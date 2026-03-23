@@ -2,8 +2,12 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from app.schemas import UsuarioRegistro, UsuarioLogin, LibreriaRegistro, Token
 from app.models import crear_usuario, login_usuario, crear_libreria
-from app.auth import create_token
+from app.auth import create_token, verify_token
 from app.models import crear_usuario, login_usuario, crear_libreria, obtener_todos_usuarios
+from app.email import enviar_email_recuperacion
+from app.models import obtener_usuario_por_email, actualizar_password
+import asyncio
+
 
 app = FastAPI()
 
@@ -56,3 +60,32 @@ def registrar_libreria(data: LibreriaRegistro):
 @app.get("/usuarios")
 def get_usuarios():
     return obtener_todos_usuarios()
+
+@app.post("/forgot-password")
+async def forgot_password(data: dict):
+    email = data.get("email")
+    user = obtener_usuario_por_email(email)
+    if not user:
+        # Por seguridad no decimos si el email existe o no
+        return {"mensaje": "Si el email existe, recibirás un enlace"}
+    
+    token = create_token({"sub": str(user["id_usuario"]), "tipo": "reset"})
+    await enviar_email_recuperacion(email, token)
+    return {"mensaje": "Si el email existe, recibirás un enlace"}
+
+
+@app.post("/reset-password")
+def reset_password(data: dict):
+    token = data.get("token")
+    nueva_password = data.get("password")
+    
+    payload = verify_token(token)
+    if not payload or payload.get("tipo") != "reset":
+        raise HTTPException(status_code=400, detail="Token inválido o expirado")
+    
+    id_usuario = payload.get("sub")
+    resultado = actualizar_password(id_usuario, nueva_password)
+    if not resultado["ok"]:
+        raise HTTPException(status_code=500, detail="Error al actualizar la contraseña")
+    
+    return {"mensaje": "Contraseña actualizada exitosamente"}

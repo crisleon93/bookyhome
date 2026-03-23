@@ -7,5 +7,6 @@ def get_db():
         user='root',
         password='',
         database='bookyhome',
-        connection_timeout=10
+        connection_timeout=10,
+        use_pure=True        # ← esta línea es clave
     )

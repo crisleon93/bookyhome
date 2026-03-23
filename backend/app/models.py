@@ -82,3 +82,19 @@ def obtener_todos_usuarios():
     cursor.close()
     db.close()
     return usuarios      
+
+def actualizar_password(id_usuario: str, nueva_password: str):
+    db = get_db()
+    cursor = db.cursor()
+    try:
+        cursor.execute(
+            "UPDATE usuarios SET contraseña_usuario = %s WHERE id_usuario = %s",
+            (hash_password(nueva_password), int(id_usuario))
+        )
+        db.commit()
+        return {"ok": True}
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+    finally:
+        cursor.close()
+        db.close()

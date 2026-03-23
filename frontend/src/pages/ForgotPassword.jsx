@@ -10,11 +10,19 @@ const IconMail = () => (
   </svg>
 )
 
+const IconCheck = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+    stroke="currentColor" strokeWidth="2" width="18" height="18">
+    <path strokeLinecap="round" strokeLinejoin="round"
+      d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+  </svg>
+)
+
 function ForgotPassword() {
-  const [email,   setEmail]   = useState('')
-  const [loading, setLoading] = useState(false)
-  const [exito,   setExito]   = useState('')
-  const [error,   setError]   = useState('')
+  const [email,    setEmail]    = useState('')
+  const [loading,  setLoading]  = useState(false)
+  const [exito,    setExito]    = useState('')
+  const [error,    setError]    = useState('')
   const [emailErr, setEmailErr] = useState('')
 
   const validate = () => {
@@ -31,7 +39,7 @@ function ForgotPassword() {
     setLoading(true)
     try {
       await axios.post('http://127.0.0.1:8000/forgot-password', { email })
-      setExito('Te enviamos un enlace para restablecer tu contraseña.')
+      setExito('Si el email está registrado, recibirás un enlace en tu correo en unos minutos.')
     } catch (err) {
       setError(err.response?.data?.detail || 'Error al enviar el enlace')
     } finally {
@@ -57,11 +65,7 @@ function ForgotPassword() {
 
         {exito && (
           <div className="flash flash--success">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-              stroke="currentColor" strokeWidth="2" width="18" height="18">
-              <path strokeLinecap="round" strokeLinejoin="round"
-                d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
+            <IconCheck />
             {exito}
           </div>
         )}
@@ -72,27 +76,29 @@ function ForgotPassword() {
           </span>
         )}
 
-        <form onSubmit={handleSubmit} noValidate>
-          <div className="auth-field">
-            <label htmlFor="email">Email</label>
-            <div className="auth-input-wrapper">
-              <IconMail />
-              <input
-                id="email"
-                type="email"
-                placeholder="tu@email.com"
-                value={email}
-                onChange={e => { setEmail(e.target.value); setEmailErr('') }}
-                className={emailErr ? 'input-error' : ''}
-              />
+        {!exito && (
+          <form onSubmit={handleSubmit} noValidate>
+            <div className="auth-field">
+              <label htmlFor="email">Email</label>
+              <div className="auth-input-wrapper">
+                <IconMail />
+                <input
+                  id="email"
+                  type="email"
+                  placeholder="tu@email.com"
+                  value={email}
+                  onChange={e => { setEmail(e.target.value); setEmailErr('') }}
+                  className={emailErr ? 'input-error' : ''}
+                />
+              </div>
+              {emailErr && <span className="error-msg">{emailErr}</span>}
             </div>
-            {emailErr && <span className="error-msg">{emailErr}</span>}
-          </div>
 
-          <button type="submit" className="btn btn-vinotinto" disabled={loading}>
-            {loading ? 'Enviando...' : 'Enviar enlace'}
-          </button>
-        </form>
+            <button type="submit" className="btn btn-vinotinto" disabled={loading}>
+              {loading ? 'Enviando...' : 'Enviar enlace'}
+            </button>
+          </form>
+        )}
 
         <div className="auth-footer-links">
           <p><Link to="/login">← Volver al inicio de sesión</Link></p>

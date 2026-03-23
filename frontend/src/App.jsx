@@ -4,6 +4,7 @@ import Register from './pages/Register'
 import ForgotPassword from './pages/ForgotPassword'
 import Libreria from './pages/Libreria'
 import Home from './pages/Home'
+import ResetPassword from './pages/Resetpassword.jsx'
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
         <Route path="/register"        element={<Register />} />
         <Route path="/libreria"        element={<Libreria />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
       </Routes>
     </BrowserRouter>
   )
