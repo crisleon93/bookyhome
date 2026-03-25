@@ -106,131 +106,130 @@ function ResetPassword() {
   if (tokenError) {
     return (
       <>
+        <Header variant="simple" />
+        <main className="auth-main">
+          <div className="auth-card">
+            <div className="auth-icon-top">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor" strokeWidth="1.8">
+                <path strokeLinecap="round" strokeLinejoin="round"
+                  d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+              </svg>
+            </div>
+            <h1 className="auth-title">Enlace inválido</h1>
+            <p className="auth-subtitle">Este enlace no es válido o ha expirado. Solicita uno nuevo.</p>
+            <div className="auth-footer-links">
+              <p><Link to="/forgot-password">Solicitar nuevo enlace</Link></p>
+              <p><Link to="/login">← Volver al login</Link></p>
+            </div>
+          </div>
+        </main>
+      </>
+    )
+  }
+
+  return (
+    <>
       <Header variant="simple" />
       <main className="auth-main">
         <div className="auth-card">
+
           <div className="auth-icon-top">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
               stroke="currentColor" strokeWidth="1.8">
               <path strokeLinecap="round" strokeLinejoin="round"
-                d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                d="M16.5 10.5V7.125A4.125 4.125 0 008.25 7.125V10.5M6 10.5h12a1.5 1.5 0 011.5 1.5v7.5A1.5 1.5 0 0118 21H6a1.5 1.5 0 01-1.5-1.5V12A1.5 1.5 0 016 10.5z" />
             </svg>
           </div>
-          <h1 className="auth-title">Enlace inválido</h1>
-          <p className="auth-subtitle">Este enlace no es válido o ha expirado. Solicita uno nuevo.</p>
+
+          <h1 className="auth-title">Nueva contraseña</h1>
+          <p className="auth-subtitle">Escribe tu nueva contraseña</p>
+
+          {exito && (
+            <div className="flash flash--success" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.6rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <IconCheck />
+                <span>¡Contraseña actualizada! Serás redirigido al login en <strong>{countdown}</strong> segundos...</span>
+              </div>
+              <div style={{ width: '100%', height: '4px', background: '#a5d6a7', borderRadius: '2px' }}>
+                <div style={{
+                  height: '100%', background: '#2e7d32', borderRadius: '2px',
+                  width: `${(countdown / 5) * 100}%`, transition: 'width 1s linear'
+                }} />
+              </div>
+              <button onClick={() => navigate('/login')}
+                style={{ background: 'none', border: 'none', color: '#2e7d32', fontWeight: '700', cursor: 'pointer', fontSize: '0.85rem', padding: 0, textDecoration: 'underline' }}>
+                Ir al login ahora →
+              </button>
+            </div>
+          )}
+
+          {error && (
+            <span className="error-msg" style={{ textAlign: 'center', display: 'block', marginBottom: '1rem' }}>
+              {error}
+            </span>
+          )}
+
+          {!exito && (
+            <form onSubmit={handleSubmit} noValidate>
+
+              <div className="auth-field">
+                <label htmlFor="password">Nueva contraseña</label>
+                <div className="auth-input-wrapper">
+                  <IconLock />
+                  <input
+                    id="password"
+                    type={showPass ? 'text' : 'password'}
+                    placeholder="Mínimo 8 caracteres"
+                    value={password}
+                    onChange={e => { setPassword(e.target.value); setErrors(p => ({ ...p, password: '' })) }}
+                    className={errors.password ? 'input-error' : ''}
+                  />
+                  <button type="button" className="btn-eye"
+                    aria-label={showPass ? 'Ocultar' : 'Mostrar'}
+                    onClick={() => setShowPass(v => !v)}>
+                    {showPass ? <IconEyeClosed /> : <IconEyeOpen />}
+                  </button>
+                </div>
+                {errors.password && <span className="error-msg">{errors.password}</span>}
+              </div>
+
+              <div className="auth-field">
+                <label htmlFor="confirmar">Confirmar contraseña</label>
+                <div className="auth-input-wrapper">
+                  <IconLock />
+                  <input
+                    id="confirmar"
+                    type={showConfirm ? 'text' : 'password'}
+                    placeholder="Repite tu contraseña"
+                    value={confirmar}
+                    onChange={e => { setConfirmar(e.target.value); setErrors(p => ({ ...p, confirmar: '' })) }}
+                    className={errors.confirmar ? 'input-error' : ''}
+                  />
+                  <button type="button" className="btn-eye"
+                    aria-label={showConfirm ? 'Ocultar' : 'Mostrar'}
+                    onClick={() => setShowConfirm(v => !v)}>
+                    {showConfirm ? <IconEyeClosed /> : <IconEyeOpen />}
+                  </button>
+                </div>
+                {errors.confirmar && <span className="error-msg">{errors.confirmar}</span>}
+              </div>
+
+              <button type="submit" className="btn btn-vinotinto" disabled={loading}>
+                {loading ? 'Actualizando...' : 'Actualizar contraseña'}
+              </button>
+
+            </form>
+          )}
+
           <div className="auth-footer-links">
-            <p><Link to="/forgot-password">Solicitar nuevo enlace</Link></p>
-            <p><Link to="/login">← Volver al login</Link></p>
+            <p><Link to="/login">← Volver al inicio de sesión</Link></p>
           </div>
+
         </div>
       </main>
-    )
-  
-
-  return (
-    <main className="auth-main">
-      <div className="auth-card">
-
-        <div className="auth-icon-top">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-            stroke="currentColor" strokeWidth="1.8">
-            <path strokeLinecap="round" strokeLinejoin="round"
-              d="M16.5 10.5V7.125A4.125 4.125 0 008.25 7.125V10.5M6 10.5h12a1.5 1.5 0 011.5 1.5v7.5A1.5 1.5 0 0118 21H6a1.5 1.5 0 01-1.5-1.5V12A1.5 1.5 0 016 10.5z" />
-          </svg>
-        </div>
-
-        <h1 className="auth-title">Nueva contraseña</h1>
-        <p className="auth-subtitle">Escribe tu nueva contraseña</p>
-
-        {/* Éxito con countdown */}
-        {exito && (
-          <div className="flash flash--success" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.6rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <IconCheck />
-              <span>¡Contraseña actualizada! Serás redirigido al login en <strong>{countdown}</strong> segundos...</span>
-            </div>
-            <div style={{ width: '100%', height: '4px', background: '#a5d6a7', borderRadius: '2px' }}>
-              <div style={{
-                height: '100%', background: '#2e7d32', borderRadius: '2px',
-                width: `${(countdown / 5) * 100}%`, transition: 'width 1s linear'
-              }} />
-            </div>
-            <button onClick={() => navigate('/login')}
-              style={{ background: 'none', border: 'none', color: '#2e7d32', fontWeight: '700', cursor: 'pointer', fontSize: '0.85rem', padding: 0, textDecoration: 'underline' }}>
-              Ir al login ahora →
-            </button>
-          </div>
-        )}
-
-        {error && (
-          <span className="error-msg" style={{ textAlign: 'center', display: 'block', marginBottom: '1rem' }}>
-            {error}
-          </span>
-        )}
-
-        {!exito && (
-          <form onSubmit={handleSubmit} noValidate>
-
-            {/* Nueva contraseña */}
-            <div className="auth-field">
-              <label htmlFor="password">Nueva contraseña</label>
-              <div className="auth-input-wrapper">
-                <IconLock />
-                <input
-                  id="password"
-                  type={showPass ? 'text' : 'password'}
-                  placeholder="Mínimo 8 caracteres"
-                  value={password}
-                  onChange={e => { setPassword(e.target.value); setErrors(p => ({ ...p, password: '' })) }}
-                  className={errors.password ? 'input-error' : ''}
-                />
-                <button type="button" className="btn-eye"
-                  aria-label={showPass ? 'Ocultar' : 'Mostrar'}
-                  onClick={() => setShowPass(v => !v)}>
-                  {showPass ? <IconEyeClosed /> : <IconEyeOpen />}
-                </button>
-              </div>
-              {errors.password && <span className="error-msg">{errors.password}</span>}
-            </div>
-
-            {/* Confirmar contraseña */}
-            <div className="auth-field">
-              <label htmlFor="confirmar">Confirmar contraseña</label>
-              <div className="auth-input-wrapper">
-                <IconLock />
-                <input
-                  id="confirmar"
-                  type={showConfirm ? 'text' : 'password'}
-                  placeholder="Repite tu contraseña"
-                  value={confirmar}
-                  onChange={e => { setConfirmar(e.target.value); setErrors(p => ({ ...p, confirmar: '' })) }}
-                  className={errors.confirmar ? 'input-error' : ''}
-                />
-                <button type="button" className="btn-eye"
-                  aria-label={showConfirm ? 'Ocultar' : 'Mostrar'}
-                  onClick={() => setShowConfirm(v => !v)}>
-                  {showConfirm ? <IconEyeClosed /> : <IconEyeOpen />}
-                </button>
-              </div>
-              {errors.confirmar && <span className="error-msg">{errors.confirmar}</span>}
-            </div>
-
-            <button type="submit" className="btn btn-vinotinto" disabled={loading}>
-              {loading ? 'Actualizando...' : 'Actualizar contraseña'}
-            </button>
-
-          </form>
-        )}
-
-        <div className="auth-footer-links">
-          <p><Link to="/login">← Volver al inicio de sesión</Link></p>
-        </div>
-
-      </div>
-    </main>
     </>
   )
-}
 }
 
 export default ResetPassword

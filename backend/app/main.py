@@ -26,7 +26,7 @@ def root():
 @app.post("/register")
 def register(data: UsuarioRegistro):
     print(f"DATOS RECIBIDOS: {data}")
-    resultado = crear_usuario(data.nombre, data.email, data.password)
+    resultado = crear_usuario(data.nombre, data.email, data.password, data.rol)
     print(f"RESULTADO: {resultado}")
     if not resultado["ok"]:
         if "Duplicate" in resultado["error"]:

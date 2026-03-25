@@ -122,21 +122,23 @@ function Home() {
   const [joinOpen,     setJoinOpen]     = useState(false)
   const [registerOpen, setRegisterOpen] = useState(false)
 
-  return (
-    <>
-    <Header variant="white" />
-      {/* TOP BAR */}
-      <div className="top-bar">
-        <div className="top-bar-container">
-          <div className="location">
-            <IconLocation />
-            Envíos a todo el país
-          </div>
+return (
+  <>
+    {/* TOP BAR PRIMERO */}
+    <div className="top-bar">
+      <div className="top-bar-container">
+        <div className="location">
+          <IconLocation />
+          Envíos a todo el país
         </div>
       </div>
+    </div>
 
-      {/* HERO */}
-      <section className="hero">
+    {/* HEADER DEBAJO */}
+    <Header variant="white" />
+
+    {/* HERO */}
+    <section className="hero">
         <div className="hero-text">
           <h1>El marketplace que conecta lectores con librerías</h1>
           <p>Miles de títulos de las mejores librerías independientes del país. Todo en un solo lugar.</p>

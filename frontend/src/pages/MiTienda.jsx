@@ -1,6 +1,6 @@
+// src/pages/MiTienda.jsx
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
 
 const MiTienda = () => {
   const navigate = useNavigate();
@@ -19,13 +19,33 @@ const MiTienda = () => {
       return;
     }
 
-    // Aquí irán las llamadas a tu backend cuando crees los endpoints
-    // Por ahora mostramos datos de ejemplo
+    // Datos de ejemplo (sin axios por ahora)
     setTimeout(() => {
       setLibros([
-        { id: 1, titulo: "Cien años de soledad", autor: "Gabriel García Márquez", precio: 45000, stock: 12, vendidos: 8 },
-        { id: 2, titulo: "El principito", autor: "Antoine de Saint-Exupéry", precio: 32000, stock: 25, vendidos: 15 },
-        { id: 3, titulo: "1984", autor: "George Orwell", precio: 38000, stock: 7, vendidos: 22 },
+        { 
+          id: 1, 
+          titulo: "Cien años de soledad", 
+          autor: "Gabriel García Márquez", 
+          precio: 45000, 
+          stock: 12, 
+          vendidos: 8 
+        },
+        { 
+          id: 2, 
+          titulo: "El principito", 
+          autor: "Antoine de Saint-Exupéry", 
+          precio: 32000, 
+          stock: 25, 
+          vendidos: 15 
+        },
+        { 
+          id: 3, 
+          titulo: "1984", 
+          autor: "George Orwell", 
+          precio: 38000, 
+          stock: 7, 
+          vendidos: 22 
+        },
       ]);
 
       setStats({
@@ -33,6 +53,7 @@ const MiTienda = () => {
         vendidosHoy: 5,
         ingresosMes: 2450000,
       });
+
       setLoading(false);
     }, 800);
   }, [navigate]);
@@ -43,30 +64,28 @@ const MiTienda = () => {
   };
 
   if (loading) {
-    return (
-      <div style={{ textAlign: 'center', padding: '100px' }}>
-        <h2>Cargando tu tienda...</h2>
-      </div>
-    );
+    return <div style={{ textAlign: 'center', padding: '100px' }}>Cargando tu tienda...</div>;
   }
 
   return (
     <div style={{ padding: '2rem', maxWidth: '1200px', margin: '0 auto', fontFamily: 'Montserrat, sans-serif' }}>
-      {/* Cabecera del Dashboard */}
+      
+      {/* Cabecera */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
         <div>
           <h1 style={{ color: '#7A1E3A', margin: 0 }}>Mi Tienda</h1>
           <p style={{ color: '#666', marginTop: '8px' }}>Bienvenido de nuevo, vendedor</p>
         </div>
-        <button 
+        <button
           onClick={handleLogout}
-          style={{ 
-            padding: '10px 20px', 
-            background: '#7A1E3A', 
-            color: 'white', 
-            border: 'none', 
-            borderRadius: '6px', 
-            cursor: 'pointer' 
+          style={{
+            padding: '10px 20px',
+            background: '#7A1E3A',
+            color: 'white',
+            border: 'none',
+            borderRadius: '6px',
+            cursor: 'pointer',
+            fontWeight: '600'
           }}
         >
           Cerrar Sesión
@@ -74,7 +93,12 @@ const MiTienda = () => {
       </div>
 
       {/* Estadísticas */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem', marginBottom: '3rem' }}>
+      <div style={{ 
+        display: 'grid', 
+        gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', 
+        gap: '1.5rem', 
+        marginBottom: '3rem' 
+      }}>
         <div style={{ background: '#F4EDE2', padding: '1.5rem', borderRadius: '12px', textAlign: 'center' }}>
           <h3>Libros Publicados</h3>
           <h2 style={{ fontSize: '2.8rem', color: '#7A1E3A', margin: '10px 0' }}>{stats.totalLibros}</h2>
@@ -93,13 +117,13 @@ const MiTienda = () => {
 
       {/* Botón Agregar Libro */}
       <div style={{ marginBottom: '2rem' }}>
-        <button 
-          style={{ 
-            background: '#7A1E3A', 
-            color: 'white', 
-            padding: '14px 28px', 
-            border: 'none', 
-            borderRadius: '8px', 
+        <button
+          style={{
+            background: '#7A1E3A',
+            color: 'white',
+            padding: '14px 28px',
+            border: 'none',
+            borderRadius: '8px',
             fontSize: '1.1rem',
             cursor: 'pointer',
             fontWeight: '700'
@@ -112,7 +136,7 @@ const MiTienda = () => {
 
       {/* Lista de Libros */}
       <h2 style={{ marginBottom: '1.5rem', color: '#2A2A2A' }}>Mis Libros</h2>
-      
+
       <div style={{ display: 'grid', gap: '1rem' }}>
         {libros.map(libro => (
           <div key={libro.id} style={{
@@ -137,21 +161,21 @@ const MiTienda = () => {
               </p>
             </div>
             <div>
-              <button style={{ 
-                padding: '8px 16px', 
-                background: '#C5425A', 
-                color: 'white', 
-                border: 'none', 
+              <button style={{
+                padding: '8px 16px',
+                background: '#C5425A',
+                color: 'white',
+                border: 'none',
                 borderRadius: '6px',
                 marginRight: '8px',
                 cursor: 'pointer'
               }}>
                 Editar
               </button>
-              <button style={{ 
-                padding: '8px 16px', 
-                background: '#ddd', 
-                border: 'none', 
+              <button style={{
+                padding: '8px 16px',
+                background: '#ddd',
+                border: 'none',
                 borderRadius: '6px',
                 cursor: 'pointer'
               }}>
@@ -161,12 +185,6 @@ const MiTienda = () => {
           </div>
         ))}
       </div>
-
-      {libros.length === 0 && (
-        <p style={{ textAlign: 'center', color: '#888', padding: '40px' }}>
-          Aún no tienes libros publicados. ¡Agrega el primero!
-        </p>
-      )}
     </div>
   );
 };

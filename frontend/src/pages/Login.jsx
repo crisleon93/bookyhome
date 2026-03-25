@@ -93,25 +93,9 @@ function Login() {
     setLoading(true)
 
     try {
-      const res = await axios.post('http://127.0.0.1:8000/login', { 
-        email, 
-        password 
-      })
-
-      const token = res.data.access_token
-      localStorage.setItem('token', token)
-
-      // Decodificar el token para saber el rol
-      const payload = JSON.parse(atob(token.split('.')[1]))
-      const role = payload.rol
-
-      // Redirección inteligente
-      if (role === "vendedor") {
-        navigate('/mi-tienda')        // Dashboard del vendedor
-      } else {
-        navigate('/')                 // Usuario normal → Home
-      }
-
+      const res = await axios.post('http://127.0.0.1:8000/login', { email, password })
+      localStorage.setItem('token', res.data.access_token)
+      navigate('/')
     } catch (err) {
       setError(err.response?.data?.detail || 'Email o contraseña incorrectos')
     } finally {

@@ -60,8 +60,7 @@ const IconClose = () => (
   </svg>
 )
 
-// ── Modal legal ───────────────────────────────────────────────────────────────
-
+// ── Modal Legal ───────────────────────────────────────────────────────────────
 function LegalModal({ open, onClose, onAccept, title, accepted, children }) {
   if (!open) return null
   return (
@@ -70,7 +69,6 @@ function LegalModal({ open, onClose, onAccept, title, accepted, children }) {
         <button className="modal-close" aria-label="Cerrar" onClick={onClose}><IconClose /></button>
         <h2 className="modal-title" style={{ fontSize: '1.2rem', marginBottom: '1rem' }}>{title}</h2>
 
-        {/* Indicador si ya fue aceptado */}
         {accepted && (
           <div className="flash flash--success" style={{ marginBottom: '0.8rem', padding: '0.5rem 0.8rem' }}>
             <IconCheck /> Ya aceptaste este documento
@@ -105,7 +103,6 @@ function LegalModal({ open, onClose, onAccept, title, accepted, children }) {
 }
 
 // ── Contenido legal ───────────────────────────────────────────────────────────
-
 const Terminos = () => (
   <>
     <p><strong>Última actualización: 21 de Marzo de 2026</strong></p>
@@ -153,61 +150,63 @@ const Privacidad = () => (
 )
 
 // ── Componente principal ───────────────────────────────────────────────────────
-
 function Register() {
-  const [nombre, setNombre]                     = useState('')
-  const [email, setEmail]                       = useState('')
-  const [password, setPassword]                 = useState('')
-  const [showPass, setShowPass]                 = useState(false)
-  const [aceptoTerminos, setAceptoTerminos]     = useState(false)
+  const [nombre, setNombre] = useState('')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [showPass, setShowPass] = useState(false)
+
+  const [aceptoTerminos, setAceptoTerminos] = useState(false)
   const [aceptoPrivacidad, setAceptoPrivacidad] = useState(false)
-  const [error, setError]                       = useState('')
-  const [exito, setExito]                       = useState('')
-  const [countdown, setCountdown]               = useState(5)
-  const [loading, setLoading]                   = useState(false)
-  const [showTerminos, setShowTerminos]         = useState(false)
-  const [showPrivacidad, setShowPrivacidad]     = useState(false)
-  const [errors, setErrors]                     = useState({ nombre: '', email: '', password: '', terminos: '' })
+
+  const [error, setError] = useState('')
+  const [exito, setExito] = useState(false)
+  const [countdown, setCountdown] = useState(5)
+  const [loading, setLoading] = useState(false)
+
+  const [showTerminos, setShowTerminos] = useState(false)
+  const [showPrivacidad, setShowPrivacidad] = useState(false)
 
   const navigate = useNavigate()
 
-  // El checkbox se marca solo cuando ambos fueron aceptados
   const terminosCompletos = aceptoTerminos && aceptoPrivacidad
 
   const validate = () => {
-    const newErrors = { nombre: '', email: '', password: '', terminos: '' }
-    let valid = true
-
-    if (!nombre.trim()) { newErrors.nombre = 'Este campo es obligatorio'; valid = false }
-    if (!email.trim()) {
-      newErrors.email = 'Este campo es obligatorio'; valid = false
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      newErrors.email = 'Ingresa un email válido'; valid = false
+    if (!nombre.trim()) {
+      setError('El nombre es obligatorio')
+      return false
     }
-    if (!password.trim()) {
-      newErrors.password = 'Este campo es obligatorio'; valid = false
-    } else if (password.length < 8) {
-      newErrors.password = 'Mínimo 8 caracteres'; valid = false
+    if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setError('Ingresa un email válido')
+      return false
+    }
+    if (!password.trim() || password.length < 8) {
+      setError('La contraseña debe tener al menos 8 caracteres')
+      return false
     }
     if (!terminosCompletos) {
-      newErrors.terminos = !aceptoTerminos
-        ? 'Debes leer y aceptar los términos y condiciones'
-        : 'Debes leer y aceptar la política de privacidad'
-      valid = false
+      setError('Debes aceptar tanto los Términos y Condiciones como la Política de Privacidad')
+      return false
     }
-
-    setErrors(newErrors)
-    return valid
+    return true
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
+
     if (!validate()) return
 
     setLoading(true)
     try {
-      await axios.post('http://127.0.0.1:8000/register', { nombre, email, password })
+      // Siempre registramos como "comprador" (o el rol que prefieras por defecto)
+      await axios.post('http://127.0.0.1:8000/register', {
+        nombre,
+        email,
+        password,
+        rol: "comprador"   // ← Aquí lo fijamos
+      })
+
       setExito(true)
       setCountdown(5)
     } catch (err) {
@@ -217,149 +216,156 @@ function Register() {
     }
   }
 
-  // Countdown para redirigir al login
   useEffect(() => {
     if (!exito) return
-    if (countdown === 0) { navigate('/login'); return }
+    if (countdown === 0) {
+      navigate('/login')
+      return
+    }
     const timer = setTimeout(() => setCountdown(c => c - 1), 1000)
     return () => clearTimeout(timer)
   }, [exito, countdown, navigate])
 
   return (
     <>
-    <Header variant="simple" />
-    <main className="auth-main">
-      <div className="auth-card">
+      <Header variant="simple" />
+      <main className="auth-main">
+        <div className="auth-card">
 
-        <h1 className="auth-title">Crear Cuenta</h1>
-        <p className="auth-subtitle">Únete y accede a miles de libros</p>
+          <h1 className="auth-title">Crear Cuenta</h1>
+          <p className="auth-subtitle">Únete y accede a miles de libros</p>
 
-        {exito && (
-          <div className="flash flash--success" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.6rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <IconCheck />
-              <span>¡Cuenta creada exitosamente! Serás redirigido al login en <strong>{countdown}</strong> segundos...</span>
-            </div>
-            {/* Barra de progreso */}
-            <div style={{ width: '100%', height: '4px', background: '#a5d6a7', borderRadius: '2px' }}>
-              <div style={{
-                height: '100%',
-                background: '#2e7d32',
-                borderRadius: '2px',
-                width: `${(countdown / 5) * 100}%`,
-                transition: 'width 1s linear'
-              }} />
-            </div>
-            <button onClick={() => navigate('/login')}
-              style={{ background: 'none', border: 'none', color: '#2e7d32', fontWeight: '700', cursor: 'pointer', fontSize: '0.85rem', padding: 0, textDecoration: 'underline' }}>
-              Ir al login ahora →
-            </button>
-          </div>
-        )}
-
-        {error && (
-          <span className="error-msg" style={{ textAlign: 'center', display: 'block', marginBottom: '1rem' }}>
-            {error}
-          </span>
-        )}
-
-        <form onSubmit={handleSubmit} noValidate>
-
-          <div className="auth-field">
-            <label htmlFor="nombre">Nombre completo</label>
-            <div className="auth-input-wrapper">
-              <IconUser />
-              <input id="nombre" type="text" placeholder="Tu nombre completo" value={nombre}
-                onChange={e => { setNombre(e.target.value); setErrors(p => ({ ...p, nombre: '' })) }}
-                className={errors.nombre ? 'input-error' : ''} />
-            </div>
-            {errors.nombre && <span className="error-msg">{errors.nombre}</span>}
-          </div>
-
-          <div className="auth-field">
-            <label htmlFor="email">Email</label>
-            <div className="auth-input-wrapper">
-              <IconMail />
-              <input id="email" type="email" placeholder="tu@email.com" value={email}
-                onChange={e => { setEmail(e.target.value); setErrors(p => ({ ...p, email: '' })) }}
-                className={errors.email ? 'input-error' : ''} />
-            </div>
-            {errors.email && <span className="error-msg">{errors.email}</span>}
-          </div>
-
-          <div className="auth-field">
-            <label htmlFor="password">Contraseña</label>
-            <div className="auth-input-wrapper">
-              <IconLock />
-              <input id="password" type={showPass ? 'text' : 'password'}
-                placeholder="Mínimo 8 caracteres" value={password}
-                onChange={e => { setPassword(e.target.value); setErrors(p => ({ ...p, password: '' })) }}
-                className={errors.password ? 'input-error' : ''} />
-              <button type="button" className="btn-eye"
-                aria-label={showPass ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-                onClick={() => setShowPass(v => !v)}>
-                {showPass ? <IconEyeClosed /> : <IconEyeOpen />}
+          {exito && (
+            <div className="flash flash--success" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.6rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <IconCheck />
+                <span>¡Cuenta creada exitosamente! Serás redirigido al login en <strong>{countdown}</strong> segundos...</span>
+              </div>
+              <button 
+                onClick={() => navigate('/login')}
+                style={{ background: 'none', border: 'none', color: '#2e7d32', fontWeight: '700', cursor: 'pointer', textDecoration: 'underline' }}
+              >
+                Ir al login ahora →
               </button>
             </div>
-            {errors.password && <span className="error-msg">{errors.password}</span>}
-          </div>
+          )}
 
-          {/* Términos y condiciones */}
-          <div className="auth-remember" style={{ marginBottom: '1rem' }}>
-            <label className="auth-checkbox-label" style={{ cursor: 'default' }}>
-              {/* Checkbox solo de lectura — se marca automáticamente */}
-              <input type="checkbox" checked={terminosCompletos} readOnly
-                style={{ cursor: 'default' }} />
-              <span>
-                He leído y acepto los{' '}
-                <button type="button" onClick={() => setShowTerminos(true)}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: 'inherit', textDecoration: 'underline',
-                    color: aceptoTerminos ? '#2e7d32' : 'var(--vinotinto)', fontWeight: '700' }}>
-                  términos y condiciones
+          {error && (
+            <span className="error-msg" style={{ textAlign: 'center', display: 'block', marginBottom: '1rem' }}>
+              {error}
+            </span>
+          )}
+
+          <form onSubmit={handleSubmit} noValidate>
+
+            <div className="auth-field">
+              <label htmlFor="nombre">Nombre completo</label>
+              <div className="auth-input-wrapper">
+                <IconUser />
+                <input
+                  id="nombre"
+                  type="text"
+                  placeholder="Tu nombre completo"
+                  value={nombre}
+                  onChange={e => setNombre(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="auth-field">
+              <label htmlFor="email">Email</label>
+              <div className="auth-input-wrapper">
+                <IconMail />
+                <input
+                  id="email"
+                  type="email"
+                  placeholder="tu@email.com"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="auth-field">
+              <label htmlFor="password">Contraseña</label>
+              <div className="auth-input-wrapper">
+                <IconLock />
+                <input
+                  id="password"
+                  type={showPass ? 'text' : 'password'}
+                  placeholder="Mínimo 8 caracteres"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                />
+                <button type="button" className="btn-eye" onClick={() => setShowPass(!showPass)}>
+                  {showPass ? <IconEyeClosed /> : <IconEyeOpen />}
                 </button>
-                {aceptoTerminos && ' ✓'}
-                {' '}y la{' '}
-                <button type="button" onClick={() => setShowPrivacidad(true)}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: 'inherit', textDecoration: 'underline',
-                    color: aceptoPrivacidad ? '#2e7d32' : 'var(--vinotinto)', fontWeight: '700' }}>
-                  política de privacidad
-                </button>
-                {aceptoPrivacidad && ' ✓'}
-              </span>
-            </label>
-            {errors.terminos && <span className="error-msg">{errors.terminos}</span>}
+              </div>
+            </div>
+
+            {/* Checkbox de términos y privacidad */}
+            <div className="auth-remember" style={{ marginBottom: '1.5rem' }}>
+              <label className="auth-checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={terminosCompletos}
+                  readOnly
+                />
+                <span>
+                  He leído y acepto los{' '}
+                  <button 
+                    type="button" 
+                    onClick={() => setShowTerminos(true)}
+                    style={{ background: 'none', border: 'none', color: 'var(--vinotinto)', textDecoration: 'underline', fontWeight: '600' }}
+                  >
+                    términos y condiciones
+                  </button>
+                  {aceptoTerminos && ' ✓'} y la{' '}
+                  <button 
+                    type="button" 
+                    onClick={() => setShowPrivacidad(true)}
+                    style={{ background: 'none', border: 'none', color: 'var(--vinotinto)', textDecoration: 'underline', fontWeight: '600' }}
+                  >
+                    política de privacidad
+                  </button>
+                  {aceptoPrivacidad && ' ✓'}
+                </span>
+              </label>
+            </div>
+
+            <button type="submit" className="btn btn-vinotinto" disabled={loading}>
+              {loading ? 'Creando cuenta...' : 'Crear Cuenta'}
+            </button>
+          </form>
+
+          <div className="auth-footer-links">
+            <p>¿Ya tienes cuenta? <Link to="/login">Inicia sesión</Link></p>
+            <p>¿Quieres vender libros? <Link to="/libreria">Registra tu librería</Link></p>
           </div>
-
-          <button type="submit" className="btn btn-vinotinto" disabled={loading}>
-            {loading ? 'Creando cuenta...' : 'Crear Cuenta'}
-          </button>
-
-        </form>
-
-        <div className="auth-footer-links">
-          <p>¿Ya tienes cuenta? <Link to="/login">Inicia sesión</Link></p>
-          <p>¿Quieres vender libros? <Link to="/libreria">Registra tu librería</Link></p>
         </div>
 
-      </div>
+        {/* Modales de Términos y Privacidad */}
+        <LegalModal
+          open={showTerminos}
+          onClose={() => setShowTerminos(false)}
+          onAccept={() => setAceptoTerminos(true)}
+          accepted={aceptoTerminos}
+          title="Términos y Condiciones de Uso — BookyHome"
+        >
+          <Terminos />
+        </LegalModal>
 
-      {/* Modal Términos */}
-      <LegalModal open={showTerminos} onClose={() => setShowTerminos(false)}
-        onAccept={() => { setAceptoTerminos(true); setErrors(p => ({ ...p, terminos: '' })); setShowTerminos(false) }}
-        accepted={aceptoTerminos}
-        title="Términos y Condiciones de Uso — BookyHome">
-        <Terminos />
-      </LegalModal>
+        <LegalModal
+          open={showPrivacidad}
+          onClose={() => setShowPrivacidad(false)}
+          onAccept={() => setAceptoPrivacidad(true)}
+          accepted={aceptoPrivacidad}
+          title="Política de Privacidad — BookyHome"
+        >
+          <Privacidad />
+        </LegalModal>
 
-      {/* Modal Privacidad */}
-      <LegalModal open={showPrivacidad} onClose={() => setShowPrivacidad(false)}
-        onAccept={() => { setAceptoPrivacidad(true); setErrors(p => ({ ...p, terminos: '' })); setShowPrivacidad(false) }}
-        accepted={aceptoPrivacidad}
-        title="Política de Privacidad — BookyHome">
-        <Privacidad />
-      </LegalModal>
-
-    </main>
+      </main>
     </>
   )
 }

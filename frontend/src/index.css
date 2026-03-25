@@ -1228,3 +1228,536 @@ body.auth-page {
   border-color: var(--blanco);
   transform: translateY(-2px);
 }
+
+/* ===========================
+   POST LOGIN — Dashboard
+   =========================== */
+ 
+.postlogin-root {
+  font-family: 'Montserrat', sans-serif;
+  background: #f5f5f0;
+  min-height: 100vh;
+}
+ 
+/* Header del dashboard (sin sticky para no solapar el sidebar) */
+.postlogin-header {
+  border-bottom: 1px solid #e5e5e5;
+  box-shadow: var(--sombra-suave);
+}
+ 
+/* Nav central del header */
+.postlogin-nav {
+  display: flex;
+  gap: 4px;
+}
+ 
+.postlogin-nav-link {
+  padding: 6px 14px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: #555;
+  background: transparent;
+  transition: var(--transition);
+}
+ 
+.postlogin-nav-link:hover {
+  color: var(--vinotinto);
+  background: #f5eaed;
+}
+ 
+.postlogin-nav-link.active {
+  font-weight: 700;
+  color: var(--vinotinto);
+  background: #f5eaed;
+}
+ 
+/* Avatar usuario */
+.user-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--vinotinto);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 0.8rem;
+  flex-shrink: 0;
+}
+ 
+.user-name {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--gris-carbon);
+}
+ 
+/* Badge carrito */
+.cart-badge {
+  background: #f5eaed;
+  color: var(--vinotinto);
+  border-radius: 20px;
+  padding: 3px 12px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+ 
+/* Layout body */
+.postlogin-body {
+  display: flex;
+  min-height: calc(100vh - 72px);
+}
+ 
+/* Sidebar */
+.postlogin-sidebar {
+  width: 200px;
+  background: #fff;
+  border-right: 1px solid #e5e5e5;
+  display: flex;
+  flex-direction: column;
+  padding: 20px 12px;
+  gap: 4px;
+  flex-shrink: 0;
+}
+ 
+.postlogin-side-link {
+  padding: 9px 14px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: #555;
+  background: transparent;
+  transition: var(--transition);
+}
+ 
+.postlogin-side-link:hover {
+  color: var(--vinotinto);
+  background: #f5eaed;
+}
+ 
+.postlogin-side-link.active {
+  font-weight: 700;
+  color: var(--vinotinto);
+  background: #f5eaed;
+}
+ 
+/* Contenido principal */
+.postlogin-main {
+  flex: 1;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+ 
+/* Tarjeta reutilizable */
+.pl-card {
+  background: #fff;
+  border-radius: 14px;
+  padding: 22px 24px;
+  border: 1px solid #e8e8e8;
+  box-shadow: var(--sombra-suave);
+}
+ 
+.pl-card-title {
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0 0 14px;
+  color: var(--gris-carbon);
+}
+ 
+/* Botón buscar — override del width 100% de btn-vinotinto */
+.pl-search-btn {
+  width: auto !important;
+  display: inline-block !important;
+  margin-top: 0 !important;
+  padding: 0 24px !important;
+  white-space: nowrap;
+  align-self: stretch;
+}
+ 
+/* Encabezado de sección */
+.pl-section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 18px;
+}
+ 
+.pl-section-title {
+  font-size: 1.05rem;
+  font-weight: 800;
+  margin: 0;
+  color: var(--gris-carbon);
+}
+ 
+.pl-section-link {
+  font-size: 0.82rem;
+  color: var(--vinotinto);
+  text-decoration: none;
+  font-weight: 600;
+}
+ 
+.pl-section-link:hover {
+  text-decoration: underline;
+}
+ 
+/* Grid libros */
+.pl-books-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 16px;
+}
+ 
+.pl-book-card {
+  padding: 0 !important;
+  overflow: hidden;
+  align-items: stretch !important;
+  flex-direction: column !important;
+}
+ 
+.pl-book-cover {
+  height: 90px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.2rem;
+}
+ 
+.pl-book-info {
+  padding: 12px 14px;
+}
+ 
+.pl-book-title {
+  font-weight: 700;
+  font-size: 0.88rem;
+  color: var(--gris-carbon);
+  margin-bottom: 4px;
+}
+ 
+.pl-book-author {
+  font-size: 0.78rem;
+  color: #777;
+  margin-bottom: 12px;
+}
+ 
+.pl-book-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+ 
+.pl-book-price {
+  font-weight: 800;
+  font-size: 0.88rem;
+  color: var(--vinotinto);
+}
+ 
+.pl-add-btn {
+  width: auto !important;
+  display: inline-block !important;
+  margin-top: 0 !important;
+  padding: 5px 12px !important;
+  font-size: 0.78rem !important;
+}
+ 
+/* Grid librerías */
+.pl-libs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 14px;
+}
+ 
+.pl-lib-card {
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 14px !important;
+  padding: 14px 16px !important;
+}
+ 
+.pl-lib-icon {
+  flex-shrink: 0;
+  font-size: 1.4rem;
+}
+ 
+.pl-lib-name {
+  font-weight: 700;
+  font-size: 0.88rem;
+  color: var(--gris-carbon);
+  margin-bottom: 2px;
+}
+ 
+.pl-lib-address {
+  font-size: 0.78rem;
+  color: #777;
+  margin-bottom: 4px;
+}
+ 
+.pl-lib-rating {
+  font-size: 0.78rem;
+  color: #555;
+  font-weight: 600;
+}
+ 
+/* Filas de compras */
+.pl-order-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 0;
+}
+ 
+.pl-order-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+ 
+.pl-order-emoji {
+  font-size: 1.6rem;
+}
+ 
+.pl-order-title {
+  font-weight: 700;
+  font-size: 0.88rem;
+  color: var(--gris-carbon);
+  margin-bottom: 3px;
+}
+ 
+.pl-order-meta {
+  font-size: 0.78rem;
+  color: #888;
+}
+ 
+.pl-order-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+ 
+.pl-order-price {
+  font-weight: 800;
+  font-size: 0.88rem;
+  color: var(--gris-carbon);
+}
+ 
+/* Badges de estado */
+.pl-badge {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+ 
+.pl-badge--entregado {
+  background: #d1fae5;
+  color: #065f46;
+  border: 1px solid #6ee7b7;
+}
+ 
+.pl-badge--camino {
+  background: #dbeafe;
+  color: #1e40af;
+  border: 1px solid #93c5fd;
+}
+ 
+.pl-badge--procesando {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fcd34d;
+}
+ 
+/* Responsive */
+@media (max-width: 768px) {
+  .postlogin-sidebar { display: none; }
+  .postlogin-nav     { display: none; }
+  .postlogin-main    { padding: 16px; }
+  .pl-books-grid     { grid-template-columns: repeat(2, 1fr); }
+  .pl-libs-grid      { grid-template-columns: 1fr; }
+  .pl-order-row      { flex-direction: column; align-items: flex-start; gap: 8px; }
+}
+
+/* ==================== DASHBOARD - ESTILO FINAL CONSISTENTE ==================== */
+
+.dashboard-container {
+  display: flex;
+  min-height: calc(100vh - 72px);
+  background: var(--beige);
+}
+
+.dashboard-sidebar {
+  width: 280px;
+  background: white;
+  border-right: 1px solid #e5e0d8;
+  padding: 20px 0;
+  box-shadow: 2px 0 15px rgba(122, 30, 58, 0.08);
+}
+
+.sidebar-user {
+  padding: 0 24px 25px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  border-bottom: 1px solid #eee;
+  margin-bottom: 15px;
+}
+
+.user-avatar-big {
+  width: 52px;
+  height: 52px;
+  background: var(--vinotinto);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1.25rem;
+}
+
+.user-name {
+  font-weight: 700;
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.user-email {
+  font-size: 0.85rem;
+  color: #777;
+  margin: 2px 0 0;
+}
+
+.sidebar-nav {
+  padding: 0 12px;
+}
+
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 24px;
+  width: 100%;
+  border: none;
+  background: none;
+  text-align: left;
+  font-size: 0.97rem;
+  color: #444;
+  border-radius: 8px;
+  margin-bottom: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.sidebar-item:hover {
+  background: #f5eaed;
+  color: var(--vinotinto);
+}
+
+.sidebar-item.active .sidebar-icon {
+  color: white;
+}
+
+.sidebar-icon {
+  width: 24px;
+  height: 24px;
+  color: inherit;
+  flex-shrink: 0;
+}
+
+.sidebar-logout {
+  margin: 40px 24px 0;
+  padding: 12px 20px;
+  background: none;
+  border: 1.5px solid #e0dbd4;
+  border-radius: 8px;
+  color: #666;
+  font-weight: 600;
+  cursor: pointer;
+  width: calc(100% - 48px);
+}
+
+.sidebar-logout:hover {
+  background: #fee;
+  color: #c62828;
+}
+
+/* Main Content */
+.dashboard-main {
+  flex: 1;
+  padding: 40px;
+}
+
+.welcome-card {
+  background: white;
+  border-radius: 12px;
+  padding: 32px;
+  box-shadow: var(--sombra-suave);
+  margin-bottom: 30px;
+}
+
+.welcome-card h1 {
+  font-size: 2.1rem;
+  margin: 0 0 10px;
+  color: var(--gris-carbon);
+}
+
+.empty-state {
+  background: white;
+  border-radius: 12px;
+  padding: 60px 30px;
+  text-align: center;
+  color: #777;
+  box-shadow: var(--sombra-suave);
+}
+/* ==================== DASHBOARD HEADER ==================== */
+.dashboard-header {
+  background: white;
+  border-bottom: 1px solid #e5e0d8;
+  padding: 0 5%;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+.dashboard-header-container {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.dashboard-user-section {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.user-info {
+  font-size: 0.95rem;
+  color: #555;
+}
+
+.btn-logout {
+  background: #7A1E3A;
+  color: white;
+  border: none;
+  padding: 8px 18px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.btn-logout:hover {
+  background: #5e1629;
+  transform: translateY(-1px);
+}
