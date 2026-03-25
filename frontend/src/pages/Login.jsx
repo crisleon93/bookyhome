@@ -84,120 +84,139 @@ function Login() {
     return valid
   }
 
+  // ==================== HANDLE SUBMIT CORREGIDO ====================
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
     if (!validate()) return
 
     setLoading(true)
+
     try {
-      const res = await axios.post('http://127.0.0.1:8000/login', { email, password })
-      localStorage.setItem('token', res.data.access_token)
-      navigate('/')
+      const res = await axios.post('http://127.0.0.1:8000/login', { 
+        email, 
+        password 
+      })
+
+      const token = res.data.access_token
+      localStorage.setItem('token', token)
+
+      // Decodificar el token para saber el rol
+      const payload = JSON.parse(atob(token.split('.')[1]))
+      const role = payload.rol
+
+      // Redirección inteligente
+      if (role === "vendedor") {
+        navigate('/mi-tienda')        // Dashboard del vendedor
+      } else {
+        navigate('/')                 // Usuario normal → Home
+      }
+
     } catch (err) {
-      setError(err.response?.data?.detail || 'Error al iniciar sesión')
+      setError(err.response?.data?.detail || 'Email o contraseña incorrectos')
     } finally {
       setLoading(false)
     }
   }
+  // =================================================================
 
   return (
     <>
-    <Header variant="simple" />
-    <main className="auth-main">
-      <div className="auth-card">
+      <Header variant="simple" />
+      <main className="auth-main">
+        <div className="auth-card">
 
-        <h1 className="auth-title">Iniciar Sesión</h1>
-        <p className="auth-subtitle">Ingresa a tu cuenta de BookyHome</p>
+          <h1 className="auth-title">Iniciar Sesión</h1>
+          <p className="auth-subtitle">Ingresa a tu cuenta de BookyHome</p>
 
-        {/* Error del servidor */}
-        {error && (
-          <p className="error-msg" style={{ textAlign: 'center', marginBottom: '1rem' }}>
-            {error}
-          </p>
-        )}
+          {/* Error del servidor */}
+          {error && (
+            <p className="error-msg" style={{ textAlign: 'center', marginBottom: '1rem' }}>
+              {error}
+            </p>
+          )}
 
-        <form onSubmit={handleSubmit} noValidate>
+          <form onSubmit={handleSubmit} noValidate>
 
-          {/* Email */}
-          <div className="auth-field">
-            <label htmlFor="email">Email</label>
-            <div className="auth-input-wrapper">
-              <IconMail />
-              <input
-                id="email"
-                type="email"
-                placeholder="tu@email.com"
-                value={email}
-                onChange={e => { setEmail(e.target.value); setErrors(p => ({ ...p, email: '' })) }}
-                className={errors.email ? 'input-error' : ''}
-              />
+            {/* Email */}
+            <div className="auth-field">
+              <label htmlFor="email">Email</label>
+              <div className="auth-input-wrapper">
+                <IconMail />
+                <input
+                  id="email"
+                  type="email"
+                  placeholder="tu@email.com"
+                  value={email}
+                  onChange={e => { setEmail(e.target.value); setErrors(p => ({ ...p, email: '' })) }}
+                  className={errors.email ? 'input-error' : ''}
+                />
+              </div>
+              {errors.email && <span className="error-msg">{errors.email}</span>}
             </div>
-            {errors.email && <span className="error-msg">{errors.email}</span>}
-          </div>
 
-          {/* Contraseña + ojito */}
-          <div className="auth-field">
-            <label htmlFor="password">Contraseña</label>
-            <div className="auth-input-wrapper">
-              <IconLock />
-              <input
-                id="password"
-                type={showPass ? 'text' : 'password'}
-                placeholder="Tu contraseña"
-                value={password}
-                onChange={e => { setPassword(e.target.value); setErrors(p => ({ ...p, password: '' })) }}
-                className={errors.password ? 'input-error' : ''}
-              />
-              <button
-                type="button"
-                className="btn-eye"
-                aria-label={showPass ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-                onClick={() => setShowPass(v => !v)}
-              >
-                {showPass ? <IconEyeClosed /> : <IconEyeOpen />}
-              </button>
+            {/* Contraseña + ojito */}
+            <div className="auth-field">
+              <label htmlFor="password">Contraseña</label>
+              <div className="auth-input-wrapper">
+                <IconLock />
+                <input
+                  id="password"
+                  type={showPass ? 'text' : 'password'}
+                  placeholder="Tu contraseña"
+                  value={password}
+                  onChange={e => { setPassword(e.target.value); setErrors(p => ({ ...p, password: '' })) }}
+                  className={errors.password ? 'input-error' : ''}
+                />
+                <button
+                  type="button"
+                  className="btn-eye"
+                  aria-label={showPass ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                  onClick={() => setShowPass(v => !v)}
+                >
+                  {showPass ? <IconEyeClosed /> : <IconEyeOpen />}
+                </button>
+              </div>
+              {errors.password && <span className="error-msg">{errors.password}</span>}
             </div>
-            {errors.password && <span className="error-msg">{errors.password}</span>}
-          </div>
 
-          {/* Olvidé contraseña */}
-          <div className="auth-forgot">
-            <Link to="/forgot-password">¿Olvidaste tu contraseña?</Link>
-          </div>
+            {/* Olvidé contraseña */}
+            <div className="auth-forgot">
+              <Link to="/forgot-password">¿Olvidaste tu contraseña?</Link>
+            </div>
 
-          {/* Recordarme */}
-          <div className="auth-remember">
-            <label className="auth-checkbox-label">
-              <input
-                type="checkbox"
-                checked={remember}
-                onChange={e => setRemember(e.target.checked)}
-              />
-              <span>Recordarme</span>
-            </label>
-          </div>
+            {/* Recordarme */}
+            <div className="auth-remember">
+              <label className="auth-checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={remember}
+                  onChange={e => setRemember(e.target.checked)}
+                />
+                <span>Recordarme</span>
+              </label>
+            </div>
 
-          <button type="submit" className="btn btn-vinotinto" disabled={loading}>
-            {loading ? 'Ingresando...' : 'Ingresar'}
+            <button type="submit" className="btn btn-vinotinto" disabled={loading}>
+              {loading ? 'Ingresando...' : 'Ingresar'}
+            </button>
+
+          </form>
+
+          {/* Separador Google */}
+          <div className="auth-divider"><span>o continúa con</span></div>
+
+          <button className="btn btn-google">
+            <IconGoogle />
+            Continuar con Google
           </button>
 
-        </form>
+          <div className="auth-footer-links">
+            <p>¿No tienes cuenta? <Link to="/register">Regístrate</Link></p>
+          </div>
 
-        {/* Separador Google */}
-        <div className="auth-divider"><span>o continúa con</span></div>
-
-        <button className="btn btn-google">
-          <IconGoogle />
-          Continuar con Google
-        </button>
-
-        <div className="auth-footer-links">
-          <p>¿No tienes cuenta? <Link to="/register">Regístrate</Link></p>
         </div>
-
-      </div>
-    </main>
+      </main>
     </>
   )
 }
