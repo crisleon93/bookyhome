@@ -6,7 +6,7 @@
 /* ===========================
    BOOKY HOME — styles.css LIMPIO
    =========================== */
- 
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap');
 :root {
   --vinotinto: #7A1E3A;
   --rojo-suave: #C5425A;
@@ -153,6 +153,22 @@ header.scrolled {
   text-decoration: none;
 }
  
+.header-white {
+  background-color: var(--blanco);
+}
+
+.header-vinotinto {
+  background-color: var(--vinotinto);
+}
+
+.header-vinotinto .user-access {
+  color: white;
+}
+
+.header-white .user-access {
+  color: var(--vinotinto);
+}
+
 /* ===========================
    HERO
    =========================== */
@@ -1192,7 +1208,7 @@ body.auth-page {
   background-color: #fdecea;
   color: #c62828;
   border: 1.5px solid #ef9a9a;
-}@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap');
+}
 
 /* auth-page background fix for React (no body class needed) */
 .auth-main {

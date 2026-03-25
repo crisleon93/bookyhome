@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import logo from '../assets/logo.png'
 import ficcion from '../assets/ficcion.png'
 import romance from '../assets/romance.png'
 import historia from '../assets/historia.png'
@@ -11,6 +10,7 @@ import arte from '../assets/arte.png'
 import biografia from '../assets/biografia.png'
 import infantil from '../assets/infantil.png'
 import tecnologia from '../assets/tecnologia.png'
+import Header from '../components/Header'
 // ── Íconos ────────────────────────────────────────────────────────────────────
 
 const IconLocation = () => (
@@ -20,27 +20,6 @@ const IconLocation = () => (
   </svg>
 )
 
-const IconSearch = () => (
-  <svg className="icon-search" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-    fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
-  </svg>
-)
-
-const IconUser = () => (
-  <svg className="icon-user" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-    fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
-  </svg>
-)
-
-const IconUserPlus = () => (
-  <svg className="icon-user" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-    fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path strokeLinecap="round" strokeLinejoin="round"
-      d="M19 7.5v3m0 0v3m0-3h3m-3 0h-3m-4.5-1.5a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM3 19.235v-.11a6.375 6.375 0 0112.75 0v.109A12.318 12.318 0 019.374 21c-2.331 0-4.512-.645-6.374-1.766z"/>
-  </svg>
-)
 
 const IconClose = () => (
   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
@@ -145,6 +124,7 @@ function Home() {
 
   return (
     <>
+    <Header variant="white" />
       {/* TOP BAR */}
       <div className="top-bar">
         <div className="top-bar-container">
@@ -154,30 +134,6 @@ function Home() {
           </div>
         </div>
       </div>
-
-      {/* HEADER */}
-      <header id="main-header">
-        <Link to="/" className="logo-link">
-          <img src={logo} alt="BookyHome" className="logo-img" />
-        </Link>
-
-        <div className="search-wrapper">
-          <input type="text" placeholder="Inicia sesión para buscar libros..." className="search-bar" />
-          <button className="search-btn"><IconSearch /></button>
-        </div>
-
-        <div className="header-actions">
-          <Link to="/login" className="user-access">
-            <IconUser />
-            <span>Ingresa</span>
-          </Link>
-          <button className="user-access" style={{ background: 'none', border: 'none', cursor: 'pointer' }}
-            onClick={() => setRegisterOpen(true)}>
-            <IconUserPlus />
-            <span>Crea tu cuenta</span>
-          </button>
-        </div>
-      </header>
 
       {/* HERO */}
       <section className="hero">
@@ -271,51 +227,6 @@ function Home() {
         <p>Únete a nuestra red de librerías y alcanza a miles de lectores en todo el país.</p>
         <Link to="/libreria" className="btn btn-primary">Registrar mi librería</Link>
       </section>
-
-      {/* FOOTER */}
-      <footer>
-        <div className="footer-container">
-          <div className="footer-column">
-            <h3>BookyHome</h3>
-            <ul>
-              <li><a href="#">Catálogo de libros</a></li>
-              <li><a href="#">Cómo comprar</a></li>
-              <li><a href="#">Métodos de pago</a></li>
-              <li><a href="#">Envíos y entregas</a></li>
-            </ul>
-          </div>
-          <div className="footer-column">
-            <h3>Comprar</h3>
-            <ul>
-              <li><a href="#">Catálogo de libros</a></li>
-              <li><a href="#">Cómo comprar</a></li>
-              <li><a href="#">Métodos de pago</a></li>
-              <li><a href="#">Envíos y entregas</a></li>
-            </ul>
-          </div>
-          <div className="footer-column">
-            <h3>Vender</h3>
-            <ul>
-              <li><a href="#">Vender en BookyHome</a></li>
-              <li><a href="#">Cómo funciona</a></li>
-              <li><a href="#">Planes y precios</a></li>
-              <li><a href="#">Centro de vendedores</a></li>
-            </ul>
-          </div>
-          <div className="footer-column">
-            <h3>Ayuda</h3>
-            <ul>
-              <li><a href="#">Centro de ayuda</a></li>
-              <li><a href="#">Preguntas frecuentes</a></li>
-              <li><a href="#">Contacto</a></li>
-              <li><a href="#">Devoluciones</a></li>
-            </ul>
-          </div>
-        </div>
-        <div className="footer-bottom">
-          <p>© 2025 BookyHome - Todos los derechos reservados.</p>
-        </div>
-      </footer>
 
       {/* MODAL: Comenzar a comprar */}
       <Modal open={joinOpen} onClose={() => setJoinOpen(false)}

@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import Header from '../components/Header'
 import axios from 'axios'
+
 
 const IconMail = () => (
   <svg className="auth-input-icon" xmlns="http://www.w3.org/2000/svg" fill="none"
@@ -48,6 +50,8 @@ function ForgotPassword() {
   }
 
   return (
+    <>
+    <Header variant="simple" />
     <main className="auth-main">
       <div className="auth-card">
 
@@ -106,6 +110,7 @@ function ForgotPassword() {
 
       </div>
     </main>
+    </>
   )
 }
 

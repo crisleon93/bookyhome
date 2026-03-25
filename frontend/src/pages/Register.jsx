@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import Header from '../components/Header'
 import axios from 'axios'
 
 const IconUser = () => (
@@ -225,6 +226,8 @@ function Register() {
   }, [exito, countdown, navigate])
 
   return (
+    <>
+    <Header variant="simple" />
     <main className="auth-main">
       <div className="auth-card">
 
@@ -357,6 +360,7 @@ function Register() {
       </LegalModal>
 
     </main>
+    </>
   )
 }
 

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import Header from '../components/Header'
 import axios from 'axios'
 
 const IconLock = () => (
@@ -104,6 +105,8 @@ function ResetPassword() {
   // Token inválido o no existe
   if (tokenError) {
     return (
+      <>
+      <Header variant="simple" />
       <main className="auth-main">
         <div className="auth-card">
           <div className="auth-icon-top">
@@ -122,7 +125,7 @@ function ResetPassword() {
         </div>
       </main>
     )
-  }
+  
 
   return (
     <main className="auth-main">
@@ -225,7 +228,9 @@ function ResetPassword() {
 
       </div>
     </main>
+    </>
   )
+}
 }
 
 export default ResetPassword
