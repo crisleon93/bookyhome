@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import axios from 'axios'
-import Header from '../components/Header'
 
 // ── Íconos ────────────────────────────────────────────────────────────────────
 
@@ -106,7 +105,6 @@ function Login() {
 
   return (
     <>
-      <Header variant="simple" />
       <main className="auth-main">
         <div className="auth-card">
 

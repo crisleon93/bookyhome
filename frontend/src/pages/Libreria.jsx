@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import Header from '../components/Header'
 import axios from 'axios'
 
 // ── Íconos ────────────────────────────────────────────────────────────────────
@@ -128,7 +127,6 @@ function Libreria() {
 
   return (
     <>
-    <Header variant="simple" />
     <main className="auth-main">
       <div className="auth-card auth-card--wide">
 

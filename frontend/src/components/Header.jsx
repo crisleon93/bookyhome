@@ -1,21 +1,29 @@
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
-import logo from '../assets/logo.png'
-import { IconSearch, IconUser, IconUserPlus } from './Icons'
+import { useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import logo from '../assets/logo.png';
+import { IconSearch, IconUser, IconUserPlus } from './Icons';
+
+// Íconos
+const IconLocation = () => (
+  <svg className="icon-top-bar" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+    fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/>
+  </svg>
+);
 
 const IconClose = () => (
   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
     stroke="currentColor" strokeWidth="2" width="20" height="20">
     <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/>
   </svg>
-)
+);
 
 const IconArrow = () => (
   <svg className="modal-arrow" xmlns="http://www.w3.org/2000/svg" fill="none"
     viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
     <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5"/>
   </svg>
-)
+);
 
 function ModalOption({ to, iconPath, title, desc, onClose }) {
   return (
@@ -32,17 +40,32 @@ function ModalOption({ to, iconPath, title, desc, onClose }) {
       </div>
       <IconArrow />
     </Link>
-  )
+  );
 }
 
 function Header({ variant }) {
-  const [modalOpen, setModalOpen] = useState(false)
+  const location = useLocation();
+  const [modalOpen, setModalOpen] = useState(false);
 
-  const isSimple = variant === "simple"
-  const isWhite  = variant === "white"
+  const isHome = location.pathname === '/';
+  const isSimple = variant === "simple";
+  const isWhite = variant === "white" || !variant;
 
   return (
     <>
+      {/* TOP BAR - Solo se muestra en la página principal */}
+      {isHome && (
+        <div className="top-bar">
+          <div className="top-bar-container">
+            <div className="location">
+              <IconLocation />
+              Envíos a todo el país
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* HEADER PRINCIPAL */}
       <header
         id="main-header"
         className={`${isSimple ? "header-center" : ""} ${isWhite ? "header-white" : "header-vinotinto"}`}
@@ -77,6 +100,7 @@ function Header({ variant }) {
         )}
       </header>
 
+      {/* MODAL */}
       {modalOpen && (
         <div className="modal-overlay open" onClick={e => { if (e.target === e.currentTarget) setModalOpen(false) }}>
           <div className="modal-card">
@@ -105,7 +129,7 @@ function Header({ variant }) {
         </div>
       )}
     </>
-  )
+  );
 }
 
-export default Header
+export default Header;

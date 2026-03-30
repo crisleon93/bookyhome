@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import Header from '../components/Header'
+
 import ficcion from '../assets/ficcion.png'
 import romance from '../assets/romance.png'
 import historia from '../assets/historia.png'
@@ -10,7 +12,6 @@ import arte from '../assets/arte.png'
 import biografia from '../assets/biografia.png'
 import infantil from '../assets/infantil.png'
 import tecnologia from '../assets/tecnologia.png'
-import Header from '../components/Header'
 // ── Íconos ────────────────────────────────────────────────────────────────────
 
 const IconLocation = () => (
@@ -124,18 +125,6 @@ function Home() {
 
 return (
   <>
-    {/* TOP BAR PRIMERO */}
-    <div className="top-bar">
-      <div className="top-bar-container">
-        <div className="location">
-          <IconLocation />
-          Envíos a todo el país
-        </div>
-      </div>
-    </div>
-
-    {/* HEADER DEBAJO */}
-    <Header variant="white" />
 
     {/* HERO */}
     <section className="hero">

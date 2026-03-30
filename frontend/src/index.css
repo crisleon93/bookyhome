@@ -45,10 +45,11 @@ h3 { font-size: 1.2rem; }
 .top-bar-container {
   max-width: 1200px;
   margin: 0 auto;
+  padding-left: 3%;     /* ← mismo margen izquierdo que el hero */
+  padding-right: 8%;
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 0 5%;
+  min-height: 32px;     /* para que no se sienta apretado */
 }
  
 .location {
