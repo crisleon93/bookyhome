@@ -106,7 +106,6 @@ function ResetPassword() {
   if (tokenError) {
     return (
       <>
-        <Header variant="simple" />
         <main className="auth-main">
           <div className="auth-card">
             <div className="auth-icon-top">
@@ -130,7 +129,6 @@ function ResetPassword() {
 
   return (
     <>
-      <Header variant="simple" />
       <main className="auth-main">
         <div className="auth-card">
 

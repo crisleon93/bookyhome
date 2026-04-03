@@ -94,7 +94,7 @@ function Login() {
     try {
       const res = await axios.post('http://127.0.0.1:8000/login', { email, password })
       localStorage.setItem('token', res.data.access_token)
-      navigate('/')
+      navigate('/post-login')
     } catch (err) {
       setError(err.response?.data?.detail || 'Email o contraseña incorrectos')
     } finally {

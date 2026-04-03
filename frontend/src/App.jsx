@@ -59,7 +59,7 @@ function MainLayout() {
             userRole === "vendedor" ? (
               <Navigate to="/mi-tienda" replace />
             ) : userRole === "usuario" ? (
-              <Navigate to="/" replace />
+              <Navigate to="/post-login" replace />
             ) : (
               <Navigate to="/login" replace />
             )

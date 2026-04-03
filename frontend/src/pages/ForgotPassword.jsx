@@ -51,7 +51,6 @@ function ForgotPassword() {
 
   return (
     <>
-    <Header variant="simple" />
     <main className="auth-main">
       <div className="auth-card">
 
