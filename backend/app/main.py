@@ -1,13 +1,23 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from app.schemas import UsuarioRegistro, UsuarioLogin, LibreriaRegistro, Token
-from app.models import crear_usuario, login_usuario, crear_libreria
-from app.auth import create_token, verify_token
-from app.models import crear_usuario, login_usuario, crear_libreria, obtener_todos_usuarios
-from app.email import enviar_email_recuperacion
-from app.models import obtener_usuario_por_email, actualizar_password
 import asyncio
 
+# Esquemas de validación
+from app.schemas import UsuarioRegistro, UsuarioLogin, LibreriaRegistro, Token
+
+# NUEVOS IMPORTS: Desde la carpeta models
+from app.models.usuarios import (
+    crear_usuario, 
+    login_usuario, 
+    obtener_todos_usuarios, 
+    obtener_usuario_por_email, 
+    actualizar_password
+)
+from app.models.tiendas import crear_libreria
+
+# Autenticación y Email
+from app.auth import create_token, verify_token
+from app.email import enviar_email_recuperacion
 
 app = FastAPI()
 
@@ -25,9 +35,7 @@ def root():
 
 @app.post("/register")
 def register(data: UsuarioRegistro):
-    print(f"DATOS RECIBIDOS: {data}")
     resultado = crear_usuario(data.nombre, data.email, data.password, data.rol)
-    print(f"RESULTADO: {resultado}")
     if not resultado["ok"]:
         if "Duplicate" in resultado["error"]:
             raise HTTPException(status_code=400, detail="Ya existe una cuenta con ese email")
@@ -39,6 +47,7 @@ def login(data: UsuarioLogin):
     user = login_usuario(data.email, data.password)
     if not user:
         raise HTTPException(status_code=401, detail="Email o contraseña incorrectos")
+    
     token = create_token({
         "sub": str(user["id_usuario"]),
         "nombre": user["nombre_usuario"],
@@ -66,13 +75,11 @@ async def forgot_password(data: dict):
     email = data.get("email")
     user = obtener_usuario_por_email(email)
     if not user:
-        # Por seguridad no decimos si el email existe o no
         return {"mensaje": "Si el email existe, recibirás un enlace"}
     
     token = create_token({"sub": str(user["id_usuario"]), "tipo": "reset"})
     await enviar_email_recuperacion(email, token)
     return {"mensaje": "Si el email existe, recibirás un enlace"}
-
 
 @app.post("/reset-password")
 def reset_password(data: dict):

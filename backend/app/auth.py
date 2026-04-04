@@ -1,39 +1,27 @@
-from datetime import datetime, timedelta
-from jose import JWTError, jwt
 from passlib.context import CryptContext
+from datetime import datetime, timedelta, timezone # Agregamos timezone
+import jwt  
 
-# ===========================
-# CONFIGURACIÓN
-# ===========================
-
-SECRET_KEY = "bookyhome_secret_2025"
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 24 horas
-
+# Configuración básica
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+SECRET_KEY = "tu_clave_secreta" 
+ALGORITHM = "HS256"
 
-# ===========================
-# CONTRASEÑAS
-# ===========================
-
-def hash_password(password: str) -> str:
+def hash_password(password: str):
     return pwd_context.hash(password)
 
-def verify_password(plain: str, hashed: str) -> bool:
-    return pwd_context.verify(plain, hashed)
+def verify_password(plain_password, hashed_password):
+    return pwd_context.verify(plain_password, hashed_password)
 
-# ===========================
-# JWT TOKEN
-# ===========================
-
-def create_token(data: dict) -> str:
+def create_token(data: dict):
     to_encode = data.copy()
-    expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    # Esto reemplaza al utcnow() tachado y es lo que se usa ahora:
+    expire = datetime.now(timezone.utc) + timedelta(hours=24)
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
-def verify_token(token: str) -> dict:
+def verify_token(token: str):
     try:
         return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-    except JWTError:
+    except Exception:
         return None
