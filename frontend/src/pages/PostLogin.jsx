@@ -3,9 +3,6 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 
-import DashboardHeader from "../components/DashboardHeader";
-import Footer from "../components/Footer";
-
 // ==================== ICONOS ====================
 const IconHome = () => (
   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.2">
@@ -39,17 +36,8 @@ const IconSettings = () => (
 );
 
 const IconCart = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" 
-    fill="none" 
-    viewBox="0 0 24 24" 
-    stroke="currentColor" 
-    strokeWidth="2.2"
-  >
-    <path 
-      strokeLinecap="round" 
-      strokeLinejoin="round" 
-      d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-1.5 6h11M10 21a1 1 0 100-2 1 1 0 000 2zm8 0a1 1 0 100-2 1 1 0 000 2z"
-    />
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.2">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-1.5 6h11M10 21a1 1 0 100-2 1 1 0 000 2zm8 0a1 1 0 100-2 1 1 0 000 2z" />
   </svg>
 );
 
@@ -98,9 +86,6 @@ export default function PostLogin() {
 
   return (
     <>
-      {/* Header limpio con barra de búsqueda */}
-      <DashboardHeader userName={userName} />
-
       <div className="dashboard-container">
         <aside className="dashboard-sidebar">
           <div className="sidebar-user">
@@ -146,8 +131,6 @@ export default function PostLogin() {
           </div>
         </main>
       </div>
-
-      <Footer />
     </>
   );
 }
