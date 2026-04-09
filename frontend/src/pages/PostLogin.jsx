@@ -38,6 +38,21 @@ const IconSettings = () => (
   </svg>
 );
 
+const IconCart = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" 
+    fill="none" 
+    viewBox="0 0 24 24" 
+    stroke="currentColor" 
+    strokeWidth="2.2"
+  >
+    <path 
+      strokeLinecap="round" 
+      strokeLinejoin="round" 
+      d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-1.5 6h11M10 21a1 1 0 100-2 1 1 0 000 2zm8 0a1 1 0 100-2 1 1 0 000 2z"
+    />
+  </svg>
+);
+
 export default function PostLogin() {
   const [userName, setUserName] = useState("");
   const [loading, setLoading] = useState(true);
@@ -73,6 +88,7 @@ export default function PostLogin() {
     { name: "Mis Compras", icon: <IconPackage /> },
     { name: "Mi Perfil", icon: <IconUser /> },
     { name: "Favoritos", icon: <IconHeart /> },
+    { name: "Carrito", icon: <IconCart /> },
     { name: "Configuración", icon: <IconSettings /> },
   ];
 
@@ -99,7 +115,13 @@ export default function PostLogin() {
             {SIDE_LINKS.map((item) => (
               <button
                 key={item.name}
-                onClick={() => setActiveSide(item.name)}
+                onClick={() => {
+                  setActiveSide(item.name);
+
+                  if (item.name === "Carrito") {
+                    navigate("/carrito");
+                  }
+                }}
                 className={`sidebar-item ${activeSide === item.name ? "active" : ""}`}
               >
                 <span className="sidebar-icon">{item.icon}</span>

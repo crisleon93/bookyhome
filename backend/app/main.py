@@ -1,5 +1,8 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from app.models.carrito import obtener_carrito
+from dotenv import load_dotenv
+load_dotenv()
 import asyncio
 
 # Esquemas de validación
@@ -96,3 +99,7 @@ def reset_password(data: dict):
         raise HTTPException(status_code=500, detail="Error al actualizar la contraseña")
     
     return {"mensaje": "Contraseña actualizada exitosamente"}
+
+@app.get("/carrito/{id_usuario}")
+def get_carrito(id_usuario: int):
+    return obtener_carrito(id_usuario)
