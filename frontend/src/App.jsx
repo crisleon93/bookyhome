@@ -13,7 +13,7 @@ import PostLogin from './pages/PostLogin';
 import MiTienda from  './pages/Mitienda';
 import PrivateRoute from "./components/PrivateRoute";
 import Carrito from "./pages/Carrito";
-
+import StoredProcedurePage from "./pages/StoredProcedurePage";
 
 function App() {
   return (
@@ -50,6 +50,7 @@ function MainLayout() {
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/carrito" element={<Carrito />} />
+        <Route path="/libros" element={<StoredProcedurePage />} />
         {/* Rutas protegidas */}
         <Route element={<PrivateRoute />}>
           <Route path="/post-login" element={<PostLogin />} />
