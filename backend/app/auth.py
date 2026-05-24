@@ -1,6 +1,6 @@
 from passlib.context import CryptContext
 from datetime import datetime, timedelta, timezone # Agregamos timezone
-import jwt  
+import jwt 
 
 # Configuración básica
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
