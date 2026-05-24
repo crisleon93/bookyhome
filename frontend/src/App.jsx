@@ -1,4 +1,4 @@
-// src/App.jsx  ← Versión mejorada y limpia
+// src/App.jsx ← Versión limpia y sin duplicados
 
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Header from './components/Header';
@@ -8,9 +8,9 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Libreria from './pages/Libreria';
 import ForgotPassword from './pages/ForgotPassword';
-import ResetPassword from './pages/Resetpassword';
+import ResetPassword from './pages/Resetpassword'; // Con 'p' minúscula según tu carpeta
 import PostLogin from './pages/PostLogin';
-import MiTienda from  './pages/Mitienda';
+import MiTienda from './pages/MiTienda';           // Una sola vez y con 'T' mayúscula
 import PrivateRoute from "./components/PrivateRoute";
 import Carrito from "./pages/Carrito";
 import StoredProcedurePage from "./pages/StoredProcedurePage";
@@ -22,11 +22,13 @@ function App() {
     </BrowserRouter>
   );
 }
+
 // Este componente está DENTRO del BrowserRouter, por eso puede usar useLocation
 function MainLayout() {
   const location = useLocation();
   // Define el variant: blanco solo en la página principal, vinotinto en el resto
   const variant = location.pathname === '/' ? 'white' : 'simple';
+
   const getUserRole = () => {
     const token = localStorage.getItem('token');
     if (!token) return null;
@@ -37,7 +39,9 @@ function MainLayout() {
       return null;
     }
   };
+
   const userRole = getUserRole();
+
   return (
     <>
       <Header variant={variant} />
@@ -51,11 +55,13 @@ function MainLayout() {
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/carrito" element={<Carrito />} />
         <Route path="/libros" element={<StoredProcedurePage />} />
+
         {/* Rutas protegidas */}
         <Route element={<PrivateRoute />}>
           <Route path="/post-login" element={<PostLogin />} />
           <Route path="/mi-tienda" element={<MiTienda />} />
         </Route>
+
         {/* Redirección después del login según el rol */}
         <Route 
           path="/dashboard" 
@@ -69,6 +75,7 @@ function MainLayout() {
             )
           } 
         />
+
         {/* Ruta por defecto */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
@@ -76,4 +83,5 @@ function MainLayout() {
     </>
   );
 }
+
 export default App;
