@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import Header from '../components/Header'
-import axios from 'axios'
+import { resetPassword } from '../services/api'
 
 const IconLock = () => (
   <svg className="auth-input-icon" xmlns="http://www.w3.org/2000/svg" fill="none"
@@ -92,7 +92,7 @@ function ResetPassword() {
 
     setLoading(true)
     try {
-      await axios.post('http://127.0.0.1:8000/reset-password', { token, password })
+      await resetPassword({ token, password })
       setExito(true)
       setCountdown(5)
     } catch (err) {

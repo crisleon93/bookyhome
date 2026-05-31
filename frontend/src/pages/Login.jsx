@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import axios from 'axios'
+import { login } from '../services/api'
 
 // ── Íconos ────────────────────────────────────────────────────────────────────
 
@@ -92,7 +92,7 @@ function Login() {
     setLoading(true)
 
     try {
-      const res = await axios.post('http://127.0.0.1:8000/login', { email, password })
+      const res = await login({ email, password })
       localStorage.setItem('token', res.data.access_token)
       navigate('/post-login')
     } catch (err) {

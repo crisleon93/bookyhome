@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import Header from '../components/Header'
-import axios from 'axios'
+import { forgotPassword } from '../services/api'
 
 
 const IconMail = () => (
@@ -40,7 +40,7 @@ function ForgotPassword() {
 
     setLoading(true)
     try {
-      await axios.post('http://127.0.0.1:8000/forgot-password', { email })
+      await forgotPassword({ email })
       setExito('Si el email está registrado, recibirás un enlace en tu correo en unos minutos.')
     } catch (err) {
       setError(err.response?.data?.detail || 'Error al enviar el enlace')

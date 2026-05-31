@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { jwtDecode } from "jwt-decode";
+import { getCarrito } from '../services/api'
 
 function Carrito() {
   const [carrito, setCarrito] = useState([]);
@@ -14,11 +15,10 @@ function Carrito() {
 
     const userId = parseInt(decoded.sub);
 
-    fetch(`http://localhost:8000/carrito/${userId}`)
-      .then(res => res.json())
-      .then(data => {
-        console.log("CARRITO:", data);
-        setCarrito(data);
+    getCarrito(userId)
+      .then(res => {
+        console.log("CARRITO:", res.data);
+        setCarrito(res.data);
       })
       .catch(err => console.error(err));
   }, []);

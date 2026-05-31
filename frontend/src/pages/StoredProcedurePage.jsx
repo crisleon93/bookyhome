@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+import { getStoredLibros } from '../services/api'
 
 const StoredProcedurePage = () => {
   const [libros, setLibros] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    axios.get("http://localhost:8000/api/stored/libros")
+    getStoredLibros()
       .then((res) => {
         setLibros(res.data);
         setLoading(false);

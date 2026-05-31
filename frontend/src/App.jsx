@@ -14,6 +14,7 @@ import MiTienda from './pages/MiTienda';           // Una sola vez y con 'T' may
 import PrivateRoute from "./components/PrivateRoute";
 import Carrito from "./pages/Carrito";
 import StoredProcedurePage from "./pages/StoredProcedurePage";
+import { getUserRole } from './hooks/useAuth';
 
 function App() {
   return (
@@ -28,17 +29,6 @@ function MainLayout() {
   const location = useLocation();
   // Define el variant: blanco solo en la página principal, vinotinto en el resto
   const variant = location.pathname === '/' ? 'white' : 'simple';
-
-  const getUserRole = () => {
-    const token = localStorage.getItem('token');
-    if (!token) return null;
-    try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      return payload.rol;
-    } catch {
-      return null;
-    }
-  };
 
   const userRole = getUserRole();
 

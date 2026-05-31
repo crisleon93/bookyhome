@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import axios from 'axios'
+import { registerLibrary } from '../services/api'
 
 // ── Íconos ────────────────────────────────────────────────────────────────────
 
@@ -113,9 +113,7 @@ function Libreria() {
 
     setLoading(true)
     try {
-      await axios.post('http://127.0.0.1:8000/libreria', {
-        nombre, libreria, direccion, email, password
-      })
+      await registerLibrary({ nombre, libreria, direccion, email, password })
       setExito('¡Librería registrada exitosamente! Ya puedes iniciar sesión.')
       setTimeout(() => navigate('/login'), 2500)
     } catch (err) {

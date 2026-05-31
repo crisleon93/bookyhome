@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import axios from 'axios'
+import { register } from '../services/api'
 
 const IconUser = () => (
   <svg className="auth-input-icon" xmlns="http://www.w3.org/2000/svg" fill="none"
@@ -199,7 +199,7 @@ function Register() {
     setLoading(true)
     try {
       // Siempre registramos como "comprador" (o el rol que prefieras por defecto)
-      await axios.post('http://127.0.0.1:8000/register', {
+      await register({
         nombre,
         email,
         password,
