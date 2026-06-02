@@ -1,0 +1,62 @@
+# HU-031 Publicar reseñas verificadas
+
+---
+
+## Identificación
+
+| Campo        | Valor                        |
+| ------------ | ---------------------------- |
+| ID           | HU-031                       |
+| Título       | Publicar reseñas verificadas |
+| Módulo       | Valoraciones y Reseñas       |
+| Prioridad    | Media                        |
+| Estado       | Definida                     |
+| RF asociados | RF31                         |
+
+---
+
+## Historia
+
+Como usuario, requiero identificar y publicar reseñas verificadas para aportar opiniones confiables sobre libros adquiridos mediante la plataforma.
+
+---
+
+## Criterios de aceptación
+
+### CA-031.1 — Validación de compra
+
+**Dado que** el usuario desea publicar una reseña verificada,
+
+**Cuando** el sistema consulta el historial de compras,
+
+**Entonces** deberá verificar que exista una transacción asociada al libro.
+
+---
+
+### CA-031.2 — Registro de reseña
+
+**Dado que** la compra fue validada,
+
+**Cuando** el usuario envía la reseña,
+
+**Entonces** el sistema deberá almacenarla como reseña verificada.
+
+---
+
+### CA-031.3 — Identificación visual
+
+**Dado que** existe una reseña verificada registrada,
+
+**Cuando** otros usuarios consultan la publicación,
+
+**Entonces** el sistema deberá mostrar un distintivo que indique su condición de verificada.
+
+---
+
+### CA-031.4 — Restricción de validación
+
+**Dado que** no existe una compra asociada,
+
+**Cuando** el usuario intenta publicar una reseña verificada,
+
+**Entonces** el sistema deberá impedir el registro bajo dicha categoría.
