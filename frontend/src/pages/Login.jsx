@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { login } from '../services/api'
+import { jwtDecode } from 'jwt-decode'
 
 // ── Íconos ────────────────────────────────────────────────────────────────────
 
@@ -93,8 +94,15 @@ function Login() {
 
     try {
       const res = await login({ email, password })
-      localStorage.setItem('token', res.data.access_token)
-      navigate('/post-login')
+      const token = res.data.access_token
+      localStorage.setItem('token', token)
+
+      const decoded = jwtDecode(token)
+      if (decoded.rol === 'vendedor') {
+        navigate('/mi-tienda')
+      } else {
+        navigate('/post-login')
+      }
     } catch (err) {
       setError(err.response?.data?.detail || 'Email o contraseña incorrectos')
     } finally {

@@ -14,7 +14,9 @@ import MiTienda from './pages/MiTienda';           // Una sola vez y con 'T' may
 import PrivateRoute from "./components/PrivateRoute";
 import Carrito from "./pages/Carrito";
 import StoredProcedurePage from "./pages/StoredProcedurePage";
+import PublicarLibro from './pages/PublicarLibro';
 import { getUserRole } from './hooks/useAuth';
+import SeccionOfertas from './components/SeccionOfertas';
 
 function App() {
   return (
@@ -45,6 +47,7 @@ function MainLayout() {
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/carrito" element={<Carrito />} />
         <Route path="/libros" element={<StoredProcedurePage />} />
+        <Route path="/vendedor/publicar" element={<PublicarLibro />} />
 
         {/* Rutas protegidas */}
         <Route element={<PrivateRoute />}>
