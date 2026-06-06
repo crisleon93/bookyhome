@@ -32,21 +32,39 @@ Proyecto e-commerce para venta de libros con frontend en React + Vite y backend 
 
 ### Backend
 1. Entrar a `backend/`.
-2. Instalar dependencias con `pip install -r requirements.txt`.
-3. Ejecutar la API con:
-   ```bash
-   uvicorn app.main:app --reload
+2. Crear/activar el entorno virtual y activar el venv:
+   ```powershell
+   cd backend
+   py -3.11 -m venv .\venv
+   .\venv\Scripts\Activate.ps1
    ```
-4. La API estará disponible en `http://127.0.0.1:8000`.
+3. Instalar dependencias:
+   ```powershell
+   python -m pip install -r requirements.txt
+   ```
+4. Ejecutar la API:
+   ```powershell
+   python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+   ```
+5. La API estará disponible en `http://127.0.0.1:8000`.
 
 ### Frontend
 1. Entrar a `frontend/`.
-2. Instalar dependencias con `pnpm install`.
+2. Instalar dependencias con:
+   ```powershell
+   pnpm install
+   ```
 3. Ejecutar la app con:
-   ```bash
+   ```powershell
    pnpm dev
    ```
 4. Abrir el navegador en la URL que indique Vite.
+
+### Comando alternativo desde la raíz
+Desde `c:\Users\USERS\Desktop\BYH FR`, el frontend puede iniciarse directamente con:
+```powershell
+pnpm dev
+```
 
 ## Notas importantes
 
