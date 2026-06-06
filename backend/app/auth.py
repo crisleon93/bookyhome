@@ -1,10 +1,11 @@
+import os
 from passlib.context import CryptContext
 from datetime import datetime, timedelta, timezone # Agregamos timezone
 import jwt 
 
 # Configuración básica
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-SECRET_KEY = "tu_clave_secreta" 
+SECRET_KEY = os.getenv("SECRET_KEY", "tu_clave_secreta")
 ALGORITHM = "HS256"
 
 def hash_password(password: str):
