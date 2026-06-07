@@ -1,4 +1,4 @@
-import React from 'react';
+// ... Tu código actual de App.js aquí ...import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import AppNavigator from './src/navigation/AppNavigator';
 import { AuthProvider } from './src/context/AuthContext';
