@@ -47,7 +47,6 @@ export default function ForgotPassword({ navigation }) {
     </View>
   );
 }
-
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16, justifyContent: 'center' },
   title: { fontSize: 24, marginBottom: 12, textAlign: 'center' },
@@ -55,3 +54,4 @@ const styles = StyleSheet.create({
   input: { borderWidth: 1, borderColor: '#ccc', padding: 10, marginBottom: 12, borderRadius: 6 },
   footerText: { marginTop: 16, textAlign: 'center', color: '#007bff' },
 });
+
