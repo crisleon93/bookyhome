@@ -6,11 +6,12 @@ import Footer from './components/Footer';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
-import Libreria from './pages/Libreria';
+import Libreria from './pages/Libreria'; // Formulario de registro de tienda
+import Catalogo from './pages/Catalogo'; // Catálogo de libros
 import ForgotPassword from './pages/ForgotPassword';
-import ResetPassword from './pages/Resetpassword'; // Con 'p' minúscula según tu carpeta
+import ResetPassword from './pages/Resetpassword';
 import PostLogin from './pages/PostLogin';
-import MiTienda from './pages/MiTienda';           // Una sola vez y con 'T' mayúscula
+import MiTienda from './pages/MiTienda';
 import PrivateRoute from "./components/PrivateRoute";
 import Carrito from "./pages/Carrito";
 import StoredProcedurePage from "./pages/StoredProcedurePage";
@@ -29,6 +30,7 @@ function App() {
 // Este componente está DENTRO del BrowserRouter, por eso puede usar useLocation
 function MainLayout() {
   const location = useLocation();
+
   // Define el variant: blanco solo en la página principal, vinotinto en el resto
   const variant = location.pathname === '/' ? 'white' : 'simple';
 
@@ -37,12 +39,19 @@ function MainLayout() {
   return (
     <>
       <Header variant={variant} />
+
       <Routes>
         {/* Rutas públicas */}
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        <Route path="/libreria" element={<Libreria />} />
+
+        {/* Catálogo de libros */}
+        <Route path="/libreria" element={<Catalogo />} />
+
+        {/* Registro de tienda */}
+        <Route path="/registro-tienda" element={<Libreria />} />
+
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/carrito" element={<Carrito />} />
@@ -56,8 +65,8 @@ function MainLayout() {
         </Route>
 
         {/* Redirección después del login según el rol */}
-        <Route 
-          path="/dashboard" 
+        <Route
+          path="/dashboard"
           element={
             userRole === "vendedor" ? (
               <Navigate to="/mi-tienda" replace />
@@ -66,12 +75,13 @@ function MainLayout() {
             ) : (
               <Navigate to="/login" replace />
             )
-          } 
+          }
         />
 
         {/* Ruta por defecto */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+
       <Footer />
     </>
   );
