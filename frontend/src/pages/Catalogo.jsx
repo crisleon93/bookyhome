@@ -1,7 +1,7 @@
 // src/pages/Catalogo.jsx
 
 import React, { useEffect, useState } from 'react';
-import api from '../services/api';
+import { getStoredLibros } from '../services/api';
 import LibroCard from '../components/LibroCard';
 import './Catalogo.css';
 
@@ -11,9 +11,9 @@ const Catalogo = () => {
   useEffect(() => {
     const cargarLibros = async () => {
       try {
-        const response = await api.getStoredLibros();
+        const response = await getStoredLibros();
 
-        console.log("Datos recibidos:", response.data); // ← Agregado
+        console.log("Datos recibidos:", response.data);
 
         setLibros(response.data);
       } catch (error) {
