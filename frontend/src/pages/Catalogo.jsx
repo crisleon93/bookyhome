@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import api from '../services/api';
 import LibroCard from '../components/LibroCard';
-import './Catalogo.css'; // Conecta los estilos de la página
+import './Catalogo.css';
 
 const Catalogo = () => {
   const [libros, setLibros] = useState([]);
@@ -12,6 +12,9 @@ const Catalogo = () => {
     const cargarLibros = async () => {
       try {
         const response = await api.getStoredLibros();
+
+        console.log("Datos recibidos:", response.data); // ← Agregado
+
         setLibros(response.data);
       } catch (error) {
         console.error("Error al cargar catálogo:", error);
