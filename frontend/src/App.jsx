@@ -14,6 +14,7 @@ import PostLogin from './pages/PostLogin';
 import MiTienda from './pages/MiTienda';
 import PrivateRoute from "./components/PrivateRoute";
 import Carrito from "./pages/Carrito";
+import Checkout from "./pages/Checkout";
 import StoredProcedurePage from "./pages/StoredProcedurePage";
 import PublicarLibro from './pages/PublicarLibro';
 import { getUserRole } from './hooks/useAuth';
@@ -55,6 +56,7 @@ function MainLayout() {
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/carrito" element={<Carrito />} />
+        <Route path="/checkout/:orderId" element={<Checkout />} />
         <Route path="/libros" element={<StoredProcedurePage />} />
         <Route path="/vendedor/publicar" element={<PublicarLibro />} />
 

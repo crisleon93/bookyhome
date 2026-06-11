@@ -71,3 +71,12 @@ class LibroRespuesta(BaseModel):
 class CategoriaRespuesta(BaseModel):
     id_categoria: int
     nombre_categoria: str
+
+# ===========================
+# PAGOS
+# ===========================
+
+class PagoRequest(BaseModel):
+    order_id: int
+    amount: float
+    payment_method: str
