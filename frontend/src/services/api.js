@@ -21,6 +21,9 @@ export const forgotPassword = (payload) => api.post('/forgot-password', payload)
 export const resetPassword = (payload) => api.post('/reset-password', payload)
 export const registerLibrary = (payload) => api.post('/libreria', payload)
 export const getCarrito = (userId) => api.get(`/carrito/${userId}`)
+export const checkoutCarrito = () => api.post('/carrito/checkout')
+export const postPayment = (payload) => api.post('/api/v1/payments', payload)
+export const getOrden = (orderId) => api.get(`/api/v1/orders/${orderId}`)
 export const getStoredLibros = () => api.get('/api/stored/libros')
 
 export default api
