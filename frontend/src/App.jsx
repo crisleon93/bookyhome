@@ -1,4 +1,4 @@
-// src/App.jsx ← Versión limpia y sin duplicados
+// src/App.jsx ← Versión corregida para control de roles y redirecciones
 
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Header from './components/Header';
@@ -6,8 +6,8 @@ import Footer from './components/Footer';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
-import Libreria from './pages/Libreria'; // Formulario de registro de tienda
-import Catalogo from './pages/Catalogo'; // Catálogo de libros
+import Libreria from './pages/Libreria'; 
+import Catalogo from './pages/Catalogo'; 
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/Resetpassword';
 import PostLogin from './pages/PostLogin';
@@ -28,7 +28,6 @@ function App() {
   );
 }
 
-// Este componente está DENTRO del BrowserRouter, por eso puede usar useLocation
 function MainLayout() {
   const location = useLocation();
 
@@ -48,10 +47,10 @@ function MainLayout() {
         <Route path="/register" element={<Register />} />
 
         {/* Catálogo de libros */}
-        <Route path="/libreria" element={<Catalogo />} />
+        <Route path="/catalogo" element={<Catalogo />} />
 
         {/* Registro de tienda */}
-        <Route path="/registro-tienda" element={<Libreria />} />
+        <Route path="/libreria" element={<Libreria />} />
 
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
@@ -66,13 +65,14 @@ function MainLayout() {
           <Route path="/mi-tienda" element={<MiTienda />} />
         </Route>
 
-        {/* Redirección después del login según el rol */}
+        {/* ── REDIRECCIÓN CORREGIDA SEGÚN ROLES EXISTENTES ──────────────────── */}
         <Route
           path="/dashboard"
           element={
             userRole === "vendedor" ? (
               <Navigate to="/mi-tienda" replace />
-            ) : userRole === "usuario" ? (
+            ) : (userRole === "usuario" || userRole === "comprador") ? ( 
+              // ◄ Ahora acepta "comprador" y no te patea de regreso al login
               <Navigate to="/post-login" replace />
             ) : (
               <Navigate to="/login" replace />

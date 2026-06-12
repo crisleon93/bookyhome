@@ -7,11 +7,18 @@ router = APIRouter()
 
 @router.post("/register")
 def register(data: UsuarioRegistro):
-    resultado = crear_usuario(data.nombre, data.email, data.password, data.rol)
+    # Pasamos el teléfono que ahora requiere obligatoriamente bookyhome.sql
+    resultado = crear_usuario(data.nombre, data.email, data.password, data.telefono, data.rol)
+    
     if not resultado["ok"]:
-        if "Duplicate" in resultado["error"]:
+        # Si el error es por duplicado (correo ya registrado)
+        if "Duplicate" in str(resultado.get("error", "")):
             raise HTTPException(status_code=400, detail="Ya existe una cuenta con ese email")
-        raise HTTPException(status_code=500, detail="Error al crear la cuenta")
+        
+        # Esto te ayudará a ver en la consola de Docker qué falló exactamente si vuelve a dar 500
+        print(f"❌ Error interno en modelo crear_usuario: {resultado.get('error')}", flush=True)
+        raise HTTPException(status_code=500, detail="Error interno al crear la cuenta en la base de datos")
+        
     return {"mensaje": "Cuenta creada exitosamente"}
 
 @router.post("/login", response_model=Token)
@@ -20,6 +27,7 @@ def login(data: UsuarioLogin):
     if not user:
         raise HTTPException(status_code=401, detail="Email o contraseña incorrectos")
 
+    # Creamos el token con los datos exactos que vienen de la base de datos de Docker
     token = create_token({
         "sub": str(user["id_usuario"]),
         "nombre": user["nombre_usuario"],

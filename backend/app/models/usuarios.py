@@ -1,15 +1,16 @@
+import os
 from app.database import get_db
 from app.auth import hash_password, verify_password
 
-def crear_usuario(nombre: str, email: str, password: str, rol: str = "usuario"):
+def crear_usuario(nombre: str, email: str, password: str, telefono: str, rol: str = "usuario"):
     db = get_db()
     cursor = db.cursor(dictionary=True)
     try:
         cursor.execute(
             """INSERT INTO usuarios 
-               (nombre_usuario, correo_usuario, contraseña_usuario, rol, fecha_registro) 
-               VALUES (%s, %s, %s, %s, CURDATE())""",
-            (nombre, email, hash_password(password), rol)
+               (nombre_usuario, correo_usuario, contrasena_usuario, telefono, rol, estado_usuario, fecha_registro) 
+               VALUES (%s, %s, %s, %s, %s, 'Activo', CURDATE())""",
+            (nombre, email, hash_password(password), telefono, rol)
         )
         db.commit()
         return {"ok": True}
@@ -22,7 +23,7 @@ def crear_usuario(nombre: str, email: str, password: str, rol: str = "usuario"):
 def obtener_usuario_por_email(email: str):
     db = get_db()
     cursor = db.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM usuarios WHERE correo_usuario = %s", (email,))
+    cursor.execute("SELECT id_usuario, nombre_usuario, correo_usuario, contrasena_usuario, rol FROM usuarios WHERE correo_usuario = %s", (email,))
     user = cursor.fetchone()
     cursor.close()
     db.close()
@@ -30,7 +31,7 @@ def obtener_usuario_por_email(email: str):
 
 def login_usuario(email: str, password: str):
     user = obtener_usuario_por_email(email)
-    if not user or not verify_password(password, user["contraseña_usuario"]):
+    if not user or not verify_password(password, user["contrasena_usuario"]):
         return None
     return user
 
@@ -48,7 +49,7 @@ def actualizar_password(id_usuario: str, nueva_password: str):
     cursor = db.cursor()
     try:
         cursor.execute(
-            "UPDATE usuarios SET contraseña_usuario = %s WHERE id_usuario = %s",
+            "UPDATE usuarios SET contrasena_usuario = %s WHERE id_usuario = %s",
             (hash_password(nueva_password), int(id_usuario))
         )
         db.commit()

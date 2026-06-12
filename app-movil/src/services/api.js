@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'http://localhost:8000',
+  baseURL: 'http://192.168.1.9:8000',
   timeout: 10000,
 });
 
@@ -15,5 +15,6 @@ export const processPayment = (payload) => api.post('/api/v1/payments', payload)
 export const getBooks = () => api.get('/api/stored/libros');
 export const getBookAvailability = (id, cantidad) => api.get(`/libros/${id}/disponibilidad`, { params: { cantidad } });
 export const getBookOffer = (id) => api.get(`/ofertas/libro/${id}/activa`);
+export const registerLibrary = (data) => api.post('/libreria', data);
 
 export default api;

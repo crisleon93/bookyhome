@@ -30,6 +30,15 @@ const IconLocation = () => (
   </svg>
 )
 
+// ── NUEVO ÍCONO PARA EL TELÉFONO DEL VENDEDOR ──────────────────────────────────
+const IconPhone = () => (
+  <svg className="auth-input-icon" xmlns="http://www.w3.org/2000/svg" fill="none"
+    viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
+    <path strokeLinecap="round" strokeLinejoin="round"
+      d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-2.824-1.554-5.154-3.883-6.707-6.707l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z" />
+  </svg>
+)
+
 const IconMail = () => (
   <svg className="auth-input-icon" xmlns="http://www.w3.org/2000/svg" fill="none"
     viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
@@ -70,25 +79,36 @@ function Libreria() {
   const [nombre,    setNombre]    = useState('')
   const [libreria,  setLibreria]  = useState('')
   const [direccion, setDireccion] = useState('')
+  const [telefono,  setTelefono]  = useState('') // ── NUEVO ESTADO AGREGADO ─────
   const [email,     setEmail]     = useState('')
   const [password,  setPassword]  = useState('')
   const [showPass,  setShowPass]  = useState(false)
   const [loading,   setLoading]   = useState(false)
   const [exito,     setExito]     = useState('')
   const [error,     setError]     = useState('')
+  
+  // Se agregó 'telefono' al objeto de errores
   const [errors,    setErrors]    = useState({
-    nombre: '', libreria: '', direccion: '', email: '', password: ''
+    nombre: '', libreria: '', direccion: '', telefono: '', email: '', password: ''
   })
 
   const navigate = useNavigate()
 
   const validate = () => {
-    const e = { nombre: '', libreria: '', direccion: '', email: '', password: '' }
+    const e = { nombre: '', libreria: '', direccion: '', telefono: '', email: '', password: '' }
     let valid = true
 
     if (!nombre.trim())    { e.nombre    = 'Este campo es obligatorio'; valid = false }
     if (!libreria.trim())  { e.libreria  = 'Este campo es obligatorio'; valid = false }
     if (!direccion.trim()) { e.direccion = 'Este campo es obligatorio'; valid = false }
+    
+    // ── VALIDACIÓN DEL TELÉFONO DEL VENDEDOR ───────────────────────────────────
+    if (!telefono.trim()) { 
+      e.telefono = 'Este campo es obligatorio'; valid = false 
+    } else if (!/^\d{7,15}$/.test(telefono.trim())) {
+      e.telefono = 'Ingresa un número válido (solo números, 7-15 dígitos)'; valid = false
+    }
+
     if (!email.trim()) {
       e.email = 'Este campo es obligatorio'; valid = false
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
@@ -113,7 +133,16 @@ function Libreria() {
 
     setLoading(true)
     try {
-      await registerLibrary({ nombre, libreria, direccion, email, password })
+      // ── ENVIAMOS TELÉFONO Y EL ROL EXPLICITO DE VENDEDOR ──────────────────────
+      await registerLibrary({ 
+        nombre, 
+        libreria, 
+        direccion, 
+        telefono,
+        email, 
+        password,
+        rol: "vendedor" // Vinculamos el rol directamente para la redirección
+      })
       setExito('¡Librería registrada exitosamente! Ya puedes iniciar sesión.')
       setTimeout(() => navigate('/login'), 2500)
     } catch (err) {
@@ -200,6 +229,23 @@ function Libreria() {
                 />
               </div>
               {errors.direccion && <span className="error-msg">{errors.direccion}</span>}
+            </div>
+
+            {/* ── NUEVO INPUT VISUAL DE TELÉFONO EN LA GRID ────────────────────── */}
+            <div className="auth-field">
+              <label htmlFor="telefono">Teléfono / Celular</label>
+              <div className="auth-input-wrapper">
+                <IconPhone />
+                <input
+                  id="telefono"
+                  type="tel"
+                  placeholder="Tu teléfono"
+                  value={telefono}
+                  onChange={e => { setTelefono(e.target.value); clearField('telefono') }}
+                  className={errors.telefono ? 'input-error' : ''}
+                />
+              </div>
+              {errors.telefono && <span className="error-msg">{errors.telefono}</span>}
             </div>
 
             {/* Email */}

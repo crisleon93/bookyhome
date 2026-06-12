@@ -10,6 +10,7 @@ class UsuarioRegistro(BaseModel):
     nombre: str
     email: EmailStr
     password: str
+    telefono: str
     rol: str = "comprador"  # 'comprador' | 'vendedor'
 
 class UsuarioLogin(BaseModel):
@@ -30,6 +31,7 @@ class LibreriaRegistro(BaseModel):
     nombre: str
     libreria: str
     direccion: str
+    telefono: str
     email: EmailStr
     password: str
 
@@ -79,4 +81,4 @@ class CategoriaRespuesta(BaseModel):
 class PagoRequest(BaseModel):
     order_id: int
     amount: float
-    payment_method: str
+    payment_method: str
