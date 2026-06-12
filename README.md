@@ -126,7 +126,7 @@ Proyecto e-commerce para venta de libros con frontend en React + Vite, backend e
 
 4. Iniciar Expo:
 ```powershell
-   npx expo start
+   pnpm start
 ```
 
 5. Escanea el código QR que aparece en la terminal con la app **Expo Go** desde tu celular.
