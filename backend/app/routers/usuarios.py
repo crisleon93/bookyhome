@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from app.schemas import UsuarioRegistro, UsuarioLogin, Token
-from app.models.usuarios import crear_usuario, login_usuario, obtener_todos_usuarios
+from app.models.usuarios import crear_usuario, login_usuario
 from app.auth import create_token
 
 router = APIRouter()
@@ -35,6 +35,3 @@ def login(data: UsuarioLogin):
     })
     return {"access_token": token, "token_type": "bearer"}
 
-@router.get("/usuarios")
-def get_usuarios():
-    return obtener_todos_usuarios()

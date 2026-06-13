@@ -54,15 +54,15 @@ function MainLayout() {
 
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
-        <Route path="/carrito" element={<Carrito />} />
-        <Route path="/checkout/:orderId" element={<Checkout />} />
         <Route path="/libros" element={<StoredProcedurePage />} />
-        <Route path="/vendedor/publicar" element={<PublicarLibro />} />
 
         {/* Rutas protegidas */}
         <Route element={<PrivateRoute />}>
           <Route path="/post-login" element={<PostLogin />} />
           <Route path="/mi-tienda" element={<MiTienda />} />
+          <Route path="/carrito" element={<Carrito />} />
+          <Route path="/checkout/:orderId" element={<Checkout />} />
+          <Route path="/vendedor/publicar" element={<PublicarLibro />} />
         </Route>
 
         {/* ── REDIRECCIÓN CORREGIDA SEGÚN ROLES EXISTENTES ──────────────────── */}

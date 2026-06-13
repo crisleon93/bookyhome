@@ -16,7 +16,7 @@ export function CartProvider({ children }) {
     }
     setLoading(true);
     try {
-      const res = await api.get(`/carrito/${user.sub}`);
+      const res = await api.get('/carrito');
       setCart(res.data || []);
     } catch (e) {
       console.log('Error loading cart', e.message);

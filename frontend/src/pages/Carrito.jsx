@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { jwtDecode } from "jwt-decode";
 import { getCarrito, checkoutCarrito } from '../services/api';
 import { useNavigate } from "react-router-dom";
 
@@ -12,10 +11,7 @@ function Carrito() {
     const token = localStorage.getItem("token");
     if (!token) return;
 
-    const decoded = jwtDecode(token);
-    const userId = parseInt(decoded.sub);
-
-    getCarrito(userId)
+    getCarrito()
       .then(res => {
         setCarrito(res.data);
       })

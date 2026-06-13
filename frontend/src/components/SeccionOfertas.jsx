@@ -1,6 +1,6 @@
 // src/components/SeccionOfertas.jsx
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import api from "../services/api";
 
 // ── Helpers ──
@@ -285,21 +285,24 @@ export default function SeccionOfertas() {
   const [ofertaEditar,   setOfertaEditar]   = useState(null);
   const [ofertaEliminar, setOfertaEliminar] = useState(null);
 
-  const cargar = () => {
+  const cargar = useCallback(async () => {
+    await Promise.resolve();
     setLoading(true);
-    Promise.all([
-      api.get("/ofertas/"),
-      api.get("/libros/mis-libros"),
-    ])
-      .then(([resOfertas, resLibros]) => {
-        setOfertas(resOfertas.data);
-        setLibros(resLibros.data);
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  };
+    try {
+      const [resOfertas, resLibros] = await Promise.all([
+        api.get("/ofertas/"),
+        api.get("/libros/mis-libros"),
+      ]);
+      setOfertas(resOfertas.data);
+      setLibros(resLibros.data);
+    } catch {
+      // Mantiene el comportamiento anterior: no mostrar error en esta seccion.
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-  useEffect(() => { cargar(); }, []);
+  useEffect(() => { void cargar(); }, [cargar]);
 
   const abrirEditar = async (oferta) => {
     try {

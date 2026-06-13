@@ -111,7 +111,7 @@ function Checkout() {
     if (cardExpiry.length !== 5) {
       errors.cardExpiry = "Fecha inválida (MM/AA)";
     } else {
-      const [month, year] = cardExpiry.split("/");
+      const [month] = cardExpiry.split("/");
       const m = parseInt(month, 10);
       if (m < 1 || m > 12) {
         errors.cardExpiry = "Mes inválido";
