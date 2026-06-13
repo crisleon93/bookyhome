@@ -3,6 +3,8 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from app.auth import verify_token
 from app.schemas import PagoRequest
 from app.models.payments import obtener_orden, registrar_pago
+from app.email import enviar_email_confirmacion  
+from app.models.usuarios import obtener_email_usuario 
 
 router = APIRouter()
 security = HTTPBearer()
@@ -37,3 +39,20 @@ def get_order_details(id_orden: int, user=Depends(get_current_user)):
     if not order:
         raise HTTPException(status_code=404, detail="Orden no encontrada")
     return order
+
+
+# ── Nuevo endpoint de confirmación por correo ──
+@router.post("/api/v1/orders/{id_orden}/send-confirmation")
+async def send_order_confirmation(id_orden: int, user=Depends(get_current_user)):
+    id_usuario = int(user["sub"])
+
+    orden = obtener_orden(id_usuario, id_orden)
+    if not orden:
+        raise HTTPException(status_code=404, detail="Orden no encontrada")
+
+    email = obtener_email_usuario(id_usuario)
+    if not email:
+        raise HTTPException(status_code=404, detail="Email del usuario no encontrado")
+
+    await enviar_email_confirmacion(email, orden)
+    return {"ok": True, "message": "Correo de confirmación enviado"}

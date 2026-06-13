@@ -59,3 +59,15 @@ def actualizar_password(id_usuario: str, nueva_password: str):
     finally:
         cursor.close()
         db.close()
+
+def obtener_email_usuario(id_usuario: int):
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    cursor.execute(
+        "SELECT correo_usuario FROM usuarios WHERE id_usuario = %s", 
+        (id_usuario,)
+    )
+    user = cursor.fetchone()
+    cursor.close()
+    db.close()
+    return user["correo_usuario"] if user else None

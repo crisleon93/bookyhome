@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { getOrden, postPayment } from "../services/api";
+import { getOrden, postPayment, sendConfirmationEmail } from "../services/api";
 
 // ── Icons ──────────────────────────────────────────────────────────────────
 const IconCreditCard = () => (
@@ -111,7 +111,7 @@ function Checkout() {
     if (cardExpiry.length !== 5) {
       errors.cardExpiry = "Fecha inválida (MM/AA)";
     } else {
-      const [month, year] = cardExpiry.split("/");
+      const [month] = cardExpiry.split("/");
       const m = parseInt(month, 10);
       if (m < 1 || m > 12) {
         errors.cardExpiry = "Mes inválido";
@@ -125,30 +125,34 @@ function Checkout() {
   };
 
   const processPaymentApi = async (method) => {
-    setPaymentProcessing(true);
-    setError("");
+  setPaymentProcessing(true);
+  setError("");
 
-    try {
-      const payload = {
-        order_id: parseInt(orderId),
-        amount: parseFloat(order.total),
-        payment_method: method
-      };
+  try {
+    const payload = {
+      order_id: parseInt(orderId),
+      amount: parseFloat(order.total),
+      payment_method: method
+    };
 
-      const res = await postPayment(payload);
-      if (res.data && res.data.ok) {
-        // Success
-        setPaymentSuccess(true);
-      } else {
-        setError("El pago fue rechazado por la pasarela de pagos.");
+    const res = await postPayment(payload);
+    if (res.data && res.data.ok) {
+      try {
+        await sendConfirmationEmail(orderId);
+      } catch (emailErr) {
+        console.warn("Correo no enviado:", emailErr);
       }
-    } catch (err) {
-      console.error(err);
-      setError(err.response?.data?.detail || "Ocurrió un error inesperado al procesar tu pago.");
-    } finally {
-      setPaymentProcessing(false);
+      setPaymentSuccess(true);
+    } else {
+      setError("El pago fue rechazado por la pasarela de pagos.");
     }
-  };
+  } catch (err) {
+    console.error(err);
+    setError(err.response?.data?.detail || "Ocurrió un error inesperado al procesar tu pago.");
+  } finally {
+    setPaymentProcessing(false);
+  }
+};
 
   const handleCardSubmit = (e) => {
     e.preventDefault();
@@ -197,50 +201,109 @@ function Checkout() {
   }
 
   if (paymentSuccess) {
-    return (
-      <div style={{ padding: "50px 8%", minHeight: "70vh", backgroundColor: "#fdfbfa", display: "flex", justifyContent: "center", alignItems: "center" }}>
+  return (
+    <div style={{ padding: "50px 8%", minHeight: "70vh", backgroundColor: "#fdfbfa", display: "flex", justifyContent: "center", alignItems: "center" }}>
+      <div style={{
+        background: "var(--blanco)",
+        padding: "40px",
+        borderRadius: "16px",
+        boxShadow: "var(--sombra-suave)",
+        maxWidth: "540px",
+        width: "100%",
+        textAlign: "center",
+        border: "1px solid #e0dbd4"
+      }}>
+        {/* Ícono animado */}
         <div style={{
-          background: "var(--blanco)",
-          padding: "40px",
-          borderRadius: "12px",
-          boxShadow: "var(--sombra-suave)",
-          maxWidth: "500px",
-          width: "100%",
-          textAlign: "center",
-          border: "1px solid #e0dbd4"
+          width: 80, height: 80,
+          borderRadius: "50%",
+          background: "#fdf0f2",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          margin: "0 auto 20px"
         }}>
-          <div style={{ marginBottom: "20px" }}>
-            <IconCheckCircle />
-          </div>
-          <h1 style={{ fontWeight: 800, color: "var(--vinotinto)", margin: "0 0 10px 0", fontSize: "2rem" }}>¡Pago Exitoso!</h1>
-          <p style={{ color: "#666", fontSize: "1rem", marginBottom: "30px" }}>
-            Tu pago ha sido procesado de manera segura. Hemos registrado tu compra y vaciado tu carrito.
+          <IconCheckCircle />
+        </div>
+
+        <h1 style={{ fontWeight: 800, color: "var(--vinotinto)", margin: "0 0 8px", fontSize: "1.8rem" }}>
+          ¡Compra Confirmada!
+        </h1>
+        <p style={{ color: "#666", fontSize: "0.95rem", marginBottom: "28px" }}>
+          Tu pago fue procesado exitosamente. Te enviamos un correo con los detalles de tu pedido.
+        </p>
+
+        {/* Detalle de la orden */}
+        <div style={{
+          background: "#fcfaf7",
+          padding: "20px",
+          borderRadius: "10px",
+          border: "1px solid #e0dbd4",
+          textAlign: "left",
+          marginBottom: "16px"
+        }}>
+          <p style={{ margin: "0 0 4px", fontSize: "11px", fontWeight: 700, color: "#aaa", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+            Resumen de tu orden
           </p>
 
-          <div style={{
-            background: "#fcfaf7",
-            padding: "20px",
-            borderRadius: "8px",
-            border: "1px solid #e0dbd4",
-            textAlign: "left",
-            marginBottom: "30px",
-            fontSize: "0.95rem"
-          }}>
-            <p style={{ margin: "0 0 8px 0" }}><strong>ID Orden:</strong> #{order.id_orden}</p>
-            <p style={{ margin: "0 0 8px 0" }}><strong>Fecha:</strong> {new Date(order.fecha).toLocaleDateString("es-CO")}</p>
-            <p style={{ margin: "0 0 8px 0" }}><strong>Método:</strong> {order.metodo_pago || "Confirmado digitalmente"}</p>
-            <p style={{ margin: "0", color: "var(--rojo-suave)", fontWeight: 700 }}>
-              <strong>Total Pagado:</strong> {Number(order.total).toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 })}
-            </p>
+          {/* Libros */}
+          <div style={{ margin: "12px 0", display: "grid", gap: "8px" }}>
+            {order.items?.map((item) => (
+              <div key={item.id_libro} style={{ display: "flex", justifyContent: "space-between", fontSize: "0.9rem" }}>
+                <span style={{ color: "#444" }}>📖 {item.titulo} <span style={{ color: "#999" }}>x{item.cantidad}</span></span>
+                <span style={{ fontWeight: 600 }}>
+                  {Number(item.precio_libro * item.cantidad).toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 })}
+                </span>
+              </div>
+            ))}
           </div>
 
-          <button className="btn btn-vinotinto" onClick={() => navigate("/")} style={{ width: "100%" }}>
+          <div style={{ borderTop: "1px solid #e0dbd4", paddingTop: "12px", marginTop: "4px", display: "grid", gap: "6px", fontSize: "0.9rem" }}>
+            <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <span style={{ color: "#666" }}>ID Orden</span>
+              <span style={{ fontWeight: 600 }}>#{order.id_orden}</span>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <span style={{ color: "#666" }}>Fecha</span>
+              <span style={{ fontWeight: 600 }}>{new Date(order.fecha).toLocaleDateString("es-CO", { day: "2-digit", month: "long", year: "numeric" })}</span>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <span style={{ color: "#666" }}>Método de pago</span>
+              <span style={{ fontWeight: 600 }}>{order.metodo_pago || "Confirmado digitalmente"}</span>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", borderTop: "1px solid #e0dbd4", paddingTop: "10px", marginTop: "4px" }}>
+              <span style={{ fontWeight: 700 }}>Total pagado</span>
+              <span style={{ fontWeight: 800, color: "var(--rojo-suave)", fontSize: "1.05rem" }}>
+                {Number(order.total).toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 })}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Aviso del correo */}
+        <div style={{
+          display: "flex", alignItems: "center", gap: "8px",
+          background: "#f0faf5", border: "1px solid #c3e6d4",
+          borderRadius: "8px", padding: "12px 16px",
+          marginBottom: "28px", fontSize: "0.85rem", color: "#2d6a4f"
+        }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          Te enviamos un correo de confirmación con los detalles de tu compra.
+        </div>
+
+        <div style={{ display: "grid", gap: "10px" }}>
+          <button className="btn btn-vinotinto" onClick={() => navigate("/post-login")} style={{ width: "100%" }}>
+            Ir a Mis Compras
+          </button>
+          <button
+            onClick={() => navigate("/catalogo")}
+            style={{ width: "100%", padding: "12px", background: "transparent", border: "1.5px solid #e0dbd4", borderRadius: "8px", fontWeight: 600, cursor: "pointer", color: "var(--gris-carbon)" }}
+          >
             Seguir comprando
           </button>
         </div>
       </div>
-    );
-  }
+    </div>
+  );
+}
 
   return (
     <div style={{ padding: "40px 8%", minHeight: "75vh", backgroundColor: "#fdfbfa" }}>

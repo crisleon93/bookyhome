@@ -1,63 +1,66 @@
-// src/pages/PostLogin.jsx
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
+import { getUsuarios, getCarrito, checkoutCarrito } from "../services/api";
+import DashboardSidebar from "../components/DashboardSidebar";
 
-// ==================== ICONOS ====================
-const IconHome = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.2">
-    <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1v-5m10-10l2 2m-2-2v10a1 1 0 01-1 1v-5m-6 0a1 1 0 001-1v5" />
+const IconCartBig = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+    stroke="currentColor" strokeWidth="1.8" 
+    style={{ width: "36px", height: "36px", minWidth: "36px" }}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
   </svg>
 );
 
-const IconPackage = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.2">
-    <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-  </svg>
-);
-
-const IconUser = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.2">
-    <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7" />
-  </svg>
-);
-
-const IconHeart = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.2">
-    <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364" />
-  </svg>
-);
-
-const IconSettings = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.2">
-    <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 002.573-1.066c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 00.817 1.194 1.724 1.724 0 01.817 1.194c-.94 1.543.827 3.31 2.37 2.37 1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 01-2.573 1.066 1.724 1.724 0 01-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 01-2.573-1.066 1.724 1.724 0 01-2.573-1.066c-1.543.94-3.31-.827-2.37-2.37a1.724 1.724 0 01-.817-1.194 1.724 1.724 0 01-.817-1.194c.94-1.543-.827-3.31-2.37-2.37z" />
-    <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-  </svg>
-);
-
-const IconCart = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.2">
-    <path strokeLinecap="round" strokeLinejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-1.5 6h11M10 21a1 1 0 100-2 1 1 0 000 2zm8 0a1 1 0 100-2 1 1 0 000 2z" />
-  </svg>
+// ── Estado vacío del carrito ──
+const CartEmptyState = ({ onGoToCatalog }) => (
+  <div className="cart-empty-state">
+    <div className="cart-empty-icon">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+        stroke="currentColor" strokeWidth="1.5" width="36" height="36">
+        <path strokeLinecap="round" strokeLinejoin="round"
+          d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
+      </svg>
+    </div>
+    <h2>Tu carrito está vacío</h2>
+    <p>Explora el catálogo y encuentra tu próxima lectura favorita.</p>
+    <button className="btn btn-vinotinto btn-catalog" onClick={onGoToCatalog}>
+      📚 Ir al catálogo
+    </button>
+  </div>
 );
 
 export default function PostLogin() {
-  const [userName, setUserName] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [userName, setUserName]     = useState("");
+  const [userEmail, setUserEmail]   = useState("");
+  const [userId, setUserId]         = useState(null);
+  const [loading, setLoading]       = useState(true);
   const [activeSide, setActiveSide] = useState("Inicio");
+
+  const [carrito, setCarrito]               = useState([]);
+  const [cartLoading, setCartLoading]       = useState(false);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [checkoutError, setCheckoutError]   = useState(null);   // ← nuevo
 
   const navigate = useNavigate();
 
+  // Decodificar token y cargar datos de usuario
   useEffect(() => {
     const token = localStorage.getItem("token");
-    if (!token) {
-      navigate("/login");
-      return;
-    }
+    if (!token) { navigate("/login"); return; }
 
     try {
       const payload = jwtDecode(token);
       setUserName(payload.nombre || "Usuario");
+      const id = parseInt(payload.sub);
+      setUserId(id);
+
+      getUsuarios()
+        .then((res) => {
+          const usuario = res.data.find((u) => u.id_usuario === id);
+          if (usuario) setUserEmail(usuario.correo_usuario);
+        })
+        .catch((err) => console.error(err));
     } catch (error) {
       console.error("Error al decodificar token:", error);
       setUserName("Usuario");
@@ -66,71 +69,166 @@ export default function PostLogin() {
     }
   }, [navigate]);
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    navigate("/login");
+  // Cargar carrito cuando se selecciona la sección
+  useEffect(() => {
+    if (activeSide === "Carrito" && userId) {
+      setCartLoading(true);
+      setCheckoutError(null);
+      getCarrito(userId)
+        .then((res) => setCarrito(res.data))
+        .catch((err) => console.error(err))
+        .finally(() => setCartLoading(false));
+    }
+  }, [activeSide, userId]);
+
+  const handleCheckout = () => {
+    setCheckoutLoading(true);
+    setCheckoutError(null);
+
+    checkoutCarrito()
+      .then((res) => {
+        if (res.data?.ok) {
+          navigate(`/checkout/${res.data.order.id_orden}`);
+        } else {
+          setCheckoutError("No se pudo procesar el pago. Intenta de nuevo.");
+        }
+      })
+      .catch((err) => {
+        console.error(err);
+        setCheckoutError(
+          err.response?.data?.detail || "Error al realizar el checkout. Intenta de nuevo."
+        );
+      })
+      .finally(() => setCheckoutLoading(false));
   };
 
-  const SIDE_LINKS = [
-    { name: "Inicio", icon: <IconHome /> },
-    { name: "Mis Compras", icon: <IconPackage /> },
-    { name: "Mi Perfil", icon: <IconUser /> },
-    { name: "Favoritos", icon: <IconHeart /> },
-    { name: "Carrito", icon: <IconCart /> },
-    { name: "Configuración", icon: <IconSettings /> },
-  ];
+  // Navegar al catálogo (ajusta la ruta si cambia)
+  const handleGoToCatalog = () => navigate("/catalogo");
 
-  if (loading) {
-    return <div className="auth-main">Cargando dashboard...</div>;
-  }
+  const totalCarrito = carrito.reduce(
+    (acc, item) => acc + Number(item.precio_libro || 0) * Number(item.cantidad || 1),
+    0
+  );
+
+  if (loading) return <div className="auth-main">Cargando dashboard...</div>;
 
   return (
-    <>
-      <div className="dashboard-container">
-        <aside className="dashboard-sidebar">
-          <div className="sidebar-user">
-            <div className="user-avatar-big">{userName.slice(0, 2).toUpperCase()}</div>
-            <div className="user-info">
-              <p className="user-name">{userName}</p>
-              <p className="user-email">usuario@bookyhome.com</p>
+    <div className="dashboard-container">
+      <DashboardSidebar
+        userName={userName}
+        userEmail={userEmail}
+        activeSide={activeSide}
+        onSelect={setActiveSide}
+      />
+
+      <main className="dashboard-main">
+
+        {/* ── INICIO ── */}
+        {activeSide === "Inicio" && (
+          <>
+            <div className="welcome-card">
+              <h1>Bienvenido de nuevo, {userName.split(" ")[0]} 👋</h1>
+              <p>Esta es tu área personal de BookyHome.</p>
             </div>
-          </div>
+            <div className="empty-state">
+              <p>Próximamente aparecerán tus recomendaciones y novedades</p>
+            </div>
+          </>
+        )}
 
-          <nav className="sidebar-nav">
-            {SIDE_LINKS.map((item) => (
-              <button
-                key={item.name}
-                onClick={() => {
-                  setActiveSide(item.name);
+        {/* ── CARRITO ── */}
+        {activeSide === "Carrito" && (
+          <>
+            <div className="pl-card" style={{ padding: "2.5rem 2rem" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                <IconCartBig />
+                <h2 style={{ margin: 0 }}>Mi Carrito</h2>
+              </div>
+            </div>
 
-                  if (item.name === "Carrito") {
-                    navigate("/carrito");
-                  }
-                }}
-                className={`sidebar-item ${activeSide === item.name ? "active" : ""}`}
-              >
-                <span className="sidebar-icon">{item.icon}</span>
-                {item.name}
-              </button>
-            ))}
-          </nav>
+            {cartLoading ? (
+              <div className="empty-state"><p>Cargando carrito...</p></div>
 
-          <button onClick={handleLogout} className="sidebar-logout">
-            Cerrar sesión
-          </button>
-        </aside>
+            ) : carrito.length === 0 ? (
+              // ── Estado vacío con CTA al catálogo ──
+              <CartEmptyState onGoToCatalog={handleGoToCatalog} />
 
-        <main className="dashboard-main">
+            ) : (
+              <div className="pl-card">
+                {carrito.map((item) => (
+                  <div key={item.id_libro} className="pl-order-row">
+                    <div className="pl-order-left">
+                      <span className="pl-order-emoji">📖</span>
+                      <div>
+                        <p className="pl-order-title">{item.titulo}</p>
+                        <p className="pl-order-meta">
+                          {item.autor_libro} · Cantidad: {item.cantidad}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="pl-order-right">
+                      <span className="pl-order-price">
+                        {Number(
+                          (item.precio_libro || 0) * (item.cantidad || 1)
+                        ).toLocaleString("es-CO", {
+                          style: "currency", currency: "COP", maximumFractionDigits: 0,
+                        })}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+
+                {/* ── Total + error + botón de pago ── */}
+                <div style={{
+                  marginTop: 20, paddingTop: 20, borderTop: "2px solid #e0dbd4",
+                  display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 16,
+                }}>
+                  <h2 style={{ fontWeight: 800, margin: 0 }}>
+                    Total a pagar:{" "}
+                    <span style={{ color: "var(--rojo-suave)" }}>
+                      {totalCarrito.toLocaleString("es-CO", {
+                        style: "currency", currency: "COP", maximumFractionDigits: 0,
+                      })}
+                    </span>
+                  </h2>
+
+                  {/* Mensaje de error del checkout */}
+                  {checkoutError && (
+                    <p style={{
+                      color: "var(--rojo-suave)", fontSize: 14,
+                      margin: 0, textAlign: "right",
+                    }}>
+                      ⚠️ {checkoutError}
+                    </p>
+                  )}
+
+                  <button
+                    className="btn btn-vinotinto"
+                    onClick={handleCheckout}
+                    disabled={checkoutLoading}
+                    style={{
+                      width: "auto", minWidth: 250,
+                      cursor: checkoutLoading ? "not-allowed" : "pointer",
+                      opacity: checkoutLoading ? 0.7 : 1,
+                    }}
+                  >
+                    {checkoutLoading ? "Procesando..." : "💳 Proceder al Pago"}
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* ── OTRAS SECCIONES ── */}
+        {!["Inicio", "Carrito"].includes(activeSide) && (
           <div className="welcome-card">
-            <h1>Bienvenido de nuevo, {userName.split(" ")[0]} 👋</h1>
-            <p>Esta es tu área personal de BookyHome.</p>
+            <h1>{activeSide}</h1>
+            <p>Esta sección estará disponible próximamente.</p>
           </div>
+        )}
 
-          <div className="empty-state">
-            <p>Próximamente aparecerán tus recomendaciones y novedades</p>
-          </div>
-        </main>
-      </div>
-    </>
+      </main>
+    </div>
   );
 }

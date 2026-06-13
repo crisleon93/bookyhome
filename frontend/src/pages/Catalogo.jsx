@@ -1,5 +1,3 @@
-// src/pages/Catalogo.jsx
-
 import React, { useEffect, useState } from 'react';
 import { getStoredLibros } from '../services/api';
 import LibroCard from '../components/LibroCard';
