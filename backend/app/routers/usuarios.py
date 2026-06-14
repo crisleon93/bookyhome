@@ -38,3 +38,4 @@ def login(data: UsuarioLogin):
 @router.get("/usuarios")
 def get_usuarios():
     return obtener_todos_usuarios()
+

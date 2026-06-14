@@ -15,6 +15,7 @@ import Checkout from "./pages/Checkout";
 import StoredProcedurePage from "./pages/StoredProcedurePage";
 import PublicarLibro from './pages/PublicarLibro';
 import { getUserRole } from './hooks/useAuth';
+import SeccionOfertas from './components/SeccionOfertas';
 
 function App() {
   return (
@@ -43,13 +44,14 @@ function MainLayout() {
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/libros" element={<StoredProcedurePage />} />
-        <Route path="/vendedor/publicar" element={<PublicarLibro />} />
 
         {/* Rutas protegidas */}
         <Route element={<PrivateRoute />}>
           <Route path="/post-login" element={<PostLogin />} />
           <Route path="/mi-tienda" element={<MiTienda />} />
           <Route path="/checkout/:orderId" element={<Checkout />} />
+          <Route path="/carrito" element={<Navigate to="/post-login" replace />} />
+          <Route path="/vendedor/publicar" element={<PublicarLibro />} />
         </Route>
 
         {/* Redirección por rol */}
@@ -65,10 +67,6 @@ function MainLayout() {
             )
           }
         />
-
-        {/* Si alguien va a /carrito lo mandamos al dashboard */}
-        <Route path="/carrito" element={<Navigate to="/post-login" replace />} />
-
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
 

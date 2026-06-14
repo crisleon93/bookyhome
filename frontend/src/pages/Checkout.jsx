@@ -290,7 +290,7 @@ function Checkout() {
         </div>
 
         <div style={{ display: "grid", gap: "10px" }}>
-          <button className="btn btn-vinotinto" onClick={() => navigate("/post-login")} style={{ width: "100%" }}>
+          <button className="btn btn-vinotinto" onClick={() => navigate("/post-login?seccion=Mis Compras")} style={{ width: "100%" }}>
             Ir a Mis Compras
           </button>
           <button
@@ -444,8 +444,11 @@ function Checkout() {
                       placeholder="MM/AA"
                       value={cardExpiry}
                       onChange={handleExpiryChange}
+                      maxLength={5}
                       style={{
-                        width: "100%", padding: "10px", borderRadius: "6px", border: formErrors.cardExpiry ? "1.5px solid red" : "1.5px solid #e0dbd4", outline: "none", fontFamily: "'Montserrat', sans-serif"
+                        width: "100%", padding: "10px", borderRadius: "6px", 
+                        border: formErrors.cardExpiry ? "1.5px solid red" : "1.5px solid #e0dbd4", 
+                        outline: "none", fontFamily: "'Montserrat', sans-serif"
                       }}
                     />
                     {formErrors.cardExpiry && <span style={{ color: "red", fontSize: "0.75rem" }}>{formErrors.cardExpiry}</span>}

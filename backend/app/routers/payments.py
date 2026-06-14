@@ -5,6 +5,7 @@ from app.schemas import PagoRequest
 from app.models.payments import obtener_orden, registrar_pago
 from app.email import enviar_email_confirmacion  
 from app.models.usuarios import obtener_email_usuario 
+from app.models.payments import obtener_orden, registrar_pago, obtener_ordenes_usuario
 
 router = APIRouter()
 security = HTTPBearer()
@@ -40,6 +41,11 @@ def get_order_details(id_orden: int, user=Depends(get_current_user)):
         raise HTTPException(status_code=404, detail="Orden no encontrada")
     return order
 
+# ── Nuevo endpoint para obtener todas las órdenes de un usuario ──
+@router.get("/api/v1/orders")
+def get_user_orders(user=Depends(get_current_user)):
+    id_usuario = int(user["sub"])
+    return obtener_ordenes_usuario(id_usuario)
 
 # ── Nuevo endpoint de confirmación por correo ──
 @router.post("/api/v1/orders/{id_orden}/send-confirmation")
@@ -56,3 +62,4 @@ async def send_order_confirmation(id_orden: int, user=Depends(get_current_user))
 
     await enviar_email_confirmacion(email, orden)
     return {"ok": True, "message": "Correo de confirmación enviado"}
+

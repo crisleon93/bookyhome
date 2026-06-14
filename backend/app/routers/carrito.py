@@ -22,11 +22,6 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
     return payload
 
 
-@router.get("/carrito/{id_usuario}")
-def get_carrito(id_usuario: int):
-    return obtener_carrito(id_usuario)
-
-
 @router.get("/carrito")
 def get_my_carrito(user=Depends(get_current_user)):
     id_usuario = int(user["sub"])
