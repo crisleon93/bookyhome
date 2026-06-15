@@ -27,6 +27,7 @@ export const postPayment = (payload) => api.post('/api/v1/payments', payload)
 export const getOrden = (orderId) => api.get(`/api/v1/orders/${orderId}`)
 export const getOrdenes = () => api.get('/api/v1/orders')
 export const getStoredLibros = () => api.get('/api/stored/libros')
+export const getLibroById = (id) => api.get(`/api/stored/libros/${id}`)
 export const getUsuarios = () => api.get('/usuarios')
 export const sendConfirmationEmail = (orderId) => api.post(`/api/v1/orders/${orderId}/send-confirmation`)
 
