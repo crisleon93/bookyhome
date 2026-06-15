@@ -82,7 +82,7 @@ export default function PostLogin() {
   }, [activeSide, userId]);
 
   useEffect(() => {
-    if (activeSide === "Mis Compras") {
+    if (activeSide === "Mis Compras" || activeSide === "Configuración") {
       setOrdenesLoading(true);
       getOrdenes()
         .then((res) => setOrdenes(res.data))
@@ -416,8 +416,58 @@ export default function PostLogin() {
           </>
         )}
 
+        {/* ── CONFIGURACIÓN / REGISTRO DE ACTIVIDAD ── */}
+        {activeSide === "Configuración" && (
+          <>
+            <div className="pl-card" style={{ padding: "2.5rem 2rem", marginBottom: 24 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                <span style={{ fontSize: 28 }}>📋</span>
+                <h2 style={{ margin: 0 }}>Registro de actividad</h2>
+              </div>
+            </div>
+
+            <div className="pl-card">
+              {(() => {
+                const favoritos = JSON.parse(localStorage.getItem('favoritos')) || [];
+                const actividades = [
+                  ...favoritos.map((libro) => ({
+                    tipo: 'favorito',
+                    emoji: '❤️',
+                    texto: `Agregaste "${libro.titulo}" a favoritos`,
+                    fecha: 'Reciente',
+                  })),
+                  ...ordenes.map((orden) => ({
+                    tipo: 'compra',
+                    emoji: '🛒',
+                    texto: `Realizaste la orden #${orden.id_orden} por $${Number(orden.total || 0).toLocaleString('es-CO')}`,
+                    fecha: orden.fecha ? new Date(orden.fecha).toLocaleDateString('es-CO') : 'Reciente',
+                  })),
+                ];
+
+                return actividades.length === 0 ? (
+                  <div style={{ padding: "30px", textAlign: "center", color: "#888" }}>
+                    <p>No hay actividad registrada aún.</p>
+                  </div>
+                ) : (
+                  actividades.map((act, i) => (
+                    <div key={i} className="pl-order-row">
+                      <div className="pl-order-left">
+                        <span className="pl-order-emoji">{act.emoji}</span>
+                        <div>
+                          <p className="pl-order-title">{act.texto}</p>
+                          <p className="pl-order-meta">{act.fecha}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                );
+              })()}
+            </div>
+          </>
+        )}
+
         {/* ── OTRAS SECCIONES ── */}
-        {!["Inicio", "Carrito", "Mis Compras", "Favoritos", "Mi Perfil"].includes(activeSide) && (
+        {!["Inicio", "Carrito", "Mis Compras", "Favoritos", "Mi Perfil", "Configuración"].includes(activeSide) && (
           <div className="welcome-card">
             <h1>{activeSide}</h1>
             <p>Esta sección estará disponible próximamente.</p>
