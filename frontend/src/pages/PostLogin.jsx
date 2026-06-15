@@ -4,7 +4,6 @@ import { jwtDecode } from "jwt-decode";
 import { getUsuarios, getCarrito, checkoutCarrito, getOrdenes } from "../services/api";
 import DashboardSidebar from "../components/DashboardSidebar";
 
-// ── Estado vacío del carrito ──
 const CartEmptyState = ({ onGoToCatalog }) => (
   <div className="cart-empty-state">
     <div className="cart-empty-icon">
@@ -34,23 +33,18 @@ export default function PostLogin() {
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [checkoutError, setCheckoutError]     = useState(null);
 
-  // Mis Compras
-  const [ordenes, setOrdenes]             = useState([]);
+  const [ordenes, setOrdenes]               = useState([]);
   const [ordenesLoading, setOrdenesLoading] = useState(false);
 
   const navigate = useNavigate();
-
   const location = useLocation();
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const seccion = params.get("seccion");
-    if (seccion) {
-      setActiveSide(seccion);
-    }
+    if (seccion) setActiveSide(seccion);
   }, [location]);
 
-  // Decodificar token y cargar datos de usuario
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) { navigate("/login"); return; }
@@ -75,7 +69,6 @@ export default function PostLogin() {
     }
   }, [navigate]);
 
-  // Cargar carrito cuando se selecciona la sección
   useEffect(() => {
     if (activeSide === "Carrito" && userId) {
       setCartLoading(true);
@@ -87,7 +80,6 @@ export default function PostLogin() {
     }
   }, [activeSide, userId]);
 
-  // Cargar órdenes cuando se selecciona "Mis Compras"
   useEffect(() => {
     if (activeSide === "Mis Compras") {
       setOrdenesLoading(true);
@@ -101,7 +93,6 @@ export default function PostLogin() {
   const handleCheckout = () => {
     setCheckoutLoading(true);
     setCheckoutError(null);
-
     checkoutCarrito()
       .then((res) => {
         if (res.data?.ok) {
@@ -112,9 +103,7 @@ export default function PostLogin() {
       })
       .catch((err) => {
         console.error(err);
-        setCheckoutError(
-          err.response?.data?.detail || "Error al realizar el checkout. Intenta de nuevo."
-        );
+        setCheckoutError(err.response?.data?.detail || "Error al realizar el checkout. Intenta de nuevo.");
       })
       .finally(() => setCheckoutLoading(false));
   };
@@ -169,10 +158,8 @@ export default function PostLogin() {
 
             {cartLoading ? (
               <div className="empty-state"><p>Cargando carrito...</p></div>
-
             ) : carrito.length === 0 ? (
               <CartEmptyState onGoToCatalog={handleGoToCatalog} />
-
             ) : (
               <div className="pl-card">
                 {carrito.map((item) => (
@@ -188,9 +175,7 @@ export default function PostLogin() {
                     </div>
                     <div className="pl-order-right">
                       <span className="pl-order-price">
-                        {Number(
-                          (item.precio_libro || 0) * (item.cantidad || 1)
-                        ).toLocaleString("es-CO", {
+                        {Number((item.precio_libro || 0) * (item.cantidad || 1)).toLocaleString("es-CO", {
                           style: "currency", currency: "COP", maximumFractionDigits: 0,
                         })}
                       </span>
@@ -212,10 +197,7 @@ export default function PostLogin() {
                   </h2>
 
                   {checkoutError && (
-                    <p style={{
-                      color: "var(--rojo-suave)", fontSize: 14,
-                      margin: 0, textAlign: "right",
-                    }}>
+                    <p style={{ color: "var(--rojo-suave)", fontSize: 14, margin: 0, textAlign: "right" }}>
                       ⚠️ {checkoutError}
                     </p>
                   )}
@@ -224,30 +206,19 @@ export default function PostLogin() {
                     className="btn btn-vinotinto"
                     onClick={handleCheckout}
                     disabled={checkoutLoading}
-                    style={{
-                      width: "auto", minWidth: 250,
-                      cursor: checkoutLoading ? "not-allowed" : "pointer",
-                      opacity: checkoutLoading ? 0.7 : 1,
-                    }}
+                    style={{ width: "auto", minWidth: 250, cursor: checkoutLoading ? "not-allowed" : "pointer", opacity: checkoutLoading ? 0.7 : 1 }}
                   >
                     {checkoutLoading ? "Procesando..." : "💳 Proceder al Pago"}
                   </button>
 
-                   <button
+                  <button
                     onClick={handleGoToCatalog}
                     style={{
-                      background: "none",
-                      border: "1.5px solid var(--vinotinto)",
-                      color: "var(--vinotinto)",
-                      borderRadius: "8px",
-                      padding: "10px 20px",
-                      fontWeight: 700,
-                      fontSize: "0.85rem",
-                      cursor: "pointer",
-                      fontFamily: "'Montserrat', sans-serif",
-                      transition: "all 0.2s",
-                      width: "auto",
-                      minWidth: 250,
+                      background: "none", border: "1.5px solid var(--vinotinto)",
+                      color: "var(--vinotinto)", borderRadius: "8px", padding: "10px 20px",
+                      fontWeight: 700, fontSize: "0.85rem", cursor: "pointer",
+                      fontFamily: "'Montserrat', sans-serif", transition: "all 0.2s",
+                      width: "auto", minWidth: 250,
                     }}
                     onMouseEnter={(e) => { e.target.style.background = "#f5eaed"; }}
                     onMouseLeave={(e) => { e.target.style.background = "none"; }}
@@ -273,9 +244,7 @@ export default function PostLogin() {
             {ordenesLoading ? (
               <div className="empty-state"><p>Cargando tus compras...</p></div>
             ) : ordenes.length === 0 ? (
-              <div className="empty-state">
-                <p>Aún no tienes compras realizadas</p>
-              </div>
+              <div className="empty-state"><p>Aún no tienes compras realizadas</p></div>
             ) : (
               <div className="pl-card">
                 {ordenes.map((orden) => (
@@ -288,8 +257,7 @@ export default function PostLogin() {
                         <p className="pl-order-title">Orden #{orden.id_orden}</p>
                         <p className="pl-order-meta">
                           {orden.fecha ? new Date(orden.fecha).toLocaleDateString("es-CO") : ""}
-                          {" · "}
-                          {orden.items?.length || 0} producto{orden.items?.length === 1 ? "" : "s"}
+                          {" · "}{orden.items?.length || 0} producto{orden.items?.length === 1 ? "" : "s"}
                           {" · "}
                           <span className={`pl-badge pl-badge--${orden.estado === "pagado" ? "entregado" : "procesando"}`}>
                             {orden.estado}
@@ -311,8 +279,53 @@ export default function PostLogin() {
           </>
         )}
 
+        {/* ── FAVORITOS ── */}
+        {activeSide === "Favoritos" && (
+          <>
+            <div className="pl-card" style={{ padding: "2.5rem 2rem", marginBottom: 24 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                <span style={{ fontSize: 28 }}>❤️</span>
+                <h2 style={{ margin: 0 }}>Mis Favoritos</h2>
+              </div>
+            </div>
+
+            {(() => {
+              const favoritos = JSON.parse(localStorage.getItem('favoritos')) || [];
+              return favoritos.length === 0 ? (
+                <div className="empty-state">
+                  <p>No tienes libros en favoritos. ¡Agrega algunos desde el catálogo!</p>
+                  <button className="btn btn-vinotinto btn-catalog" onClick={handleGoToCatalog}>
+                    📚 Ir al catálogo
+                  </button>
+                </div>
+              ) : (
+                <div className="pl-card">
+                  {favoritos.map((libro) => (
+                    <div key={libro.id_libro} className="pl-order-row">
+                      <div className="pl-order-left">
+                        <span className="pl-order-emoji">📖</span>
+                        <div>
+                          <p className="pl-order-title">{libro.titulo}</p>
+                          <p className="pl-order-meta">
+                            {libro.autor_libro || libro.autor} · {libro.nombre_categoria}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="pl-order-right">
+                        <span className="pl-order-price">
+                          ${Number(libro.precio_libro ?? libro.precio ?? 0).toLocaleString('es-CO')}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
+          </>
+        )}
+
         {/* ── OTRAS SECCIONES ── */}
-        {!["Inicio", "Carrito", "Mis Compras"].includes(activeSide) && (
+        {!["Inicio", "Carrito", "Mis Compras", "Favoritos"].includes(activeSide) && (
           <div className="welcome-card">
             <h1>{activeSide}</h1>
             <p>Esta sección estará disponible próximamente.</p>

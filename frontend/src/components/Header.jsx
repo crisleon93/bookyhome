@@ -3,7 +3,6 @@ import { Link, useLocation } from 'react-router-dom';
 import logo from '../assets/logo.png';
 import { IconSearch, IconUser, IconUserPlus } from './Icons';
 
-// Íconos
 const IconLocation = () => (
   <svg className="icon-top-bar" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
     fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -53,7 +52,6 @@ function Header({ variant }) {
 
   return (
     <>
-      {/* TOP BAR - Solo se muestra en la página principal */}
       {isHome && (
         <div className="top-bar">
           <div className="top-bar-container">
@@ -65,7 +63,6 @@ function Header({ variant }) {
         </div>
       )}
 
-      {/* HEADER PRINCIPAL */}
       <header
         id="main-header"
         className={`${isSimple ? "header-center" : ""} ${isWhite ? "header-white" : "header-vinotinto"}`}
@@ -73,6 +70,34 @@ function Header({ variant }) {
         <Link to="/" className="logo-link">
           <img src={logo} alt="BookyHome" className="logo-img" />
         </Link>
+
+        {/* Navegación siempre visible */}
+        <nav style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
+          <Link to="/catalogo" style={{
+            color: isSimple ? 'var(--vinotinto)' : 'white',
+            textDecoration: 'none',
+            fontWeight: 600,
+            fontSize: '0.95rem'
+          }}>
+            📚 Catálogo
+          </Link>
+          <Link to="/favoritos" style={{
+            color: isSimple ? 'var(--vinotinto)' : 'white',
+            textDecoration: 'none',
+            fontWeight: 600,
+            fontSize: '0.95rem'
+          }}>
+            ❤️ Favoritos
+          </Link>
+          <Link to="/carrito" style={{
+            color: isSimple ? 'var(--vinotinto)' : 'white',
+            textDecoration: 'none',
+            fontWeight: 600,
+            fontSize: '0.95rem'
+          }}>
+            🛒 Carrito
+          </Link>
+        </nav>
 
         {!isSimple && (
           <>
@@ -100,7 +125,6 @@ function Header({ variant }) {
         )}
       </header>
 
-      {/* MODAL */}
       {modalOpen && (
         <div className="modal-overlay open" onClick={e => { if (e.target === e.currentTarget) setModalOpen(false) }}>
           <div className="modal-card">
