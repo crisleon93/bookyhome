@@ -255,40 +255,74 @@ export default function AdminDashboard() {
         )}
 
         {/* USUARIOS */}
-        {activeSection === 'usuarios' && (
-          <>
-            <h1 style={{ marginBottom: '30px', color: '#6b1a2a' }}>👤 Gestión de Usuarios</h1>
-            <div style={{ background: 'white', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead>
-                  <tr style={{ background: '#6b1a2a', color: 'white' }}>
-                    <th style={{ padding: '14px 16px', textAlign: 'left' }}>ID</th>
-                    <th style={{ padding: '14px 16px', textAlign: 'left' }}>Nombre</th>
-                    <th style={{ padding: '14px 16px', textAlign: 'left' }}>Correo</th>
-                    <th style={{ padding: '14px 16px', textAlign: 'left' }}>Rol</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {usuarios.map((u, i) => (
-                    <tr key={u.id_usuario} style={{ background: i % 2 === 0 ? '#fafafa' : 'white' }}>
-                      <td style={{ padding: '12px 16px' }}>{u.id_usuario}</td>
-                      <td style={{ padding: '12px 16px' }}>{u.nombre_usuario}</td>
-                      <td style={{ padding: '12px 16px' }}>{u.correo_usuario}</td>
-                      <td style={{ padding: '12px 16px' }}>
-                        <span style={{
-                          background: u.rol === 'admin' ? '#6b1a2a' : u.rol === 'vendedor' ? '#e67e22' : '#27ae60',
-                          color: 'white', padding: '4px 10px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 600
-                        }}>
-                          {u.rol}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </>
-        )}
+{activeSection === 'usuarios' && (
+  <>
+    <h1 style={{ marginBottom: '30px', color: '#6b1a2a' }}>👤 Gestión de Usuarios</h1>
+    <div style={{ background: 'white', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
+      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <thead>
+          <tr style={{ background: '#6b1a2a', color: 'white' }}>
+            <th style={{ padding: '14px 16px', textAlign: 'left' }}>ID</th>
+            <th style={{ padding: '14px 16px', textAlign: 'left' }}>Nombre</th>
+            <th style={{ padding: '14px 16px', textAlign: 'left' }}>Correo</th>
+            <th style={{ padding: '14px 16px', textAlign: 'left' }}>Rol</th>
+            <th style={{ padding: '14px 16px', textAlign: 'left' }}>Estado</th>
+            <th style={{ padding: '14px 16px', textAlign: 'left' }}>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {usuarios.map((u, i) => (
+            <tr key={u.id_usuario} style={{
+              background: u.estado_usuario === 'Bloqueado' ? '#fff3f3' : i % 2 === 0 ? '#fafafa' : 'white',
+              opacity: u.estado_usuario === 'Bloqueado' ? 0.7 : 1
+            }}>
+              <td style={{ padding: '12px 16px' }}>{u.id_usuario}</td>
+              <td style={{ padding: '12px 16px' }}>{u.nombre_usuario}</td>
+              <td style={{ padding: '12px 16px' }}>{u.correo_usuario}</td>
+              <td style={{ padding: '12px 16px' }}>
+                <span style={{
+                  background: u.rol === 'admin' ? '#6b1a2a' : u.rol === 'vendedor' ? '#e67e22' : '#27ae60',
+                  color: 'white', padding: '4px 10px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 600
+                }}>
+                  {u.rol}
+                </span>
+              </td>
+              <td style={{ padding: '12px 16px' }}>
+                <span style={{
+                  background: u.estado_usuario === 'Bloqueado' ? '#e74c3c' : '#27ae60',
+                  color: 'white', padding: '4px 10px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 600
+                }}>
+                  {u.estado_usuario === 'Bloqueado' ? '🔒 Bloqueado' : '✅ Activo'}
+                </span>
+              </td>
+              <td style={{ padding: '12px 16px' }}>
+                <button onClick={async () => {
+                  const bloqueado = u.estado_usuario !== 'Bloqueado';
+                  try {
+                    await api.patch(`/usuarios/${u.id_usuario}/bloquear`, { bloqueado });
+                    setUsuarios(usuarios.map(us =>
+                      us.id_usuario === u.id_usuario
+                        ? { ...us, estado_usuario: bloqueado ? 'Bloqueado' : 'Activo' }
+                        : us
+                    ));
+                  } catch {
+                    alert('Error al cambiar estado del usuario');
+                  }
+                }} style={{
+                  background: u.estado_usuario === 'Bloqueado' ? '#27ae60' : '#e74c3c',
+                  color: 'white', border: 'none', padding: '6px 12px',
+                  borderRadius: '6px', cursor: 'pointer', fontWeight: 600
+                }}>
+                  {u.estado_usuario === 'Bloqueado' ? '🔓 Desbloquear' : '🔒 Bloquear'}
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </>
+)}
 
         {/* LIBROS */}
 {activeSection === 'libros' && (
