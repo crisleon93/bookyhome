@@ -5,6 +5,7 @@ import os, shutil, uuid
 
 from app.auth import verify_token
 from app.models.libro import (
+    ocultar_libro,
     crear_libro,
     agregar_imagen_libro,
     obtener_libros_por_tienda,
@@ -255,3 +256,16 @@ def descontar(id_libro: int, cantidad: int = Form(...)):
     if not resultado["ok"]:
         raise HTTPException(status_code=409, detail=resultado["error"])
     return resultado
+
+# PATCH /libros/{id_libro}/ocultar
+from pydantic import BaseModel
+
+class OcultarPayload(BaseModel):
+    oculto: bool
+
+@router.patch("/{id_libro}/ocultar")
+def ocultar(id_libro: int, payload: OcultarPayload, user=Depends(get_current_user)):
+    resultado = ocultar_libro(id_libro, payload.oculto)
+    if not resultado["ok"]:
+        raise HTTPException(status_code=500, detail=resultado["error"])
+    return {"mensaje": "Estado del libro actualizado"}

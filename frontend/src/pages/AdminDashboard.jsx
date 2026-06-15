@@ -55,6 +55,17 @@ export default function AdminDashboard() {
     }
   };
 
+  const ocultarLibro = async (id_libro, oculto_actual) => {
+  try {
+    await api.patch(`/libros/${id_libro}/ocultar`, { oculto: !oculto_actual });
+    setLibros(libros.map((l) =>
+      l.id_libro === id_libro ? { ...l, oculto: !oculto_actual } : l
+    ));
+  } catch (error) {
+    alert('Error al ocultar el libro');
+  }
+};
+
   if (loading) return <div style={{ padding: '40px', textAlign: 'center' }}>Cargando panel admin...</div>;
 
   // Datos para reportes
@@ -280,40 +291,59 @@ export default function AdminDashboard() {
         )}
 
         {/* LIBROS */}
-        {activeSection === 'libros' && (
-          <>
-            <h1 style={{ marginBottom: '30px', color: '#6b1a2a' }}>📚 Gestión de Libros</h1>
-            <div style={{ background: 'white', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead>
-                  <tr style={{ background: '#6b1a2a', color: 'white' }}>
-                    <th style={{ padding: '14px 16px', textAlign: 'left' }}>Título</th>
-                    <th style={{ padding: '14px 16px', textAlign: 'left' }}>Autor</th>
-                    <th style={{ padding: '14px 16px', textAlign: 'left' }}>Precio</th>
-                    <th style={{ padding: '14px 16px', textAlign: 'left' }}>Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {libros.map((l, i) => (
-                    <tr key={l.id_libro} style={{ background: i % 2 === 0 ? '#fafafa' : 'white' }}>
-                      <td style={{ padding: '12px 16px' }}>{l.titulo}</td>
-                      <td style={{ padding: '12px 16px' }}>{l.autor_libro}</td>
-                      <td style={{ padding: '12px 16px' }}>${Number(l.precio_libro).toLocaleString('es-CO')}</td>
-                      <td style={{ padding: '12px 16px' }}>
-                        <button onClick={() => eliminarLibro(l.id_libro)} style={{
-                          background: '#e74c3c', color: 'white', border: 'none',
-                          padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontWeight: 600
-                        }}>
-                          🗑 Eliminar
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </>
-        )}
+{activeSection === 'libros' && (
+  <>
+    <h1 style={{ marginBottom: '30px', color: '#6b1a2a' }}>📚 Gestión de Libros</h1>
+    <div style={{ background: 'white', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
+      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <thead>
+          <tr style={{ background: '#6b1a2a', color: 'white' }}>
+            <th style={{ padding: '14px 16px', textAlign: 'left' }}>Título</th>
+            <th style={{ padding: '14px 16px', textAlign: 'left' }}>Autor</th>
+            <th style={{ padding: '14px 16px', textAlign: 'left' }}>Precio</th>
+            <th style={{ padding: '14px 16px', textAlign: 'left' }}>Estado</th>
+            <th style={{ padding: '14px 16px', textAlign: 'left' }}>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {libros.map((l, i) => (
+            <tr key={l.id_libro} style={{
+              background: l.oculto ? '#fff3f3' : i % 2 === 0 ? '#fafafa' : 'white',
+              opacity: l.oculto ? 0.7 : 1
+            }}>
+              <td style={{ padding: '12px 16px' }}>{l.titulo}</td>
+              <td style={{ padding: '12px 16px' }}>{l.autor_libro}</td>
+              <td style={{ padding: '12px 16px' }}>${Number(l.precio_libro).toLocaleString('es-CO')}</td>
+              <td style={{ padding: '12px 16px' }}>
+                <span style={{
+                  background: l.oculto ? '#e74c3c' : '#27ae60',
+                  color: 'white', padding: '4px 10px', borderRadius: '20px',
+                  fontSize: '0.8rem', fontWeight: 600
+                }}>
+                  {l.oculto ? '🚫 Oculto' : '✅ Visible'}
+                </span>
+              </td>
+              <td style={{ padding: '12px 16px', display: 'flex', gap: '8px' }}>
+                <button onClick={() => ocultarLibro(l.id_libro, l.oculto)} style={{
+                  background: l.oculto ? '#27ae60' : '#e67e22', color: 'white', border: 'none',
+                  padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontWeight: 600
+                }}>
+                  {l.oculto ? '👁 Mostrar' : '🚫 Ocultar'}
+                </button>
+                <button onClick={() => eliminarLibro(l.id_libro)} style={{
+                  background: '#e74c3c', color: 'white', border: 'none',
+                  padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontWeight: 600
+                }}>
+                  🗑 Eliminar
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </>
+)}
 
         {/* TIENDAS */}
         {activeSection === 'tiendas' && (
