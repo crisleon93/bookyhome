@@ -49,7 +49,6 @@ const IconTag = () => (
   </svg>
 );
 
-// ── Helpers ──
 const formatPrecio = (valor) =>
   "$" + String(parseInt(valor)).replace(/\B(?=(\d{3})+(?!\d))/g, ".") + " COP";
 
@@ -74,37 +73,25 @@ const BadgeEstado = ({ estado }) => {
   );
 };
 
-/* ─── COMPONENTE ALERTA STOCK BAJO ─── */
 function AlertaStock({ alertas }) {
   if (!alertas || alertas.length === 0) return null;
   return (
     <div style={{
-      background: "#fefce8",
-      border: "1.5px solid #fde68a",
-      borderRadius: "10px",
-      padding: "14px 18px",
-      marginBottom: "20px",
-      display: "flex",
-      alignItems: "flex-start",
-      gap: "12px",
+      background: "#fefce8", border: "1.5px solid #fde68a", borderRadius: "10px",
+      padding: "14px 18px", marginBottom: "20px", display: "flex", alignItems: "flex-start", gap: "12px",
     }}>
       <span style={{ fontSize: "1.3rem", flexShrink: 0, marginTop: "2px" }}>⚠️</span>
       <div style={{ flex: 1 }}>
         <p style={{ margin: "0 0 8px", fontWeight: 700, fontSize: "0.92rem", color: "#92400e" }}>
-          {alertas.length === 1
-            ? "1 libro con stock bajo"
-            : `${alertas.length} libros con stock bajo`}
+          {alertas.length === 1 ? "1 libro con stock bajo" : `${alertas.length} libros con stock bajo`}
         </p>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
           {alertas.map((libro, i) => (
             <span key={i} style={{
               background: libro.stock === 0 ? "#fef2f2" : "#fef9c3",
-              color:      libro.stock === 0 ? "#b91c1c" : "#854d0e",
-              border:     `1px solid ${libro.stock === 0 ? "#fca5a5" : "#fde047"}`,
-              borderRadius: "20px",
-              padding: "3px 10px",
-              fontSize: "0.78rem",
-              fontWeight: 700,
+              color: libro.stock === 0 ? "#b91c1c" : "#854d0e",
+              border: `1px solid ${libro.stock === 0 ? "#fca5a5" : "#fde047"}`,
+              borderRadius: "20px", padding: "3px 10px", fontSize: "0.78rem", fontWeight: 700,
             }}>
               {libro.titulo} — {libro.stock === 0 ? "Sin stock" : `${libro.stock} uds`}
             </span>
@@ -115,7 +102,6 @@ function AlertaStock({ alertas }) {
   );
 }
 
-/* ─── MODAL EDITAR LIBRO ─── */
 function ModalEditarLibro({ libro, categorias, onClose, onGuardado }) {
   const [form, setForm] = useState({
     id_categoria:      libro.id_categoria,
@@ -129,10 +115,7 @@ function ModalEditarLibro({ libro, categorias, onClose, onGuardado }) {
   const [cargando, setCargando] = useState(false);
   const [error,    setError]    = useState("");
 
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-    setError("");
-  };
+  const handleChange = (e) => { setForm({ ...form, [e.target.name]: e.target.value }); setError(""); };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -140,20 +123,15 @@ function ModalEditarLibro({ libro, categorias, onClose, onGuardado }) {
     if (!form.autor_libro.trim())       return setError("El autor es obligatorio");
     if (Number(form.precio_libro) <= 0) return setError("El precio debe ser mayor a 0");
     if (Number(form.stock) < 0)         return setError("El stock no puede ser negativo");
-
     setCargando(true);
     try {
       const data = new FormData();
       Object.entries(form).forEach(([k, v]) => data.append(k, v));
-      await api.put(`/libros/${libro.id_libro}`, data, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      await api.put(`/libros/${libro.id_libro}`, data, { headers: { "Content-Type": "multipart/form-data" } });
       onGuardado();
     } catch (err) {
       setError(err.response?.data?.detail || "Error al guardar los cambios");
-    } finally {
-      setCargando(false);
-    }
+    } finally { setCargando(false); }
   };
 
   return (
@@ -184,9 +162,7 @@ function ModalEditarLibro({ libro, categorias, onClose, onGuardado }) {
             <div className="form-group">
               <label>Estado *</label>
               <select name="estado_libro" value={form.estado_libro} onChange={handleChange}>
-                {ESTADOS.map((e) => (
-                  <option key={e.value} value={e.value}>{e.label}</option>
-                ))}
+                {ESTADOS.map((e) => <option key={e.value} value={e.value}>{e.label}</option>)}
               </select>
             </div>
             <div className="form-group">
@@ -209,9 +185,7 @@ function ModalEditarLibro({ libro, categorias, onClose, onGuardado }) {
           </div>
           {error && <div className="form-error">⚠ {error}</div>}
           <div className="modal-actions">
-            <button type="button" className="btn-outline" onClick={onClose} disabled={cargando}>
-              Cancelar
-            </button>
+            <button type="button" className="btn-outline" onClick={onClose} disabled={cargando}>Cancelar</button>
             <button type="submit" className="btn btn-vinotinto" disabled={cargando}>
               {cargando ? "Guardando…" : "Guardar cambios"}
             </button>
@@ -222,7 +196,6 @@ function ModalEditarLibro({ libro, categorias, onClose, onGuardado }) {
   );
 }
 
-/* ─── MODAL CONFIRMAR ELIMINACIÓN ─── */
 function ModalEliminar({ libro, onClose, onEliminado }) {
   const [cargando, setCargando] = useState(false);
   const [error,    setError]    = useState("");
@@ -249,9 +222,7 @@ function ModalEliminar({ libro, onClose, onEliminado }) {
           <p style={{ color: "#444", marginBottom: "6px" }}>
             ¿Estás seguro de que quieres eliminar <strong>"{libro.titulo}"</strong>?
           </p>
-          <p style={{ fontSize: "0.85rem", color: "#888" }}>
-            Esta acción no se puede deshacer.
-          </p>
+          <p style={{ fontSize: "0.85rem", color: "#888" }}>Esta acción no se puede deshacer.</p>
         </div>
         {error && <div className="form-error" style={{ marginBottom: "16px" }}>⚠ {error}</div>}
         <div className="modal-actions">
@@ -265,7 +236,6 @@ function ModalEliminar({ libro, onClose, onEliminado }) {
   );
 }
 
-/* ─── MODAL GESTIONAR STOCK ─── */
 function ModalStock({ libro, onClose, onActualizado }) {
   const [stock,    setStock]    = useState(libro.stock);
   const [cargando, setCargando] = useState(false);
@@ -277,9 +247,7 @@ function ModalStock({ libro, onClose, onActualizado }) {
     try {
       const data = new FormData();
       data.append("stock", stock);
-      await api.patch(`/libros/${libro.id_libro}/stock`, data, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      await api.patch(`/libros/${libro.id_libro}/stock`, data, { headers: { "Content-Type": "multipart/form-data" } });
       onActualizado();
     } catch (err) {
       setError(err.response?.data?.detail || "Error al actualizar stock");
@@ -299,11 +267,8 @@ function ModalStock({ libro, onClose, onActualizado }) {
         </p>
         <div className="stock-control">
           <button className="stock-btn" onClick={() => setStock(Math.max(0, stock - 1))}>−</button>
-          <input
-            type="number" min="0" value={stock}
-            onChange={(e) => setStock(Number(e.target.value))}
-            className="stock-input"
-          />
+          <input type="number" min="0" value={stock}
+            onChange={(e) => setStock(Number(e.target.value))} className="stock-input" />
           <button className="stock-btn" onClick={() => setStock(stock + 1)}>+</button>
         </div>
         {error && <div className="form-error" style={{ margin: "12px 0" }}>⚠ {error}</div>}
@@ -331,9 +296,11 @@ export default function MiTienda() {
   const [loadingStats,  setLoadingStats]  = useState(false);
   const [topVendidos,   setTopVendidos]   = useState([]);
   const [loadingTop,    setLoadingTop]    = useState(false);
-  const [alertasStock,  setAlertasStock]  = useState([]);   // ← NUEVO
+  const [alertasStock,  setAlertasStock]  = useState([]);
+  const [tiendaInfo,    setTiendaInfo]    = useState(null);
+  const [tiendaForm,    setTiendaForm]    = useState({ nombre_tienda: "", direccion: "", telefono: "" });
+  const [tiendaMsg,     setTiendaMsg]     = useState("");
 
-  // Modales
   const [modalEditar,   setModalEditar]   = useState(null);
   const [modalEliminar, setModalEliminar] = useState(null);
   const [modalStock,    setModalStock]    = useState(null);
@@ -351,7 +318,7 @@ export default function MiTienda() {
       const payload = jwtDecode(token);
       setUserName(payload.nombre || "Vendedor");
     } catch { setUserName("Vendedor"); }
-    finally  { setLoading(false); }
+    finally { setLoading(false); }
   }, [navigate]);
 
   const cargarLibros = () => {
@@ -362,10 +329,8 @@ export default function MiTienda() {
       .finally(() => setLoadingLibros(false));
   };
 
-  // ── Carga inicial de libros ──
   useEffect(() => { cargarLibros(); }, []);
 
-  // ── Carga inicial: categorías, stats, top vendidos y alertas de stock ──
   useEffect(() => {
     api.get("/libros/categorias").then((r) => setCategorias(r.data)).catch(() => {});
 
@@ -379,17 +344,27 @@ export default function MiTienda() {
       .then((r) => setTopVendidos(r.data)).catch(() => setTopVendidos([]))
       .finally(() => setLoadingTop(false));
 
-    //  alertas de stock bajo (libros con stock <= 3)
     api.get("/libros/alertas-stock")
       .then((r) => setAlertasStock(r.data))
       .catch(() => setAlertasStock([]));
+
+    api.get("/tiendas")
+      .then((r) => {
+        const miTienda = r.data[0];
+        if (miTienda) {
+          setTiendaInfo(miTienda);
+          setTiendaForm({
+            nombre_tienda: miTienda.nombre_tienda,
+            direccion: miTienda.direccion,
+            telefono: miTienda.telefono,
+          });
+        }
+      })
+      .catch(() => {});
   }, []);
 
-  // Recargar alertas cada vez que cambie el stock
   const cargarAlertas = () => {
-    api.get("/libros/alertas-stock")
-      .then((r) => setAlertasStock(r.data))
-      .catch(() => {});
+    api.get("/libros/alertas-stock").then((r) => setAlertasStock(r.data)).catch(() => {});
   };
 
   const handleLogout = () => { localStorage.removeItem("token"); navigate("/login"); };
@@ -398,7 +373,7 @@ export default function MiTienda() {
     { name: "Inicio",         icon: <IconHome /> },
     { name: "Mis Libros",     icon: <IconBook /> },
     { name: "Publicar Libro", icon: <IconPlus />, path: "/vendedor/publicar" },
-    { name: "Promociones", icon: <IconTag /> },
+    { name: "Promociones",    icon: <IconTag /> },
     { name: "Ventas",         icon: <IconCart /> },
     { name: "Pedidos",        icon: <IconPackage /> },
     { name: "Clientes",       icon: <IconUser /> },
@@ -407,7 +382,6 @@ export default function MiTienda() {
 
   if (loading) return <div style={{ padding: "2rem" }}>Cargando tienda...</div>;
 
-  /* ─── SECCIÓN INICIO ─── */
   const renderInicio = () => (
     <>
       <div className="welcome-card">
@@ -415,7 +389,6 @@ export default function MiTienda() {
         <p>Aquí tienes un resumen de tu tienda en BookyHome.</p>
       </div>
 
-      {/*  alerta de stock bajo visible en Inicio */}
       <AlertaStock alertas={alertasStock} />
 
       <div className="stats-seccion-label">Tus libros</div>
@@ -441,9 +414,7 @@ export default function MiTienda() {
           <div className="seller-stat-number">
             {loadingStats ? "…" : stats ? formatPrecio(stats.total_hoy) : "—"}
           </div>
-          <span className="stat-sub">
-            {stats ? `${stats.ordenes_hoy} orden(es)` : "Sin datos aún"}
-          </span>
+          <span className="stat-sub">{stats ? `${stats.ordenes_hoy} orden(es)` : "Sin datos aún"}</span>
         </div>
         <div className="seller-stat-card seller-stat-card--ventas">
           <h3>Vendido esta semana</h3>
@@ -456,9 +427,7 @@ export default function MiTienda() {
           <div className="seller-stat-number">
             {loadingStats ? "…" : stats ? formatPrecio(stats.total_mes) : "—"}
           </div>
-          <span className="stat-sub">
-            {stats ? `${stats.ordenes_mes} orden(es)` : "Sin datos aún"}
-          </span>
+          <span className="stat-sub">{stats ? `${stats.ordenes_mes} orden(es)` : "Sin datos aún"}</span>
         </div>
       </div>
 
@@ -498,7 +467,6 @@ export default function MiTienda() {
     </>
   );
 
-  /* ─── SECCIÓN MIS LIBROS ─── */
   const renderMisLibros = () => (
     <>
       <div className="welcome-card" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -511,12 +479,10 @@ export default function MiTienda() {
         </button>
       </div>
 
-      {/* alerta de stock bajo visible en Mis Libros */}
       <AlertaStock alertas={alertasStock} />
 
       <div className="seller-books">
         {loadingLibros && <p style={{ color: "#999", padding: "20px 0" }}>Cargando...</p>}
-
         {!loadingLibros && libros.length === 0 && (
           <div className="empty-state">
             <div style={{ fontSize: "2.5rem", marginBottom: "12px" }}>📚</div>
@@ -526,7 +492,6 @@ export default function MiTienda() {
             </button>
           </div>
         )}
-
         {!loadingLibros && libros.map((libro) => (
           <div key={libro.id_libro} className="book-row">
             <div className="book-cover-mini">
@@ -540,10 +505,8 @@ export default function MiTienda() {
             </div>
             <BadgeEstado estado={libro.estado_libro} />
             <div className="book-price">{formatPrecio(libro.precio_libro)}</div>
-            {/*stock en rojo si es 0, amarillo si es bajo */}
             <div style={{
-              fontSize: "0.85rem",
-              minWidth: "70px",
+              fontSize: "0.85rem", minWidth: "70px",
               color: libro.stock === 0 ? "#b91c1c" : libro.stock <= 3 ? "#92400e" : "#777",
               fontWeight: libro.stock <= 3 ? 700 : 400,
             }}>
@@ -551,18 +514,106 @@ export default function MiTienda() {
               {libro.stock === 0 && <span style={{ marginLeft: "4px" }}>⚠</span>}
             </div>
             <div className="book-actions">
-              <button className="btn-accion btn-stock" onClick={() => setModalStock(libro)}>
-                Stock
-              </button>
-              <button className="btn-accion btn-editar" onClick={() => setModalEditar(libro)}>
-                Editar
-              </button>
-              <button className="btn-accion btn-eliminar-sm" onClick={() => setModalEliminar(libro)}>
-                Eliminar
-              </button>
+              <button className="btn-accion btn-stock" onClick={() => setModalStock(libro)}>Stock</button>
+              <button className="btn-accion btn-editar" onClick={() => setModalEditar(libro)}>Editar</button>
+              <button className="btn-accion btn-eliminar-sm" onClick={() => setModalEliminar(libro)}>Eliminar</button>
             </div>
           </div>
         ))}
+      </div>
+    </>
+  );
+
+  const renderConfiguracion = () => (
+    <>
+      <div className="welcome-card">
+        <h1 style={{ fontSize: "1.7rem", marginBottom: "6px" }}>⚙️ Perfil del negocio</h1>
+        <p style={{ margin: 0 }}>Información de tu tienda en BookyHome</p>
+      </div>
+
+      <div className="pl-card" style={{ padding: "2rem", marginTop: "20px" }}>
+        {!tiendaInfo ? (
+          <p style={{ color: "#888" }}>Cargando información de la tienda...</p>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: "16px", maxWidth: "500px" }}>
+            <div>
+              <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>
+                Nombre de la tienda
+              </label>
+              <input
+                type="text"
+                value={tiendaForm.nombre_tienda}
+                onChange={(e) => setTiendaForm({ ...tiendaForm, nombre_tienda: e.target.value })}
+                style={{
+                  width: "100%", padding: "10px 14px", borderRadius: "8px",
+                  border: "1px solid #ddd", fontSize: "0.95rem", fontFamily: "Montserrat, sans-serif"
+                }}
+              />
+            </div>
+
+            <div>
+              <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>
+                Dirección
+              </label>
+              <input
+                type="text"
+                value={tiendaForm.direccion}
+                onChange={(e) => setTiendaForm({ ...tiendaForm, direccion: e.target.value })}
+                style={{
+                  width: "100%", padding: "10px 14px", borderRadius: "8px",
+                  border: "1px solid #ddd", fontSize: "0.95rem", fontFamily: "Montserrat, sans-serif"
+                }}
+              />
+            </div>
+
+            <div>
+              <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>
+                Teléfono
+              </label>
+              <input
+                type="text"
+                value={tiendaForm.telefono}
+                onChange={(e) => setTiendaForm({ ...tiendaForm, telefono: e.target.value })}
+                style={{
+                  width: "100%", padding: "10px 14px", borderRadius: "8px",
+                  border: "1px solid #ddd", fontSize: "0.95rem", fontFamily: "Montserrat, sans-serif"
+                }}
+              />
+            </div>
+
+            <div>
+              <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>
+                Miembro desde
+              </label>
+              <input
+                type="text"
+                value={tiendaInfo.fecha_creacion}
+                readOnly
+                style={{
+                  width: "100%", padding: "10px 14px", borderRadius: "8px",
+                  border: "1px solid #ddd", fontSize: "0.95rem", background: "#f5f5f5",
+                  fontFamily: "Montserrat, sans-serif", color: "#888"
+                }}
+              />
+            </div>
+
+            {tiendaMsg && <p style={{ color: "green", fontWeight: 600 }}>{tiendaMsg}</p>}
+
+            <button
+              style={{
+                background: "var(--vinotinto)", color: "white", border: "none",
+                padding: "12px 24px", borderRadius: "8px", fontWeight: 700,
+                fontSize: "0.95rem", cursor: "pointer", fontFamily: "Montserrat, sans-serif"
+              }}
+              onClick={() => {
+                setTiendaMsg("✓ Perfil del negocio actualizado");
+                setTimeout(() => setTiendaMsg(""), 3000);
+              }}
+            >
+              Guardar cambios
+            </button>
+          </div>
+        )}
       </div>
     </>
   );
@@ -584,8 +635,8 @@ export default function MiTienda() {
       case "Ventas":        return renderProximamente("Ventas");
       case "Pedidos":       return renderProximamente("Pedidos");
       case "Clientes":      return renderProximamente("Clientes");
-      case "Configuración": return renderProximamente("Configuración");
-      case "Promociones": return <SeccionOfertas />;
+      case "Configuración": return renderConfiguracion();
+      case "Promociones":   return <SeccionOfertas />;
       default:              return renderInicio();
     }
   };
@@ -615,7 +666,6 @@ export default function MiTienda() {
 
       <main className="dashboard-main">{renderContenido()}</main>
 
-      {/* MODALES */}
       {modalEditar && (
         <ModalEditarLibro
           libro={modalEditar}
