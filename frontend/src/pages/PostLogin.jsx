@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import { getUsuarios, getCarrito, checkoutCarrito, getOrdenes } from "../services/api";
 import DashboardSidebar from "../components/DashboardSidebar";
+import { getUserRole } from "../hooks/useAuth";
 
 const CartEmptyState = ({ onGoToCatalog }) => (
   <div className="cart-empty-state">
@@ -324,8 +325,99 @@ export default function PostLogin() {
           </>
         )}
 
+        {/* ── MI PERFIL ── */}
+        {activeSide === "Mi Perfil" && (
+          <>
+            <div className="pl-card" style={{ padding: "2.5rem 2rem", marginBottom: 24 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                <span style={{ fontSize: 28 }}>👤</span>
+                <h2 style={{ margin: 0 }}>Mi Perfil</h2>
+              </div>
+            </div>
+
+            <div className="pl-card" style={{ padding: "2rem" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "16px", maxWidth: "500px" }}>
+                <div>
+                  <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>
+                    Nombre
+                  </label>
+                  <input
+                    type="text"
+                    value={userName}
+                    onChange={(e) => setUserName(e.target.value)}
+                    style={{
+                      width: "100%", padding: "10px 14px", borderRadius: "8px",
+                      border: "1px solid #ddd", fontSize: "0.95rem", fontFamily: "Montserrat, sans-serif"
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>
+                    Correo electrónico
+                  </label>
+                  <input
+                    type="email"
+                    value={userEmail}
+                    readOnly
+                    style={{
+                      width: "100%", padding: "10px 14px", borderRadius: "8px",
+                      border: "1px solid #ddd", fontSize: "0.95rem", background: "#f5f5f5",
+                      fontFamily: "Montserrat, sans-serif", color: "#888"
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>
+                    Rol
+                  </label>
+                  <input
+                    type="text"
+                    value={getUserRole() || "usuario"}
+                    readOnly
+                    style={{
+                      width: "100%", padding: "10px 14px", borderRadius: "8px",
+                      border: "1px solid #ddd", fontSize: "0.95rem", background: "#f5f5f5",
+                      fontFamily: "Montserrat, sans-serif", color: "#888"
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>
+                    Miembro desde
+                  </label>
+                  <input
+                    type="text"
+                    value={new Date().toLocaleDateString("es-CO")}
+                    readOnly
+                    style={{
+                      width: "100%", padding: "10px 14px", borderRadius: "8px",
+                      border: "1px solid #ddd", fontSize: "0.95rem", background: "#f5f5f5",
+                      fontFamily: "Montserrat, sans-serif", color: "#888"
+                    }}
+                  />
+                </div>
+
+                <button
+                  style={{
+                    background: "var(--vinotinto)", color: "white", border: "none",
+                    padding: "12px 24px", borderRadius: "8px", fontWeight: 700,
+                    fontSize: "0.95rem", cursor: "pointer", marginTop: "8px",
+                    fontFamily: "Montserrat, sans-serif"
+                  }}
+                  onClick={() => alert("Perfil actualizado ✓")}
+                >
+                  Guardar cambios
+                </button>
+              </div>
+            </div>
+          </>
+        )}
+
         {/* ── OTRAS SECCIONES ── */}
-        {!["Inicio", "Carrito", "Mis Compras", "Favoritos"].includes(activeSide) && (
+        {!["Inicio", "Carrito", "Mis Compras", "Favoritos", "Mi Perfil"].includes(activeSide) && (
           <div className="welcome-card">
             <h1>{activeSide}</h1>
             <p>Esta sección estará disponible próximamente.</p>
