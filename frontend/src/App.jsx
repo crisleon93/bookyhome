@@ -20,6 +20,7 @@ import Checkout from './pages/Checkout';
 import StoredProcedurePage from './pages/StoredProcedurePage';
 import PublicarLibro from './pages/PublicarLibro';
 import DetalleLibro from './pages/DetalleLibro';
+import AdminDashboard from './pages/AdminDashboard';
 
 import { getUserRole } from './hooks/useAuth';
 
@@ -61,6 +62,7 @@ function MainLayout() {
           <Route path="/mi-tienda" element={<MiTienda />} />
           <Route path="/checkout/:orderId" element={<Checkout />} />
           <Route path="/vendedor/publicar" element={<PublicarLibro />} />
+          <Route path="/admin" element={<AdminDashboard />} />
         </Route>
 
         {/* Redirección por rol */}
@@ -69,6 +71,8 @@ function MainLayout() {
           element={
             userRole === 'vendedor' ? (
               <Navigate to="/mi-tienda" replace />
+            ) : userRole === 'admin' ? (
+              <Navigate to="/admin" replace />
             ) : (userRole === 'usuario' || userRole === 'comprador') ? (
               <Navigate to="/post-login" replace />
             ) : (
