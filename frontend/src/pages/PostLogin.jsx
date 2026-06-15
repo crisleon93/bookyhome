@@ -134,18 +134,78 @@ export default function PostLogin() {
 
       <main className="dashboard-main">
 
-        {/* ── INICIO ── */}
-        {activeSide === "Inicio" && (
-          <>
-            <div className="welcome-card">
-              <h1>Bienvenido de nuevo, {userName.split(" ")[0]} 👋</h1>
-              <p>Esta es tu área personal de BookyHome.</p>
+{/* ── INICIO ── */}
+{activeSide === "Inicio" && (
+  <>
+    <div className="welcome-card">
+      <h1>Bienvenido de nuevo, {userName.split(" ")[0]} 👋</h1>
+      <p>Esta es tu área personal de BookyHome.</p>
+    </div>
+
+    {/* RECOMENDACIONES PERSONALIZADAS */}
+    {(() => {
+      const favoritos = JSON.parse(localStorage.getItem('favoritos')) || [];
+      const categoriasVistas = [...new Set(favoritos.map(f => f.nombre_categoria).filter(Boolean))];
+
+      if (favoritos.length === 0) {
+        return (
+          <div className="empty-state">
+            <p>Agrega libros a favoritos para recibir recomendaciones personalizadas 💡</p>
+            <button className="btn btn-vinotinto btn-catalog" onClick={handleGoToCatalog}>
+              📚 Explorar catálogo
+            </button>
+          </div>
+        );
+      }
+
+      return (
+        <div className="pl-card" style={{ padding: '2rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+            <span style={{ fontSize: 28 }}>✨</span>
+            <div>
+              <h2 style={{ margin: 0 }}>Recomendados para ti</h2>
+              <p style={{ margin: 0, color: '#888', fontSize: '0.85rem' }}>
+                Basado en tus categorías favoritas: {categoriasVistas.join(', ')}
+              </p>
             </div>
-            <div className="empty-state">
-              <p>Próximamente aparecerán tus recomendaciones y novedades</p>
+          </div>
+
+          {favoritos.slice(0, 5).map((libro) => (
+            <div key={libro.id_libro} className="pl-order-row" style={{ cursor: 'pointer' }}
+              onClick={() => navigate('/catalogo')}>
+              <div className="pl-order-left">
+                <span className="pl-order-emoji">📖</span>
+                <div>
+                  <p className="pl-order-title">{libro.titulo}</p>
+                  <p className="pl-order-meta">
+                    {libro.autor_libro || libro.autor} · {libro.nombre_categoria}
+                  </p>
+                </div>
+              </div>
+              <div className="pl-order-right">
+                <span className="pl-order-price">
+                  ${Number(libro.precio_libro ?? libro.precio ?? 0).toLocaleString('es-CO')}
+                </span>
+                <span style={{
+                  background: '#6b1a2a', color: 'white', padding: '4px 10px',
+                  borderRadius: '20px', fontSize: '0.75rem', fontWeight: 600, marginLeft: '10px'
+                }}>
+                  ❤️ Favorito
+                </span>
+              </div>
             </div>
-          </>
-        )}
+          ))}
+
+          <div style={{ marginTop: '16px', textAlign: 'center' }}>
+            <button className="btn btn-vinotinto btn-catalog" onClick={handleGoToCatalog}>
+              📚 Ver más libros
+            </button>
+          </div>
+        </div>
+      );
+    })()}
+  </>
+)}
 
         {/* ── CARRITO ── */}
         {activeSide === "Carrito" && (
