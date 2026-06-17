@@ -2663,5 +2663,3 @@ SELECT * FROM v_detalles_carrito;
 
 SELECT '=== BooKyHome LISTA PARA USAR ===' AS '';
 select * from usuarios; 
-
-
