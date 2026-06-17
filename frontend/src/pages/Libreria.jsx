@@ -154,8 +154,8 @@ function Libreria() {
 
   return (
     <>
-    <main className="auth-main">
-      <div className="auth-card auth-card--wide">
+    <main className="auth-main auth-main--compact">
+      <div className="auth-card auth-card--wide auth-card--compact">
 
         <h1 className="auth-title">Registrar Librería</h1>
         <p className="auth-subtitle">Vende tus libros en BookyHome</p>

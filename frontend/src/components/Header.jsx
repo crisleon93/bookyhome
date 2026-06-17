@@ -24,6 +24,30 @@ const IconArrow = () => (
   </svg>
 );
 
+const IconBooks = () => (
+  <svg className="header-nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+    fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="18" height="18">
+    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z" />
+  </svg>
+);
+
+const IconFavorites = () => (
+  <svg className="header-nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+    fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="18" height="18">
+    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78Z" />
+  </svg>
+);
+
+const IconCart = () => (
+  <svg className="header-nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+    fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="18" height="18">
+    <circle cx="9" cy="20" r="1" />
+    <circle cx="17" cy="20" r="1" />
+    <path d="M3 3h2l2.68 13.39A2 2 0 0 0 9.66 18H18a2 2 0 0 0 2-1.6L22 6H6" />
+  </svg>
+);
+
 function ModalOption({ to, iconPath, title, desc, onClose }) {
   return (
     <Link to={to} className="modal-option" onClick={onClose}>
@@ -79,7 +103,10 @@ function Header({ variant }) {
             fontWeight: 600,
             fontSize: '0.95rem'
           }}>
-            📚 Catálogo
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+              <IconBooks />
+              Catálogo
+            </span>
           </Link>
           <Link to="/favoritos" style={{
             color: isSimple ? 'var(--vinotinto)' : 'white',
@@ -87,7 +114,10 @@ function Header({ variant }) {
             fontWeight: 600,
             fontSize: '0.95rem'
           }}>
-            ❤️ Favoritos
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+              <IconFavorites />
+              Favoritos
+            </span>
           </Link>
           <Link to="/carrito" style={{
             color: isSimple ? 'var(--vinotinto)' : 'white',
@@ -95,7 +125,10 @@ function Header({ variant }) {
             fontWeight: 600,
             fontSize: '0.95rem'
           }}>
-            🛒 Carrito
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+              <IconCart />
+              Carrito
+            </span>
           </Link>
         </nav>
 

@@ -247,8 +247,8 @@ function Register() {
 
   return (
     <>
-      <main className="auth-main">
-        <div className="auth-card">
+      <main className="auth-main auth-main--compact">
+        <div className="auth-card auth-card--wide auth-card--compact">
 
           <h1 className="auth-title">Crear Cuenta</h1>
           <p className="auth-subtitle">Únete y accede a miles de libros</p>

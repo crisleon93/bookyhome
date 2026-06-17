@@ -8,13 +8,22 @@ router = APIRouter()
 @router.post("/forgot-password")
 async def forgot_password(data: dict):
     email = data.get("email")
+    if not email:
+        raise HTTPException(status_code=400, detail="El email es obligatorio")
+
     user = obtener_usuario_por_email(email)
     if not user:
-        return {"mensaje": "Si el email existe, recibirás un enlace"}
+        return {"mensaje": "No se encontró una cuenta con ese email", "correo_enviado": False}
 
     token = create_token({"sub": str(user["id_usuario"]), "tipo": "reset"})
-    await enviar_email_recuperacion(email, token)
-    return {"mensaje": "Si el email existe, recibirás un enlace"}
+    try:
+        await enviar_email_recuperacion(email, token)
+        print(f"✅ Correo de recuperación enviado a {email}", flush=True)
+    except Exception as exc:
+        print(f"❌ Error enviando correo de recuperación a {email}: {exc}", flush=True)
+        raise HTTPException(status_code=500, detail="No se pudo enviar el correo de recuperación")
+
+    return {"mensaje": "Correo de recuperación enviado", "correo_enviado": True}
 
 @router.post("/reset-password")
 def reset_password(data: dict):

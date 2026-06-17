@@ -135,7 +135,7 @@ function ModalEditarLibro({ libro, categorias, onClose, onGuardado }) {
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay open" onClick={onClose}>
       <div className="modal-box" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h2>Editar libro</h2>
@@ -212,7 +212,7 @@ function ModalEliminar({ libro, onClose, onEliminado }) {
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay open" onClick={onClose}>
       <div className="modal-box modal-box--sm" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h2>Eliminar libro</h2>
@@ -256,7 +256,7 @@ function ModalStock({ libro, onClose, onActualizado }) {
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay open" onClick={onClose}>
       <div className="modal-box modal-box--sm" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h2>Gestionar stock</h2>
@@ -469,9 +469,9 @@ export default function MiTienda() {
 
   const renderMisLibros = () => (
     <>
-      <div className="welcome-card" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      <div className="welcome-card" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "16px" }}>
         <div>
-          <h1 style={{ fontSize: "1.7rem", marginBottom: "6px" }}>Mis libros</h1>
+          <h1 style={{ fontSize: "1.55rem", marginBottom: "4px" }}>Mis libros</h1>
           <p style={{ margin: 0 }}>{libros.length} {libros.length === 1 ? "libro publicado" : "libros publicados"}</p>
         </div>
         <button className="btn btn-vinotinto btn-header" onClick={() => navigate("/vendedor/publicar")}>
@@ -527,7 +527,7 @@ export default function MiTienda() {
   const renderConfiguracion = () => (
     <>
       <div className="welcome-card">
-        <h1 style={{ fontSize: "1.7rem", marginBottom: "6px" }}>⚙️ Perfil del negocio</h1>
+        <h1 style={{ fontSize: "1.55rem", marginBottom: "4px" }}>⚙️ Perfil del negocio</h1>
         <p style={{ margin: 0 }}>Información de tu tienda en BookyHome</p>
       </div>
 
