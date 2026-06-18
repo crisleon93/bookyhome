@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { register } from '../services/api'
+import { notify } from '../components/ToastProvider'
 
 const IconUser = () => (
   <svg className="auth-input-icon" xmlns="http://www.w3.org/2000/svg" fill="none"
@@ -160,8 +161,10 @@ const Privacidad = () => (
 // ── Componente principal ───────────────────────────────────────────────────────
 function Register() {
   const [nombre, setNombre] = useState('')
+  const [apellidos, setApellidos] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [telefono, setTelefono] = useState('') // ── NUEVO ESTADO AGREGADO ─────
   const [showPass, setShowPass] = useState(false)
 
@@ -179,10 +182,40 @@ function Register() {
   const navigate = useNavigate()
 
   const terminosCompletos = aceptoTerminos && aceptoPrivacidad
+  const passwordScore = [
+    password.length >= 8,
+    /[A-Z]/.test(password),
+    /[0-9]/.test(password),
+    /[^A-Za-z0-9]/.test(password)
+  ].filter(Boolean).length
+  const passwordStrength = password.length === 0
+    ? { label: 'Completa tu contrasena', width: '0%', color: '#ddd' }
+    : passwordScore <= 2
+      ? { label: 'Contrasena debil', width: '33%', color: '#dc2626' }
+      : passwordScore === 3
+        ? { label: 'Contrasena media', width: '66%', color: '#ca8a04' }
+        : { label: 'Contrasena fuerte', width: '100%', color: '#15803d' }
+  const formReady =
+    nombre.trim() &&
+    apellidos.trim() &&
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) &&
+    /^\d{7,15}$/.test(telefono.trim()) &&
+    password.length >= 8 &&
+    password === confirmPassword &&
+    terminosCompletos
+
+  const blockClipboard = (event) => {
+    event.preventDefault()
+    notify('Por seguridad, escribe este campo manualmente.', 'info')
+  }
 
   const validate = () => {
     if (!nombre.trim()) {
       setError('El nombre es obligatorio')
+      return false
+    }
+    if (!apellidos.trim()) {
+      setError('Los apellidos son obligatorios')
       return false
     }
     if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
@@ -202,6 +235,10 @@ function Register() {
       setError('La contraseña debe tener al menos 8 caracteres')
       return false
     }
+    if (password !== confirmPassword) {
+      setError('Las contrasenas no coinciden')
+      return false
+    }
     if (!terminosCompletos) {
       setError('Debes aceptar tanto los Términos y Condiciones como la Política de Privacidad')
       return false
@@ -219,7 +256,7 @@ function Register() {
     try {
       // Enviamos todos los parámetros incluyendo el teléfono
       await register({
-        nombre,
+        nombre: `${nombre.trim()} ${apellidos.trim()}`,
         email,
         password,
         telefono, // ── SE ENVÍA EL TELÉFONO AL BACKEND ─────────────────────────
@@ -227,9 +264,12 @@ function Register() {
       })
 
       setExito(true)
+      notify('Cuenta creada exitosamente', 'success')
       setCountdown(5)
     } catch (err) {
-      setError(err.response?.data?.detail || 'Error al crear la cuenta')
+      const message = err.response?.data?.detail || 'Error al crear la cuenta'
+      setError(message)
+      notify(message, 'error')
     } finally {
       setLoading(false)
     }
@@ -277,15 +317,29 @@ function Register() {
           <form onSubmit={handleSubmit} noValidate>
 
             <div className="auth-field">
-              <label htmlFor="nombre">Nombre completo</label>
+              <label htmlFor="nombre">Nombre</label>
               <div className="auth-input-wrapper">
                 <IconUser />
                 <input
                   id="nombre"
                   type="text"
-                  placeholder="Tu nombre completo"
+                  placeholder="Tu nombre"
                   value={nombre}
                   onChange={e => setNombre(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="auth-field">
+              <label htmlFor="apellidos">Apellidos</label>
+              <div className="auth-input-wrapper">
+                <IconUser />
+                <input
+                  id="apellidos"
+                  type="text"
+                  placeholder="Tus apellidos"
+                  value={apellidos}
+                  onChange={e => setApellidos(e.target.value)}
                 />
               </div>
             </div>
@@ -300,6 +354,8 @@ function Register() {
                   placeholder="tu@email.com"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
+                  onPaste={blockClipboard}
+                  onCopy={blockClipboard}
                 />
               </div>
             </div>
@@ -330,10 +386,35 @@ function Register() {
                   placeholder="Mínimo 8 caracteres"
                   value={password}
                   onChange={e => setPassword(e.target.value)}
+                  onPaste={blockClipboard}
+                  onCopy={blockClipboard}
                 />
                 <button type="button" className="btn-eye" onClick={() => setShowPass(!showPass)}>
                   {showPass ? <IconEyeClosed /> : <IconEyeOpen />}
                 </button>
+              </div>
+              <div
+                className="password-strength"
+                style={{ '--strength-width': passwordStrength.width, '--strength-color': passwordStrength.color }}
+              >
+                <div className="password-strength__bar"><span /></div>
+                <span className="password-strength__label">{passwordStrength.label}</span>
+              </div>
+            </div>
+
+            <div className="auth-field">
+              <label htmlFor="confirmPassword">Confirmar contrasena</label>
+              <div className="auth-input-wrapper">
+                <IconLock />
+                <input
+                  id="confirmPassword"
+                  type={showPass ? 'text' : 'password'}
+                  placeholder="Repite tu contrasena"
+                  value={confirmPassword}
+                  onChange={e => setConfirmPassword(e.target.value)}
+                  onPaste={blockClipboard}
+                  onCopy={blockClipboard}
+                />
               </div>
             </div>
 
@@ -367,7 +448,7 @@ function Register() {
               </label>
             </div>
 
-            <button type="submit" className="btn btn-vinotinto" disabled={loading}>
+            <button type="submit" className="btn btn-vinotinto" disabled={loading || !formReady}>
               {loading ? 'Creando cuenta...' : 'Crear Cuenta'}
             </button>
           </form>

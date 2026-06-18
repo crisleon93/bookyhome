@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends, Form
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from typing import List
+from datetime import datetime
 
 from app.auth import verify_token
 from app.models.oferta import (
@@ -18,6 +19,13 @@ router = APIRouter()
 security = HTTPBearer()
 
 TIPOS_VALIDOS = ["porcentaje", "fijo", "especial"]
+
+
+def parse_fecha(fecha: str):
+    try:
+        return datetime.strptime(fecha, "%Y-%m-%d %H:%M:%S")
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Formato de fecha invalido")
 
 
 # ──────────────────────────────────────────────
@@ -75,7 +83,14 @@ def crear(
         raise HTTPException(status_code=400,
             detail="El porcentaje no puede ser mayor a 100")
 
-    if fecha_inicio >= fecha_fin:
+    inicio = parse_fecha(fecha_inicio)
+    fin = parse_fecha(fecha_fin)
+
+    if inicio < datetime.now():
+        raise HTTPException(status_code=400,
+            detail="No puedes crear promociones con fechas pasadas")
+
+    if inicio >= fin:
         raise HTTPException(status_code=400,
             detail="La fecha de inicio debe ser anterior a la fecha de fin")
 
@@ -140,7 +155,10 @@ def editar(
         raise HTTPException(status_code=400,
             detail="El porcentaje no puede ser mayor a 100")
 
-    if fecha_inicio >= fecha_fin:
+    inicio = parse_fecha(fecha_inicio)
+    fin = parse_fecha(fecha_fin)
+
+    if inicio >= fin:
         raise HTTPException(status_code=400,
             detail="La fecha de inicio debe ser anterior a la fecha de fin")
 

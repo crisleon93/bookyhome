@@ -14,6 +14,12 @@ const formatFecha = (f) => {
   return new Date(f).toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" });
 };
 
+const inputDateTimeNow = () => {
+  const date = new Date();
+  date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
+  return date.toISOString().slice(0, 16);
+};
+
 const TIPOS = [
   { value: "porcentaje", label: "Porcentaje (%)" },
   { value: "fijo",       label: "Valor fijo (COP)" },
@@ -49,6 +55,7 @@ function FormOferta({ libros, ofertaEditar, onGuardado, onCancelar }) {
   });
   const [cargando, setCargando] = useState(false);
   const [error,    setError]    = useState("");
+  const fechaMinima = inputDateTimeNow();
 
   const toggleLibro = (id) => {
     setForm((f) => ({
@@ -63,6 +70,8 @@ function FormOferta({ libros, ofertaEditar, onGuardado, onCancelar }) {
     if (!form.nombre_oferta.trim())  return setError("El nombre es obligatorio");
     if (!form.fecha_inicio)          return setError("La fecha de inicio es obligatoria");
     if (!form.fecha_fin)             return setError("La fecha de fin es obligatoria");
+    if (!esEdicion && form.fecha_inicio < fechaMinima)
+                                     return setError("No puedes crear promociones con fechas pasadas");
     if (form.fecha_inicio >= form.fecha_fin)
                                      return setError("La fecha de inicio debe ser anterior a la de fin");
     if (form.tipo_descuento !== "especial" && (!form.valor_descuento || Number(form.valor_descuento) <= 0))
@@ -79,16 +88,6 @@ function FormOferta({ libros, ofertaEditar, onGuardado, onCancelar }) {
       data.append("fecha_inicio",    form.fecha_inicio.replace("T", " ") + ":00");
       data.append("fecha_fin",       form.fecha_fin.replace("T", " ")    + ":00");
       data.append("ids_libros",      form.ids_libros.join(","));
-
-       console.log("Token:", localStorage.getItem("token"));
-      console.log("Datos:", {
-        nombre_oferta: form.nombre_oferta,
-        tipo_descuento: form.tipo_descuento,
-        valor_descuento: form.valor_descuento,
-        fecha_inicio: form.fecha_inicio,
-        fecha_fin: form.fecha_fin,
-        ids_libros: form.ids_libros,
-      });
 
       if (esEdicion) {
         await api.put(`/ofertas/${ofertaEditar.id_oferta}`, data, {
@@ -157,12 +156,12 @@ function FormOferta({ libros, ofertaEditar, onGuardado, onCancelar }) {
         {/* Fechas */}
         <div className="form-group">
           <label>Fecha inicio *</label>
-          <input type="datetime-local" value={form.fecha_inicio}
+          <input type="datetime-local" min={fechaMinima} value={form.fecha_inicio}
             onChange={(e) => setForm({ ...form, fecha_inicio: e.target.value })} />
         </div>
         <div className="form-group">
           <label>Fecha fin *</label>
-          <input type="datetime-local" value={form.fecha_fin}
+          <input type="datetime-local" min={form.fecha_inicio || fechaMinima} value={form.fecha_fin}
             onChange={(e) => setForm({ ...form, fecha_fin: e.target.value })} />
         </div>
       </div>

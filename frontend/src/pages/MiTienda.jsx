@@ -73,7 +73,7 @@ const BadgeEstado = ({ estado }) => {
   );
 };
 
-function AlertaStock({ alertas }) {
+function AlertaStock({ alertas, umbral }) {
   if (!alertas || alertas.length === 0) return null;
   return (
     <div style={{
@@ -84,6 +84,9 @@ function AlertaStock({ alertas }) {
       <div style={{ flex: 1 }}>
         <p style={{ margin: "0 0 8px", fontWeight: 700, fontSize: "0.92rem", color: "#92400e" }}>
           {alertas.length === 1 ? "1 libro con stock bajo" : `${alertas.length} libros con stock bajo`}
+        </p>
+        <p style={{ margin: "0 0 8px", fontSize: "0.78rem", color: "#854d0e" }}>
+          Alerta configurada para {umbral} unidad{Number(umbral) === 1 ? "" : "es"} o menos.
         </p>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
           {alertas.map((libro, i) => (
@@ -297,6 +300,7 @@ export default function MiTienda() {
   const [topVendidos,   setTopVendidos]   = useState([]);
   const [loadingTop,    setLoadingTop]    = useState(false);
   const [alertasStock,  setAlertasStock]  = useState([]);
+  const [stockUmbral,   setStockUmbral]   = useState(3);
   const [tiendaInfo,    setTiendaInfo]    = useState(null);
   const [tiendaForm,    setTiendaForm]    = useState({ nombre_tienda: "", direccion: "", telefono: "" });
   const [tiendaMsg,     setTiendaMsg]     = useState("");
@@ -344,7 +348,7 @@ export default function MiTienda() {
       .then((r) => setTopVendidos(r.data)).catch(() => setTopVendidos([]))
       .finally(() => setLoadingTop(false));
 
-    api.get("/libros/alertas-stock")
+    api.get(`/libros/alertas-stock?umbral=${stockUmbral}`)
       .then((r) => setAlertasStock(r.data))
       .catch(() => setAlertasStock([]));
 
@@ -361,10 +365,10 @@ export default function MiTienda() {
         }
       })
       .catch(() => {});
-  }, []);
+  }, [stockUmbral]);
 
   const cargarAlertas = () => {
-    api.get("/libros/alertas-stock").then((r) => setAlertasStock(r.data)).catch(() => {});
+    api.get(`/libros/alertas-stock?umbral=${stockUmbral}`).then((r) => setAlertasStock(r.data)).catch(() => {});
   };
 
   const handleLogout = () => { localStorage.removeItem("token"); navigate("/login"); };
@@ -389,7 +393,20 @@ export default function MiTienda() {
         <p>Aquí tienes un resumen de tu tienda en BookyHome.</p>
       </div>
 
-      <AlertaStock alertas={alertasStock} />
+      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "10px" }}>
+        <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "0.85rem", fontWeight: 700, color: "#555" }}>
+          Avisar stock minimo
+          <input
+            type="number"
+            min="0"
+            value={stockUmbral}
+            onChange={(e) => setStockUmbral(Math.max(0, Number(e.target.value)))}
+            style={{ width: "76px", padding: "7px 9px", border: "1.5px solid #e0dbd4", borderRadius: "6px", fontFamily: "Montserrat, sans-serif" }}
+          />
+        </label>
+      </div>
+
+      <AlertaStock alertas={alertasStock} umbral={stockUmbral} />
 
       <div className="stats-seccion-label">Tus libros</div>
       <div className="seller-stats">
@@ -479,7 +496,7 @@ export default function MiTienda() {
         </button>
       </div>
 
-      <AlertaStock alertas={alertasStock} />
+      <AlertaStock alertas={alertasStock} umbral={stockUmbral} />
 
       <div className="seller-books">
         {loadingLibros && <p style={{ color: "#999", padding: "20px 0" }}>Cargando...</p>}

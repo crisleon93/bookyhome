@@ -1,7 +1,10 @@
 import { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import logo from '../assets/logo.png';
 import { IconSearch, IconUser, IconUserPlus } from './Icons';
+import { login } from '../services/api';
+import { jwtDecode } from 'jwt-decode';
+import { notify } from './ToastProvider';
 
 const IconLocation = () => (
   <svg className="icon-top-bar" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
@@ -68,11 +71,42 @@ function ModalOption({ to, iconPath, title, desc, onClose }) {
 
 function Header({ variant }) {
   const location = useLocation();
+  const navigate = useNavigate();
   const [modalOpen, setModalOpen] = useState(false);
+  const [loginOpen, setLoginOpen] = useState(false);
+  const [loginForm, setLoginForm] = useState({ email: '', password: '' });
+  const [loginLoading, setLoginLoading] = useState(false);
+  const [loginError, setLoginError] = useState('');
 
   const isHome = location.pathname === '/';
   const isSimple = variant === "simple";
   const isWhite = variant === "white" || !variant;
+
+  const handleLoginSubmit = async (event) => {
+    event.preventDefault();
+    setLoginError('');
+    if (!loginForm.email.trim() || !loginForm.password.trim()) {
+      setLoginError('Completa correo y contrasena');
+      return;
+    }
+
+    setLoginLoading(true);
+    try {
+      const res = await login(loginForm);
+      const token = res.data.access_token;
+      localStorage.setItem('token', token);
+      const decoded = jwtDecode(token);
+      notify('Inicio de sesion correcto', 'success');
+      setLoginOpen(false);
+      navigate(decoded.rol === 'vendedor' ? '/mi-tienda' : '/post-login');
+    } catch (err) {
+      const message = err.response?.data?.detail || 'Email o contrasena incorrectos';
+      setLoginError(message);
+      notify(message, 'error');
+    } finally {
+      setLoginLoading(false);
+    }
+  };
 
   return (
     <>
@@ -140,10 +174,15 @@ function Header({ variant }) {
             </div>
 
             <div className="header-actions">
-              <Link to="/login" className="user-access">
+              <button
+                type="button"
+                className="user-access"
+                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                onClick={() => setLoginOpen(true)}
+              >
                 <IconUser />
                 <span>Ingresa</span>
-              </Link>
+              </button>
 
               <button
                 className="user-access"
@@ -181,6 +220,48 @@ function Header({ variant }) {
                 title="Tengo una librería"
                 desc="Quiero vender mis libros en BookyHome"
               />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {loginOpen && (
+        <div className="modal-overlay open" onClick={e => { if (e.target === e.currentTarget) setLoginOpen(false) }}>
+          <div className="modal-card">
+            <button className="modal-close" aria-label="Cerrar" onClick={() => setLoginOpen(false)}>
+              <IconClose />
+            </button>
+            <h2 className="modal-title">Iniciar sesion</h2>
+            <p className="modal-subtitle">Ingresa con tu cuenta de BookyHome</p>
+            {loginError && <span className="error-msg" style={{ textAlign: 'center', marginBottom: '1rem' }}>{loginError}</span>}
+            <form onSubmit={handleLoginSubmit} noValidate>
+              <div className="auth-field">
+                <label htmlFor="modal-login-email">Email</label>
+                <input
+                  id="modal-login-email"
+                  type="email"
+                  placeholder="tu@email.com"
+                  value={loginForm.email}
+                  onChange={e => setLoginForm({ ...loginForm, email: e.target.value })}
+                />
+              </div>
+              <div className="auth-field">
+                <label htmlFor="modal-login-password">Contrasena</label>
+                <input
+                  id="modal-login-password"
+                  type="password"
+                  placeholder="Tu contrasena"
+                  value={loginForm.password}
+                  onChange={e => setLoginForm({ ...loginForm, password: e.target.value })}
+                />
+              </div>
+              <button type="submit" className="btn btn-vinotinto" disabled={loginLoading}>
+                {loginLoading ? 'Ingresando...' : 'Ingresar'}
+              </button>
+            </form>
+            <div className="auth-footer-links">
+              <p><Link to="/forgot-password" onClick={() => setLoginOpen(false)}>Olvide mi contrasena</Link></p>
+              <p><Link to="/register" onClick={() => setLoginOpen(false)}>Crear cuenta</Link></p>
             </div>
           </div>
         </div>

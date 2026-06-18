@@ -4,6 +4,8 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-route
 
 import Header from './components/Header';
 import Footer from './components/Footer';
+import CookieBanner from './components/CookieBanner';
+import { ToastProvider } from './components/ToastProvider';
 
 import Home from './pages/Home';
 import Login from './pages/Login';
@@ -38,7 +40,7 @@ function MainLayout() {
   const userRole = getUserRole();
 
   return (
-    <>
+    <ToastProvider>
       <Header variant={variant} />
 
       <Routes>
@@ -85,7 +87,8 @@ function MainLayout() {
       </Routes>
 
       <Footer />
-    </>
+      <CookieBanner />
+    </ToastProvider>
   );
 }
 
