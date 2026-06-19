@@ -165,7 +165,7 @@ export default function Header({
               icon={<IconBook size={22} color={VINOTINTO} />}
               title="Tengo una librería"
               desc="Quiero vender mis libros en BookyHome"
-              onPress={() => { setModalVisible(false); navigation?.navigate?.('Register'); }}
+              onPress={() => { setModalVisible(false); navigation?.navigate?.('RegisterLibrary'); }}
             />
           </View>
         </TouchableOpacity>

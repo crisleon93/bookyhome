@@ -203,7 +203,7 @@ export default function RegisterLibrary({ navigation }) {
                       <View style={styles.inputIcon}><IconLock /></View>
                       <TextInput
                         style={styles.input}
-                        placeholder="••••••••"
+                        placeholder="Tu contraseña"
                         placeholderTextColor="#aaa"
                         value={password}
                         onChangeText={(t) => { setPassword(t); clearField('password'); }}

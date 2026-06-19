@@ -102,7 +102,7 @@ export default function Home({ navigation }) {
             <TouchableOpacity style={styles.heroBtnPrimary} onPress={() => navigation.navigate('Register')} activeOpacity={0.85}>
               <Text style={styles.heroBtnPrimaryText}>Comenzar a comprar</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.heroBtnSecondary} onPress={() => navigation.navigate('Register')} activeOpacity={0.85}>
+            <TouchableOpacity style={styles.heroBtnSecondary} onPress={() => navigation.navigate('RegisterLibrary')} activeOpacity={0.85}>
               <Text style={styles.heroBtnSecondaryText}>Vender libros</Text>
             </TouchableOpacity>
           </View>
@@ -191,7 +191,7 @@ export default function Home({ navigation }) {
           <Text style={styles.libCtaSub}>
             Únete a nuestra red de librerías y alcanza a miles de lectores en todo el país.
           </Text>
-          <TouchableOpacity style={styles.libCtaBtn} onPress={() => navigation.navigate('Register')} activeOpacity={0.85}>
+          <TouchableOpacity style={styles.libCtaBtn} onPress={() => navigation.navigate('RegisterLibrary')} activeOpacity={0.85}>
             <Text style={styles.libCtaBtnText}>Registrar mi librería</Text>
           </TouchableOpacity>
         </View>
