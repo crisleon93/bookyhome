@@ -17,7 +17,6 @@ import ResetPassword from './pages/Resetpassword';
 import PostLogin from './pages/PostLogin';
 import MiTienda from './pages/MiTienda';
 import PrivateRoute from './components/PrivateRoute';
-import Carrito from './pages/Carrito';
 import Checkout from './pages/Checkout';
 import StoredProcedurePage from './pages/StoredProcedurePage';
 import PublicarLibro from './pages/PublicarLibro';
@@ -51,7 +50,6 @@ function MainLayout() {
         <Route path="/libreria" element={<Libreria />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
-        <Route path="/carrito" element={<Carrito />} />
         <Route path="/libros" element={<StoredProcedurePage />} />
         <Route path="/catalogo" element={<Catalogo />} />
         <Route path="/catalogo/:id" element={<DetalleLibro />} />
@@ -68,7 +66,6 @@ function MainLayout() {
         {/* ── RUTAS EXCLUSIVAS DE ADMINISTRADOR ── */}
         <Route element={<PrivateRoute allowedRoles={['admin', 'administrador']} />}>
           <Route path="/admin" element={<AdminDashboard />} />
-          {/* Si tu compañero agrega más páginas de admin como /admin/libros, van aquí adentro */}
         </Route>
 
         {/* ── REDIRECCIÓN LOGÍSTICA POR ROL ── */}
@@ -86,7 +83,10 @@ function MainLayout() {
             )
           }
         />
-        
+
+        {/* El carrito vive dentro del dashboard (PostLogin), no como página propia */}
+        <Route path="/carrito" element={<Navigate to="/post-login" replace />} />
+
         {/* Catch-all para rutas inexistentes */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

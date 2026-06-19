@@ -5,6 +5,7 @@ import os, shutil, uuid
 
 from app.auth import verify_token
 from app.models.libro import (
+    eliminar_libro_por_admin,
     ocultar_libro,
     crear_libro,
     agregar_imagen_libro,
@@ -122,6 +123,18 @@ async def publicar_libro(
     if not tienda:
         raise HTTPException(status_code=404, detail="No tienes una tienda registrada")
 
+    # 🚨 NUEVA VALIDACIÓN: Bloquear si la tienda no está aprobada ('Activa')
+    # Validamos si 'tienda' es un diccionario o una tupla de la DB
+    estado_tienda = tienda.get("estado_tienda") if isinstance(tienda, dict) else tienda[5] 
+    
+    # Si viene en minúsculas 'pendiente', 'suspendida' o diferente de 'activa', se frena
+    if not estado_tienda or str(estado_tienda).lower() != "activa":
+        raise HTTPException(
+            status_code=403, 
+            detail="Tu librería se encuentra pendiente de aprobación o suspendida por el administrador. No tienes permisos para publicar libros."
+        )
+
+    # Si la tienda está activa, el código continúa su camino normal...
     resultado = crear_libro(
         id_tienda=tienda["id_tienda"],
         id_categoria=id_categoria,
@@ -204,17 +217,31 @@ def editar(
 # DELETE /libros/{id_libro}
 @router.delete("/{id_libro}")
 def eliminar(id_libro: int, user=Depends(get_current_user)):
+    rol_usuario = user.get("rol") # Asegúrate de que tu token traiga el rol
+    
+    # 👑 SI ES ADMINISTRADOR: Borra directo sin pedir tienda
+    if rol_usuario == "admin":
+        # Pasamos un ID de tienda genérico o modificamos la función para que acepte None
+        resultado = eliminar_libro_por_admin(id_libro) 
+        if not resultado["ok"]:
+            raise HTTPException(status_code=500, detail=resultado["error"])
+        return {"mensaje": "Libro eliminado por el Administrador"}
+        
+    # 🏪 SI ES VENDEDOR: Mantiene tu lógica estricta de seguridad
     id_usuario = int(user["sub"])
     tienda = obtener_tienda_por_usuario(id_usuario)
     if not tienda:
         raise HTTPException(status_code=404, detail="No tienes una tienda registrada")
+        
+    # Validamos que esté activa para poder operar
+    estado = tienda.get("estado_tienda") if isinstance(tienda, dict) else tienda[5]
+    if str(estado).lower() != "activa":
+        raise HTTPException(status_code=403, detail="Tu tienda no está activa")
 
     resultado = eliminar_libro(id_libro, tienda["id_tienda"])
     if not resultado["ok"]:
-        raise HTTPException(
-            status_code=403 if "autorizado" in resultado["error"].lower() else 500,
-            detail=resultado["error"]
-        )
+        raise HTTPException(status_code=500, detail=resultado["error"])
+        
     return {"mensaje": "Libro eliminado correctamente"}
 
 

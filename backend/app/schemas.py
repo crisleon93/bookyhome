@@ -45,6 +45,8 @@ class Token(BaseModel):
 # ===========================
 # LIBROS
 # ===========================
+class OcultarPayload(BaseModel):
+    oculto: bool
 
 class LibroCrear(BaseModel):
     id_categoria: int
@@ -82,3 +84,11 @@ class PagoRequest(BaseModel):
     order_id: int
     amount: float
     payment_method: str
+
+
+# ===========================
+# Estado tiendas
+# ===========================
+
+class EstadoTiendaPayload(BaseModel):
+    estado: str  # Recibirá 'Activa' o 'Suspendida'

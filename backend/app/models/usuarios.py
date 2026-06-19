@@ -22,12 +22,22 @@ def crear_usuario(nombre: str, email: str, password: str, telefono: str, rol: st
 
 def obtener_usuario_por_email(email: str):
     db = get_db()
-    cursor = db.cursor(dictionary=True)
-    cursor.execute("SELECT id_usuario, nombre_usuario, correo_usuario, contrasena_usuario, rol FROM usuarios WHERE correo_usuario = %s", (email,))
-    user = cursor.fetchone()
-    cursor.close()
-    db.close()
-    return user
+    cursor = db.cursor(dictionary=True) 
+    try:
+        query = """
+            SELECT id_usuario, nombre_usuario, correo_usuario, contrasena_usuario, rol, estado_usuario 
+            FROM usuarios 
+            WHERE correo_usuario = %s
+        """
+        cursor.execute(query, (email,))
+        user = cursor.fetchone()
+        return user
+    except Exception as e:
+        print(f"Error: {e}")
+        return None
+    finally:
+        cursor.close()
+        db.close()
 
 def login_usuario(email: str, password: str):
     user = obtener_usuario_por_email(email)

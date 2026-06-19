@@ -28,7 +28,13 @@ def login(data: UsuarioLogin):
     if not user:
         raise HTTPException(status_code=401, detail="Email o contraseña incorrectos")
 
-    # Creamos el token con los datos exactos que vienen de la base de datos de Docker
+    if user.get("estado_usuario") == "Bloqueado":
+        raise HTTPException(
+            status_code=403, 
+            detail="Tu cuenta ha sido suspendida. Comunícate con el administrador."
+        )
+
+    # Creamos el token con los datos que vienen de la base de datos de Docker
     token = create_token({
         "sub": str(user["id_usuario"]),
         "nombre": user["nombre_usuario"],
