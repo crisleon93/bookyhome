@@ -1,136 +1,107 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { registerLibrary } from '../services/api'
+import { notify } from '../components/ToastProvider'
+import { 
+  IconUser, 
+  IconStore, 
+  IconLocation, 
+  IconPhone, 
+  IconMail, 
+  IconLock, 
+  IconEyeOpen, 
+  IconEyeClosed,
+  IconCheck
+} from '../components/Icons'
+import { LegalModal, Terminos, Privacidad } from '../components/Legal'
 
-// ── Íconos ────────────────────────────────────────────────────────────────────
-
-const IconUser = () => (
-  <svg className="auth-input-icon" xmlns="http://www.w3.org/2000/svg" fill="none"
-    viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
-    <path strokeLinecap="round" strokeLinejoin="round"
-      d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.5 20.25a8.25 8.25 0 0115 0" />
-  </svg>
-)
-
-const IconStore = () => (
-  <svg className="auth-input-icon" xmlns="http://www.w3.org/2000/svg" fill="none"
-    viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
-    <path strokeLinecap="round" strokeLinejoin="round"
-      d="M13.5 21v-7.5A2.25 2.25 0 0011.25 11.25h-1.5A2.25 2.25 0 007.5 13.5V21m6 0H7.5m6 0h3.75A2.25 2.25 0 0019.5 18.75V9.375a2.25 2.25 0 00-.659-1.591l-4.5-4.5A2.25 2.25 0 0012.75 3H6.75A2.25 2.25 0 004.5 5.25v13.5A2.25 2.25 0 006.75 21H7.5" />
-  </svg>
-)
-
-const IconLocation = () => (
-  <svg className="auth-input-icon" xmlns="http://www.w3.org/2000/svg" fill="none"
-    viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
-    <path strokeLinecap="round" strokeLinejoin="round"
-      d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
-    <path strokeLinecap="round" strokeLinejoin="round"
-      d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
-  </svg>
-)
-
-// ── NUEVO ÍCONO PARA EL TELÉFONO DEL VENDEDOR ──────────────────────────────────
-const IconPhone = () => (
-  <svg className="auth-input-icon" xmlns="http://www.w3.org/2000/svg" fill="none"
-    viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
-    <path strokeLinecap="round" strokeLinejoin="round"
-      d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-2.824-1.554-5.154-3.883-6.707-6.707l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z" />
-  </svg>
-)
-
-const IconMail = () => (
-  <svg className="auth-input-icon" xmlns="http://www.w3.org/2000/svg" fill="none"
-    viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
-    <path strokeLinecap="round" strokeLinejoin="round"
-      d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25H4.5a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5H4.5a2.25 2.25 0 00-2.25 2.25m19.5 0l-9.75 6.75L2.25 6.75" />
-  </svg>
-)
-
-const IconLock = () => (
-  <svg className="auth-input-icon" xmlns="http://www.w3.org/2000/svg" fill="none"
-    viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
-    <path strokeLinecap="round" strokeLinejoin="round"
-      d="M16.5 10.5V7.125A4.125 4.125 0 008.25 7.125V10.5M6 10.5h12a1.5 1.5 0 011.5 1.5v7.5A1.5 1.5 0 0118 21H6a1.5 1.5 0 01-1.5-1.5V12A1.5 1.5 0 016 10.5z" />
-  </svg>
-)
-
-const IconEyeOpen = () => (
-  <svg className="eye-icon" xmlns="http://www.w3.org/2000/svg" fill="none"
-    viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
-    <path strokeLinecap="round" strokeLinejoin="round"
-      d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
-    <path strokeLinecap="round" strokeLinejoin="round"
-      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-  </svg>
-)
-
-const IconEyeClosed = () => (
-  <svg className="eye-icon" xmlns="http://www.w3.org/2000/svg" fill="none"
-    viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
-    <path strokeLinecap="round" strokeLinejoin="round"
-      d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
-  </svg>
-)
-
-// ── Componente ────────────────────────────────────────────────────────────────
-
-function Libreria() {
+function Libreria({ isModal = false, onSuccess }) {
   const [nombre,    setNombre]    = useState('')
   const [libreria,  setLibreria]  = useState('')
   const [ciudad,    setCiudad]    = useState('')
   const [tipoVia,   setTipoVia]   = useState('')
   const [numeroVia, setNumeroVia] = useState('')
   const [complemento, setComplemento] = useState('')
-  const [telefono,  setTelefono]  = useState('') // ── NUEVO ESTADO AGREGADO ─────
+  const [telefono,  setTelefono]  = useState('')
   const [email,     setEmail]     = useState('')
   const [password,  setPassword]  = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [showPass,  setShowPass]  = useState(false)
   const [loading,   setLoading]   = useState(false)
   const [exito,     setExito]     = useState('')
   const [error,     setError]     = useState('')
   
-  // Se agregó 'telefono' al objeto de errores
-  const [errors,    setErrors]    = useState({
-    nombre: '', libreria: '', direccion: '', telefono: '', email: '', password: ''
-  })
+  const [aceptoTerminos, setAceptoTerminos] = useState(false)
+  const [aceptoPrivacidad, setAceptoPrivacidad] = useState(false)
+
+  const [showTerminos, setShowTerminos] = useState(false)
+  const [showPrivacidad, setShowPrivacidad] = useState(false)
 
   const navigate = useNavigate()
+  
   const direccionCompleta = [ciudad, tipoVia && numeroVia ? `${tipoVia} ${numeroVia}` : '', complemento]
     .filter(Boolean)
     .join(', ')
 
-  const validate = () => {
-    const e = { nombre: '', libreria: '', direccion: '', telefono: '', email: '', password: '' }
-    let valid = true
+  const terminosCompletos = aceptoTerminos && aceptoPrivacidad
 
-    if (!nombre.trim())    { e.nombre    = 'Este campo es obligatorio'; valid = false }
-    if (!libreria.trim())  { e.libreria  = 'Este campo es obligatorio'; valid = false }
-    if (!direccionCompleta.trim()) { e.direccion = 'Completa la direccion de la tienda'; valid = false }
-    
-    // ── VALIDACIÓN DEL TELÉFONO DEL VENDEDOR ───────────────────────────────────
-    if (!telefono.trim()) { 
-      e.telefono = 'Este campo es obligatorio'; valid = false 
-    } else if (!/^\d{7,15}$/.test(telefono.trim())) {
-      e.telefono = 'Ingresa un número válido (solo números, 7-15 dígitos)'; valid = false
-    }
+  const formReady =
+    nombre.trim() &&
+    libreria.trim() &&
+    ciudad &&
+    tipoVia &&
+    numeroVia.trim() &&
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) &&
+    /^\d{7,15}$/.test(telefono.trim()) &&
+    password.length >= 8 &&
+    password === confirmPassword &&
+    terminosCompletos
 
-    if (!email.trim()) {
-      e.email = 'Este campo es obligatorio'; valid = false
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      e.email = 'Ingresa un email válido'; valid = false
-    }
-    if (!password.trim()) {
-      e.password = 'Este campo es obligatorio'; valid = false
-    } else if (password.length < 8) {
-      e.password = 'Mínimo 8 caracteres'; valid = false
-    }
-
-    setErrors(e)
-    return valid
+  const blockClipboard = (event) => {
+    event.preventDefault()
+    notify('Por seguridad, escribe este campo manualmente.', 'info')
   }
 
-  const clearField = (field) => setErrors(p => ({ ...p, [field]: '' }))
+  const validate = () => {
+    setError('')
+    if (!nombre.trim()) {
+      setError('El nombre es obligatorio')
+      return false
+    }
+    if (!libreria.trim()) {
+      setError('El nombre de la librería es obligatorio')
+      return false
+    }
+    if (!ciudad || !tipoVia || !numeroVia.trim()) {
+      setError('Completa la ubicación de la tienda')
+      return false
+    }
+    if (!telefono.trim()) { 
+      setError('El teléfono es obligatorio')
+      return false 
+    }
+    if (!/^\d{7,15}$/.test(telefono.trim())) {
+      setError('Ingresa un número de teléfono válido (solo números, entre 7 y 15 dígitos)')
+      return false
+    }
+    if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setError('Ingresa un email válido')
+      return false
+    }
+    if (!password.trim() || password.length < 8) {
+      setError('La contraseña debe tener al menos 8 caracteres')
+      return false
+    }
+    if (password !== confirmPassword) {
+      setError('Las contraseñas no coinciden')
+      return false
+    }
+    if (!terminosCompletos) {
+      setError('Debes aceptar tanto los Términos y Condiciones como la Política de Privacidad')
+      return false
+    }
+    return true
+  }
 
   const handleSubmit = async (ev) => {
     ev.preventDefault()
@@ -139,7 +110,6 @@ function Libreria() {
 
     setLoading(true)
     try {
-      // ── ENVIAMOS TELÉFONO Y EL ROL EXPLICITO DE VENDEDOR ──────────────────────
       await registerLibrary({ 
         nombre, 
         libreria, 
@@ -147,214 +117,281 @@ function Libreria() {
         telefono,
         email, 
         password,
-        rol: "vendedor" // Vinculamos el rol directamente para la redirección
+        rol: "vendedor"
       })
-      setExito('¡Librería registrada exitosamente! Ya puedes iniciar sesión.')
-      setTimeout(() => navigate('/login'), 2500)
+      setExito('¡Librería registrada exitosamente! Redirigiendo...')
+      notify('Librería registrada exitosamente', 'success')
+      setTimeout(() => {
+        if (isModal && onSuccess) {
+          onSuccess()
+        } else {
+          navigate('/login')
+        }
+      }, 2500)
     } catch (err) {
-      setError(err.response?.data?.detail || 'Error al registrar la librería')
+      const msg = err.response?.data?.detail || 'Error al registrar la librería'
+      setError(msg)
+      notify(msg, 'error')
     } finally {
       setLoading(false)
     }
   }
 
-  return (
-    <>
-    <main className="auth-main auth-main--compact">
-      <div className="auth-card auth-card--wide auth-card--compact">
+  const formContent = (
+    <div className={isModal ? "" : "auth-card auth-card--wide auth-card--compact"}>
 
-        <h1 className="auth-title">Registrar Librería</h1>
-        <p className="auth-subtitle">Vende tus libros en BookyHome</p>
+      <h1 className="auth-title">Registrar Librería</h1>
+      <p className="auth-subtitle">Vende tus libros en BookyHome</p>
 
-        {exito && (
-          <div className="flash flash--success">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-              stroke="currentColor" strokeWidth="2" width="18" height="18">
-              <path strokeLinecap="round" strokeLinejoin="round"
-                d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            {exito}
+      {exito && (
+        <div className="flash flash--success">
+          <IconCheck />
+          {exito}
+        </div>
+      )}
+
+      {error && (
+        <span className="error-msg" style={{ textAlign: 'center', display: 'block', marginBottom: '1rem' }}>
+          {error}
+        </span>
+      )}
+
+      <form onSubmit={handleSubmit} noValidate>
+        <div className="auth-grid">
+
+          {/* Nombre del dueño */}
+          <div className="auth-field">
+            <label htmlFor="nombre">Nombre</label>
+            <div className="auth-input-wrapper">
+              <IconUser className="auth-input-icon" />
+              <input
+                id="nombre"
+                type="text"
+                placeholder="Tu nombre completo"
+                value={nombre}
+                onChange={e => { setNombre(e.target.value); setError('') }}
+              />
+            </div>
           </div>
-        )}
 
-        {error && (
-          <span className="error-msg" style={{ textAlign: 'center', display: 'block', marginBottom: '1rem' }}>
-            {error}
-          </span>
-        )}
-
-        <form onSubmit={handleSubmit} noValidate>
-          <div className="auth-grid">
-
-            {/* Nombre del dueño */}
-            <div className="auth-field">
-              <label htmlFor="nombre">Nombre</label>
-              <div className="auth-input-wrapper">
-                <IconUser />
-                <input
-                  id="nombre"
-                  type="text"
-                  placeholder="Tu nombre completo"
-                  value={nombre}
-                  onChange={e => { setNombre(e.target.value); clearField('nombre') }}
-                  className={errors.nombre ? 'input-error' : ''}
-                />
-              </div>
-              {errors.nombre && <span className="error-msg">{errors.nombre}</span>}
+          {/* Nombre librería */}
+          <div className="auth-field">
+            <label htmlFor="libreria">Nombre de la librería</label>
+            <div className="auth-input-wrapper">
+              <IconStore />
+              <input
+                id="libreria"
+                type="text"
+                placeholder="Mi Librería"
+                value={libreria}
+                onChange={e => { setLibreria(e.target.value); setError('') }}
+              />
             </div>
+          </div>
 
-            {/* Nombre librería */}
-            <div className="auth-field">
-              <label htmlFor="libreria">Nombre de la librería</label>
+          {/* Dirección */}
+          <div className="auth-field auth-field--full">
+            <label htmlFor="ciudad">Ubicación de la tienda</label>
+            <div className="address-grid">
               <div className="auth-input-wrapper">
-                <IconStore />
-                <input
-                  id="libreria"
-                  type="text"
-                  placeholder="Mi Librería"
-                  value={libreria}
-                  onChange={e => { setLibreria(e.target.value); clearField('libreria') }}
-                  className={errors.libreria ? 'input-error' : ''}
-                />
-              </div>
-              {errors.libreria && <span className="error-msg">{errors.libreria}</span>}
-            </div>
-
-            <div className="auth-field auth-field--full">
-              <label htmlFor="ciudad">Ubicacion de la tienda</label>
-              <div className="address-grid">
-                <div className="auth-input-wrapper">
-                  <IconLocation />
-                  <select
-                    id="ciudad"
-                    className="auth-select"
-                    value={ciudad}
-                    onChange={e => { setCiudad(e.target.value); clearField('direccion') }}
-                  >
-                    <option value="">Ciudad</option>
-                    <option value="Bogota">Bogota</option>
-                    <option value="Medellin">Medellin</option>
-                    <option value="Cali">Cali</option>
-                    <option value="Barranquilla">Barranquilla</option>
-                    <option value="Cartagena">Cartagena</option>
-                  </select>
-                </div>
-                <div className="auth-input-wrapper">
-                  <IconLocation />
-                  <select
-                    className="auth-select"
-                    value={tipoVia}
-                    onChange={e => { setTipoVia(e.target.value); clearField('direccion') }}
-                  >
-                    <option value="">Tipo de via</option>
-                    <option value="Calle">Calle</option>
-                    <option value="Carrera">Carrera</option>
-                    <option value="Avenida">Avenida</option>
-                    <option value="Diagonal">Diagonal</option>
-                    <option value="Transversal">Transversal</option>
-                  </select>
-                </div>
-                <div className="auth-input-wrapper">
-                  <IconLocation />
-                  <input
-                    type="text"
-                    placeholder="Numero: 45 # 12-30"
-                    value={numeroVia}
-                    onChange={e => { setNumeroVia(e.target.value); clearField('direccion') }}
-                  />
-                </div>
-                <div className="auth-input-wrapper">
-                  <IconLocation />
-                  <input
-                    type="text"
-                    placeholder="Complemento: local, piso, barrio"
-                    value={complemento}
-                    onChange={e => setComplemento(e.target.value)}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {errors.direccion && (
-              <div className="auth-field auth-field--full">
-                <span className="error-msg">{errors.direccion}</span>
-              </div>
-            )}
-
-            {/* ── NUEVO INPUT VISUAL DE TELÉFONO EN LA GRID ────────────────────── */}
-            <div className="auth-field">
-              <label htmlFor="telefono">Teléfono / Celular</label>
-              <div className="auth-input-wrapper">
-                <IconPhone />
-                <input
-                  id="telefono"
-                  type="tel"
-                  placeholder="Tu teléfono"
-                  value={telefono}
-                  onChange={e => { setTelefono(e.target.value); clearField('telefono') }}
-                  className={errors.telefono ? 'input-error' : ''}
-                />
-              </div>
-              {errors.telefono && <span className="error-msg">{errors.telefono}</span>}
-            </div>
-
-            {/* Email */}
-            <div className="auth-field">
-              <label htmlFor="email">Email</label>
-              <div className="auth-input-wrapper">
-                <IconMail />
-                <input
-                  id="email"
-                  type="email"
-                  placeholder="@email.com"
-                  value={email}
-                  onChange={e => { setEmail(e.target.value); clearField('email') }}
-                  className={errors.email ? 'input-error' : ''}
-                />
-              </div>
-              {errors.email && <span className="error-msg">{errors.email}</span>}
-            </div>
-
-            {/* Contraseña + ojito */}
-            <div className="auth-field">
-              <label htmlFor="password">Contraseña</label>
-              <div className="auth-input-wrapper">
-                <IconLock />
-                <input
-                  id="password"
-                  type={showPass ? 'text' : 'password'}
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={e => { setPassword(e.target.value); clearField('password') }}
-                  className={errors.password ? 'input-error' : ''}
-                />
-                <button
-                  type="button"
-                  className="btn-eye"
-                  aria-label={showPass ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-                  onClick={() => setShowPass(v => !v)}
+                <IconLocation />
+                <select
+                  id="ciudad"
+                  className="auth-select"
+                  value={ciudad}
+                  onChange={e => { setCiudad(e.target.value); setError('') }}
                 >
-                  {showPass ? <IconEyeClosed /> : <IconEyeOpen />}
-                </button>
+                  <option value="">Ciudad</option>
+                  <option value="Bogota">Bogotá</option>
+                  <option value="Medellin">Medellín</option>
+                  <option value="Cali">Cali</option>
+                  <option value="Barranquilla">Barranquilla</option>
+                  <option value="Cartagena">Cartagena</option>
+                </select>
               </div>
-              {errors.password && <span className="error-msg">{errors.password}</span>}
+              <div className="auth-input-wrapper">
+                <IconLocation />
+                <select
+                  className="auth-select"
+                  value={tipoVia}
+                  onChange={e => { setTipoVia(e.target.value); setError('') }}
+                >
+                  <option value="">Tipo de vía</option>
+                  <option value="Calle">Calle</option>
+                  <option value="Carrera">Carrera</option>
+                  <option value="Avenida">Avenida</option>
+                  <option value="Diagonal">Diagonal</option>
+                  <option value="Transversal">Transversal</option>
+                </select>
+              </div>
+              <div className="auth-input-wrapper">
+                <IconLocation />
+                <input
+                  type="text"
+                  placeholder="Número: 45 # 12-30"
+                  value={numeroVia}
+                  onChange={e => { setNumeroVia(e.target.value); setError('') }}
+                />
+              </div>
+              <div className="auth-input-wrapper">
+                <IconLocation />
+                <input
+                  type="text"
+                  placeholder="Complemento: local, piso, barrio"
+                  value={complemento}
+                  onChange={e => setComplemento(e.target.value)}
+                />
+              </div>
             </div>
+          </div>
 
-          </div>{/* /auth-grid */}
+          {/* Teléfono */}
+          <div className="auth-field">
+            <label htmlFor="telefono">Teléfono / Celular</label>
+            <div className="auth-input-wrapper">
+              <IconPhone />
+              <input
+                id="telefono"
+                type="tel"
+                placeholder="Tu teléfono"
+                value={telefono}
+                onChange={e => { setTelefono(e.target.value); setError('') }}
+              />
+            </div>
+          </div>
 
-          <button type="submit" className="btn btn-vinotinto" disabled={loading}>
-            {loading ? 'Registrando...' : 'Registrar Librería'}
-          </button>
+          {/* Email */}
+          <div className="auth-field">
+            <label htmlFor="email">Email</label>
+            <div className="auth-input-wrapper">
+              <IconMail />
+              <input
+                id="email"
+                type="email"
+                placeholder="tu@email.com"
+                value={email}
+                onChange={e => { setEmail(e.target.value); setError('') }}
+              />
+            </div>
+          </div>
 
-        </form>
+          {/* Contraseña */}
+          <div className="auth-field">
+            <label htmlFor="password">Contraseña</label>
+            <div className="auth-input-wrapper">
+              <IconLock />
+              <input
+                id="password"
+                type={showPass ? 'text' : 'password'}
+                placeholder="Mínimo 8 caracteres"
+                value={password}
+                onChange={e => { setPassword(e.target.value); setError('') }}
+                onPaste={blockClipboard}
+                onCopy={blockClipboard}
+              />
+              <button
+                type="button"
+                className="btn-eye"
+                aria-label={showPass ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                onClick={() => setShowPass(v => !v)}
+              >
+                {showPass ? <IconEyeClosed /> : <IconEyeOpen />}
+              </button>
+            </div>
+          </div>
 
+          {/* Confirmar Contraseña */}
+          <div className="auth-field">
+            <label htmlFor="confirmPassword">Confirmar contraseña</label>
+            <div className="auth-input-wrapper">
+              <IconLock />
+              <input
+                id="confirmPassword"
+                type={showPass ? 'text' : 'password'}
+                placeholder="Repite tu contraseña"
+                value={confirmPassword}
+                onChange={e => { setConfirmPassword(e.target.value); setError('') }}
+                onPaste={blockClipboard}
+                onCopy={blockClipboard}
+              />
+            </div>
+          </div>
+
+        </div>{/* /auth-grid */}
+
+        {/* Checkboxes de términos y privacidad */}
+        <div className="auth-remember" style={{ marginTop: '1.5rem', marginBottom: '1.5rem' }}>
+          <label className="auth-checkbox-label">
+            <input
+              type="checkbox"
+              checked={terminosCompletos}
+              readOnly
+            />
+            <span>
+              He leído y acepto los{' '}
+              <button 
+                type="button" 
+                onClick={() => setShowTerminos(true)}
+                style={{ background: 'none', border: 'none', color: 'var(--vinotinto)', textDecoration: 'underline', fontWeight: '600', cursor: 'pointer' }}
+              >
+                términos y condiciones
+              </button>
+              {aceptoTerminos && ' ✓'} y la{' '}
+              <button 
+                type="button" 
+                onClick={() => setShowPrivacidad(true)}
+                style={{ background: 'none', border: 'none', color: 'var(--vinotinto)', textDecoration: 'underline', fontWeight: '600', cursor: 'pointer' }}
+              >
+                política de privacidad
+              </button>
+              {aceptoPrivacidad && ' ✓'}
+            </span>
+          </label>
+        </div>
+
+        <button type="submit" className="btn btn-vinotinto" disabled={loading || !formReady}>
+          {loading ? 'Registrando...' : 'Registrar Librería'}
+        </button>
+
+      </form>
+
+      {!isModal && (
         <div className="auth-footer-links">
           <p>¿Ya tienes cuenta? <Link to="/login">Inicia sesión</Link></p>
         </div>
+      )}
 
-      </div>
+      {/* Modales de Términos y Privacidad */}
+      <LegalModal
+        open={showTerminos}
+        onClose={() => setShowTerminos(false)}
+        onAccept={() => setAceptoTerminos(true)}
+        accepted={aceptoTerminos}
+        title="Términos y Condiciones de Uso — BookyHome"
+      >
+        <Terminos />
+      </LegalModal>
+
+      <LegalModal
+        open={showPrivacidad}
+        onClose={() => setShowPrivacidad(false)}
+        onAccept={() => setAceptoPrivacidad(true)}
+        accepted={aceptoPrivacidad}
+        title="Política de Privacidad — BookyHome"
+      >
+        <Privacidad />
+      </LegalModal>
+    </div>
+  )
+
+  if (isModal) {
+    return formContent;
+  }
+
+  return (
+    <main className="auth-main auth-main--compact">
+      {formContent}
     </main>
-    </>
   )
 }
 

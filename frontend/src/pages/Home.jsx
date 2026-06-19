@@ -128,6 +128,7 @@ return (
 
     {/* HERO */}
     <section className="hero">
+      <div className="layout-container hero-container">
         <div className="hero-text">
           <h1>El marketplace que conecta lectores con librerías</h1>
           <p>Miles de títulos de las mejores librerías independientes del país. Todo en un solo lugar.</p>
@@ -142,81 +143,92 @@ return (
           <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTgQkxN-TFkw-qgA1RKnj0Tmp4i7tXAbuEl3A&s"
             alt="Personas explorando libros" />
         </div>
-      </section>
+      </div>
+    </section>
 
       {/* STATS */}
       <section className="stats">
-        {STATS.map((s, i) => (
-          <div key={i} className="stat-item">
-            <div className={`stat-icon ${s.color}`}>
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d={s.icon}/>
-              </svg>
+        <div className="layout-container stats-container">
+          {STATS.map((s, i) => (
+            <div key={i} className="stat-item">
+              <div className={`stat-icon ${s.color}`}>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d={s.icon}/>
+                </svg>
+              </div>
+              <h2>{s.num}</h2>
+              <p>{s.label}</p>
             </div>
-            <h2>{s.num}</h2>
-            <p>{s.label}</p>
-          </div>
-        ))}
+          ))}
+        </div>
       </section>
 
       {/* BENEFITS */}
       <section className="benefits">
-        <h2>¿Por qué elegir BookyHome?</h2>
-        <div className="benefits-grid">
-          {BENEFITS.map((b, i) => (
-            <div key={i} className="benefit-card">
-              <div className="benefit-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-                  stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d={b.icon}/>
-                </svg>
+        <div className="layout-container">
+          <h2>¿Por qué elegir BookyHome?</h2>
+          <div className="benefits-grid">
+            {BENEFITS.map((b, i) => (
+              <div key={i} className="benefit-card">
+                <div className="benefit-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d={b.icon}/>
+                  </svg>
+                </div>
+                <h3>{b.title}</h3>
+                <p>{b.desc}</p>
               </div>
-              <h3>{b.title}</h3>
-              <p>{b.desc}</p>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </section>
 
       {/* CATEGORIES */}
       <section className="categories">
-        <h2>Explora nuestras categorías</h2>
-        <p>Libros para todos los gustos y momentos</p>
-        <div className="category-grid">
-          {CATEGORIES.map((c, i) => (
-            <div key={i} className="category-card"
-              style={{ backgroundImage: `url(${c.img})` }}>
-              <h3>{c.name}</h3>
-            </div>
-          ))}
-        </div>
-        <div style={{ textAlign: 'center', marginTop: '2rem' }}>
-          <Link to="/login" className="btn btn-primary">
-            Inicia sesión para ver el catálogo completo
-          </Link>
+        <div className="layout-container">
+          <h2>Explora nuestras categorías</h2>
+          <p>Libros para todos los gustos y momentos</p>
+          <div className="category-grid">
+            {CATEGORIES.map((c, i) => (
+              <div key={i} className="category-card"
+                style={{ backgroundImage: `url(${c.img})` }}>
+                <h3>{c.name}</h3>
+              </div>
+            ))}
+          </div>
+          <div style={{ textAlign: 'center', marginTop: '2rem' }}>
+            <Link to="/login" className="btn btn-primary">
+              Inicia sesión para ver el catálogo completo
+            </Link>
+          </div>
         </div>
       </section>
 
       {/* HOW IT WORKS */}
       <section className="how-it-works">
-        <h2>¿Cómo funciona?</h2>
-        <div className="steps">
-          {STEPS.map((s, i) => (
-            <div key={i} className="step">
-              <span className={`step-number ${s.cls}`}>{s.num}</span>
-              <h3>{s.title}</h3>
-              <p>{s.desc}</p>
-            </div>
-          ))}
+        <div className="layout-container">
+          <h2>¿Cómo funciona?</h2>
+          <div className="steps">
+            {STEPS.map((s, i) => (
+              <div key={i} className="step">
+                <span className={`step-number ${s.cls}`}>{s.num}</span>
+                <h3>{s.title}</h3>
+                <p>{s.desc}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
       {/* CTA LIBRERÍAS */}
       <section className="cta-libraries">
-        <h2>¿Tienes una librería?</h2>
-        <p>Únete a nuestra red de librerías y alcanza a miles de lectores en todo el país.</p>
-        <Link to="/libreria" className="btn btn-primary">Registrar mi librería</Link>
+        <div className="layout-container">
+          <h2>¿Tienes una librería?</h2>
+          <p>Únete a nuestra red de librerías y alcanza a miles de lectores en todo el país.</p>
+          <Link to="/libreria" className="btn btn-primary">Registrar mi librería</Link>
+        </div>
       </section>
 
       {/* MODAL: Comenzar a comprar */}
