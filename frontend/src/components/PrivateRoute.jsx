@@ -1,4 +1,4 @@
-// src/PrivateRoute.jsx
+// src/components/PrivateRoute.jsx
 import { Navigate, Outlet } from 'react-router-dom';
 import { jwtDecode } from 'jwt-decode';
 
@@ -10,24 +10,51 @@ function PrivateRoute({ allowedRoles }) {
     return <Navigate to="/login" replace />;
   }
 
-  // 2. Si se requiere un rol específico (como el de administrador)
+  // Variables de control fuera del try/catch
+  let isRoleAllowed = true;
+  let isTokenValid = true;
+
+  // 2. Si se requiere un rol específico, decodificamos SOLO los datos en el try/catch
   if (allowedRoles) {
     try {
       const payload = jwtDecode(token);
-      // Ajusta 'payload.rol' o 'payload.role' según cómo lo envíe tu backend en FastAPI
       const userRole = payload.rol || payload.role; 
 
-      // Si el rol del usuario no está entre los permitidos, lo rebota al PostLogin común
+      // Evaluamos si el rol está permitido y guardamos el resultado en la variable
       if (!allowedRoles.includes(userRole)) {
-        return <Navigate to="/post-login" replace />;
+        isRoleAllowed = false;
       }
-    } catch (error) {
-      // Si el token es inválido o está corrupto, limpiamos y al login
-      localStorage.removeItem('token');
-      return <Navigate to="/login" replace />;
+    } catch{
+      isTokenValid = false;
     }
   }
 
+  // 3. Procesamos las redirecciones FUERA del try/catch usando JSX de manera segura
+  if (!isTokenValid) {
+    localStorage.removeItem('token');
+    return <Navigate to="/login" replace />;
+  }
+
+  // 3. Procesamos las redirecciones FUERA del try/catch usando JSX de manera segura
+  if (!isTokenValid) {
+    localStorage.removeItem('token');
+    return <Navigate to="/login" replace />;
+  }
+
+  // 🔄 REBOTE INTELIGENTE: Evaluamos el rol de forma directa para el JSX
+  if (!isRoleAllowed) {
+    const payload = jwtDecode(token);
+    const userRole = payload.rol || payload.role;
+
+    if (userRole === 'vendedor') {
+      return <Navigate to="/mi-tienda" replace />;
+    }
+    
+    // Si es comprador o cualquier otro rol, va a post-login
+    return <Navigate to="/post-login" replace />;
+  }
+
+  // 4. Si todo está en orden, permite ver los componentes hijos
   return <Outlet />;
 }
 
