@@ -77,10 +77,20 @@ function Header({ variant }) {
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
   const [loginLoading, setLoginLoading] = useState(false);
   const [loginError, setLoginError] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
 
   const isHome = location.pathname === '/';
   const isSimple = variant === "simple";
   const isWhite = variant === "white" || !variant;
+
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    if (searchTerm.trim()) {
+      navigate(`/catalogo?q=${encodeURIComponent(searchTerm.trim())}`);
+    } else {
+      navigate('/catalogo');
+    }
+  };
 
   const handleLoginSubmit = async (event) => {
     event.preventDefault();
@@ -168,10 +178,16 @@ function Header({ variant }) {
 
         {!isSimple && (
           <>
-            <div className="search-wrapper">
-              <input type="text" placeholder="Buscar libros..." className="search-bar" />
-              <button className="search-btn"><IconSearch /></button>
-            </div>
+            <form className="search-wrapper" onSubmit={handleSearchSubmit}>
+              <input
+                type="text"
+                placeholder="Buscar libros..."
+                className="search-bar"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+              <button type="submit" className="search-btn"><IconSearch /></button>
+            </form>
 
             <div className="header-actions">
               <button

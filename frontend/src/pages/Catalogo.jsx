@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { getStoredLibros } from '../services/api';
 import LibroCard from '../components/LibroCard';
 import './Catalogo.css';
 
 const Catalogo = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [libros, setLibros] = useState([]);
-  const [busqueda, setBusqueda] = useState('');
+  const [busqueda, setBusqueda] = useState(searchParams.get('q') || '');
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState('');
 
   useEffect(() => {
@@ -33,6 +35,12 @@ const Catalogo = () => {
     return coincideBusqueda && coincideCategoria;
   });
 
+  const handleBusquedaChange = (e) => {
+    const valor = e.target.value;
+    setBusqueda(valor);
+    setSearchParams(valor ? { q: valor } : {});
+  };
+
   return (
     <main className="catalogo-main">
       <h1>📚 Catálogo de Libros</h1>
@@ -43,7 +51,7 @@ const Catalogo = () => {
           type="text"
           placeholder="🔍 Buscar libros..."
           value={busqueda}
-          onChange={(e) => setBusqueda(e.target.value)}
+          onChange={handleBusquedaChange}
         />
         <select
           value={categoriaSeleccionada}

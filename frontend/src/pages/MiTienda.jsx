@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
-import api from "../services/api";
+import api, { getUsuarios } from "../services/api";
 import SeccionOfertas from "../components/SeccionOfertas";
 
 /* ================= ICONOS ================= */
@@ -290,6 +290,7 @@ function ModalStock({ libro, onClose, onActualizado }) {
 export default function MiTienda() {
   const navigate = useNavigate();
   const [userName,      setUserName]      = useState("");
+  const [userEmail, setUserEmail] = useState("");
   const [loading,       setLoading]       = useState(true);
   const [activeSide,    setActiveSide]    = useState("Inicio");
   const [libros,        setLibros]        = useState([]);
@@ -321,6 +322,15 @@ export default function MiTienda() {
     try {
       const payload = jwtDecode(token);
       setUserName(payload.nombre || "Vendedor");
+
+      const id = parseInt(payload.sub);
+      getUsuarios()
+        .then((res) => {
+          const usuario = res.data.find((u) => u.id_usuario === id);
+          if (usuario) setUserEmail(usuario.correo_usuario);
+        })
+        .catch((err) => console.error(err));
+
     } catch { setUserName("Vendedor"); }
     finally { setLoading(false); }
   }, [navigate]);
@@ -380,8 +390,7 @@ export default function MiTienda() {
     { name: "Promociones",    icon: <IconTag /> },
     { name: "Ventas",         icon: <IconCart /> },
     { name: "Pedidos",        icon: <IconPackage /> },
-    { name: "Clientes",       icon: <IconUser /> },
-    { name: "Configuración",  icon: <IconSettings /> },
+    { name: "Perfil",  icon: <IconSettings /> },
   ];
 
   if (loading) return <div style={{ padding: "2rem" }}>Cargando tienda...</div>;
@@ -652,7 +661,7 @@ export default function MiTienda() {
       case "Ventas":        return renderProximamente("Ventas");
       case "Pedidos":       return renderProximamente("Pedidos");
       case "Clientes":      return renderProximamente("Clientes");
-      case "Configuración": return renderConfiguracion();
+      case "Perfil":        return renderConfiguracion();
       case "Promociones":   return <SeccionOfertas />;
       default:              return renderInicio();
     }
@@ -665,7 +674,7 @@ export default function MiTienda() {
           <div className="user-avatar-big">{userName.slice(0, 2).toUpperCase()}</div>
           <div>
             <p className="user-name">{userName}</p>
-            <p className="user-email">vendedor@bookyhome.com</p>
+            <p className="user-email">{userEmail}</p>
           </div>
         </div>
         <nav className="sidebar-nav">
