@@ -51,6 +51,13 @@ const IconCart = () => (
   </svg>
 );
 
+const IconMenu = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+    stroke="currentColor" strokeWidth="2" width="22" height="22">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
+  </svg>
+);
+
 function ModalOption({ to, iconPath, title, desc, onClose }) {
   return (
     <Link to={to} className="modal-option" onClick={onClose}>
@@ -77,6 +84,7 @@ function Header({ variant }) {
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
   const [loginLoading, setLoginLoading] = useState(false);
   const [loginError, setLoginError] = useState('');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const isHome = location.pathname === '/';
   const isSimple = variant === "simple";
@@ -86,7 +94,7 @@ function Header({ variant }) {
     event.preventDefault();
     setLoginError('');
     if (!loginForm.email.trim() || !loginForm.password.trim()) {
-      setLoginError('Completa correo y contrasena');
+      setLoginError('Completa correo y contraseña');
       return;
     }
 
@@ -96,11 +104,11 @@ function Header({ variant }) {
       const token = res.data.access_token;
       localStorage.setItem('token', token);
       const decoded = jwtDecode(token);
-      notify('Inicio de sesion correcto', 'success');
+      notify('Inicio de sesión correcto', 'success');
       setLoginOpen(false);
       navigate(decoded.rol === 'vendedor' ? '/mi-tienda' : '/post-login');
     } catch (err) {
-      const message = err.response?.data?.detail || 'Email o contrasena incorrectos';
+      const message = err.response?.data?.detail || 'Email o contraseña incorrectos';
       setLoginError(message);
       notify(message, 'error');
     } finally {
@@ -123,43 +131,37 @@ function Header({ variant }) {
 
       <header
         id="main-header"
-        className={`${isSimple ? "header-center" : ""} ${isWhite ? "header-white" : "header-vinotinto"}`}
+        className={`${isSimple ? "header-center" : ""} ${isWhite ? "header-white" : "header-vinotinto"} ${mobileMenuOpen ? "header-menu-open" : ""}`}
       >
         <Link to="/" className="logo-link">
           <img src={logo} alt="BookyHome" className="logo-img" />
         </Link>
 
-        {/* Navegación siempre visible */}
-        <nav style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
-          <Link to="/catalogo" style={{
-            color: isSimple ? 'var(--vinotinto)' : 'white',
-            textDecoration: 'none',
-            fontWeight: 600,
-            fontSize: '0.95rem'
-          }}>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+        <button
+          type="button"
+          className="header-menu-toggle"
+          aria-label={mobileMenuOpen ? "Cerrar menú" : "Abrir menú"}
+          aria-expanded={mobileMenuOpen}
+          onClick={() => setMobileMenuOpen((open) => !open)}
+        >
+          <IconMenu />
+        </button>
+
+        <nav className="header-nav">
+          <Link to="/catalogo" className="header-nav-link" onClick={() => setMobileMenuOpen(false)}>
+            <span>
               <IconBooks />
               Catálogo
             </span>
           </Link>
-          <Link to="/favoritos" style={{
-            color: isSimple ? 'var(--vinotinto)' : 'white',
-            textDecoration: 'none',
-            fontWeight: 600,
-            fontSize: '0.95rem'
-          }}>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+          <Link to="/favoritos" className="header-nav-link" onClick={() => setMobileMenuOpen(false)}>
+            <span>
               <IconFavorites />
               Favoritos
             </span>
           </Link>
-          <Link to="/carrito" style={{
-            color: isSimple ? 'var(--vinotinto)' : 'white',
-            textDecoration: 'none',
-            fontWeight: 600,
-            fontSize: '0.95rem'
-          }}>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+          <Link to="/carrito" className="header-nav-link" onClick={() => setMobileMenuOpen(false)}>
+            <span>
               <IconCart />
               Carrito
             </span>
@@ -231,7 +233,7 @@ function Header({ variant }) {
             <button className="modal-close" aria-label="Cerrar" onClick={() => setLoginOpen(false)}>
               <IconClose />
             </button>
-            <h2 className="modal-title">Iniciar sesion</h2>
+            <h2 className="modal-title">Iniciar sesión</h2>
             <p className="modal-subtitle">Ingresa con tu cuenta de BookyHome</p>
             {loginError && <span className="error-msg" style={{ textAlign: 'center', marginBottom: '1rem' }}>{loginError}</span>}
             <form onSubmit={handleLoginSubmit} noValidate>
@@ -246,11 +248,11 @@ function Header({ variant }) {
                 />
               </div>
               <div className="auth-field">
-                <label htmlFor="modal-login-password">Contrasena</label>
+                <label htmlFor="modal-login-password">Contraseña</label>
                 <input
                   id="modal-login-password"
                   type="password"
-                  placeholder="Tu contrasena"
+                  placeholder="Tu contraseña"
                   value={loginForm.password}
                   onChange={e => setLoginForm({ ...loginForm, password: e.target.value })}
                 />
@@ -260,7 +262,7 @@ function Header({ variant }) {
               </button>
             </form>
             <div className="auth-footer-links">
-              <p><Link to="/forgot-password" onClick={() => setLoginOpen(false)}>Olvide mi contrasena</Link></p>
+              <p><Link to="/forgot-password" onClick={() => setLoginOpen(false)}>Olvidé mi contraseña</Link></p>
               <p><Link to="/register" onClick={() => setLoginOpen(false)}>Crear cuenta</Link></p>
             </div>
           </div>

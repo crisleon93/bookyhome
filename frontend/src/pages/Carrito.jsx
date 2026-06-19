@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { getCarrito, checkoutCarrito } from '../services/api';
 import { useNavigate } from "react-router-dom";
+import { notify } from '../components/ToastProvider';
 
 function Carrito() {
   const [carrito, setCarrito] = useState([]);
@@ -30,12 +31,12 @@ function Carrito() {
           const orderId = res.data.order.id_orden;
           navigate(`/checkout/${orderId}`);
         } else {
-          alert("Error al procesar el checkout");
+          notify("Error al procesar el checkout", "error");
         }
       })
       .catch(err => {
         console.error(err);
-        alert(err.response?.data?.detail || "Error al realizar checkout");
+        notify(err.response?.data?.detail || "Error al realizar checkout", "error");
       })
       .finally(() => {
         setLoading(false);

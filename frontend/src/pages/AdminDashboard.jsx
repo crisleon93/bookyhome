@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getUserRole } from '../hooks/useAuth';
 import api from '../services/api';
+import { notify } from '../components/ToastProvider';
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
@@ -17,7 +18,7 @@ export default function AdminDashboard() {
     const role = getUserRole();
     if (role !== 'admin') { navigate('/login'); return; }
     cargarDatos();
-  }, []);
+  }, [navigate]);
 
   const cargarDatos = async () => {
     try {
@@ -50,8 +51,8 @@ export default function AdminDashboard() {
       await api.delete(`/libros/${id_libro}`);
       setLibros(libros.filter((l) => l.id_libro !== id_libro));
       setStats((prev) => ({ ...prev, libros: prev.libros - 1 }));
-    } catch (error) {
-      alert('Error al eliminar el libro');
+    } catch {
+      notify('Error al eliminar el libro', 'error');
     }
   };
 
@@ -61,8 +62,8 @@ export default function AdminDashboard() {
     setLibros(libros.map((l) =>
       l.id_libro === id_libro ? { ...l, oculto: !oculto_actual } : l
     ));
-  } catch (error) {
-    alert('Error al ocultar el libro');
+  } catch {
+    notify('Error al ocultar el libro', 'error');
   }
 };
 
@@ -306,7 +307,7 @@ export default function AdminDashboard() {
                         : us
                     ));
                   } catch {
-                    alert('Error al cambiar estado del usuario');
+                    notify('Error al cambiar estado del usuario', 'error');
                   }
                 }} style={{
                   background: u.estado_usuario === 'Bloqueado' ? '#27ae60' : '#e74c3c',

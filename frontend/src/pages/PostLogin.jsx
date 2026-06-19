@@ -4,6 +4,7 @@ import { jwtDecode } from "jwt-decode";
 import { getUsuarios, getCarrito, checkoutCarrito, getOrdenes } from "../services/api";
 import DashboardSidebar from "../components/DashboardSidebar";
 import { getUserRole } from "../hooks/useAuth";
+import { notify } from "../components/ToastProvider";
 
 const CartEmptyState = ({ onGoToCatalog }) => (
   <div className="cart-empty-state">
@@ -467,7 +468,7 @@ export default function PostLogin() {
                     fontSize: "0.95rem", cursor: "pointer", marginTop: "8px",
                     fontFamily: "Montserrat, sans-serif"
                   }}
-                  onClick={() => alert("Perfil actualizado ✓")}
+                  onClick={() => notify("Perfil actualizado", "success")}
                 >
                   Guardar cambios
                 </button>
