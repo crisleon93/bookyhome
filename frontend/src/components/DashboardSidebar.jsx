@@ -65,7 +65,13 @@ export default function DashboardSidebar({ userName, userEmail, activeSide, onSe
         {MENU_LINKS.map((item) => (
           <button
             key={item.name}
-            onClick={() => onSelect(item.name)}
+            onClick={() => {
+              if (item.name === "Catálogo") {
+                navigate("/catalogo");
+              } else {
+                onSelect(item.name);
+              }
+            }}
             className={`sidebar-item ${activeSide === item.name ? "active" : ""}`}
           >
             <span className="sidebar-icon">{ICONS[item.name]}</span>

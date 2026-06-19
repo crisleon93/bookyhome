@@ -306,6 +306,11 @@ export default function MiTienda() {
   const [tiendaForm,    setTiendaForm]    = useState({ nombre_tienda: "", direccion: "", telefono: "" });
   const [tiendaMsg,     setTiendaMsg]     = useState("");
 
+  const [ventas,        setVentas]        = useState([]);
+  const [loadingVentas, setLoadingVentas] = useState(false);
+  const [pedidos,       setPedidos]       = useState([]);
+  const [loadingPedidos, setLoadingPedidos] = useState(false);
+
   const [modalEditar,   setModalEditar]   = useState(null);
   const [modalEliminar, setModalEliminar] = useState(null);
   const [modalStock,    setModalStock]    = useState(null);
@@ -343,7 +348,31 @@ export default function MiTienda() {
       .finally(() => setLoadingLibros(false));
   };
 
+  const cargarPedidos = () => {
+    setLoadingPedidos(true);
+    api.get("/libros/mis-pedidos")
+      .then((res) => setPedidos(res.data))
+      .catch(() => {})
+      .finally(() => setLoadingPedidos(false));
+  };
+
+  const cargarVentas = () => {
+    setLoadingVentas(true);
+    api.get("/libros/mis-ventas")
+      .then((res) => setVentas(res.data))
+      .catch(() => {})
+      .finally(() => setLoadingVentas(false));
+  };
+ 
   useEffect(() => { cargarLibros(); }, []);
+
+  useEffect(() => {
+    if (activeSide === "Pedidos") {
+      cargarPedidos();
+    } else if (activeSide === "Ventas") {
+      cargarVentas();
+    }
+  }, [activeSide]);
 
   useEffect(() => {
     api.get("/libros/categorias").then((r) => setCategorias(r.data)).catch(() => {});
@@ -362,9 +391,9 @@ export default function MiTienda() {
       .then((r) => setAlertasStock(r.data))
       .catch(() => setAlertasStock([]));
 
-    api.get("/tiendas")
+    api.get("/tiendas/mi-tienda")
       .then((r) => {
-        const miTienda = r.data[0];
+        const miTienda = r.data;
         if (miTienda) {
           setTiendaInfo(miTienda);
           setTiendaForm({
@@ -632,8 +661,16 @@ export default function MiTienda() {
                 fontSize: "0.95rem", cursor: "pointer", fontFamily: "Montserrat, sans-serif"
               }}
               onClick={() => {
-                setTiendaMsg("✓ Perfil del negocio actualizado");
-                setTimeout(() => setTiendaMsg(""), 3000);
+                api.put("/tiendas/mi-tienda", tiendaForm)
+                  .then(() => {
+                    setTiendaMsg("✓ Perfil del negocio actualizado");
+                    setTimeout(() => setTiendaMsg(""), 3000);
+                    setTiendaInfo(prev => ({ ...prev, ...tiendaForm }));
+                  })
+                  .catch((err) => {
+                    setTiendaMsg("❌ Error al guardar cambios: " + (err.response?.data?.detail || err.message));
+                    setTimeout(() => setTiendaMsg(""), 4000);
+                  });
               }}
             >
               Guardar cambios
@@ -654,12 +691,133 @@ export default function MiTienda() {
     </div>
   );
 
+  const renderPedidos = () => (
+    <>
+      <div className="welcome-card">
+        <h1 style={{ fontSize: "1.55rem", marginBottom: "4px" }}>📦 Pedidos Recibidos</h1>
+        <p style={{ margin: 0 }}>Gestiona las compras realizadas por tus clientes</p>
+      </div>
+
+      <div className="seller-books" style={{ marginTop: "20px" }}>
+        {loadingPedidos && <p style={{ color: "#999", padding: "20px 0" }}>Cargando pedidos...</p>}
+        {!loadingPedidos && pedidos.length === 0 && (
+          <div className="empty-state">
+            <div style={{ fontSize: "2.5rem", marginBottom: "12px" }}>📦</div>
+            <p style={{ fontWeight: 700, color: "#444", marginBottom: "8px" }}>Aún no has recibido pedidos</p>
+            <p style={{ fontSize: "0.85rem", color: "#888" }}>Cuando un comprador adquiera tus libros, aparecerán aquí</p>
+          </div>
+        )}
+        {!loadingPedidos && pedidos.length > 0 && (
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
+              <thead>
+                <tr style={{ borderBottom: "2px solid #e0dbd4", color: "var(--vinotinto)" }}>
+                  <th style={{ padding: "12px", fontWeight: 700 }}>ID Orden</th>
+                  <th style={{ padding: "12px", fontWeight: 700 }}>Fecha</th>
+                  <th style={{ padding: "12px", fontWeight: 700 }}>Cliente</th>
+                  <th style={{ padding: "12px", fontWeight: 700 }}>Productos</th>
+                  <th style={{ padding: "12px", fontWeight: 700 }}>Estado</th>
+                  <th style={{ padding: "12px", fontWeight: 700, textAlign: "right" }}>Total Tienda</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pedidos.map((pedido) => (
+                  <tr key={pedido.id_orden} style={{ borderBottom: "1px solid #f0ebe4" }}>
+                    <td style={{ padding: "12px", fontWeight: 600 }}>#{pedido.id_orden}</td>
+                    <td style={{ padding: "12px", fontSize: "0.9rem" }}>
+                      {pedido.fecha ? new Date(pedido.fecha).toLocaleDateString("es-CO") : "Reciente"}
+                    </td>
+                    <td style={{ padding: "12px" }}>
+                      <div style={{ fontWeight: 600 }}>{pedido.cliente}</div>
+                      <div style={{ fontSize: "0.8rem", color: "#777" }}>{pedido.correo_cliente}</div>
+                    </td>
+                    <td style={{ padding: "12px" }}>
+                      {pedido.items.map((item, index) => (
+                        <div key={index} style={{ fontSize: "0.88rem", marginBottom: "4px" }}>
+                          📚 <strong>{item.titulo}</strong> x {item.cantidad}
+                        </div>
+                      ))}
+                    </td>
+                    <td style={{ padding: "12px" }}>
+                      <span className={`pl-badge pl-badge--${pedido.estado === "pagado" ? "entregado" : "procesando"}`}>
+                        {pedido.estado}
+                      </span>
+                    </td>
+                    <td style={{ padding: "12px", textAlign: "right", fontWeight: 700, color: "var(--gris-carbon)" }}>
+                      {formatPrecio(pedido.total_tienda)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </>
+  );
+
+  const renderVentas = () => (
+    <>
+      <div className="welcome-card">
+        <h1 style={{ fontSize: "1.55rem", marginBottom: "4px" }}>💰 Registro de Ventas</h1>
+        <p style={{ margin: 0 }}>Historial detallado de libros vendidos</p>
+      </div>
+
+      <div className="seller-books" style={{ marginTop: "20px" }}>
+        {loadingVentas && <p style={{ color: "#999", padding: "20px 0" }}>Cargando ventas...</p>}
+        {!loadingVentas && ventas.length === 0 && (
+          <div className="empty-state">
+            <div style={{ fontSize: "2.5rem", marginBottom: "12px" }}>📊</div>
+            <p style={{ fontWeight: 700, color: "#444", marginBottom: "8px" }}>No hay ventas registradas aún</p>
+            <p style={{ fontSize: "0.85rem", color: "#888" }}>Aquí aparecerá el desglose por libro vendido</p>
+          </div>
+        )}
+        {!loadingVentas && ventas.length > 0 && (
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
+              <thead>
+                <tr style={{ borderBottom: "2px solid #e0dbd4", color: "var(--vinotinto)" }}>
+                  <th style={{ padding: "12px", fontWeight: 700 }}>Orden</th>
+                  <th style={{ padding: "12px", fontWeight: 700 }}>Fecha</th>
+                  <th style={{ padding: "12px", fontWeight: 700 }}>Libro</th>
+                  <th style={{ padding: "12px", fontWeight: 700, textAlign: "center" }}>Cant</th>
+                  <th style={{ padding: "12px", fontWeight: 700, textAlign: "right" }}>Precio Unit.</th>
+                  <th style={{ padding: "12px", fontWeight: 700, textAlign: "right" }}>Total</th>
+                  <th style={{ padding: "12px", fontWeight: 700 }}>Comprador</th>
+                </tr>
+              </thead>
+              <tbody>
+                {ventas.map((v, index) => (
+                  <tr key={index} style={{ borderBottom: "1px solid #f0ebe4" }}>
+                    <td style={{ padding: "12px", fontWeight: 600 }}>#{v.id_orden}</td>
+                    <td style={{ padding: "12px", fontSize: "0.9rem" }}>
+                      {v.fecha ? new Date(v.fecha).toLocaleDateString("es-CO") : "Reciente"}
+                    </td>
+                    <td style={{ padding: "12px", fontWeight: 600, color: "var(--vinotinto)" }}>{v.titulo}</td>
+                    <td style={{ padding: "12px", textAlign: "center" }}>{v.cantidad}</td>
+                    <td style={{ padding: "12px", textAlign: "right" }}>{formatPrecio(v.precio_libro)}</td>
+                    <td style={{ padding: "12px", textAlign: "right", fontWeight: 700, color: "var(--rojo-suave)" }}>
+                      {formatPrecio(v.total)}
+                    </td>
+                    <td style={{ padding: "12px" }}>
+                      <div style={{ fontWeight: 600 }}>{v.cliente}</div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </>
+  );
+
   const renderContenido = () => {
     switch (activeSide) {
       case "Inicio":        return renderInicio();
       case "Mis Libros":    return renderMisLibros();
-      case "Ventas":        return renderProximamente("Ventas");
-      case "Pedidos":       return renderProximamente("Pedidos");
+      case "Ventas":        return renderVentas();
+      case "Pedidos":       return renderPedidos();
       case "Clientes":      return renderProximamente("Clientes");
       case "Perfil":        return renderConfiguracion();
       case "Promociones":   return <SeccionOfertas />;

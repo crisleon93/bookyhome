@@ -27,8 +27,11 @@ const Catalogo = () => {
   ];
 
   const librosFiltrados = libros.filter((libro) => {
+    const query = busqueda.toLowerCase();
     const coincideBusqueda =
-      libro.titulo?.toLowerCase().includes(busqueda.toLowerCase());
+      (libro.titulo?.toLowerCase().includes(query)) ||
+      (libro.autor_libro?.toLowerCase().includes(query)) ||
+      (libro.nombre_categoria?.toLowerCase().includes(query));
     const coincideCategoria =
       categoriaSeleccionada === '' ||
       libro.nombre_categoria === categoriaSeleccionada;

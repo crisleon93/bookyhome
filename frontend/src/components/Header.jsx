@@ -91,6 +91,17 @@ function Header({ variant }) {
   const isSimple = variant === "simple";
   const isWhite = variant === "white" || !variant;
 
+  const token = localStorage.getItem("token");
+  let isLoggedIn = false;
+  if (token) {
+    try {
+      jwtDecode(token);
+      isLoggedIn = true;
+    } catch {
+      isLoggedIn = false;
+    }
+  }
+
   const handleSearchSubmit = (e) => {
     e.preventDefault();
     if (searchTerm.trim()) {
@@ -192,24 +203,37 @@ function Header({ variant }) {
             </form>
 
             <div className="header-actions">
-              <button
-                type="button"
-                className="user-access"
-                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
-                onClick={() => setLoginOpen(true)}
-              >
-                <IconUser />
-                <span>Ingresa</span>
-              </button>
+              {isLoggedIn ? (
+                <Link
+                  to="/dashboard"
+                  className="user-access"
+                  style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}
+                >
+                  <IconUser />
+                  <span>Mi Cuenta</span>
+                </Link>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    className="user-access"
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                    onClick={() => setLoginOpen(true)}
+                  >
+                    <IconUser />
+                    <span>Ingresa</span>
+                  </button>
 
-              <button
-                className="user-access"
-                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
-                onClick={() => setModalOpen(true)}
-              >
-                <IconUserPlus />
-                <span>Crea tu cuenta</span>
-              </button>
+                  <button
+                    className="user-access"
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                    onClick={() => setModalOpen(true)}
+                  >
+                    <IconUserPlus />
+                    <span>Crea tu cuenta</span>
+                  </button>
+                </>
+              )}
             </div>
           </>
         )}

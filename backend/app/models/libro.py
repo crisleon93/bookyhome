@@ -398,3 +398,111 @@ def ocultar_libro(id_libro: int, oculto: bool):
     finally:
         cursor.close()
         db.close()
+
+
+# ──────────────────────────────────────────────
+#  VENDEDOR - PEDIDOS Y VENTAS DESDE ORDERS.JSON
+# ──────────────────────────────────────────────
+def _load_orders():
+    # El archivo orders.json se almacena en backend/app/data/
+    import os, json
+    storage_dir = os.path.join(os.path.dirname(__file__), '..', 'data')
+    order_file = os.path.join(storage_dir, 'orders.json')
+    if not os.path.exists(order_file):
+        return {}
+    try:
+        with open(order_file, 'r', encoding='utf-8') as file:
+            return json.load(file)
+    except Exception:
+        return {}
+
+def obtener_pedidos_tienda(id_tienda: int):
+    # 1. Obtener todos los libros de la tienda
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    try:
+        cursor.execute("SELECT id_libro, titulo FROM libros WHERE id_tienda = %s", (id_tienda,))
+        libros_tienda = {row["id_libro"]: row["titulo"] for row in cursor.fetchall()}
+        
+        if not libros_tienda:
+            return []
+            
+        # 2. Mapear usuarios para info de cliente
+        cursor.execute("SELECT id_usuario, nombre_usuario, correo_usuario FROM usuarios")
+        usuarios_map = {
+            row["id_usuario"]: {
+                "nombre": row["nombre_usuario"],
+                "correo": row["correo_usuario"]
+            }
+            for row in cursor.fetchall()
+        }
+    finally:
+        cursor.close()
+        db.close()
+        
+    # 3. Cargar las órdenes de orders.json
+    orders_data = _load_orders()
+    
+    pedidos = []
+    for user_id_str, user_orders in orders_data.items():
+        try:
+            user_id = int(user_id_str)
+        except ValueError:
+            continue
+        cliente_info = usuarios_map.get(user_id, {"nombre": f"Usuario #{user_id}", "correo": ""})
+        
+        for order in user_orders:
+            items_tienda = []
+            total_tienda = 0.0
+            
+            for item in order.get("items", []):
+                try:
+                    id_libro = int(item.get("id_libro"))
+                except (ValueError, TypeError):
+                    continue
+                if id_libro in libros_tienda:
+                    cant = int(item.get("cantidad", 1))
+                    precio = float(item.get("precio_libro", 0))
+                    items_tienda.append({
+                        "id_libro": id_libro,
+                        "titulo": item.get("titulo", libros_tienda[id_libro]),
+                        "autor_libro": item.get("autor_libro", ""),
+                        "precio_libro": precio,
+                        "cantidad": cant,
+                        "imagen": item.get("imagen")
+                    })
+                    total_tienda += precio * cant
+            
+            if items_tienda:
+                pedidos.append({
+                    "id_orden": order.get("id_orden"),
+                    "fecha": order.get("fecha"),
+                    "estado": order.get("estado"),
+                    "cliente": cliente_info["nombre"],
+                    "correo_cliente": cliente_info["correo"],
+                    "items": items_tienda,
+                    "total_tienda": total_tienda,
+                    "total_orden": order.get("total")
+                })
+                
+    return sorted(pedidos, key=lambda p: p.get("fecha", ""), reverse=True)
+
+def obtener_ventas_tienda(id_tienda: int):
+    pedidos = obtener_pedidos_tienda(id_tienda)
+    ventas = []
+    for p in pedidos:
+        for item in p["items"]:
+            ventas.append({
+                "id_orden": p["id_orden"],
+                "fecha": p["fecha"],
+                "estado": p["estado"],
+                "cliente": p["cliente"],
+                "correo_cliente": p["correo_cliente"],
+                "id_libro": item["id_libro"],
+                "titulo": item["titulo"],
+                "autor_libro": item["autor_libro"],
+                "precio_libro": item["precio_libro"],
+                "cantidad": item["cantidad"],
+                "total": item["precio_libro"] * item["cantidad"]
+            })
+    return ventas
