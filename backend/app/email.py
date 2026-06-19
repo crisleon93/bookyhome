@@ -19,7 +19,8 @@ conf = ConnectionConfig(
 
 
 async def enviar_email_recuperacion(email: str, token: str):
-    enlace = f"http://localhost:5173/reset-password?token={token}"
+    frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173").rstrip("/")
+    enlace = f"{frontend_url}/reset-password?token={token}"
 
     mensaje = MessageSchema(
         subject="Recuperación de contraseña — BookyHome",

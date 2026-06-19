@@ -3,8 +3,8 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import { getUsuarios, getCarrito, checkoutCarrito, getOrdenes } from "../services/api";
 import DashboardSidebar from "../components/DashboardSidebar";
+import { getUserRole } from "../hooks/useAuth";
 
-// ── Estado vacío del carrito ──
 const CartEmptyState = ({ onGoToCatalog }) => (
   <div className="cart-empty-state">
     <div className="cart-empty-icon">
@@ -34,23 +34,18 @@ export default function PostLogin() {
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [checkoutError, setCheckoutError]     = useState(null);
 
-  // Mis Compras
-  const [ordenes, setOrdenes]             = useState([]);
+  const [ordenes, setOrdenes]               = useState([]);
   const [ordenesLoading, setOrdenesLoading] = useState(false);
 
   const navigate = useNavigate();
-
   const location = useLocation();
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const seccion = params.get("seccion");
-    if (seccion) {
-      setActiveSide(seccion);
-    }
+    if (seccion) setActiveSide(seccion);
   }, [location]);
 
-  // Decodificar token y cargar datos de usuario
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) { navigate("/login"); return; }
@@ -75,7 +70,6 @@ export default function PostLogin() {
     }
   }, [navigate]);
 
-  // Cargar carrito cuando se selecciona la sección
   useEffect(() => {
     if (activeSide === "Carrito" && userId) {
       setCartLoading(true);
@@ -87,9 +81,8 @@ export default function PostLogin() {
     }
   }, [activeSide, userId]);
 
-  // Cargar órdenes cuando se selecciona "Mis Compras"
   useEffect(() => {
-    if (activeSide === "Mis Compras") {
+    if (activeSide === "Mis Compras" || activeSide === "Configuración") {
       setOrdenesLoading(true);
       getOrdenes()
         .then((res) => setOrdenes(res.data))
@@ -101,7 +94,6 @@ export default function PostLogin() {
   const handleCheckout = () => {
     setCheckoutLoading(true);
     setCheckoutError(null);
-
     checkoutCarrito()
       .then((res) => {
         if (res.data?.ok) {
@@ -112,9 +104,7 @@ export default function PostLogin() {
       })
       .catch((err) => {
         console.error(err);
-        setCheckoutError(
-          err.response?.data?.detail || "Error al realizar el checkout. Intenta de nuevo."
-        );
+        setCheckoutError(err.response?.data?.detail || "Error al realizar el checkout. Intenta de nuevo.");
       })
       .finally(() => setCheckoutLoading(false));
   };
@@ -144,18 +134,78 @@ export default function PostLogin() {
 
       <main className="dashboard-main">
 
-        {/* ── INICIO ── */}
-        {activeSide === "Inicio" && (
-          <>
-            <div className="welcome-card">
-              <h1>Bienvenido de nuevo, {userName.split(" ")[0]} 👋</h1>
-              <p>Esta es tu área personal de BookyHome.</p>
+{/* ── INICIO ── */}
+{activeSide === "Inicio" && (
+  <>
+    <div className="welcome-card">
+      <h1>Bienvenido de nuevo, {userName.split(" ")[0]} 👋</h1>
+      <p>Esta es tu área personal de BookyHome.</p>
+    </div>
+
+    {/* RECOMENDACIONES PERSONALIZADAS */}
+    {(() => {
+      const favoritos = JSON.parse(localStorage.getItem('favoritos')) || [];
+      const categoriasVistas = [...new Set(favoritos.map(f => f.nombre_categoria).filter(Boolean))];
+
+      if (favoritos.length === 0) {
+        return (
+          <div className="empty-state">
+            <p>Agrega libros a favoritos para recibir recomendaciones personalizadas 💡</p>
+            <button className="btn btn-vinotinto btn-catalog" onClick={handleGoToCatalog}>
+              📚 Explorar catálogo
+            </button>
+          </div>
+        );
+      }
+
+      return (
+        <div className="pl-card" style={{ padding: '2rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+            <span style={{ fontSize: 28 }}>✨</span>
+            <div>
+              <h2 style={{ margin: 0 }}>Recomendados para ti</h2>
+              <p style={{ margin: 0, color: '#888', fontSize: '0.85rem' }}>
+                Basado en tus categorías favoritas: {categoriasVistas.join(', ')}
+              </p>
             </div>
-            <div className="empty-state">
-              <p>Próximamente aparecerán tus recomendaciones y novedades</p>
+          </div>
+
+          {favoritos.slice(0, 5).map((libro) => (
+            <div key={libro.id_libro} className="pl-order-row" style={{ cursor: 'pointer' }}
+              onClick={() => navigate('/catalogo')}>
+              <div className="pl-order-left">
+                <span className="pl-order-emoji">📖</span>
+                <div>
+                  <p className="pl-order-title">{libro.titulo}</p>
+                  <p className="pl-order-meta">
+                    {libro.autor_libro || libro.autor} · {libro.nombre_categoria}
+                  </p>
+                </div>
+              </div>
+              <div className="pl-order-right">
+                <span className="pl-order-price">
+                  ${Number(libro.precio_libro ?? libro.precio ?? 0).toLocaleString('es-CO')}
+                </span>
+                <span style={{
+                  background: '#6b1a2a', color: 'white', padding: '4px 10px',
+                  borderRadius: '20px', fontSize: '0.75rem', fontWeight: 600, marginLeft: '10px'
+                }}>
+                  ❤️ Favorito
+                </span>
+              </div>
             </div>
-          </>
-        )}
+          ))}
+
+          <div style={{ marginTop: '16px', textAlign: 'center' }}>
+            <button className="btn btn-vinotinto btn-catalog" onClick={handleGoToCatalog}>
+              📚 Ver más libros
+            </button>
+          </div>
+        </div>
+      );
+    })()}
+  </>
+)}
 
         {/* ── CARRITO ── */}
         {activeSide === "Carrito" && (
@@ -169,10 +219,8 @@ export default function PostLogin() {
 
             {cartLoading ? (
               <div className="empty-state"><p>Cargando carrito...</p></div>
-
             ) : carrito.length === 0 ? (
               <CartEmptyState onGoToCatalog={handleGoToCatalog} />
-
             ) : (
               <div className="pl-card">
                 {carrito.map((item) => (
@@ -188,9 +236,7 @@ export default function PostLogin() {
                     </div>
                     <div className="pl-order-right">
                       <span className="pl-order-price">
-                        {Number(
-                          (item.precio_libro || 0) * (item.cantidad || 1)
-                        ).toLocaleString("es-CO", {
+                        {Number((item.precio_libro || 0) * (item.cantidad || 1)).toLocaleString("es-CO", {
                           style: "currency", currency: "COP", maximumFractionDigits: 0,
                         })}
                       </span>
@@ -212,10 +258,7 @@ export default function PostLogin() {
                   </h2>
 
                   {checkoutError && (
-                    <p style={{
-                      color: "var(--rojo-suave)", fontSize: 14,
-                      margin: 0, textAlign: "right",
-                    }}>
+                    <p style={{ color: "var(--rojo-suave)", fontSize: 14, margin: 0, textAlign: "right" }}>
                       ⚠️ {checkoutError}
                     </p>
                   )}
@@ -224,30 +267,19 @@ export default function PostLogin() {
                     className="btn btn-vinotinto"
                     onClick={handleCheckout}
                     disabled={checkoutLoading}
-                    style={{
-                      width: "auto", minWidth: 250,
-                      cursor: checkoutLoading ? "not-allowed" : "pointer",
-                      opacity: checkoutLoading ? 0.7 : 1,
-                    }}
+                    style={{ width: "auto", minWidth: 250, cursor: checkoutLoading ? "not-allowed" : "pointer", opacity: checkoutLoading ? 0.7 : 1 }}
                   >
                     {checkoutLoading ? "Procesando..." : "💳 Proceder al Pago"}
                   </button>
 
-                   <button
+                  <button
                     onClick={handleGoToCatalog}
                     style={{
-                      background: "none",
-                      border: "1.5px solid var(--vinotinto)",
-                      color: "var(--vinotinto)",
-                      borderRadius: "8px",
-                      padding: "10px 20px",
-                      fontWeight: 700,
-                      fontSize: "0.85rem",
-                      cursor: "pointer",
-                      fontFamily: "'Montserrat', sans-serif",
-                      transition: "all 0.2s",
-                      width: "auto",
-                      minWidth: 250,
+                      background: "none", border: "1.5px solid var(--vinotinto)",
+                      color: "var(--vinotinto)", borderRadius: "8px", padding: "10px 20px",
+                      fontWeight: 700, fontSize: "0.85rem", cursor: "pointer",
+                      fontFamily: "'Montserrat', sans-serif", transition: "all 0.2s",
+                      width: "auto", minWidth: 250,
                     }}
                     onMouseEnter={(e) => { e.target.style.background = "#f5eaed"; }}
                     onMouseLeave={(e) => { e.target.style.background = "none"; }}
@@ -273,9 +305,7 @@ export default function PostLogin() {
             {ordenesLoading ? (
               <div className="empty-state"><p>Cargando tus compras...</p></div>
             ) : ordenes.length === 0 ? (
-              <div className="empty-state">
-                <p>Aún no tienes compras realizadas</p>
-              </div>
+              <div className="empty-state"><p>Aún no tienes compras realizadas</p></div>
             ) : (
               <div className="pl-card">
                 {ordenes.map((orden) => (
@@ -288,8 +318,7 @@ export default function PostLogin() {
                         <p className="pl-order-title">Orden #{orden.id_orden}</p>
                         <p className="pl-order-meta">
                           {orden.fecha ? new Date(orden.fecha).toLocaleDateString("es-CO") : ""}
-                          {" · "}
-                          {orden.items?.length || 0} producto{orden.items?.length === 1 ? "" : "s"}
+                          {" · "}{orden.items?.length || 0} producto{orden.items?.length === 1 ? "" : "s"}
                           {" · "}
                           <span className={`pl-badge pl-badge--${orden.estado === "pagado" ? "entregado" : "procesando"}`}>
                             {orden.estado}
@@ -311,8 +340,194 @@ export default function PostLogin() {
           </>
         )}
 
+        {/* ── FAVORITOS ── */}
+        {activeSide === "Favoritos" && (
+          <>
+            <div className="pl-card" style={{ padding: "2.5rem 2rem", marginBottom: 24 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                <span style={{ fontSize: 28 }}>❤️</span>
+                <h2 style={{ margin: 0 }}>Mis Favoritos</h2>
+              </div>
+            </div>
+
+            {(() => {
+              const favoritos = JSON.parse(localStorage.getItem('favoritos')) || [];
+              return favoritos.length === 0 ? (
+                <div className="empty-state">
+                  <p>No tienes libros en favoritos. ¡Agrega algunos desde el catálogo!</p>
+                  <button className="btn btn-vinotinto btn-catalog" onClick={handleGoToCatalog}>
+                    📚 Ir al catálogo
+                  </button>
+                </div>
+              ) : (
+                <div className="pl-card">
+                  {favoritos.map((libro) => (
+                    <div key={libro.id_libro} className="pl-order-row">
+                      <div className="pl-order-left">
+                        <span className="pl-order-emoji">📖</span>
+                        <div>
+                          <p className="pl-order-title">{libro.titulo}</p>
+                          <p className="pl-order-meta">
+                            {libro.autor_libro || libro.autor} · {libro.nombre_categoria}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="pl-order-right">
+                        <span className="pl-order-price">
+                          ${Number(libro.precio_libro ?? libro.precio ?? 0).toLocaleString('es-CO')}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
+          </>
+        )}
+
+        {/* ── MI PERFIL ── */}
+        {activeSide === "Mi Perfil" && (
+          <>
+            <div className="pl-card" style={{ padding: "2.5rem 2rem", marginBottom: 24 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                <span style={{ fontSize: 28 }}>👤</span>
+                <h2 style={{ margin: 0 }}>Mi Perfil</h2>
+              </div>
+            </div>
+
+            <div className="pl-card" style={{ padding: "2rem" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "16px", maxWidth: "500px" }}>
+                <div>
+                  <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>
+                    Nombre
+                  </label>
+                  <input
+                    type="text"
+                    value={userName}
+                    onChange={(e) => setUserName(e.target.value)}
+                    style={{
+                      width: "100%", padding: "10px 14px", borderRadius: "8px",
+                      border: "1px solid #ddd", fontSize: "0.95rem", fontFamily: "Montserrat, sans-serif"
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>
+                    Correo electrónico
+                  </label>
+                  <input
+                    type="email"
+                    value={userEmail}
+                    readOnly
+                    style={{
+                      width: "100%", padding: "10px 14px", borderRadius: "8px",
+                      border: "1px solid #ddd", fontSize: "0.95rem", background: "#f5f5f5",
+                      fontFamily: "Montserrat, sans-serif", color: "#888"
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>
+                    Rol
+                  </label>
+                  <input
+                    type="text"
+                    value={getUserRole() || "usuario"}
+                    readOnly
+                    style={{
+                      width: "100%", padding: "10px 14px", borderRadius: "8px",
+                      border: "1px solid #ddd", fontSize: "0.95rem", background: "#f5f5f5",
+                      fontFamily: "Montserrat, sans-serif", color: "#888"
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>
+                    Miembro desde
+                  </label>
+                  <input
+                    type="text"
+                    value={new Date().toLocaleDateString("es-CO")}
+                    readOnly
+                    style={{
+                      width: "100%", padding: "10px 14px", borderRadius: "8px",
+                      border: "1px solid #ddd", fontSize: "0.95rem", background: "#f5f5f5",
+                      fontFamily: "Montserrat, sans-serif", color: "#888"
+                    }}
+                  />
+                </div>
+
+                <button
+                  style={{
+                    background: "var(--vinotinto)", color: "white", border: "none",
+                    padding: "12px 24px", borderRadius: "8px", fontWeight: 700,
+                    fontSize: "0.95rem", cursor: "pointer", marginTop: "8px",
+                    fontFamily: "Montserrat, sans-serif"
+                  }}
+                  onClick={() => alert("Perfil actualizado ✓")}
+                >
+                  Guardar cambios
+                </button>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* ── CONFIGURACIÓN / REGISTRO DE ACTIVIDAD ── */}
+        {activeSide === "Configuración" && (
+          <>
+            <div className="pl-card" style={{ padding: "2.5rem 2rem", marginBottom: 24 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                <span style={{ fontSize: 28 }}>📋</span>
+                <h2 style={{ margin: 0 }}>Registro de actividad</h2>
+              </div>
+            </div>
+
+            <div className="pl-card">
+              {(() => {
+                const favoritos = JSON.parse(localStorage.getItem('favoritos')) || [];
+                const actividades = [
+                  ...favoritos.map((libro) => ({
+                    tipo: 'favorito',
+                    emoji: '❤️',
+                    texto: `Agregaste "${libro.titulo}" a favoritos`,
+                    fecha: 'Reciente',
+                  })),
+                  ...ordenes.map((orden) => ({
+                    tipo: 'compra',
+                    emoji: '🛒',
+                    texto: `Realizaste la orden #${orden.id_orden} por $${Number(orden.total || 0).toLocaleString('es-CO')}`,
+                    fecha: orden.fecha ? new Date(orden.fecha).toLocaleDateString('es-CO') : 'Reciente',
+                  })),
+                ];
+
+                return actividades.length === 0 ? (
+                  <div style={{ padding: "30px", textAlign: "center", color: "#888" }}>
+                    <p>No hay actividad registrada aún.</p>
+                  </div>
+                ) : (
+                  actividades.map((act, i) => (
+                    <div key={i} className="pl-order-row">
+                      <div className="pl-order-left">
+                        <span className="pl-order-emoji">{act.emoji}</span>
+                        <div>
+                          <p className="pl-order-title">{act.texto}</p>
+                          <p className="pl-order-meta">{act.fecha}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                );
+              })()}
+            </div>
+          </>
+        )}
+
         {/* ── OTRAS SECCIONES ── */}
-        {!["Inicio", "Carrito", "Mis Compras"].includes(activeSide) && (
+        {!["Inicio", "Carrito", "Mis Compras", "Favoritos", "Mi Perfil", "Configuración"].includes(activeSide) && (
           <div className="welcome-card">
             <h1>{activeSide}</h1>
             <p>Esta sección estará disponible próximamente.</p>

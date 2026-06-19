@@ -71,3 +71,21 @@ def obtener_email_usuario(id_usuario: int):
     cursor.close()
     db.close()
     return user["correo_usuario"] if user else None
+
+def bloquear_usuario(id_usuario: int, bloqueado: bool):
+    db = get_db()
+    cursor = db.cursor()
+    try:
+        estado = 'Bloqueado' if bloqueado else 'Activo'
+        cursor.execute(
+            "UPDATE usuarios SET estado_usuario = %s WHERE id_usuario = %s",
+            (estado, id_usuario)
+        )
+        db.commit()
+        return {"ok": True}
+    except Exception as e:
+        db.rollback()
+        return {"ok": False, "error": str(e)}
+    finally:
+        cursor.close()
+        db.close()

@@ -78,7 +78,10 @@ const IconEyeClosed = () => (
 function Libreria() {
   const [nombre,    setNombre]    = useState('')
   const [libreria,  setLibreria]  = useState('')
-  const [direccion, setDireccion] = useState('')
+  const [ciudad,    setCiudad]    = useState('')
+  const [tipoVia,   setTipoVia]   = useState('')
+  const [numeroVia, setNumeroVia] = useState('')
+  const [complemento, setComplemento] = useState('')
   const [telefono,  setTelefono]  = useState('') // ── NUEVO ESTADO AGREGADO ─────
   const [email,     setEmail]     = useState('')
   const [password,  setPassword]  = useState('')
@@ -93,6 +96,9 @@ function Libreria() {
   })
 
   const navigate = useNavigate()
+  const direccionCompleta = [ciudad, tipoVia && numeroVia ? `${tipoVia} ${numeroVia}` : '', complemento]
+    .filter(Boolean)
+    .join(', ')
 
   const validate = () => {
     const e = { nombre: '', libreria: '', direccion: '', telefono: '', email: '', password: '' }
@@ -100,7 +106,7 @@ function Libreria() {
 
     if (!nombre.trim())    { e.nombre    = 'Este campo es obligatorio'; valid = false }
     if (!libreria.trim())  { e.libreria  = 'Este campo es obligatorio'; valid = false }
-    if (!direccion.trim()) { e.direccion = 'Este campo es obligatorio'; valid = false }
+    if (!direccionCompleta.trim()) { e.direccion = 'Completa la direccion de la tienda'; valid = false }
     
     // ── VALIDACIÓN DEL TELÉFONO DEL VENDEDOR ───────────────────────────────────
     if (!telefono.trim()) { 
@@ -137,7 +143,7 @@ function Libreria() {
       await registerLibrary({ 
         nombre, 
         libreria, 
-        direccion, 
+        direccion: direccionCompleta, 
         telefono,
         email, 
         password,
@@ -154,8 +160,8 @@ function Libreria() {
 
   return (
     <>
-    <main className="auth-main">
-      <div className="auth-card auth-card--wide">
+    <main className="auth-main auth-main--compact">
+      <div className="auth-card auth-card--wide auth-card--compact">
 
         <h1 className="auth-title">Registrar Librería</h1>
         <p className="auth-subtitle">Vende tus libros en BookyHome</p>
@@ -214,22 +220,66 @@ function Libreria() {
               {errors.libreria && <span className="error-msg">{errors.libreria}</span>}
             </div>
 
-            {/* Dirección — full width */}
             <div className="auth-field auth-field--full">
-              <label htmlFor="direccion">Dirección</label>
-              <div className="auth-input-wrapper">
-                <IconLocation />
-                <input
-                  id="direccion"
-                  type="text"
-                  placeholder="Calle Principal 123"
-                  value={direccion}
-                  onChange={e => { setDireccion(e.target.value); clearField('direccion') }}
-                  className={errors.direccion ? 'input-error' : ''}
-                />
+              <label htmlFor="ciudad">Ubicacion de la tienda</label>
+              <div className="address-grid">
+                <div className="auth-input-wrapper">
+                  <IconLocation />
+                  <select
+                    id="ciudad"
+                    className="auth-select"
+                    value={ciudad}
+                    onChange={e => { setCiudad(e.target.value); clearField('direccion') }}
+                  >
+                    <option value="">Ciudad</option>
+                    <option value="Bogota">Bogota</option>
+                    <option value="Medellin">Medellin</option>
+                    <option value="Cali">Cali</option>
+                    <option value="Barranquilla">Barranquilla</option>
+                    <option value="Cartagena">Cartagena</option>
+                  </select>
+                </div>
+                <div className="auth-input-wrapper">
+                  <IconLocation />
+                  <select
+                    className="auth-select"
+                    value={tipoVia}
+                    onChange={e => { setTipoVia(e.target.value); clearField('direccion') }}
+                  >
+                    <option value="">Tipo de via</option>
+                    <option value="Calle">Calle</option>
+                    <option value="Carrera">Carrera</option>
+                    <option value="Avenida">Avenida</option>
+                    <option value="Diagonal">Diagonal</option>
+                    <option value="Transversal">Transversal</option>
+                  </select>
+                </div>
+                <div className="auth-input-wrapper">
+                  <IconLocation />
+                  <input
+                    type="text"
+                    placeholder="Numero: 45 # 12-30"
+                    value={numeroVia}
+                    onChange={e => { setNumeroVia(e.target.value); clearField('direccion') }}
+                  />
+                </div>
+                <div className="auth-input-wrapper">
+                  <IconLocation />
+                  <input
+                    type="text"
+                    placeholder="Complemento: local, piso, barrio"
+                    value={complemento}
+                    onChange={e => setComplemento(e.target.value)}
+                  />
+                </div>
               </div>
-              {errors.direccion && <span className="error-msg">{errors.direccion}</span>}
             </div>
+
+            {errors.direccion && (
+              <div className="auth-field auth-field--full">
+                <span className="error-msg">{errors.direccion}</span>
+              </div>
+            )}
 
             {/* ── NUEVO INPUT VISUAL DE TELÉFONO EN LA GRID ────────────────────── */}
             <div className="auth-field">

@@ -40,8 +40,12 @@ function ForgotPassword() {
 
     setLoading(true)
     try {
-      await forgotPassword({ email })
-      setExito('Si el email está registrado, recibirás un enlace en tu correo en unos minutos.')
+      const response = await forgotPassword({ email })
+      if (response.data?.correo_enviado) {
+        setExito('Correo de recuperación enviado. Revisa tu bandeja de entrada y también la carpeta de spam.')
+      } else {
+        setError(response.data?.mensaje || 'No se encontró una cuenta con ese email')
+      }
     } catch (err) {
       setError(err.response?.data?.detail || 'Error al enviar el enlace')
     } finally {

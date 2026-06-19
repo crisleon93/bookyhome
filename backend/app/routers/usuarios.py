@@ -1,3 +1,4 @@
+from app.models.usuarios import crear_usuario, login_usuario, obtener_todos_usuarios, bloquear_usuario
 from fastapi import APIRouter, HTTPException
 from app.schemas import UsuarioRegistro, UsuarioLogin, Token
 from app.models.usuarios import crear_usuario, login_usuario, obtener_todos_usuarios
@@ -39,3 +40,14 @@ def login(data: UsuarioLogin):
 def get_usuarios():
     return obtener_todos_usuarios()
 
+from pydantic import BaseModel
+
+class BloquearPayload(BaseModel):
+    bloqueado: bool
+
+@router.patch("/usuarios/{id_usuario}/bloquear")
+def bloquear(id_usuario: int, payload: BloquearPayload):
+    resultado = bloquear_usuario(id_usuario, payload.bloqueado)
+    if not resultado["ok"]:
+        raise HTTPException(status_code=500, detail=resultado["error"])
+    return {"mensaje": "Estado del usuario actualizado"}

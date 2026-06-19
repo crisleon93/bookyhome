@@ -378,3 +378,23 @@ def obtener_alertas_stock(id_tienda: int, umbral: int = 3):
     finally:
         cursor.close()
         db.close()
+
+# ──────────────────────────────────────────────
+#  OCULTAR / MOSTRAR LIBRO (admin)
+# ──────────────────────────────────────────────
+def ocultar_libro(id_libro: int, oculto: bool):
+    db = get_db()
+    cursor = db.cursor()
+    try:
+        cursor.execute(
+            "UPDATE libros SET oculto = %s WHERE id_libro = %s",
+            (1 if oculto else 0, id_libro)
+        )
+        db.commit()
+        return {"ok": True}
+    except Exception as e:
+        db.rollback()
+        return {"ok": False, "error": str(e)}
+    finally:
+        cursor.close()
+        db.close()

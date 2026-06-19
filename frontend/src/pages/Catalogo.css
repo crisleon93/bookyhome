@@ -46,3 +46,71 @@
   font-size: 0.85rem;
   font-weight: 600;
 }
+.categoria-badge {
+  display: inline-block;
+  background: #fce4ec;
+  color: var(--vinotinto);
+  border-radius: 20px;
+  padding: 3px 12px;
+  font-size: 0.8rem;
+  margin: 8px 0;
+}
+
+.punto-verde { color: #4caf50; }
+.punto-rojo { color: #e53935; }
+
+.disponibilidad {
+  font-size: 0.9rem;
+  margin: 4px 0;
+}
+
+.tienda {
+  color: #888;
+  font-size: 0.85rem;
+  margin: 4px 0;
+}
+
+.btn-favorito {
+  background: white;
+  color: var(--vinotinto);
+  border: 1px solid var(--vinotinto);
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  margin-top: 10px;
+}
+.categoria-badge {
+  display: inline-block;
+  background: #fce4ec;
+  color: var(--vinotinto);
+  border-radius: 20px;
+  padding: 3px 12px;
+  font-size: 0.8rem;
+  margin: 8px 0;
+}
+
+.punto-verde { color: #4caf50; }
+.punto-rojo { color: #e53935; }
+
+.disponibilidad {
+  font-size: 0.9rem;
+  margin: 4px 0;
+}
+
+.tienda {
+  color: #888;
+  font-size: 0.85rem;
+  margin: 4px 0;
+}
+
+.btn-favorito {
+  background: white;
+  color: var(--vinotinto);
+  border: 1px solid var(--vinotinto);
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  margin-top: 10px;
+}
