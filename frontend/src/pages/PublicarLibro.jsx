@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "../services/api";
-import "./PublicarLibro.css";
+import '../styles/publicar.css';
+
 
 const ESTADOS = [
   { value: "nuevo", label: "Nuevo", desc: "Sin uso, en perfectas condiciones" },

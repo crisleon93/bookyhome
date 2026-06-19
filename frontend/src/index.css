@@ -1,6 +1,6 @@
 /* ===========================
    BookyHome — index.css LIMPIO
-   Sin duplicados · Junio 2025
+   Sin duplicados · Junio 2026
    =========================== */
 
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap');
@@ -16,6 +16,10 @@
   --transition:  all 0.3s ease;
 }
 
+/* ===========================
+   BASE GLOBAL
+   Tipografía, reset, layout
+   =========================== */
 *, *::before, *::after { box-sizing: border-box; }
 
 .layout-container {
@@ -157,6 +161,7 @@ header.scrolled { box-shadow: 0 2px 20px rgba(122, 30, 58, 0.15); }
   color: var(--vinotinto);
 }
 
+/* -- Logo -- */
 .logo-box {
   background-color: var(--vinotinto);
   color: white;
@@ -183,6 +188,7 @@ header.scrolled { box-shadow: 0 2px 20px rgba(122, 30, 58, 0.15); }
   display: block;
 }
 
+/* -- Buscador -- */
 .search-wrapper {
   flex: 1;
   position: relative;
@@ -214,6 +220,7 @@ header.scrolled { box-shadow: 0 2px 20px rgba(122, 30, 58, 0.15); }
   color: #666;
 }
 
+/* -- Acceso de usuario (icono + texto) -- */
 .user-access {
   display: flex;
   flex-direction: column;
@@ -969,6 +976,7 @@ body.auth-page {
 }
 
 /* Validación */
+/* -- Validación de campos (errores) -- */
 .input-error {
   border-color: #e53935 !important;
   box-shadow: 0 0 0 3px rgba(229, 57, 53, 0.1) !important;
@@ -982,6 +990,7 @@ body.auth-page {
 }
 
 /* Ojo — mostrar/ocultar contraseña */
+/* -- Botón ojo: mostrar/ocultar contraseña -- */
 .btn-eye {
   position: absolute;
   right: 12px;
@@ -1001,6 +1010,7 @@ body.auth-page {
 }
 
 /* Flash messages */
+/* -- Mensajes flash de éxito/error en formularios -- */
 .flash {
   display: flex;
   align-items: center;
@@ -1037,6 +1047,7 @@ body.auth-page {
   box-shadow: 0 0 0 3px rgba(122, 30, 58, 0.1);
 }
 
+/* -- Toast global (notificaciones emergentes) -- */
 .toast {
   position: fixed;
   right: 22px;
@@ -1055,6 +1066,7 @@ body.auth-page {
 .toast--error { background: #b91c1c; }
 .toast--info { background: #2a2a2a; }
 
+/* -- Banner de cookies -- */
 .cookie-banner {
   position: fixed;
   left: 22px;
@@ -1084,6 +1096,7 @@ body.auth-page {
   white-space: nowrap;
 }
 
+/* -- Indicador de fortaleza de contraseña -- */
 .password-strength {
   display: grid;
   gap: 4px;
@@ -1108,6 +1121,7 @@ body.auth-page {
   color: var(--strength-color, #777);
 }
 
+/* -- Select y grid de dirección (registro) -- */
 .auth-select {
   width: 100%;
   padding: 0.56rem 1rem 0.56rem 2.45rem;

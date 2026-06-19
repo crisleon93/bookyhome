@@ -40,7 +40,10 @@ def obtener_libro(id_libro: int):
             SELECT
                 l.*,
                 c.nombre_categoria,
-                t.nombre_tienda
+                t.nombre_tienda,
+                (SELECT url_imagen FROM imagenes_libro
+                 WHERE id_libro = l.id_libro
+                 ORDER BY id_imagen ASC LIMIT 1) AS imagen_url
             FROM libros l
             INNER JOIN categorias c
                 ON l.id_categoria = c.id_categoria
