@@ -1,8 +1,27 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from pydantic import BaseModel
 from app.schemas import LibreriaRegistro
-from app.models.tiendas import crear_libreria, obtener_tiendas, actualizar_estado_tienda
+from app.models.tiendas import (
+    crear_libreria,
+    obtener_tiendas,
+    actualizar_estado_tienda,
+    obtener_tienda_por_usuario,
+    actualizar_tienda,
+)
+from app.auth import verify_token
 
 router = APIRouter()
+security = HTTPBearer()
+
+
+def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    token = credentials.credentials
+    payload = verify_token(token)
+    if not payload:
+        raise HTTPException(status_code=401, detail="Token inválido o expirado")
+    return payload
+
 
 @router.post("/libreria")
 def registrar_libreria(data: LibreriaRegistro):
@@ -35,3 +54,34 @@ def cambiar_estado_tienda(id_tienda: int, payload: dict):
     if not resultado["ok"]:
         raise HTTPException(status_code=400, detail=resultado["error"])
     return {"ok": True, "estado": nuevo_estado}
+
+
+@router.get("/tiendas/mi-tienda")
+def obtener_mi_tienda(user=Depends(get_current_user)):
+    id_usuario = int(user["sub"])
+    tienda = obtener_tienda_por_usuario(id_usuario)
+    if not tienda:
+        raise HTTPException(status_code=404, detail="No tienes una tienda registrada")
+    return tienda
+
+
+class TiendaUpdate(BaseModel):
+    nombre_tienda: str
+    direccion: str
+    telefono: str
+
+
+@router.put("/tiendas/mi-tienda")
+def modificar_mi_tienda(data: TiendaUpdate, user=Depends(get_current_user)):
+    id_usuario = int(user["sub"])
+    tienda = obtener_tienda_por_usuario(id_usuario)
+    if not tienda:
+        raise HTTPException(status_code=404, detail="No tienes una tienda registrada")
+
+    resultado = actualizar_tienda(id_usuario, data.nombre_tienda, data.direccion, data.telefono)
+    if not resultado["ok"]:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error al actualizar la tienda: {resultado['error']}"
+        )
+    return {"mensaje": "Tienda actualizada exitosamente"}

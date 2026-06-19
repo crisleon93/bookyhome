@@ -193,7 +193,7 @@ function Checkout() {
     return (
       <div style={{ padding: "40px 8%", minHeight: "60vh", backgroundColor: "#fdfbfa", textAlign: "center" }}>
         <p style={{ fontSize: "1.2rem", color: "red", fontWeight: 600 }}>{error}</p>
-        <button className="btn btn-vinotinto" onClick={() => navigate("/carrito")} style={{ display: "inline-block", width: "auto", marginTop: "20px" }}>
+        <button className="btn btn-vinotinto" onClick={() => navigate("/post-login?seccion=Carrito")} style={{ display: "inline-block", width: "auto", marginTop: "20px" }}>
           Volver al Carrito
         </button>
       </div>

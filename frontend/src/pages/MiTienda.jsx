@@ -5,49 +5,17 @@ import { jwtDecode } from "jwt-decode";
 import api, { getUsuarios } from "../services/api";
 import SeccionOfertas from "../components/SeccionOfertas";
 
-/* ================= ICONOS ================= */
-const IconHome = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="22" height="22">
-    <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 21v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21m0 0h4.5V3.545M12.75 21h7.5V10.75M2.25 21h1.5m18 0h-18M2.25 9l4.5-1.636M18.75 3l-1.5.545m0 6.205 3 1m1.5.5-1.5-.5M6.75 7.364V3h-3v18m3-13.636 10.5-3.819" />
-  </svg>
-);
-const IconBook = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="22" height="22">
-    <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" />
-  </svg>
-);
-const IconPlus = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="22" height="22">
-    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-  </svg>
-);
-const IconCart = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="22" height="22">
-    <path strokeLinecap="round" strokeLinejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-1.5 6h11M10 21a1 1 0 100-2 1 1 0 000 2zm8 0a1 1 0 100-2 1 1 0 000 2z" />
-  </svg>
-);
-const IconPackage = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="22" height="22">
-    <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-  </svg>
-);
-const IconUser = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="22" height="22">
-    <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7" />
-  </svg>
-);
-const IconSettings = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5" width="22" height="22">
-    <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37z" />
-    <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-  </svg>
-);
-const IconTag = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="22" height="22">
-    <path strokeLinecap="round" strokeLinejoin="round" d="M9.568 3H5.25A2.25 2.25 0 0 0 3 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 0 0 5.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 0 0 9.568 3Z" />
-    <path strokeLinecap="round" strokeLinejoin="round" d="M6 6h.008v.008H6V6Z" />
-  </svg>
-);
+import { 
+  IconStoreAlt as IconHome, 
+  IconBook, 
+  IconPlus, 
+  IconCartAlt as IconCart, 
+  IconPackage, 
+  IconUser, 
+  IconSettings, 
+  IconTag 
+} from "../components/Icons";
+
 
 const formatPrecio = (valor) =>
   "$" + String(parseInt(valor)).replace(/\B(?=(\d{3})+(?!\d))/g, ".") + " COP";
@@ -301,10 +269,15 @@ export default function MiTienda() {
   const [topVendidos,   setTopVendidos]   = useState([]);
   const [loadingTop,    setLoadingTop]    = useState(false);
   const [alertasStock,  setAlertasStock]  = useState([]);
-  const [stockUmbral,   setStockUmbral]   = useState(3);
+  const [stockUmbral,   setStockUmbral]   = useState(() => Number(localStorage.getItem('stockUmbral')) || 3);
   const [tiendaInfo,    setTiendaInfo]    = useState(null);
   const [tiendaForm,    setTiendaForm]    = useState({ nombre_tienda: "", direccion: "", telefono: "" });
   const [tiendaMsg,     setTiendaMsg]     = useState("");
+
+  const [ventas,        setVentas]        = useState([]);
+  const [loadingVentas, setLoadingVentas] = useState(false);
+  const [pedidos,       setPedidos]       = useState([]);
+  const [loadingPedidos, setLoadingPedidos] = useState(false);
 
   const [modalEditar,   setModalEditar]   = useState(null);
   const [modalEliminar, setModalEliminar] = useState(null);
@@ -343,7 +316,31 @@ export default function MiTienda() {
       .finally(() => setLoadingLibros(false));
   };
 
+  const cargarPedidos = () => {
+    setLoadingPedidos(true);
+    api.get("/libros/mis-pedidos")
+      .then((res) => setPedidos(res.data))
+      .catch(() => {})
+      .finally(() => setLoadingPedidos(false));
+  };
+
+  const cargarVentas = () => {
+    setLoadingVentas(true);
+    api.get("/libros/mis-ventas")
+      .then((res) => setVentas(res.data))
+      .catch(() => {})
+      .finally(() => setLoadingVentas(false));
+  };
+ 
   useEffect(() => { cargarLibros(); }, []);
+
+  useEffect(() => {
+    if (activeSide === "Pedidos") {
+      cargarPedidos();
+    } else if (activeSide === "Ventas") {
+      cargarVentas();
+    }
+  }, [activeSide]);
 
   useEffect(() => {
     api.get("/libros/categorias").then((r) => setCategorias(r.data)).catch(() => {});
@@ -362,9 +359,9 @@ export default function MiTienda() {
       .then((r) => setAlertasStock(r.data))
       .catch(() => setAlertasStock([]));
 
-    api.get("/tiendas")
+    api.get("/tiendas/mi-tienda")
       .then((r) => {
-        const miTienda = r.data[0];
+        const miTienda = r.data;
         if (miTienda) {
           setTiendaInfo(miTienda);
           setTiendaForm({
@@ -409,7 +406,11 @@ export default function MiTienda() {
             type="number"
             min="0"
             value={stockUmbral}
-            onChange={(e) => setStockUmbral(Math.max(0, Number(e.target.value)))}
+            onChange={(e) => {
+              const val = Math.max(0, Number(e.target.value));
+              setStockUmbral(val);
+              localStorage.setItem('stockUmbral', val);
+            }}
             style={{ width: "76px", padding: "7px 9px", border: "1.5px solid #e0dbd4", borderRadius: "6px", fontFamily: "Montserrat, sans-serif" }}
           />
         </label>
@@ -632,8 +633,16 @@ export default function MiTienda() {
                 fontSize: "0.95rem", cursor: "pointer", fontFamily: "Montserrat, sans-serif"
               }}
               onClick={() => {
-                setTiendaMsg("✓ Perfil del negocio actualizado");
-                setTimeout(() => setTiendaMsg(""), 3000);
+                api.put("/tiendas/mi-tienda", tiendaForm)
+                  .then(() => {
+                    setTiendaMsg("✓ Perfil del negocio actualizado");
+                    setTimeout(() => setTiendaMsg(""), 3000);
+                    setTiendaInfo(prev => ({ ...prev, ...tiendaForm }));
+                  })
+                  .catch((err) => {
+                    setTiendaMsg("❌ Error al guardar cambios: " + (err.response?.data?.detail || err.message));
+                    setTimeout(() => setTiendaMsg(""), 4000);
+                  });
               }}
             >
               Guardar cambios
@@ -654,12 +663,133 @@ export default function MiTienda() {
     </div>
   );
 
+  const renderPedidos = () => (
+    <>
+      <div className="welcome-card">
+        <h1 style={{ fontSize: "1.55rem", marginBottom: "4px" }}>📦 Pedidos Recibidos</h1>
+        <p style={{ margin: 0 }}>Gestiona las compras realizadas por tus clientes</p>
+      </div>
+
+      <div className="seller-books" style={{ marginTop: "20px" }}>
+        {loadingPedidos && <p style={{ color: "#999", padding: "20px 0" }}>Cargando pedidos...</p>}
+        {!loadingPedidos && pedidos.length === 0 && (
+          <div className="empty-state">
+            <div style={{ fontSize: "2.5rem", marginBottom: "12px" }}>📦</div>
+            <p style={{ fontWeight: 700, color: "#444", marginBottom: "8px" }}>Aún no has recibido pedidos</p>
+            <p style={{ fontSize: "0.85rem", color: "#888" }}>Cuando un comprador adquiera tus libros, aparecerán aquí</p>
+          </div>
+        )}
+        {!loadingPedidos && pedidos.length > 0 && (
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
+              <thead>
+                <tr style={{ borderBottom: "2px solid #e0dbd4", color: "var(--vinotinto)" }}>
+                  <th style={{ padding: "12px", fontWeight: 700 }}>ID Orden</th>
+                  <th style={{ padding: "12px", fontWeight: 700 }}>Fecha</th>
+                  <th style={{ padding: "12px", fontWeight: 700 }}>Cliente</th>
+                  <th style={{ padding: "12px", fontWeight: 700 }}>Productos</th>
+                  <th style={{ padding: "12px", fontWeight: 700 }}>Estado</th>
+                  <th style={{ padding: "12px", fontWeight: 700, textAlign: "right" }}>Total Tienda</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pedidos.map((pedido) => (
+                  <tr key={pedido.id_orden} style={{ borderBottom: "1px solid #f0ebe4" }}>
+                    <td style={{ padding: "12px", fontWeight: 600 }}>#{pedido.id_orden}</td>
+                    <td style={{ padding: "12px", fontSize: "0.9rem" }}>
+                      {pedido.fecha ? new Date(pedido.fecha).toLocaleDateString("es-CO") : "Reciente"}
+                    </td>
+                    <td style={{ padding: "12px" }}>
+                      <div style={{ fontWeight: 600 }}>{pedido.cliente}</div>
+                      <div style={{ fontSize: "0.8rem", color: "#777" }}>{pedido.correo_cliente}</div>
+                    </td>
+                    <td style={{ padding: "12px" }}>
+                      {pedido.items.map((item, index) => (
+                        <div key={index} style={{ fontSize: "0.88rem", marginBottom: "4px" }}>
+                          📚 <strong>{item.titulo}</strong> x {item.cantidad}
+                        </div>
+                      ))}
+                    </td>
+                    <td style={{ padding: "12px" }}>
+                      <span className={`pl-badge pl-badge--${pedido.estado === "pagado" ? "entregado" : "procesando"}`}>
+                        {pedido.estado}
+                      </span>
+                    </td>
+                    <td style={{ padding: "12px", textAlign: "right", fontWeight: 700, color: "var(--gris-carbon)" }}>
+                      {formatPrecio(pedido.total_tienda)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </>
+  );
+
+  const renderVentas = () => (
+    <>
+      <div className="welcome-card">
+        <h1 style={{ fontSize: "1.55rem", marginBottom: "4px" }}>💰 Registro de Ventas</h1>
+        <p style={{ margin: 0 }}>Historial detallado de libros vendidos</p>
+      </div>
+
+      <div className="seller-books" style={{ marginTop: "20px" }}>
+        {loadingVentas && <p style={{ color: "#999", padding: "20px 0" }}>Cargando ventas...</p>}
+        {!loadingVentas && ventas.length === 0 && (
+          <div className="empty-state">
+            <div style={{ fontSize: "2.5rem", marginBottom: "12px" }}>📊</div>
+            <p style={{ fontWeight: 700, color: "#444", marginBottom: "8px" }}>No hay ventas registradas aún</p>
+            <p style={{ fontSize: "0.85rem", color: "#888" }}>Aquí aparecerá el desglose por libro vendido</p>
+          </div>
+        )}
+        {!loadingVentas && ventas.length > 0 && (
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
+              <thead>
+                <tr style={{ borderBottom: "2px solid #e0dbd4", color: "var(--vinotinto)" }}>
+                  <th style={{ padding: "12px", fontWeight: 700 }}>Orden</th>
+                  <th style={{ padding: "12px", fontWeight: 700 }}>Fecha</th>
+                  <th style={{ padding: "12px", fontWeight: 700 }}>Libro</th>
+                  <th style={{ padding: "12px", fontWeight: 700, textAlign: "center" }}>Cant</th>
+                  <th style={{ padding: "12px", fontWeight: 700, textAlign: "right" }}>Precio Unit.</th>
+                  <th style={{ padding: "12px", fontWeight: 700, textAlign: "right" }}>Total</th>
+                  <th style={{ padding: "12px", fontWeight: 700 }}>Comprador</th>
+                </tr>
+              </thead>
+              <tbody>
+                {ventas.map((v, index) => (
+                  <tr key={index} style={{ borderBottom: "1px solid #f0ebe4" }}>
+                    <td style={{ padding: "12px", fontWeight: 600 }}>#{v.id_orden}</td>
+                    <td style={{ padding: "12px", fontSize: "0.9rem" }}>
+                      {v.fecha ? new Date(v.fecha).toLocaleDateString("es-CO") : "Reciente"}
+                    </td>
+                    <td style={{ padding: "12px", fontWeight: 600, color: "var(--vinotinto)" }}>{v.titulo}</td>
+                    <td style={{ padding: "12px", textAlign: "center" }}>{v.cantidad}</td>
+                    <td style={{ padding: "12px", textAlign: "right" }}>{formatPrecio(v.precio_libro)}</td>
+                    <td style={{ padding: "12px", textAlign: "right", fontWeight: 700, color: "var(--rojo-suave)" }}>
+                      {formatPrecio(v.total)}
+                    </td>
+                    <td style={{ padding: "12px" }}>
+                      <div style={{ fontWeight: 600 }}>{v.cliente}</div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </>
+  );
+
   const renderContenido = () => {
     switch (activeSide) {
       case "Inicio":        return renderInicio();
       case "Mis Libros":    return renderMisLibros();
-      case "Ventas":        return renderProximamente("Ventas");
-      case "Pedidos":       return renderProximamente("Pedidos");
+      case "Ventas":        return renderVentas();
+      case "Pedidos":       return renderPedidos();
       case "Clientes":      return renderProximamente("Clientes");
       case "Perfil":        return renderConfiguracion();
       case "Promociones":   return <SeccionOfertas />;

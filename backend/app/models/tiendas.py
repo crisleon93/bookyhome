@@ -98,3 +98,22 @@ def obtener_tienda_por_usuario(id_usuario: int):
     finally:
         cursor.close()
         db.close()
+
+
+def actualizar_tienda(id_usuario: int, nombre_tienda: str, direccion: str, telefono: str):
+    db = get_db()
+    cursor = db.cursor()
+    try:
+        cursor.execute("""
+            UPDATE tiendas
+            SET nombre_tienda = %s, direccion = %s, telefono = %s
+            WHERE id_usuario = %s
+        """, (nombre_tienda, direccion, telefono, id_usuario))
+        db.commit()
+        return {"ok": True}
+    except Exception as e:
+        db.rollback()
+        return {"ok": False, "error": str(e)}
+    finally:
+        cursor.close()
+        db.close()

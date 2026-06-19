@@ -38,9 +38,15 @@ function MainLayout() {
   const variant = location.pathname === '/' ? 'white' : 'simple';
   const userRole = getUserRole();
 
+  const isDashboard =
+    location.pathname.startsWith('/mi-tienda') ||
+    location.pathname.startsWith('/admin') ||
+    location.pathname.startsWith('/post-login') ||
+    location.pathname.startsWith('/vendedor/publicar');
+
   return (
     <ToastProvider>
-      <Header variant={variant} />
+      {!isDashboard && <Header variant={variant} />}
 
       <Routes>
         {/* ── RUTAS PÚBLICAS ── */}
@@ -58,8 +64,13 @@ function MainLayout() {
         {/* ── RUTAS PROTEGIDAS GENERALES (Cualquier usuario logueado) ── */}
         <Route element={<PrivateRoute />}>
           <Route path="/post-login" element={<PostLogin />} />
-          <Route path="/mi-tienda" element={<MiTienda />} />
+          <Route path="/carrito" element={<Navigate to="/post-login?seccion=Carrito" replace />} />
           <Route path="/checkout/:orderId" element={<Checkout />} />
+        </Route>
+
+        {/* ── RUTAS EXCLUSIVAS DE VENDEDOR ── */}
+        <Route element={<PrivateRoute allowedRoles={['vendedor']} />}>
+          <Route path="/mi-tienda" element={<MiTienda />} />
           <Route path="/vendedor/publicar" element={<PublicarLibro />} />
         </Route>
 
@@ -91,7 +102,7 @@ function MainLayout() {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
 
-      <Footer />
+      {!isDashboard && <Footer />}
       <CookieBanner />
     </ToastProvider>
   );

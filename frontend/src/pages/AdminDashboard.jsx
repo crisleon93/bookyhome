@@ -29,6 +29,14 @@ const NAV_ITEMS = [
   { id: 'ordenes',   label: 'Órdenes',   Icon: IconPackage },
 ];
 
+// Ícono de sidebar: tamaño y color fijos, ignora className/defaults de cada ícono
+function SidebarIcon(props) {
+  const IconComp = props.Icon;
+  return (
+    <IconComp className="" width={props.size || 20} height={props.size || 20} strokeWidth={2} style={{ color: '#FFFFFF', display: 'block' }} />
+  );
+}
+
 export default function AdminDashboard() {
   const navigate = useNavigate();
   const [stats, setStats] = useState({ usuarios: 0, libros: 0, ordenes: 0, tiendas: 0 });
@@ -44,9 +52,9 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     const role = getUserRole();
-    if (role !== 'admin') { 
-      navigate('/login'); 
-      return; 
+    if (role !== 'admin') {
+      navigate('/login');
+      return;
     }
 
     const cargarDatos = async () => {
@@ -80,7 +88,7 @@ export default function AdminDashboard() {
   const ocultarLibro = async (id_libro, oculto_actual) => {
     try {
       await api.patch(`/libros/${id_libro}/ocultar`, { oculto: !oculto_actual });
-      
+
       setLibros(libros.map((l) =>
         l.id_libro === id_libro ? { ...l, oculto: !oculto_actual } : l
       ));
@@ -94,7 +102,7 @@ export default function AdminDashboard() {
   const eliminarLibro = async (id_libro) => {
     if (!window.confirm('¿Seguro que quieres eliminar este libro?')) return;
     try {
-      const token = localStorage.getItem('token'); 
+      const token = localStorage.getItem('token');
 
       await api.delete(`/libros/${id_libro}`, {
         headers: {
@@ -113,37 +121,35 @@ export default function AdminDashboard() {
   };
 
   const manejarEstadoTienda = async (idTienda, nuevoEstado) => {
-  const mensajeConfirmacion = nuevoEstado === 'Activa' 
-    ? '¿Deseas aprobar y activar esta librería?' 
-    : '¿Seguro que deseas suspender esta librería?';
+    const mensajeConfirmacion = nuevoEstado === 'Activa'
+      ? '¿Deseas aprobar y activar esta librería?'
+      : '¿Seguro que deseas suspender esta librería?';
 
-  if (!window.confirm(mensajeConfirmacion)) return;
+    if (!window.confirm(mensajeConfirmacion)) return;
 
-  try {
-    const token = localStorage.getItem('token');
-    
-    // Enviamos el JSON correspondiente al payload de tu endpoint
-    await api.patch(`/tiendas/${idTienda}/estado`, 
-      { estado: nuevoEstado }, 
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
+    try {
+      const token = localStorage.getItem('token');
 
-    // Actualiza en caliente modificando la propiedad exacta: estado_tienda
-    setTiendas((tiendasActuales) =>
-      tiendasActuales.map((t) =>
-        t.id_tienda === idTienda 
-          ? { ...t, estado_tienda: nuevoEstado.toLowerCase() } // 'activa' o 'suspendida'
-          : t
-      )
-    );
+      await api.patch(`/tiendas/${idTienda}/estado`,
+        { estado: nuevoEstado },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
 
-    notify(`Librería actualizada a: ${nuevoEstado}`, 'success');
-  } catch (error) {
-    console.error("Error al actualizar estado:", error);
-    const mensajeError = error.response?.data?.detail || 'Error al cambiar el estado';
-    notify(mensajeError, 'error');
-  }
-};
+      setTiendas((tiendasActuales) =>
+        tiendasActuales.map((t) =>
+          t.id_tienda === idTienda
+            ? { ...t, estado_tienda: nuevoEstado.toLowerCase() }
+            : t
+        )
+      );
+
+      notify(`Librería actualizada a: ${nuevoEstado}`, 'success');
+    } catch (error) {
+      console.error("Error al actualizar estado:", error);
+      const mensajeError = error.response?.data?.detail || 'Error al cambiar el estado';
+      notify(mensajeError, 'error');
+    }
+  };
 
   if (loading) return <div style={{ padding: '40px', textAlign: 'center', fontFamily: "'Montserrat', sans-serif" }}>Cargando panel admin...</div>;
 
@@ -207,7 +213,7 @@ export default function AdminDashboard() {
         }}>
           {sidebarOpen && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <IconSettings />
+              <SidebarIcon Icon={IconSettings} size={22} />
               <span style={{ fontSize: '1.05rem', fontWeight: 800 }}>Admin Panel</span>
             </div>
           )}
@@ -220,12 +226,13 @@ export default function AdminDashboard() {
             }}
             title={sidebarOpen ? 'Contraer menú' : 'Expandir menú'}
           >
-            {sidebarOpen ? <IconChevronLeft /> : <IconMenu />}
+            {sidebarOpen
+              ? <SidebarIcon Icon={IconChevronLeft} size={20} />
+              : <SidebarIcon Icon={IconMenu} size={20} />}
           </button>
         </div>
 
         {NAV_ITEMS.map((item) => {
-          const Icon = item.Icon;
           const active = activeSection === item.id;
           return (
             <button
@@ -244,8 +251,8 @@ export default function AdminDashboard() {
                 transition: 'background 0.15s ease',
               }}
             >
-              <span style={{ display: 'flex', color: '#FFFFFF' }}>
-                <Icon />
+              <span style={{ display: 'flex', flexShrink: 0 }}>
+                <SidebarIcon Icon={item.Icon} size={20} />
               </span>
               {sidebarOpen && <span>{item.label}</span>}
             </button>
@@ -265,7 +272,7 @@ export default function AdminDashboard() {
             gap: '10px', fontFamily: "'Montserrat', sans-serif", fontSize: '0.85rem',
           }}
         >
-          <IconLogOut />
+          <SidebarIcon Icon={IconLogOut} size={18} />
           {sidebarOpen && <span>Volver al inicio</span>}
         </button>
       </aside>
@@ -280,7 +287,7 @@ export default function AdminDashboard() {
               background: '#F5EAED', color: VINOTINTO,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
-              <ActiveIcon />
+              <ActiveIcon className="" width={24} height={24} style={{ color: VINOTINTO }} />
             </div>
           )}
           <h1 style={{ margin: 0, color: VINOTINTO, fontSize: '1.7rem', fontWeight: 800 }}>
@@ -291,13 +298,13 @@ export default function AdminDashboard() {
         {/* DASHBOARD REESTRUCTURADO */}
         {activeSection === 'dashboard' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
-            
+
             {/* Grid de 3 Tarjetas Operacionales Limpias */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
               {[
-                { label: 'Total Usuarios',   value: stats.usuarios,     Icon: IconUser },
-                { label: 'Total Libros',     value: stats.libros,      Icon: IconBook },
-                { label: 'Total Tiendas',    value: stats.tiendas,     Icon: IconStore },
+                { label: 'Total Usuarios', value: stats.usuarios, Icon: IconUser },
+                { label: 'Total Libros',   value: stats.libros,  Icon: IconBook },
+                { label: 'Total Tiendas',  value: stats.tiendas, Icon: IconStore },
               ].map((stat) => (
                 <div key={stat.label} style={{
                   background: WHITE, borderRadius: '14px', padding: '28px',
@@ -310,7 +317,7 @@ export default function AdminDashboard() {
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     margin: '0 auto',
                   }}>
-                    <stat.Icon />
+                    <stat.Icon className="" width={24} height={24} style={{ color: VINOTINTO }} />
                   </div>
                   <div style={{ fontSize: '2.2rem', fontWeight: 800, color: VINOTINTO, margin: '14px 0 4px' }}>
                     {stat.value}
@@ -322,11 +329,11 @@ export default function AdminDashboard() {
 
             {/* Grid de Tablas de Monitoreo Directo */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
-              
+
               {/* Tabla: Últimos Usuarios */}
               <div style={{ background: WHITE, borderRadius: '14px', padding: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.04)', border: `1px solid ${BORDER}` }}>
                 <h3 style={{ margin: '0 0 16px', color: VINOTINTO, display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.05rem', fontWeight: 700 }}>
-                  <IconUser size={20} style={{ color: VINOTINTO }} />
+                  <IconUser className="" width={20} height={20} style={{ color: VINOTINTO }} />
                   Últimos Usuarios Registrados
                 </h3>
                 <div style={{ overflowX: 'auto' }}>
@@ -361,7 +368,7 @@ export default function AdminDashboard() {
               {/* Tabla: Últimas Tiendas */}
               <div style={{ background: WHITE, borderRadius: '14px', padding: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.04)', border: `1px solid ${BORDER}` }}>
                 <h3 style={{ margin: '0 0 16px', color: VINOTINTO, display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.05rem', fontWeight: 700 }}>
-                <IconStore size={20} style={{ color: VINOTINTO }} />
+                  <IconStore className="" width={20} height={20} style={{ color: VINOTINTO }} />
                   Últimas Tiendas Creadas
                 </h3>
                 <div style={{ overflowX: 'auto' }}>
@@ -379,7 +386,7 @@ export default function AdminDashboard() {
                           <td style={{ padding: '10px 8px', fontWeight: 600, color: VINOTINTO }}>{t.nombre_tienda}</td>
                           <td style={{ padding: '10px 8px', color: '#555' }}>{t.telefono || '-'}</td>
                           <td style={{ padding: '10px 8px', color: GRAY }}>
-                            {t.fecha_creacion 
+                            {t.fecha_creacion
                               ? new Date(t.fecha_creacion).toLocaleDateString('es-ES', {
                                   day: '2-digit',
                                   month: '2-digit',
@@ -415,12 +422,12 @@ export default function AdminDashboard() {
                   <div style={{
                     width: '46px', height: '46px', borderRadius: '23px',
                     background: '#F5EAED', color: s.color,
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'center', 
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
                     flexShrink: 0,
                   }}>
-                    <s.Icon />
+                    <s.Icon className="" width={22} height={22} style={{ color: s.color }} />
                   </div>
                   <div>
                     <div style={{ fontSize: '1.5rem', fontWeight: 800, color: s.color }}>{s.value}</div>
@@ -434,7 +441,7 @@ export default function AdminDashboard() {
               {/* Usuarios por rol unificados */}
               <div style={{ background: WHITE, borderRadius: '14px', padding: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.06)', border: `1px solid ${BORDER}` }}>
                 <h3 style={{ margin: '0 0 20px', color: VINOTINTO, display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <IconUser /> Usuarios por rol
+                  <IconUser className="" width={20} height={20} style={{ color: VINOTINTO }} /> Usuarios por rol
                 </h3>
                 {Object.entries(roleCount).map(([rol, count]) => (
                   <BarraProgreso
@@ -448,7 +455,7 @@ export default function AdminDashboard() {
               {/* Libros por categoría */}
               <div style={{ background: WHITE, borderRadius: '14px', padding: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.06)', border: `1px solid ${BORDER}` }}>
                 <h3 style={{ margin: '0 0 20px', color: VINOTINTO, display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <IconBook /> Libros por categoría
+                  <IconBook className="" width={20} height={20} style={{ color: VINOTINTO }} /> Libros por categoría
                 </h3>
                 {Object.entries(categoriaCount).slice(0, 6).map(([cat, count]) => (
                   <BarraProgreso
@@ -466,8 +473,8 @@ export default function AdminDashboard() {
           <div style={{ background: WHITE, borderRadius: '14px', overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.06)', border: `1px solid ${BORDER}` }}>
             <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'flex-end' }}>
               <label style={{ marginRight: '10px', fontWeight: 600, alignSelf: 'center' }}>Filtrar por Rol:</label>
-              <select 
-                value={filtroRol} 
+              <select
+                value={filtroRol}
                 onChange={(e) => setFiltroRol(e.target.value)}
                 style={{
                   padding: '8px 12px',
@@ -509,7 +516,7 @@ export default function AdminDashboard() {
                         background: u.rol === 'admin' ? VINOTINTO : u.rol === 'vendedor' ? ORANGE : GREEN,
                         color: WHITE, padding: '4px 10px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 600
                       }}>
-                        {u.rol} 
+                        {u.rol}
                       </span>
                     </td>
                     <td style={{ padding: '12px 16px' }}>
@@ -518,7 +525,9 @@ export default function AdminDashboard() {
                         color: WHITE, padding: '4px 10px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 600,
                         display: 'inline-flex', alignItems: 'center', gap: '5px',
                       }}>
-                        {u.estado_usuario === 'Bloqueado' ? <IconLock /> : <IconCheck />}
+                        {u.estado_usuario === 'Bloqueado'
+                          ? <IconLock className="" width={14} height={14} style={{ color: WHITE }} />
+                          : <IconCheck className="" width={14} height={14} style={{ color: WHITE }} />}
                         {u.estado_usuario === 'Bloqueado' ? 'Bloqueado' : 'Activo'}
                       </span>
                     </td>
@@ -541,7 +550,9 @@ export default function AdminDashboard() {
                         borderRadius: '6px', cursor: 'pointer', fontWeight: 600,
                         display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem',
                       }}>
-                        {u.estado_usuario === 'Bloqueado' ? <IconUnlock /> : <IconLock />}
+                        {u.estado_usuario === 'Bloqueado'
+                          ? <IconUnlock className="" width={14} height={14} style={{ color: WHITE }} />
+                          : <IconLock className="" width={14} height={14} style={{ color: WHITE }} />}
                         {u.estado_usuario === 'Bloqueado' ? 'Desbloquear' : 'Bloquear'}
                       </button>
                     </td>
@@ -555,19 +566,18 @@ export default function AdminDashboard() {
         {/* LIBROS */}
         {activeSection === 'libros' && (
           <div style={{ background: WHITE, borderRadius: '14px', overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.06)', border: `1px solid ${BORDER}`, padding: '16px' }}>
-            
-            {/* 🆕 Contenedor del filtro selector optimizado */}
+
             <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '10px' }}>
               <label style={{ fontWeight: 600, fontSize: '0.9rem', color: '#555' }}>Filtrar por Categoría:</label>
-              <select 
-                value={filtroCategoria} 
+              <select
+                value={filtroCategoria}
                 onChange={(e) => setFiltroCategoria(e.target.value)}
                 style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid #FAF8F5', background: WHITE, fontWeight: 600, cursor: 'pointer', outline: 'none' }}
               >
                 <option value="todas">Todas las Categorías</option>
                 {[
-                  "Arte", "Aventura", "Biografia", "Ciencia", "Comedia", 
-                  "Educacion", "Fantasia", "Ficcion", "Historia", "Infantil", 
+                  "Arte", "Aventura", "Biografia", "Ciencia", "Comedia",
+                  "Educacion", "Fantasia", "Ficcion", "Historia", "Infantil",
                   "Ingenieria", "Juvenil", "Romance", "Tecnologia", "Terror"
                 ].map((cat) => (
                   <option key={cat} value={cat}>{cat}</option>
@@ -581,14 +591,14 @@ export default function AdminDashboard() {
                   <th style={{ padding: '14px 16px', textAlign: 'left' }}>Título</th>
                   <th style={{ padding: '14px 16px', textAlign: 'left' }}>Autor</th>
                   <th style={{ padding: '14px 16px', textAlign: 'left' }}>Precio</th>
-                  <th style={{ padding: '14px 16px', textAlign: 'left' }}>Categoría</th> 
+                  <th style={{ padding: '14px 16px', textAlign: 'left' }}>Categoría</th>
                   <th style={{ padding: '14px 16px', textAlign: 'left' }}>Estado</th>
                   <th style={{ padding: '14px 16px', textAlign: 'left' }}>Acciones</th>
                 </tr>
               </thead>
               <tbody>
                 {libros
-                  .filter((l) => filtroCategoria === 'todas' || l.nombre_categoria === filtroCategoria) 
+                  .filter((l) => filtroCategoria === 'todas' || l.nombre_categoria === filtroCategoria)
                   .map((l, i) => (
                     <tr key={l.id_libro} style={{
                       background: l.oculto ? '#fff3f3' : i % 2 === 0 ? '#fafafa' : WHITE,
@@ -598,7 +608,7 @@ export default function AdminDashboard() {
                       <td style={{ padding: '12px 16px', fontWeight: 600 }}>{l.titulo}</td>
                       <td style={{ padding: '12px 16px', color: '#555' }}>{l.autor_libro}</td>
                       <td style={{ padding: '12px 16px', fontWeight: 600 }}>${Number(l.precio_libro).toLocaleString('es-CO')}</td>
-                      
+
                       <td style={{ padding: '12px 16px', color: '#666', fontSize: '0.85rem', fontWeight: 500 }}>
                         {l.nombre_categoria || 'Sin categoría'}
                       </td>
@@ -610,7 +620,9 @@ export default function AdminDashboard() {
                           fontSize: '0.8rem', fontWeight: 600,
                           display: 'inline-flex', alignItems: 'center', gap: '5px',
                         }}>
-                          {l.oculto ? <IconBan /> : <IconCheck />}
+                          {l.oculto
+                            ? <IconBan className="" width={14} height={14} style={{ color: WHITE }} />
+                            : <IconCheck className="" width={14} height={14} style={{ color: WHITE }} />}
                           {l.oculto ? 'Oculto' : 'Visible'}
                         </span>
                       </td>
@@ -621,7 +633,9 @@ export default function AdminDashboard() {
                           padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontWeight: 600,
                           display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem',
                         }}>
-                          {l.oculto ? <IconEye /> : <IconBan />}
+                          {l.oculto
+                            ? <IconEye className="" width={14} height={14} style={{ color: WHITE }} />
+                            : <IconBan className="" width={14} height={14} style={{ color: WHITE }} />}
                           {l.oculto ? 'Mostrar' : 'Ocultar'}
                         </button>
                         <button onClick={() => eliminarLibro(l.id_libro)} style={{
@@ -629,7 +643,7 @@ export default function AdminDashboard() {
                           padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontWeight: 600,
                           display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem',
                         }}>
-                          <IconTrash /> Eliminar
+                          <IconTrash className="" width={14} height={14} style={{ color: WHITE }} /> Eliminar
                         </button>
                       </td>
                     </tr>
@@ -650,8 +664,8 @@ export default function AdminDashboard() {
                   <th style={{ padding: '14px 16px', textAlign: 'left' }}>Dirección</th>
                   <th style={{ padding: '14px 16px', textAlign: 'left' }}>Teléfono</th>
                   <th style={{ padding: '14px 16px', textAlign: 'left' }}>Fecha</th>
-                  <th style={{ padding: '14px 16px', textAlign: 'left' }}>Estado</th> 
-                  <th style={{ padding: '14px 16px', textAlign: 'center' }}>Acciones</th> 
+                  <th style={{ padding: '14px 16px', textAlign: 'left' }}>Estado</th>
+                  <th style={{ padding: '14px 16px', textAlign: 'center' }}>Acciones</th>
                 </tr>
               </thead>
               <tbody>
@@ -662,8 +676,7 @@ export default function AdminDashboard() {
                     <td style={{ padding: '12px 16px', color: '#555' }}>{t.direccion}</td>
                     <td style={{ padding: '12px 16px', color: '#555' }}>{t.telefono}</td>
                     <td style={{ padding: '12px 16px', color: '#777', fontSize: '0.9rem' }}>{t.fecha_creacion}</td>
-                    
-                    {/* Badge de Estado Dinámico */}
+
                     <td style={{ padding: '12px 16px' }}>
                       <span style={{
                         background: t.estado_tienda?.toLowerCase() === 'activa' ? GREEN : t.estado_tienda?.toLowerCase() === 'suspendida' ? RED : ORANGE,
@@ -673,20 +686,18 @@ export default function AdminDashboard() {
                       </span>
                     </td>
 
-                    {/* Panel de Botones Dinámicos */}
                     <td style={{ padding: '12px 16px', display: 'flex', gap: '8px', justifyContent: 'center' }}>
-                      {/* Valida si viene 'pendiente', vacío o nulo */}
                       {(t.estado_tienda?.toLowerCase() === 'pendiente' || !t.estado_tienda) && (
-                        <button 
+                        <button
                           onClick={() => manejarEstadoTienda(t.id_tienda, 'Activa')}
                           style={{ background: GREEN, color: WHITE, border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontWeight: 600, fontSize: '0.8rem' }}
                         >
                           Aprobar
                         </button>
                       )}
-                      
+
                       {t.estado_tienda?.toLowerCase() === 'activa' && (
-                        <button 
+                        <button
                           onClick={() => manejarEstadoTienda(t.id_tienda, 'Suspendida')}
                           style={{ background: ORANGE, color: WHITE, border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontWeight: 600, fontSize: '0.8rem' }}
                         >
@@ -695,7 +706,7 @@ export default function AdminDashboard() {
                       )}
 
                       {t.estado_tienda?.toLowerCase() === 'suspendida' && (
-                        <button 
+                        <button
                           onClick={() => manejarEstadoTienda(t.id_tienda, 'Activa')}
                           style={{ background: GREEN, color: WHITE, border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontWeight: 600, fontSize: '0.8rem' }}
                         >

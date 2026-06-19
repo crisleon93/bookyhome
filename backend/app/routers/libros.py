@@ -20,6 +20,8 @@ from app.models.libro import (
     validar_disponibilidad,
     descontar_stock,
     obtener_alertas_stock,
+    obtener_pedidos_tienda,
+    obtener_ventas_tienda,
 )
 
 router = APIRouter()
@@ -60,6 +62,26 @@ def mis_libros(user=Depends(get_current_user)):
     if not tienda:
         raise HTTPException(status_code=404, detail="No tienes una tienda registrada")
     return obtener_libros_por_tienda(tienda["id_tienda"])
+
+
+# GET /libros/mis-pedidos
+@router.get("/mis-pedidos")
+def mis_pedidos(user=Depends(get_current_user)):
+    id_usuario = int(user["sub"])
+    tienda = obtener_tienda_por_usuario(id_usuario)
+    if not tienda:
+        raise HTTPException(status_code=404, detail="No tienes una tienda registrada")
+    return obtener_pedidos_tienda(tienda["id_tienda"])
+
+
+# GET /libros/mis-ventas
+@router.get("/mis-ventas")
+def mis_ventas(user=Depends(get_current_user)):
+    id_usuario = int(user["sub"])
+    tienda = obtener_tienda_por_usuario(id_usuario)
+    if not tienda:
+        raise HTTPException(status_code=404, detail="No tienes una tienda registrada")
+    return obtener_ventas_tienda(tienda["id_tienda"])
 
 
 # GET /libros/stats

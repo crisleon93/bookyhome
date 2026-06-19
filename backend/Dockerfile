@@ -17,4 +17,4 @@ COPY . .
 EXPOSE 8000
 
 # 7. Comando para arrancar el servidor (Asumiendo FastAPI con uvicorn)
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]

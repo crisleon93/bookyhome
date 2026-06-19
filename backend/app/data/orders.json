@@ -1,0 +1,20 @@
+{
+  "22": [
+    {
+      "id_orden": 1,
+      "fecha": "2026-06-19T22:05:18.638504Z",
+      "items": [
+        {
+          "id_libro": 2,
+          "titulo": "Amor en Invierno",
+          "autor_libro": "L. Moreno",
+          "precio_libro": 28000.0,
+          "cantidad": 1,
+          "imagen": null
+        }
+      ],
+      "total": 28000.0,
+      "estado": "pendiente"
+    }
+  ]
+}

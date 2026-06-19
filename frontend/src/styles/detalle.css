@@ -1,0 +1,180 @@
+/* ===========================
+   DETALLE DE LIBRO
+   styles/detalle.css
+   =========================== */
+
+/* -- Contenedor principal del detalle -- */
+.detalle-container {
+  padding: 32px 0 48px;
+}
+
+/* -- Card del detalle (grid) -- */
+.detalle-card {
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  gap: 36px;
+  background: white;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0,0,0,.08);
+  border: 1px solid #e0dbd4;
+}
+
+/* -- Imagen del libro -- */
+.detalle-imagen img {
+  width: 100%;
+  height: 480px;
+  object-fit: cover;
+  display: block;
+}
+
+/* -- Información del libro -- */
+.detalle-info {
+  padding: 28px 28px 28px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* -- Categoría del libro -- */
+.detalle-categoria {
+  display: inline-block;
+  background: rgba(122,30,58,.08);
+  color: var(--vinotinto);
+  padding: 4px 14px;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 0.82rem;
+  width: fit-content;
+}
+
+/* -- Título del libro -- */
+.detalle-info h1 {
+  font-size: 1.6rem;
+  font-weight: 800;
+  line-height: 1.2;
+  margin: 0;
+  color: var(--gris-carbon);
+}
+
+/* -- Precio del libro -- */
+.detalle-precio {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: var(--vinotinto);
+  margin: 4px 0;
+}
+
+/* -- Detalles de atributos (autor, tienda, etc.) -- */
+.detalle-dato {
+  font-size: 0.92rem;
+  margin: 0;
+  color: #555;
+}
+
+/* -- Strong inside detalle-dato -- */
+.detalle-dato strong {
+  color: var(--gris-carbon);
+}
+
+/* -- Disponibilidad -- */
+.detalle-disponible {
+  font-weight: 600;
+  font-size: 0.88rem;
+}
+
+/* -- Acciones: favorito y agregar al carrito -- */
+.detalle-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+/* -- Botón favorito -- */
+.btn-favorito {
+  width: 100%;
+  padding: 12px;
+  border: 1.5px solid var(--vinotinto);
+  background: white;
+  color: var(--vinotinto);
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s;
+  font-family: 'Montserrat', sans-serif;
+}
+.btn-favorito:hover {
+  background: #fdf0f2;
+}
+
+/* -- Botón carrito -- */
+.btn-carrito {
+  width: 100%;
+  padding: 13px;
+  border: none;
+  border-radius: 10px;
+  background: var(--vinotinto);
+  color: white;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  font-family: 'Montserrat', sans-serif;
+}
+.btn-carrito:hover:not(:disabled) {
+  opacity: 0.88;
+}
+.btn-carrito:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* -- Compartir en redes -- */
+.detalle-share {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+.detalle-share button {
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.82rem;
+  cursor: pointer;
+  font-family: 'Montserrat', sans-serif;
+  transition: opacity 0.2s;
+}
+.detalle-share button:hover {
+  opacity: 0.85;
+}
+
+/* -- Descripción del libro -- */
+.detalle-descripcion {
+  margin-top: 24px;
+  background: white;
+  border-radius: 14px;
+  padding: 24px;
+  box-shadow: 0 2px 10px rgba(0,0,0,.06);
+  border: 1px solid #e0dbd4;
+}
+.detalle-descripcion h2 {
+  color: var(--vinotinto);
+  margin-bottom: 10px;
+  font-size: 1.05rem;
+}
+.detalle-descripcion p {
+  font-size: 0.92rem;
+  color: #555;
+  line-height: 1.7;
+}
+
+/* -- Estado de carga del detalle -- */
+.detalle-loading {
+  text-align: center;
+  padding: 60px;
+  font-size: 1.1rem;
+  color: #999;
+}

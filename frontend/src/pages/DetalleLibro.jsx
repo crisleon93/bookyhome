@@ -1,7 +1,9 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { getLibroById } from '../services/api';
-import './DetalleLibro.css';
+import { getLibroById, addToCart } from '../services/api';
+import { notify } from '../components/ToastProvider';
+import '../styles/detalle.css';
+
 
 const obtenerImagen = (categoria) => {
   const imagenes = {
@@ -27,6 +29,7 @@ const DetalleLibro = () => {
   const [loading, setLoading] = useState(true);
   const [esFavorito, setEsFavorito] = useState(false);
   const [copiadoMsg, setCopiadoMsg] = useState('');
+  const [cartLoading, setCartLoading] = useState(false);
 
   const cargarLibro = useCallback(async () => {
     try {
@@ -72,11 +75,37 @@ const DetalleLibro = () => {
     });
   };
 
+  const handleAgregarCarrito = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      notify('Debes iniciar sesión para agregar al carrito', 'error');
+      return;
+    }
+    setCartLoading(true);
+    try {
+      await addToCart({
+        id_libro:    libro.id_libro,
+        cantidad:    1,
+        titulo:      libro.titulo,
+        autor_libro: libro.autor_libro,
+        precio_libro: libro.precio_libro,
+        imagen:      obtenerImagen(libro.nombre_categoria),
+      });
+      notify(`"​${libro.titulo}" agregado al carrito ✓`, 'success');
+      window.dispatchEvent(new Event('cart-updated'));
+    } catch (err) {
+      const msg = err.response?.data?.detail || 'No se pudo agregar al carrito';
+      notify(msg, 'error');
+    } finally {
+      setCartLoading(false);
+    }
+  };
+
   if (loading) return <div className="detalle-loading">Cargando libro...</div>;
   if (!libro) return <div className="detalle-loading">Libro no encontrado</div>;
 
   return (
-    <main className="detalle-container">
+    <main className="layout-container detalle-container">
       <div className="detalle-card">
         <div className="detalle-imagen">
           <img src={obtenerImagen(libro.nombre_categoria)} alt={libro.titulo} />
@@ -90,61 +119,48 @@ const DetalleLibro = () => {
           </div>
           <p className="detalle-dato"><strong>Autor:</strong> {libro.autor_libro}</p>
           <p className="detalle-dato"><strong>Tienda:</strong> {libro.nombre_tienda}</p>
-          <p className="detalle-dato detalle-disponible">🟢 Disponible</p>
+          <p className="detalle-dato detalle-disponible">
+            {libro.stock > 0 ? `🟢 Disponible (${libro.stock} en stock)` : '🔴 Sin stock'}
+          </p>
 
-          <button onClick={toggleFavorito} className="btn-favorito">
-            {esFavorito ? '❤️ Quitar favorito' : '🤍 Agregar favorito'}
-          </button>
-
-          <button className="btn-carrito">Agregar al carrito</button>
-
-          <div style={{ marginTop: '16px', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+          <div className="detalle-actions">
             <button
-              onClick={compartirWhatsApp}
-              style={{
-                background: '#25D366',
-                color: 'white',
-                border: 'none',
-                padding: '10px 16px',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                fontWeight: 600,
-                fontSize: '0.9rem'
-              }}
+              className="btn-carrito"
+              onClick={handleAgregarCarrito}
+              disabled={cartLoading || libro.stock === 0}
             >
-              📲 Compartir por WhatsApp
+              {cartLoading ? 'Agregando...' : libro.stock === 0 ? 'Sin stock' : '🛒 Agregar al carrito'}
             </button>
 
-            <button
-              onClick={copiarEnlace}
-              style={{
-                background: 'white',
-                color: 'var(--vinotinto)',
-                border: '1px solid var(--vinotinto)',
-                padding: '10px 16px',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                fontWeight: 600,
-                fontSize: '0.9rem'
-              }}
-            >
-              🔗 Copiar enlace
+            <button onClick={toggleFavorito} className="btn-favorito">
+              {esFavorito ? '❤️ Quitar de favoritos' : '🤍 Agregar a favoritos'}
             </button>
           </div>
 
-          {copiadoMsg && (
-            <p style={{ color: 'green', marginTop: '8px', fontWeight: 600 }}>
-              {copiadoMsg}
-            </p>
-          )}
+          <div className="detalle-share">
+            <button
+              onClick={compartirWhatsApp}
+              style={{ background: '#25D366', color: 'white', border: 'none' }}
+            >
+              📲 WhatsApp
+            </button>
+            <button
+              onClick={copiarEnlace}
+              style={{ background: 'white', color: 'var(--vinotinto)', border: '1px solid var(--vinotinto)' }}
+            >
+              🔗 Copiar enlace
+            </button>
+            {copiadoMsg && <span style={{ color: 'green', fontWeight: 600, alignSelf: 'center', fontSize: '0.82rem' }}>{copiadoMsg}</span>}
+          </div>
         </div>
       </div>
 
       <section className="detalle-descripcion">
         <h2>Descripción</h2>
         <p>
-          Descubre esta obra disponible en BookyHome.
-          Encuentra libros de distintas categorías, autores y librerías registradas en la plataforma.
+          {libro.descripcion_libro
+            ? libro.descripcion_libro
+            : 'Este libro no tiene una descripción disponible aún.'}
         </p>
       </section>
     </main>

@@ -1,66 +1,31 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import logo from '../assets/logo.png';
-import { IconSearch, IconUser, IconUserPlus } from './Icons';
-import { login } from '../services/api';
+import { 
+  IconSearch, 
+  IconUser, 
+  IconUserPlus, 
+  IconLocationTopBar as IconLocation, 
+  IconClose, 
+  IconArrow, 
+  IconBooks, 
+  IconFavorites, 
+  IconCart, 
+  IconMenu,
+  IconMail,
+  IconLock,
+  IconEyeOpen,
+  IconEyeClosed
+} from './Icons';
+import { login, getCarrito } from '../services/api';
 import { jwtDecode } from 'jwt-decode';
 import { notify } from './ToastProvider';
+import Register from '../pages/Register';
+import Libreria from '../pages/Libreria';
 
-const IconLocation = () => (
-  <svg className="icon-top-bar" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-    fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/>
-  </svg>
-);
-
-const IconClose = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-    stroke="currentColor" strokeWidth="2" width="20" height="20">
-    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/>
-  </svg>
-);
-
-const IconArrow = () => (
-  <svg className="modal-arrow" xmlns="http://www.w3.org/2000/svg" fill="none"
-    viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-    <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5"/>
-  </svg>
-);
-
-const IconBooks = () => (
-  <svg className="header-nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-    fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="18" height="18">
-    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z" />
-  </svg>
-);
-
-const IconFavorites = () => (
-  <svg className="header-nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-    fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="18" height="18">
-    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78Z" />
-  </svg>
-);
-
-const IconCart = () => (
-  <svg className="header-nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-    fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="18" height="18">
-    <circle cx="9" cy="20" r="1" />
-    <circle cx="17" cy="20" r="1" />
-    <path d="M3 3h2l2.68 13.39A2 2 0 0 0 9.66 18H18a2 2 0 0 0 2-1.6L22 6H6" />
-  </svg>
-);
-
-const IconMenu = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-    stroke="currentColor" strokeWidth="2" width="22" height="22">
-    <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
-  </svg>
-);
-
-function ModalOption({ to, iconPath, title, desc, onClose }) {
-  return (
-    <Link to={to} className="modal-option" onClick={onClose}>
+function ModalOption({ to, onClick, iconPath, title, desc, onClose }) {
+  const content = (
+    <>
       <div className="modal-option-icon">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
           stroke="currentColor" strokeWidth="1.8">
@@ -72,6 +37,25 @@ function ModalOption({ to, iconPath, title, desc, onClose }) {
         <p>{desc}</p>
       </div>
       <IconArrow />
+    </>
+  );
+
+  if (onClick) {
+    return (
+      <button 
+        type="button" 
+        className="modal-option" 
+        onClick={() => { onClick(); if (onClose) onClose(); }}
+        style={{ background: 'none', border: '1.5px solid #e5e0d8', width: '100%', textAlign: 'left', cursor: 'pointer', fontFamily: 'inherit' }}
+      >
+        {content}
+      </button>
+    );
+  }
+
+  return (
+    <Link to={to} className="modal-option" onClick={onClose}>
+      {content}
     </Link>
   );
 }
@@ -81,15 +65,64 @@ function Header({ variant }) {
   const navigate = useNavigate();
   const [modalOpen, setModalOpen] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
+  const [registerOpen, setRegisterOpen] = useState(false);
+  const [libreriaOpen, setLibreriaOpen] = useState(false);
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
   const [loginLoading, setLoginLoading] = useState(false);
   const [loginError, setLoginError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [showPass, setShowPass] = useState(false);
+  const [cartCount, setCartCount] = useState(0);
 
   const isHome = location.pathname === '/';
+
+  useEffect(() => {
+    if (!loginOpen) {
+      setShowPass(false);
+    }
+  }, [loginOpen]);
   const isSimple = variant === "simple";
   const isWhite = variant === "white" || !variant;
+
+  const token = localStorage.getItem("token");
+  let isLoggedIn = false;
+  let userRole = null;
+  if (token) {
+    try {
+      const decoded = jwtDecode(token);
+      isLoggedIn = true;
+      userRole = decoded.rol;
+    } catch {
+      isLoggedIn = false;
+    }
+  }
+
+  useEffect(() => {
+    if (!dropdownOpen) return;
+    const handleClose = () => setDropdownOpen(false);
+    window.addEventListener('click', handleClose);
+    return () => window.removeEventListener('click', handleClose);
+  }, [dropdownOpen]);
+
+  // Badge del carrito: carga inicial + escucha evento cart-updated
+  useEffect(() => {
+    const fetchCount = async () => {
+      if (!isLoggedIn) { setCartCount(0); return; }
+      try {
+        const res = await getCarrito();
+        const items = res.data || [];
+        const total = items.reduce((acc, item) => acc + (item.cantidad || 1), 0);
+        setCartCount(total);
+      } catch {
+        setCartCount(0);
+      }
+    };
+    fetchCount();
+    window.addEventListener('cart-updated', fetchCount);
+    return () => window.removeEventListener('cart-updated', fetchCount);
+  }, [isLoggedIn]);
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
@@ -143,7 +176,8 @@ function Header({ variant }) {
         id="main-header"
         className={`${isSimple ? "header-center" : ""} ${isWhite ? "header-white" : "header-vinotinto"} ${mobileMenuOpen ? "header-menu-open" : ""}`}
       >
-        <Link to="/" className="logo-link">
+        <div className="layout-container header-container">
+          <Link to="/" className="logo-link">
           <img src={logo} alt="BookyHome" className="logo-img" />
         </Link>
 
@@ -171,8 +205,30 @@ function Header({ variant }) {
             </span>
           </Link>
           <Link to="/carrito" className="header-nav-link" onClick={() => setMobileMenuOpen(false)}>
-            <span>
-              <IconCart />
+            <span style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+              <span style={{ position: 'relative' }}>
+                <IconCart />
+                {isLoggedIn && cartCount > 0 && (
+                  <span style={{
+                    position: 'absolute',
+                    top: '-6px',
+                    right: '-8px',
+                    background: 'var(--vinotinto)',
+                    color: 'white',
+                    borderRadius: '50%',
+                    width: '16px',
+                    height: '16px',
+                    fontSize: '10px',
+                    fontWeight: 800,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    lineHeight: 1,
+                  }}>
+                    {cartCount > 9 ? '9+' : cartCount}
+                  </span>
+                )}
+              </span>
               Carrito
             </span>
           </Link>
@@ -192,27 +248,76 @@ function Header({ variant }) {
             </form>
 
             <div className="header-actions">
-              <button
-                type="button"
-                className="user-access"
-                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
-                onClick={() => setLoginOpen(true)}
-              >
-                <IconUser />
-                <span>Ingresa</span>
-              </button>
+              {isLoggedIn ? (
+                <div className="user-dropdown-wrapper">
+                  <button
+                    type="button"
+                    className="user-access"
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: '6px' }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setDropdownOpen(!dropdownOpen);
+                    }}
+                  >
+                    <IconUser />
+                    <span>Mi Cuenta</span>
+                  </button>
+                  <div className={`user-dropdown-menu ${dropdownOpen ? 'open' : ''}`}>
+                    <Link 
+                      to={userRole === 'vendedor' ? '/mi-tienda' : userRole === 'admin' ? '/admin' : '/post-login'} 
+                      className="user-dropdown-item" 
+                      onClick={() => setDropdownOpen(false)}
+                    >
+                      Dashboard
+                    </Link>
+                    <Link to="/favoritos" className="user-dropdown-item" onClick={() => setDropdownOpen(false)}>
+                      Favoritos
+                    </Link>
+                    <Link to="/carrito" className="user-dropdown-item" onClick={() => setDropdownOpen(false)}>
+                      Carrito
+                    </Link>
+                    <div className="user-dropdown-divider" />
+                    <button
+                      type="button"
+                      className="user-dropdown-item"
+                      style={{ color: '#dc2626' }}
+                      onClick={() => {
+                        setDropdownOpen(false);
+                        localStorage.removeItem("token");
+                        notify("Sesión cerrada", "info");
+                        navigate("/");
+                      }}
+                    >
+                      Cerrar Sesión
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    className="user-access"
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                    onClick={() => setLoginOpen(true)}
+                  >
+                    <IconUser />
+                    <span>Ingresa</span>
+                  </button>
 
-              <button
-                className="user-access"
-                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
-                onClick={() => setModalOpen(true)}
-              >
-                <IconUserPlus />
-                <span>Crea tu cuenta</span>
-              </button>
+                  <button
+                    className="user-access"
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                    onClick={() => setModalOpen(true)}
+                  >
+                    <IconUserPlus />
+                    <span>Crea tu cuenta</span>
+                  </button>
+                </>
+              )}
             </div>
           </>
         )}
+        </div>
       </header>
 
       {modalOpen && (
@@ -225,15 +330,13 @@ function Header({ variant }) {
             <p className="modal-subtitle">¿Cómo quieres unirte a BookyHome?</p>
             <div className="modal-options">
               <ModalOption
-                to="/register"
-                onClose={() => setModalOpen(false)}
+                onClick={() => { setModalOpen(false); setRegisterOpen(true); }}
                 iconPath="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.5 20.25a8.25 8.25 0 0115 0"
                 title="Soy comprador"
                 desc="Quiero explorar y comprar libros"
               />
               <ModalOption
-                to="/libreria"
-                onClose={() => setModalOpen(false)}
+                onClick={() => { setModalOpen(false); setLibreriaOpen(true); }}
                 iconPath="M13.5 21v-7.5A2.25 2.25 0 0011.25 11.25h-1.5A2.25 2.25 0 007.5 13.5V21m6 0H7.5m6 0h3.75A2.25 2.25 0 0019.5 18.75V9.375a2.25 2.25 0 00-.659-1.591l-4.5-4.5A2.25 2.25 0 0012.75 3H6.75A2.25 2.25 0 004.5 5.25v13.5A2.25 2.25 0 006.75 21H7.5"
                 title="Tengo una librería"
                 desc="Quiero vender mis libros en BookyHome"
@@ -255,23 +358,37 @@ function Header({ variant }) {
             <form onSubmit={handleLoginSubmit} noValidate>
               <div className="auth-field">
                 <label htmlFor="modal-login-email">Email</label>
-                <input
-                  id="modal-login-email"
-                  type="email"
-                  placeholder="tu@email.com"
-                  value={loginForm.email}
-                  onChange={e => setLoginForm({ ...loginForm, email: e.target.value })}
-                />
+                <div className="auth-input-wrapper">
+                  <IconMail />
+                  <input
+                    id="modal-login-email"
+                    type="email"
+                    placeholder="tu@email.com"
+                    value={loginForm.email}
+                    onChange={e => setLoginForm({ ...loginForm, email: e.target.value })}
+                  />
+                </div>
               </div>
               <div className="auth-field">
                 <label htmlFor="modal-login-password">Contraseña</label>
-                <input
-                  id="modal-login-password"
-                  type="password"
-                  placeholder="Tu contraseña"
-                  value={loginForm.password}
-                  onChange={e => setLoginForm({ ...loginForm, password: e.target.value })}
-                />
+                <div className="auth-input-wrapper">
+                  <IconLock />
+                  <input
+                    id="modal-login-password"
+                    type={showPass ? 'text' : 'password'}
+                    placeholder="Tu contraseña"
+                    value={loginForm.password}
+                    onChange={e => setLoginForm({ ...loginForm, password: e.target.value })}
+                  />
+                  <button
+                    type="button"
+                    className="btn-eye"
+                    aria-label={showPass ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                    onClick={() => setShowPass(v => !v)}
+                  >
+                    {showPass ? <IconEyeClosed /> : <IconEyeOpen />}
+                  </button>
+                </div>
               </div>
               <button type="submit" className="btn btn-vinotinto" disabled={loginLoading}>
                 {loginLoading ? 'Ingresando...' : 'Ingresar'}
@@ -279,8 +396,53 @@ function Header({ variant }) {
             </form>
             <div className="auth-footer-links">
               <p><Link to="/forgot-password" onClick={() => setLoginOpen(false)}>Olvidé mi contraseña</Link></p>
-              <p><Link to="/register" onClick={() => setLoginOpen(false)}>Crear cuenta</Link></p>
+              <p>
+                ¿No tienes cuenta?{' '}
+                <button 
+                  type="button" 
+                  onClick={() => { setLoginOpen(false); setRegisterOpen(true); }}
+                  style={{ background: 'none', border: 'none', color: 'var(--vinotinto)', fontWeight: '700', cursor: 'pointer', textDecoration: 'underline', padding: 0, fontFamily: 'inherit', fontSize: 'inherit' }}
+                >
+                  Crear cuenta
+                </button>
+              </p>
             </div>
+          </div>
+        </div>
+      )}
+
+      {registerOpen && (
+        <div className="modal-overlay open" onClick={e => { if (e.target === e.currentTarget) setRegisterOpen(false) }}>
+          <div className="modal-box" style={{ maxWidth: '800px', maxHeight: '90vh', overflowY: 'auto', position: 'relative' }}>
+            <button className="modal-close" aria-label="Cerrar" onClick={() => setRegisterOpen(false)}>
+              <IconClose />
+            </button>
+            <Register 
+              isModal={true} 
+              onClose={() => setRegisterOpen(false)} 
+              onSuccess={() => {
+                setRegisterOpen(false);
+                setLoginOpen(true);
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      {libreriaOpen && (
+        <div className="modal-overlay open" onClick={e => { if (e.target === e.currentTarget) setLibreriaOpen(false) }}>
+          <div className="modal-box" style={{ maxWidth: '800px', maxHeight: '90vh', overflowY: 'auto', position: 'relative' }}>
+            <button className="modal-close" aria-label="Cerrar" onClick={() => setLibreriaOpen(false)}>
+              <IconClose />
+            </button>
+            <Libreria 
+              isModal={true} 
+              onClose={() => setLibreriaOpen(false)} 
+              onSuccess={() => {
+                setLibreriaOpen(false);
+                setLoginOpen(true);
+              }}
+            />
           </div>
         </div>
       )}

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import LibroCard from '../components/LibroCard';
-import './Catalogo.css';
+import '../styles/catalogo.css';
 
 const Favoritos = () => {
   const [favoritos, setFavoritos] = useState(() => {
