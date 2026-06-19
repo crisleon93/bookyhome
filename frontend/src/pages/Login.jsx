@@ -98,7 +98,11 @@ function Login() {
       localStorage.setItem('token', token)
 
       const decoded = jwtDecode(token)
-      if (decoded.rol === 'vendedor') {
+      const userRole = decoded.rol || decoded.role
+
+      if (userRole === 'admin' || userRole === 'administrador') {
+        navigate('/admin')
+      } else if (userRole === 'vendedor') {
         navigate('/mi-tienda')
       } else {
         navigate('/post-login')

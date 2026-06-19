@@ -44,8 +44,7 @@ function MainLayout() {
       <Header variant={variant} />
 
       <Routes>
-
-        {/* Rutas públicas */}
+        {/* ── RUTAS PÚBLICAS ── */}
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
@@ -58,22 +57,27 @@ function MainLayout() {
         <Route path="/catalogo/:id" element={<DetalleLibro />} />
         <Route path="/favoritos" element={<Favoritos />} />
 
-        {/* Rutas protegidas */}
+        {/* ── RUTAS PROTEGIDAS GENERALES (Cualquier usuario logueado) ── */}
         <Route element={<PrivateRoute />}>
           <Route path="/post-login" element={<PostLogin />} />
           <Route path="/mi-tienda" element={<MiTienda />} />
           <Route path="/checkout/:orderId" element={<Checkout />} />
           <Route path="/vendedor/publicar" element={<PublicarLibro />} />
-          <Route path="/admin" element={<AdminDashboard />} />
         </Route>
 
-        {/* Redirección por rol */}
+        {/* ── RUTAS EXCLUSIVAS DE ADMINISTRADOR ── */}
+        <Route element={<PrivateRoute allowedRoles={['admin', 'administrador']} />}>
+          <Route path="/admin" element={<AdminDashboard />} />
+          {/* Si tu compañero agrega más páginas de admin como /admin/libros, van aquí adentro */}
+        </Route>
+
+        {/* ── REDIRECCIÓN LOGÍSTICA POR ROL ── */}
         <Route
           path="/dashboard"
           element={
             userRole === 'vendedor' ? (
               <Navigate to="/mi-tienda" replace />
-            ) : userRole === 'admin' ? (
+            ) : (userRole === 'admin' || userRole === 'administrador') ? (
               <Navigate to="/admin" replace />
             ) : (userRole === 'usuario' || userRole === 'comprador') ? (
               <Navigate to="/post-login" replace />
@@ -82,8 +86,9 @@ function MainLayout() {
             )
           }
         />
+        
+        {/* Catch-all para rutas inexistentes */}
         <Route path="*" element={<Navigate to="/" replace />} />
-
       </Routes>
 
       <Footer />

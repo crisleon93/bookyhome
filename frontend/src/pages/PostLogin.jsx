@@ -6,18 +6,19 @@ import DashboardSidebar from "../components/DashboardSidebar";
 import { getUserRole } from "../hooks/useAuth";
 import { notify } from "../components/ToastProvider";
 
+// Componente especializado con el SVG profesional para carrito vacío
 const CartEmptyState = ({ onGoToCatalog }) => (
-  <div className="cart-empty-state">
-    <div className="cart-empty-icon">
+  <div className="cart-empty-state" style={{ textAlign: "center", padding: "50px 0" }}>
+    <div className="cart-empty-icon" style={{ marginBottom: "20px", color: "var(--vinotinto)" }}>
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-        stroke="currentColor" strokeWidth="1.5" width="36" height="36">
+        stroke="currentColor" strokeWidth="1.5" width="48" height="48" style={{ margin: "0 auto" }}>
         <path strokeLinecap="round" strokeLinejoin="round"
           d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
       </svg>
     </div>
-    <h2>Tu carrito está vacío</h2>
-    <p>Explora el catálogo y encuentra tu próxima lectura favorita.</p>
-    <button className="btn btn-vinotinto btn-catalog" onClick={onGoToCatalog}>
+    <h2 style={{ fontWeight: 700, color: "var(--gris-carbon)" }}>Tu carrito está vacío</h2>
+    <p style={{ color: "#666", marginBottom: "20px" }}>Explora el catálogo y encuentra tu próxima lectura favorita.</p>
+    <button className="btn btn-vinotinto" onClick={onGoToCatalog} style={{ display: "inline-block", width: "auto" }}>
       📚 Ir al catálogo
     </button>
   </div>
@@ -135,80 +136,80 @@ export default function PostLogin() {
 
       <main className="dashboard-main">
 
-{/* ── INICIO ── */}
-{activeSide === "Inicio" && (
-  <>
-    <div className="welcome-card">
-      <h1>Bienvenido de nuevo, {userName.split(" ")[0]} 👋</h1>
-      <p>Esta es tu área personal de BookyHome.</p>
-    </div>
-
-    {/* RECOMENDACIONES PERSONALIZADAS */}
-    {(() => {
-      const favoritos = JSON.parse(localStorage.getItem('favoritos')) || [];
-      const categoriasVistas = [...new Set(favoritos.map(f => f.nombre_categoria).filter(Boolean))];
-
-      if (favoritos.length === 0) {
-        return (
-          <div className="empty-state">
-            <p>Agrega libros a favoritos para recibir recomendaciones personalizadas 💡</p>
-            <button className="btn btn-vinotinto btn-catalog" onClick={handleGoToCatalog}>
-              📚 Explorar catálogo
-            </button>
-          </div>
-        );
-      }
-
-      return (
-        <div className="pl-card" style={{ padding: '2rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
-            <span style={{ fontSize: 28 }}>✨</span>
-            <div>
-              <h2 style={{ margin: 0 }}>Recomendados para ti</h2>
-              <p style={{ margin: 0, color: '#888', fontSize: '0.85rem' }}>
-                Basado en tus categorías favoritas: {categoriasVistas.join(', ')}
-              </p>
+        {/* ── INICIO ── */}
+        {activeSide === "Inicio" && (
+          <>
+            <div className="welcome-card">
+              <h1>Bienvenido de nuevo, {userName.split(" ")[0]} 👋</h1>
+              <p>Esta es tu área personal de BookyHome.</p>
             </div>
-          </div>
 
-          {favoritos.slice(0, 5).map((libro) => (
-            <div key={libro.id_libro} className="pl-order-row" style={{ cursor: 'pointer' }}
-              onClick={() => navigate('/catalogo')}>
-              <div className="pl-order-left">
-                <span className="pl-order-emoji">📖</span>
-                <div>
-                  <p className="pl-order-title">{libro.titulo}</p>
-                  <p className="pl-order-meta">
-                    {libro.autor_libro || libro.autor} · {libro.nombre_categoria}
-                  </p>
+            {/* RECOMENDACIONES PERSONALIZADAS */}
+            {(() => {
+              const favoritos = JSON.parse(localStorage.getItem('favoritos')) || [];
+              const categoriasVistas = [...new Set(favoritos.map(f => f.nombre_categoria).filter(Boolean))];
+
+              if (favoritos.length === 0) {
+                return (
+                  <div className="empty-state">
+                    <p>Agrega libros a favoritos para recibir recomendaciones personalizadas 💡</p>
+                    <button className="btn btn-vinotinto btn-catalog" onClick={handleGoToCatalog}>
+                      📚 Explorar catálogo
+                    </button>
+                  </div>
+                );
+              }
+
+              return (
+                <div className="pl-card" style={{ padding: '2rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+                    <span style={{ fontSize: 28 }}>✨</span>
+                    <div>
+                      <h2 style={{ margin: 0 }}>Recomendados para ti</h2>
+                      <p style={{ margin: 0, color: '#888', fontSize: '0.85rem' }}>
+                        Basado en tus categorías favoritas: {categoriasVistas.join(', ')}
+                      </p>
+                    </div>
+                  </div>
+
+                  {favoritos.slice(0, 5).map((libro) => (
+                    <div key={libro.id_libro} className="pl-order-row" style={{ cursor: 'pointer' }}
+                      onClick={() => navigate('/catalogo')}>
+                      <div className="pl-order-left">
+                        <span className="pl-order-emoji">📖</span>
+                        <div>
+                          <p className="pl-order-title">{libro.titulo}</p>
+                          <p className="pl-order-meta">
+                            {libro.autor_libro || libro.autor} · {libro.nombre_categoria}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="pl-order-right">
+                        <span className="pl-order-price">
+                          ${Number(libro.precio_libro ?? libro.precio ?? 0).toLocaleString('es-CO')}
+                        </span>
+                        <span style={{
+                          background: '#6b1a2a', color: 'white', padding: '4px 10px',
+                          borderRadius: '20px', fontSize: '0.75rem', fontWeight: 600, marginLeft: '10px'
+                        }}>
+                          ❤️ Favorito
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+
+                  <div style={{ marginTop: '16px', textAlign: 'center' }}>
+                    <button className="btn btn-vinotinto btn-catalog" onClick={handleGoToCatalog}>
+                      📚 Ver más libros
+                    </button>
+                  </div>
                 </div>
-              </div>
-              <div className="pl-order-right">
-                <span className="pl-order-price">
-                  ${Number(libro.precio_libro ?? libro.precio ?? 0).toLocaleString('es-CO')}
-                </span>
-                <span style={{
-                  background: '#6b1a2a', color: 'white', padding: '4px 10px',
-                  borderRadius: '20px', fontSize: '0.75rem', fontWeight: 600, marginLeft: '10px'
-                }}>
-                  ❤️ Favorito
-                </span>
-              </div>
-            </div>
-          ))}
+              );
+            })()}
+          </>
+        )}
 
-          <div style={{ marginTop: '16px', textAlign: 'center' }}>
-            <button className="btn btn-vinotinto btn-catalog" onClick={handleGoToCatalog}>
-              📚 Ver más libros
-            </button>
-          </div>
-        </div>
-      );
-    })()}
-  </>
-)}
-
-        {/* ── CARRITO ── */}
+        {/* ── CARRITO (FUSIONADO Y OPTIMIZADO) ── */}
         {activeSide === "Carrito" && (
           <>
             <div className="pl-card" style={{ padding: "2.5rem 2rem", marginBottom: 24 }}>
@@ -221,33 +222,58 @@ export default function PostLogin() {
             {cartLoading ? (
               <div className="empty-state"><p>Cargando carrito...</p></div>
             ) : carrito.length === 0 ? (
-              <CartEmptyState onGoToCatalog={handleGoToCatalog} />
+              <div className="pl-card" style={{ padding: "40px" }}>
+                <CartEmptyState onGoToCatalog={handleGoToCatalog} />
+              </div>
             ) : (
-              <div className="pl-card">
+              /* Cuadrícula organizada con las tarjetas visuales estilizadas del compañero */
+              <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "20px" }}>
                 {carrito.map((item) => (
-                  <div key={item.id_libro} className="pl-order-row">
-                    <div className="pl-order-left">
-                      <span className="pl-order-emoji">📖</span>
-                      <div>
-                        <p className="pl-order-title">{item.titulo}</p>
-                        <p className="pl-order-meta">
-                          {item.autor_libro} · Cantidad: {item.cantidad}
-                        </p>
-                      </div>
+                  <div
+                    key={item.id_libro}
+                    style={{
+                      background: "var(--blanco)",
+                      border: "1px solid #e0dbd4",
+                      borderRadius: "8px",
+                      padding: "20px",
+                      boxShadow: "var(--sombra-suave)",
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      flexWrap: "wrap",
+                      gap: "15px"
+                    }}
+                  >
+                    <div>
+                      <h3 style={{ margin: "0 0 5px 0", fontWeight: 700, color: "var(--vinotinto)" }}>{item.titulo}</h3>
+                      <p style={{ margin: "0 0 5px 0", color: "#666", fontSize: "0.9rem" }}>Autor: {item.autor_libro}</p>
+                      <p style={{ margin: "0", fontWeight: 600, fontSize: "0.95rem" }}>Cantidad: {item.cantidad}</p>
                     </div>
-                    <div className="pl-order-right">
-                      <span className="pl-order-price">
-                        {Number((item.precio_libro || 0) * (item.cantidad || 1)).toLocaleString("es-CO", {
-                          style: "currency", currency: "COP", maximumFractionDigits: 0,
+
+                    <div style={{ textAlign: "right" }}>
+                      <p style={{ margin: "0 0 5px 0", color: "#777", fontSize: "0.9rem" }}>
+                        Unitario: {Number(item.precio_libro).toLocaleString("es-CO", {
+                          style: "currency", currency: "COP", maximumFractionDigits: 0
                         })}
-                      </span>
+                      </p>
+                      <p style={{ margin: "0", fontWeight: 700, color: "var(--gris-carbon)", fontSize: "1.1rem" }}>
+                        Total: {Number((item.precio_libro || 0) * (item.cantidad || 1)).toLocaleString("es-CO", {
+                          style: "currency", currency: "COP", maximumFractionDigits: 0
+                        })}
+                      </p>
                     </div>
                   </div>
                 ))}
 
+                {/* Bloque de Cierre de Caja y Botones de Acción */}
                 <div style={{
-                  marginTop: 20, paddingTop: 20, borderTop: "2px solid #e0dbd4",
-                  display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 16,
+                  marginTop: "30px",
+                  borderTop: "2px solid #e0dbd4",
+                  paddingTop: "20px",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "flex-end",
+                  gap: "16px"
                 }}>
                   <h2 style={{ fontWeight: 800, margin: 0 }}>
                     Total a pagar:{" "}
@@ -399,9 +425,7 @@ export default function PostLogin() {
             <div className="pl-card" style={{ padding: "2rem" }}>
               <div style={{ display: "flex", flexDirection: "column", gap: "16px", maxWidth: "500px" }}>
                 <div>
-                  <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>
-                    Nombre
-                  </label>
+                  <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>Nombre</label>
                   <input
                     type="text"
                     value={userName}
@@ -414,9 +438,7 @@ export default function PostLogin() {
                 </div>
 
                 <div>
-                  <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>
-                    Correo electrónico
-                  </label>
+                  <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>Correo electrónico</label>
                   <input
                     type="email"
                     value={userEmail}
@@ -430,28 +452,10 @@ export default function PostLogin() {
                 </div>
 
                 <div>
-                  <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>
-                    Rol
-                  </label>
+                  <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>Rol</label>
                   <input
                     type="text"
                     value={getUserRole() || "usuario"}
-                    readOnly
-                    style={{
-                      width: "100%", padding: "10px 14px", borderRadius: "8px",
-                      border: "1px solid #ddd", fontSize: "0.95rem", background: "#f5f5f5",
-                      fontFamily: "Montserrat, sans-serif", color: "#888"
-                    }}
-                  />
-                </div>
-
-                <div>
-                  <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>
-                    Miembro desde
-                  </label>
-                  <input
-                    type="text"
-                    value={new Date().toLocaleDateString("es-CO")}
                     readOnly
                     style={{
                       width: "100%", padding: "10px 14px", borderRadius: "8px",
