@@ -189,12 +189,12 @@ function Register() {
     /[^A-Za-z0-9]/.test(password)
   ].filter(Boolean).length
   const passwordStrength = password.length === 0
-    ? { label: 'Completa tu contrasena', width: '0%', color: '#ddd' }
+    ? { label: 'Completa tu contraseña', width: '0%', color: '#ddd' }
     : passwordScore <= 2
-      ? { label: 'Contrasena debil', width: '33%', color: '#dc2626' }
+      ? { label: 'Contraseña débil', width: '33%', color: '#dc2626' }
       : passwordScore === 3
-        ? { label: 'Contrasena media', width: '66%', color: '#ca8a04' }
-        : { label: 'Contrasena fuerte', width: '100%', color: '#15803d' }
+        ? { label: 'Contraseña media', width: '66%', color: '#ca8a04' }
+        : { label: 'Contraseña fuerte', width: '100%', color: '#15803d' }
   const formReady =
     nombre.trim() &&
     apellidos.trim() &&
@@ -236,7 +236,7 @@ function Register() {
       return false
     }
     if (password !== confirmPassword) {
-      setError('Las contrasenas no coinciden')
+      setError('Las contraseñas no coinciden')
       return false
     }
     if (!terminosCompletos) {
@@ -315,8 +315,8 @@ function Register() {
           )}
 
           <form onSubmit={handleSubmit} noValidate>
-
-            <div className="auth-field">
+            <div className="auth-grid">
+              <div className="auth-field">
               <label htmlFor="nombre">Nombre</label>
               <div className="auth-input-wrapper">
                 <IconUser />
@@ -403,19 +403,20 @@ function Register() {
             </div>
 
             <div className="auth-field">
-              <label htmlFor="confirmPassword">Confirmar contrasena</label>
+              <label htmlFor="confirmPassword">Confirmar contraseña</label>
               <div className="auth-input-wrapper">
                 <IconLock />
                 <input
                   id="confirmPassword"
                   type={showPass ? 'text' : 'password'}
-                  placeholder="Repite tu contrasena"
+                  placeholder="Repite tu contraseña"
                   value={confirmPassword}
                   onChange={e => setConfirmPassword(e.target.value)}
                   onPaste={blockClipboard}
                   onCopy={blockClipboard}
                 />
               </div>
+            </div>
             </div>
 
             {/* Checkbox de términos y privacidad */}

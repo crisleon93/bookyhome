@@ -1,14 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import LibroCard from '../components/LibroCard';
 import './Catalogo.css';
 
 const Favoritos = () => {
-  const [favoritos, setFavoritos] = useState([]);
-
-  useEffect(() => {
+  const [favoritos, setFavoritos] = useState(() => {
     const data = JSON.parse(localStorage.getItem('favoritos')) || [];
-    setFavoritos(data);
-  }, []);
+    return data;
+  });
 
   const handleEliminar = (id_libro) => {
     const nuevos = favoritos.filter((f) => f.id_libro !== id_libro);

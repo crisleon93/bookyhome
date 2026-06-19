@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { getLibroById } from '../services/api';
 import './DetalleLibro.css';
@@ -28,11 +28,7 @@ const DetalleLibro = () => {
   const [esFavorito, setEsFavorito] = useState(false);
   const [copiadoMsg, setCopiadoMsg] = useState('');
 
-  useEffect(() => {
-    cargarLibro();
-  }, []);
-
-  const cargarLibro = async () => {
+  const cargarLibro = useCallback(async () => {
     try {
       const response = await getLibroById(id);
       setLibro(response.data);
@@ -44,7 +40,11 @@ const DetalleLibro = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
+
+  useEffect(() => {
+    cargarLibro();
+  }, [cargarLibro]);
 
   const toggleFavorito = () => {
     let favoritos = JSON.parse(localStorage.getItem('favoritos')) || [];

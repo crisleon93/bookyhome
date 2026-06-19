@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import api from "../services/api";
+import { notify } from "./ToastProvider";
 
 // ── Helpers ──
 const formatPrecio = (v) => {
@@ -310,7 +311,7 @@ export default function SeccionOfertas() {
       setMostrarForm(true);
     } catch (e) {
       console.error("Error al cargar la oferta:", e);
-      alert("Error al cargar la oferta para edición");
+      notify("Error al cargar la oferta para edición", "error");
     }
   };
 

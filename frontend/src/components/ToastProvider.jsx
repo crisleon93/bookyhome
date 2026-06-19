@@ -38,8 +38,10 @@ export function ToastProvider({ children }) {
   )
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useToast = () => useContext(ToastContext)
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const notify = (message, type = 'info') => {
   window.dispatchEvent(new CustomEvent('bookyhome:toast', { detail: { message, type } }))
 }

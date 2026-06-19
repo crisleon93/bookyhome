@@ -2,10 +2,11 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const LibroCard = ({ libro, onAdd, adding = false, message = '' }) => {
-  if (!libro) return null;
-
   const navigate = useNavigate();
   const [favMsg, setFavMsg] = useState('');
+
+  if (!libro) return null;
+
   const imageUrl = libro.imagen_url || libro.imagen_principal || libro.imagenes?.[0];
   const author = libro.autor_libro || libro.autor || 'Autor no disponible';
   const price = Number(libro.precio_libro ?? libro.precio ?? 0);
