@@ -20,14 +20,13 @@ def crear_libreria(nombre, nombre_libreria, direccion, telefono, email, password
         cursor.execute(
             """
             INSERT INTO tiendas
-            (id_usuario, nombre_tienda, direccion, telefono, fecha_creacion)
-            VALUES (%s, %s, %s, %s, CURDATE())
+            (id_usuario, nombre_tienda, direccion, telefono, fecha_creacion, estado_tienda)
+            VALUES (%s, %s, %s, %s, CURDATE(), 'pendiente')
             """,
             (id_usuario, nombre_libreria, direccion, telefono)
         )
 
         db.commit()
-
         return {"ok": True}
 
     except Exception as e:
@@ -42,21 +41,60 @@ def crear_libreria(nombre, nombre_libreria, direccion, telefono, email, password
 def obtener_tiendas():
     db = get_db()
     cursor = db.cursor(dictionary=True)
-
     try:
         cursor.execute("""
             SELECT
-                id_tienda,
-                nombre_tienda,
-                direccion,
-                telefono,
-                fecha_creacion
-            FROM tiendas
-            ORDER BY id_tienda
+                t.id_tienda,
+                t.nombre_tienda,
+                t.direccion,
+                t.telefono,
+                t.fecha_creacion,
+                t.estado_tienda,
+                u.correo_usuario AS email_contacto,
+                u.nombre_usuario AS nombre_dueno
+            FROM tiendas t
+            JOIN usuarios u ON u.id_usuario = t.id_usuario
+            ORDER BY t.id_tienda
         """)
-
         return cursor.fetchall()
+    finally:
+        cursor.close()
+        db.close()
 
+
+def actualizar_estado_tienda(id_tienda: int, nuevo_estado: str):
+    db = get_db()
+    cursor = db.cursor()
+    try:
+        query = "UPDATE tiendas SET estado_tienda = %s WHERE id_tienda = %s"
+        
+        cursor.execute(query, (nuevo_estado, id_tienda))
+        db.commit()
+        
+        return {"ok": True}
+    except Exception as e:
+        db.rollback()
+        print(f"❌ Error interno en SQL: {e}", flush=True)
+        return {"ok": False, "error": str(e)}
+    finally:
+        cursor.close()
+        db.close()
+        
+def obtener_tienda_por_usuario(id_usuario: int):
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    try:
+        # Usamos los nombres de columna reales de tu tabla tiendas
+        query = """
+            SELECT id_tienda, id_usuario, nombre_tienda, direccion, telefono, estado_tienda 
+            FROM tiendas 
+            WHERE id_usuario = %s
+        """
+        cursor.execute(query, (id_usuario,))
+        return cursor.fetchone() # Retorna el diccionario o None si no existe
+    except Exception as e:
+        print(f"❌ Error al obtener tienda por usuario: {e}", flush=True)
+        return None
     finally:
         cursor.close()
         db.close()

@@ -2663,3 +2663,13 @@ SELECT * FROM v_detalles_carrito;
 
 SELECT '=== BooKyHome LISTA PARA USAR ===' AS '';
 select * from usuarios; 
+
+SET SQL_SAFE_UPDATES = 0;
+
+UPDATE usuarios 
+SET rol = 'comprador' 
+WHERE rol = 'usuario';
+
+SET SQL_SAFE_UPDATES = 1;
+ALTER TABLE tiendas 
+ADD COLUMN estado_tienda VARCHAR(20) NOT NULL DEFAULT 'pendiente';

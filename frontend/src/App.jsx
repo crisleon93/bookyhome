@@ -100,7 +100,10 @@ function MainLayout() {
             )
           }
         />
-        
+
+        {/* El carrito vive dentro del dashboard (PostLogin), no como página propia */}
+        <Route path="/carrito" element={<Navigate to="/post-login" replace />} />
+
         {/* Catch-all para rutas inexistentes */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

@@ -145,13 +145,33 @@ def eliminar_libro(id_libro: int, id_tienda: int):
     db = get_db()
     cursor = db.cursor()
     try:
-        # Verificar que el libro pertenece a la tienda
         cursor.execute("SELECT id_tienda FROM libros WHERE id_libro = %s", (id_libro,))
         row = cursor.fetchone()
-        if not row or row[0] != id_tienda:
+        
+        if not row:
+            return {"ok": False, "error": "El libro no existe"}
+            
+        tienda_libro = row.get("id_tienda") if isinstance(row, dict) else row[0]
+        
+        if tienda_libro != id_tienda:
             return {"ok": False, "error": "No autorizado"}
 
-        # Eliminar imágenes primero (FK)
+        cursor.execute("DELETE FROM imagenes_libro WHERE id_libro = %s", (id_libro,))
+        cursor.execute("DELETE FROM libros WHERE id_libro = %s", (id_libro,))
+        db.commit()
+        return {"ok": True}
+        
+    except Exception as e:
+        db.rollback()
+        return {"ok": False, "error": str(e)}
+    finally:
+        cursor.close()
+        db.close()
+
+def eliminar_libro_por_admin(id_libro: int):
+    db = get_db()
+    cursor = db.cursor()
+    try:
         cursor.execute("DELETE FROM imagenes_libro WHERE id_libro = %s", (id_libro,))
         cursor.execute("DELETE FROM libros WHERE id_libro = %s", (id_libro,))
         db.commit()
@@ -162,7 +182,6 @@ def eliminar_libro(id_libro: int, id_tienda: int):
     finally:
         cursor.close()
         db.close()
-
 
 # ──────────────────────────────────────────────
 #  ACTUALIZAR STOCK
@@ -386,14 +405,16 @@ def ocultar_libro(id_libro: int, oculto: bool):
     db = get_db()
     cursor = db.cursor()
     try:
-        cursor.execute(
-            "UPDATE libros SET oculto = %s WHERE id_libro = %s",
-            (1 if oculto else 0, id_libro)
-        )
+        valor_oculto = 1 if oculto else 0
+        
+        query = "UPDATE libros SET oculto = %s WHERE id_libro = %s"
+        cursor.execute(query, (valor_oculto, id_libro))
         db.commit()
+        
         return {"ok": True}
     except Exception as e:
         db.rollback()
+        print(f"❌ Error al ocultar libro en DB: {e}", flush=True)
         return {"ok": False, "error": str(e)}
     finally:
         cursor.close()
