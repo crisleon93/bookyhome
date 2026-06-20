@@ -11,6 +11,9 @@ from app.routers.carrito import router as carrito_router
 from app.routers.stored import router as stored_router
 from app.routers.payments import router as payments_router
 from app.routers import ofertas
+from app.routers.resenas import router as resenas_router
+from app.routers.perfil import router as perfil_router
+from app.routers.catalogo import router as catalogo_router
 
 
 load_dotenv()
@@ -33,6 +36,9 @@ app.include_router(stored_router)
 app.include_router(payments_router)
 app.include_router(libros.router, prefix="/libros", tags=["Libros"])
 app.include_router(ofertas.router, prefix="/ofertas", tags=["ofertas"])
+app.include_router(resenas_router)
+app.include_router(perfil_router)
+app.include_router(catalogo_router)
 
 @app.get("/")
 def root():

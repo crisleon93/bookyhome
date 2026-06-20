@@ -1,0 +1,251 @@
+/* ================================
+   RESEÑAS Y CALIFICACIONES
+   ================================ */
+
+.resena-container {
+  background: #faf8f6;
+  border-radius: 12px;
+  padding: 2rem;
+  margin: 2rem 0;
+  border-left: 4px solid var(--vinotinto);
+}
+
+.resena-promedio {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid #e0dbd4;
+  margin-bottom: 2rem;
+}
+
+.promedio-numero {
+  text-align: center;
+}
+
+.promedio-numero .numero {
+  font-size: 3rem;
+  font-weight: 700;
+  color: var(--vinotinto);
+  display: block;
+}
+
+.promedio-numero .maxima {
+  color: #999;
+  font-size: 0.9rem;
+}
+
+.promedio-estrellas {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.total-resenas {
+  color: #666;
+  margin: 0.5rem 0 0;
+  font-size: 0.9rem;
+}
+
+.btn-resena-crear {
+  background: var(--vinotinto);
+  color: white;
+  border: none;
+  padding: 0.8rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 1.5rem;
+  transition: all 0.3s ease;
+}
+
+.btn-resena-crear:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(122, 30, 58, 0.2);
+}
+
+/* FORMULARIO RESEÑA */
+.resena-formulario {
+  background: white;
+  border: 1px solid #e0dbd4;
+  border-radius: 10px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.resena-formulario .form-group {
+  margin-bottom: 1.5rem;
+}
+
+.resena-formulario label {
+  display: block;
+  font-weight: 600;
+  color: #2a2a2a;
+  margin-bottom: 0.8rem;
+}
+
+.calificacion-selector {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.star-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem;
+  transition: transform 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.star-btn:hover {
+  transform: scale(1.2);
+}
+
+.star-btn.activa {
+  transform: scale(1.3);
+}
+
+.resena-formulario textarea {
+  width: 100%;
+  padding: 1rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 1rem;
+  resize: vertical;
+  min-height: 100px;
+}
+
+.resena-formulario textarea:focus {
+  outline: none;
+  border-color: var(--vinotinto);
+  box-shadow: 0 0 0 3px rgba(122, 30, 58, 0.1);
+}
+
+.resena-formulario small {
+  display: block;
+  color: #999;
+  margin-top: 0.5rem;
+  text-align: right;
+}
+
+.form-acciones {
+  display: flex;
+  gap: 1rem;
+}
+
+.form-acciones button {
+  flex: 1;
+}
+
+/* LISTA DE RESEÑAS */
+.resena-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.sin-resenas {
+  text-align: center;
+  color: #999;
+  padding: 2rem;
+  background: white;
+  border-radius: 8px;
+  border: 1px dashed #ddd;
+}
+
+.resena-item {
+  background: white;
+  border: 1px solid #e0dbd4;
+  border-radius: 10px;
+  padding: 1.5rem;
+  transition: all 0.3s ease;
+}
+
+.resena-item:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.resena-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.resena-header strong {
+  color: #2a2a2a;
+  font-size: 1rem;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.resena-estrellas {
+  display: flex;
+  gap: 0.3rem;
+}
+
+.resena-fecha {
+  color: #999;
+  font-size: 0.85rem;
+}
+
+.resena-comentario {
+  color: #555;
+  line-height: 1.6;
+  margin: 0 0 1rem;
+  padding: 0;
+}
+
+.btn-eliminar-resena {
+  background: #f5f5f5;
+  border: 1px solid #ddd;
+  color: #c62828;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-eliminar-resena:hover {
+  background: #ffe5e5;
+  border-color: #c62828;
+}
+
+.resena-loading {
+  text-align: center;
+  padding: 2rem;
+  color: #999;
+}
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+  .resena-container {
+    padding: 1.5rem;
+  }
+
+  .resena-promedio {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+    text-align: left;
+  }
+
+  .promedio-numero .numero {
+    font-size: 2rem;
+  }
+
+  .form-acciones {
+    flex-direction: column-reverse;
+  }
+
+  .resena-header {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+}

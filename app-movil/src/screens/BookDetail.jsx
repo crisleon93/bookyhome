@@ -1,11 +1,23 @@
-import React, { useContext, useState } from 'react';
-import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import React, { useContext, useState, useEffect } from 'react';
+import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity, Alert, TextInput, ActivityIndicator } from 'react-native';
 import { CartContext } from '../context/CartContext';
+import { AuthContext } from '../context/AuthContext';
+import { getReviewsForBook, createReview } from '../services/api';
 
 export default function BookDetail({ route, navigation }) {
   const { book } = route.params;
   const { addToCart } = useContext(CartContext);
+  const { user, loading: authLoading } = useContext(AuthContext);
   const [adding, setAdding] = useState(false);
+  const [reviews, setReviews] = useState([]);
+  const [promedio, setPromedio] = useState(0);
+  const [total, setTotal] = useState(0);
+  const [loadingReviews, setLoadingReviews] = useState(true);
+
+  // Nuevo estado para crear reseña
+  const [rating, setRating] = useState(5);
+  const [comment, setComment] = useState('');
+  const [submittingReview, setSubmittingReview] = useState(false);
 
   const handleAddToCart = async () => {
     setAdding(true);
@@ -19,6 +31,60 @@ export default function BookDetail({ route, navigation }) {
         { text: 'Ver Carrito', onPress: () => navigation.navigate('Cart') },
       ]
     );
+  };
+
+  useEffect(() => {
+    let mounted = true;
+    const load = async () => {
+      setLoadingReviews(true);
+      try {
+        const id = book.id_libro || book.id || book.idBook || book.id_book;
+        const resp = await getReviewsForBook(id);
+        if (!mounted) return;
+        setPromedio(resp.data.promedio ?? 0);
+        setTotal(resp.data.total ?? 0);
+        setReviews(resp.data.resenas || []);
+      } catch (err) {
+        console.log('Error cargando reseñas', err);
+      } finally {
+        if (mounted) setLoadingReviews(false);
+      }
+    };
+
+    load();
+    return () => { mounted = false; };
+  }, [book]);
+
+  const handleSubmitReview = async () => {
+    if (!user) {
+      Alert.alert('Inicia sesión', 'Debes iniciar sesión para dejar una reseña.');
+      return;
+    }
+
+    if (rating < 1 || rating > 5) {
+      Alert.alert('Calificación inválida', 'La calificación debe estar entre 1 y 5.');
+      return;
+    }
+
+    setSubmittingReview(true);
+    try {
+      const id_libro = book.id_libro || book.id || book.idBook || book.id_book;
+      await createReview({ id_libro, calificacion: rating, comentario: comment });
+      setComment('');
+      setRating(5);
+      // recargar reseñas
+      const resp = await getReviewsForBook(id_libro);
+      setPromedio(resp.data.promedio ?? 0);
+      setTotal(resp.data.total ?? 0);
+      setReviews(resp.data.resenas || []);
+      Alert.alert('Éxito', 'Reseña creada correctamente');
+    } catch (err) {
+      console.log('Error creando reseña', err);
+      const msg = err?.response?.data?.detail || 'Error creando reseña';
+      Alert.alert('Error', msg);
+    } finally {
+      setSubmittingReview(false);
+    }
   };
 
   return (
@@ -50,6 +116,50 @@ export default function BookDetail({ route, navigation }) {
         >
           <Text style={styles.buttonText}>{adding ? 'Agregando...' : 'Agregar al Carrito'}</Text>
         </TouchableOpacity>
+
+        <View style={{ width: '100%', marginTop: 20 }}>
+          <Text style={styles.sectionTitle}>Reseñas ({total}) — Promedio: {promedio}</Text>
+
+          {loadingReviews ? (
+            <ActivityIndicator size="small" color="#7A1E3A" />
+          ) : (
+            reviews.map((r) => (
+              <View key={r.id_resena} style={{ marginBottom: 12, alignSelf: 'stretch' }}>
+                <Text style={{ fontWeight: '700' }}>{r.nombre_usuario} · {r.calificacion}/5</Text>
+                <Text style={{ color: '#555' }}>{r.comentario}</Text>
+                <Text style={{ color: '#999', fontSize: 12 }}>{r.fecha_resena}</Text>
+              </View>
+            ))
+          )}
+
+          <View style={{ height: 1, backgroundColor: '#e0dbd4', marginVertical: 12 }} />
+
+          <Text style={styles.sectionTitle}>Dejar una reseña</Text>
+          <Text style={{ marginBottom: 6, color: '#444' }}>{user ? `Como ${user.nombre_usuario || user.email || ''}` : 'Inicia sesión para comentar'}</Text>
+          <View style={{ flexDirection: 'row', marginBottom: 8 }}>
+            {[1,2,3,4,5].map((s) => (
+              <TouchableOpacity key={s} onPress={() => setRating(s)} style={{ marginRight: 8 }}>
+                <Text style={{ fontSize: 18, color: s <= rating ? '#C5425A' : '#999' }}>{'★'}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+          <TextInput
+            value={comment}
+            onChangeText={setComment}
+            placeholder="Escribe tu reseña..."
+            multiline
+            style={{ borderWidth: 1, borderColor: '#e0dbd4', padding: 10, borderRadius: 8, minHeight: 80, marginBottom: 10 }}
+            editable={!!user}
+          />
+
+          <TouchableOpacity
+            style={[styles.button, (submittingReview || !user) && styles.buttonDisabled]}
+            onPress={handleSubmitReview}
+            disabled={submittingReview || !user}
+          >
+            <Text style={styles.buttonText}>{submittingReview ? 'Enviando...' : 'Enviar reseña'}</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </ScrollView>
   );

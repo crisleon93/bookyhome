@@ -293,14 +293,15 @@ header.scrolled { box-shadow: 0 2px 20px rgba(122, 30, 58, 0.15); }
 }
 
 .hero-image {
-  flex: 1;
+  flex: 0 0 45%;
+  max-width: 45%;
   display: flex;
   justify-content: flex-end;
 }
 
 .hero-image img {
   width: 100%;
-  max-width: 480px;
+  max-width: 400px;
   border-radius: 12px;
   box-shadow: 0 20px 50px rgba(0,0,0,0.35);
 }
@@ -334,8 +335,7 @@ a.btn:focus {
   border-color: var(--blanco);
 }
 .btn-primary:hover {
-  background-color: transparent;
-  color: var(--blanco);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.18);
   transform: translateY(-2px);
 }
 
@@ -346,7 +346,7 @@ a.btn:focus {
   border: 2px solid var(--blanco) !important;
 }
 .btn-secondary:hover {
-  background-color: rgba(255,255,255,0.15);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.18);
   color: var(--blanco);
   transform: translateY(-2px);
 }
@@ -421,9 +421,8 @@ a.btn:focus {
   border: 2px solid var(--blanco);
 }
 #btn-vender-libros:hover {
-  background-color: var(--blanco);
-  color: var(--vinotinto);
-  border-color: var(--blanco);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.18);
+  color: var(--blanco);
   transform: translateY(-2px);
 }
 
@@ -592,6 +591,17 @@ a.btn:focus {
   margin-bottom: 1.5rem;
 }
 
+.categories .btn-primary {
+  background-color: var(--vinotinto);
+  color: var(--blanco);
+  border-color: var(--vinotinto);
+}
+.categories .btn-primary:hover {
+  background-color: #611728;
+  border-color: #611728;
+  color: var(--blanco);
+}
+
 .category-grid {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
@@ -738,44 +748,53 @@ a.btn:focus {
    =========================== */
 footer {
   background-color: var(--gris-carbon);
-  color: #ccc;
-  padding: 3rem 2rem 1.5rem;
+  color: #b0b0b0;
+  padding: 3.5rem 2rem 2rem;
 }
 .footer-container {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 2rem;
-  max-width: 1200px;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 3rem;
+  max-width: 1300px;
   margin: 0 auto;
 }
 .footer-column h3 {
-  font-size: 1rem;
-  margin-bottom: 1.2rem;
+  font-size: 0.95rem;
+  margin-bottom: 1.5rem;
   text-transform: uppercase;
-  letter-spacing: 1px;
-  color: var(--blanco);
+  letter-spacing: 0.8px;
+  color: #ffffff;
+  font-weight: 700;
 }
 .footer-column ul {
   list-style: none;
   padding: 0;
   margin: 0;
 }
-.footer-column ul li       { margin-bottom: 0.7rem; }
-.footer-column ul li a {
-  color: #aaa;
-  text-decoration: none;
-  font-size: 0.88rem;
-  transition: color 0.3s;
+.footer-column ul li {
+  margin-bottom: 0.9rem;
 }
-.footer-column ul li a:hover { color: var(--rojo-suave); }
+.footer-column ul li a {
+  color: #b0b0b0;
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: color 0.25s ease;
+  display: inline-block;
+}
+.footer-column ul li a:hover {
+  color: var(--rojo-suave);
+}
+.footer-column ul li a.highlight:hover {
+  color: var(--rojo-suave);
+}
 
 .footer-bottom {
   text-align: center;
-  margin-top: 2.5rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid #444;
+  margin-top: 3rem;
+  padding-top: 2rem;
+  border-top: 1px solid #333;
   font-size: 0.8rem;
-  color: #888;
+  color: #999;
 }
 
 /* ===========================

@@ -1,7 +1,9 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { jwtDecode } from 'jwt-decode';
 import { getLibroById, addToCart } from '../services/api';
 import { notify } from '../components/ToastProvider';
+import ResenaLibro from '../components/ResenaLibro';
 import '../styles/detalle.css';
 
 
@@ -164,6 +166,21 @@ const DetalleLibro = () => {
             : 'Este libro no tiene una descripción disponible aún.'}
         </p>
       </section>
+
+      {/* SECCIÓN RESEÑAS */}
+      {(() => {
+        const token = localStorage.getItem('token');
+        let userId = null;
+        if (token) {
+          try {
+            const decoded = jwtDecode(token);
+            userId = decoded.sub;
+          } catch (error) {
+            console.error('Error decodificando token:', error);
+          }
+        }
+        return <ResenaLibro idLibro={libro.id_libro} idUsuario={userId ? parseInt(userId) : null} />;
+      })()}
     </main>
   );
 };

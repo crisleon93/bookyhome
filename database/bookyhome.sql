@@ -63,6 +63,7 @@ CREATE TABLE tiendas (
     direccion VARCHAR(100),
     telefono VARCHAR(50),
     fecha_creacion DATE,
+    estado_tienda VARCHAR(20) NOT NULL DEFAULT 'activa',
     FOREIGN KEY (id_usuario) REFERENCES usuarios(id_usuario)
 );
 
@@ -2671,5 +2672,3 @@ SET rol = 'comprador'
 WHERE rol = 'usuario';
 
 SET SQL_SAFE_UPDATES = 1;
-ALTER TABLE tiendas 
-ADD COLUMN estado_tienda VARCHAR(20) NOT NULL DEFAULT 'pendiente';

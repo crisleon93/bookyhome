@@ -42,6 +42,16 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
     return payload
 
 
+def verificar_tienda_activa(tienda):
+    estado = tienda.get("estado_tienda") if isinstance(tienda, dict) else tienda[5]
+    if str(estado).lower() != "activa":
+        raise HTTPException(
+            status_code=403,
+            detail="Tu tienda no está activa. Solo las tiendas activas pueden administrar libros."
+        )
+    return True
+
+
 # ══════════════════════════════════════════════
 #  RUTAS CON NOMBRE FIJO — SIEMPRE PRIMERO
 #  (deben ir antes que /{id_libro} para que
@@ -145,18 +155,8 @@ async def publicar_libro(
     if not tienda:
         raise HTTPException(status_code=404, detail="No tienes una tienda registrada")
 
-    # 🚨 NUEVA VALIDACIÓN: Bloquear si la tienda no está aprobada ('Activa')
-    # Validamos si 'tienda' es un diccionario o una tupla de la DB
-    estado_tienda = tienda.get("estado_tienda") if isinstance(tienda, dict) else tienda[5] 
-    
-    # Si viene en minúsculas 'pendiente', 'suspendida' o diferente de 'activa', se frena
-    if not estado_tienda or str(estado_tienda).lower() != "activa":
-        raise HTTPException(
-            status_code=403, 
-            detail="Tu librería se encuentra pendiente de aprobación o suspendida por el administrador. No tienes permisos para publicar libros."
-        )
+    verificar_tienda_activa(tienda)
 
-    # Si la tienda está activa, el código continúa su camino normal...
     resultado = crear_libro(
         id_tienda=tienda["id_tienda"],
         id_categoria=id_categoria,
@@ -217,6 +217,8 @@ def editar(
     if not tienda:
         raise HTTPException(status_code=404, detail="No tienes una tienda registrada")
 
+    verificar_tienda_activa(tienda)
+
     resultado = editar_libro(
         id_libro=id_libro,
         id_tienda=tienda["id_tienda"],
@@ -255,10 +257,7 @@ def eliminar(id_libro: int, user=Depends(get_current_user)):
     if not tienda:
         raise HTTPException(status_code=404, detail="No tienes una tienda registrada")
         
-    # Validamos que esté activa para poder operar
-    estado = tienda.get("estado_tienda") if isinstance(tienda, dict) else tienda[5]
-    if str(estado).lower() != "activa":
-        raise HTTPException(status_code=403, detail="Tu tienda no está activa")
+    verificar_tienda_activa(tienda)
 
     resultado = eliminar_libro(id_libro, tienda["id_tienda"])
     if not resultado["ok"]:
@@ -275,6 +274,9 @@ def update_stock(id_libro: int, stock: int = Form(...), user=Depends(get_current
     tienda = obtener_tienda_por_usuario(id_usuario)
     if not tienda:
         raise HTTPException(status_code=404, detail="No tienes una tienda registrada")
+
+    verificar_tienda_activa(tienda)
+
     if stock < 0:
         raise HTTPException(status_code=400, detail="El stock no puede ser negativo")
 

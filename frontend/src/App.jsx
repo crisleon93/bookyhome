@@ -22,6 +22,7 @@ import StoredProcedurePage from './pages/StoredProcedurePage';
 import PublicarLibro from './pages/PublicarLibro';
 import DetalleLibro from './pages/DetalleLibro';
 import AdminDashboard from './pages/AdminDashboard';
+import PerfilUsuario from './pages/PerfilUsuario';
 
 import { getUserRole } from './hooks/useAuth';
 import LegalPage from './pages/LegalPage';
@@ -72,6 +73,7 @@ function MainLayout() {
           <Route path="/post-login" element={<PostLogin />} />
           <Route path="/carrito" element={<Navigate to="/post-login?seccion=Carrito" replace />} />
           <Route path="/checkout/:orderId" element={<Checkout />} />
+          <Route path="/perfil" element={<PerfilUsuario />} />
         </Route>
 
         {/* ── RUTAS EXCLUSIVAS DE VENDEDOR ── */}

@@ -17,4 +17,9 @@ export const getBookAvailability = (id, cantidad) => api.get(`/libros/${id}/disp
 export const getBookOffer = (id) => api.get(`/ofertas/libro/${id}/activa`);
 export const registerLibrary = (data) => api.post('/libreria', data);
 
+// ===== Reseñas =====
+export const getReviewsForBook = (id) => api.get(`/resenas/libro/${id}`);
+export const createReview = (payload) => api.post('/resenas/crear', payload);
+export const updateReview = (id, payload) => api.put(`/resenas/${id}`, payload);
+export const deleteReview = (id) => api.delete(`/resenas/${id}`);
 export default api;

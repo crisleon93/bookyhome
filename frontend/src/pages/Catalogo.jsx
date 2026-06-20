@@ -1,51 +1,64 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { getStoredLibros, addToCart } from '../services/api';
+import api, { addToCart } from '../services/api';
 import { notify } from '../components/ToastProvider';
+import FiltrosCatalogo from '../components/FiltrosCatalogo';
 import LibroCard from '../components/LibroCard';
 import '../styles/catalogo.css';
 
 
 const Catalogo = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [libros, setLibros]             = useState([]);
-  const [loading, setLoading]           = useState(true);
-  const [busqueda, setBusqueda]         = useState(searchParams.get('q') || '');
-  const [categoriaSeleccionada, setCategoriaSeleccionada] = useState(searchParams.get('categoria') || '');
-  const [addingId, setAddingId]         = useState(null);
+  const [libros, setLibros] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [pagina, setPagina] = useState(1);
+  const [totalPaginas, setTotalPaginas] = useState(1);
+  const [addingId, setAddingId] = useState(null);
 
-  useEffect(() => {
-    const cargarLibros = async () => {
-      try {
-        const response = await getStoredLibros();
-        setLibros(response.data);
-      } catch (error) {
-        console.error('Error al cargar catálogo:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    cargarLibros();
-  }, []);
-
-  const categorias = [...new Set(libros.map((libro) => libro.nombre_categoria))];
-
-  const librosFiltrados = libros.filter((libro) => {
-    const query = busqueda.toLowerCase();
-    const coincideBusqueda =
-      (libro.titulo?.toLowerCase().includes(query)) ||
-      (libro.autor_libro?.toLowerCase().includes(query)) ||
-      (libro.nombre_categoria?.toLowerCase().includes(query));
-    const coincideCategoria =
-      categoriaSeleccionada === '' ||
-      libro.nombre_categoria === categoriaSeleccionada;
-    return coincideBusqueda && coincideCategoria;
+  const [filtros, setFiltros] = useState({
+    q: searchParams.get('q') || '',
+    categoria_id: null,
+    precio_min: 0,
+    precio_max: 1000000,
+    calificacion_min: 0,
+    disponible: true,
+    ordenar_por: 'relevancia'
   });
 
-  const handleBusquedaChange = (e) => {
-    const valor = e.target.value;
-    setBusqueda(valor);
-    setSearchParams(valor ? { q: valor } : {});
+  useEffect(() => {
+    cargarLibros();
+  }, [filtros, pagina]);
+
+  const cargarLibros = async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams();
+      
+      if (filtros.q) params.append('q', filtros.q);
+      if (filtros.categoria_id) params.append('categoria_id', filtros.categoria_id);
+      if (filtros.precio_min) params.append('precio_min', filtros.precio_min);
+      if (filtros.precio_max) params.append('precio_max', filtros.precio_max);
+      if (filtros.calificacion_min) params.append('calificacion_min', filtros.calificacion_min);
+      if (filtros.disponible) params.append('disponible', 'true');
+      params.append('ordenar_por', filtros.ordenar_por);
+      params.append('pagina', pagina);
+      params.append('limite', 20);
+
+      const response = await api.get(`/catalogo/busqueda-avanzada?${params}`);
+      setLibros(response.data.libros || []);
+      setTotalPaginas(response.data.total_paginas || 1);
+      setPagina(response.data.pagina || 1);
+    } catch (error) {
+      console.error('Error al cargar catálogo:', error);
+      notify('Error al cargar el catálogo', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleFiltrosChange = (nuevosFiltros) => {
+    setFiltros(nuevosFiltros);
+    setPagina(1);
   };
 
   const handleAddToCart = async (libro) => {
@@ -57,12 +70,12 @@ const Catalogo = () => {
     setAddingId(libro.id_libro);
     try {
       await addToCart({
-        id_libro:     libro.id_libro,
-        cantidad:     1,
-        titulo:       libro.titulo,
-        autor_libro:  libro.autor_libro,
+        id_libro: libro.id_libro,
+        cantidad: 1,
+        titulo: libro.titulo,
+        autor_libro: libro.autor_libro,
         precio_libro: libro.precio_libro,
-        imagen:       libro.imagen_url || null,
+        imagen: libro.imagen_url || null,
       });
       notify(`"${libro.titulo}" agregado al carrito ✓`, 'success');
       window.dispatchEvent(new Event('cart-updated'));
@@ -76,67 +89,89 @@ const Catalogo = () => {
 
   return (
     <main className="layout-container catalogo-main">
-      <h1 style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: '4px' }}>
+      <h1 style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: '1rem' }}>
         📚 Catálogo de libros
       </h1>
 
-      {/* Barra de búsqueda y filtros */}
-      <div className="barra-busqueda" style={{ display: 'flex', gap: '12px', marginTop: '16px', flexWrap: 'wrap' }}>
-        <input
-          type="text"
-          placeholder="Buscar por título, autor o categoría…"
-          value={busqueda}
-          onChange={handleBusquedaChange}
-          style={{ flex: 1, minWidth: '220px' }}
-        />
-        <select
-          value={categoriaSeleccionada}
-          onChange={(e) => setCategoriaSeleccionada(e.target.value)}
-        >
-          <option value="">Todas las categorías</option>
-          {categorias.map((cat) => (
-            <option key={cat} value={cat}>{cat}</option>
-          ))}
-        </select>
-      </div>
+      {/* FILTROS AVANZADOS */}
+      <FiltrosCatalogo 
+        onFiltrosChange={handleFiltrosChange}
+        filtrosActivos={filtros}
+      />
 
-      {/* Contador de resultados */}
-      {!loading && (
-        <p style={{ fontSize: '0.82rem', color: '#999', margin: '12px 0 0' }}>
-          {librosFiltrados.length === 0
-            ? 'Sin resultados'
-            : `Mostrando ${librosFiltrados.length} libro${librosFiltrados.length !== 1 ? 's' : ''}`}
-        </p>
-      )}
-
-      {/* Loading */}
-      {loading && (
-        <p style={{ marginTop: '40px', textAlign: 'center', color: '#999' }}>Cargando catálogo…</p>
-      )}
-
-      {/* Estado vacío */}
-      {!loading && librosFiltrados.length === 0 && (
-        <div className="catalogo-empty">
-          <svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
-          </svg>
-          <h3>No encontramos libros</h3>
-          <p>Intenta con otro término de búsqueda o categoría diferente.</p>
+      {/* RESULTADOS */}
+      {loading ? (
+        <div style={{ textAlign: 'center', padding: '2rem', color: '#999' }}>
+          Cargando libros...
         </div>
-      )}
-
-      {/* Grid de libros */}
-      {!loading && librosFiltrados.length > 0 && (
-        <div className="catalogo-grid">
-          {librosFiltrados.filter(Boolean).map((libro) => (
-            <LibroCard
-              key={libro.id_libro}
-              libro={libro}
-              onAdd={handleAddToCart}
-              adding={addingId === libro.id_libro}
-            />
-          ))}
+      ) : libros.length === 0 ? (
+        <div style={{
+          textAlign: 'center',
+          padding: '2rem',
+          background: '#faf8f6',
+          borderRadius: '12px',
+          color: '#999'
+        }}>
+          <p>No se encontraron libros con los filtros seleccionados</p>
+          <button 
+            onClick={() => handleFiltrosChange({
+              q: '',
+              categoria_id: null,
+              precio_min: 0,
+              precio_max: 1000000,
+              calificacion_min: 0,
+              disponible: true,
+              ordenar_por: 'relevancia'
+            })}
+            style={{
+              background: 'var(--vinotinto)',
+              color: 'white',
+              border: 'none',
+              padding: '0.7rem 1.5rem',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              marginTop: '1rem'
+            }}
+          >
+            Limpiar filtros
+          </button>
         </div>
+      ) : (
+        <>
+          <div className="libros-grid">
+            {libros.map((libro) => (
+              <LibroCard
+                key={libro.id_libro}
+                libro={libro}
+                onAddToCart={handleAddToCart}
+                isAdding={addingId === libro.id_libro}
+              />
+            ))}
+          </div>
+
+          {/* PAGINACIÓN */}
+          {totalPaginas > 1 && (
+            <div className="paginacion">
+              <button
+                disabled={pagina === 1}
+                onClick={() => setPagina(pagina - 1)}
+                className="btn-paginacion"
+              >
+                ← Anterior
+              </button>
+              <span className="pagina-info">
+                Página {pagina} de {totalPaginas}
+              </span>
+              <button
+                disabled={pagina === totalPaginas}
+                onClick={() => setPagina(pagina + 1)}
+                className="btn-paginacion"
+              >
+                Siguiente →
+              </button>
+            </div>
+          )}
+        </>
       )}
     </main>
   );
