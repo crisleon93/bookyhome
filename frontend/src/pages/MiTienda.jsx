@@ -13,7 +13,8 @@ import {
   IconPackage, 
   IconUser, 
   IconSettings, 
-  IconTag 
+  IconTag, 
+  IconMenu 
 } from "../components/Icons";
 
 
@@ -261,6 +262,7 @@ export default function MiTienda() {
   const [userEmail, setUserEmail] = useState("");
   const [loading,       setLoading]       = useState(true);
   const [activeSide,    setActiveSide]    = useState("Inicio");
+  const [sidebarOpen,   setSidebarOpen]   = useState(() => localStorage.getItem("sidebarOpen") !== "false");
   const [libros,        setLibros]        = useState([]);
   const [loadingLibros, setLoadingLibros] = useState(false);
   const [categorias,    setCategorias]    = useState([]);
@@ -343,6 +345,12 @@ export default function MiTienda() {
   }, [activeSide]);
 
   useEffect(() => {
+    localStorage.setItem("sidebarOpen", sidebarOpen ? "true" : "false");
+  }, [sidebarOpen]);
+
+  const toggleSidebar = () => setSidebarOpen((open) => !open);
+
+  useEffect(() => {
     api.get("/libros/categorias").then((r) => setCategorias(r.data)).catch(() => {});
 
     setLoadingStats(true);
@@ -394,15 +402,128 @@ export default function MiTienda() {
 
   const renderInicio = () => (
     <>
-      <div className="welcome-card">
-        <h1>Hola, {userName.split(" ")[0]} 👋</h1>
-        <p>Aquí tienes un resumen de tu tienda en BookyHome.</p>
+      <div className="welcome-card welcome-card--small">
+        <h1>Bienvenido, {userName.split(" ")[0]} 👋</h1>
+        <p>Aquí tienes un panorama claro de tu tienda en BookyHome.</p>
       </div>
 
-      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "10px" }}>
-        <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "0.85rem", fontWeight: 700, color: "#555" }}>
-          Avisar stock minimo
+      <div className="dashboard-top-grid">
+        <div className="dashboard-card summary-card">
+          <div className="dashboard-card-header">
+            <div>
+              <p className="dashboard-card-title">Resumen</p>
+              <p className="dashboard-card-subtitle">Estado general de tu tienda</p>
+            </div>
+            <span className="dashboard-card-tag">HISTÓRICO</span>
+          </div>
+
+          <div className="summary-pill-grid">
+            <div className="summary-pill">
+              <span>Total ventas (COP)</span>
+              <strong>{loadingStats ? "…" : stats ? formatPrecio(stats.total_mes) : "$0 COP"}</strong>
+            </div>
+            <div className="summary-pill">
+              <span>Libros publicados</span>
+              <strong>{loadingLibros ? "…" : statsLibros.totalLibros}</strong>
+            </div>
+          </div>
+        </div>
+
+        <div className="dashboard-card trend-card">
+          <div className="dashboard-card-header">
+            <div>
+              <p className="dashboard-card-title">Tendencia de venta</p>
+              <p className="dashboard-card-subtitle">Resumen mensual</p>
+            </div>
+            <span className="dashboard-card-tag tag-accent">ESTA SEMANA</span>
+          </div>
+
+          <div className="trend-pill-grid">
+            <div className="trend-pill">
+              <p>Ventas esta semana</p>
+              <strong>{loadingStats ? '…' : stats ? formatPrecio(stats.total_semana) : '$0 COP'}</strong>
+            </div>
+            <div className="trend-pill">
+              <p>Órdenes este mes</p>
+              <strong>{loadingStats ? '…' : stats ? stats.ordenes_mes : '0'}</strong>
+            </div>
+          </div>
+
+          <div className="analytics-chart-block">
+            <div className="analytics-chart-bars">
+              {[0.35, 0.55, 0.7, 0.6, 0.85, 1].map((ratio, index) => (
+                <div
+                  key={index}
+                  className="analytics-chart-bar"
+                  style={{ height: `${Math.max(18, ratio * 100)}%` }}
+                />
+              ))}
+            </div>
+            <div className="analytics-chart-meta">
+              <p>Ventas en los últimos 6 días</p>
+              <strong>{loadingStats ? '…' : stats ? formatPrecio(stats.total_semana) : '$0 COP'}</strong>
+            </div>
+          </div>
+        </div>
+
+        <div className="dashboard-card notifications-card">
+          <div className="dashboard-card-header">
+            <div>
+              <p className="dashboard-card-title">Centro de notificaciones</p>
+              <p className="dashboard-card-subtitle">Lo más reciente</p>
+            </div>
+          </div>
+          <div className="notification-item">
+            <strong>{alertasStock.length}</strong>
+            <div>
+              <p>Libros con stock bajo</p>
+              <small>Revisa el inventario</small>
+            </div>
+          </div>
+          <div className="notification-item">
+            <strong>{loadingLibros ? '…' : statsLibros.totalLibros}</strong>
+            <div>
+              <p>Libros publicados</p>
+              <small>Tu catálogo activo</small>
+            </div>
+          </div>
+          <div className="notification-item">
+            <strong>{loadingTop ? '…' : topVendidos.length}</strong>
+            <div>
+              <p>Libros en top ventas</p>
+              <small>Los más populares</small>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="inventory-alert-card">
+        <div>
+          <div className="inventory-alert-top">
+            <p className="inventory-alert-title">Alertas de inventario</p>
+            <p className="inventory-alert-copy">Recibe avisos automáticos cuando el stock de tus libros esté por debajo del umbral.</p>
+          </div>
+          <div className="inventory-alert-status">
+            <span className={alertasStock.length > 0 ? 'inventory-status-warning' : 'inventory-status-ok'}>
+              {alertasStock.length > 0 ? '⚠' : '✓'}
+            </span>
+            <div>
+              <p className="inventory-status-title">
+                {alertasStock.length > 0 ? 'Hay libros por debajo del umbral' : 'Todo tu inventario está dentro del umbral'}
+              </p>
+              <p className="inventory-status-copy">
+                {alertasStock.length > 0
+                  ? `${alertasStock.length} de ${libros.length} libro(s) por debajo de ${stockUmbral} unidades`
+                  : `0 de ${libros.length} libros por debajo de ${stockUmbral} unidades`}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="inventory-alert-right">
+          <p className="inventory-alert-subtitle">Umbral de alerta</p>
           <input
+            id="stock-umbral"
             type="number"
             min="0"
             value={stockUmbral}
@@ -411,12 +532,56 @@ export default function MiTienda() {
               setStockUmbral(val);
               localStorage.setItem('stockUmbral', val);
             }}
-            style={{ width: "76px", padding: "7px 9px", border: "1.5px solid #e0dbd4", borderRadius: "6px", fontFamily: "Montserrat, sans-serif" }}
           />
-        </label>
+          <small className="inventory-alert-hint">Ajusta cuántas unidades quedan antes de generar una alerta.</small>
+        </div>
       </div>
 
       <AlertaStock alertas={alertasStock} umbral={stockUmbral} />
+
+      <div className="dashboard-card recent-books-card">
+        <div className="dashboard-card-header">
+          <div>
+            <p className="dashboard-card-title">Últimos libros publicados</p>
+            <p className="dashboard-card-subtitle">Los tres libros más recientes de tu catálogo</p>
+          </div>
+          <button className="btn-ver-todos" onClick={() => setActiveSide("Mis Libros")}>Ver todos →</button>
+        </div>
+
+        {loadingLibros ? (
+          <p style={{ color: "#999", padding: "16px 0" }}>Cargando libros...</p>
+        ) : libros.length === 0 ? (
+          <div className="empty-state" style={{ padding: "30px 20px" }}>
+            <div style={{ fontSize: "2rem", marginBottom: "10px" }}>📚</div>
+            <p style={{ fontWeight: 700, color: "#444", marginBottom: "6px" }}>No hay libros publicados aún</p>
+            <p style={{ fontSize: "0.85rem", color: "#888" }}>Publica tu primer libro para verlo aquí.</p>
+          </div>
+        ) : (
+          <div className="recent-books-list">
+            {libros.slice(0, 3).map((libro) => (
+              <div key={libro.id_libro} className="recent-book-item">
+                <div className="recent-book-left">
+                  <div className="recent-book-cover">
+                    {libro.imagenes?.[0] ? (
+                      <img src={`http://127.0.0.1:8000${libro.imagenes[0]}`} alt={libro.titulo} />
+                    ) : (
+                      <span>📖</span>
+                    )}
+                  </div>
+                  <div>
+                    <strong>{libro.titulo}</strong>
+                    <p>{libro.autor_libro}</p>
+                  </div>
+                </div>
+                <div className="recent-book-meta">
+                  <span>{libro.nombre_categoria}</span>
+                  <strong>{formatPrecio(libro.precio_libro)}</strong>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       <div className="stats-seccion-label">Tus libros</div>
       <div className="seller-stats">
@@ -798,11 +963,16 @@ export default function MiTienda() {
   };
 
   return (
-    <div className="dashboard-container">
-      <aside className="dashboard-sidebar">
+    <div className={`dashboard-container ${sidebarOpen ? "" : "sidebar-collapsed"}`}>
+      <aside className={`dashboard-sidebar ${sidebarOpen ? "" : "collapsed"}`}>
+        <div className="sidebar-header">
+          <button type="button" className="sidebar-collapse-btn" onClick={toggleSidebar} title={sidebarOpen ? "Contraer menú" : "Expandir menú"} aria-label={sidebarOpen ? "Contraer menú" : "Expandir menú"}>
+            {sidebarOpen ? "◀" : "▶"}
+          </button>
+        </div>
         <div className="sidebar-user">
           <div className="user-avatar-big">{userName.slice(0, 2).toUpperCase()}</div>
-          <div>
+          <div className="sidebar-user-info">
             <p className="user-name">{userName}</p>
             <p className="user-email">{userEmail}</p>
           </div>
@@ -811,7 +981,9 @@ export default function MiTienda() {
           {SIDE_LINKS.map((item) => (
             <button key={item.name}
               onClick={() => { setActiveSide(item.name); if (item.path) navigate(item.path); }}
-              className={`sidebar-item ${activeSide === item.name ? "active" : ""}`}>
+              className={`sidebar-item ${activeSide === item.name ? "active" : ""}`}
+              data-tooltip={item.name}
+              title={item.name}>
               <span className="sidebar-icon">{item.icon}</span>
               {item.name}
             </button>

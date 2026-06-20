@@ -193,6 +193,7 @@ export default function PublicarLibro() {
                 value={form.titulo}
                 onChange={handleChange}
               />
+              <p className="input-hint">Usa el título exacto del libro para que los compradores te encuentren fácil.</p>
             </div>
 
             <div className="form-group">
@@ -206,6 +207,7 @@ export default function PublicarLibro() {
                 value={form.autor_libro}
                 onChange={handleChange}
               />
+              <p className="input-hint">Si es autor colectivo o editorial, escríbelo igual al título.</p>
             </div>
 
             <div className="form-group">
@@ -223,6 +225,7 @@ export default function PublicarLibro() {
                   </option>
                 ))}
               </select>
+              <p className="input-hint">Elige la categoría que más describe el contenido del libro.</p>
             </div>
 
             <div className="form-group">
@@ -241,6 +244,7 @@ export default function PublicarLibro() {
                 value={form.descripcion_libro}
                 onChange={handleChange}
               />
+              <p className="input-hint">Incluye condición, edición y cualquier detalle importante para el comprador.</p>
             </div>
           </div>
         </div>
@@ -304,6 +308,7 @@ export default function PublicarLibro() {
                     className="input-with-prefix"
                   />
                 </div>
+                <p className="input-hint">Precio en pesos. Si quieres, entra el valor que verá el comprador.</p>
               </div>
 
               <div className="form-group">
@@ -317,6 +322,7 @@ export default function PublicarLibro() {
                   value={form.stock}
                   onChange={handleChange}
                 />
+                <p className="input-hint">Cantidad que tienes lista para vender hoy.</p>
               </div>
             </div>
 

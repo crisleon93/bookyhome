@@ -101,6 +101,13 @@
   margin: 0 0 20px;
 }
 
+.input-hint {
+  margin: 6px 0 0;
+  color: #6b7280;
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
 /* Grupos de formulario */
 .form-group {
   margin-bottom: 18px;
