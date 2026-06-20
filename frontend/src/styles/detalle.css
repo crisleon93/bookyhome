@@ -151,6 +151,33 @@
   opacity: 0.85;
 }
 
+/* -- Variantes de botones de compartir -- */
+.detalle-share-btn {
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.82rem;
+  cursor: pointer;
+  font-family: 'Montserrat', sans-serif;
+  transition: opacity 0.2s;
+  border: none;
+}
+.detalle-share-whatsapp {
+  background: #25D366;
+  color: white;
+}
+.detalle-share-copiar {
+  background: white;
+  color: var(--vinotinto);
+  border: 1.5px solid var(--vinotinto) !important;
+}
+.detalle-share-copiado {
+  color: #15803d;
+  font-weight: 600;
+  align-self: center;
+  font-size: 0.82rem;
+}
+
 /* -- Descripción del libro -- */
 .detalle-descripcion {
   margin-top: 24px;

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import Header from '../components/Header'
 
 import ficcion from '../assets/ficcion.png'
@@ -122,6 +122,7 @@ function ModalOption({ to, iconPath, title, desc, onClose }) {
 function Home() {
   const [joinOpen,     setJoinOpen]     = useState(false)
   const [registerOpen, setRegisterOpen] = useState(false)
+  const navigate = useNavigate()
 
 return (
   <>
@@ -140,8 +141,8 @@ return (
           </div>
         </div>
         <div className="hero-image">
-          <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTgQkxN-TFkw-qgA1RKnj0Tmp4i7tXAbuEl3A&s"
-            alt="Personas explorando libros" />
+          <img src="https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=800&q=80"
+            alt="Personas explorando libros en una librería" />
         </div>
       </div>
     </section>
@@ -192,15 +193,19 @@ return (
           <p>Libros para todos los gustos y momentos</p>
           <div className="category-grid">
             {CATEGORIES.map((c, i) => (
-              <div key={i} className="category-card"
-                style={{ backgroundImage: `url(${c.img})` }}>
+              <div
+                key={i}
+                className="category-card"
+                style={{ backgroundImage: `url(${c.img})`, cursor: 'pointer' }}
+                onClick={() => navigate(`/catalogo?categoria=${encodeURIComponent(c.name)}`)}
+              >
                 <h3>{c.name}</h3>
               </div>
             ))}
           </div>
           <div style={{ textAlign: 'center', marginTop: '2rem' }}>
-            <Link to="/login" className="btn btn-primary">
-              Inicia sesión para ver el catálogo completo
+            <Link to="/catalogo" className="btn btn-primary">
+              Ver catálogo completo
             </Link>
           </div>
         </div>

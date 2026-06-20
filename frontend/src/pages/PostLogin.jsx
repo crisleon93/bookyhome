@@ -174,7 +174,7 @@ export default function PostLogin() {
 
                   {favoritos.slice(0, 5).map((libro) => (
                     <div key={libro.id_libro} className="pl-order-row" style={{ cursor: 'pointer' }}
-                      onClick={() => navigate('/catalogo')}>
+                      onClick={() => navigate(`/catalogo/${libro.id_libro}`)}>
                       <div className="pl-order-left">
                         <span className="pl-order-emoji">📖</span>
                         <div>

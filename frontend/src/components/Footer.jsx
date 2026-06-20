@@ -1,53 +1,59 @@
+import { Link } from 'react-router-dom';
+
 function Footer() {
   return (
     <footer>
 
       <div className="footer-container">
 
+        {/* Columna 1 — BookyHome */}
         <div className="footer-column">
           <h3>BookyHome</h3>
           <ul>
-            <li><a href="#">Catálogo de libros</a></li>
-            <li><a href="#">Cómo comprar</a></li>
-            <li><a href="#">Métodos de pago</a></li>
-            <li><a href="#">Envíos y entregas</a></li>
+            <li><Link to="/">Inicio</Link></li>
+            <li><Link to="/catalogo">Catálogo de libros</Link></li>
+            <li><Link to="/libreria">Registrar librería</Link></li>
+            <li><Link to="/favoritos">Mis favoritos</Link></li>
           </ul>
         </div>
 
+        {/* Columna 2 — Comprar */}
         <div className="footer-column">
           <h3>Comprar</h3>
           <ul>
-            <li><a href="#">Catálogo de libros</a></li>
-            <li><a href="#">Cómo comprar</a></li>
-            <li><a href="#">Métodos de pago</a></li>
-            <li><a href="#">Envíos y entregas</a></li>
+            <li><Link to="/catalogo">Ver todos los libros</Link></li>
+            <li><Link to="/catalogo?categoria=Romance">Romance</Link></li>
+            <li><Link to="/catalogo?categoria=Ciencia">Ciencia</Link></li>
+            <li><Link to="/catalogo?categoria=Tecnolog%C3%ADa">Tecnología</Link></li>
           </ul>
         </div>
 
+        {/* Columna 3 — Vender */}
         <div className="footer-column">
           <h3>Vender</h3>
           <ul>
-            <li><a href="#">Vender en BookyHome</a></li>
-            <li><a href="#">Cómo funciona</a></li>
-            <li><a href="#">Planes y precios</a></li>
-            <li><a href="#">Centro de vendedores</a></li>
+            <li><Link to="/libreria">Vender en BookyHome</Link></li>
+            <li><Link to="/vendedor/publicar">Publicar un libro</Link></li>
+            <li><Link to="/mi-tienda">Mi tienda</Link></li>
+            <li><Link to="/libreria">Planes y precios</Link></li>
           </ul>
         </div>
 
+        {/* Columna 4 — Mi cuenta */}
         <div className="footer-column">
-          <h3>Ayuda</h3>
+          <h3>Mi cuenta</h3>
           <ul>
-            <li><a href="#">Centro de ayuda</a></li>
-            <li><a href="#">Preguntas frecuentes</a></li>
-            <li><a href="#">Contacto</a></li>
-            <li><a href="#">Devoluciones</a></li>
+            <li><Link to="/login">Iniciar sesión</Link></li>
+            <li><Link to="/register">Crear cuenta</Link></li>
+            <li><Link to="/post-login">Dashboard</Link></li>
+            <li><Link to="/post-login?seccion=Mis Compras">Mis compras</Link></li>
           </ul>
         </div>
 
       </div>
 
       <div className="footer-bottom">
-        <p>© {new Date().getFullYear()} BookyHome - Todos los derechos reservados.</p>
+        <p>© {new Date().getFullYear()} BookyHome — Todos los derechos reservados.</p>
       </div>
 
     </footer>

@@ -11,7 +11,7 @@ const Catalogo = () => {
   const [libros, setLibros]             = useState([]);
   const [loading, setLoading]           = useState(true);
   const [busqueda, setBusqueda]         = useState(searchParams.get('q') || '');
-  const [categoriaSeleccionada, setCategoriaSeleccionada] = useState('');
+  const [categoriaSeleccionada, setCategoriaSeleccionada] = useState(searchParams.get('categoria') || '');
   const [addingId, setAddingId]         = useState(null);
 
   useEffect(() => {

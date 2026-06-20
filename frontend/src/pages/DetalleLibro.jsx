@@ -5,7 +5,8 @@ import { notify } from '../components/ToastProvider';
 import '../styles/detalle.css';
 
 
-const obtenerImagen = (categoria) => {
+const obtenerImagen = (libro) => {
+  if (libro?.imagen_url) return libro.imagen_url;
   const imagenes = {
     Fantasía: 'https://images.unsplash.com/photo-1518709268805-4e9042af2176',
     Romance: 'https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2',
@@ -20,7 +21,7 @@ const obtenerImagen = (categoria) => {
     Arte: 'https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b',
     Comedia: 'https://images.unsplash.com/photo-1516321497487-e288fb19713f'
   };
-  return imagenes[categoria] || 'https://images.unsplash.com/photo-1512820790803-83ca734da794';
+  return imagenes[libro?.nombre_categoria] || 'https://images.unsplash.com/photo-1512820790803-83ca734da794';
 };
 
 const DetalleLibro = () => {
@@ -89,7 +90,7 @@ const DetalleLibro = () => {
         titulo:      libro.titulo,
         autor_libro: libro.autor_libro,
         precio_libro: libro.precio_libro,
-        imagen:      obtenerImagen(libro.nombre_categoria),
+        imagen:      libro.imagen_url || obtenerImagen(libro),
       });
       notify(`"​${libro.titulo}" agregado al carrito ✓`, 'success');
       window.dispatchEvent(new Event('cart-updated'));
@@ -108,7 +109,7 @@ const DetalleLibro = () => {
     <main className="layout-container detalle-container">
       <div className="detalle-card">
         <div className="detalle-imagen">
-          <img src={obtenerImagen(libro.nombre_categoria)} alt={libro.titulo} />
+          <img src={obtenerImagen(libro)} alt={libro.titulo} />
         </div>
 
         <div className="detalle-info">
@@ -139,18 +140,18 @@ const DetalleLibro = () => {
 
           <div className="detalle-share">
             <button
+              className="detalle-share-btn detalle-share-whatsapp"
               onClick={compartirWhatsApp}
-              style={{ background: '#25D366', color: 'white', border: 'none' }}
             >
               📲 WhatsApp
             </button>
             <button
+              className="detalle-share-btn detalle-share-copiar"
               onClick={copiarEnlace}
-              style={{ background: 'white', color: 'var(--vinotinto)', border: '1px solid var(--vinotinto)' }}
             >
               🔗 Copiar enlace
             </button>
-            {copiadoMsg && <span style={{ color: 'green', fontWeight: 600, alignSelf: 'center', fontSize: '0.82rem' }}>{copiadoMsg}</span>}
+            {copiadoMsg && <span className="detalle-share-copiado">{copiadoMsg}</span>}
           </div>
         </div>
       </div>

@@ -17,7 +17,6 @@
   margin-top: 24px;
 }
 
-/* ── Tarjeta de libro ── */
 /* -- Tarjeta individual de libro -- */
 .libro-card {
   border: 1px solid #e0dbd4;
@@ -130,4 +129,23 @@
 }
 .catalogo-empty p {
   font-size: 0.9rem;
+}
+
+/* -- Botón quitar de favoritos -- */
+.btn-quitar-favorito {
+  width: 100%;
+  margin-top: 8px;
+  padding: 9px;
+  background: white;
+  border: 1.5px solid #e53935;
+  color: #e53935;
+  border-radius: 8px;
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 600;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+.btn-quitar-favorito:hover {
+  background: #fef2f2;
 }

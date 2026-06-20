@@ -24,11 +24,16 @@ import DetalleLibro from './pages/DetalleLibro';
 import AdminDashboard from './pages/AdminDashboard';
 
 import { getUserRole } from './hooks/useAuth';
+import LegalPage from './pages/LegalPage';
 
 function App() {
   return (
     <BrowserRouter>
-      <MainLayout />
+      <ToastProvider>
+        <MainLayout />
+        {/* CookieBanner fuera de MainLayout: no se re-monta con cambios de ruta */}
+        <CookieBanner />
+      </ToastProvider>
     </BrowserRouter>
   );
 }
@@ -45,7 +50,7 @@ function MainLayout() {
     location.pathname.startsWith('/vendedor/publicar');
 
   return (
-    <ToastProvider>
+    <>
       {!isDashboard && <Header variant={variant} />}
 
       <Routes>
@@ -60,6 +65,7 @@ function MainLayout() {
         <Route path="/catalogo" element={<Catalogo />} />
         <Route path="/catalogo/:id" element={<DetalleLibro />} />
         <Route path="/favoritos" element={<Favoritos />} />
+        <Route path="/legal" element={<LegalPage />} />
 
         {/* ── RUTAS PROTEGIDAS GENERALES (Cualquier usuario logueado) ── */}
         <Route element={<PrivateRoute />}>
@@ -77,7 +83,6 @@ function MainLayout() {
         {/* ── RUTAS EXCLUSIVAS DE ADMINISTRADOR ── */}
         <Route element={<PrivateRoute allowedRoles={['admin', 'administrador']} />}>
           <Route path="/admin" element={<AdminDashboard />} />
-          {/* Si tu compañero agrega más páginas de admin como /admin/libros, van aquí adentro */}
         </Route>
 
         {/* ── REDIRECCIÓN LOGÍSTICA POR ROL ── */}
@@ -101,8 +106,7 @@ function MainLayout() {
       </Routes>
 
       {!isDashboard && <Footer />}
-      <CookieBanner />
-    </ToastProvider>
+    </>
   );
 }
 
