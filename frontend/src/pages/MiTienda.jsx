@@ -2,20 +2,9 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
-import api, { getUsuarios } from "../services/api";
+import api from "../services/api";
 import SeccionOfertas from "../components/SeccionOfertas";
-
-import { 
-  IconStoreAlt as IconHome, 
-  IconBook, 
-  IconPlus, 
-  IconCartAlt as IconCart, 
-  IconPackage, 
-  IconUser, 
-  IconSettings, 
-  IconTag, 
-  IconMenu 
-} from "../components/Icons";
+import SellerSidebar from "../components/SellerSidebarFlowbite";
 
 
 const formatPrecio = (valor) =>
@@ -259,10 +248,8 @@ function ModalStock({ libro, onClose, onActualizado }) {
 export default function MiTienda() {
   const navigate = useNavigate();
   const [userName,      setUserName]      = useState("");
-  const [userEmail, setUserEmail] = useState("");
   const [loading,       setLoading]       = useState(true);
   const [activeSide,    setActiveSide]    = useState("Inicio");
-  const [sidebarOpen,   setSidebarOpen]   = useState(() => localStorage.getItem("sidebarOpen") !== "false");
   const [libros,        setLibros]        = useState([]);
   const [loadingLibros, setLoadingLibros] = useState(false);
   const [categorias,    setCategorias]    = useState([]);
@@ -297,15 +284,6 @@ export default function MiTienda() {
     try {
       const payload = jwtDecode(token);
       setUserName(payload.nombre || "Vendedor");
-
-      const id = parseInt(payload.sub);
-      getUsuarios()
-        .then((res) => {
-          const usuario = res.data.find((u) => u.id_usuario === id);
-          if (usuario) setUserEmail(usuario.correo_usuario);
-        })
-        .catch((err) => console.error(err));
-
     } catch { setUserName("Vendedor"); }
     finally { setLoading(false); }
   }, [navigate]);
@@ -345,12 +323,6 @@ export default function MiTienda() {
   }, [activeSide]);
 
   useEffect(() => {
-    localStorage.setItem("sidebarOpen", sidebarOpen ? "true" : "false");
-  }, [sidebarOpen]);
-
-  const toggleSidebar = () => setSidebarOpen((open) => !open);
-
-  useEffect(() => {
     api.get("/libros/categorias").then((r) => setCategorias(r.data)).catch(() => {});
 
     setLoadingStats(true);
@@ -385,18 +357,6 @@ export default function MiTienda() {
   const cargarAlertas = () => {
     api.get(`/libros/alertas-stock?umbral=${stockUmbral}`).then((r) => setAlertasStock(r.data)).catch(() => {});
   };
-
-  const handleLogout = () => { localStorage.removeItem("token"); navigate("/login"); };
-
-  const SIDE_LINKS = [
-    { name: "Inicio",         icon: <IconHome /> },
-    { name: "Mis Libros",     icon: <IconBook /> },
-    { name: "Publicar Libro", icon: <IconPlus />, path: "/vendedor/publicar" },
-    { name: "Promociones",    icon: <IconTag /> },
-    { name: "Ventas",         icon: <IconCart /> },
-    { name: "Pedidos",        icon: <IconPackage /> },
-    { name: "Perfil",  icon: <IconSettings /> },
-  ];
 
   if (loading) return <div style={{ padding: "2rem" }}>Cargando tienda...</div>;
 
@@ -963,34 +923,13 @@ export default function MiTienda() {
   };
 
   return (
-    <div className={`dashboard-container ${sidebarOpen ? "" : "sidebar-collapsed"}`}>
-      <aside className={`dashboard-sidebar ${sidebarOpen ? "" : "collapsed"}`}>
-        <div className="sidebar-header">
-          <button type="button" className="sidebar-collapse-btn" onClick={toggleSidebar} title={sidebarOpen ? "Contraer menú" : "Expandir menú"} aria-label={sidebarOpen ? "Contraer menú" : "Expandir menú"}>
-            {sidebarOpen ? "◀" : "▶"}
-          </button>
-        </div>
-        <div className="sidebar-user">
-          <div className="user-avatar-big">{userName.slice(0, 2).toUpperCase()}</div>
-          <div className="sidebar-user-info">
-            <p className="user-name">{userName}</p>
-            <p className="user-email">{userEmail}</p>
-          </div>
-        </div>
-        <nav className="sidebar-nav">
-          {SIDE_LINKS.map((item) => (
-            <button key={item.name}
-              onClick={() => { setActiveSide(item.name); if (item.path) navigate(item.path); }}
-              className={`sidebar-item ${activeSide === item.name ? "active" : ""}`}
-              data-tooltip={item.name}
-              title={item.name}>
-              <span className="sidebar-icon">{item.icon}</span>
-              {item.name}
-            </button>
-          ))}
-        </nav>
-        <button onClick={handleLogout} className="sidebar-logout">Cerrar sesión</button>
-      </aside>
+    <div className="dashboard-container">
+      <SellerSidebar
+        userName={userName}
+        activeSide={activeSide}
+        setActiveSide={setActiveSide}
+        handleLogout={() => { localStorage.removeItem("token"); navigate("/login"); }}
+      />
 
       <main className="dashboard-main">{renderContenido()}</main>
 

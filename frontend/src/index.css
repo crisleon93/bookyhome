@@ -178,38 +178,41 @@ header.scrolled { box-shadow: 0 2px 20px rgba(122, 30, 58, 0.15); }
   display: flex;
   align-items: center;
   height: 100%;
+  width: 125px;
+  overflow: visible;
 }
 
 .logo-img {
-  width: auto;
-  height: 58px;
-  object-fit: contain;
+  width: 200px;
+  height: 135px;
+  transform: translateX(-40px);
   display: block;
 }
 
-/* -- Buscador -- */
 .search-wrapper {
-  flex: 1;
+  flex: 1 1 0;
+  max-width: 100%;
+  min-width: 0;
   position: relative;
-  max-width: 700px;
 }
 
 .search-bar {
-  width: 100%;
-  padding: 0.7rem 1rem 0.7rem 3rem;
+  width: 70%;
+  padding: 0.8rem 1rem 0.8rem 1rem;
   border: 1px solid #ddd;
   border-radius: 4px;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   outline: none;
   font-family: 'Montserrat', sans-serif;
-  transition: border-color 0.3s ease;
+  transition: border-color 0.3s ease, background-color 0.3s ease;
+  background: #fff;
 }
 
 .search-bar:focus { border-color: var(--vinotinto); }
 
 .search-btn {
   position: absolute;
-  right: 10px;
+  right: 270px;
   top: 50%;
   transform: translateY(-50%);
   background: none;
@@ -259,11 +262,13 @@ header.scrolled { box-shadow: 0 2px 20px rgba(122, 30, 58, 0.15); }
 .hero-container {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 3rem;
 }
 
-.hero-text { flex: 1; }
+.hero-text { 
+  flex: 0 1 auto;
+}
 
 .hero-text h1 {
   font-size: 2.1rem;

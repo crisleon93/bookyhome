@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import logo from '../assets/logo.png';
+import logo2 from '../assets/logo2.png';
 import { 
   IconSearch, 
   IconUser, 
@@ -17,7 +18,7 @@ import {
   IconEyeOpen,
   IconEyeClosed
 } from './Icons';
-import { login, getCarrito } from '../services/api';
+import { login } from '../services/api';
 import { jwtDecode } from 'jwt-decode';
 import { notify } from './ToastProvider';
 import Register from '../pages/Register';
@@ -74,7 +75,6 @@ function Header({ variant }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [showPass, setShowPass] = useState(false);
-  const [cartCount, setCartCount] = useState(0);
 
   const isHome = location.pathname === '/';
 
@@ -105,24 +105,6 @@ function Header({ variant }) {
     window.addEventListener('click', handleClose);
     return () => window.removeEventListener('click', handleClose);
   }, [dropdownOpen]);
-
-  // Badge del carrito: carga inicial + escucha evento cart-updated
-  useEffect(() => {
-    const fetchCount = async () => {
-      if (!isLoggedIn) { setCartCount(0); return; }
-      try {
-        const res = await getCarrito();
-        const items = res.data || [];
-        const total = items.reduce((acc, item) => acc + (item.cantidad || 1), 0);
-        setCartCount(total);
-      } catch {
-        setCartCount(0);
-      }
-    };
-    fetchCount();
-    window.addEventListener('cart-updated', fetchCount);
-    return () => window.removeEventListener('cart-updated', fetchCount);
-  }, [isLoggedIn]);
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
@@ -178,7 +160,7 @@ function Header({ variant }) {
       >
         <div className="layout-container header-container">
           <Link to="/" className="logo-link">
-          <img src={logo} alt="BookyHome" className="logo-img" />
+          <img src={isWhite ? logo : logo2} alt="BookyHome" className="logo-img" />
         </Link>
 
         <button
@@ -190,49 +172,6 @@ function Header({ variant }) {
         >
           <IconMenu />
         </button>
-
-        <nav className="header-nav">
-          <Link to="/catalogo" className="header-nav-link" onClick={() => setMobileMenuOpen(false)}>
-            <span>
-              <IconBooks />
-              Catálogo
-            </span>
-          </Link>
-          <Link to="/favoritos" className="header-nav-link" onClick={() => setMobileMenuOpen(false)}>
-            <span>
-              <IconFavorites />
-              Favoritos
-            </span>
-          </Link>
-          <Link to="/carrito" className="header-nav-link" onClick={() => setMobileMenuOpen(false)}>
-            <span style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-              <span style={{ position: 'relative' }}>
-                <IconCart />
-                {isLoggedIn && cartCount > 0 && (
-                  <span style={{
-                    position: 'absolute',
-                    top: '-6px',
-                    right: '-8px',
-                    background: 'var(--vinotinto)',
-                    color: 'white',
-                    borderRadius: '50%',
-                    width: '16px',
-                    height: '16px',
-                    fontSize: '10px',
-                    fontWeight: 800,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    lineHeight: 1,
-                  }}>
-                    {cartCount > 9 ? '9+' : cartCount}
-                  </span>
-                )}
-              </span>
-              Carrito
-            </span>
-          </Link>
-        </nav>
 
         {!isSimple && (
           <>
