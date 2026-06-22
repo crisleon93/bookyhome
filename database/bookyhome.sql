@@ -63,7 +63,6 @@ CREATE TABLE tiendas (
     direccion VARCHAR(100),
     telefono VARCHAR(50),
     fecha_creacion DATE,
-    estado_tienda VARCHAR(20) NOT NULL DEFAULT 'activa',
     FOREIGN KEY (id_usuario) REFERENCES usuarios(id_usuario)
 );
 
@@ -2663,7 +2662,10 @@ CALL sp_listar_libros_disponibles();
 SELECT * FROM v_detalles_carrito;
 
 SELECT '=== BooKyHome LISTA PARA USAR ===' AS '';
-select * from usuarios; 
+select * from libros;
+
+ALTER TABLE libros 
+ADD COLUMN oculto TINYINT(1) NOT NULL DEFAULT 0;
 
 SET SQL_SAFE_UPDATES = 0;
 
@@ -2672,3 +2674,6 @@ SET rol = 'comprador'
 WHERE rol = 'usuario';
 
 SET SQL_SAFE_UPDATES = 1;
+ALTER TABLE tiendas 
+ADD COLUMN estado_tienda VARCHAR(20) NOT NULL DEFAULT 'pendiente';
+
