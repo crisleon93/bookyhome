@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "../services/api";
+import SellerSidebar from "../components/SellerSidebarFlowbite";
 import '../styles/publicar.css';
 
 
@@ -20,6 +21,18 @@ export default function PublicarLibro() {
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState("");
   const [exito, setExito] = useState(false);
+  const [activeSide, setActiveSide] = useState("Publicar Libro");
+
+  const handleSidebarSelect = (name) => {
+    // Si el usuario está en la página de publicar, mantener el highlight.
+    // Para cualquier otra selección, navegamos de regreso al dashboard principal.
+    if (name === "Publicar Libro") {
+      setActiveSide(name);
+      return;
+    }
+    // Navegar indicando la subsección deseada para que MiTienda la abra.
+    navigate(`/mi-tienda?seccion=${encodeURIComponent(name)}`);
+  };
 
   const [form, setForm] = useState({
     id_categoria: "",
@@ -104,28 +117,49 @@ export default function PublicarLibro() {
 
   if (exito) {
     return (
-      <div className="publicar-exito">
-        <div className="exito-icon">✓</div>
-        <h2>¡Libro publicado!</h2>
-        <p>Redirigiendo a tus libros…</p>
+      <div className="dashboard-container">
+        <SellerSidebar
+          userName="Vendedor"
+          activeSide={activeSide}
+          setActiveSide={setActiveSide}
+          handleLogout={() => {
+            localStorage.removeItem("token");
+            navigate("/login");
+          }}
+        />
+        <main className="dashboard-main">
+          <div className="publicar-exito">
+            <div className="exito-icon">✓</div>
+            <h2>¡Libro publicado!</h2>
+            <p>Redirigiendo a tus libros…</p>
+          </div>
+        </main>
       </div>
     );
   }
 
   return (
-    <div className="publicar-wrapper">
-      {/* Encabezado */}
-      <div className="publicar-header">
-        <button className="btn-back" onClick={() => navigate(-1)}>
-          ← Volver
-        </button>
-        <div>
-          <h1 className="publicar-title">Publicar libro</h1>
-          <p className="publicar-subtitle">
-            Completa la información para poner tu libro a la venta
-          </p>
-        </div>
-      </div>
+    <div className="dashboard-container">
+      <SellerSidebar
+        userName="Vendedor"
+        activeSide={activeSide}
+        setActiveSide={handleSidebarSelect}
+        handleLogout={() => {
+          localStorage.removeItem("token");
+          navigate("/login");
+        }}
+      />
+      <main className="dashboard-main">
+        <div className="publicar-wrapper">
+          {/* Encabezado */}
+          <div className="publicar-header">
+            <div>
+              <h1 className="publicar-title">Publicar libro</h1>
+              <p className="publicar-subtitle">
+                Completa la información para poner tu libro a la venta
+              </p>
+            </div>
+          </div>
 
       <form onSubmit={handleSubmit} className="publicar-form">
         {/* ── COLUMNA IZQUIERDA ── */}
@@ -371,5 +405,7 @@ export default function PublicarLibro() {
         </div>
       </form>
     </div>
+  </main>
+</div>
   );
 }

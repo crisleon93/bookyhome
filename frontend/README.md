@@ -1,13 +1,14 @@
 # Frontend BookyHome
 
-Frontend web de BookyHome desarrollado con React, Vite y React Router. Esta aplicacion contiene la experiencia publica del marketplace, el flujo de comprador y las pantallas principales del vendedor.
+Frontend web de BookyHome desarrollado con React, Vite y React Router. Esta aplicacion contiene la experiencia publica del marketplace, el flujo de comprador y las pantallas de vendedor.
 
 ## Tecnologias
 
 - React 19
 - Vite 8
-- React Router DOM
+- React Router DOM 7
 - Axios
+- Flowbite / Flowbite React
 - ESLint
 - JWT para sesion y roles
 
@@ -19,45 +20,51 @@ frontend/
   src/
     assets/               Imagenes y recursos visuales
     components/           Componentes reutilizables
-    context/              Contextos de React, si aplican
+    context/              Contextos de React
     hooks/                Utilidades como lectura de token/rol
     pages/                Paginas principales de la aplicacion
     services/             Cliente de API centralizado
+    styles/               Estilos globales y modulares
     App.jsx               Definicion de rutas y layout principal
     main.jsx              Entrada de React
     index.css             Estilos globales
-    App.css               Estilos complementarios
+    App.css               Estilos dependientes del layout
   eslint.config.js        Configuracion de ESLint
-  vite.config.js          Configuracion de Vite
+  vite.config.js          Configuracion de Vite y Puerto 5173
   package.json            Scripts y dependencias
 ```
 
 ## Paginas principales
 
-- `Home.jsx`: pagina inicial de BookyHome.
+- `Home.jsx`: pagina inicial y bienvenida.
 - `Catalogo.jsx`: listado de libros, busqueda y filtros.
 - `DetalleLibro.jsx`: vista individual de un libro.
 - `Carrito.jsx`: carrito del comprador autenticado.
-- `Checkout.jsx`: formulario y flujo de pago.
-- `PostLogin.jsx`: area privada del comprador.
-- `MiTienda.jsx`: panel principal del vendedor.
-- `PublicarLibro.jsx`: publicacion de libros.
-- `Libreria.jsx`: registro de libreria o vendedor.
-- `Login.jsx` y `Register.jsx`: autenticacion y registro.
-- `ForgotPassword.jsx` y `Resetpassword.jsx`: recuperacion de contrasena.
+- `Checkout.jsx`: fila de pago y confirmacion.
+- `Login.jsx`: inicio de sesion.
+- `Register.jsx`: registro de usuario.
+- `ForgotPassword.jsx`: solicitud de recuperacion.
+- `Resetpassword.jsx`: cambio de nueva contrasena.
+- `Libreria.jsx`: registro de libreria/vendedor.
+- `PostLogin.jsx`: dashboard principal del comprador.
+- `PerfilUsuario.jsx`: gestion de perfil y secciones internas del comprador.
+- `MiTienda.jsx`: panel del vendedor.
+- `PublicarLibro.jsx`: publicacion de libros para vendedores.
 - `Favoritos.jsx`: libros guardados por el comprador.
-- `StoredProcedurePage.jsx`: vista de apoyo para libros/procedimientos almacenados.
+- `StoredProcedurePage.jsx`: vista de soporte para libros y stored procedures.
+- `AdminDashboard.jsx`: panel administrativo (ruta protegida).
 
 ## Componentes relevantes
 
-- `Header.jsx`: navegacion superior general.
-- `Footer.jsx`: pie de pagina global.
+- `Header.jsx`: barra de navegacion superior.
+- `Footer.jsx`: pie de pagina.
 - `PrivateRoute.jsx`: proteccion de rutas que requieren sesion.
-- `LibroCard.jsx`: tarjeta reutilizable para libros.
-- `SeccionOfertas.jsx`: gestion de promociones/ofertas del vendedor.
-- `DashboardSidebar.jsx`: navegacion lateral usada por pantallas internas actuales.
-- `DashboardHeader.jsx`: encabezado de dashboard.
-- `Icons.jsx`: iconos reutilizables.
+- `DashboardSidebar.jsx`: sidebar interno actual para comprador.
+- `SellerSidebarFlowbite.jsx`: sidebar para vistas de vendedor.
+- `Icons.jsx`: componentes de iconos reutilizables.
+- `ToastProvider.jsx`: notificaciones de usuario.
+- `LibroCard.jsx`: tarjeta de libro reutilizable.
+- `DashboardHeader.jsx`: encabezado en el dashboard.
 
 ## Servicio de API
 
@@ -118,17 +125,40 @@ pnpm preview
 Algunas rutas requieren token de sesion:
 
 - `/post-login`
-- `/mi-tienda`
-- `/carrito`
+- `/carrito` (redirige a `/post-login?seccion=Carrito`)
 - `/checkout/:orderId`
+- `/perfil`
+- `/mi-tienda`
 - `/vendedor/publicar`
+- `/admin`
 
-La validacion se hace con `PrivateRoute.jsx`.
+La validacion se hace con `PrivateRoute.jsx` y el token JWT almacenado en `localStorage`.
 
 ## Notas de desarrollo
 
 - El frontend se comunica con el backend FastAPI.
 - Para usar carrito, checkout, publicar libros y gestionar tienda se requiere iniciar sesion.
 - El rol del usuario se obtiene desde el token JWT.
-- El catalogo consume libros desde el backend.
-- El proyecto actualmente combina paginas publicas normales con pantallas internas tipo dashboard; si se redisenan las vistas, conviene unificar la navegacion bajo un solo header.
+- El flujo de comprador actual utiliza `DashboardSidebar.jsx`.
+- El flujo de vendedor utiliza `SellerSidebarFlowbite.jsx`.
+- El puerto de desarrollo predeterminado es `5173`.
+
+## Conexion de API
+
+Las principales rutas usadas por el frontend son:
+
+- `POST /login`
+- `POST /register`
+- `POST /forgot-password`
+- `POST /reset-password`
+- `POST /libreria`
+- `GET /carrito`
+- `POST /carrito`
+- `POST /carrito/checkout`
+- `GET /api/v1/orders`
+- `POST /api/v1/payments`
+- `GET /api/stored/libros`
+- `GET /api/stored/libros/:id`
+- `GET /usuarios`
+
+Estas rutas se consumen desde `src/services/api.js`.

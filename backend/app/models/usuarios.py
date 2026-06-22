@@ -2,7 +2,12 @@ import os
 from app.database import get_db
 from app.auth import hash_password, verify_password
 
+# ========================
+# Funciones de usuario
+# ========================
+
 def crear_usuario(nombre: str, email: str, password: str, telefono: str, rol: str = "usuario"):
+    """Crea una cuenta nueva y guarda sus datos en la base de datos."""
     db = get_db()
     cursor = db.cursor(dictionary=True)
     try:
@@ -21,6 +26,7 @@ def crear_usuario(nombre: str, email: str, password: str, telefono: str, rol: st
         db.close()
 
 def obtener_usuario_por_email(email: str):
+    """Busca un usuario por su correo electrónico."""
     db = get_db()
     cursor = db.cursor(dictionary=True) 
     try:
@@ -40,12 +46,14 @@ def obtener_usuario_por_email(email: str):
         db.close()
 
 def login_usuario(email: str, password: str):
+    """Valida la contraseña de un usuario y devuelve sus datos si es correcto."""
     user = obtener_usuario_por_email(email)
     if not user or not verify_password(password, user["contrasena_usuario"]):
         return None
     return user
 
 def obtener_todos_usuarios():
+    """Recupera todos los usuarios registrados en el sistema."""
     db = get_db()
     cursor = db.cursor(dictionary=True)
     cursor.execute("SELECT id_usuario, nombre_usuario, correo_usuario, rol, estado_usuario, fecha_registro FROM usuarios")
@@ -55,6 +63,7 @@ def obtener_todos_usuarios():
     return usuarios
 
 def actualizar_password(id_usuario: str, nueva_password: str):
+    """Actualiza la contraseña de un usuario con hash seguro."""
     db = get_db()
     cursor = db.cursor()
     try:
@@ -71,6 +80,7 @@ def actualizar_password(id_usuario: str, nueva_password: str):
         db.close()
 
 def obtener_email_usuario(id_usuario: int):
+    """Obtiene el correo de un usuario según su id."""
     db = get_db()
     cursor = db.cursor(dictionary=True)
     cursor.execute(
@@ -83,6 +93,7 @@ def obtener_email_usuario(id_usuario: int):
     return user["correo_usuario"] if user else None
 
 def bloquear_usuario(id_usuario: int, bloqueado: bool):
+    """Cambia el estado del usuario entre Activo y Bloqueado."""
     db = get_db()
     cursor = db.cursor()
     try:

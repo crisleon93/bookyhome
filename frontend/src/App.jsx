@@ -40,6 +40,9 @@ function App() {
 }
 
 function MainLayout() {
+  // ========================
+  // Estado de la ruta y UI
+  // ========================
   const location = useLocation();
   const variant = location.pathname === '/' ? 'white' : 'simple';
   const userRole = getUserRole();
@@ -52,6 +55,7 @@ function MainLayout() {
 
   return (
     <>
+      {/* Header solo en páginas públicas */}
       {!isDashboard && <Header variant={variant} />}
 
       <Routes>
@@ -110,6 +114,7 @@ function MainLayout() {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
 
+      {/* Footer solo en páginas públicas */}
       {!isDashboard && <Footer />}
     </>
   );

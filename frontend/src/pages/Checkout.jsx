@@ -30,6 +30,9 @@ const IconCheckCircle = () => (
 );
 
 function Checkout() {
+  // ========================
+  // Hooks y estado local
+  // ========================
   const { orderId } = useParams();
   const navigate = useNavigate();
 
@@ -54,6 +57,9 @@ function Checkout() {
   const [paypalError, setPaypalError] = useState("");
   const [paypalProcessing, setPaypalProcessing] = useState(false);
 
+  // ========================
+  // Efectos de carga
+  // ========================
   useEffect(() => {
     if (!orderId) return;
 
@@ -72,7 +78,9 @@ function Checkout() {
       });
   }, [orderId]);
 
-  // Card Inputs Formatting
+  // ========================
+  // Handlers de formularios
+  // ========================
   const handleCardNumberChange = (e) => {
     let value = e.target.value.replace(/\D/g, "");
     if (value.length > 16) value = value.slice(0, 16);
@@ -124,11 +132,14 @@ function Checkout() {
     return Object.keys(errors).length === 0;
   };
 
+  // ========================
+  // Procesamiento de pago
+  // ========================
   const processPaymentApi = async (method) => {
-  setPaymentProcessing(true);
-  setError("");
+    setPaymentProcessing(true);
+    setError("");
 
-  try {
+    try {
     const payload = {
       order_id: parseInt(orderId),
       amount: parseFloat(order.total),
@@ -165,6 +176,9 @@ function Checkout() {
     }, 2000);
   };
 
+  // ========================
+  // Envía el pago con PayPal
+  // ========================
   const handlePaypalSubmit = (e) => {
     e.preventDefault();
     if (!paypalEmail || !paypalPassword) {
@@ -181,6 +195,9 @@ function Checkout() {
     }, 2000);
   };
 
+  // ========================
+  // Renderizado de estados
+  // ========================
   if (loading) {
     return (
       <div style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "60vh", backgroundColor: "#fdfbfa" }}>
@@ -189,6 +206,9 @@ function Checkout() {
     );
   }
 
+  // ========================
+  // Error al cargar la orden
+  // ========================
   if (error && !order) {
     return (
       <div style={{ padding: "40px 8%", minHeight: "60vh", backgroundColor: "#fdfbfa", textAlign: "center" }}>
@@ -200,9 +220,12 @@ function Checkout() {
     );
   }
 
+  // ========================
+  // Confirmación de pago exitoso
+  // ========================
   if (paymentSuccess) {
-  return (
-    <div style={{ padding: "50px 8%", minHeight: "70vh", backgroundColor: "#fdfbfa", display: "flex", justifyContent: "center", alignItems: "center" }}>
+    return (
+      <div style={{ padding: "50px 8%", minHeight: "70vh", backgroundColor: "#fdfbfa", display: "flex", justifyContent: "center", alignItems: "center" }}>
       <div style={{
         background: "var(--blanco)",
         padding: "40px",
@@ -307,6 +330,9 @@ function Checkout() {
 
   return (
     <div style={{ padding: "40px 8%", minHeight: "75vh", backgroundColor: "#fdfbfa" }}>
+      // ========================
+      // Indicador de pago en progreso
+      // ========================
       {paymentProcessing && (
         <div style={{
           position: "fixed",

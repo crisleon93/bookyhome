@@ -1,6 +1,6 @@
 # Backend BookyHome
 
-Backend de BookyHome construido con FastAPI y MySQL. Expone la API usada por el frontend web y la app movil para autenticacion, catalogo de libros, tiendas, carrito, ofertas, pagos y ordenes.
+Backend de BookyHome construido con FastAPI y MySQL. Expone la API usada por el frontend web y la app movil para autenticacion, catalogo de libros, tiendas, carrito, ofertas, pagos, ordenes y perfil de usuario.
 
 ## Tecnologias
 
@@ -42,6 +42,8 @@ Los endpoints estan organizados en `app/routers/`:
 - `carrito.py`: obtener carrito autenticado, agregar libros, eliminar items, limpiar carrito y checkout.
 - `payments.py`: consulta de ordenes, pagos y confirmaciones.
 - `stored.py`: consultas de catalogo y stored procedures.
+- `perfil.py`: perfil de usuario, actualizacion de datos y historial de compras.
+- `resenas.py`: creacion, edicion y eliminacion de reseñas.
 
 ## Models
 
@@ -51,7 +53,7 @@ La logica de datos vive en `app/models/`:
 - `tiendas.py`: creacion y consulta de tiendas/librerias.
 - `libro.py`: operaciones sobre libros, categorias, stock y estadisticas.
 - `oferta.py`: operaciones de ofertas y libros asociados.
-- `carrito.py`: almacenamiento de carrito y ordenes.
+- `carrito.py`: operaciones de carrito y ordenes.
 - `payments.py`: registro de pagos y consulta de ordenes.
 
 ## Autenticacion

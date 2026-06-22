@@ -16,6 +16,9 @@ import {
 import { LegalModal, Terminos, Privacidad } from '../components/Legal'
 
 function Libreria({ isModal = false, onSuccess }) {
+  // ========================
+  // Estado del formulario
+  // ========================
   const [nombre,    setNombre]    = useState('')
   const [libreria,  setLibreria]  = useState('')
   const [ciudad,    setCiudad]    = useState('')
@@ -39,6 +42,9 @@ function Libreria({ isModal = false, onSuccess }) {
 
   const navigate = useNavigate()
   
+  // ========================
+  // Constantes derivadas
+  // ========================
   const direccionCompleta = [ciudad, tipoVia && numeroVia ? `${tipoVia} ${numeroVia}` : '', complemento]
     .filter(Boolean)
     .join(', ')
@@ -57,6 +63,9 @@ function Libreria({ isModal = false, onSuccess }) {
     password === confirmPassword &&
     terminosCompletos
 
+  // ========================
+  // Funciones de validación y utilidad
+  // ========================
   const blockClipboard = (event) => {
     event.preventDefault()
     notify('Por seguridad, escribe este campo manualmente.', 'info')
@@ -103,6 +112,12 @@ function Libreria({ isModal = false, onSuccess }) {
     return true
   }
 
+  // ========================
+  // Manejador de envío del formulario
+  // ========================
+  // ========================
+  // Envío del formulario de librería
+  // ========================
   const handleSubmit = async (ev) => {
     ev.preventDefault()
     setError('')
@@ -137,6 +152,9 @@ function Libreria({ isModal = false, onSuccess }) {
     }
   }
 
+  // ========================
+  // Contenido del formulario
+  // ========================
   const formContent = (
     <div className={isModal ? "" : "auth-card auth-card--wide auth-card--compact"}>
 
@@ -384,6 +402,9 @@ function Libreria({ isModal = false, onSuccess }) {
     </div>
   )
 
+  // ========================
+  // Layout final según contexto
+  // ========================
   if (isModal) {
     return formContent;
   }

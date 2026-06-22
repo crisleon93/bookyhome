@@ -1,3 +1,6 @@
+# ========================
+# Configuración principal de FastAPI
+# ========================
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
@@ -15,11 +18,13 @@ from app.routers.resenas import router as resenas_router
 from app.routers.perfil import router as perfil_router
 from app.routers.catalogo import router as catalogo_router
 
-
 load_dotenv()
 
 app = FastAPI()
 
+# ========================
+# Middleware y seguridad de CORS
+# ========================
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -28,6 +33,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# ========================
+# Registro de enrutadores
+# ========================
 app.include_router(usuarios_router)
 app.include_router(libreria_router)
 app.include_router(auth_router)

@@ -7,9 +7,12 @@ from pydantic import BaseModel
 
 router = APIRouter()
 
-
+# ========================
+# Registro e inicio de sesión
+# ========================
 @router.post("/register")
 def register(data: UsuarioRegistro):
+    """Registra un nuevo usuario y devuelve un mensaje de éxito o error."""
     resultado = crear_usuario(data.nombre, data.email, data.password, data.telefono, data.rol)
 
     if not resultado["ok"]:
@@ -24,6 +27,7 @@ def register(data: UsuarioRegistro):
 
 @router.post("/login", response_model=Token)
 def login(data: UsuarioLogin):
+    """Valida credenciales y devuelve un token JWT si el usuario existe."""
     user = login_usuario(data.email, data.password)
     if not user:
         raise HTTPException(status_code=401, detail="Email o contraseña incorrectos")
@@ -51,8 +55,12 @@ def login(data: UsuarioLogin):
     return {"access_token": token, "token_type": "bearer"}
 
 
+# ========================
+# Administración de usuarios
+# ========================
 @router.get("/usuarios")
 def get_usuarios():
+    """Devuelve la lista de usuarios registrados."""
     return obtener_todos_usuarios()
 
 
@@ -62,6 +70,7 @@ class BloquearPayload(BaseModel):
 
 @router.patch("/usuarios/{id_usuario}/bloquear")
 def bloquear(id_usuario: int, payload: BloquearPayload):
+    """Activa o bloquea un usuario según el valor recibido."""
     resultado = bloquear_usuario(id_usuario, payload.bloqueado)
     if not resultado["ok"]:
         raise HTTPException(status_code=500, detail=resultado["error"])

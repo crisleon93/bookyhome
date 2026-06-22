@@ -94,7 +94,7 @@ const DetalleLibro = () => {
         precio_libro: libro.precio_libro,
         imagen:      libro.imagen_url || obtenerImagen(libro),
       });
-      notify(`"​${libro.titulo}" agregado al carrito ✓`, 'success');
+      notify(`"${libro.titulo}" agregado al carrito ✓`, 'success');
       window.dispatchEvent(new Event('cart-updated'));
     } catch (err) {
       const msg = err.response?.data?.detail || 'No se pudo agregar al carrito';

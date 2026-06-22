@@ -25,6 +25,9 @@ const CartEmptyState = ({ onGoToCatalog }) => (
 );
 
 export default function PostLogin() {
+  // ========================
+  // Estado local
+  // ========================
   const [userName, setUserName]     = useState("");
   const [userEmail, setUserEmail]   = useState("");
   const [userId, setUserId]         = useState(null);
@@ -39,9 +42,15 @@ export default function PostLogin() {
   const [ordenes, setOrdenes]               = useState([]);
   const [ordenesLoading, setOrdenesLoading] = useState(false);
 
+  // ========================
+  // Hooks de navegación y ubicación
+  // ========================
   const navigate = useNavigate();
   const location = useLocation();
 
+  // ========================
+  // Efectos de inicialización
+  // ========================
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const seccion = params.get("seccion");
@@ -93,6 +102,9 @@ export default function PostLogin() {
     }
   }, [activeSide]);
 
+  // ========================
+  // Manejadores de acciones
+  // ========================
   const handleCheckout = () => {
     setCheckoutLoading(true);
     setCheckoutError(null);

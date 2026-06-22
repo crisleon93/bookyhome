@@ -32,14 +32,23 @@ const ICONS = {
 };
 
 export default function SellerSidebarFlowbite({ userName = 'Vendedor', activeSide = 'Inicio', setActiveSide, handleLogout }) {
+  // ========================
+  // Estado local
+  // ========================
   const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(false);
 
+  // ========================
+  // Handlers
+  // ========================
   const onLogout = handleLogout || (() => {
     localStorage.removeItem('token');
     navigate('/login');
   });
 
+  // ========================
+  // Render
+  // ========================
   return (
     <aside className={`dashboard-sidebar ${collapsed ? 'collapsed' : ''}`}>
       <div className="sidebar-header">
@@ -59,6 +68,12 @@ export default function SellerSidebarFlowbite({ userName = 'Vendedor', activeSid
           <p className="user-name">{userName}</p>
           <p className="user-email">Panel del vendedor</p>
         </div>
+      </div>
+
+      <div style={{ padding: '10px 20px' }}>
+        <button type="button" onClick={onLogout} className="sidebar-logout">
+          Cerrar sesión
+        </button>
       </div>
 
       <nav className="sidebar-nav">
@@ -82,9 +97,7 @@ export default function SellerSidebarFlowbite({ userName = 'Vendedor', activeSid
         ))}
       </nav>
 
-      <button type="button" onClick={onLogout} className="sidebar-logout">
-        Cerrar sesión
-      </button>
+      {/* logout moved to profile area */}
     </aside>
   );
 }

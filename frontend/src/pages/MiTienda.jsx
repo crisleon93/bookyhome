@@ -1,12 +1,15 @@
 // src/pages/MiTienda.jsx
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import api from "../services/api";
 import SeccionOfertas from "../components/SeccionOfertas";
 import SellerSidebar from "../components/SellerSidebarFlowbite";
 
 
+// ========================
+// Utilidades y constantes
+// ========================
 const formatPrecio = (valor) =>
   "$" + String(parseInt(valor)).replace(/\B(?=(\d{3})+(?!\d))/g, ".") + " COP";
 
@@ -31,6 +34,9 @@ const BadgeEstado = ({ estado }) => {
   );
 };
 
+// ========================
+// Componentes auxiliares
+// ========================
 function AlertaStock({ alertas, umbral }) {
   if (!alertas || alertas.length === 0) return null;
   return (
@@ -158,6 +164,9 @@ function ModalEditarLibro({ libro, categorias, onClose, onGuardado }) {
 }
 
 function ModalEliminar({ libro, onClose, onEliminado }) {
+  // ========================
+  // Estado del modal de eliminación
+  // ========================
   const [cargando, setCargando] = useState(false);
   const [error,    setError]    = useState("");
 
@@ -198,6 +207,9 @@ function ModalEliminar({ libro, onClose, onEliminado }) {
 }
 
 function ModalStock({ libro, onClose, onActualizado }) {
+  // ========================
+  // Estado del modal de stock
+  // ========================
   const [stock,    setStock]    = useState(libro.stock);
   const [cargando, setCargando] = useState(false);
   const [error,    setError]    = useState("");
@@ -246,7 +258,11 @@ function ModalStock({ libro, onClose, onActualizado }) {
 
 /* ================= COMPONENTE PRINCIPAL ================= */
 export default function MiTienda() {
+  // ========================
+  // Estado local principal
+  // ========================
   const navigate = useNavigate();
+  const handleLogout = () => { localStorage.removeItem("token"); navigate("/login"); };
   const [userName,      setUserName]      = useState("");
   const [loading,       setLoading]       = useState(true);
   const [activeSide,    setActiveSide]    = useState("Inicio");
@@ -288,6 +304,18 @@ export default function MiTienda() {
     finally { setLoading(false); }
   }, [navigate]);
 
+  // Si llegamos con un query param `seccion`, abrir esa subsección.
+  const location = useLocation();
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(location.search);
+      const seccion = params.get('seccion');
+      if (seccion) setActiveSide(seccion);
+    } catch {
+      // ignore
+    }
+  }, [location.search]);
+
   const cargarLibros = () => {
     setLoadingLibros(true);
     api.get("/libros/mis-libros")
@@ -312,6 +340,9 @@ export default function MiTienda() {
       .finally(() => setLoadingVentas(false));
   };
  
+  // ========================
+  // Efectos de carga inicial y actualizacion por sección
+  // ========================
   useEffect(() => { cargarLibros(); }, []);
 
   useEffect(() => {
@@ -928,7 +959,7 @@ export default function MiTienda() {
         userName={userName}
         activeSide={activeSide}
         setActiveSide={setActiveSide}
-        handleLogout={() => { localStorage.removeItem("token"); navigate("/login"); }}
+        handleLogout={handleLogout}
       />
 
       <main className="dashboard-main">{renderContenido()}</main>

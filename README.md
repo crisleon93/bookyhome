@@ -2,7 +2,7 @@
 
 BookyHome es un proyecto e-commerce para venta de libros. Incluye frontend web en React + Vite, backend en FastAPI, base de datos MySQL y una app movil en Expo/React Native.
 
-El entorno web completo se puede levantar con Docker mediante un solo comando. La app movil se ejecuta aparte con Expo y consume la misma API del backend.
+El entorno web completo se puede levantar con Docker mediante un solo comando. La app movil corre aparte con Expo y consume la misma API del backend.
 
 ## Estructura del proyecto
 
@@ -35,6 +35,8 @@ Estructura principal:
   - `carrito.py`: carrito autenticado, agregar, eliminar, limpiar y checkout.
   - `payments.py`: pagos, ordenes y confirmaciones.
   - `stored.py`: consultas de catalogo y stored procedures.
+  - `perfil.py`: perfil de usuario, actualizacion y historial de compras.
+  - `resenas.py`: creacion, edicion y eliminacion de reseñas.
 - `app/models/`: logica de acceso a datos y operaciones de negocio.
   - `usuarios.py`
   - `tiendas.py`
@@ -58,35 +60,43 @@ backend/README.md
 
 ## Frontend web
 
-El frontend esta en `frontend/` y esta construido con React, Vite, React Router y Axios.
+El frontend esta en `frontend/` y construye la experiencia de Compra y Venta con React, Vite, React Router y Axios.
 
 Estructura principal:
 
 - `src/App.jsx`: configuracion de rutas y layout principal.
 - `src/main.jsx`: entrada de React.
 - `src/pages/`: paginas publicas y privadas.
-  - home
-  - catalogo
-  - detalle de libro
-  - carrito
-  - checkout
-  - login/registro
-  - recuperacion de contrasena
-  - area comprador
-  - tienda del vendedor
-  - publicacion de libros
+  - `Home.jsx`
+  - `Catalogo.jsx`
+  - `DetalleLibro.jsx`
+  - `Carrito.jsx`
+  - `Checkout.jsx`
+  - `Login.jsx`
+  - `Register.jsx`
+  - `ForgotPassword.jsx`
+  - `Resetpassword.jsx`
+  - `PostLogin.jsx`
+  - `PerfilUsuario.jsx`
+  - `MiTienda.jsx`
+  - `PublicarLibro.jsx`
+  - `Libreria.jsx`
+  - `Favoritos.jsx`
+  - `StoredProcedurePage.jsx`
+  - `AdminDashboard.jsx`
 - `src/components/`: componentes reutilizables.
-  - header
-  - footer
-  - tarjetas de libros
-  - rutas privadas
-  - seccion de ofertas
-  - componentes de dashboard
+  - `Header.jsx`
+  - `Footer.jsx`
+  - `PrivateRoute.jsx`
+  - `DashboardSidebar.jsx`
+  - `SellerSidebarFlowbite.jsx`
+  - `Icons.jsx`
+  - `ToastProvider.jsx`
 - `src/services/api.js`: cliente Axios centralizado para consumir el backend.
 - `src/hooks/useAuth.js`: utilidades para leer token y rol.
 - `src/assets/`: imagenes y recursos visuales.
-- `src/index.css`: estilos globales.
-- `Dockerfile`: imagen del frontend.
+- `src/styles/`: estilos modulares y temas.
+- `vite.config.js`: configuracion de Vite con puerto 5173.
 
 Mas detalle en:
 

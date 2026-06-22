@@ -5,8 +5,12 @@ from app.models.usuarios import obtener_usuario_por_email, actualizar_password
 
 router = APIRouter()
 
+# ========================
+# Recuperación de contraseña
+# ========================
 @router.post("/forgot-password")
 async def forgot_password(data: dict):
+    """Genera un token de recuperación y envía un correo al usuario."""
     email = data.get("email")
     if not email:
         raise HTTPException(status_code=400, detail="El email es obligatorio")
@@ -25,8 +29,12 @@ async def forgot_password(data: dict):
 
     return {"mensaje": "Correo de recuperación enviado", "correo_enviado": True}
 
+# ========================
+# Reinicio de contraseña con token
+# ========================
 @router.post("/reset-password")
 def reset_password(data: dict):
+    """Verifica el token de recuperación y actualiza la contraseña del usuario."""
     token = data.get("token")
     nueva_password = data.get("password")
 

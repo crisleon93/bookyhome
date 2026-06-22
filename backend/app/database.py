@@ -5,7 +5,9 @@ import mysql.connector
 from mysql.connector import InterfaceError
 
 def get_db():
-    # 1. Recuperamos las variables de entorno (Prioriza lo que configuramos en Docker)
+    # ========================
+    # Configuración de conexión
+    # ========================
     db_host = os.getenv('DB_HOST', 'mysql')     
     db_port = int(os.getenv('DB_PORT', '3306'))
     db_user = os.getenv('DB_USER', 'root')
@@ -15,7 +17,9 @@ def get_db():
     intentos_maximos = 10
     segundos_espera = 3
 
-    # 2. Bucle de conexión tolerante al tiempo de inicialización de MySQL
+    # ========================
+    # Reintentos mientras MySQL se inicializa
+    # ========================
     for intento in range(1, intentos_maximos + 1):
         try:
             conexion = mysql.connector.connect(

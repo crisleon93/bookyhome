@@ -1,28 +1,46 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { jwtDecode } from 'jwt-decode';
 import api from '../services/api';
 import { notify } from '../components/ToastProvider';
+import DashboardSidebar from '../components/DashboardSidebar';
 import '../styles/perfil-usuario.css';
 
 function PerfilUsuario() {
+  // ========================
+  // Estado local
+  // ========================
   const navigate = useNavigate();
   const [usuario, setUsuario] = useState(null);
   const [historial, setHistorial] = useState([]);
   const [editando, setEditando] = useState(false);
   const [loading, setLoading] = useState(true);
   const [guardando, setGuardando] = useState(false);
+  const [userName, setUserName] = useState('');
+  const [activeSide, setActiveSide] = useState('Mi Perfil');
 
   const [formData, setFormData] = useState({
     nombre_usuario: '',
     telefono: '',
   });
 
+  // ========================
+  // Carga de datos
+  // ========================
   const cargarPerfil = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
       if (!token) {
         navigate('/login');
         return;
+      }
+
+      // Extraer nombre del token
+      try {
+        const payload = jwtDecode(token);
+        setUserName(payload.nombre || 'Comprador');
+      } catch {
+        setUserName('Comprador');
       }
 
       const response = await api.get('/perfil/mi-perfil');
@@ -53,6 +71,9 @@ function PerfilUsuario() {
     cargarHistorial();
   }, [cargarPerfil, cargarHistorial]);
 
+  // ========================
+  // Manejadores de formulario
+  // ========================
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -90,23 +111,14 @@ function PerfilUsuario() {
     });
   };
 
-  if (loading) {
-    return <div className="perfil-loading">Cargando perfil...</div>;
-  }
-
-  if (!usuario) {
-    return <div className="perfil-error">Error al cargar perfil</div>;
-  }
-
-  return (
-    <div className="perfil-container">
-      <div className="perfil-header">
+  const renderMiPerfil = () => (
+    <>
+      <div className="welcome-card">
         <h1>Mi Perfil</h1>
         <p className="subtitulo">Gestiona tu información personal y ve tu historial</p>
       </div>
 
       <div className="perfil-contenido">
-        {/* SECCIÓN INFORMACIÓN PERSONAL */}
         <section className="perfil-seccion">
           <div className="seccion-header">
             <h2>Información Personal</h2>
@@ -199,10 +211,31 @@ function PerfilUsuario() {
           )}
         </section>
 
-        {/* SECCIÓN MIS COMPRAS */}
         <section className="perfil-seccion">
-          <h2>Mis Compras</h2>
-          
+          <h2>Seguridad</h2>
+          <div className="seguridad-opciones">
+            <div className="opcion-seguridad">
+              <div>
+                <h3>Cambiar Contraseña</h3>
+                <p>Actualiza tu contraseña regularmente por seguridad</p>
+              </div>
+              <a href="/forgot-password" className="btn btn-secondary">Cambiar</a>
+            </div>
+          </div>
+        </section>
+      </div>
+    </>
+  );
+
+  const renderMisCompras = () => (
+    <>
+      <div className="welcome-card">
+        <h1>Mis Compras</h1>
+        <p className="subtitulo">Historial de tus compras en BookyHome</p>
+      </div>
+
+      <div className="perfil-contenido">
+        <section className="perfil-seccion">
           {historial.length === 0 ? (
             <div className="sin-compras">
               <p>Aún no tienes compras</p>
@@ -241,22 +274,65 @@ function PerfilUsuario() {
             </div>
           )}
         </section>
+      </div>
+    </>
+  );
 
-        {/* SECCIÓN SEGURIDAD */}
-        <section className="perfil-seccion">
-          <h2>Seguridad</h2>
-          <div className="seguridad-opciones">
-            <div className="opcion-seguridad">
-              <div>
-                <h3>Cambiar Contraseña</h3>
-                <p>Actualiza tu contraseña regularmente por seguridad</p>
-              </div>
-              <a href="/forgot-password" className="btn btn-secondary">Cambiar</a>
-            </div>
-          </div>
-        </section>
+  const renderFavoritos = () => (
+    <div className="welcome-card">
+      <div className="empty-state" style={{ boxShadow: "none", padding: "60px 20px" }}>
+        <div style={{ fontSize: "2.5rem", marginBottom: "12px" }}>❤️</div>
+        <p style={{ fontWeight: 700, color: "#444", marginBottom: "8px", fontSize: "1.1rem" }}>Favoritos</p>
+        <p style={{ fontSize: "0.87rem", color: "#888" }}>Esta sección estará disponible próximamente</p>
       </div>
     </div>
+  );
+
+  const renderResenas = () => (
+    <div className="welcome-card">
+      <div className="empty-state" style={{ boxShadow: "none", padding: "60px 20px" }}>
+        <div style={{ fontSize: "2.5rem", marginBottom: "12px" }}>⭐</div>
+        <p style={{ fontWeight: 700, color: "#444", marginBottom: "8px", fontSize: "1.1rem" }}>Reseñas</p>
+        <p style={{ fontSize: "0.87rem", color: "#888" }}>Esta sección estará disponible próximamente</p>
+      </div>
+    </div>
+  );
+
+  const renderConfiguracion = () => (
+    <div className="welcome-card">
+      <div className="empty-state" style={{ boxShadow: "none", padding: "60px 20px" }}>
+        <div style={{ fontSize: "2.5rem", marginBottom: "12px" }}>⚙️</div>
+        <p style={{ fontWeight: 700, color: "#444", marginBottom: "8px", fontSize: "1.1rem" }}>Configuración</p>
+        <p style={{ fontSize: "0.87rem", color: "#888" }}>Esta sección estará disponible próximamente</p>
+      </div>
+    </div>
+  );
+
+  return (
+    <>
+      {loading ? (
+        <div className="perfil-loading">Cargando perfil...</div>
+      ) : !usuario ? (
+        <div className="perfil-error">Error al cargar perfil</div>
+      ) : (
+        <div style={{ display: 'flex', minHeight: '100vh', background: '#fafaf9' }}>
+          <DashboardSidebar 
+            userName={userName}
+            userEmail={usuario?.correo_usuario || ''}
+            activeSide={activeSide}
+            onSelect={setActiveSide}
+          />
+          
+          <main style={{ flex: 1, padding: '2rem', overflowY: 'auto' }}>
+            {activeSide === 'Mi Perfil' && renderMiPerfil()}
+            {activeSide === 'Mis Compras' && renderMisCompras()}
+            {activeSide === 'Favoritos' && renderFavoritos()}
+            {activeSide === 'Reseñas' && renderResenas()}
+            {activeSide === 'Configuración' && renderConfiguracion()}
+          </main>
+        </div>
+      )}
+    </>
   );
 }
 
