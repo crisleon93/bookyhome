@@ -48,7 +48,7 @@ def login_usuario(email: str, password: str):
 def obtener_todos_usuarios():
     db = get_db()
     cursor = db.cursor(dictionary=True)
-    cursor.execute("SELECT id_usuario, nombre_usuario, correo_usuario, rol, fecha_registro FROM usuarios")
+    cursor.execute("SELECT id_usuario, nombre_usuario, correo_usuario, rol, estado_usuario, fecha_registro FROM usuarios")
     usuarios = cursor.fetchall()
     cursor.close()
     db.close()

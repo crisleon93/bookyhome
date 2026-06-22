@@ -131,7 +131,14 @@ function Header({ variant }) {
       const decoded = jwtDecode(token);
       notify('Inicio de sesión correcto', 'success');
       setLoginOpen(false);
-      navigate(decoded.rol === 'vendedor' ? '/mi-tienda' : '/post-login');
+
+      if (decoded.rol === 'vendedor') {
+        navigate('/mi-tienda');
+      } else if (decoded.rol === 'admin' || decoded.rol === 'administrador') {
+        navigate('/admin');
+      } else {
+        navigate('/post-login');
+      }
     } catch (err) {
       const message = err.response?.data?.detail || 'Email o contraseña incorrectos';
       setLoginError(message);

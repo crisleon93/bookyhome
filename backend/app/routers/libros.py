@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Form
+from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Form, Body # ⬅️ ASEGÚRATE DE QUE 'Body' ESTÉ AQUÍ
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from typing import List, Optional
 import os, shutil, uuid
@@ -43,11 +43,22 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
 
 
 def verificar_tienda_activa(tienda):
+    """
+    Bloquea las operaciones si la tienda está 'suspendida' o 'pendiente'.
+    Solo las tiendas en estado 'activa' pueden operar con normalidad.
+    """
     estado = tienda.get("estado_tienda") if isinstance(tienda, dict) else tienda[5]
-    if str(estado).lower() != "activa":
+    estado_str = str(estado).lower() if estado else ""
+
+    if estado_str == "suspendida":
         raise HTTPException(
             status_code=403,
-            detail="Tu tienda no está activa. Solo las tiendas activas pueden administrar libros."
+            detail="Tu tienda ha sido suspendida por incumplir las normas. Comunícate con el administrador."
+        )
+    elif estado_str == "pendiente" or not estado_str:
+        raise HTTPException(
+            status_code=403,
+            detail="Tu tienda se encuentra pendiente de aprobación por el administrador. No puedes realizar esta operación aún."
         )
     return True
 
@@ -71,6 +82,7 @@ def mis_libros(user=Depends(get_current_user)):
     tienda = obtener_tienda_por_usuario(id_usuario)
     if not tienda:
         raise HTTPException(status_code=404, detail="No tienes una tienda registrada")
+    verificar_tienda_activa(tienda)
     return obtener_libros_por_tienda(tienda["id_tienda"])
 
 
@@ -81,6 +93,7 @@ def mis_pedidos(user=Depends(get_current_user)):
     tienda = obtener_tienda_por_usuario(id_usuario)
     if not tienda:
         raise HTTPException(status_code=404, detail="No tienes una tienda registrada")
+    verificar_tienda_activa(tienda)
     return obtener_pedidos_tienda(tienda["id_tienda"])
 
 
@@ -91,6 +104,7 @@ def mis_ventas(user=Depends(get_current_user)):
     tienda = obtener_tienda_por_usuario(id_usuario)
     if not tienda:
         raise HTTPException(status_code=404, detail="No tienes una tienda registrada")
+    verificar_tienda_activa(tienda)
     return obtener_ventas_tienda(tienda["id_tienda"])
 
 
@@ -101,6 +115,7 @@ def stats_ventas(user=Depends(get_current_user)):
     tienda = obtener_tienda_por_usuario(id_usuario)
     if not tienda:
         raise HTTPException(status_code=404, detail="No tienes una tienda registrada")
+    verificar_tienda_activa(tienda)
     return obtener_stats_ventas(tienda["id_tienda"])
 
 
@@ -111,6 +126,7 @@ def top_vendidos(user=Depends(get_current_user)):
     tienda = obtener_tienda_por_usuario(id_usuario)
     if not tienda:
         raise HTTPException(status_code=404, detail="No tienes una tienda registrada")
+    verificar_tienda_activa(tienda)
     return obtener_top_vendidos(tienda["id_tienda"], limite=5)
 
 
@@ -123,6 +139,7 @@ def alertas_stock(umbral: int = 3, user=Depends(get_current_user)):
     tienda = obtener_tienda_por_usuario(id_usuario)
     if not tienda:
         raise HTTPException(status_code=404, detail="No tienes una tienda registrada")
+    verificar_tienda_activa(tienda)
     return obtener_alertas_stock(tienda["id_tienda"], umbral)
 
 
@@ -241,28 +258,27 @@ def editar(
 # DELETE /libros/{id_libro}
 @router.delete("/{id_libro}")
 def eliminar(id_libro: int, user=Depends(get_current_user)):
-    rol_usuario = user.get("rol") # Asegúrate de que tu token traiga el rol
-    
-    # 👑 SI ES ADMINISTRADOR: Borra directo sin pedir tienda
+    rol_usuario = user.get("rol")  # Asegúrate de que tu token traiga el rol
+
+    # SI ES ADMINISTRADOR: Borra directo sin pedir tienda
     if rol_usuario == "admin":
-        # Pasamos un ID de tienda genérico o modificamos la función para que acepte None
-        resultado = eliminar_libro_por_admin(id_libro) 
+        resultado = eliminar_libro_por_admin(id_libro)
         if not resultado["ok"]:
             raise HTTPException(status_code=500, detail=resultado["error"])
         return {"mensaje": "Libro eliminado por el Administrador"}
-        
-    # 🏪 SI ES VENDEDOR: Mantiene tu lógica estricta de seguridad
+
+    # SI ES VENDEDOR: Mantiene la lógica estricta de seguridad
     id_usuario = int(user["sub"])
     tienda = obtener_tienda_por_usuario(id_usuario)
     if not tienda:
         raise HTTPException(status_code=404, detail="No tienes una tienda registrada")
-        
+
     verificar_tienda_activa(tienda)
 
     resultado = eliminar_libro(id_libro, tienda["id_tienda"])
     if not resultado["ok"]:
         raise HTTPException(status_code=500, detail=resultado["error"])
-        
+
     return {"mensaje": "Libro eliminado correctamente"}
 
 
@@ -314,9 +330,41 @@ from pydantic import BaseModel
 class OcultarPayload(BaseModel):
     oculto: bool
 
+# PATCH /libros/{id_libro}/ocultar
+from pydantic import BaseModel
+
+# 🚨 La clase DEBE estar arriba de la función
+class OcultarPayload(BaseModel):
+    oculto: bool
+
+# PATCH /libros/{id_libro}/ocultar
+from fastapi import Body # 🚨 Asegúrate de agregar Body en tus imports de fastapi arriba
+
+# PATCH /libros/{id_libro}/ocultar
+# PATCH /libros/{id_libro}/ocultar
 @router.patch("/{id_libro}/ocultar")
-def ocultar(id_libro: int, payload: OcultarPayload, user=Depends(get_current_user)):
-    resultado = ocultar_libro(id_libro, payload.oculto)
+def ocultar(id_libro: int, payload: dict = Body(...), user=Depends(get_current_user)):
+    rol_usuario = user.get("rol")
+    ocultar_estado = payload.get("oculto", False)
+    
+    if rol_usuario == "admin":
+        resultado = ocultar_libro(id_libro, ocultar_estado)
+        if not resultado["ok"]:
+            raise HTTPException(status_code=500, detail=resultado["error"])
+        return {"mensaje": "Estado de visibilidad del libro actualizado por el Administrador"}
+
+    id_usuario = int(user["sub"])
+    tienda = obtener_tienda_por_usuario(id_usuario)
+    if not tienda:
+        raise HTTPException(status_code=404, detail="No tienes una tienda registrada")
+        
+    verificar_tienda_activa(tienda)
+
+    resultado = ocultar_libro(id_libro, ocultar_estado, id_tienda=tienda["id_tienda"])
     if not resultado["ok"]:
-        raise HTTPException(status_code=500, detail=resultado["error"])
-    return {"mensaje": "Estado del libro actualizado"}
+        raise HTTPException(
+            status_code=403 if "autorizado" in resultado["error"].lower() else 500, 
+            detail=resultado["error"]
+        )
+        
+    return {"mensaje": "Estado del libro actualizado correctamente"}

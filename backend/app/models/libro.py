@@ -63,19 +63,44 @@ def obtener_libros_por_tienda(id_tienda: int):
             FROM libros l
             LEFT JOIN categorias c ON l.id_categoria = c.id_categoria
             LEFT JOIN imagenes_libro i ON l.id_libro = i.id_libro
-            WHERE l.id_tienda = %s
+            WHERE l.id_tienda = %s 
             GROUP BY l.id_libro
             ORDER BY l.fecha_listado DESC
         """, (id_tienda,))
         libros = cursor.fetchall()
-        # Convertir imagenes de string CSV a lista
+        
         for libro in libros:
+            if "oculto" in libro:
+                libro["oculto"] = 1 if libro["oculto"] else 0
             libro["imagenes"] = libro["imagenes"].split(",") if libro["imagenes"] else []
         return libros
     finally:
         cursor.close()
         db.close()
 
+def obtener_libros_visibles_por_tienda(id_tienda: int):
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    try:
+        cursor.execute("""
+            SELECT l.*, c.nombre_categoria,
+                   GROUP_CONCAT(i.url_imagen) AS imagenes
+            FROM libros l
+            LEFT JOIN categorias c ON l.id_categoria = c.id_categoria
+            LEFT JOIN imagenes_libro i ON l.id_libro = i.id_libro
+            WHERE l.id_tienda = %s 
+              AND l.oculto = 0  -- 🎯 CANDADO: Filtra para que NO salgan los ocultos en el catálogo
+            GROUP BY l.id_libro
+            ORDER BY l.fecha_listado DESC
+        """, (id_tienda,))
+        libros = cursor.fetchall()
+        
+        for libro in libros:
+            libro["imagenes"] = libro["imagenes"].split(",") if libro["imagenes"] else []
+        return libros
+    finally:
+        cursor.close()
+        db.close()
 
 # ──────────────────────────────────────────────
 #  OBTENER TIENDA DEL USUARIO AUTENTICADO
@@ -401,25 +426,36 @@ def obtener_alertas_stock(id_tienda: int, umbral: int = 3):
 # ──────────────────────────────────────────────
 #  OCULTAR / MOSTRAR LIBRO (admin)
 # ──────────────────────────────────────────────
-def ocultar_libro(id_libro: int, oculto: bool):
+def ocultar_libro(id_libro: int, ocultar_estado: bool, id_tienda: int = None):
     db = get_db()
     cursor = db.cursor()
     try:
-        valor_oculto = 1 if oculto else 0
+        # Convertimos el booleano (True/False) al entero que entiende MySQL (1/0)
+        valor_oculto = 1 if ocultar_estado else 0
         
-        query = "UPDATE libros SET oculto = %s WHERE id_libro = %s"
-        cursor.execute(query, (valor_oculto, id_libro))
+        # Si se pasa id_tienda, es un vendedor y aseguramos que el libro sea suyo
+        if id_tienda is not None and id_tienda != 0:
+            query = "UPDATE libros SET oculto = %s WHERE id_libro = %s AND id_tienda = %s"
+            cursor.execute(query, (valor_oculto, id_libro, id_tienda))
+        else:
+            # Si no hay id_tienda, es el administrador modificando el catálogo global
+            query = "UPDATE libros SET oculto = %s WHERE id_libro = %s"
+            cursor.execute(query, (valor_oculto, id_libro))
+            
         db.commit()
         
+        # Si no se afectó ninguna fila, es porque el libro no existe o el id_tienda no coincide
+        if cursor.rowcount == 0:
+            return {"ok": False, "error": "El libro no existe o no tienes permisos sobre él"}
+            
         return {"ok": True}
     except Exception as e:
         db.rollback()
-        print(f"❌ Error al ocultar libro en DB: {e}", flush=True)
+        print(f"❌ Error en SQL ocultar_libro: {e}", flush=True)
         return {"ok": False, "error": str(e)}
     finally:
         cursor.close()
         db.close()
-
 
 # ──────────────────────────────────────────────
 #  VENDEDOR - PEDIDOS Y VENTAS DESDE ORDERS.JSON

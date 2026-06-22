@@ -49,6 +49,10 @@ export default function AdminDashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [filtroRol, setFiltroRol] = useState('todos');
   const [filtroCategoria, setFiltroCategoria] = useState('todas');
+  const [paginaUsuarios, setPaginaUsuarios] = useState(1);
+  const [paginaLibros, setPaginaLibros] = useState(1);
+
+  const registrosPorPagina = 10;
 
   useEffect(() => {
     const role = getUserRole();
@@ -85,17 +89,27 @@ export default function AdminDashboard() {
     cargarDatos();
   }, [navigate]);
 
-  const ocultarLibro = async (id_libro, oculto_actual) => {
+  const ocultarLibro = async (idLibro, estadoOcultoActual) => {
     try {
-      await api.patch(`/libros/${id_libro}/ocultar`, { oculto: !oculto_actual });
+      const token = localStorage.getItem('token');
+      const nuevoEstadoBooleano = estadoOcultoActual === 1 ? false : true;
 
-      setLibros(libros.map((l) =>
-        l.id_libro === id_libro ? { ...l, oculto: !oculto_actual } : l
-      ));
-      notify('Estado del libro actualizado', 'success');
+      await api.patch(`/libros/${idLibro}/ocultar`, 
+        { oculto: nuevoEstadoBooleano }, 
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      // Importante: Asegúrate de que 'setLibros' coincida con el nombre de tu set de React
+      setLibros((librosActuales) =>
+        librosActuales.map((l) =>
+          l.id_libro === idLibro ? { ...l, oculto: nuevoEstadoBooleano ? 1 : 0 } : l
+        )
+      );
+
+      notify('Visibilidad del libro actualizada', 'success');
     } catch (error) {
       console.error("Error en ocultar:", error);
-      notify('Error al ocultar el libro', 'error');
+      notify('Error al cambiar la visibilidad del libro', 'error');
     }
   };
 
@@ -196,6 +210,33 @@ export default function AdminDashboard() {
   };
   const ActiveIcon = NAV_ITEMS.find((i) => i.id === activeSection)?.Icon;
 
+  // USUARIOS
+  const usuariosFiltrados = usuarios.filter(
+    u => filtroRol === 'todos' || u.rol === filtroRol
+  );
+
+  const totalPaginasUsuarios = Math.ceil(
+    usuariosFiltrados.length / registrosPorPagina
+  );
+
+  const usuariosPaginados = usuariosFiltrados.slice(
+    (paginaUsuarios - 1) * registrosPorPagina,
+    paginaUsuarios * registrosPorPagina
+  );
+
+  // LIBROS
+  const librosFiltrados = libros.filter(
+    l => filtroCategoria === 'todas' || l.nombre_categoria === filtroCategoria
+  );
+
+  const totalPaginasLibros = Math.ceil(
+    librosFiltrados.length / registrosPorPagina
+  );
+
+  const librosPaginados = librosFiltrados.slice(
+    (paginaLibros - 1) * registrosPorPagina,
+    paginaLibros * registrosPorPagina
+  );
   return (
     <div style={{ display: 'flex', minHeight: '100vh', fontFamily: "'Montserrat', sans-serif", background: BEIGE }}>
 
@@ -260,8 +301,11 @@ export default function AdminDashboard() {
         })}
 
         <button
-          onClick={() => navigate('/')}
-          title={!sidebarOpen ? 'Volver al inicio' : undefined}
+          onClick={() => {
+            localStorage.removeItem('token');
+            navigate('/login');
+          }}
+          title={!sidebarOpen ? 'Cerrar sesión' : undefined}
           style={{
             marginTop: 'auto', background: 'none',
             border: '1.5px solid rgba(255,255,255,0.35)', color: WHITE,
@@ -273,7 +317,7 @@ export default function AdminDashboard() {
           }}
         >
           <SidebarIcon Icon={IconLogOut} size={18} />
-          {sidebarOpen && <span>Volver al inicio</span>}
+          {sidebarOpen && <span>Cerrar sesión</span>}
         </button>
       </aside>
 
@@ -470,12 +514,15 @@ export default function AdminDashboard() {
 
         {/* USUARIOS */}
         {activeSection === 'usuarios' && (
-          <div style={{ background: WHITE, borderRadius: '14px', overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.06)', border: `1px solid ${BORDER}` }}>
+          <div style={{ background: WHITE, borderRadius: '14px', overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.06)', border: `1px solid ${BORDER}` , padding: '16px'}}>
             <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'flex-end' }}>
               <label style={{ marginRight: '10px', fontWeight: 600, alignSelf: 'center' }}>Filtrar por Rol:</label>
               <select
                 value={filtroRol}
-                onChange={(e) => setFiltroRol(e.target.value)}
+                onChange={(e) => {
+                  setFiltroRol(e.target.value);
+                  setPaginaUsuarios(1);
+                }}
                 style={{
                   padding: '8px 12px',
                   borderRadius: '8px',
@@ -503,7 +550,7 @@ export default function AdminDashboard() {
                 </tr>
               </thead>
               <tbody>
-                {usuarios.filter(u => filtroRol === 'todos' || u.rol === filtroRol).map((u, i) => (
+                {usuariosPaginados.map((u, i) => (
                   <tr key={u.id_usuario} style={{
                     background: u.estado_usuario === 'Bloqueado' ? '#fff3f3' : i % 2 === 0 ? '#fafafa' : WHITE,
                     opacity: u.estado_usuario === 'Bloqueado' ? 0.7 : 1
@@ -560,6 +607,63 @@ export default function AdminDashboard() {
                 ))}
               </tbody>
             </table>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '20px 0'
+              }}
+            >
+              <span>
+                Mostrando {(paginaUsuarios - 1) * registrosPorPagina + 1}
+                -
+                {Math.min(
+                  paginaUsuarios * registrosPorPagina,
+                  usuariosFiltrados.length
+                )}
+                de {usuariosFiltrados.length} usuarios
+              </span>
+
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  onClick={() => setPaginaUsuarios(paginaUsuarios - 1)}
+                  disabled={paginaUsuarios === 1}
+                  style={{
+                    padding: '8px 12px',
+                    borderRadius: '6px',
+                    border: 'none',
+                    background: paginaUsuarios === 1 ? '#ccc' : VINOTINTO,
+                    color: WHITE,
+                    cursor: 'pointer'
+                  }}
+                >
+                  Anterior
+                </button>
+
+                <span style={{ padding: '8px 12px', fontWeight: 600 }}>
+                  {paginaUsuarios} / {totalPaginasUsuarios}
+                </span>
+
+                <button
+                  onClick={() => setPaginaUsuarios(paginaUsuarios + 1)}
+                  disabled={paginaUsuarios === totalPaginasUsuarios}
+                  style={{
+                    padding: '8px 12px',
+                    borderRadius: '6px',
+                    border: 'none',
+                    background:
+                      paginaUsuarios === totalPaginasUsuarios
+                        ? '#ccc'
+                        : VINOTINTO,
+                    color: WHITE,
+                    cursor: 'pointer'
+                  }}
+                >
+                  Siguiente
+                </button>
+              </div>
+            </div>
           </div>
         )}
 
@@ -571,7 +675,10 @@ export default function AdminDashboard() {
               <label style={{ fontWeight: 600, fontSize: '0.9rem', color: '#555' }}>Filtrar por Categoría:</label>
               <select
                 value={filtroCategoria}
-                onChange={(e) => setFiltroCategoria(e.target.value)}
+                onChange={(e) => {
+                  setFiltroCategoria(e.target.value);
+                  setPaginaLibros(1);
+                }}
                 style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid #FAF8F5', background: WHITE, fontWeight: 600, cursor: 'pointer', outline: 'none' }}
               >
                 <option value="todas">Todas las Categorías</option>
@@ -597,9 +704,7 @@ export default function AdminDashboard() {
                 </tr>
               </thead>
               <tbody>
-                {libros
-                  .filter((l) => filtroCategoria === 'todas' || l.nombre_categoria === filtroCategoria)
-                  .map((l, i) => (
+                {librosPaginados.map((l, i) => (
                     <tr key={l.id_libro} style={{
                       background: l.oculto ? '#fff3f3' : i % 2 === 0 ? '#fafafa' : WHITE,
                       opacity: l.oculto ? 0.7 : 1,
@@ -628,15 +733,23 @@ export default function AdminDashboard() {
                       </td>
 
                       <td style={{ padding: '12px 16px', display: 'flex', gap: '8px' }}>
-                        <button onClick={() => ocultarLibro(l.id_libro, l.oculto)} style={{
-                          background: l.oculto ? GREEN : ORANGE, color: WHITE, border: 'none',
-                          padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontWeight: 600,
-                          display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem',
-                        }}>
-                          {l.oculto
-                            ? <IconEye className="" width={14} height={14} style={{ color: WHITE }} />
-                            : <IconBan className="" width={14} height={14} style={{ color: WHITE }} />}
-                          {l.oculto ? 'Mostrar' : 'Ocultar'}
+                        <button
+                          onClick={() => ocultarLibro(l.id_libro, l.oculto)}
+                          style={{
+                            // 🎯 VALIDACIÓN FLEXIBLE: Se sombreará si es 1, si es true o si es el texto "1"
+                            background: (l.oculto === 1 || l.oculto === true || l.oculto == "1") ? '#6c757d' : VINOTINTO,
+                            color: WHITE,
+                            border: 'none',
+                            padding: '6px 12px',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            fontWeight: 600,
+                            fontSize: '0.8rem',
+                            opacity: (l.oculto === 1 || l.oculto === true || l.oculto == "1") ? 0.6 : 1
+                          }}
+                        >
+                          {/* 🎯 Lo mismo para el texto del botón */}
+                          {(l.oculto === 1 || l.oculto === true || l.oculto == "1") ? 'Mostrar' : 'Ocultar'}
                         </button>
                         <button onClick={() => eliminarLibro(l.id_libro)} style={{
                           background: RED, color: WHITE, border: 'none',
@@ -650,6 +763,63 @@ export default function AdminDashboard() {
                   ))}
               </tbody>
             </table>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                paddingTop: '20px'
+              }}
+            >
+              <span>
+                Mostrando {(paginaLibros - 1) * registrosPorPagina + 1}
+                -
+                {Math.min(
+                  paginaLibros * registrosPorPagina,
+                  librosFiltrados.length
+                )}
+                de {librosFiltrados.length} libros
+              </span>
+
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  onClick={() => setPaginaLibros(paginaLibros - 1)}
+                  disabled={paginaLibros === 1}
+                  style={{
+                    padding: '8px 12px',
+                    borderRadius: '6px',
+                    border: 'none',
+                    background: paginaLibros === 1 ? '#ccc' : VINOTINTO,
+                    color: WHITE,
+                    cursor: 'pointer'
+                  }}
+                >
+                  Anterior
+                </button>
+
+                <span style={{ padding: '8px 12px', fontWeight: 600 }}>
+                  {paginaLibros} / {totalPaginasLibros}
+                </span>
+
+                <button
+                  onClick={() => setPaginaLibros(paginaLibros + 1)}
+                  disabled={paginaLibros === totalPaginasLibros}
+                  style={{
+                    padding: '8px 12px',
+                    borderRadius: '6px',
+                    border: 'none',
+                    background:
+                      paginaLibros === totalPaginasLibros
+                        ? '#ccc'
+                        : VINOTINTO,
+                    color: WHITE,
+                    cursor: 'pointer'
+                  }}
+                >
+                  Siguiente
+                </button>
+              </div>
+            </div>
           </div>
         )}
 
@@ -663,7 +833,7 @@ export default function AdminDashboard() {
                   <th style={{ padding: '14px 16px', textAlign: 'left' }}>Nombre</th>
                   <th style={{ padding: '14px 16px', textAlign: 'left' }}>Dirección</th>
                   <th style={{ padding: '14px 16px', textAlign: 'left' }}>Teléfono</th>
-                  <th style={{ padding: '14px 16px', textAlign: 'left' }}>Fecha</th>
+                  <th style={{ padding: '14px 16px', textAlign: 'left' }}>Fecha Registro</th>
                   <th style={{ padding: '14px 16px', textAlign: 'left' }}>Estado</th>
                   <th style={{ padding: '14px 16px', textAlign: 'center' }}>Acciones</th>
                 </tr>
