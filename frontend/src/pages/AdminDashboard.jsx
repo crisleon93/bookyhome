@@ -51,6 +51,7 @@ export default function AdminDashboard() {
   const [filtroCategoria, setFiltroCategoria] = useState('todas');
   const [paginaUsuarios, setPaginaUsuarios] = useState(1);
   const [paginaLibros, setPaginaLibros] = useState(1);
+  const [paginaTiendas, setPaginaTiendas] = useState(1);
 
   const registrosPorPagina = 10;
 
@@ -94,12 +95,11 @@ export default function AdminDashboard() {
       const token = localStorage.getItem('token');
       const nuevoEstadoBooleano = estadoOcultoActual === 1 ? false : true;
 
-      await api.patch(`/libros/${idLibro}/ocultar`, 
-        { oculto: nuevoEstadoBooleano }, 
+      await api.patch(`/libros/${idLibro}/ocultar`,
+        { oculto: nuevoEstadoBooleano },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      // Importante: Asegúrate de que 'setLibros' coincida con el nombre de tu set de React
       setLibros((librosActuales) =>
         librosActuales.map((l) =>
           l.id_libro === idLibro ? { ...l, oculto: nuevoEstadoBooleano ? 1 : 0 } : l
@@ -118,15 +118,20 @@ export default function AdminDashboard() {
     try {
       const token = localStorage.getItem('token');
 
-      await api.delete(`/libros/${id_libro}`, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
+      const res = await api.delete(`/libros/${id_libro}`, {
+        headers: { Authorization: `Bearer ${token}` }
       });
 
-      setLibros(libros.filter((l) => l.id_libro !== id_libro));
-      setStats((prev) => ({ ...prev, libros: prev.libros - 1 }));
-      notify('Libro eliminado con éxito', 'success');
+      if (res.data.modo === 'ocultado') {
+        setLibros(libros.map((l) =>
+          l.id_libro === id_libro ? { ...l, oculto: 1 } : l
+        ));
+        notify(res.data.mensaje || 'El libro tiene compras registradas, se ocultó en vez de eliminarse', 'info');
+      } else {
+        setLibros(libros.filter((l) => l.id_libro !== id_libro));
+        setStats((prev) => ({ ...prev, libros: prev.libros - 1 }));
+        notify('Libro eliminado con éxito', 'success');
+      }
     } catch (error) {
       console.error("Error en eliminar:", error);
       const mensajeError = error.response?.data?.detail || 'Error al eliminar el libro';
@@ -237,6 +242,17 @@ export default function AdminDashboard() {
     (paginaLibros - 1) * registrosPorPagina,
     paginaLibros * registrosPorPagina
   );
+
+  // TIENDAS
+  const totalPaginasTiendas = Math.ceil(
+    tiendas.length / registrosPorPagina
+  );
+
+  const tiendasPaginadas = tiendas.slice(
+    (paginaTiendas - 1) * registrosPorPagina,
+    paginaTiendas * registrosPorPagina
+  );
+
   return (
     <div style={{ display: 'flex', minHeight: '100vh', fontFamily: "'Montserrat', sans-serif", background: BEIGE }}>
 
@@ -514,7 +530,7 @@ export default function AdminDashboard() {
 
         {/* USUARIOS */}
         {activeSection === 'usuarios' && (
-          <div style={{ background: WHITE, borderRadius: '14px', overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.06)', border: `1px solid ${BORDER}` , padding: '16px'}}>
+          <div style={{ background: WHITE, borderRadius: '14px', overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.06)', border: `1px solid ${BORDER}`, padding: '16px' }}>
             <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'flex-end' }}>
               <label style={{ marginRight: '10px', fontWeight: 600, alignSelf: 'center' }}>Filtrar por Rol:</label>
               <select
@@ -607,63 +623,60 @@ export default function AdminDashboard() {
                 ))}
               </tbody>
             </table>
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                padding: '20px 0'
-              }}
-            >
-              <span>
-                Mostrando {(paginaUsuarios - 1) * registrosPorPagina + 1}
-                -
-                {Math.min(
-                  paginaUsuarios * registrosPorPagina,
-                  usuariosFiltrados.length
-                )}
-                de {usuariosFiltrados.length} usuarios
-              </span>
 
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <button
-                  onClick={() => setPaginaUsuarios(paginaUsuarios - 1)}
-                  disabled={paginaUsuarios === 1}
-                  style={{
-                    padding: '8px 12px',
-                    borderRadius: '6px',
-                    border: 'none',
-                    background: paginaUsuarios === 1 ? '#ccc' : VINOTINTO,
-                    color: WHITE,
-                    cursor: 'pointer'
-                  }}
-                >
-                  Anterior
-                </button>
-
-                <span style={{ padding: '8px 12px', fontWeight: 600 }}>
-                  {paginaUsuarios} / {totalPaginasUsuarios}
+            {usuariosFiltrados.length > registrosPorPagina && (
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  paddingTop: '20px'
+                }}
+              >
+                <span>
+                  Mostrando {(paginaUsuarios - 1) * registrosPorPagina + 1}-{Math.min(paginaUsuarios * registrosPorPagina, usuariosFiltrados.length)} de {usuariosFiltrados.length} usuarios
                 </span>
 
-                <button
-                  onClick={() => setPaginaUsuarios(paginaUsuarios + 1)}
-                  disabled={paginaUsuarios === totalPaginasUsuarios}
-                  style={{
-                    padding: '8px 12px',
-                    borderRadius: '6px',
-                    border: 'none',
-                    background:
-                      paginaUsuarios === totalPaginasUsuarios
-                        ? '#ccc'
-                        : VINOTINTO,
-                    color: WHITE,
-                    cursor: 'pointer'
-                  }}
-                >
-                  Siguiente
-                </button>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button
+                    onClick={() => setPaginaUsuarios(paginaUsuarios - 1)}
+                    disabled={paginaUsuarios === 1}
+                    style={{
+                      padding: '8px 12px',
+                      borderRadius: '6px',
+                      border: 'none',
+                      background: paginaUsuarios === 1 ? '#ccc' : VINOTINTO,
+                      color: WHITE,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Anterior
+                  </button>
+
+                  <span style={{ padding: '8px 12px', fontWeight: 600 }}>
+                    {paginaUsuarios} / {totalPaginasUsuarios}
+                  </span>
+
+                  <button
+                    onClick={() => setPaginaUsuarios(paginaUsuarios + 1)}
+                    disabled={paginaUsuarios === totalPaginasUsuarios}
+                    style={{
+                      padding: '8px 12px',
+                      borderRadius: '6px',
+                      border: 'none',
+                      background:
+                        paginaUsuarios === totalPaginasUsuarios
+                          ? '#ccc'
+                          : VINOTINTO,
+                      color: WHITE,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Siguiente
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         )}
 
@@ -697,6 +710,7 @@ export default function AdminDashboard() {
                 <tr style={{ background: VINOTINTO, color: WHITE }}>
                   <th style={{ padding: '14px 16px', textAlign: 'left' }}>Título</th>
                   <th style={{ padding: '14px 16px', textAlign: 'left' }}>Autor</th>
+                  <th style={{ padding: '14px 16px', textAlign: 'left' }}>Tienda</th>
                   <th style={{ padding: '14px 16px', textAlign: 'left' }}>Precio</th>
                   <th style={{ padding: '14px 16px', textAlign: 'left' }}>Categoría</th>
                   <th style={{ padding: '14px 16px', textAlign: 'left' }}>Estado</th>
@@ -705,121 +719,117 @@ export default function AdminDashboard() {
               </thead>
               <tbody>
                 {librosPaginados.map((l, i) => (
-                    <tr key={l.id_libro} style={{
-                      background: l.oculto ? '#fff3f3' : i % 2 === 0 ? '#fafafa' : WHITE,
-                      opacity: l.oculto ? 0.7 : 1,
-                      borderBottom: '1px solid #FAF8F5'
-                    }}>
-                      <td style={{ padding: '12px 16px', fontWeight: 600 }}>{l.titulo}</td>
-                      <td style={{ padding: '12px 16px', color: '#555' }}>{l.autor_libro}</td>
-                      <td style={{ padding: '12px 16px', fontWeight: 600 }}>${Number(l.precio_libro).toLocaleString('es-CO')}</td>
+                  <tr key={l.id_libro} style={{
+                    background: l.oculto ? '#fff3f3' : i % 2 === 0 ? '#fafafa' : WHITE,
+                    opacity: l.oculto ? 0.7 : 1,
+                    borderBottom: '1px solid #FAF8F5'
+                  }}>
+                    <td style={{ padding: '12px 16px', fontWeight: 600 }}>{l.titulo}</td>
+                    <td style={{ padding: '12px 16px', color: '#555' }}>{l.autor_libro}</td>
+                    <td style={{ padding: '12px 16px', color: '#7A1E3A', fontWeight: 600 }}>{l.nombre_tienda || '—'}</td>
+                    <td style={{ padding: '12px 16px', fontWeight: 600 }}>${Number(l.precio_libro).toLocaleString('es-CO')}</td>
 
-                      <td style={{ padding: '12px 16px', color: '#666', fontSize: '0.85rem', fontWeight: 500 }}>
-                        {l.nombre_categoria || 'Sin categoría'}
-                      </td>
+                    <td style={{ padding: '12px 16px', color: '#666', fontSize: '0.85rem', fontWeight: 500 }}>
+                      {l.nombre_categoria || 'Sin categoría'}
+                    </td>
 
-                      <td style={{ padding: '12px 16px' }}>
-                        <span style={{
-                          background: l.oculto ? RED : GREEN,
-                          color: WHITE, padding: '4px 10px', borderRadius: '20px',
-                          fontSize: '0.8rem', fontWeight: 600,
-                          display: 'inline-flex', alignItems: 'center', gap: '5px',
-                        }}>
-                          {l.oculto
-                            ? <IconBan className="" width={14} height={14} style={{ color: WHITE }} />
-                            : <IconCheck className="" width={14} height={14} style={{ color: WHITE }} />}
-                          {l.oculto ? 'Oculto' : 'Visible'}
-                        </span>
-                      </td>
+                    <td style={{ padding: '12px 16px' }}>
+                      <span style={{
+                        background: l.oculto ? RED : GREEN,
+                        color: WHITE, padding: '4px 10px', borderRadius: '20px',
+                        fontSize: '0.8rem', fontWeight: 600,
+                        display: 'inline-flex', alignItems: 'center', gap: '5px',
+                      }}>
+                        {l.oculto
+                          ? <IconBan className="" width={14} height={14} style={{ color: WHITE }} />
+                          : <IconCheck className="" width={14} height={14} style={{ color: WHITE }} />}
+                        {l.oculto ? 'Oculto' : 'Visible'}
+                      </span>
+                    </td>
 
-                      <td style={{ padding: '12px 16px', display: 'flex', gap: '8px' }}>
-                        <button
-                          onClick={() => ocultarLibro(l.id_libro, l.oculto)}
-                          style={{
-                            // 🎯 VALIDACIÓN FLEXIBLE: Se sombreará si es 1, si es true o si es el texto "1"
-                            background: (l.oculto === 1 || l.oculto === true || l.oculto == "1") ? '#6c757d' : VINOTINTO,
-                            color: WHITE,
-                            border: 'none',
-                            padding: '6px 12px',
-                            borderRadius: '6px',
-                            cursor: 'pointer',
-                            fontWeight: 600,
-                            fontSize: '0.8rem',
-                            opacity: (l.oculto === 1 || l.oculto === true || l.oculto == "1") ? 0.6 : 1
-                          }}
-                        >
-                          {/* 🎯 Lo mismo para el texto del botón */}
-                          {(l.oculto === 1 || l.oculto === true || l.oculto == "1") ? 'Mostrar' : 'Ocultar'}
-                        </button>
-                        <button onClick={() => eliminarLibro(l.id_libro)} style={{
-                          background: RED, color: WHITE, border: 'none',
-                          padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontWeight: 600,
-                          display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem',
-                        }}>
-                          <IconTrash className="" width={14} height={14} style={{ color: WHITE }} /> Eliminar
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
+                    <td style={{ padding: '12px 16px', display: 'flex', gap: '8px' }}>
+                      <button
+                        onClick={() => ocultarLibro(l.id_libro, l.oculto)}
+                        style={{
+                          background: (l.oculto === 1 || l.oculto === true || l.oculto == "1") ? '#6c757d' : VINOTINTO,
+                          color: WHITE,
+                          border: 'none',
+                          padding: '6px 12px',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          fontWeight: 600,
+                          fontSize: '0.8rem',
+                          opacity: (l.oculto === 1 || l.oculto === true || l.oculto == "1") ? 0.6 : 1
+                        }}
+                      >
+                        {(l.oculto === 1 || l.oculto === true || l.oculto == "1") ? 'Mostrar' : 'Ocultar'}
+                      </button>
+                      <button onClick={() => eliminarLibro(l.id_libro)} style={{
+                        background: RED, color: WHITE, border: 'none',
+                        padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontWeight: 600,
+                        display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem',
+                      }}>
+                        <IconTrash className="" width={14} height={14} style={{ color: WHITE }} /> Eliminar
+                      </button>
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                paddingTop: '20px'
-              }}
-            >
-              <span>
-                Mostrando {(paginaLibros - 1) * registrosPorPagina + 1}
-                -
-                {Math.min(
-                  paginaLibros * registrosPorPagina,
-                  librosFiltrados.length
-                )}
-                de {librosFiltrados.length} libros
-              </span>
 
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <button
-                  onClick={() => setPaginaLibros(paginaLibros - 1)}
-                  disabled={paginaLibros === 1}
-                  style={{
-                    padding: '8px 12px',
-                    borderRadius: '6px',
-                    border: 'none',
-                    background: paginaLibros === 1 ? '#ccc' : VINOTINTO,
-                    color: WHITE,
-                    cursor: 'pointer'
-                  }}
-                >
-                  Anterior
-                </button>
-
-                <span style={{ padding: '8px 12px', fontWeight: 600 }}>
-                  {paginaLibros} / {totalPaginasLibros}
+            {librosFiltrados.length > registrosPorPagina && (
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  paddingTop: '20px'
+                }}
+              >
+                <span>
+                  Mostrando {(paginaLibros - 1) * registrosPorPagina + 1}-{Math.min(paginaLibros * registrosPorPagina, librosFiltrados.length)} de {librosFiltrados.length} libros
                 </span>
 
-                <button
-                  onClick={() => setPaginaLibros(paginaLibros + 1)}
-                  disabled={paginaLibros === totalPaginasLibros}
-                  style={{
-                    padding: '8px 12px',
-                    borderRadius: '6px',
-                    border: 'none',
-                    background:
-                      paginaLibros === totalPaginasLibros
-                        ? '#ccc'
-                        : VINOTINTO,
-                    color: WHITE,
-                    cursor: 'pointer'
-                  }}
-                >
-                  Siguiente
-                </button>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button
+                    onClick={() => setPaginaLibros(paginaLibros - 1)}
+                    disabled={paginaLibros === 1}
+                    style={{
+                      padding: '8px 12px',
+                      borderRadius: '6px',
+                      border: 'none',
+                      background: paginaLibros === 1 ? '#ccc' : VINOTINTO,
+                      color: WHITE,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Anterior
+                  </button>
+
+                  <span style={{ padding: '8px 12px', fontWeight: 600 }}>
+                    {paginaLibros} / {totalPaginasLibros}
+                  </span>
+
+                  <button
+                    onClick={() => setPaginaLibros(paginaLibros + 1)}
+                    disabled={paginaLibros === totalPaginasLibros}
+                    style={{
+                      padding: '8px 12px',
+                      borderRadius: '6px',
+                      border: 'none',
+                      background:
+                        paginaLibros === totalPaginasLibros
+                          ? '#ccc'
+                          : VINOTINTO,
+                      color: WHITE,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Siguiente
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         )}
 
@@ -839,7 +849,7 @@ export default function AdminDashboard() {
                 </tr>
               </thead>
               <tbody>
-                {tiendas.map((t, i) => (
+                {tiendasPaginadas.map((t, i) => (
                   <tr key={t.id_tienda} style={{ borderBottom: '1px solid #FAF8F5', background: i % 2 === 0 ? '#fafafa' : WHITE }}>
                     <td style={{ padding: '12px 16px', fontWeight: 600 }}>{t.id_tienda}</td>
                     <td style={{ padding: '12px 16px', fontWeight: 600 }}>{t.nombre_tienda}</td>
@@ -849,24 +859,21 @@ export default function AdminDashboard() {
 
                     <td style={{ padding: '12px 16px' }}>
                       <span style={{
-                        background: t.estado_tienda?.toLowerCase() === 'activa' ? GREEN : t.estado_tienda?.toLowerCase() === 'suspendida' ? RED : ORANGE,
+                        background: t.estado_tienda?.toLowerCase() === 'suspendida' ? RED : GREEN,
                         color: WHITE, padding: '4px 10px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 600
                       }}>
-                        {t.estado_tienda || 'Pendiente'}
+                        {t.estado_tienda?.toLowerCase() === 'suspendida' ? 'Suspendida' : 'Activa'}
                       </span>
                     </td>
-
                     <td style={{ padding: '12px 16px', display: 'flex', gap: '8px', justifyContent: 'center' }}>
-                      {(t.estado_tienda?.toLowerCase() === 'pendiente' || !t.estado_tienda) && (
+                      {t.estado_tienda?.toLowerCase() === 'suspendida' ? (
                         <button
                           onClick={() => manejarEstadoTienda(t.id_tienda, 'Activa')}
                           style={{ background: GREEN, color: WHITE, border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontWeight: 600, fontSize: '0.8rem' }}
                         >
-                          Aprobar
+                          Reactivar
                         </button>
-                      )}
-
-                      {t.estado_tienda?.toLowerCase() === 'activa' && (
+                      ) : (
                         <button
                           onClick={() => manejarEstadoTienda(t.id_tienda, 'Suspendida')}
                           style={{ background: ORANGE, color: WHITE, border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontWeight: 600, fontSize: '0.8rem' }}
@@ -874,20 +881,65 @@ export default function AdminDashboard() {
                           Suspender
                         </button>
                       )}
-
-                      {t.estado_tienda?.toLowerCase() === 'suspendida' && (
-                        <button
-                          onClick={() => manejarEstadoTienda(t.id_tienda, 'Activa')}
-                          style={{ background: GREEN, color: WHITE, border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontWeight: 600, fontSize: '0.8rem' }}
-                        >
-                          Reactivar
-                        </button>
-                      )}
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
+
+            {tiendas.length > registrosPorPagina && (
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  paddingTop: '20px'
+                }}
+              >
+                <span>
+                  Mostrando {(paginaTiendas - 1) * registrosPorPagina + 1}-{Math.min(paginaTiendas * registrosPorPagina, tiendas.length)} de {tiendas.length} tiendas
+                </span>
+
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button
+                    onClick={() => setPaginaTiendas(paginaTiendas - 1)}
+                    disabled={paginaTiendas === 1}
+                    style={{
+                      padding: '8px 12px',
+                      borderRadius: '6px',
+                      border: 'none',
+                      background: paginaTiendas === 1 ? '#ccc' : VINOTINTO,
+                      color: WHITE,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Anterior
+                  </button>
+
+                  <span style={{ padding: '8px 12px', fontWeight: 600 }}>
+                    {paginaTiendas} / {totalPaginasTiendas}
+                  </span>
+
+                  <button
+                    onClick={() => setPaginaTiendas(paginaTiendas + 1)}
+                    disabled={paginaTiendas === totalPaginasTiendas}
+                    style={{
+                      padding: '8px 12px',
+                      borderRadius: '6px',
+                      border: 'none',
+                      background:
+                        paginaTiendas === totalPaginasTiendas
+                          ? '#ccc'
+                          : VINOTINTO,
+                      color: WHITE,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Siguiente
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 

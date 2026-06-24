@@ -21,7 +21,7 @@ def crear_libreria(nombre, nombre_libreria, direccion, telefono, email, password
             """
             INSERT INTO tiendas
             (id_usuario, nombre_tienda, direccion, telefono, fecha_creacion, estado_tienda)
-            VALUES (%s, %s, %s, %s, CURDATE(), 'pendiente')
+            VALUES (%s, %s, %s, %s, CURDATE(), 'activa')
             """,
             (id_usuario, nombre_libreria, direccion, telefono)
         )

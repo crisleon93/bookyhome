@@ -2664,9 +2664,13 @@ SELECT * FROM v_detalles_carrito;
 SELECT '=== BooKyHome LISTA PARA USAR ===' AS '';
 select * from libros;
 
+CALL sp_listar_libros_disponibles();
+
+-- Agregar la columna oculto a la tabla libros
 ALTER TABLE libros 
 ADD COLUMN oculto TINYINT(1) NOT NULL DEFAULT 0;
 
+-- Modificar el rol de usuarios por comprador
 SET SQL_SAFE_UPDATES = 0;
 
 UPDATE usuarios 
@@ -2674,6 +2678,29 @@ SET rol = 'comprador'
 WHERE rol = 'usuario';
 
 SET SQL_SAFE_UPDATES = 1;
-ALTER TABLE tiendas 
-ADD COLUMN estado_tienda VARCHAR(20) NOT NULL DEFAULT 'pendiente';
 
+-- Modificar el rol admin
+-- UPDATE usuarios
+ -- SET rol = 'admin'
+-- WHERE id_usuario = 17;
+
+-- Modificar el procedure sp_listar_libros_disponibles para poder ocultar los libros desde administrador
+DROP PROCEDURE IF EXISTS sp_listar_libros_disponibles;
+
+DELIMITER $$
+CREATE PROCEDURE sp_listar_libros_disponibles()
+BEGIN
+    SELECT 
+        l.id_libro, 
+        l.titulo, 
+        l.autor_libro, 
+        c.nombre_categoria, 
+        t.nombre_tienda, 
+        l.precio_libro, 
+        l.stock,
+        l.oculto
+    FROM libros l
+    INNER JOIN categorias c ON l.id_categoria = c.id_categoria
+    INNER JOIN tiendas t ON l.id_tienda = t.id_tienda;
+END$$
+DELIMITER ;

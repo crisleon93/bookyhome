@@ -37,7 +37,9 @@ def busqueda_avanzada(
     
     try:
         # Construir WHERE dinámico
-        where_conditions = ["l.stock > 0"]
+        # l.oculto = 0 asegura que los libros ocultados por moderación (admin) 
+        # o por el propio vendedor nunca aparezcan en el catálogo público
+        where_conditions = ["l.stock > 0", "l.oculto = 0"]
         params = []
         
         if q:

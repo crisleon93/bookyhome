@@ -44,8 +44,8 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
 
 def verificar_tienda_activa(tienda):
     """
-    Bloquea las operaciones si la tienda está 'suspendida' o 'pendiente'.
-    Solo las tiendas en estado 'activa' pueden operar con normalidad.
+    Solo bloquea operaciones si la tienda está SUSPENDIDA.
+    Las tiendas nuevas nacen activas y pueden operar de inmediato.
     """
     estado = tienda.get("estado_tienda") if isinstance(tienda, dict) else tienda[5]
     estado_str = str(estado).lower() if estado else ""
@@ -54,11 +54,6 @@ def verificar_tienda_activa(tienda):
         raise HTTPException(
             status_code=403,
             detail="Tu tienda ha sido suspendida por incumplir las normas. Comunícate con el administrador."
-        )
-    elif estado_str == "pendiente" or not estado_str:
-        raise HTTPException(
-            status_code=403,
-            detail="Tu tienda se encuentra pendiente de aprobación por el administrador. No puedes realizar esta operación aún."
         )
     return True
 

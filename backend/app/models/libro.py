@@ -197,10 +197,30 @@ def eliminar_libro_por_admin(id_libro: int):
     db = get_db()
     cursor = db.cursor()
     try:
+        cursor.execute(
+            "SELECT COUNT(*) FROM detalle_orden WHERE id_libro = %s", (id_libro,)
+        )
+        tiene_ordenes = cursor.fetchone()[0] > 0
+
+        if tiene_ordenes:
+            cursor.execute(
+                "UPDATE libros SET oculto = 1 WHERE id_libro = %s", (id_libro,)
+            )
+            db.commit()
+            return {
+                "ok": True,
+                "modo": "ocultado",
+                "mensaje": "El libro tiene compras registradas, no se puede eliminar. Se ha ocultado permanentemente."
+            }
+
+        # Sin órdenes asociadas: se puede eliminar físicamente sin riesgo
+        cursor.execute("DELETE FROM carrito_compras WHERE id_libro = %s", (id_libro,))
+        cursor.execute("DELETE FROM oferta_libros WHERE id_libro = %s", (id_libro,))
         cursor.execute("DELETE FROM imagenes_libro WHERE id_libro = %s", (id_libro,))
         cursor.execute("DELETE FROM libros WHERE id_libro = %s", (id_libro,))
         db.commit()
-        return {"ok": True}
+        return {"ok": True, "modo": "eliminado"}
+
     except Exception as e:
         db.rollback()
         return {"ok": False, "error": str(e)}
