@@ -1,8 +1,15 @@
 import { Link } from 'react-router-dom';
 
 function Footer() {
+  const location = window.location.pathname;
+  const isDashboardPage = location.startsWith('/mi-tienda') ||
+    location.startsWith('/post-login') ||
+    location.startsWith('/vendedor') ||
+    location.startsWith('/perfil') ||
+    location.startsWith('/publicar');
+
   return (
-    <footer>
+    <footer style={{ marginLeft: isDashboardPage ? 'var(--dashboard-sidebar-width, 250px)' : undefined, width: isDashboardPage ? 'calc(100% - var(--dashboard-sidebar-width, 250px))' : undefined }}>
 
       <div className="footer-container">
 

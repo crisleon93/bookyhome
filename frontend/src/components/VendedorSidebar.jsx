@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   IconStoreAlt as IconHome,
@@ -46,6 +46,13 @@ function SidebarIcon(props) {
 export default function VendedorSidebar({ userName = 'Vendedor', activeSide = 'Inicio', setActiveSide, handleLogout }) {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(true);
+
+  useEffect(() => {
+    document.documentElement.style.setProperty('--dashboard-sidebar-width', sidebarOpen ? '250px' : '76px');
+    return () => {
+      document.documentElement.style.setProperty('--dashboard-sidebar-width', '0px');
+    };
+  }, [sidebarOpen]);
 
   const onLogout = handleLogout || (() => {
     localStorage.removeItem('token');

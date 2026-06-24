@@ -47,11 +47,8 @@ function MainLayout() {
   const variant = location.pathname === '/' ? 'white' : 'simple';
   const userRole = getUserRole();
 
-  const isDashboard =
-    location.pathname.startsWith('/mi-tienda') ||
-    location.pathname.startsWith('/admin') ||
-    location.pathname.startsWith('/post-login') ||
-    location.pathname.startsWith('/vendedor/publicar');
+  // Mostrar header en páginas de comprador y vendedor; ocultarlo solo en admin
+  const isDashboard = location.pathname.startsWith('/admin');
 
   return (
     <>

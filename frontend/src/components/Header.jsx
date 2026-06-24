@@ -77,6 +77,11 @@ function Header({ variant }) {
   const [showPass, setShowPass] = useState(false);
 
   const isHome = location.pathname === '/';
+  const isDashboardPage = location.pathname.startsWith('/mi-tienda') ||
+    location.pathname.startsWith('/post-login') ||
+    location.pathname.startsWith('/vendedor') ||
+    location.pathname.startsWith('/perfil') ||
+    location.pathname.startsWith('/publicar');
 
   useEffect(() => {
     if (!loginOpen) {
@@ -131,7 +136,6 @@ function Header({ variant }) {
       const decoded = jwtDecode(token);
       notify('Inicio de sesión correcto', 'success');
       setLoginOpen(false);
-
       if (decoded.rol === 'vendedor') {
         navigate('/mi-tienda');
       } else if (decoded.rol === 'admin' || decoded.rol === 'administrador') {
@@ -164,6 +168,13 @@ function Header({ variant }) {
       <header
         id="main-header"
         className={`${isSimple ? "header-center" : ""} ${isWhite ? "header-white" : "header-vinotinto"} ${mobileMenuOpen ? "header-menu-open" : ""}`}
+        style={{
+          position: isDashboardPage ? 'fixed' : undefined,
+          left: isDashboardPage ? 'var(--dashboard-sidebar-width, 250px)' : undefined,
+          top: isHome ? '32px' : '1px',
+          width: isDashboardPage ? 'calc(100% - var(--dashboard-sidebar-width, 250px))' : undefined,
+          zIndex: isDashboardPage ? 1000 : undefined
+        }}
       >
         <div className="layout-container header-container">
           <Link to="/" className="logo-link">

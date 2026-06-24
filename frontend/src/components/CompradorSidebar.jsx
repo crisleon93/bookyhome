@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
   IconHome, 
@@ -43,6 +43,13 @@ function SidebarIcon(props) {
 export default function CompradorSidebar({ userName, userEmail, activeSide, onSelect }) {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(true);
+
+  useEffect(() => {
+    document.documentElement.style.setProperty('--dashboard-sidebar-width', sidebarOpen ? '250px' : '76px');
+    return () => {
+      document.documentElement.style.setProperty('--dashboard-sidebar-width', '0px');
+    };
+  }, [sidebarOpen]);
 
   return (
     <aside className={`dashboard-sidebar ${sidebarOpen ? '' : 'collapsed'}`} style={{

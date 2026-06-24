@@ -22,21 +22,27 @@ function FiltrosCatalogo({ onFiltrosChange }) {
 
   const [expandido, setExpandido] = useState(false);
 
-  async function cargarOpciones() {
-    try {
-      const response = await api.get('/catalogo/filtros-disponibles');
-      setOpciones(response.data);
-      setFiltros(prev => ({
-        ...prev,
-        precio_max: response.data.precio_max
-      }));
-    } catch (error) {
-      console.error('Error cargando filtros:', error);
-    }
-  }
-
   useEffect(() => {
+    let mounted = true;
+
+    const cargarOpciones = async () => {
+      try {
+        const response = await api.get('/catalogo/filtros-disponibles');
+        if (!mounted) return;
+        setOpciones(response.data);
+        setFiltros(prev => ({
+          ...prev,
+          precio_max: response.data.precio_max
+        }));
+      } catch (error) {
+        console.error('Error cargando filtros:', error);
+      }
+    };
+
     cargarOpciones();
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   const handleFiltroChange = (campo, valor) => {

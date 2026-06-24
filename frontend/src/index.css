@@ -99,8 +99,12 @@ header {
   position: sticky;
   top: 0;
   z-index: 100;
-  transition: box-shadow 0.3s ease;
+  transition: box-shadow 0.3s ease, left 0.25s ease, width 0.25s ease;
   height: 60px;
+}
+
+#main-header[style] {
+  transition: left 0.25s ease, width 0.25s ease, top 0.25s ease;
 }
 
 .header-container {
@@ -755,6 +759,7 @@ footer {
   background-color: var(--gris-carbon);
   color: #b0b0b0;
   padding: 3.5rem 2rem 2rem;
+  transition: margin-left 0.25s ease, width 0.25s ease;
 }
 .footer-container {
   display: grid;
