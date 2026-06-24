@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { jwtDecode } from 'jwt-decode';
 import api from '../services/api';
 import { notify } from '../components/ToastProvider';
-import DashboardSidebar from '../components/DashboardSidebar';
+import CompradorSidebar from '../components/CompradorSidebar';
 import '../styles/perfil-usuario.css';
 
 function PerfilUsuario() {
@@ -316,7 +316,7 @@ function PerfilUsuario() {
         <div className="perfil-error">Error al cargar perfil</div>
       ) : (
         <div style={{ display: 'flex', minHeight: '100vh', background: '#fafaf9' }}>
-          <DashboardSidebar 
+          <CompradorSidebar 
             userName={userName}
             userEmail={usuario?.correo_usuario || ''}
             activeSide={activeSide}

@@ -1795,24 +1795,25 @@ body.auth-page {
    =========================== */
 .dashboard-container {
   display: flex;
-  min-height: calc(100vh - 72px);
+  min-height: calc(100vh - 1px);
   background: var(--beige);
 }
 
 .dashboard-sidebar {
-  width: 260px;
-  background: white;
-  border-right: 1px solid #e5e0d8;
+  width: 250px;
+  background: var(--vinotinto);
+  color: white;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
   padding: 20px 0;
-  box-shadow: 2px 0 15px rgba(122, 30, 58, 0.08);
-  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), padding 0.3s ease;
+  box-shadow: 2px 0 15px rgba(122, 30, 58, 0.2);
+  transition: width 0.25s ease, padding 0.25s ease;
   position: relative;
   display: flex;
   flex-direction: column;
 }
 
 .dashboard-sidebar.collapsed {
-  width: 80px;
+  width: 76px;
   padding: 20px 0;
 }
 
@@ -1828,20 +1829,20 @@ body.auth-page {
   justify-content: center;
   width: 40px;
   height: 40px;
-  background: rgba(245, 231, 238, 0.8);
-  border: 1px solid rgba(122, 30, 58, 0.15);
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 50%;
-  color: var(--vinotinto);
+  color: white;
   font-size: 1.1rem;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.25s ease;
   font-weight: 700;
 }
 
 .sidebar-collapse-btn:hover {
-  background: rgba(245, 221, 230, 1);
+  background: rgba(255, 255, 255, 0.18);
   transform: scale(1.05);
-  box-shadow: 0 2px 8px rgba(122, 30, 58, 0.12);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 .sidebar-user {
@@ -1849,14 +1850,14 @@ body.auth-page {
   display: flex;
   align-items: center;
   gap: 16px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
   margin-bottom: 16px;
 }
 
 .dashboard-sidebar.collapsed .sidebar-user {
   justify-content: center;
   padding: 0 0 20px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 .dashboard-sidebar.collapsed .sidebar-user-info {
@@ -1864,9 +1865,9 @@ body.auth-page {
 }
 
 .user-avatar-big {
-  width: 48px;
-  height: 48px;
-  background: var(--vinotinto);
+  width: 52px;
+  height: 52px;
+  background: rgba(255, 255, 255, 0.2);
   color: white;
   border-radius: 50%;
   display: flex;
@@ -1875,6 +1876,8 @@ body.auth-page {
   font-weight: 700;
   font-size: 1.2rem;
   flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  border: 2px solid rgba(255, 255, 255, 0.3);
 }
 
 .sidebar-user-info {
@@ -1887,7 +1890,7 @@ body.auth-page {
 .user-name {
   margin: 0;
   font-weight: 700;
-  color: #2d2d2d;
+  color: white;
   font-size: 0.95rem;
   white-space: nowrap;
   overflow: hidden;
@@ -1897,7 +1900,7 @@ body.auth-page {
 .user-email {
   margin: 0;
   font-size: 0.8rem;
-  color: #777;
+  color: rgba(255, 255, 255, 0.7);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1926,7 +1929,7 @@ body.auth-page {
   background: transparent;
   text-align: left;
   font-size: 0.93rem;
-  color: #555;
+  color: rgba(255, 255, 255, 0.8);
   border-radius: 12px;
   margin: 0;
   cursor: pointer;
@@ -1937,13 +1940,13 @@ body.auth-page {
 }
 
 .sidebar-item:hover {
-  background: rgba(245, 231, 238, 0.6);
-  color: var(--vinotinto);
+  background: rgba(255, 255, 255, 0.12);
+  color: white;
 }
 
 .sidebar-item.active {
-  background: rgba(122, 30, 58, 0.08);
-  color: var(--vinotinto);
+  background: rgba(255, 255, 255, 0.18);
+  color: white;
   font-weight: 700;
 }
 
@@ -1954,7 +1957,7 @@ body.auth-page {
   top: 0;
   bottom: 0;
   width: 4px;
-  background: var(--vinotinto);
+  background: white;
   border-radius: 0 12px 12px 0;
 }
 
@@ -1966,6 +1969,35 @@ body.auth-page {
 
 .dashboard-sidebar.collapsed .sidebar-item span:not(.sidebar-icon) {
   display: none;
+}
+
+.sidebar-logout {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1.5px solid rgba(255, 255, 255, 0.35);
+  color: white;
+  padding: 11px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 0.85rem;
+  font-family: 'Montserrat', sans-serif;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  margin: 0 10px;
+}
+
+.sidebar-logout:hover {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.dashboard-sidebar.collapsed .sidebar-logout {
+  justify-content: center;
+  padding: 11px;
+  margin: 0;
 }
 
 .sidebar-icon {
@@ -2063,6 +2095,13 @@ body.auth-page {
   flex: 1;
   padding: 20px 24px;
   overflow-y: auto;
+  margin-left: 250px;
+  transition: margin-left 0.25s ease;
+}
+
+/* When the sidebar is collapsed adjust main margin */
+.dashboard-sidebar.collapsed + .dashboard-main {
+  margin-left: 76px;
 }
 
 .welcome-card {

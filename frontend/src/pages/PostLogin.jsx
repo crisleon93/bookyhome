@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import { getUsuarios, getCarrito, checkoutCarrito, getOrdenes } from "../services/api";
-import DashboardSidebar from "../components/DashboardSidebar";
+import CompradorSidebar from "../components/CompradorSidebar";
 import { getUserRole } from "../hooks/useAuth";
 import { notify } from "../components/ToastProvider";
 
@@ -139,7 +139,7 @@ export default function PostLogin() {
 
   return (
     <div className="dashboard-container">
-      <DashboardSidebar
+      <CompradorSidebar
         userName={userName}
         userEmail={userEmail}
         activeSide={activeSide}

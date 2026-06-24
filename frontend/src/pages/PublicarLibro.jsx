@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "../services/api";
-import SellerSidebar from "../components/SellerSidebarFlowbite";
+import SellerSidebar from "../components/VendedorSidebar";
 import '../styles/publicar.css';
 
 
@@ -124,7 +124,7 @@ export default function PublicarLibro() {
           setActiveSide={setActiveSide}
           handleLogout={() => {
             localStorage.removeItem("token");
-            navigate("/login");
+            navigate("/");
           }}
         />
         <main className="dashboard-main">
@@ -146,7 +146,7 @@ export default function PublicarLibro() {
         setActiveSide={handleSidebarSelect}
         handleLogout={() => {
           localStorage.removeItem("token");
-          navigate("/login");
+          navigate("/");
         }}
       />
       <main className="dashboard-main">

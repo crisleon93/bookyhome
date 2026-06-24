@@ -4,7 +4,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import api from "../services/api";
 import SeccionOfertas from "../components/SeccionOfertas";
-import SellerSidebar from "../components/SellerSidebarFlowbite";
+import SellerSidebar from "../components/VendedorSidebar";
 
 
 // ========================
@@ -262,7 +262,7 @@ export default function MiTienda() {
   // Estado local principal
   // ========================
   const navigate = useNavigate();
-  const handleLogout = () => { localStorage.removeItem("token"); navigate("/login"); };
+  const handleLogout = () => { localStorage.removeItem("token"); navigate("/"); };
   const [userName,      setUserName]      = useState("");
   const [loading,       setLoading]       = useState(true);
   const [activeSide,    setActiveSide]    = useState("Inicio");
