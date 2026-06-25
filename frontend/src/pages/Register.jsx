@@ -174,7 +174,7 @@ function Register({ isModal = false, onSuccess }) {
               <input
                 id="nombre"
                 type="text"
-                placeholder="Tu nombre"
+                placeholder="Juan Pérez"
                 value={nombre}
                 onChange={e => setNombre(e.target.value)}
               />
@@ -188,7 +188,7 @@ function Register({ isModal = false, onSuccess }) {
               <input
                 id="apellidos"
                 type="text"
-                placeholder="Tus apellidos"
+                placeholder="Pérez García"
                 value={apellidos}
                 onChange={e => setApellidos(e.target.value)}
               />
@@ -202,7 +202,7 @@ function Register({ isModal = false, onSuccess }) {
               <input
                 id="email"
                 type="email"
-                placeholder="tu@email.com"
+                placeholder="ejemplo@gmail.com"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 onPaste={blockClipboard}
@@ -218,7 +218,7 @@ function Register({ isModal = false, onSuccess }) {
               <input
                 id="telefono"
                 type="tel"
-                placeholder="Tu teléfono"
+                placeholder="3001234567"
                 value={telefono}
                 onChange={e => setTelefono(e.target.value)}
               />
@@ -258,7 +258,7 @@ function Register({ isModal = false, onSuccess }) {
               <input
                 id="confirmPassword"
                 type={showPass ? 'text' : 'password'}
-                placeholder="Repite tu contraseña"
+                placeholder="Repite la contraseña"
                 value={confirmPassword}
                 onChange={e => setConfirmPassword(e.target.value)}
                 onPaste={blockClipboard}

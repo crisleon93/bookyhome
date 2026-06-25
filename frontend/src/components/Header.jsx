@@ -154,31 +154,29 @@ function Header({ variant }) {
 
   return (
     <>
-      {isHome && (
-        <div className="top-bar">
-          <div className="top-bar-container">
-            <div className="location">
-              <IconLocation />
-              Envíos a todo el país
-            </div>
-          </div>
-        </div>
-      )}
-
       <header
         id="main-header"
-        className={`${isSimple ? "header-center" : ""} ${isWhite ? "header-white" : "header-vinotinto"} ${mobileMenuOpen ? "header-menu-open" : ""}`}
+        className={`${isSimple ? "header-center" : ""} ${isHome ? "header-vinotinto" : isWhite ? "header-white" : "header-vinotinto"} ${mobileMenuOpen ? "header-menu-open" : ""}`}
         style={{
           position: isDashboardPage ? 'fixed' : undefined,
           left: isDashboardPage ? 'var(--dashboard-sidebar-width, 250px)' : undefined,
-          top: isHome ? '32px' : '1px',
           width: isDashboardPage ? 'calc(100% - var(--dashboard-sidebar-width, 250px))' : undefined,
           zIndex: isDashboardPage ? 1000 : undefined
         }}
       >
+        {isHome && (
+          <div className="top-bar">
+            <div className="top-bar-container">
+              <div className="location">
+                <IconLocation />
+                Envíos a todo el país
+              </div>
+            </div>
+          </div>
+        )}
         <div className="layout-container header-container">
           <Link to="/" className="logo-link">
-          <img src={isWhite ? logo : logo2} alt="BookyHome" className="logo-img" />
+          <img src={isHome ? logo2 : isWhite ? logo : logo2} alt="BookyHome" className="logo-img" />
         </Link>
 
         <button
@@ -320,7 +318,7 @@ function Header({ variant }) {
                   <input
                     id="modal-login-email"
                     type="email"
-                    placeholder="tu@email.com"
+                    placeholder="ejemplo@gmail.com"
                     value={loginForm.email}
                     onChange={e => setLoginForm({ ...loginForm, email: e.target.value })}
                   />
@@ -333,7 +331,7 @@ function Header({ variant }) {
                   <input
                     id="modal-login-password"
                     type={showPass ? 'text' : 'password'}
-                    placeholder="Tu contraseña"
+                    placeholder="Contraseña"
                     value={loginForm.password}
                     onChange={e => setLoginForm({ ...loginForm, password: e.target.value })}
                   />

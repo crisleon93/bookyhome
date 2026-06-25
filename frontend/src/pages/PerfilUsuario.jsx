@@ -141,7 +141,7 @@ function PerfilUsuario() {
                   name="nombre_usuario"
                   value={formData.nombre_usuario}
                   onChange={handleInputChange}
-                  placeholder="Tu nombre"
+                  placeholder="Juan Pérez"
                   required
                 />
               </div>
@@ -153,7 +153,7 @@ function PerfilUsuario() {
                   name="telefono"
                   value={formData.telefono}
                   onChange={handleInputChange}
-                  placeholder="Tu teléfono"
+                  placeholder="3001234567"
                 />
               </div>
 
