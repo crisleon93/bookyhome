@@ -16,12 +16,12 @@ const VINOTINTO = '#7A1E3A';
 const WHITE = '#FFFFFF';
 
 const ICONS = {
-  "Inicio": <IconHome strokeWidth={2.2} />,
-  "Catálogo": <IconBook strokeWidth={2.2} />,
-  "Favoritos": <IconFavorites strokeWidth={2.2} />,
-  "Carrito": <IconCart strokeWidth={2.2} />,
-  "Mis Compras": <IconPackage strokeWidth={2.2} />,
-  "Mi Perfil": <IconUser strokeWidth={2.2} />,
+  "Inicio": <IconHome strokeWidth={2.2} style={{ color: WHITE }} />,
+  "Catálogo": <IconBook strokeWidth={2.2} style={{ color: WHITE }} />,
+  "Favoritos": <IconFavorites strokeWidth={2.2} style={{ color: WHITE }} />,
+  "Carrito": <IconCart strokeWidth={2.2} style={{ color: WHITE }} />,
+  "Mis Compras": <IconPackage strokeWidth={2.2} style={{ color: WHITE }} />,
+  "Mi Perfil": <IconUser strokeWidth={2.2} style={{ color: WHITE }} />,
 };
 
 const MENU_LINKS = [

@@ -27,13 +27,13 @@ const MENU_LINKS = [
 ];
 
 const ICONS = {
-  Inicio: <IconHome strokeWidth={2.2} />,
-  'Mis Libros': <IconBook strokeWidth={2.2} />,
-  'Publicar Libro': <IconPlus strokeWidth={2.2} />,
-  Promociones: <IconTag strokeWidth={2.2} />,
-  Ventas: <IconCart strokeWidth={2.2} />,
-  Pedidos: <IconPackage strokeWidth={2.2} />,
-  Perfil: <IconSettings strokeWidth={2.2} />,
+  Inicio: <IconHome strokeWidth={2.2} style={{ color: WHITE }} />,
+  'Mis Libros': <IconBook strokeWidth={2.2} style={{ color: WHITE }} />,
+  'Publicar Libro': <IconPlus strokeWidth={2.2} style={{ color: WHITE }} />,
+  Promociones: <IconTag strokeWidth={2.2} style={{ color: WHITE }} />,
+  Ventas: <IconCart strokeWidth={2.2} style={{ color: WHITE }} />,
+  Pedidos: <IconPackage strokeWidth={2.2} style={{ color: WHITE }} />,
+  Perfil: <IconSettings strokeWidth={2.2} style={{ color: WHITE }} />,
 };
 
 function SidebarIcon(props) {
