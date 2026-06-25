@@ -140,7 +140,7 @@ function Login() {
                 <input
                   id="email"
                   type="email"
-                  placeholder="tu@email.com"
+                  placeholder="ejemplo@gmail.com"
                   value={email}
                   onChange={e => { setEmail(e.target.value); setErrors(p => ({ ...p, email: '' })) }}
                   className={errors.email ? 'input-error' : ''}
@@ -157,7 +157,7 @@ function Login() {
                 <input
                   id="password"
                   type={showPass ? 'text' : 'password'}
-                  placeholder="Tu contraseña"
+                  placeholder="Contraseña"
                   value={password}
                   onChange={e => { setPassword(e.target.value); setErrors(p => ({ ...p, password: '' })) }}
                   className={errors.password ? 'input-error' : ''}

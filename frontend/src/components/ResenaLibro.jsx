@@ -155,7 +155,7 @@ function ResenaLibro({ idLibro, idUsuario }) {
             <textarea
               value={comentario}
               onChange={(e) => setComentario(e.target.value.slice(0, 500))}
-              placeholder="Comparte tu experiencia con este libro..."
+              placeholder="Comparte la experiencia con este libro..."
               maxLength={500}
               rows="4"
             />

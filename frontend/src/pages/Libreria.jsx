@@ -51,6 +51,20 @@ function Libreria({ isModal = false, onSuccess }) {
 
   const terminosCompletos = aceptoTerminos && aceptoPrivacidad
 
+  const passwordScore = [
+    password.length >= 8,
+    /[A-Z]/.test(password),
+    /[0-9]/.test(password),
+    /[^A-Za-z0-9]/.test(password)
+  ].filter(Boolean).length
+  const passwordStrength = password.length === 0
+    ? { label: 'Completa la contraseña', width: '0%', color: '#ddd' }
+    : passwordScore <= 2
+      ? { label: 'Contraseña débil', width: '33%', color: '#dc2626' }
+      : passwordScore === 3
+        ? { label: 'Contraseña media', width: '66%', color: '#ca8a04' }
+        : { label: 'Contraseña fuerte', width: '100%', color: '#15803d' }
+
   const formReady =
     nombre.trim() &&
     libreria.trim() &&
@@ -185,7 +199,7 @@ function Libreria({ isModal = false, onSuccess }) {
               <input
                 id="nombre"
                 type="text"
-                placeholder="Tu nombre completo"
+                placeholder="Juan Pérez"
                 value={nombre}
                 onChange={e => { setNombre(e.target.value); setError('') }}
               />
@@ -271,7 +285,7 @@ function Libreria({ isModal = false, onSuccess }) {
               <input
                 id="telefono"
                 type="tel"
-                placeholder="Tu teléfono"
+                placeholder="3001234567"
                 value={telefono}
                 onChange={e => { setTelefono(e.target.value); setError('') }}
               />
@@ -286,7 +300,7 @@ function Libreria({ isModal = false, onSuccess }) {
               <input
                 id="email"
                 type="email"
-                placeholder="tu@email.com"
+                placeholder="ejemplo@gmail.com"
                 value={email}
                 onChange={e => { setEmail(e.target.value); setError('') }}
               />
@@ -316,6 +330,13 @@ function Libreria({ isModal = false, onSuccess }) {
                 {showPass ? <IconEyeClosed /> : <IconEyeOpen />}
               </button>
             </div>
+            <div
+              className="password-strength"
+              style={{ '--strength-width': passwordStrength.width, '--strength-color': passwordStrength.color }}
+            >
+              <div className="password-strength__bar"><span /></div>
+              <span className="password-strength__label">{passwordStrength.label}</span>
+            </div>
           </div>
 
           {/* Confirmar Contraseña */}
@@ -326,7 +347,7 @@ function Libreria({ isModal = false, onSuccess }) {
               <input
                 id="confirmPassword"
                 type={showPass ? 'text' : 'password'}
-                placeholder="Repite tu contraseña"
+                placeholder="Repite la contraseña"
                 value={confirmPassword}
                 onChange={e => { setConfirmPassword(e.target.value); setError('') }}
                 onPaste={blockClipboard}

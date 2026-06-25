@@ -92,7 +92,7 @@ function ForgotPassword() {
                 <input
                   id="email"
                   type="email"
-                  placeholder="tu@email.com"
+                  placeholder="ejemplo@gmail.com"
                   value={email}
                   onChange={e => { setEmail(e.target.value); setEmailErr('') }}
                   className={emailErr ? 'input-error' : ''}

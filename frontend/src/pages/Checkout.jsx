@@ -438,7 +438,7 @@ function Checkout() {
                   <label style={{ display: "block", fontSize: "0.85rem", fontWeight: 600, marginBottom: "5px" }}>Nombre del Titular</label>
                   <input
                     type="text"
-                    placeholder="Como aparece en la tarjeta"
+                    placeholder="Juan Pérez"
                     value={cardName}
                     onChange={(e) => { setCardName(e.target.value); setFormErrors(p => ({ ...p, cardName: "" })); }}
                     style={{

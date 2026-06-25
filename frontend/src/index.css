@@ -48,8 +48,9 @@ h3 { font-size: 1.1rem; }
 .top-bar {
   background-color: var(--vinotinto);
   color: var(--blanco);
-  padding: 0.5rem 0;
+  padding: 0.3rem 0;
   font-size: 0.85rem;
+  margin: 0;
 }
 
 .top-bar-container {
@@ -66,6 +67,10 @@ h3 { font-size: 1.1rem; }
   display: flex;
   align-items: center;
   gap: 5px;
+}
+
+.location svg {
+  color: white;
 }
 
 .top-nav a {
@@ -94,13 +99,13 @@ h3 { font-size: 1.1rem; }
    =========================== */
 header {
   display: flex;
-  align-items: center;
+  flex-direction: column;
   background-color: var(--blanco);
   position: sticky;
   top: 0;
   z-index: 100;
   transition: box-shadow 0.3s ease, left 0.25s ease, width 0.25s ease;
-  height: 60px;
+  margin: 0;
 }
 
 #main-header[style] {
@@ -113,6 +118,7 @@ header {
   align-items: center;
   gap: 1.5rem;
   width: 100%;
+  height: 60px;
 }
 
 header.scrolled { box-shadow: 0 2px 20px rgba(122, 30, 58, 0.15); }
@@ -124,6 +130,16 @@ header.scrolled { box-shadow: 0 2px 20px rgba(122, 30, 58, 0.15); }
 .header-white .header-nav-link,
 .header-center .header-nav-link { color: var(--vinotinto); }
 .header-vinotinto .header-nav-link { color: white; }
+
+/* Iconos del header según fondo */
+.header-vinotinto .search-btn svg { color: var(--gris-carbon); }
+.header-white .search-btn svg { color: var(--vinotinto); }
+
+.header-vinotinto .user-access svg { color: white; }
+.header-white .user-access svg { color: var(--vinotinto); }
+
+.header-vinotinto .header-menu-toggle svg { color: white; }
+.header-white .header-menu-toggle svg { color: var(--vinotinto); }
 
 .header-nav {
   display: flex;
@@ -213,6 +229,21 @@ header.scrolled { box-shadow: 0 2px 20px rgba(122, 30, 58, 0.15); }
 }
 
 .search-bar:focus { border-color: var(--vinotinto); }
+
+/* Estilos de búsqueda en header vinotinto */
+.header-vinotinto .search-bar {
+  background: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: var(--gris-carbon);
+}
+
+.header-vinotinto .search-bar::placeholder {
+  color: var(--gris-carbon);
+}
+
+.header-vinotinto .search-bar:focus {
+  border-color: var(--vinotinto);
+}
 
 .search-btn {
   position: absolute;

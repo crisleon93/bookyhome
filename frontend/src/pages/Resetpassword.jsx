@@ -199,7 +199,7 @@ function ResetPassword() {
                   <input
                     id="confirmar"
                     type={showConfirm ? 'text' : 'password'}
-                    placeholder="Repite tu contraseña"
+                    placeholder="Repite la contraseña"
                     value={confirmar}
                     onChange={e => { setConfirmar(e.target.value); setErrors(p => ({ ...p, confirmar: '' })) }}
                     className={errors.confirmar ? 'input-error' : ''}
