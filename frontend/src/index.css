@@ -270,6 +270,14 @@ header.scrolled { box-shadow: 0 2px 20px rgba(122, 30, 58, 0.15); }
   text-decoration: none;
 }
 
+.user-access svg {
+  width: 24px !important;
+  height: 24px !important;
+  flex-shrink: 0 !important;
+  aspect-ratio: 1/1 !important;
+  overflow: visible !important;
+}
+
 .header-actions {
   display: flex;
   align-items: center;
@@ -289,7 +297,7 @@ header.scrolled { box-shadow: 0 2px 20px rgba(122, 30, 58, 0.15); }
    HERO
    =========================== */
 .hero {
-  background: linear-gradient(135deg, var(--vinotinto) 0%, var(--rojo-suave) 100%);
+  background: linear-gradient(135deg, var(--vinotinto) 0%, var(--gris-carbon) 100%);
   color: var(--blanco);
   padding: 2.5rem 0;
 }
@@ -321,7 +329,7 @@ header.scrolled { box-shadow: 0 2px 20px rgba(122, 30, 58, 0.15); }
   line-height: 1.6;
   margin-bottom: 1.5rem;
   color: var(--blanco);
-  opacity: 0.92;
+  opacity: 1;
 }
 
 .hero-buttons {
@@ -469,6 +477,11 @@ a.btn:focus {
 /* ===========================
    ICONOS SVG INLINE
    =========================== */
+/* Evitar deformación de SVGs en contenedores flex */
+svg {
+  flex-shrink: 0;
+}
+
 .icon-top-bar {
   width: 13px;
   height: 13px;
@@ -490,6 +503,8 @@ a.btn:focus {
   height: 24px;
   color: var(--vinotinto);
   margin-bottom: 3px;
+  flex-shrink: 0;
+  aspect-ratio: 1/1;
 }
 
 /* ===========================
@@ -3229,7 +3244,12 @@ body.auth-page {
   }
   .user-access {
     min-width: 0;
-    flex: 1;
+    flex: 0 1 auto;
+  }
+  .user-access svg {
+    width: 24px !important;
+    height: 24px !important;
+    flex-shrink: 0 !important;
   }
   .search-wrapper {
     order: 3;
