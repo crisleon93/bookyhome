@@ -23,6 +23,9 @@ import PublicarLibro from './pages/PublicarLibro';
 import DetalleLibro from './pages/DetalleLibro';
 import AdminDashboard from './pages/AdminDashboard';
 import PerfilUsuario from './pages/PerfilUsuario';
+import Chat from './pages/Chat';
+import Notificaciones from './pages/Notificaciones';
+import Historial from './pages/Historial';
 
 import { getUserRole } from './hooks/useAuth';
 import LegalPage from './pages/LegalPage';
@@ -75,6 +78,10 @@ function MainLayout() {
           <Route path="/carrito" element={<Navigate to="/post-login?seccion=Carrito" replace />} />
           <Route path="/checkout/:orderId" element={<Checkout />} />
           <Route path="/perfil" element={<PerfilUsuario />} />
+          <Route path="/chat" element={<Chat />} />
+          <Route path="/chat/:id_sala" element={<Chat />} />
+          <Route path="/notificaciones" element={<Notificaciones />} />
+          <Route path="/historial" element={<Historial />} />
         </Route>
 
         {/* ── RUTAS EXCLUSIVAS DE VENDEDOR ── */}

@@ -17,6 +17,9 @@ from app.routers import ofertas
 from app.routers.resenas import router as resenas_router
 from app.routers.perfil import router as perfil_router
 from app.routers.catalogo import router as catalogo_router
+from app.routers.chat import router as chat_router
+from app.routers.notificaciones import router as notificaciones_router
+from app.routers.historial_interacciones import router as historial_router
 
 load_dotenv()
 
@@ -47,6 +50,9 @@ app.include_router(ofertas.router, prefix="/ofertas", tags=["ofertas"])
 app.include_router(resenas_router)
 app.include_router(perfil_router)
 app.include_router(catalogo_router)
+app.include_router(chat_router)
+app.include_router(notificaciones_router)
+app.include_router(historial_router)
 
 @app.get("/")
 def root():

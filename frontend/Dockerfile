@@ -20,4 +20,4 @@ COPY . .
 EXPOSE 5173
 
 # 8. El comando final que encenderá el servidor de desarrollo dentro de Docker
-CMD ["pnpm", "run", "dev", "--", "--host"]
+CMD ["pnpm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "8000", "--reload"]

@@ -62,6 +62,7 @@ CREATE TABLE tiendas (
     nombre_tienda VARCHAR(50) NOT NULL,
     direccion VARCHAR(100),
     telefono VARCHAR(50),
+    estado_tienda VARCHAR(50) DEFAULT 'activa',
     fecha_creacion DATE,
     FOREIGN KEY (id_usuario) REFERENCES usuarios(id_usuario)
 );
