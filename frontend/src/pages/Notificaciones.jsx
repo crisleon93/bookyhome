@@ -5,7 +5,7 @@ import { getToken } from "../hooks/useAuth";
 import { notificacionesService } from "../services/notificaciones";
 import "../styles/Notificaciones.css";
 
-export default function Notificaciones() {
+export default function Notificaciones({ embedded = false, onOpenReference = null }) {
   const navigate = useNavigate();
   const token = getToken();
 
@@ -71,23 +71,28 @@ export default function Notificaciones() {
 
   // ============= NAVEGAR A REFERENCIA =============
   const handleClickNotificacion = (notif) => {
-    switch (notif.tipo) {
-      case "mensaje":
-        navigate(`/chat/${notif.referencia_id}`);
-        break;
-      case "resena":
-        navigate(`/catalogo/${notif.referencia_id}`);
-        break;
-      case "oferta":
-        navigate(`/catalogo/${notif.referencia_id}`);
-        break;
-      case "pedido":
-      case "entrega":
-      case "pago":
-        navigate("/perfil");
-        break;
-      default:
-        break;
+    // Si el componente padre maneja la apertura de referencias (ej. dashboard vendedor), usar callback
+    if (onOpenReference) {
+      onOpenReference(notif);
+    } else {
+      switch (notif.tipo) {
+        case "mensaje":
+          navigate(`/chat/${notif.referencia_id}`);
+          break;
+        case "resena":
+          navigate(`/catalogo/${notif.referencia_id}`);
+          break;
+        case "oferta":
+          navigate(`/catalogo/${notif.referencia_id}`);
+          break;
+        case "pedido":
+        case "entrega":
+        case "pago":
+          navigate("/perfil");
+          break;
+        default:
+          break;
+      }
     }
     handleMarcarLeida(notif.id_notificacion);
   };

@@ -20,6 +20,10 @@ import {
   IconLock
 } from "../components/Icons";
 
+import Catalogo from './Catalogo';
+import Chat from './Chat';
+import Notificaciones from './Notificaciones';
+
 // Componente especializado con el SVG profesional para carrito vacío
 const CartEmptyState = ({ onGoToCatalog }) => (
   <div className="cart-empty-state" style={{ textAlign: "center", padding: "50px 0" }}>
@@ -183,7 +187,7 @@ export default function PostLogin() {
       .finally(() => setCheckoutLoading(false));
   };
 
-  const handleGoToCatalog = () => navigate("/catalogo");
+  const handleGoToCatalog = () => handleSelectSection("Catálogo");
 
   const handleSelectSection = (seccion) => {
     setActiveSide(seccion);
@@ -284,6 +288,21 @@ export default function PostLogin() {
               );
             })()}
           </>
+        )}
+
+        {/* ── CATÁLOGO EN DASHBOARD (sin salto de página) ── */}
+        {activeSide === "Catálogo" && (
+          <Catalogo />
+        )}
+
+        {/* ── MENSAJES EN DASHBOARD (sin salto de página) ── */}
+        {activeSide === "Mensajes" && (
+          <Chat />
+        )}
+
+        {/* ── NOTIFICACIONES EN DASHBOARD (sin salto de página) ── */}
+        {activeSide === "Notificaciones" && (
+          <Notificaciones />
         )}
 
         {/* ── CARRITO (FUSIONADO Y OPTIMIZADO) ── */}
