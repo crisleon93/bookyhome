@@ -362,6 +362,225 @@
   padding: 0.6rem 1.2rem;
 }
 
+/* ESTADÍSTICAS DE COMPRAS */
+.estadisticas-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.estadistica-card {
+  background: linear-gradient(135deg, var(--vinotinto) 0%, #9a2a4a 100%);
+  color: white;
+  padding: 1.5rem;
+  border-radius: 12px;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(122, 30, 58, 0.15);
+}
+
+.estadistica-label {
+  margin: 0 0 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  opacity: 0.9;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.estadistica-valor {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 800;
+}
+
+/* CATEGORÍAS FAVORITAS */
+.categorias-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+}
+
+.categoria-card {
+  background: #faf8f6;
+  border: 1px solid #e0dbd4;
+  border-radius: 8px;
+  padding: 1rem;
+  text-align: center;
+  transition: all 0.2s ease;
+}
+
+.categoria-card:hover {
+  border-color: var(--vinotinto);
+  box-shadow: 0 4px 12px rgba(122, 30, 58, 0.1);
+  transform: translateY(-2px);
+}
+
+.categoria-emoji {
+  font-size: 2rem;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.categoria-nombre {
+  margin: 0 0 0.3rem;
+  font-weight: 700;
+  color: var(--vinotinto);
+  font-size: 0.95rem;
+}
+
+.categoria-conteo {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #666;
+}
+
+/* SISTEMA DE FIDELIZACIÓN */
+.fidelizacion-card {
+  background: linear-gradient(135deg, #faf8f6 0%, #f5f0eb 100%);
+  border: 1px solid #e0dbd4;
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+.fidelizacion-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.nivel-badge {
+  padding: 0.5rem 1.2rem;
+  border-radius: 20px;
+  font-size: 1rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.nivel-bronce {
+  background: linear-gradient(135deg, #cd7f32 0%, #b87333 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(205, 127, 50, 0.3);
+}
+
+.nivel-plata {
+  background: linear-gradient(135deg, #c0c0c0 0%, #a8a8a8 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(192, 192, 192, 0.3);
+}
+
+.nivel-oro {
+  background: linear-gradient(135deg, #ffd700 0%, #ffb700 100%);
+  color: #2a2a2a;
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.4);
+}
+
+.puntos-info {
+  text-align: right;
+}
+
+.puntos-valor {
+  margin: 0;
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: var(--vinotinto);
+}
+
+.puntos-label {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.progreso-siguiente {
+  margin-bottom: 1rem;
+}
+
+.progreso-bar {
+  height: 8px;
+  background: #e0dbd4;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progreso-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--vinotinto) 0%, #9a2a4a 100%);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.beneficios-info {
+  padding-top: 1rem;
+  border-top: 1px solid #e0dbd4;
+}
+
+/* DIRECCIONES DE ENVÍO */
+.direcciones-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.direccion-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 1.2rem;
+  background: #faf8f6;
+  border: 1px solid #e0dbd4;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.direccion-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border-color: var(--vinotinto);
+}
+
+.direccion-principal {
+  border: 2px solid var(--vinotinto);
+  background: #fef5f7;
+}
+
+.direccion-info {
+  flex: 1;
+}
+
+.badge-principal {
+  display: inline-block;
+  background: var(--vinotinto);
+  color: white;
+  padding: 0.3rem 0.7rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.5rem;
+}
+
+.direccion-acciones {
+  display: flex;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.direccion-acciones .btn {
+  padding: 0.4rem 0.8rem;
+  font-size: 0.85rem;
+}
+
+.btn-danger {
+  background: #dc2626 !important;
+  color: white !important;
+}
+
+.btn-danger:hover {
+  background: #b91c1c !important;
+}
+
 /* LOADING Y ERROR */
 .perfil-loading,
 .perfil-error {

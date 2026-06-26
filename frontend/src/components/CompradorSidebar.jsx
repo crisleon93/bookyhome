@@ -1,27 +1,29 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
-  IconHome, 
-  IconBook, 
-  IconFavoritesAlt as IconFavorites, 
-  IconCartAlt as IconCart, 
+  IconStoreAlt as IconHome, 
+  IconBooks as IconBook, 
+  IconStar as IconFavorites, 
+  IconCart, 
   IconPackage, 
-  IconUser,
+  IconSettings as IconUser,
   IconChevronLeft,
   IconMenu,
-  IconLogOut
+  IconLogOut,
+  IconMapPin
 } from "./Icons";
 
 const VINOTINTO = '#7A1E3A';
 const WHITE = '#FFFFFF';
 
 const ICONS = {
-  "Inicio": <IconHome strokeWidth={2.2} style={{ color: WHITE }} />,
-  "Catálogo": <IconBook strokeWidth={2.2} style={{ color: WHITE }} />,
-  "Favoritos": <IconFavorites strokeWidth={2.2} style={{ color: WHITE }} />,
-  "Carrito": <IconCart strokeWidth={2.2} style={{ color: WHITE }} />,
-  "Mis Compras": <IconPackage strokeWidth={2.2} style={{ color: WHITE }} />,
-  "Mi Perfil": <IconUser strokeWidth={2.2} style={{ color: WHITE }} />,
+  "Inicio": <IconHome width={20} height={20} strokeWidth={2} style={{ color: WHITE }} />,
+  "Catálogo": <IconBook width={20} height={20} strokeWidth={2} style={{ color: WHITE }} />,
+  "Favoritos": <IconFavorites width={20} height={20} strokeWidth={2} style={{ color: WHITE }} />,
+  "Carrito": <IconCart width={20} height={20} strokeWidth={2} style={{ color: WHITE }} />,
+  "Mis Compras": <IconPackage width={20} height={20} strokeWidth={2} style={{ color: WHITE }} />,
+  "Mi Perfil": <IconUser width={20} height={20} strokeWidth={2} style={{ color: WHITE }} />,
+  "Direcciones": <IconMapPin width={20} height={20} strokeWidth={2} style={{ color: WHITE }} />,
 };
 
 const MENU_LINKS = [
@@ -30,6 +32,7 @@ const MENU_LINKS = [
   { name: "Favoritos", label: "Favoritos" },
   { name: "Carrito", label: "Carrito" },
   { name: "Mis Compras", label: "Mis compras" },
+  { name: "Direcciones", label: "Direcciones" },
   { name: "Mi Perfil", label: "Perfil" },
 ];
 
@@ -54,7 +57,7 @@ export default function CompradorSidebar({ userName, userEmail, activeSide, onSe
   return (
     <aside className={`dashboard-sidebar ${sidebarOpen ? '' : 'collapsed'}`} style={{
       width: sidebarOpen ? '250px' : '76px',
-      position: 'fixed', top: '1px', left: 0, zIndex: 60,
+      position: 'fixed', top: '0px', left: 0, zIndex: 60,
       height: 'calc(100vh - 1px)',
       background: VINOTINTO, color: WHITE,
       padding: '24px 14px', display: 'flex', flexDirection: 'column', gap: '6px',

@@ -5,6 +5,20 @@ import { getUsuarios, getCarrito, checkoutCarrito, getOrdenes } from "../service
 import CompradorSidebar from "../components/CompradorSidebar";
 import { getUserRole } from "../hooks/useAuth";
 import { notify } from "../components/ToastProvider";
+import {
+  IconChartBar,
+  IconBooks,
+  IconBook,
+  IconStar,
+  IconSettings,
+  IconFavorites,
+  IconLocation,
+  IconCart,
+  IconPackage,
+  IconUser,
+  IconCheck,
+  IconLock
+} from "../components/Icons";
 
 // Componente especializado con el SVG profesional para carrito vacío
 const CartEmptyState = ({ onGoToCatalog }) => (
@@ -41,6 +55,20 @@ export default function PostLogin() {
 
   const [ordenes, setOrdenes]               = useState([]);
   const [ordenesLoading, setOrdenesLoading] = useState(false);
+
+  const [estadisticas, setEstadisticas] = useState(null);
+  const [categoriasFavoritas, setCategoriasFavoritas] = useState([]);
+  const [nivelFidelizacion, setNivelFidelizacion] = useState(null);
+  const [direcciones, setDirecciones] = useState([]);
+  const [mostrarFormDireccion, setMostrarFormDireccion] = useState(false);
+  const [direccionForm, setDireccionForm] = useState({
+    direccion: '',
+    ciudad: '',
+    departamento: '',
+    codigo_postal: '',
+    es_principal: false
+  });
+  const [guardando, setGuardando] = useState(false);
 
   // ========================
   // Hooks de navegación y ubicación
@@ -102,6 +130,38 @@ export default function PostLogin() {
     }
   }, [activeSide]);
 
+  const cargarDatosPerfil = async () => {
+    try {
+      // Cargar estadísticas
+      try {
+        const resEstadisticas = await getUsuarios();
+        const usuario = resEstadisticas.data.find((u) => u.id_usuario === userId);
+        if (usuario) {
+          setEstadisticas({ total_gastado: 0, num_compras: 0, libro_mas_comprado: null });
+        }
+      } catch {
+        setEstadisticas({ total_gastado: 0, num_compras: 0, libro_mas_comprado: null });
+      }
+
+      // Cargar categorías favoritas (simulado)
+      setCategoriasFavoritas([]);
+
+      // Cargar nivel de fidelización (simulado)
+      setNivelFidelizacion({ nivel: 'Bronce', puntos: 0, siguiente_nivel: 'Plata', puntos_para_siguiente: 5 });
+
+      // Cargar direcciones (simulado)
+      setDirecciones([]);
+    } catch (error) {
+      console.error('Error cargando datos del perfil:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (activeSide === "Mi Perfil" || activeSide === "Direcciones") {
+      cargarDatosPerfil();
+    }
+  }, [activeSide, userId]);
+
   // ========================
   // Manejadores de acciones
   // ========================
@@ -152,7 +212,7 @@ export default function PostLogin() {
         {activeSide === "Inicio" && (
           <>
             <div className="welcome-card">
-              <h1>Bienvenido de nuevo, {userName.split(" ")[0]} 👋</h1>
+              <h1>Bienvenido de nuevo, {userName.split(" ")[0]}</h1>
               <p>Esta es tu área personal de BookyHome.</p>
             </div>
 
@@ -164,9 +224,10 @@ export default function PostLogin() {
               if (favoritos.length === 0) {
                 return (
                   <div className="empty-state">
-                    <p>Agrega libros a favoritos para recibir recomendaciones personalizadas 💡</p>
-                    <button className="btn btn-vinotinto btn-catalog" onClick={handleGoToCatalog}>
-                      📚 Explorar catálogo
+                    <p>Agrega libros a favoritos para recibir recomendaciones personalizadas</p>
+                    <button className="btn btn-vinotinto btn-catalog" onClick={handleGoToCatalog} style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
+                      <IconBooks width={18} height={18} strokeWidth={2} style={{ color: 'white' }} />
+                      Explorar catálogo
                     </button>
                   </div>
                 );
@@ -175,7 +236,7 @@ export default function PostLogin() {
               return (
                 <div className="pl-card" style={{ padding: '2rem' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
-                    <span style={{ fontSize: 28 }}>✨</span>
+                    <IconStar width={28} height={28} strokeWidth={2} style={{ color: '#7A1E3A' }} />
                     <div>
                       <h2 style={{ margin: 0 }}>Recomendados para ti</h2>
                       <p style={{ margin: 0, color: '#888', fontSize: '0.85rem' }}>
@@ -188,7 +249,9 @@ export default function PostLogin() {
                     <div key={libro.id_libro} className="pl-order-row" style={{ cursor: 'pointer' }}
                       onClick={() => navigate(`/catalogo/${libro.id_libro}`)}>
                       <div className="pl-order-left">
-                        <span className="pl-order-emoji">📖</span>
+                        <span className="pl-order-emoji" style={{ display: 'flex', alignItems: 'center' }}>
+                          <IconBook width={24} height={24} strokeWidth={2} style={{ color: '#7A1E3A' }} />
+                        </span>
                         <div>
                           <p className="pl-order-title">{libro.titulo}</p>
                           <p className="pl-order-meta">
@@ -202,17 +265,19 @@ export default function PostLogin() {
                         </span>
                         <span style={{
                           background: '#6b1a2a', color: 'white', padding: '4px 10px',
-                          borderRadius: '20px', fontSize: '0.75rem', fontWeight: 600, marginLeft: '10px'
+                          borderRadius: '20px', fontSize: '0.75rem', fontWeight: 600, marginLeft: '10px', display: 'flex', alignItems: 'center', gap: '4px'
                         }}>
-                          ❤️ Favorito
+                          <IconFavorites width={12} height={12} strokeWidth={2} style={{ color: 'white' }} />
+                          Favorito
                         </span>
                       </div>
                     </div>
                   ))}
 
                   <div style={{ marginTop: '16px', textAlign: 'center' }}>
-                    <button className="btn btn-vinotinto btn-catalog" onClick={handleGoToCatalog}>
-                      📚 Ver más libros
+                    <button className="btn btn-vinotinto btn-catalog" onClick={handleGoToCatalog} style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
+                      <IconBooks width={18} height={18} strokeWidth={2} style={{ color: 'white' }} />
+                      Ver más libros
                     </button>
                   </div>
                 </div>
@@ -226,7 +291,7 @@ export default function PostLogin() {
           <>
             <div className="pl-card" style={{ padding: "2.5rem 2rem", marginBottom: 24 }}>
               <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                <span style={{ fontSize: 28 }}>🛒</span>
+                <IconCart width={28} height={28} strokeWidth={2} style={{ color: '#7A1E3A' }} />
                 <h2 style={{ margin: 0 }}>Mi Carrito</h2>
               </div>
             </div>
@@ -298,7 +363,7 @@ export default function PostLogin() {
 
                   {checkoutError && (
                     <p style={{ color: "var(--rojo-suave)", fontSize: 14, margin: 0, textAlign: "right" }}>
-                      ⚠️ {checkoutError}
+                      {checkoutError}
                     </p>
                   )}
 
@@ -306,9 +371,9 @@ export default function PostLogin() {
                     className="btn btn-vinotinto"
                     onClick={handleCheckout}
                     disabled={checkoutLoading}
-                    style={{ width: "auto", minWidth: 250, cursor: checkoutLoading ? "not-allowed" : "pointer", opacity: checkoutLoading ? 0.7 : 1 }}
+                    style={{ width: "auto", minWidth: 250, cursor: checkoutLoading ? "not-allowed" : "pointer", opacity: checkoutLoading ? 0.7 : 1, display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}
                   >
-                    {checkoutLoading ? "Procesando..." : "💳 Proceder al Pago"}
+                    {checkoutLoading ? "Procesando..." : <><IconCart width={18} height={18} strokeWidth={2} style={{ color: 'white' }} /> Proceder al Pago</>}
                   </button>
 
                   <button
@@ -318,12 +383,13 @@ export default function PostLogin() {
                       color: "var(--vinotinto)", borderRadius: "8px", padding: "10px 20px",
                       fontWeight: 700, fontSize: "0.85rem", cursor: "pointer",
                       fontFamily: "'Montserrat', sans-serif", transition: "all 0.2s",
-                      width: "auto", minWidth: 250,
+                      width: "auto", minWidth: 250, display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center'
                     }}
                     onMouseEnter={(e) => { e.target.style.background = "#f5eaed"; }}
                     onMouseLeave={(e) => { e.target.style.background = "none"; }}
                   >
-                    📚 Seguir comprando
+                    <IconBooks width={18} height={18} strokeWidth={2} style={{ color: '#7A1E3A' }} />
+                    Seguir comprando
                   </button>
                 </div>
               </div>
@@ -336,7 +402,7 @@ export default function PostLogin() {
           <>
             <div className="pl-card" style={{ padding: "2.5rem 2rem", marginBottom: 24 }}>
               <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                <span style={{ fontSize: 28 }}>📦</span>
+                <IconPackage width={28} height={28} strokeWidth={2} style={{ color: '#7A1E3A' }} />
                 <h2 style={{ margin: 0 }}>Mis Compras</h2>
               </div>
             </div>
@@ -350,8 +416,8 @@ export default function PostLogin() {
                 {ordenes.map((orden) => (
                   <div key={orden.id_orden} className="pl-order-row">
                     <div className="pl-order-left">
-                      <span className="pl-order-emoji">
-                        {orden.estado === "pagado" ? "✅" : "⏳"}
+                      <span className="pl-order-emoji" style={{ display: 'flex', alignItems: 'center' }}>
+                        {orden.estado === "pagado" ? <IconCheck width={20} height={20} strokeWidth={2} style={{ color: 'green' }} /> : <IconLock width={20} height={20} strokeWidth={2} style={{ color: '#7A1E3A' }} />}
                       </span>
                       <div>
                         <p className="pl-order-title">Orden #{orden.id_orden}</p>
@@ -384,7 +450,7 @@ export default function PostLogin() {
           <>
             <div className="pl-card" style={{ padding: "2.5rem 2rem", marginBottom: 24 }}>
               <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                <span style={{ fontSize: 28 }}>❤️</span>
+                <IconFavorites width={28} height={28} strokeWidth={2} style={{ color: '#7A1E3A' }} />
                 <h2 style={{ margin: 0 }}>Mis Favoritos</h2>
               </div>
             </div>
@@ -394,8 +460,9 @@ export default function PostLogin() {
               return favoritos.length === 0 ? (
                 <div className="empty-state">
                   <p>No tienes libros en favoritos. ¡Agrega algunos desde el catálogo!</p>
-                  <button className="btn btn-vinotinto btn-catalog" onClick={handleGoToCatalog}>
-                    📚 Ir al catálogo
+                  <button className="btn btn-vinotinto btn-catalog" onClick={handleGoToCatalog} style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
+                    <IconBooks width={18} height={18} strokeWidth={2} style={{ color: 'white' }} />
+                    Ir al catálogo
                   </button>
                 </div>
               ) : (
@@ -403,7 +470,9 @@ export default function PostLogin() {
                   {favoritos.map((libro) => (
                     <div key={libro.id_libro} className="pl-order-row">
                       <div className="pl-order-left">
-                        <span className="pl-order-emoji">📖</span>
+                        <span className="pl-order-emoji" style={{ display: 'flex', alignItems: 'center' }}>
+                          <IconBook width={24} height={24} strokeWidth={2} style={{ color: '#7A1E3A' }} />
+                        </span>
                         <div>
                           <p className="pl-order-title">{libro.titulo}</p>
                           <p className="pl-order-meta">
@@ -429,12 +498,94 @@ export default function PostLogin() {
           <>
             <div className="pl-card" style={{ padding: "2.5rem 2rem", marginBottom: 24 }}>
               <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                <span style={{ fontSize: 28 }}>👤</span>
+                <IconUser width={28} height={28} strokeWidth={2} style={{ color: '#7A1E3A' }} />
                 <h2 style={{ margin: 0 }}>Mi Perfil</h2>
               </div>
             </div>
 
+            {/* Estadísticas de Compras */}
+            <div className="pl-card" style={{ padding: "2rem", marginBottom: 20 }}>
+              <h3 style={{ margin: "0 0 1rem 0", color: "var(--vinotinto)", fontSize: "1.2rem", display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <IconChartBar width={24} height={24} strokeWidth={2} style={{ color: '#7A1E3A' }} />
+                Estadísticas de Compras
+              </h3>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px" }}>
+                <div style={{ background: "#faf8f6", padding: "1.5rem", borderRadius: "8px", border: "1px solid #e0dbd4" }}>
+                  <p style={{ margin: 0, color: "#666", fontSize: "0.9rem" }}>Total Gastado</p>
+                  <p style={{ margin: "0.5rem 0 0 0", fontSize: "1.5rem", fontWeight: 700, color: "var(--vinotinto)" }}>
+                    ${estadisticas?.total_gastado?.toLocaleString('es-CO') || '0'} COP
+                  </p>
+                </div>
+                <div style={{ background: "#faf8f6", padding: "1.5rem", borderRadius: "8px", border: "1px solid #e0dbd4" }}>
+                  <p style={{ margin: 0, color: "#666", fontSize: "0.9rem" }}>Número de Compras</p>
+                  <p style={{ margin: "0.5rem 0 0 0", fontSize: "1.5rem", fontWeight: 700, color: "var(--vinotinto)" }}>
+                    {estadisticas?.num_compras || 0}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Categorías Favoritas */}
+            <div className="pl-card" style={{ padding: "2rem", marginBottom: 20 }}>
+              <h3 style={{ margin: "0 0 0.5rem 0", color: "var(--vinotinto)", fontSize: "1.2rem", display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <IconBooks width={24} height={24} strokeWidth={2} style={{ color: '#7A1E3A' }} />
+                Categorías Favoritas
+              </h3>
+              <p style={{ color: "#666", fontSize: "0.9rem", marginBottom: "1rem" }}>Basado en tu historial de compras</p>
+              {categoriasFavoritas.length > 0 ? (
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: "12px" }}>
+                  {categoriasFavoritas.map((cat, index) => (
+                    <div key={index} style={{ background: "#faf8f6", padding: "1rem", borderRadius: "8px", border: "1px solid #e0dbd4", textAlign: "center" }}>
+                      <span style={{ fontSize: "1.5rem", display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <IconBook width={24} height={24} strokeWidth={2} style={{ color: '#7A1E3A' }} />
+                      </span>
+                      <p style={{ margin: "0.5rem 0 0 0", fontWeight: 600 }}>{cat.nombre}</p>
+                      <p style={{ margin: 0, fontSize: "0.85rem", color: "#666" }}>{cat.conteo} compra{cat.conteo > 1 ? 's' : ''}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div style={{ padding: "20px", textAlign: "center", color: "#888" }}>
+                  <p>Aún no tienes categorías favoritas. Compra libros para ver tus preferencias aquí.</p>
+                </div>
+              )}
+            </div>
+
+            {/* Nivel de Fidelización */}
+            <div className="pl-card" style={{ padding: "2rem", marginBottom: 20 }}>
+              <h3 style={{ margin: "0 0 1rem 0", color: "var(--vinotinto)", fontSize: "1.2rem", display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <IconStar width={24} height={24} strokeWidth={2} style={{ color: '#7A1E3A' }} />
+                Nivel de Fidelización
+              </h3>
+              <div style={{ background: "linear-gradient(135deg, #faf8f6 0%, #f5f0eb 100%)", border: "1px solid #e0dbd4", borderRadius: "12px", padding: "1.5rem" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
+                  <div style={{ padding: "0.5rem 1.2rem", borderRadius: "20px", fontSize: "1rem", fontWeight: 800, textTransform: "uppercase", letterSpacing: "1px", background: "linear-gradient(135deg, #cd7f32 0%, #b87333 100%)", color: "white", boxShadow: "0 4px 12px rgba(205, 127, 50, 0.3)" }}>
+                    {nivelFidelizacion?.nivel || 'Bronce'}
+                  </div>
+                  <div style={{ textAlign: "right" }}>
+                    <p style={{ margin: 0, fontSize: "1.8rem", fontWeight: 700, color: "var(--vinotinto)" }}>{nivelFidelizacion?.puntos || 0} puntos</p>
+                    <p style={{ margin: 0, fontSize: "0.85rem", color: "#666" }}>Puntos acumulados</p>
+                  </div>
+                </div>
+                <div style={{ marginBottom: "1rem" }}>
+                  <p style={{ fontSize: "0.85rem", color: "#666", marginBottom: "0.5rem" }}>
+                    {nivelFidelizacion?.puntos_para_siguiente > 0
+                      ? `${nivelFidelizacion.puntos_para_siguiente} puntos para ${nivelFidelizacion.siguiente_nivel}`
+                      : "5 puntos para Plata"}
+                  </p>
+                  <div style={{ height: "8px", background: "#e0dbd4", borderRadius: "4px", overflow: "hidden" }}>
+                    <div style={{ height: "100%", background: "linear-gradient(90deg, var(--vinotinto) 0%, #9a2a4a 100%)", borderRadius: "4px", width: "0%" }} />
+                  </div>
+                </div>
+                <div style={{ paddingTop: "1rem", borderTop: "1px solid #e0dbd4" }}>
+                  <p style={{ fontSize: "0.85rem", color: "#666", margin: 0 }}>Sigue comprando para desbloquear beneficios exclusivos</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Información Personal */}
             <div className="pl-card" style={{ padding: "2rem" }}>
+              <h3 style={{ margin: "0 0 1rem 0", color: "var(--vinotinto)", fontSize: "1.2rem" }}>Información Personal</h3>
               <div style={{ display: "flex", flexDirection: "column", gap: "16px", maxWidth: "500px" }}>
                 <div>
                   <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>Nombre</label>
@@ -463,20 +614,6 @@ export default function PostLogin() {
                   />
                 </div>
 
-                <div>
-                  <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>Rol</label>
-                  <input
-                    type="text"
-                    value={getUserRole() || "usuario"}
-                    readOnly
-                    style={{
-                      width: "100%", padding: "10px 14px", borderRadius: "8px",
-                      border: "1px solid #ddd", fontSize: "0.95rem", background: "#f5f5f5",
-                      fontFamily: "Montserrat, sans-serif", color: "#888"
-                    }}
-                  />
-                </div>
-
                 <button
                   style={{
                     background: "var(--vinotinto)", color: "white", border: "none",
@@ -490,6 +627,173 @@ export default function PostLogin() {
                 </button>
               </div>
             </div>
+          </>
+        )}
+
+        {/* ── DIRECCIONES ── */}
+        {activeSide === "Direcciones" && (
+          <>
+            <div className="pl-card" style={{ padding: "2.5rem 2rem", marginBottom: 24 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                <IconLocation width={28} height={28} strokeWidth={2} style={{ color: '#7A1E3A' }} />
+                <h2 style={{ margin: 0 }}>Direcciones de Envío</h2>
+              </div>
+            </div>
+
+            {mostrarFormDireccion ? (
+              <div className="pl-card" style={{ padding: "2rem", marginBottom: 20 }}>
+                <h3 style={{ margin: "0 0 1rem 0", color: "var(--vinotinto)", fontSize: "1.2rem" }}>Agregar Nueva Dirección</h3>
+                <div style={{ display: "flex", flexDirection: "column", gap: "16px", maxWidth: "500px" }}>
+                  <div>
+                    <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>Dirección</label>
+                    <input
+                      type="text"
+                      value={direccionForm.direccion}
+                      onChange={(e) => setDireccionForm({...direccionForm, direccion: e.target.value})}
+                      style={{
+                        width: "100%", padding: "10px 14px", borderRadius: "8px",
+                        border: "1px solid #ddd", fontSize: "0.95rem", fontFamily: "Montserrat, sans-serif"
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>Ciudad</label>
+                    <input
+                      type="text"
+                      value={direccionForm.ciudad}
+                      onChange={(e) => setDireccionForm({...direccionForm, ciudad: e.target.value})}
+                      style={{
+                        width: "100%", padding: "10px 14px", borderRadius: "8px",
+                        border: "1px solid #ddd", fontSize: "0.95rem", fontFamily: "Montserrat, sans-serif"
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>Departamento</label>
+                    <input
+                      type="text"
+                      value={direccionForm.departamento}
+                      onChange={(e) => setDireccionForm({...direccionForm, departamento: e.target.value})}
+                      style={{
+                        width: "100%", padding: "10px 14px", borderRadius: "8px",
+                        border: "1px solid #ddd", fontSize: "0.95rem", fontFamily: "Montserrat, sans-serif"
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>Código Postal</label>
+                    <input
+                      type="text"
+                      value={direccionForm.codigo_postal}
+                      onChange={(e) => setDireccionForm({...direccionForm, codigo_postal: e.target.value})}
+                      style={{
+                        width: "100%", padding: "10px 14px", borderRadius: "8px",
+                        border: "1px solid #ddd", fontSize: "0.95rem", fontFamily: "Montserrat, sans-serif"
+                      }}
+                    />
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <input
+                      type="checkbox"
+                      checked={direccionForm.es_principal}
+                      onChange={(e) => setDireccionForm({...direccionForm, es_principal: e.target.checked})}
+                    />
+                    <label style={{ fontWeight: 600, color: "#444", margin: 0 }}>Marcar como dirección principal</label>
+                  </div>
+                  <div style={{ display: "flex", gap: "12px", marginTop: "8px" }}>
+                    <button
+                      style={{
+                        background: "var(--vinotinto)", color: "white", border: "none",
+                        padding: "12px 24px", borderRadius: "8px", fontWeight: 700,
+                        fontSize: "0.95rem", cursor: "pointer",
+                        fontFamily: "Montserrat, sans-serif"
+                      }}
+                      onClick={() => {
+                        notify("Dirección agregada (simulado)", "success");
+                        setMostrarFormDireccion(false);
+                        setDireccionForm({ direccion: '', ciudad: '', departamento: '', codigo_postal: '', es_principal: false });
+                      }}
+                    >
+                      Guardar Dirección
+                    </button>
+                    <button
+                      style={{
+                        background: "none", border: "1.5px solid var(--vinotinto)",
+                        color: "var(--vinotinto)", borderRadius: "8px", padding: "12px 24px",
+                        fontWeight: 700, fontSize: "0.95rem", cursor: "pointer",
+                        fontFamily: "Montserrat, sans-serif"
+                      }}
+                      onClick={() => {
+                        setMostrarFormDireccion(false);
+                        setDireccionForm({ direccion: '', ciudad: '', departamento: '', codigo_postal: '', es_principal: false });
+                      }}
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <button
+                style={{
+                  background: "var(--vinotinto)", color: "white", border: "none",
+                  padding: "12px 24px", borderRadius: "8px", fontWeight: 700,
+                  fontSize: "0.95rem", cursor: "pointer", marginBottom: 20,
+                  fontFamily: "Montserrat, sans-serif"
+                }}
+                onClick={() => setMostrarFormDireccion(true)}
+              >
+                + Agregar Nueva Dirección
+              </button>
+            )}
+
+            {direcciones.length === 0 ? (
+              <div className="pl-card" style={{ padding: "40px", textAlign: "center" }}>
+                <p style={{ fontWeight: 700, color: "#444", marginBottom: "6px" }}>No tienes direcciones guardadas</p>
+                <p style={{ fontSize: "0.85rem", color: "#888", marginBottom: "12px" }}>Agrega una dirección para envíos más rápidos</p>
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                {direcciones.map((dir) => (
+                  <div key={dir.id_direccion} className="pl-card" style={{ padding: "1.5rem", border: dir.es_principal ? "2px solid var(--vinotinto)" : "1px solid #e0dbd4" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                      <div>
+                        {dir.es_principal && <span style={{ background: "var(--vinotinto)", color: "white", padding: "4px 10px", borderRadius: "12px", fontSize: "0.75rem", fontWeight: 600, display: "inline-block", marginBottom: "8px" }}>Principal</span>}
+                        <p style={{ margin: "4px 0", fontWeight: 600 }}>{dir.direccion}</p>
+                        <p style={{ margin: "2px 0", color: "#666" }}>{dir.ciudad}{dir.departamento ? `, ${dir.departamento}` : ''}</p>
+                        {dir.codigo_postal && <p style={{ margin: "2px 0", color: "#888", fontSize: "0.85rem" }}>CP: {dir.codigo_postal}</p>}
+                      </div>
+                      <div style={{ display: "flex", gap: "8px" }}>
+                        {!dir.es_principal && (
+                          <button
+                            style={{
+                              background: "var(--vinotinto)", color: "white", border: "none",
+                              padding: "8px 16px", borderRadius: "6px", fontWeight: 600,
+                              fontSize: "0.85rem", cursor: "pointer",
+                              fontFamily: "Montserrat, sans-serif"
+                            }}
+                            onClick={() => notify("Dirección principal actualizada (simulado)", "success")}
+                          >
+                            Hacer Principal
+                          </button>
+                        )}
+                        <button
+                          style={{
+                            background: "#dc2626", color: "white", border: "none",
+                            padding: "8px 16px", borderRadius: "6px", fontWeight: 600,
+                            fontSize: "0.85rem", cursor: "pointer",
+                            fontFamily: "Montserrat, sans-serif"
+                          }}
+                          onClick={() => notify("Dirección eliminada (simulado)", "success")}
+                        >
+                          Eliminar
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </>
         )}
 
@@ -544,7 +848,7 @@ export default function PostLogin() {
         )}
 
         {/* ── OTRAS SECCIONES ── */}
-        {!["Inicio", "Carrito", "Mis Compras", "Favoritos", "Mi Perfil", "Configuración"].includes(activeSide) && (
+        {!["Inicio", "Carrito", "Mis Compras", "Favoritos", "Mi Perfil", "Direcciones", "Configuración"].includes(activeSide) && (
           <div className="welcome-card">
             <h1>{activeSide}</h1>
             <p>Esta sección estará disponible próximamente.</p>
