@@ -6,7 +6,8 @@ import {
   IconStar as IconFavorites, 
   IconCart, 
   IconPackage, 
-  IconSettings as IconUser,
+  IconUser,
+  IconSettings,
   IconChevronLeft,
   IconMenu,
   IconLogOut,
@@ -24,6 +25,7 @@ const ICONS = {
   "Mis Compras": <IconPackage width={20} height={20} strokeWidth={2} style={{ color: WHITE }} />,
   "Mi Perfil": <IconUser width={20} height={20} strokeWidth={2} style={{ color: WHITE }} />,
   "Direcciones": <IconMapPin width={20} height={20} strokeWidth={2} style={{ color: WHITE }} />,
+  "Configuración": <IconSettings width={20} height={20} strokeWidth={2} style={{ color: WHITE }} />,
 };
 
 const MENU_LINKS = [
@@ -34,6 +36,7 @@ const MENU_LINKS = [
   { name: "Mis Compras", label: "Mis compras" },
   { name: "Direcciones", label: "Direcciones" },
   { name: "Mi Perfil", label: "Perfil" },
+  { name: "Configuración", label: "Configuración" },
 ];
 
 function SidebarIcon(props) {
@@ -106,13 +109,7 @@ export default function CompradorSidebar({ userName, userEmail, activeSide, onSe
         return (
           <button
             key={item.name}
-            onClick={() => {
-              if (item.name === "Catálogo") {
-                navigate("/catalogo");
-              } else {
-                onSelect(item.name);
-              }
-            }}
+            onClick={() => onSelect(item.name)}
             title={!sidebarOpen ? item.label : undefined}
             style={{
               background: active ? 'rgba(255,255,255,0.18)' : 'none',
@@ -133,7 +130,7 @@ export default function CompradorSidebar({ userName, userEmail, activeSide, onSe
           </button>
         );
       })}
-
+      
       {/* Logout */}
       <button
         onClick={() => {
