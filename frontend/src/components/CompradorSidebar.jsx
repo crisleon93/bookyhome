@@ -11,8 +11,12 @@ import {
   IconChevronLeft,
   IconMenu,
   IconLogOut,
-  IconMapPin
+  IconMapPin,
+  IconMail,
+  IconPhone
 } from "./Icons";
+import { notificacionesService } from '../services/notificaciones';
+import { chatService } from '../services/chat';
 
 const VINOTINTO = '#7A1E3A';
 const WHITE = '#FFFFFF';
@@ -25,6 +29,8 @@ const ICONS = {
   "Mis Compras": <IconPackage width={20} height={20} strokeWidth={2} style={{ color: WHITE }} />,
   "Mi Perfil": <IconUser width={20} height={20} strokeWidth={2} style={{ color: WHITE }} />,
   "Direcciones": <IconMapPin width={20} height={20} strokeWidth={2} style={{ color: WHITE }} />,
+  "Mensajes": <IconMail width={20} height={20} strokeWidth={2} style={{ color: WHITE }} />,
+  "Notificaciones": <IconPhone width={20} height={20} strokeWidth={2} style={{ color: WHITE }} />,
   "Configuración": <IconSettings width={20} height={20} strokeWidth={2} style={{ color: WHITE }} />,
 };
 
@@ -35,6 +41,8 @@ const MENU_LINKS = [
   { name: "Carrito", label: "Carrito" },
   { name: "Mis Compras", label: "Mis compras" },
   { name: "Direcciones", label: "Direcciones" },
+  { name: "Mensajes", label: "Mensajes" },
+  { name: "Notificaciones", label: "Notificaciones" },
   { name: "Mi Perfil", label: "Perfil" },
   { name: "Configuración", label: "Configuración" },
 ];
@@ -49,6 +57,28 @@ function SidebarIcon(props) {
 export default function CompradorSidebar({ userName, userEmail, activeSide, onSelect }) {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [noLeidosNotif, setNoLeidosNotif] = useState(0);
+  const [noLeidosMensajes, setNoLeidosMensajes] = useState(0);
+
+  useEffect(() => {
+    let mounted = true;
+    const cargar = async () => {
+      try {
+        const notifData = await notificacionesService.obtener(false, 1, 0);
+        if (!mounted) return;
+        setNoLeidosNotif(notifData.no_leidas || 0);
+
+        const salasData = await chatService.getSalas();
+        const totalNo = (salasData.salas || []).reduce((acc, s) => acc + (s.no_leidos || 0), 0);
+        setNoLeidosMensajes(totalNo);
+      } catch (err) {
+        console.error('Error contadores sidebar comprador', err);
+      }
+    };
+    cargar();
+    const iv = setInterval(cargar, 10000);
+    return () => { mounted = false; clearInterval(iv); };
+  }, []);
 
   useEffect(() => {
     document.documentElement.style.setProperty('--dashboard-sidebar-width', sidebarOpen ? '250px' : '76px');
@@ -109,7 +139,21 @@ export default function CompradorSidebar({ userName, userEmail, activeSide, onSe
         return (
           <button
             key={item.name}
-            onClick={() => onSelect(item.name)}
+            onClick={() => {
+              // Preferir onSelect cuando el dashboard controla la selección (evita salto de página)
+              if (onSelect) {
+                onSelect(item.name);
+                return;
+              }
+              // Fallback: navegar a rutas externas
+              if (item.path) {
+                navigate(item.path);
+                return;
+              }
+              if (item.name === "Catálogo") {
+                navigate("/catalogo");
+              }
+            }}
             title={!sidebarOpen ? item.label : undefined}
             style={{
               background: active ? 'rgba(255,255,255,0.18)' : 'none',
@@ -123,10 +167,22 @@ export default function CompradorSidebar({ userName, userEmail, activeSide, onSe
               transition: 'background 0.15s ease',
             }}
           >
-            <span style={{ display: 'flex', flexShrink: 0 }}>
+            <span style={{ display: 'flex', flexShrink: 0, alignItems: 'center' }}>
               {ICONS[item.name]}
             </span>
-            {sidebarOpen && <span>{item.label}</span>}
+            {sidebarOpen && (
+              <span style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1 }}>
+                <span style={{ flex: 1 }}>{item.label}</span>
+                <span style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                  {item.name === 'Notificaciones' && noLeidosNotif > 0 && (
+                    <span style={{ background: '#FFC107', color: '#000', borderRadius: 12, padding: '2px 8px', fontSize: 12, fontWeight: 700 }}>{noLeidosNotif}</span>
+                  )}
+                  {item.name === 'Mensajes' && noLeidosMensajes > 0 && (
+                    <span style={{ background: '#F87171', color: '#fff', borderRadius: 12, padding: '2px 8px', fontSize: 12, fontWeight: 700 }}>{noLeidosMensajes}</span>
+                  )}
+                </span>
+              </span>
+            )}
           </button>
         );
       })}

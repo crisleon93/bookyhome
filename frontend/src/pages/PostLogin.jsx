@@ -22,6 +22,10 @@ import {
   IconLock
 } from "../components/Icons";
 
+import Catalogo from './Catalogo';
+import Chat from './Chat';
+import Notificaciones from './Notificaciones';
+
 // Componente especializado con el SVG profesional para carrito vacío
 const CartEmptyState = ({ onGoToCatalog }) => (
   <div className="cart-empty-state" style={{ textAlign: "center", padding: "50px 0" }}>
@@ -266,7 +270,7 @@ export default function PostLogin() {
       .finally(() => setCheckoutLoading(false));
   };
 
-  const handleGoToCatalog = () => navigate("/catalogo");
+  const handleGoToCatalog = () => handleSelectSection("Catálogo");
 
   const handleSelectSection = (seccion) => {
     setActiveSide(seccion);
@@ -369,111 +373,19 @@ export default function PostLogin() {
           </>
         )}
 
-        {/* ── CATÁLOGO ── */}
+        {/* ── CATÁLOGO EN DASHBOARD (sin salto de página) ── */}
         {activeSide === "Catálogo" && (
-          <>
-            <div className="pl-card" style={{ padding: "2.5rem 2rem", marginBottom: 24 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                <IconBooks width={28} height={28} strokeWidth={2} style={{ color: '#7A1E3A' }} />
-                <h2 style={{ margin: 0 }}>Catálogo de Libros</h2>
-              </div>
-            </div>
+          <Catalogo />
+        )}
 
-            {/* FILTROS AVANZADOS */}
-            <FiltrosCatalogo 
-              onFiltrosChange={handleCatalogoFiltrosChange}
-              filtrosActivos={catalogoFiltros}
-            />
+        {/* ── MENSAJES EN DASHBOARD (sin salto de página) ── */}
+        {activeSide === "Mensajes" && (
+          <Chat />
+        )}
 
-            {/* RESULTADOS */}
-            {catalogoLoading ? (
-              <div style={{ textAlign: 'center', padding: '2rem', color: '#999' }}>
-                Cargando libros...
-              </div>
-            ) : libros.length === 0 ? (
-              <div className="pl-card" style={{
-                textAlign: 'center',
-                padding: '2rem',
-                background: '#faf8f6',
-                borderRadius: '12px',
-                color: '#999'
-              }}>
-                <p>No se encontraron libros con los filtros seleccionados</p>
-                <button 
-                  onClick={() => handleCatalogoFiltrosChange({
-                    q: '',
-                    categoria_id: null,
-                    precio_min: 0,
-                    precio_max: 1000000,
-                    calificacion_min: 0,
-                    disponible: true,
-                    ordenar_por: 'relevancia'
-                  })}
-                  style={{
-                    background: 'var(--vinotinto)',
-                    color: 'white',
-                    border: 'none',
-                    padding: '0.7rem 1.5rem',
-                    borderRadius: '6px',
-                    cursor: 'pointer',
-                    marginTop: '1rem'
-                  }}
-                >
-                  Limpiar filtros
-                </button>
-              </div>
-            ) : (
-              <>
-                <div className="libros-grid">
-                  {libros.map((libro) => (
-                    <LibroCard
-                      key={libro.id_libro}
-                      libro={libro}
-                      onAddToCart={handleCatalogoAddToCart}
-                      isAdding={catalogoAddingId === libro.id_libro}
-                    />
-                  ))}
-                </div>
-
-                {/* PAGINACIÓN */}
-                {catalogoTotalPaginas > 1 && (
-                  <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1rem', marginTop: '2rem' }}>
-                    <button
-                      disabled={catalogoPagina === 1}
-                      onClick={() => setCatalogoPagina(catalogoPagina - 1)}
-                      style={{
-                        background: catalogoPagina === 1 ? '#ccc' : 'var(--vinotinto)',
-                        color: 'white',
-                        border: 'none',
-                        padding: '0.5rem 1rem',
-                        borderRadius: '6px',
-                        cursor: catalogoPagina === 1 ? 'not-allowed' : 'pointer'
-                      }}
-                    >
-                      ← Anterior
-                    </button>
-                    <span style={{ color: '#666' }}>
-                      Página {catalogoPagina} de {catalogoTotalPaginas}
-                    </span>
-                    <button
-                      disabled={catalogoPagina === catalogoTotalPaginas}
-                      onClick={() => setCatalogoPagina(catalogoPagina + 1)}
-                      style={{
-                        background: catalogoPagina === catalogoTotalPaginas ? '#ccc' : 'var(--vinotinto)',
-                        color: 'white',
-                        border: 'none',
-                        padding: '0.5rem 1rem',
-                        borderRadius: '6px',
-                        cursor: catalogoPagina === catalogoTotalPaginas ? 'not-allowed' : 'pointer'
-                      }}
-                    >
-                      Siguiente →
-                    </button>
-                  </div>
-                )}
-              </>
-            )}
-          </>
+        {/* ── NOTIFICACIONES EN DASHBOARD (sin salto de página) ── */}
+        {activeSide === "Notificaciones" && (
+          <Notificaciones />
         )}
 
         {/* ── CARRITO (FUSIONADO Y OPTIMIZADO) ── */}

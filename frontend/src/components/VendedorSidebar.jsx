@@ -7,6 +7,8 @@ import {
   IconCartAlt as IconCart,
   IconPackage,
   IconSettings,
+  IconMail,
+  IconPhone,
   IconTag,
   IconChevronLeft,
   IconMenu,
@@ -23,17 +25,21 @@ const MENU_LINKS = [
   { name: 'Promociones' },
   { name: 'Ventas' },
   { name: 'Pedidos' },
+  { name: 'Mensajes' },
+  { name: 'Notificaciones' },
   { name: 'Perfil' },
 ];
 
 const ICONS = {
-  Inicio: <IconHome strokeWidth={2.2} style={{ color: WHITE }} />,
-  'Mis Libros': <IconBook strokeWidth={2.2} style={{ color: WHITE }} />,
-  'Publicar Libro': <IconPlus strokeWidth={2.2} style={{ color: WHITE }} />,
-  Promociones: <IconTag strokeWidth={2.2} style={{ color: WHITE }} />,
-  Ventas: <IconCart strokeWidth={2.2} style={{ color: WHITE }} />,
-  Pedidos: <IconPackage strokeWidth={2.2} style={{ color: WHITE }} />,
-  Perfil: <IconSettings strokeWidth={2.2} style={{ color: WHITE }} />,
+  Inicio: IconHome,
+  'Mis Libros': IconBook,
+  'Publicar Libro': IconPlus,
+  Promociones: IconTag,
+  Ventas: IconCart,
+  Pedidos: IconPackage,
+  Perfil: IconSettings,
+  Mensajes: IconMail,
+  Notificaciones: IconPhone,
 };
 
 function SidebarIcon(props) {
@@ -46,6 +52,50 @@ function SidebarIcon(props) {
 export default function VendedorSidebar({ userName = 'Vendedor', activeSide = 'Inicio', setActiveSide, handleLogout }) {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [noLeidosNotif, setNoLeidosNotif] = useState(0);
+  const [noLeidosMensajes, setNoLeidosMensajes] = useState(0);
+
+  // Cargar contadores de notificaciones y mensajes
+  useEffect(() => {
+    let mounted = true;
+    const cargarContadores = async () => {
+      try {
+        const { notificacionesService } = await import('../services/notificaciones');
+        const { chatService } = await import('../services/chat');
+
+        try {
+          const notifData = await notificacionesService.obtener(false, 1, 0);
+          if (mounted && notifData) {
+            setNoLeidosNotif(notifData.no_leidas || 0);
+          }
+        } catch (notifErr) {
+          console.error('Error cargando notificaciones:', notifErr);
+          if (mounted) setNoLeidosNotif(0);
+        }
+
+        try {
+          const salasData = await chatService.getSalas();
+          if (mounted && salasData && salasData.salas) {
+            const totalNo = (salasData.salas || []).reduce((acc, s) => acc + (s.no_leidos || 0), 0);
+            setNoLeidosMensajes(totalNo);
+          }
+        } catch (chatErr) {
+          console.error('Error cargando chats:', chatErr);
+          if (mounted) setNoLeidosMensajes(0);
+        }
+      } catch (err) {
+        console.error('Error importando servicios:', err);
+        if (mounted) {
+          setNoLeidosNotif(0);
+          setNoLeidosMensajes(0);
+        }
+      }
+    };
+
+    cargarContadores();
+    const iv = setInterval(cargarContadores, 10000);
+    return () => { mounted = false; clearInterval(iv); };
+  }, []);
 
   useEffect(() => {
     document.documentElement.style.setProperty('--dashboard-sidebar-width', sidebarOpen ? '250px' : '76px');
@@ -112,11 +162,15 @@ export default function VendedorSidebar({ userName = 'Vendedor', activeSide = 'I
           <button
             key={item.name}
             onClick={() => {
+              // Preferir setActiveSide para evitar saltos de página cuando el dashboard maneja la vista
+              if (setActiveSide) {
+                setActiveSide(item.name);
+                return;
+              }
               if (item.path) {
                 navigate(item.path);
                 return;
               }
-              if (setActiveSide) setActiveSide(item.name);
             }}
             title={!sidebarOpen ? item.name : undefined}
             style={{
@@ -131,10 +185,22 @@ export default function VendedorSidebar({ userName = 'Vendedor', activeSide = 'I
               transition: 'background 0.15s ease',
             }}
           >
-            <span style={{ display: 'flex', flexShrink: 0 }}>
-              {ICONS[item.name]}
+            <span style={{ display: 'flex', flexShrink: 0, alignItems: 'center' }}>
+              <SidebarIcon Icon={ICONS[item.name]} size={20} />
             </span>
-            {sidebarOpen && <span>{item.name}</span>}
+            {sidebarOpen && (
+              <span style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1 }}>
+                <span style={{ flex: 1 }}>{item.name}</span>
+                <span style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                  {item.name === 'Notificaciones' && noLeidosNotif > 0 && (
+                    <span style={{ background: '#FFC107', color: '#000', borderRadius: 12, padding: '2px 8px', fontSize: 12, fontWeight: 700 }}>{noLeidosNotif}</span>
+                  )}
+                  {item.name === 'Mensajes' && noLeidosMensajes > 0 && (
+                    <span style={{ background: '#F87171', color: '#fff', borderRadius: 12, padding: '2px 8px', fontSize: 12, fontWeight: 700 }}>{noLeidosMensajes}</span>
+                  )}
+                </span>
+              </span>
+            )}
           </button>
         );
       })}

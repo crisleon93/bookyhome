@@ -47,8 +47,20 @@ export default function PublicarLibro() {
   // Cargar categorías al montar
   useEffect(() => {
     axios.get("/libros/categorias")
-      .then((res) => setCategorias(res.data))
-      .catch(() => setError("No se pudieron cargar las categorías"));
+      .then((res) => {
+        if (Array.isArray(res.data)) {
+          setCategorias(res.data);
+        } else {
+          console.error("Respuesta inesperada de categorías:", res.data);
+          setError("No se pudieron cargar las categorías");
+          setCategorias([]);
+        }
+      })
+      .catch((err) => {
+        console.error("Error cargando categorías:", err);
+        setError("No se pudieron cargar las categorías. Recarga la página.");
+        setCategorias([]);
+      });
   }, []);
 
   const handleChange = (e) => {
