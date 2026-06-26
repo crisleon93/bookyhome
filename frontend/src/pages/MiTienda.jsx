@@ -5,6 +5,16 @@ import { jwtDecode } from "jwt-decode";
 import api from "../services/api";
 import SeccionOfertas from "../components/SeccionOfertas";
 import SellerSidebar from "../components/VendedorSidebar";
+import {
+  IconBook,
+  IconBooks,
+  IconChartBar,
+  IconStar,
+  IconSettings,
+  IconCheck,
+  IconLock,
+  IconPackage
+} from "../components/Icons";
 
 
 // ========================
@@ -44,7 +54,7 @@ function AlertaStock({ alertas, umbral }) {
       background: "#fefce8", border: "1.5px solid #fde68a", borderRadius: "10px",
       padding: "14px 18px", marginBottom: "20px", display: "flex", alignItems: "flex-start", gap: "12px",
     }}>
-      <span style={{ fontSize: "1.3rem", flexShrink: 0, marginTop: "2px" }}>⚠️</span>
+      <span style={{ display: 'flex', alignItems: 'center', flexShrink: 0, marginTop: '2px' }}><IconLock width={20} height={20} strokeWidth={2} style={{ color: '#92400e' }} /></span>
       <div style={{ flex: 1 }}>
         <p style={{ margin: "0 0 8px", fontWeight: 700, fontSize: "0.92rem", color: "#92400e" }}>
           {alertas.length === 1 ? "1 libro con stock bajo" : `${alertas.length} libros con stock bajo`}
@@ -150,7 +160,7 @@ function ModalEditarLibro({ libro, categorias, onClose, onGuardado }) {
             <textarea name="descripcion_libro" maxLength={300} rows={3}
               value={form.descripcion_libro} onChange={handleChange} />
           </div>
-          {error && <div className="form-error">⚠ {error}</div>}
+          {error && <div className="form-error" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><IconLock width={16} height={16} strokeWidth={2} style={{ color: '#b91c1c' }} /> {error}</div>}
           <div className="modal-actions">
             <button type="button" className="btn-outline" onClick={onClose} disabled={cargando}>Cancelar</button>
             <button type="submit" className="btn btn-vinotinto" disabled={cargando}>
@@ -194,7 +204,7 @@ function ModalEliminar({ libro, onClose, onEliminado }) {
           </p>
           <p style={{ fontSize: "0.85rem", color: "#888" }}>Esta acción no se puede deshacer.</p>
         </div>
-        {error && <div className="form-error" style={{ marginBottom: "16px" }}>⚠ {error}</div>}
+        {error && <div className="form-error" style={{ marginBottom: "16px", display: 'flex', alignItems: 'center', gap: '4px' }}><IconLock width={16} height={16} strokeWidth={2} style={{ color: '#b91c1c' }} /> {error}</div>}
         <div className="modal-actions">
           <button className="btn-outline" onClick={onClose} disabled={cargando}>Cancelar</button>
           <button className="btn-eliminar" onClick={confirmar} disabled={cargando}>
@@ -244,7 +254,7 @@ function ModalStock({ libro, onClose, onActualizado }) {
             onChange={(e) => setStock(Number(e.target.value))} className="stock-input" />
           <button className="stock-btn" onClick={() => setStock(stock + 1)}>+</button>
         </div>
-        {error && <div className="form-error" style={{ margin: "12px 0" }}>⚠ {error}</div>}
+        {error && <div className="form-error" style={{ margin: "12px 0", display: 'flex', alignItems: 'center', gap: '4px' }}><IconLock width={16} height={16} strokeWidth={2} style={{ color: '#b91c1c' }} /> {error}</div>}
         <div className="modal-actions" style={{ marginTop: "20px" }}>
           <button className="btn-outline" onClick={onClose} disabled={cargando}>Cancelar</button>
           <button className="btn btn-vinotinto" onClick={guardar} disabled={cargando}>
@@ -394,7 +404,7 @@ export default function MiTienda() {
   const renderInicio = () => (
     <>
       <div className="welcome-card welcome-card--small">
-        <h1>Bienvenido, {userName.split(" ")[0]} 👋</h1>
+        <h1>Bienvenido, {userName.split(" ")[0]}</h1>
         <p>Aquí tienes un panorama claro de tu tienda en BookyHome.</p>
       </div>
 
@@ -495,8 +505,8 @@ export default function MiTienda() {
             <p className="inventory-alert-copy">Recibe avisos automáticos cuando el stock de tus libros esté por debajo del umbral.</p>
           </div>
           <div className="inventory-alert-status">
-            <span className={alertasStock.length > 0 ? 'inventory-status-warning' : 'inventory-status-ok'}>
-              {alertasStock.length > 0 ? '⚠' : '✓'}
+            <span className={alertasStock.length > 0 ? 'inventory-status-warning' : 'inventory-status-ok'} style={{ display: 'flex', alignItems: 'center' }}>
+              {alertasStock.length > 0 ? <IconLock width={20} height={20} strokeWidth={2} style={{ color: '#92400e' }} /> : <IconCheck width={20} height={20} strokeWidth={2} style={{ color: 'green' }} />}
             </span>
             <div>
               <p className="inventory-status-title">
@@ -543,7 +553,9 @@ export default function MiTienda() {
           <p style={{ color: "#999", padding: "16px 0" }}>Cargando libros...</p>
         ) : libros.length === 0 ? (
           <div className="empty-state" style={{ padding: "30px 20px" }}>
-            <div style={{ fontSize: "2rem", marginBottom: "10px" }}>📚</div>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: "10px" }}>
+              <IconBooks width={48} height={48} strokeWidth={2} style={{ color: '#7A1E3A' }} />
+            </div>
             <p style={{ fontWeight: 700, color: "#444", marginBottom: "6px" }}>No hay libros publicados aún</p>
             <p style={{ fontSize: "0.85rem", color: "#888" }}>Publica tu primer libro para verlo aquí.</p>
           </div>
@@ -556,7 +568,7 @@ export default function MiTienda() {
                     {libro.imagenes?.[0] ? (
                       <img src={`http://127.0.0.1:8000${libro.imagenes[0]}`} alt={libro.titulo} />
                     ) : (
-                      <span>📖</span>
+                      <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}><IconBook width={24} height={24} strokeWidth={2} style={{ color: '#7A1E3A' }} /></span>
                     )}
                   </div>
                   <div>
@@ -616,13 +628,18 @@ export default function MiTienda() {
 
       <div className="seller-books">
         <div className="seller-books-header">
-          <h2 className="seller-books-title">🏆 Libros más vendidos</h2>
+          <h2 className="seller-books-title" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <IconStar width={24} height={24} strokeWidth={2} style={{ color: '#7A1E3A' }} />
+            Libros más vendidos
+          </h2>
           <button className="btn-ver-todos" onClick={() => setActiveSide("Mis Libros")}>Ver todos →</button>
         </div>
         {loadingTop && <p style={{ color: "#999", padding: "20px 0" }}>Cargando...</p>}
         {!loadingTop && topVendidos.length === 0 && (
           <div className="empty-state">
-            <div style={{ fontSize: "2rem", marginBottom: "10px" }}>📊</div>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: "10px" }}>
+              <IconChartBar width={48} height={48} strokeWidth={2} style={{ color: '#7A1E3A' }} />
+            </div>
             <p style={{ fontWeight: 700, color: "#444", marginBottom: "6px" }}>Aún no hay ventas registradas</p>
             <p style={{ fontSize: "0.85rem", color: "#888" }}>Cuando se registren ventas, aparecerán aquí los más populares</p>
           </div>
@@ -633,7 +650,7 @@ export default function MiTienda() {
             <div className="book-cover-mini">
               {libro.imagenes?.[0]
                 ? <img src={`http://127.0.0.1:8000${libro.imagenes[0]}`} alt={libro.titulo} />
-                : <span>📖</span>}
+                : <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}><IconBook width={24} height={24} strokeWidth={2} style={{ color: '#7A1E3A' }} /></span>}
             </div>
             <div className="book-info" style={{ flex: 1 }}>
               <h4>{libro.titulo}</h4>
@@ -668,7 +685,9 @@ export default function MiTienda() {
         {loadingLibros && <p style={{ color: "#999", padding: "20px 0" }}>Cargando...</p>}
         {!loadingLibros && libros.length === 0 && (
           <div className="empty-state">
-            <div style={{ fontSize: "2.5rem", marginBottom: "12px" }}>📚</div>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: "12px" }}>
+              <IconBooks width={48} height={48} strokeWidth={2} style={{ color: '#7A1E3A' }} />
+            </div>
             <p style={{ fontWeight: 700, color: "#444", marginBottom: "8px" }}>No tienes libros publicados</p>
             <button className="btn btn-vinotinto btn-header" onClick={() => navigate("/vendedor/publicar")}>
               Publicar primer libro
@@ -680,7 +699,7 @@ export default function MiTienda() {
             <div className="book-cover-mini">
               {libro.imagenes?.[0]
                 ? <img src={`http://127.0.0.1:8000${libro.imagenes[0]}`} alt={libro.titulo} />
-                : <span>📖</span>}
+                : <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}><IconBook width={24} height={24} strokeWidth={2} style={{ color: '#7A1E3A' }} /></span>}
             </div>
             <div className="book-info" style={{ flex: 1 }}>
               <h4>{libro.titulo}</h4>
@@ -694,7 +713,7 @@ export default function MiTienda() {
               fontWeight: libro.stock <= 3 ? 700 : 400,
             }}>
               Stock: <strong>{libro.stock}</strong>
-              {libro.stock === 0 && <span style={{ marginLeft: "4px" }}>⚠</span>}
+              {libro.stock === 0 && <span style={{ marginLeft: "4px", display: 'flex', alignItems: 'center' }}><IconLock width={16} height={16} strokeWidth={2} style={{ color: '#b91c1c' }} /></span>}
             </div>
             <div className="book-actions">
               <button className="btn-accion btn-stock" onClick={() => setModalStock(libro)}>Stock</button>
@@ -710,7 +729,10 @@ export default function MiTienda() {
   const renderConfiguracion = () => (
     <>
       <div className="welcome-card">
-        <h1 style={{ fontSize: "1.55rem", marginBottom: "4px" }}>⚙️ Perfil del negocio</h1>
+        <h1 style={{ fontSize: "1.55rem", marginBottom: "4px", display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <IconSettings width={24} height={24} strokeWidth={2} style={{ color: '#7A1E3A' }} />
+          Perfil del negocio
+        </h1>
         <p style={{ margin: 0 }}>Información de tu tienda en BookyHome</p>
       </div>
 
@@ -791,12 +813,12 @@ export default function MiTienda() {
               onClick={() => {
                 api.put("/tiendas/mi-tienda", tiendaForm)
                   .then(() => {
-                    setTiendaMsg("✓ Perfil del negocio actualizado");
+                    setTiendaMsg("Perfil del negocio actualizado");
                     setTimeout(() => setTiendaMsg(""), 3000);
                     setTiendaInfo(prev => ({ ...prev, ...tiendaForm }));
                   })
                   .catch((err) => {
-                    setTiendaMsg("❌ Error al guardar cambios: " + (err.response?.data?.detail || err.message));
+                    setTiendaMsg("Error al guardar cambios: " + (err.response?.data?.detail || err.message));
                     setTimeout(() => setTiendaMsg(""), 4000);
                   });
               }}
@@ -812,7 +834,9 @@ export default function MiTienda() {
   const renderProximamente = (nombre) => (
     <div className="welcome-card">
       <div className="empty-state" style={{ boxShadow: "none", padding: "60px 20px" }}>
-        <div style={{ fontSize: "2.5rem", marginBottom: "12px" }}>🚧</div>
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: "12px" }}>
+          <IconLock width={48} height={48} strokeWidth={2} style={{ color: '#7A1E3A' }} />
+        </div>
         <p style={{ fontWeight: 700, color: "#444", marginBottom: "8px", fontSize: "1.1rem" }}>{nombre}</p>
         <p style={{ fontSize: "0.87rem", color: "#888" }}>Esta sección estará disponible próximamente</p>
       </div>
@@ -822,7 +846,10 @@ export default function MiTienda() {
   const renderPedidos = () => (
     <>
       <div className="welcome-card">
-        <h1 style={{ fontSize: "1.55rem", marginBottom: "4px" }}>📦 Pedidos Recibidos</h1>
+        <h1 style={{ fontSize: "1.55rem", marginBottom: "4px", display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <IconPackage width={28} height={28} strokeWidth={2} style={{ color: '#7A1E3A' }} />
+          Pedidos Recibidos
+        </h1>
         <p style={{ margin: 0 }}>Gestiona las compras realizadas por tus clientes</p>
       </div>
 
@@ -830,7 +857,9 @@ export default function MiTienda() {
         {loadingPedidos && <p style={{ color: "#999", padding: "20px 0" }}>Cargando pedidos...</p>}
         {!loadingPedidos && pedidos.length === 0 && (
           <div className="empty-state">
-            <div style={{ fontSize: "2.5rem", marginBottom: "12px" }}>📦</div>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: "12px" }}>
+              <IconPackage width={48} height={48} strokeWidth={2} style={{ color: '#7A1E3A' }} />
+            </div>
             <p style={{ fontWeight: 700, color: "#444", marginBottom: "8px" }}>Aún no has recibido pedidos</p>
             <p style={{ fontSize: "0.85rem", color: "#888" }}>Cuando un comprador adquiera tus libros, aparecerán aquí</p>
           </div>
@@ -861,8 +890,8 @@ export default function MiTienda() {
                     </td>
                     <td style={{ padding: "12px" }}>
                       {pedido.items.map((item, index) => (
-                        <div key={index} style={{ fontSize: "0.88rem", marginBottom: "4px" }}>
-                          📚 <strong>{item.titulo}</strong> x {item.cantidad}
+                        <div key={index} style={{ fontSize: "0.88rem", marginBottom: "4px", display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <IconBook width={16} height={16} strokeWidth={2} style={{ color: '#7A1E3A' }} /> <strong>{item.titulo}</strong> x {item.cantidad}
                         </div>
                       ))}
                     </td>
@@ -887,7 +916,10 @@ export default function MiTienda() {
   const renderVentas = () => (
     <>
       <div className="welcome-card">
-        <h1 style={{ fontSize: "1.55rem", marginBottom: "4px" }}>💰 Registro de Ventas</h1>
+        <h1 style={{ fontSize: "1.55rem", marginBottom: "4px", display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <IconChartBar width={28} height={28} strokeWidth={2} style={{ color: '#7A1E3A' }} />
+          Registro de Ventas
+        </h1>
         <p style={{ margin: 0 }}>Historial detallado de libros vendidos</p>
       </div>
 
@@ -895,7 +927,9 @@ export default function MiTienda() {
         {loadingVentas && <p style={{ color: "#999", padding: "20px 0" }}>Cargando ventas...</p>}
         {!loadingVentas && ventas.length === 0 && (
           <div className="empty-state">
-            <div style={{ fontSize: "2.5rem", marginBottom: "12px" }}>📊</div>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: "12px" }}>
+              <IconChartBar width={48} height={48} strokeWidth={2} style={{ color: '#7A1E3A' }} />
+            </div>
             <p style={{ fontWeight: 700, color: "#444", marginBottom: "8px" }}>No hay ventas registradas aún</p>
             <p style={{ fontSize: "0.85rem", color: "#888" }}>Aquí aparecerá el desglose por libro vendido</p>
           </div>

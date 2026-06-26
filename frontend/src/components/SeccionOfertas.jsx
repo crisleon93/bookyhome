@@ -3,6 +3,11 @@
 import { useState, useEffect, useCallback } from "react";
 import api from "../services/api";
 import { notify } from "./ToastProvider";
+import {
+  IconTag,
+  IconCheck,
+  IconLock
+} from "./Icons";
 
 // ── Helpers ──
 const formatPrecio = (v) => {
@@ -218,8 +223,8 @@ function FormOferta({ libros, ofertaEditar, onGuardado, onCancelar }) {
       {error && (
         <div style={{ background: "#fdecea", color: "#c62828", border: "1.5px solid #ef9a9a",
           borderRadius: "8px", padding: "10px 14px", fontSize: "0.88rem",
-          fontWeight: 600, marginBottom: "16px" }}>
-          ⚠ {error}
+          fontWeight: 600, marginBottom: "16px", display: 'flex', alignItems: 'center', gap: '4px' }}>
+          <IconLock width={16} height={16} strokeWidth={2} style={{ color: '#c62828' }} /> {error}
         </div>
       )}
 
@@ -262,7 +267,7 @@ function ModalEliminarOferta({ oferta, onClose, onEliminado }) {
           </p>
           <p style={{ fontSize: "0.85rem", color: "#888" }}>Esta acción no se puede deshacer.</p>
         </div>
-        {error && <div className="form-error" style={{ marginBottom: "16px" }}>⚠ {error}</div>}
+        {error && <div className="form-error" style={{ marginBottom: "16px", display: 'flex', alignItems: 'center', gap: '4px' }}><IconLock width={16} height={16} strokeWidth={2} style={{ color: '#c62828' }} /> {error}</div>}
         <div className="modal-actions">
           <button className="btn-outline" onClick={onClose} disabled={cargando}>Cancelar</button>
           <button className="btn-eliminar" onClick={confirmar} disabled={cargando}>
@@ -370,13 +375,13 @@ export default function SeccionOfertas() {
     </div>
   );
 
-  const renderGrupo = (titulo, lista, emoji) => {
+  const renderGrupo = (titulo, lista, icon) => {
     if (lista.length === 0) return null;
     return (
       <div style={{ marginBottom: "8px" }}>
         <div style={{ fontSize: "0.78rem", fontWeight: 800, textTransform: "uppercase",
-          letterSpacing: "0.08em", color: "#999", margin: "20px 0 4px" }}>
-          {emoji} {titulo} ({lista.length})
+          letterSpacing: "0.08em", color: "#999", margin: "20px 0 4px", display: 'flex', alignItems: 'center', gap: '6px' }}>
+          {icon} {titulo} ({lista.length})
         </div>
         {lista.map(renderFila)}
       </div>
@@ -414,7 +419,9 @@ export default function SeccionOfertas() {
 
         {!loading && ofertas.length === 0 && (
           <div className="empty-state">
-            <div style={{ fontSize: "2.5rem", marginBottom: "12px" }}>🏷️</div>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: "12px" }}>
+              <IconTag width={48} height={48} strokeWidth={2} style={{ color: '#7A1E3A' }} />
+            </div>
             <p style={{ fontWeight: 700, color: "#444", marginBottom: "8px" }}>
               Aún no tienes promociones creadas
             </p>
@@ -426,9 +433,9 @@ export default function SeccionOfertas() {
 
         {!loading && ofertas.length > 0 && (
           <>
-            {renderGrupo("Activas ahora", activas,  "🟢")}
-            {renderGrupo("Próximas",      proximas, "🔵")}
-            {renderGrupo("Vencidas",      vencidas, "⚫")}
+            {renderGrupo("Activas ahora", activas,  <IconCheck width={16} height={16} strokeWidth={2} style={{ color: 'green' }} />)}
+            {renderGrupo("Próximas",      proximas, <IconLock width={16} height={16} strokeWidth={2} style={{ color: '#1e40af' }} />)}
+            {renderGrupo("Vencidas",      vencidas, <IconLock width={16} height={16} strokeWidth={2} style={{ color: '#6b7280' }} />)}
           </>
         )}
       </div>
