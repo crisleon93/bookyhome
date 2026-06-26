@@ -6,7 +6,8 @@ import {
   IconStar as IconFavorites, 
   IconCart, 
   IconPackage, 
-  IconSettings as IconUser,
+  IconUser,
+  IconSettings,
   IconChevronLeft,
   IconMenu,
   IconLogOut,
@@ -21,15 +22,16 @@ const VINOTINTO = '#7A1E3A';
 const WHITE = '#FFFFFF';
 
 const ICONS = {
-  Inicio: IconHome,
-  Catálogo: IconBook,
-  Favoritos: IconFavorites,
-  Carrito: IconCart,
-  'Mis Compras': IconPackage,
-  'Mi Perfil': IconUser,
-  Direcciones: IconMapPin,
-  Mensajes: IconMail,
-  Notificaciones: IconPhone,
+  "Inicio": <IconHome width={20} height={20} strokeWidth={2} style={{ color: WHITE }} />,
+  "Catálogo": <IconBook width={20} height={20} strokeWidth={2} style={{ color: WHITE }} />,
+  "Favoritos": <IconFavorites width={20} height={20} strokeWidth={2} style={{ color: WHITE }} />,
+  "Carrito": <IconCart width={20} height={20} strokeWidth={2} style={{ color: WHITE }} />,
+  "Mis Compras": <IconPackage width={20} height={20} strokeWidth={2} style={{ color: WHITE }} />,
+  "Mi Perfil": <IconUser width={20} height={20} strokeWidth={2} style={{ color: WHITE }} />,
+  "Direcciones": <IconMapPin width={20} height={20} strokeWidth={2} style={{ color: WHITE }} />,
+  "Mensajes": <IconMail width={20} height={20} strokeWidth={2} style={{ color: WHITE }} />,
+  "Notificaciones": <IconPhone width={20} height={20} strokeWidth={2} style={{ color: WHITE }} />,
+  "Configuración": <IconSettings width={20} height={20} strokeWidth={2} style={{ color: WHITE }} />,
 };
 
 const MENU_LINKS = [
@@ -42,6 +44,7 @@ const MENU_LINKS = [
   { name: "Mensajes", label: "Mensajes" },
   { name: "Notificaciones", label: "Notificaciones" },
   { name: "Mi Perfil", label: "Perfil" },
+  { name: "Configuración", label: "Configuración" },
 ];
 
 function SidebarIcon(props) {
@@ -165,7 +168,7 @@ export default function CompradorSidebar({ userName, userEmail, activeSide, onSe
             }}
           >
             <span style={{ display: 'flex', flexShrink: 0, alignItems: 'center' }}>
-              <SidebarIcon Icon={ICONS[item.name]} size={20} />
+              {ICONS[item.name]}
             </span>
             {sidebarOpen && (
               <span style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1 }}>
@@ -183,7 +186,7 @@ export default function CompradorSidebar({ userName, userEmail, activeSide, onSe
           </button>
         );
       })}
-
+      
       {/* Logout */}
       <button
         onClick={() => {

@@ -22,7 +22,6 @@ import StoredProcedurePage from './pages/StoredProcedurePage';
 import PublicarLibro from './pages/PublicarLibro';
 import DetalleLibro from './pages/DetalleLibro';
 import AdminDashboard from './pages/AdminDashboard';
-import PerfilUsuario from './pages/PerfilUsuario';
 import Chat from './pages/Chat';
 import Notificaciones from './pages/Notificaciones';
 import Historial from './pages/Historial';
@@ -77,7 +76,6 @@ function MainLayout() {
           <Route path="/post-login" element={<PostLogin />} />
           <Route path="/carrito" element={<Navigate to="/post-login?seccion=Carrito" replace />} />
           <Route path="/checkout/:orderId" element={<Checkout />} />
-          <Route path="/perfil" element={<PerfilUsuario />} />
           <Route path="/chat" element={<Chat />} />
           <Route path="/chat/:id_sala" element={<Chat />} />
           <Route path="/notificaciones" element={<Notificaciones />} />

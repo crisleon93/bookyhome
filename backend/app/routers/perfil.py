@@ -18,6 +18,11 @@ class PerfilActualizar(BaseModel):
     direccion: str = None
     fecha_nacimiento: str = None  # YYYY-MM-DD
 
+class PreferenciasUsuario(BaseModel):
+    notificaciones_promociones: bool = True
+    notificaciones_pedidos: bool = True
+    notificaciones_novedades: bool = False
+
 class PerfilRespuesta(BaseModel):
     id_usuario: int
     nombre_usuario: str
@@ -50,7 +55,9 @@ def obtener_perfil(user_id: int = Depends(get_current_user)):
                 correo_usuario,
                 telefono,
                 rol,
-                DATE_FORMAT(fecha_registro, '%Y-%m-%d') as fecha_registro
+                DATE_FORMAT(fecha_registro, '%Y-%m-%d') as fecha_registro,
+                foto_perfil,
+                preferencias
             FROM usuarios
             WHERE id_usuario = %s
         """
@@ -59,6 +66,17 @@ def obtener_perfil(user_id: int = Depends(get_current_user)):
         
         if not usuario:
             raise HTTPException(status_code=404, detail="Usuario no encontrado")
+        
+        # Parse preferencias si existen
+        if usuario.get('preferencias'):
+            import json
+            usuario['preferencias'] = json.loads(usuario['preferencias'])
+        else:
+            usuario['preferencias'] = {
+                'notificaciones_promociones': True,
+                'notificaciones_pedidos': True,
+                'notificaciones_novedades': False
+            }
         
         return usuario
     finally:
@@ -162,9 +180,8 @@ def obtener_historial_compras(user_id: int = Depends(get_current_user)):
 
 @router.post("/foto-perfil")
 async def subir_foto_perfil(file: UploadFile = File(...), user_id: int = Depends(get_current_user)):
-    """Sube foto de perfil del usuario (simulado)"""
+    """Sube foto de perfil del usuario"""
     
-    # Para un proyecto SENA, simplemente guardamos la ruta
     try:
         os.makedirs("uploads/perfiles", exist_ok=True)
         
@@ -175,6 +192,17 @@ async def subir_foto_perfil(file: UploadFile = File(...), user_id: int = Depends
             contents = await file.read()
             f.write(contents)
         
+        # Actualizar la URL en la base de datos
+        db = get_db()
+        cursor = db.cursor()
+        try:
+            query = "UPDATE usuarios SET foto_perfil = %s WHERE id_usuario = %s"
+            cursor.execute(query, (filepath, user_id))
+            db.commit()
+        finally:
+            cursor.close()
+            db.close()
+        
         return {
             "ok": True,
             "mensaje": "Foto de perfil subida",
@@ -182,3 +210,29 @@ async def subir_foto_perfil(file: UploadFile = File(...), user_id: int = Depends
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.put("/preferencias")
+def actualizar_preferencias(data: PreferenciasUsuario, user_id: int = Depends(get_current_user)):
+    """Actualiza las preferencias del usuario"""
+    import json
+    
+    db = get_db()
+    cursor = db.cursor()
+    try:
+        preferencias_json = json.dumps({
+            'notificaciones_promociones': data.notificaciones_promociones,
+            'notificaciones_pedidos': data.notificaciones_pedidos,
+            'notificaciones_novedades': data.notificaciones_novedades
+        })
+        
+        query = "UPDATE usuarios SET preferencias = %s WHERE id_usuario = %s"
+        cursor.execute(query, (preferencias_json, user_id))
+        db.commit()
+        
+        return {"ok": True, "mensaje": "Preferencias actualizadas correctamente"}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        cursor.close()
+        db.close()
