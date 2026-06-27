@@ -1,0 +1,20 @@
+[
+  {
+    "id_pago": 1,
+    "id_usuario": 17,
+    "id_orden": 1,
+    "monto": 100000.0,
+    "metodo_pago": "PayPal",
+    "fecha_pago": "2026-06-23T18:39:04.102454Z",
+    "estado": "aprobado"
+  },
+  {
+    "id_pago": 2,
+    "id_usuario": 18,
+    "id_orden": 1,
+    "monto": 80000.0,
+    "metodo_pago": "Tarjeta de Crédito",
+    "fecha_pago": "2026-06-23T20:53:58.890753Z",
+    "estado": "aprobado"
+  }
+]

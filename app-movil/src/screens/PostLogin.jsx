@@ -114,6 +114,18 @@ export default function PostLogin({ navigation }) {
         <Text style={styles.greetingSub}>¿Qué libro buscas hoy?</Text>
       </View>
 
+      <View style={styles.quickActions}>
+        <TouchableOpacity style={styles.quickAction} onPress={() => navigation.navigate('Profile')}>
+          <Text style={styles.quickActionLabel}>Perfil</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.quickAction} onPress={() => navigation.navigate('History')}>
+          <Text style={styles.quickActionLabel}>Historial</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.quickAction} onPress={() => navigation.navigate('Notifications')}>
+          <Text style={styles.quickActionLabel}>Notificaciones</Text>
+        </TouchableOpacity>
+      </View>
+
       {/* Stats strip */}
       <View style={styles.statsStrip}>
         {[
@@ -254,6 +266,29 @@ const styles = StyleSheet.create({
   cardPrice:  { fontSize: 15, fontWeight: '800', color: PRIMARY, marginBottom: 8 },
   addBtn:     { backgroundColor: PRIMARY, borderRadius: 8, paddingVertical: 7, alignItems: 'center' },
   addBtnText: { color: WHITE, fontSize: 11, fontWeight: '700' },
+
+  quickActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginHorizontal: 16,
+    marginBottom: 18,
+  },
+  quickAction: {
+    flex: 1,
+    backgroundColor: WHITE,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: BORDER,
+    paddingVertical: 12,
+    alignItems: 'center',
+    marginHorizontal: 4,
+  },
+  quickActionLabel: {
+    color: PRIMARY,
+    fontWeight: '700',
+    fontSize: 12,
+  },
 
   /* Misc */
   loadingWrap: { flex: 1, justifyContent: 'center', alignItems: 'center' },

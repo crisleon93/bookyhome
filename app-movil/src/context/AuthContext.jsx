@@ -76,8 +76,13 @@ export function AuthProvider({ children }) {
 
   const signIn = async (newToken) => {
     const payload = decodeJwtPayload(newToken);
+    const safeUser = payload || {
+      sub: 'usuario',
+      nombre: 'usuario',
+      rol: 'comprador',
+    };
     setToken(newToken);
-    setUser(payload);
+    setUser(safeUser);
     await AsyncStorage.setItem('token', newToken);
   };
 

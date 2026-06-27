@@ -8,19 +8,23 @@ import PostLogin from '../screens/PostLogin';
 import Cart from '../screens/Cart';
 import BookDetail from '../screens/BookDetail';
 import Checkout from '../screens/Checkout';
+import Profile from '../screens/Profile';
+import History from '../screens/History';
+import Notifications from '../screens/Notifications';
 import { AuthContext } from '../context/AuthContext';
 import RegisterLibrary from '../screens/RegisterLibrary';
 
 const Stack = createNativeStackNavigator();
 
 export default function AppNavigator() {
-  const { user, loading } = useContext(AuthContext);
+  const { user, token, loading } = useContext(AuthContext);
+  const isAuthenticated = Boolean(token || user);
 
   if (loading) return null;
 
   return (
     <Stack.Navigator>
-      {!user ? (
+      {!isAuthenticated ? (
         <>
           <Stack.Screen name="Home" component={Home} options={{ headerShown: false }} />
           <Stack.Screen name="Login" component={Login} options={{ headerShown: false }} />
@@ -31,6 +35,9 @@ export default function AppNavigator() {
       ) : (
         <>
           <Stack.Screen name="PostLogin" component={PostLogin} options={{ headerShown: false }} />
+          <Stack.Screen name="Profile" component={Profile} options={{ title: 'Mi Perfil' }} />
+          <Stack.Screen name="History" component={History} options={{ title: 'Historial de compras' }} />
+          <Stack.Screen name="Notifications" component={Notifications} options={{ title: 'Notificaciones' }} />
           <Stack.Screen name="BookDetail" component={BookDetail} options={{ title: 'Detalle del libro' }} />
           <Stack.Screen name="Cart" component={Cart} options={{ title: 'Mi Carrito' }} />
           <Stack.Screen name="Checkout" component={Checkout} options={{ title: 'Pago Seguro' }} />
