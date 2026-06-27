@@ -16,5 +16,75 @@
       "total": 28000.0,
       "estado": "pendiente"
     }
+  ],
+  "17": [
+    {
+      "id_orden": 1,
+      "fecha": "2026-06-23T18:38:40.839432Z",
+      "items": [
+        {
+          "id_libro": 15,
+          "titulo": "Biografia de un Genio",
+          "autor_libro": "F. Ruiz",
+          "precio_libro": 80000.0,
+          "cantidad": 1,
+          "imagen": "https://bookyhome.com/images/biografia.jpg"
+        },
+        {
+          "id_libro": 14,
+          "titulo": "Humor y Vida",
+          "autor_libro": "T. Gomez",
+          "precio_libro": 20000.0,
+          "cantidad": 1,
+          "imagen": "https://bookyhome.com/images/humor.jpg"
+        }
+      ],
+      "total": 100000.0,
+      "estado": "pagado",
+      "metodo_pago": "PayPal"
+    },
+    {
+      "id_orden": 2,
+      "fecha": "2026-06-23T18:40:38.309492Z",
+      "items": [
+        {
+          "id_libro": 15,
+          "titulo": "Biografia de un Genio",
+          "autor_libro": "F. Ruiz",
+          "precio_libro": 80000.0,
+          "cantidad": 1,
+          "imagen": "https://bookyhome.com/images/biografia.jpg"
+        },
+        {
+          "id_libro": 14,
+          "titulo": "Humor y Vida",
+          "autor_libro": "T. Gomez",
+          "precio_libro": 20000.0,
+          "cantidad": 1,
+          "imagen": "https://bookyhome.com/images/humor.jpg"
+        }
+      ],
+      "total": 100000.0,
+      "estado": "pendiente"
+    }
+  ],
+  "18": [
+    {
+      "id_orden": 1,
+      "fecha": "2026-06-23T20:52:32.917262Z",
+      "items": [
+        {
+          "id_libro": 15,
+          "titulo": "Biografia de un Genio",
+          "autor_libro": "F. Ruiz",
+          "precio_libro": 80000.0,
+          "cantidad": 1,
+          "imagen": "https://bookyhome.com/images/biografia.jpg"
+        }
+      ],
+      "total": 80000.0,
+      "estado": "pagado",
+      "metodo_pago": "Tarjeta de Crédito"
+    }
   ]
 }
