@@ -2,9 +2,9 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
   IconStoreAlt as IconHome, 
-  IconBooks as IconBook, 
-  IconStar as IconFavorites, 
-  IconCart, 
+  IconBook, 
+  IconFavoritesAlt as IconFavorites, 
+  IconCartAlt as IconCart, 
   IconPackage, 
   IconUser,
   IconSettings,
@@ -22,16 +22,16 @@ const VINOTINTO = '#7A1E3A';
 const WHITE = '#FFFFFF';
 
 const ICONS = {
-  "Inicio": <IconHome width={20} height={20} strokeWidth={2} style={{ color: WHITE }} />,
-  "Catálogo": <IconBook width={20} height={20} strokeWidth={2} style={{ color: WHITE }} />,
-  "Favoritos": <IconFavorites width={20} height={20} strokeWidth={2} style={{ color: WHITE }} />,
-  "Carrito": <IconCart width={20} height={20} strokeWidth={2} style={{ color: WHITE }} />,
-  "Mis Compras": <IconPackage width={20} height={20} strokeWidth={2} style={{ color: WHITE }} />,
-  "Mi Perfil": <IconUser width={20} height={20} strokeWidth={2} style={{ color: WHITE }} />,
-  "Direcciones": <IconMapPin width={20} height={20} strokeWidth={2} style={{ color: WHITE }} />,
-  "Mensajes": <IconMail width={20} height={20} strokeWidth={2} style={{ color: WHITE }} />,
-  "Notificaciones": <IconPhone width={20} height={20} strokeWidth={2} style={{ color: WHITE }} />,
-  "Configuración": <IconSettings width={20} height={20} strokeWidth={2} style={{ color: WHITE }} />,
+  "Inicio": <IconHome width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
+  "Catálogo": <IconBook width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
+  "Favoritos": <IconFavorites width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
+  "Carrito": <IconCart width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
+  "Mis Compras": <IconPackage width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
+  "Direcciones": <IconMapPin width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
+  "Notificaciones": <IconPhone className="" width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
+  "Mensajes": <IconMail className="" width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
+  "Mi Perfil": <IconUser width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
+  "Configuración": <IconSettings width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
 };
 
 const MENU_LINKS = [
@@ -41,8 +41,8 @@ const MENU_LINKS = [
   { name: "Carrito", label: "Carrito" },
   { name: "Mis Compras", label: "Mis compras" },
   { name: "Direcciones", label: "Direcciones" },
-  { name: "Mensajes", label: "Mensajes" },
   { name: "Notificaciones", label: "Notificaciones" },
+  { name: "Mensajes", label: "Mensajes" },
   { name: "Mi Perfil", label: "Perfil" },
   { name: "Configuración", label: "Configuración" },
 ];
@@ -167,7 +167,7 @@ export default function CompradorSidebar({ userName, userEmail, activeSide, onSe
               transition: 'background 0.15s ease',
             }}
           >
-            <span style={{ display: 'flex', flexShrink: 0, alignItems: 'center' }}>
+            <span style={{ display: 'flex', flexShrink: 0, alignItems: 'center', width: '24px', height: '24px', justifyContent: 'center' }}>
               {ICONS[item.name]}
             </span>
             {sidebarOpen && (

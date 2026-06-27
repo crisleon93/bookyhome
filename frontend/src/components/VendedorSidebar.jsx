@@ -6,6 +6,7 @@ import {
   IconPlus,
   IconCartAlt as IconCart,
   IconPackage,
+  IconUser,
   IconSettings,
   IconMail,
   IconPhone,
@@ -25,21 +26,23 @@ const MENU_LINKS = [
   { name: 'Promociones' },
   { name: 'Ventas' },
   { name: 'Pedidos' },
-  { name: 'Mensajes' },
   { name: 'Notificaciones' },
+  { name: 'Mensajes' },
   { name: 'Perfil' },
+  { name: 'Configuración' },
 ];
 
 const ICONS = {
-  Inicio: IconHome,
-  'Mis Libros': IconBook,
-  'Publicar Libro': IconPlus,
-  Promociones: IconTag,
-  Ventas: IconCart,
-  Pedidos: IconPackage,
-  Perfil: IconSettings,
-  Mensajes: IconMail,
-  Notificaciones: IconPhone,
+  Inicio: <IconHome width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
+  'Mis Libros': <IconBook width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
+  'Publicar Libro': <IconPlus width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
+  Promociones: <IconTag width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
+  Ventas: <IconCart width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
+  Pedidos: <IconPackage width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
+  Notificaciones: <IconPhone className="" width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
+  Mensajes: <IconMail className="" width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
+  Perfil: <IconUser width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
+  Configuración: <IconSettings width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
 };
 
 function SidebarIcon(props) {
@@ -185,22 +188,10 @@ export default function VendedorSidebar({ userName = 'Vendedor', activeSide = 'I
               transition: 'background 0.15s ease',
             }}
           >
-            <span style={{ display: 'flex', flexShrink: 0, alignItems: 'center' }}>
-              <SidebarIcon Icon={ICONS[item.name]} size={20} />
+            <span style={{ display: 'flex', flexShrink: 0 }}>
+              {ICONS[item.name]}
             </span>
-            {sidebarOpen && (
-              <span style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1 }}>
-                <span style={{ flex: 1 }}>{item.name}</span>
-                <span style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                  {item.name === 'Notificaciones' && noLeidosNotif > 0 && (
-                    <span style={{ background: '#FFC107', color: '#000', borderRadius: 12, padding: '2px 8px', fontSize: 12, fontWeight: 700 }}>{noLeidosNotif}</span>
-                  )}
-                  {item.name === 'Mensajes' && noLeidosMensajes > 0 && (
-                    <span style={{ background: '#F87171', color: '#fff', borderRadius: 12, padding: '2px 8px', fontSize: 12, fontWeight: 700 }}>{noLeidosMensajes}</span>
-                  )}
-                </span>
-              </span>
-            )}
+            {sidebarOpen && <span>{item.name}</span>}
           </button>
         );
       })}
