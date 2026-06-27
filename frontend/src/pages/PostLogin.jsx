@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
-import { getUsuarios, getCarrito, checkoutCarrito, getOrdenes } from "../services/api";
+import { getUsuarios, getCarrito, checkoutCarrito, getOrdenes, addToCart } from "../services/api";
 import CompradorSidebar from "../components/CompradorSidebar";
+import FiltrosCatalogo from "../components/FiltrosCatalogo";
+import LibroCard from "../components/LibroCard";
 import { getUserRole } from "../hooks/useAuth";
 import { notify } from "../components/ToastProvider";
 import {
@@ -19,6 +21,10 @@ import {
   IconCheck,
   IconLock
 } from "../components/Icons";
+
+import Catalogo from './Catalogo';
+import Chat from './Chat';
+import Notificaciones from './Notificaciones';
 
 // Componente especializado con el SVG profesional para carrito vacío
 const CartEmptyState = ({ onGoToCatalog }) => (
@@ -69,6 +75,22 @@ export default function PostLogin() {
     es_principal: false
   });
   const [guardando, setGuardando] = useState(false);
+
+  // Estado del catálogo
+  const [libros, setLibros] = useState([]);
+  const [catalogoLoading, setCatalogoLoading] = useState(true);
+  const [catalogoPagina, setCatalogoPagina] = useState(1);
+  const [catalogoTotalPaginas, setCatalogoTotalPaginas] = useState(1);
+  const [catalogoAddingId, setCatalogoAddingId] = useState(null);
+  const [catalogoFiltros, setCatalogoFiltros] = useState({
+    q: '',
+    categoria_id: null,
+    precio_min: 0,
+    precio_max: 1000000,
+    calificacion_min: 0,
+    disponible: true,
+    ordenar_por: 'relevancia'
+  });
 
   // ========================
   // Hooks de navegación y ubicación
@@ -162,6 +184,71 @@ export default function PostLogin() {
     }
   }, [activeSide, userId]);
 
+  // Cargar catálogo cuando se selecciona esa sección
+  useEffect(() => {
+    if (activeSide === "Catálogo") {
+      cargarCatalogo();
+    }
+  }, [activeSide, catalogoFiltros, catalogoPagina]);
+
+  const cargarCatalogo = async () => {
+    setCatalogoLoading(true);
+    try {
+      const params = new URLSearchParams();
+      
+      if (catalogoFiltros.q) params.append('q', catalogoFiltros.q);
+      if (catalogoFiltros.categoria_id) params.append('categoria_id', catalogoFiltros.categoria_id);
+      if (catalogoFiltros.precio_min) params.append('precio_min', catalogoFiltros.precio_min);
+      if (catalogoFiltros.precio_max) params.append('precio_max', catalogoFiltros.precio_max);
+      if (catalogoFiltros.calificacion_min) params.append('calificacion_min', catalogoFiltros.calificacion_min);
+      if (catalogoFiltros.disponible) params.append('disponible', 'true');
+      params.append('ordenar_por', catalogoFiltros.ordenar_por);
+      params.append('pagina', catalogoPagina);
+      params.append('limite', 20);
+
+      const response = await api.get(`/catalogo/busqueda-avanzada?${params}`);
+      setLibros(response.data.libros || []);
+      setCatalogoTotalPaginas(response.data.total_paginas || 1);
+      setCatalogoPagina(response.data.pagina || 1);
+    } catch (error) {
+      console.error('Error al cargar catálogo:', error);
+      notify('Error al cargar el catálogo', 'error');
+    } finally {
+      setCatalogoLoading(false);
+    }
+  };
+
+  const handleCatalogoFiltrosChange = (nuevosFiltros) => {
+    setCatalogoFiltros(nuevosFiltros);
+    setCatalogoPagina(1);
+  };
+
+  const handleCatalogoAddToCart = async (libro) => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      notify('Debes iniciar sesión para agregar al carrito', 'error');
+      return;
+    }
+    setCatalogoAddingId(libro.id_libro);
+    try {
+      await addToCart({
+        id_libro: libro.id_libro,
+        cantidad: 1,
+        titulo: libro.titulo,
+        autor_libro: libro.autor_libro,
+        precio_libro: libro.precio_libro,
+        imagen: libro.imagen_url || null,
+      });
+      notify(`"${libro.titulo}" agregado al carrito ✓`, 'success');
+      window.dispatchEvent(new Event('cart-updated'));
+    } catch (err) {
+      const msg = err.response?.data?.detail || 'No se pudo agregar al carrito';
+      notify(msg, 'error');
+    } finally {
+      setCatalogoAddingId(null);
+    }
+  };
+
   // ========================
   // Manejadores de acciones
   // ========================
@@ -183,7 +270,7 @@ export default function PostLogin() {
       .finally(() => setCheckoutLoading(false));
   };
 
-  const handleGoToCatalog = () => navigate("/catalogo");
+  const handleGoToCatalog = () => handleSelectSection("Catálogo");
 
   const handleSelectSection = (seccion) => {
     setActiveSide(seccion);
@@ -225,7 +312,7 @@ export default function PostLogin() {
                 return (
                   <div className="empty-state">
                     <p>Agrega libros a favoritos para recibir recomendaciones personalizadas</p>
-                    <button className="btn btn-vinotinto btn-catalog" onClick={handleGoToCatalog} style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
+                    <button className="btn btn-vinotinto btn-catalog" onClick={() => setActiveSide('Catálogo')} style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
                       <IconBooks width={18} height={18} strokeWidth={2} style={{ color: 'white' }} />
                       Explorar catálogo
                     </button>
@@ -275,7 +362,7 @@ export default function PostLogin() {
                   ))}
 
                   <div style={{ marginTop: '16px', textAlign: 'center' }}>
-                    <button className="btn btn-vinotinto btn-catalog" onClick={handleGoToCatalog} style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
+                    <button className="btn btn-vinotinto btn-catalog" onClick={() => setActiveSide('Catálogo')} style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
                       <IconBooks width={18} height={18} strokeWidth={2} style={{ color: 'white' }} />
                       Ver más libros
                     </button>
@@ -284,6 +371,21 @@ export default function PostLogin() {
               );
             })()}
           </>
+        )}
+
+        {/* ── CATÁLOGO EN DASHBOARD (sin salto de página) ── */}
+        {activeSide === "Catálogo" && (
+          <Catalogo />
+        )}
+
+        {/* ── MENSAJES EN DASHBOARD (sin salto de página) ── */}
+        {activeSide === "Mensajes" && (
+          <Chat />
+        )}
+
+        {/* ── NOTIFICACIONES EN DASHBOARD (sin salto de página) ── */}
+        {activeSide === "Notificaciones" && (
+          <Notificaciones />
         )}
 
         {/* ── CARRITO (FUSIONADO Y OPTIMIZADO) ── */}
@@ -586,6 +688,54 @@ export default function PostLogin() {
             {/* Información Personal */}
             <div className="pl-card" style={{ padding: "2rem" }}>
               <h3 style={{ margin: "0 0 1rem 0", color: "var(--vinotinto)", fontSize: "1.2rem" }}>Información Personal</h3>
+              
+              {/* Foto de Perfil */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '2rem', marginBottom: '2rem', paddingBottom: '2rem', borderBottom: '1px solid #e0dbd4' }}>
+                <div style={{ flexShrink: 0 }}>
+                  <div style={{ 
+                    width: '100px', 
+                    height: '100px', 
+                    borderRadius: '50%', 
+                    background: '#e0dbd4', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center',
+                    fontSize: '2rem',
+                    color: '#7A1E3A',
+                    fontWeight: 'bold',
+                    border: '3px solid #7A1E3A'
+                  }}>
+                    {userName?.charAt(0).toUpperCase() || 'U'}
+                  </div>
+                </div>
+                <div>
+                  <h3 style={{ margin: '0 0 0.5rem 0' }}>Foto de Perfil</h3>
+                  <p style={{ margin: '0 0 1rem 0', color: '#666', fontSize: '0.9rem' }}>
+                    Sube una foto para personalizar tu perfil
+                  </p>
+                  <input 
+                    type="file" 
+                    id="foto-perfil-input"
+                    accept="image/*"
+                    style={{ display: 'none' }}
+                  />
+                  <label 
+                    htmlFor="foto-perfil-input"
+                    style={{
+                      background: 'var(--vinotinto)',
+                      color: 'white',
+                      padding: '0.5rem 1rem',
+                      borderRadius: '6px',
+                      fontSize: '0.9rem',
+                      cursor: 'pointer',
+                      display: 'inline-block'
+                    }}
+                  >
+                    Cambiar Foto
+                  </label>
+                </div>
+              </div>
+
               <div style={{ display: "flex", flexDirection: "column", gap: "16px", maxWidth: "500px" }}>
                 <div>
                   <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>Nombre</label>
@@ -797,58 +947,93 @@ export default function PostLogin() {
           </>
         )}
 
-        {/* ── CONFIGURACIÓN / REGISTRO DE ACTIVIDAD ── */}
+        {/* ── CONFIGURACIÓN ── */}
         {activeSide === "Configuración" && (
           <>
             <div className="pl-card" style={{ padding: "2.5rem 2rem", marginBottom: 24 }}>
               <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                <span style={{ fontSize: 28 }}>📋</span>
-                <h2 style={{ margin: 0 }}>Registro de actividad</h2>
+                <IconSettings width={28} height={28} strokeWidth={2} style={{ color: '#7A1E3A' }} />
+                <h2 style={{ margin: 0 }}>Configuración de Cuenta</h2>
               </div>
             </div>
 
-            <div className="pl-card">
-              {(() => {
-                const favoritos = JSON.parse(localStorage.getItem('favoritos')) || [];
-                const actividades = [
-                  ...favoritos.map((libro) => ({
-                    tipo: 'favorito',
-                    emoji: '❤️',
-                    texto: `Agregaste "${libro.titulo}" a favoritos`,
-                    fecha: 'Reciente',
-                  })),
-                  ...ordenes.map((orden) => ({
-                    tipo: 'compra',
-                    emoji: '🛒',
-                    texto: `Realizaste la orden #${orden.id_orden} por $${Number(orden.total || 0).toLocaleString('es-CO')}`,
-                    fecha: orden.fecha ? new Date(orden.fecha).toLocaleDateString('es-CO') : 'Reciente',
-                  })),
-                ];
-
-                return actividades.length === 0 ? (
-                  <div style={{ padding: "30px", textAlign: "center", color: "#888" }}>
-                    <p>No hay actividad registrada aún.</p>
+            {/* Preferencias de Notificaciones */}
+            <div className="pl-card" style={{ padding: "2rem", marginBottom: 20 }}>
+              <h3 style={{ margin: "0 0 1rem 0", color: "var(--vinotinto)", fontSize: "1.2rem" }}>Preferencias de Notificaciones</h3>
+              <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "1.2rem", background: "#faf8f6", borderRadius: "8px", borderLeft: "4px solid var(--vinotinto)" }}>
+                  <div style={{ flex: 1 }}>
+                    <h4 style={{ margin: "0 0 0.3rem 0", color: "#2a2a2a", fontSize: "1rem" }}>Promociones y Ofertas</h4>
+                    <p style={{ margin: 0, color: "#666", fontSize: "0.85rem" }}>Recibe notificaciones sobre descuentos especiales y promociones</p>
                   </div>
-                ) : (
-                  actividades.map((act, i) => (
-                    <div key={i} className="pl-order-row">
-                      <div className="pl-order-left">
-                        <span className="pl-order-emoji">{act.emoji}</span>
-                        <div>
-                          <p className="pl-order-title">{act.texto}</p>
-                          <p className="pl-order-meta">{act.fecha}</p>
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                );
-              })()}
+                  <label style={{ position: "relative", display: "inline-block", width: "50px", height: "26px", flexShrink: 0 }}>
+                    <input type="checkbox" defaultChecked style={{ opacity: 0, width: 0, height: 0 }} />
+                    <span style={{ position: "absolute", cursor: "pointer", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "var(--vinotinto)", transition: "0.3s", borderRadius: "26px" }}></span>
+                    <span style={{ position: "absolute", content: "", height: "20px", width: "20px", left: "3px", bottom: "3px", backgroundColor: "white", transition: "0.3s", borderRadius: "50%", transform: "translateX(24px)" }}></span>
+                  </label>
+                </div>
+
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "1.2rem", background: "#faf8f6", borderRadius: "8px", borderLeft: "4px solid var(--vinotinto)" }}>
+                  <div style={{ flex: 1 }}>
+                    <h4 style={{ margin: "0 0 0.3rem 0", color: "#2a2a2a", fontSize: "1rem" }}>Actualizaciones de Pedidos</h4>
+                    <p style={{ margin: 0, color: "#666", fontSize: "0.85rem" }}>Notificaciones sobre el estado de tus compras y envíos</p>
+                  </div>
+                  <label style={{ position: "relative", display: "inline-block", width: "50px", height: "26px", flexShrink: 0 }}>
+                    <input type="checkbox" defaultChecked style={{ opacity: 0, width: 0, height: 0 }} />
+                    <span style={{ position: "absolute", cursor: "pointer", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "var(--vinotinto)", transition: "0.3s", borderRadius: "26px" }}></span>
+                    <span style={{ position: "absolute", content: "", height: "20px", width: "20px", left: "3px", bottom: "3px", backgroundColor: "white", transition: "0.3s", borderRadius: "50%", transform: "translateX(24px)" }}></span>
+                  </label>
+                </div>
+
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "1.2rem", background: "#faf8f6", borderRadius: "8px", borderLeft: "4px solid var(--vinotinto)" }}>
+                  <div style={{ flex: 1 }}>
+                    <h4 style={{ margin: "0 0 0.3rem 0", color: "#2a2a2a", fontSize: "1rem" }}>Novedades y Libros</h4>
+                    <p style={{ margin: 0, color: "#666", fontSize: "0.85rem" }}>Recibe recomendaciones basadas en tus intereses</p>
+                  </div>
+                  <label style={{ position: "relative", display: "inline-block", width: "50px", height: "26px", flexShrink: 0 }}>
+                    <input type="checkbox" style={{ opacity: 0, width: 0, height: 0 }} />
+                    <span style={{ position: "absolute", cursor: "pointer", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "#ccc", transition: "0.3s", borderRadius: "26px" }}></span>
+                    <span style={{ position: "absolute", content: "", height: "20px", width: "20px", left: "3px", bottom: "3px", backgroundColor: "white", transition: "0.3s", borderRadius: "50%" }}></span>
+                  </label>
+                </div>
+
+                <button
+                  style={{
+                    background: "var(--vinotinto)", color: "white", border: "none",
+                    padding: "12px 24px", borderRadius: "8px", fontWeight: 700,
+                    fontSize: "0.95rem", cursor: "pointer", marginTop: "8px",
+                    fontFamily: "Montserrat, sans-serif"
+                  }}
+                  onClick={() => notify("Preferencias guardadas", "success")}
+                >
+                  Guardar cambios
+                </button>
+              </div>
+            </div>
+
+            {/* Información de la Cuenta */}
+            <div className="pl-card" style={{ padding: "2rem" }}>
+              <h3 style={{ margin: "0 0 1rem 0", color: "var(--vinotinto)", fontSize: "1.2rem" }}>Información de la Cuenta</h3>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "1rem" }}>
+                <div style={{ padding: "1rem", background: "#faf8f6", borderRadius: "8px" }}>
+                  <label style={{ fontWeight: 600, color: "var(--vinotinto)", display: "block", marginBottom: "0.5rem", fontSize: "0.9rem", textTransform: "uppercase", letterSpacing: "0.5px" }}>Rol</label>
+                  <p style={{ margin: 0, color: "#2a2a2a", fontSize: "1rem" }}>Usuario</p>
+                </div>
+                <div style={{ padding: "1rem", background: "#faf8f6", borderRadius: "8px" }}>
+                  <label style={{ fontWeight: 600, color: "var(--vinotinto)", display: "block", marginBottom: "0.5rem", fontSize: "0.9rem", textTransform: "uppercase", letterSpacing: "0.5px" }}>Estado</label>
+                  <p style={{ margin: 0, color: "#2a2a2a", fontSize: "1rem" }}>Activo</p>
+                </div>
+                <div style={{ padding: "1rem", background: "#faf8f6", borderRadius: "8px" }}>
+                  <label style={{ fontWeight: 600, color: "var(--vinotinto)", display: "block", marginBottom: "0.5rem", fontSize: "0.9rem", textTransform: "uppercase", letterSpacing: "0.5px" }}>ID de Usuario</label>
+                  <p style={{ margin: 0, color: "#2a2a2a", fontSize: "1rem" }}>#{userId || 'N/A'}</p>
+                </div>
+              </div>
             </div>
           </>
         )}
 
         {/* ── OTRAS SECCIONES ── */}
-        {!["Inicio", "Carrito", "Mis Compras", "Favoritos", "Mi Perfil", "Direcciones", "Configuración"].includes(activeSide) && (
+        {!["Inicio", "Catálogo", "Carrito", "Mis Compras", "Favoritos", "Mi Perfil", "Direcciones", "Configuración"].includes(activeSide) && (
           <div className="welcome-card">
             <h1>{activeSide}</h1>
             <p>Esta sección estará disponible próximamente.</p>

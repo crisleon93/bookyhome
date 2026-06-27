@@ -2,9 +2,11 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
-import api from "../services/api";
+import api, { getApiBaseUrl } from "../services/api";
 import SeccionOfertas from "../components/SeccionOfertas";
 import SellerSidebar from "../components/VendedorSidebar";
+import Chat from './Chat';
+import Notificaciones from './Notificaciones';
 import {
   IconBook,
   IconBooks,
@@ -98,6 +100,7 @@ function ModalEditarLibro({ libro, categorias, onClose, onGuardado }) {
     e.preventDefault();
     if (!form.titulo.trim())            return setError("El título es obligatorio");
     if (!form.autor_libro.trim())       return setError("El autor es obligatorio");
+    if (!form.id_categoria)             return setError("Selecciona una categoría");
     if (Number(form.precio_libro) <= 0) return setError("El precio debe ser mayor a 0");
     if (Number(form.stock) < 0)         return setError("El stock no puede ser negativo");
     setCargando(true);
@@ -276,6 +279,7 @@ export default function MiTienda() {
   const [userName,      setUserName]      = useState("");
   const [loading,       setLoading]       = useState(true);
   const [activeSide,    setActiveSide]    = useState("Inicio");
+  const [selectedSalaInChat, setSelectedSalaInChat] = useState(null);
   const [libros,        setLibros]        = useState([]);
   const [loadingLibros, setLoadingLibros] = useState(false);
   const [categorias,    setCategorias]    = useState([]);
@@ -329,24 +333,54 @@ export default function MiTienda() {
   const cargarLibros = () => {
     setLoadingLibros(true);
     api.get("/libros/mis-libros")
-      .then((res) => setLibros(res.data))
-      .catch(() => {})
+      .then((res) => {
+        if (Array.isArray(res.data)) {
+          setLibros(res.data);
+        } else {
+          console.error("Respuesta inesperada de mis-libros:", res.data);
+          setLibros([]);
+        }
+      })
+      .catch((err) => {
+        console.error("Error cargando libros:", err);
+        setLibros([]);
+      })
       .finally(() => setLoadingLibros(false));
   };
 
   const cargarPedidos = () => {
     setLoadingPedidos(true);
     api.get("/libros/mis-pedidos")
-      .then((res) => setPedidos(res.data))
-      .catch(() => {})
+      .then((res) => {
+        if (Array.isArray(res.data)) {
+          setPedidos(res.data);
+        } else {
+          console.error("Respuesta inesperada de mis-pedidos:", res.data);
+          setPedidos([]);
+        }
+      })
+      .catch((err) => {
+        console.error("Error cargando pedidos:", err);
+        setPedidos([]);
+      })
       .finally(() => setLoadingPedidos(false));
   };
 
   const cargarVentas = () => {
     setLoadingVentas(true);
     api.get("/libros/mis-ventas")
-      .then((res) => setVentas(res.data))
-      .catch(() => {})
+      .then((res) => {
+        if (Array.isArray(res.data)) {
+          setVentas(res.data);
+        } else {
+          console.error("Respuesta inesperada de mis-ventas:", res.data);
+          setVentas([]);
+        }
+      })
+      .catch((err) => {
+        console.error("Error cargando ventas:", err);
+        setVentas([]);
+      })
       .finally(() => setLoadingVentas(false));
   };
  
@@ -364,39 +398,98 @@ export default function MiTienda() {
   }, [activeSide]);
 
   useEffect(() => {
-    api.get("/libros/categorias").then((r) => setCategorias(r.data)).catch(() => {});
+    api.get("/libros/categorias")
+      .then((r) => {
+        if (Array.isArray(r.data)) {
+          setCategorias(r.data);
+        } else {
+          console.error("Respuesta inesperada de categorías:", r.data);
+          setCategorias([]);
+        }
+      })
+      .catch((err) => {
+        console.error("Error cargando categorías:", err);
+        setCategorias([]);
+      });
 
     setLoadingStats(true);
     api.get("/libros/stats")
-      .then((r) => setStats(r.data)).catch(() => setStats(null))
+      .then((r) => {
+        if (r.data && typeof r.data === "object") {
+          setStats(r.data);
+        } else {
+          console.error("Respuesta inesperada de stats:", r.data);
+          setStats(null);
+        }
+      })
+      .catch((err) => {
+        console.error("Error cargando stats:", err);
+        setStats(null);
+      })
       .finally(() => setLoadingStats(false));
 
     setLoadingTop(true);
     api.get("/libros/top-vendidos")
-      .then((r) => setTopVendidos(r.data)).catch(() => setTopVendidos([]))
+      .then((r) => {
+        if (Array.isArray(r.data)) {
+          setTopVendidos(r.data);
+        } else {
+          console.error("Respuesta inesperada de top-vendidos:", r.data);
+          setTopVendidos([]);
+        }
+      })
+      .catch((err) => {
+        console.error("Error cargando top-vendidos:", err);
+        setTopVendidos([]);
+      })
       .finally(() => setLoadingTop(false));
 
     api.get(`/libros/alertas-stock?umbral=${stockUmbral}`)
-      .then((r) => setAlertasStock(r.data))
-      .catch(() => setAlertasStock([]));
+      .then((r) => {
+        if (Array.isArray(r.data)) {
+          setAlertasStock(r.data);
+        } else {
+          console.error("Respuesta inesperada de alertas-stock:", r.data);
+          setAlertasStock([]);
+        }
+      })
+      .catch((err) => {
+        console.error("Error cargando alertas de stock:", err);
+        setAlertasStock([]);
+      });
 
     api.get("/tiendas/mi-tienda")
       .then((r) => {
         const miTienda = r.data;
-        if (miTienda) {
+        if (miTienda && typeof miTienda === "object") {
           setTiendaInfo(miTienda);
           setTiendaForm({
-            nombre_tienda: miTienda.nombre_tienda,
-            direccion: miTienda.direccion,
-            telefono: miTienda.telefono,
+            nombre_tienda: miTienda.nombre_tienda || "",
+            direccion: miTienda.direccion || "",
+            telefono: miTienda.telefono || "",
           });
         }
       })
-      .catch(() => {});
+      .catch((err) => {
+        console.error("Error cargando información de tienda:", err);
+        setTiendaInfo(null);
+      });
   }, [stockUmbral]);
 
   const cargarAlertas = () => {
-    api.get(`/libros/alertas-stock?umbral=${stockUmbral}`).then((r) => setAlertasStock(r.data)).catch(() => {});
+    api.get(`/libros/alertas-stock?umbral=${stockUmbral}`)
+      .then((r) => {
+        if (Array.isArray(r.data)) {
+          setAlertasStock(r.data);
+        } else {
+          console.error("Respuesta inesperada de alertas-stock:", r.data);
+          setAlertasStock([]);
+        }
+      })
+      .catch((err) => {
+        console.error("Error cargando alertas de stock:", err);
+        setAlertasStock([]);
+      });
   };
 
   if (loading) return <div style={{ padding: "2rem" }}>Cargando tienda...</div>;
@@ -566,7 +659,7 @@ export default function MiTienda() {
                 <div className="recent-book-left">
                   <div className="recent-book-cover">
                     {libro.imagenes?.[0] ? (
-                      <img src={`http://127.0.0.1:8000${libro.imagenes[0]}`} alt={libro.titulo} />
+                      <img src={`${getApiBaseUrl()}${libro.imagenes[0]}`} alt={libro.titulo} />
                     ) : (
                       <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}><IconBook width={24} height={24} strokeWidth={2} style={{ color: '#7A1E3A' }} /></span>
                     )}
@@ -649,7 +742,7 @@ export default function MiTienda() {
             <div className="top-rank">#{i + 1}</div>
             <div className="book-cover-mini">
               {libro.imagenes?.[0]
-                ? <img src={`http://127.0.0.1:8000${libro.imagenes[0]}`} alt={libro.titulo} />
+                ? <img src={`${getApiBaseUrl()}${libro.imagenes[0]}`} alt={libro.titulo} />
                 : <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}><IconBook width={24} height={24} strokeWidth={2} style={{ color: '#7A1E3A' }} /></span>}
             </div>
             <div className="book-info" style={{ flex: 1 }}>
@@ -698,7 +791,7 @@ export default function MiTienda() {
           <div key={libro.id_libro} className="book-row">
             <div className="book-cover-mini">
               {libro.imagenes?.[0]
-                ? <img src={`http://127.0.0.1:8000${libro.imagenes[0]}`} alt={libro.titulo} />
+                ? <img src={`${getApiBaseUrl()}${libro.imagenes[0]}`} alt={libro.titulo} />
                 : <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}><IconBook width={24} height={24} strokeWidth={2} style={{ color: '#7A1E3A' }} /></span>}
             </div>
             <div className="book-info" style={{ flex: 1 }}>
@@ -811,6 +904,14 @@ export default function MiTienda() {
                 fontSize: "0.95rem", cursor: "pointer", fontFamily: "Montserrat, sans-serif"
               }}
               onClick={() => {
+                if (!tiendaForm.nombre_tienda?.trim()) {
+                  setTiendaMsg("El nombre de la tienda es obligatorio");
+                  return;
+                }
+                if (tiendaForm.nombre_tienda.trim().length < 3) {
+                  setTiendaMsg("El nombre debe tener al menos 3 caracteres");
+                  return;
+                }
                 api.put("/tiendas/mi-tienda", tiendaForm)
                   .then(() => {
                     setTiendaMsg("Perfil del negocio actualizado");
@@ -818,6 +919,7 @@ export default function MiTienda() {
                     setTiendaInfo(prev => ({ ...prev, ...tiendaForm }));
                   })
                   .catch((err) => {
+                    console.error("Error actualizando tienda:", err);
                     setTiendaMsg("Error al guardar cambios: " + (err.response?.data?.detail || err.message));
                     setTimeout(() => setTiendaMsg(""), 4000);
                   });
@@ -977,6 +1079,16 @@ export default function MiTienda() {
   const renderContenido = () => {
     switch (activeSide) {
       case "Inicio":        return renderInicio();
+      case "Mensajes":      return <Chat embedded={true} selectedSalaProp={selectedSalaInChat} onSelectSala={(id) => setSelectedSalaInChat(id)} />;
+      case "Notificaciones":return <Notificaciones embedded={true} onOpenReference={(notif) => {
+                              if (notif.tipo === 'mensaje') {
+                                setActiveSide('Mensajes');
+                                setSelectedSalaInChat(notif.referencia_id);
+                              } else if (notif.tipo === 'resena' || notif.tipo === 'oferta') {
+                                // abrir catálogo en sección del vendedor
+                                setActiveSide('Promociones');
+                              }
+                            }} />;
       case "Mis Libros":    return renderMisLibros();
       case "Ventas":        return renderVentas();
       case "Pedidos":       return renderPedidos();

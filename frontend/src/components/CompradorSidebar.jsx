@@ -2,28 +2,36 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
   IconStoreAlt as IconHome, 
-  IconBooks as IconBook, 
-  IconStar as IconFavorites, 
-  IconCart, 
+  IconBook, 
+  IconFavoritesAlt as IconFavorites, 
+  IconCartAlt as IconCart, 
   IconPackage, 
-  IconSettings as IconUser,
+  IconUser,
+  IconSettings,
   IconChevronLeft,
   IconMenu,
   IconLogOut,
-  IconMapPin
+  IconMapPin,
+  IconMail,
+  IconPhone
 } from "./Icons";
+import { notificacionesService } from '../services/notificaciones';
+import { chatService } from '../services/chat';
 
 const VINOTINTO = '#7A1E3A';
 const WHITE = '#FFFFFF';
 
 const ICONS = {
-  "Inicio": <IconHome width={20} height={20} strokeWidth={2} style={{ color: WHITE }} />,
-  "Catálogo": <IconBook width={20} height={20} strokeWidth={2} style={{ color: WHITE }} />,
-  "Favoritos": <IconFavorites width={20} height={20} strokeWidth={2} style={{ color: WHITE }} />,
-  "Carrito": <IconCart width={20} height={20} strokeWidth={2} style={{ color: WHITE }} />,
-  "Mis Compras": <IconPackage width={20} height={20} strokeWidth={2} style={{ color: WHITE }} />,
-  "Mi Perfil": <IconUser width={20} height={20} strokeWidth={2} style={{ color: WHITE }} />,
-  "Direcciones": <IconMapPin width={20} height={20} strokeWidth={2} style={{ color: WHITE }} />,
+  "Inicio": <IconHome width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
+  "Catálogo": <IconBook width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
+  "Favoritos": <IconFavorites width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
+  "Carrito": <IconCart width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
+  "Mis Compras": <IconPackage width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
+  "Direcciones": <IconMapPin width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
+  "Notificaciones": <IconPhone className="" width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
+  "Mensajes": <IconMail className="" width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
+  "Mi Perfil": <IconUser width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
+  "Configuración": <IconSettings width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
 };
 
 const MENU_LINKS = [
@@ -33,7 +41,10 @@ const MENU_LINKS = [
   { name: "Carrito", label: "Carrito" },
   { name: "Mis Compras", label: "Mis compras" },
   { name: "Direcciones", label: "Direcciones" },
+  { name: "Notificaciones", label: "Notificaciones" },
+  { name: "Mensajes", label: "Mensajes" },
   { name: "Mi Perfil", label: "Perfil" },
+  { name: "Configuración", label: "Configuración" },
 ];
 
 function SidebarIcon(props) {
@@ -46,6 +57,28 @@ function SidebarIcon(props) {
 export default function CompradorSidebar({ userName, userEmail, activeSide, onSelect }) {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [noLeidosNotif, setNoLeidosNotif] = useState(0);
+  const [noLeidosMensajes, setNoLeidosMensajes] = useState(0);
+
+  useEffect(() => {
+    let mounted = true;
+    const cargar = async () => {
+      try {
+        const notifData = await notificacionesService.obtener(false, 1, 0);
+        if (!mounted) return;
+        setNoLeidosNotif(notifData.no_leidas || 0);
+
+        const salasData = await chatService.getSalas();
+        const totalNo = (salasData.salas || []).reduce((acc, s) => acc + (s.no_leidos || 0), 0);
+        setNoLeidosMensajes(totalNo);
+      } catch (err) {
+        console.error('Error contadores sidebar comprador', err);
+      }
+    };
+    cargar();
+    const iv = setInterval(cargar, 10000);
+    return () => { mounted = false; clearInterval(iv); };
+  }, []);
 
   useEffect(() => {
     document.documentElement.style.setProperty('--dashboard-sidebar-width', sidebarOpen ? '250px' : '76px');
@@ -107,10 +140,18 @@ export default function CompradorSidebar({ userName, userEmail, activeSide, onSe
           <button
             key={item.name}
             onClick={() => {
+              // Preferir onSelect cuando el dashboard controla la selección (evita salto de página)
+              if (onSelect) {
+                onSelect(item.name);
+                return;
+              }
+              // Fallback: navegar a rutas externas
+              if (item.path) {
+                navigate(item.path);
+                return;
+              }
               if (item.name === "Catálogo") {
                 navigate("/catalogo");
-              } else {
-                onSelect(item.name);
               }
             }}
             title={!sidebarOpen ? item.label : undefined}
@@ -126,14 +167,26 @@ export default function CompradorSidebar({ userName, userEmail, activeSide, onSe
               transition: 'background 0.15s ease',
             }}
           >
-            <span style={{ display: 'flex', flexShrink: 0 }}>
+            <span style={{ display: 'flex', flexShrink: 0, alignItems: 'center', width: '24px', height: '24px', justifyContent: 'center' }}>
               {ICONS[item.name]}
             </span>
-            {sidebarOpen && <span>{item.label}</span>}
+            {sidebarOpen && (
+              <span style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1 }}>
+                <span style={{ flex: 1 }}>{item.label}</span>
+                <span style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                  {item.name === 'Notificaciones' && noLeidosNotif > 0 && (
+                    <span style={{ background: '#FFC107', color: '#000', borderRadius: 12, padding: '2px 8px', fontSize: 12, fontWeight: 700 }}>{noLeidosNotif}</span>
+                  )}
+                  {item.name === 'Mensajes' && noLeidosMensajes > 0 && (
+                    <span style={{ background: '#F87171', color: '#fff', borderRadius: 12, padding: '2px 8px', fontSize: 12, fontWeight: 700 }}>{noLeidosMensajes}</span>
+                  )}
+                </span>
+              </span>
+            )}
           </button>
         );
       })}
-
+      
       {/* Logout */}
       <button
         onClick={() => {

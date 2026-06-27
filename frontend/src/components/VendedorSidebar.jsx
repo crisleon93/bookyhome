@@ -6,7 +6,10 @@ import {
   IconPlus,
   IconCartAlt as IconCart,
   IconPackage,
+  IconUser,
   IconSettings,
+  IconMail,
+  IconPhone,
   IconTag,
   IconChevronLeft,
   IconMenu,
@@ -23,17 +26,23 @@ const MENU_LINKS = [
   { name: 'Promociones' },
   { name: 'Ventas' },
   { name: 'Pedidos' },
+  { name: 'Notificaciones' },
+  { name: 'Mensajes' },
   { name: 'Perfil' },
+  { name: 'Configuración' },
 ];
 
 const ICONS = {
-  Inicio: <IconHome strokeWidth={2.2} style={{ color: WHITE }} />,
-  'Mis Libros': <IconBook strokeWidth={2.2} style={{ color: WHITE }} />,
-  'Publicar Libro': <IconPlus strokeWidth={2.2} style={{ color: WHITE }} />,
-  Promociones: <IconTag strokeWidth={2.2} style={{ color: WHITE }} />,
-  Ventas: <IconCart strokeWidth={2.2} style={{ color: WHITE }} />,
-  Pedidos: <IconPackage strokeWidth={2.2} style={{ color: WHITE }} />,
-  Perfil: <IconSettings strokeWidth={2.2} style={{ color: WHITE }} />,
+  Inicio: <IconHome width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
+  'Mis Libros': <IconBook width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
+  'Publicar Libro': <IconPlus width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
+  Promociones: <IconTag width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
+  Ventas: <IconCart width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
+  Pedidos: <IconPackage width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
+  Notificaciones: <IconPhone className="" width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
+  Mensajes: <IconMail className="" width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
+  Perfil: <IconUser width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
+  Configuración: <IconSettings width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
 };
 
 function SidebarIcon(props) {
@@ -46,6 +55,50 @@ function SidebarIcon(props) {
 export default function VendedorSidebar({ userName = 'Vendedor', activeSide = 'Inicio', setActiveSide, handleLogout }) {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [noLeidosNotif, setNoLeidosNotif] = useState(0);
+  const [noLeidosMensajes, setNoLeidosMensajes] = useState(0);
+
+  // Cargar contadores de notificaciones y mensajes
+  useEffect(() => {
+    let mounted = true;
+    const cargarContadores = async () => {
+      try {
+        const { notificacionesService } = await import('../services/notificaciones');
+        const { chatService } = await import('../services/chat');
+
+        try {
+          const notifData = await notificacionesService.obtener(false, 1, 0);
+          if (mounted && notifData) {
+            setNoLeidosNotif(notifData.no_leidas || 0);
+          }
+        } catch (notifErr) {
+          console.error('Error cargando notificaciones:', notifErr);
+          if (mounted) setNoLeidosNotif(0);
+        }
+
+        try {
+          const salasData = await chatService.getSalas();
+          if (mounted && salasData && salasData.salas) {
+            const totalNo = (salasData.salas || []).reduce((acc, s) => acc + (s.no_leidos || 0), 0);
+            setNoLeidosMensajes(totalNo);
+          }
+        } catch (chatErr) {
+          console.error('Error cargando chats:', chatErr);
+          if (mounted) setNoLeidosMensajes(0);
+        }
+      } catch (err) {
+        console.error('Error importando servicios:', err);
+        if (mounted) {
+          setNoLeidosNotif(0);
+          setNoLeidosMensajes(0);
+        }
+      }
+    };
+
+    cargarContadores();
+    const iv = setInterval(cargarContadores, 10000);
+    return () => { mounted = false; clearInterval(iv); };
+  }, []);
 
   useEffect(() => {
     document.documentElement.style.setProperty('--dashboard-sidebar-width', sidebarOpen ? '250px' : '76px');
@@ -112,11 +165,15 @@ export default function VendedorSidebar({ userName = 'Vendedor', activeSide = 'I
           <button
             key={item.name}
             onClick={() => {
+              // Preferir setActiveSide para evitar saltos de página cuando el dashboard maneja la vista
+              if (setActiveSide) {
+                setActiveSide(item.name);
+                return;
+              }
               if (item.path) {
                 navigate(item.path);
                 return;
               }
-              if (setActiveSide) setActiveSide(item.name);
             }}
             title={!sidebarOpen ? item.name : undefined}
             style={{

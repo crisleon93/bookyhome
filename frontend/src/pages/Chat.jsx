@@ -6,13 +6,14 @@ import { getToken } from "../hooks/useAuth";
 import { chatService } from "../services/chat";
 import "../styles/Chat.css";
 
-export default function Chat() {
+export default function Chat({ embedded = false, selectedSalaProp = null, onSelectSala = null }) {
   const navigate = useNavigate();
   const token = getToken();
-  const { id_sala } = useParams();
+  const params = useParams();
+  const id_sala = embedded ? null : params.id_sala;
 
   const [salas, setSalas] = useState([]);
-  const [selectedSala, setSelectedSala] = useState(id_sala || null);
+  const [selectedSala, setSelectedSala] = useState(selectedSalaProp || id_sala || null);
   const [mensajes, setMensajes] = useState([]);
   const [nuevoMensaje, setNuevoMensaje] = useState("");
   const [loading, setLoading] = useState(false);
@@ -106,7 +107,10 @@ export default function Chat() {
   // ============= SELECCIONAR SALA =============
   const handleSeleccionarSala = (sala) => {
     setSelectedSala(sala.id_sala);
-    navigate(`/chat/${sala.id_sala}`);
+    if (onSelectSala) {
+      try { onSelectSala(sala.id_sala); } catch (e) { /* ignore */ }
+    }
+    if (!embedded) navigate(`/chat/${sala.id_sala}`);
   };
 
   // ============= UI =============
@@ -123,8 +127,12 @@ export default function Chat() {
           <div className="salas-list">
             {salas.length === 0 ? (
               <div className="salas-empty">
-                <p>No tienes conversaciones</p>
-                <small>Inicia una conversación con una tienda</small>
+                <p>{embedded ? 'Aún no tienes conversaciones' : 'No tienes conversaciones'}</p>
+                <small>
+                  {embedded
+                    ? 'No has recibido mensajes de clientes todavía.'
+                    : 'Inicia una conversación con una tienda'}
+                </small>
               </div>
             ) : (
               salas.map((sala) => (
