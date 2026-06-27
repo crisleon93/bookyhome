@@ -1,3 +1,5 @@
+-- DROP DATABASE bookyhome;
+CREATE DATABASE bookyhome;
 USE bookyhome;
 
 -- =====================================================
@@ -2662,10 +2664,334 @@ SELECT 'log_actividad'        AS Tabla, COUNT(*) AS Registros FROM log_actividad
 CALL sp_listar_libros_disponibles();
 SELECT * FROM v_detalles_carrito;
 
-SELECT '=== BooKyHome LISTA PARA USAR ===' AS '';
-select * from libros;
+-- poblacion de las tablas para pruebas en la pagina 
 
-CALL sp_listar_libros_disponibles();
+SET FOREIGN_KEY_CHECKS = 0;
+
+-- =============================================================================
+-- 1. USUARIOS (Compradores, Vendedores y 1 Admin)
+-- Contraseña para ingresar a cualquiera: La tuya encriptada con Bcrypt
+-- =============================================================================
+INSERT INTO usuarios (nombre_usuario, correo_usuario, telefono, foto_perfil, estado_usuario, contrasena_usuario, rol, fecha_registro) VALUES
+('Camila Rojas',        'camila.rojas@gmail.com',     '3001234567', NULL, 'Activo', '$2b$12$quJWnYOoFcA4JVMhaYKIvu7lLc2ZLFlQF8nCPTvAWPgnwoNMOWVNW', 'comprador', '2025-01-15'),
+('Andres Felipe Gomez',  'andres.gomez@hotmail.com',   '3012345678', NULL, 'Activo', '$2b$12$quJWnYOoFcA4JVMhaYKIvu7lLc2ZLFlQF8nCPTvAWPgnwoNMOWVNW', 'comprador', '2025-01-20'),
+('Valentina Castro',     'valentina.castro@gmail.com', '3023456789', NULL, 'Activo', '$2b$12$quJWnYOoFcA4JVMhaYKIvu7lLc2ZLFlQF8nCPTvAWPgnwoNMOWVNW', 'comprador', '2025-02-02'),
+('Juan Pablo Martinez',  'jp.martinez@outlook.com',    '3034567890', NULL, 'Activo', '$2b$12$quJWnYOoFcA4JVMhaYKIvu7lLc2ZLFlQF8nCPTvAWPgnwoNMOWVNW', 'comprador', '2025-02-10'),
+('Laura Daniela Perez',  'laura.perez@gmail.com',      '3045678901', NULL, 'Activo', '$2b$12$quJWnYOoFcA4JVMhaYKIvu7lLc2ZLFlQF8nCPTvAWPgnwoNMOWVNW', 'comprador', '2025-02-18'),
+('Santiago Ramirez',     'santiago.ramirez@gmail.com', '3056789012', NULL, 'Activo', '$2b$12$quJWnYOoFcA4JVMhaYKIvu7lLc2ZLFlQF8nCPTvAWPgnwoNMOWVNW', 'comprador', '2025-03-01'),
+('Mariana Lopez',        'mariana.lopez@yahoo.com',    '3067890123', NULL, 'Activo', '$2b$12$quJWnYOoFcA4JVMhaYKIvu7lLc2ZLFlQF8nCPTvAWPgnwoNMOWVNW', 'comprador', '2025-03-12'),
+('Daniel Esteban Torres','daniel.torres@gmail.com',    '3078901234', NULL, 'Activo', '$2b$12$quJWnYOoFcA4JVMhaYKIvu7lLc2ZLFlQF8nCPTvAWPgnwoNMOWVNW', 'comprador', '2025-03-20'),
+('Isabella Sanchez',     'isabella.sanchez@gmail.com', '3089012345', NULL, 'Activo', '$2b$12$quJWnYOoFcA4JVMhaYKIvu7lLc2ZLFlQF8nCPTvAWPgnwoNMOWVNW', 'comprador', '2025-04-05'),
+('Nicolas Vargas',       'nicolas.vargas@hotmail.com', '3090123456', NULL, 'Activo', '$2b$12$quJWnYOoFcA4JVMhaYKIvu7lLc2ZLFlQF8nCPTvAWPgnwoNMOWVNW', 'comprador', '2025-04-22'),
+('Libreria El Sotano SAS',     'contacto@elsotano.co',       '3101111111', NULL, 'Activo', '$2b$12$quJWnYOoFcA4JVMhaYKIvu7lLc2ZLFlQF8nCPTvAWPgnwoNMOWVNW', 'vendedor', '2024-11-10'),
+('Pagina Trece Libros',        'ventas@paginatrece.co',      '3102222222', NULL, 'Activo', '$2b$12$quJWnYOoFcA4JVMhaYKIvu7lLc2ZLFlQF8nCPTvAWPgnwoNMOWVNW', 'vendedor', '2024-11-15'),
+('Rincon Literario Bogota',    'info@rinconliterario.co',    '3103333333', NULL, 'Activo', '$2b$12$quJWnYOoFcA4JVMhaYKIvu7lLc2ZLFlQF8nCPTvAWPgnwoNMOWVNW', 'vendedor', '2024-12-01'),
+('Libros Usados Medellin',     'contacto@librosusadosmed.co','3104444444', NULL, 'Activo', '$2b$12$quJWnYOoFcA4JVMhaYKIvu7lLc2ZLFlQF8nCPTvAWPgnwoNMOWVNW', 'vendedor', '2024-12-10'),
+('Universo de Tinta',          'hola@universodetinta.co',    '3105555555', NULL, 'Activo', '$2b$12$quJWnYOoFcA4JVMhaYKIvu7lLc2ZLFlQF8nCPTvAWPgnwoNMOWVNW', 'vendedor', '2025-01-05'),
+('Tienda en Vacaciones Test',  'pausa@vacacionestest.co',    '3106666666', NULL, 'Suspendido', '$2b$12$quJWnYOoFcA4JVMhaYKIvu7lLc2ZLFlQF8nCPTvAWPgnwoNMOWVNW', 'vendedor', '2025-01-08'),
+('Administrador BookyHome', 'admin@bookyhome.co', '3000000000', NULL, 'Activo', '$2b$12$quJWnYOoFcA4JVMhaYKIvu7lLc2ZLFlQF8nCPTvAWPgnwoNMOWVNW', 'admin', '2024-10-01');
+
+-- =============================================================================
+-- 2. TIENDAS
+-- =============================================================================
+INSERT INTO tiendas (id_usuario, nombre_tienda, direccion, telefono, estado_tienda, fecha_creacion) VALUES
+((SELECT id_usuario FROM usuarios WHERE correo_usuario = 'contacto@elsotano.co'), 'Librería El Sótano', 'Calle 45 # 13-22', '3101111111', 'Activo', '2024-11-10'),
+((SELECT id_usuario FROM usuarios WHERE correo_usuario = 'ventas@paginatrece.co'), 'Página Trece', 'Carrera 7 # 54-10', '3102222222', 'Activo', '2024-11-15'),
+((SELECT id_usuario FROM usuarios WHERE correo_usuario = 'info@rinconliterario.co'), 'El Rincón Literario', 'Av. El Poblado # 10-50', '3103333333', 'Activo', '2024-12-01'),
+((SELECT id_usuario FROM usuarios WHERE correo_usuario = 'contacto@librosusadosmed.co'), 'Libros Usados Medellín', 'Circular 4 # 73-15', '3104444444', 'Activo', '2024-12-10'),
+((SELECT id_usuario FROM usuarios WHERE correo_usuario = 'hola@universodetinta.co'), 'Universo de Tinta', 'Calle 18 # 6-31', '3105555555', 'Activo', '2025-01-05'),
+((SELECT id_usuario FROM usuarios WHERE correo_usuario = 'pausa@vacacionestest.co'), 'Tienda Test Pausada', 'Carrera 15 # 85-12', '3106666666', 'Inactivo', '2025-01-08');
+
+-- =============================================================================
+-- 3. CALIFICACIONES TIENDAS
+-- =============================================================================
+INSERT INTO calificaciones_tiendas (id_tienda, id_usuario, calificacion, comentario, fecha_calificacion) VALUES
+((SELECT id_tienda FROM tiendas WHERE nombre_tienda = 'Librería El Sótano'), (SELECT id_usuario FROM usuarios WHERE correo_usuario = 'camila.rojas@gmail.com'), 5, 'Excelente atención y el libro llegó impecable.', '2025-02-10'),
+((SELECT id_tienda FROM tiendas WHERE nombre_tienda = 'Librería El Sótano'), (SELECT id_usuario FROM usuarios WHERE correo_usuario = 'andres.gomez@hotmail.com'), 4, 'Buen catálogo, demoró un día más de lo esperado.', '2025-02-22'),
+((SELECT id_tienda FROM tiendas WHERE nombre_tienda = 'Página Trece'), (SELECT id_usuario FROM usuarios WHERE correo_usuario = 'valentina.castro@gmail.com'), 5, '¡Encontré ediciones hermosas de fantasía!', '2025-03-05'),
+((SELECT id_tienda FROM tiendas WHERE nombre_tienda = 'El Rincón Literario'), (SELECT id_usuario FROM usuarios WHERE correo_usuario = 'jp.martinez@outlook.com'), 4, 'Buen empaque y libros muy bien cuidados.', '2025-03-18'),
+((SELECT id_tienda FROM tiendas WHERE nombre_tienda = 'Libros Usados Medellín'), (SELECT id_usuario FROM usuarios WHERE correo_usuario = 'laura.perez@gmail.com'), 4, 'Libro usado en perfecto estado económico.', '2025-04-02'),
+((SELECT id_tienda FROM tiendas WHERE nombre_tienda = 'Universo de Tinta'), (SELECT id_usuario FROM usuarios WHERE correo_usuario = 'santiago.ramirez@gmail.com'), 5, 'Entrega superrápida y el manga venía con extras.', '2025-04-15'),
+((SELECT id_tienda FROM tiendas WHERE nombre_tienda = 'Librería El Sótano'), (SELECT id_usuario FROM usuarios WHERE correo_usuario = 'mariana.lopez@yahoo.com'), 5, 'Servicio muy profesional.', '2025-04-20'),
+((SELECT id_tienda FROM tiendas WHERE nombre_tienda = 'Página Trece'), (SELECT id_usuario FROM usuarios WHERE correo_usuario = 'daniel.torres@gmail.com'), 3, 'El libro es genial pero la transportadora se demoró.', '2025-04-25');
+
+-- =============================================================================
+-- 4. LIBROS (Los 30 libros originales adaptados a tus categorías)
+-- =============================================================================
+INSERT INTO libros (id_tienda, id_categoria, titulo, autor_libro, descripcion_libro, precio_libro, stock, estado_libro, fecha_publicacion, fecha_listado) VALUES
+((SELECT id_tienda FROM tiendas WHERE nombre_tienda = 'Librería El Sótano'), 4, 'Cien años de soledad', 'Gabriel García Márquez', 'La saga de la familia Buendía en el pueblo ficticio de Macondo.', 45000.00, 10, 'Visible', '1967-05-30', '2025-01-15'),
+((SELECT id_tienda FROM tiendas WHERE nombre_tienda = 'Librería El Sótano'), 4, '1984', 'George Orwell', 'Una inquietante visión totalitaria del futuro bajo la vigilancia constante del Gran Hermano.', 35000.00, 15, 'Visible', '1949-06-08', '2025-01-16'),
+((SELECT id_tienda FROM tiendas WHERE nombre_tienda = 'Librería El Sótano'), 11, 'Sapiens: De animales a dioses', 'Yuval Noah Harari', 'Una breve historia de la humanidad, desde los primeros humanos hasta los avances de hoy.', 59000.00, 7, 'Visible', '2011-01-01', '2025-01-17'),
+((SELECT id_tienda FROM tiendas WHERE nombre_tienda = 'Librería El Sótano'), 1, 'Padre Rico, Padre Pobre', 'Robert Kiyosaki', 'Evidencia lo que los ricos enseñan a sus hijos sobre el dinero que la clase media no.', 38000.00, 0, 'Visible', '1997-04-01', '2025-01-18'),
+((SELECT id_tienda FROM tiendas WHERE nombre_tienda = 'Librería El Sótano'), 4, 'El amor en los tiempos del cólera', 'Gabriel García Márquez', 'La historia de amor verdadero entre Fermina Daza y Florentino Ariza que resiste el tiempo.', 42000.00, 4, 'Visible', '1985-03-06', '2025-01-19'),
+((SELECT id_tienda FROM tiendas WHERE nombre_tienda = 'Librería El Sótano'), 11, 'Breve historia del tiempo', 'Stephen Hawking', 'Un viaje a través del espacio y el tiempo explicando los agujeros negros y el Big Bang.', 39000.00, 3, 'Visible', '1988-04-01', '2025-01-20'),
+((SELECT id_tienda FROM tiendas WHERE nombre_tienda = 'Librería El Sótano'), 4, 'Crimen y castigo', 'Fiódor Dostoyevski', 'El dilema moral y psicológico del joven Raskólnikov tras cometer un asesinato.', 32000.00, 2, 'Visible', '1866-01-01', '2025-01-21'),
+((SELECT id_tienda FROM tiendas WHERE nombre_tienda = 'Página Trece'), 1, 'El Señor de los Anillos: La Comunidad del Anillo', 'J.R.R. Tolkien', 'El inicio del viaje del hobbit Frodo Bolsón para destruir el Anillo Único.', 55000.00, 8, 'Visible', '1954-07-29', '2025-01-22'),
+((SELECT id_tienda FROM tiendas WHERE nombre_tienda = 'Página Trece'), 1, 'Harry Potter y la piedra filosofal', 'J.K. Rowling', 'Un niño huérfano descubre en su undécimo cumpleaños que es un mago.', 42000.00, 12, 'Visible', '1997-06-26', '2025-01-23'),
+((SELECT id_tienda FROM tiendas WHERE nombre_tienda = 'Página Trece'), 4, 'Fahrenheit 451', 'Ray Bradbury', 'Una sociedad futura donde los libros están prohibidos y los bomberos los queman.', 29000.00, 6, 'Visible', '1953-10-19', '2025-01-24'),
+((SELECT id_tienda FROM tiendas WHERE nombre_tienda = 'Página Trece'), 1, 'Crónicas de Narnia: El león, la bruja y el ropero', 'C.S. Lewis', 'Cuatro hermanos descubren un mundo mágico detrás de un armario.', 34000.00, 11, 'Visible', '1950-10-16', '2025-01-25'),
+((SELECT id_tienda FROM tiendas WHERE nombre_tienda = 'Página Trece'), 4, 'Un mundo feliz', 'Aldous Huxley', 'Una sociedad utópica que ha sacrificado las emociones y el arte por estabilidad.', 31000.00, 5, 'Visible', '1932-02-01', '2025-01-26'),
+((SELECT id_tienda FROM tiendas WHERE nombre_tienda = 'Página Trece'), 1, 'El Hobbit', 'J.R.R. Tolkien', 'La gran aventura de Bilbo Bolsón junto a enanos para rescatar un tesoro.', 48000.00, 9, 'Visible', '1937-09-21', '2025-01-27'),
+((SELECT id_tienda FROM tiendas WHERE nombre_tienda = 'El Rincón Literario'), 15, 'Steve Jobs', 'Walter Isaacson', 'La biografía exclusiva del fundador de Apple basada en más de cuarenta entrevistas.', 65000.00, 5, 'Visible', '2011-10-24', '2025-01-28'),
+((SELECT id_tienda FROM tiendas WHERE nombre_tienda = 'El Rincón Literario'), 1, 'Hábitos Atómicos', 'James Clear', 'Una guía práctica para romper malos hábitos y desarrollar buenos comportamientos.', 49000.00, 20, 'Visible', '2018-10-16', '2025-01-29'),
+((SELECT id_tienda FROM tiendas WHERE nombre_tienda = 'El Rincón Literario'), 10, 'El infinito en un junco', 'Irene Vallejo', 'Un ensayo hermoso sobre la invención de los libros en el mundo antiguo.', 69000.00, 4, 'Visible', '2019-09-01', '2025-01-30'),
+((SELECT id_tienda FROM tiendas WHERE nombre_tienda = 'El Rincón Literario'), 15, 'Frida Kahlo: Una biografía', 'Hayden Herrera', 'La biografía definitiva de la pintora mexicana llena de arte y dolor.', 45000.00, 2, 'Visible', '1983-03-01', '2025-01-31'),
+((SELECT id_tienda FROM tiendas WHERE nombre_tienda = 'El Rincón Literario'), 10, 'Moderna de Pueblo: Idiotizadas', 'Raquel Córcoles', 'Un cómic divertido que cuestiona los antiguos mitos de las princesas.', 38000.00, 6, 'Visible', '2017-10-24', '2025-02-01'),
+((SELECT id_tienda FROM tiendas WHERE nombre_tienda = 'Libros Usados Medellín'), 3, 'El Resplandor', 'Stephen King', 'Un escritor se traslada con su familia a un hotel aislado donde despiertan fuerzas oscuras.', 25000.00, 1, 'Visible', '1977-01-28', '2025-02-02'),
+((SELECT id_tienda FROM tiendas WHERE nombre_tienda = 'Libros Usados Medellín'), 3, 'Drácula', 'Bram Stoker', 'La clásica historia de terror del conde vampiro de Transilvania.', 22000.00, 3, 'Visible', '1897-05-26', '2025-02-03'),
+((SELECT id_tienda FROM tiendas WHERE nombre_tienda = 'Libros Usados Medellín'), 3, 'It (Eso)', 'Stephen King', 'Un grupo de niños es aterrorizado por un monstruo que cambia de forma.', 68000.00, 4, 'Visible', '1986-09-15', '2025-02-04'),
+((SELECT id_tienda FROM tiendas WHERE nombre_tienda = 'Libros Usados Medellín'), 4, 'Don Quijote de la Mancha', 'Miguel de Cervantes', 'Las aventuras del famoso caballero andante y su escudero Sancho Panza.', 50000.00, 2, 'Visible', '1605-01-16', '2025-02-05'),
+((SELECT id_tienda FROM tiendas WHERE nombre_tienda = 'Libros Usados Medellín'), 3, 'Frankenstein', 'Mary Shelley', 'Un científico crea una criatura a partir de restos humanos y sufre las consecuencias.', 18000.00, 5, 'Visible', '1818-01-01', '2025-02-06'),
+((SELECT id_tienda FROM tiendas WHERE nombre_tienda = 'Universo de Tinta'), 14, 'Maus', 'Art Spiegelman', 'La historia de un superviviente del Holocausto relatada mediante cómics de animales.', 75000.00, 4, 'Visible', '1986-09-01', '2025-02-07'),
+((SELECT id_tienda FROM tiendas WHERE nombre_tienda = 'Universo de Tinta'), 2, 'Orgullo y Prejuicio', 'Jane Austen', 'La tormentosa relación entre Elizabeth Bennet y el aristócrata Fitzwilliam Darcy.', 28000.00, 6, 'Visible', '1813-01-28', '2025-02-08'),
+((SELECT id_tienda FROM tiendas WHERE nombre_tienda = 'Universo de Tinta'), 9, 'Heartstopper: Volumen 1', 'Alice Oseman', 'Dos chicos se conocen, se hacen amigos y empiezan a enamorarse en esta novela gráfica.', 52000.00, 9, 'Visible', '2019-02-07', '2025-02-09'),
+((SELECT id_tienda FROM tiendas WHERE nombre_tienda = 'Universo de Tinta'), 2, 'Bajo la misma estrella', 'John Green', 'La emotiva historia de amor de dos adolescentes que sufren cáncer.', 25000.00, 12, 'Visible', '2012-01-10', '2025-02-10'),
+((SELECT id_tienda FROM tiendas WHERE nombre_tienda = 'Universo de Tinta'), 9, 'Kimetsu no Yaiba - Tomo 1', 'Koyoharu Gotouge', 'Tanjiro se convierte en cazador de demonios para salvar a su hermana Nezuko.', 35000.00, 18, 'Visible', '2016-06-03', '2025-02-11'),
+((SELECT id_tienda FROM tiendas WHERE nombre_tienda = 'Universo de Tinta'), 9, 'El principito', 'Antoine de Saint-Exupéry', 'Un piloto perdido en el desierto conoce a un pequeño príncipe de otro planeta.', 20000.00, 25, 'Visible', '1943-04-06', '2025-02-12'),
+((SELECT id_tienda FROM tiendas WHERE nombre_tienda = 'Librería El Sótano'), 4, 'Libro de Prueba Oculto', 'Autor Anónimo', 'Este libro no debería verse en el catálogo general.', 15000.00, 5, 'Oculto', '2025-01-01', '2025-02-13');
+-- =============================================================================
+-- 5. IMÁGENES DE LIBRO
+-- =============================================================================
+INSERT INTO imagenes_libro (id_libro, url_imagen, es_principal) VALUES
+((SELECT id_libro FROM libros WHERE titulo = 'Cien años de soledad'), 'https://covers.openlibrary.org/b/id/12711612-L.jpg', 1),
+((SELECT id_libro FROM libros WHERE titulo = '1984'), 'https://covers.openlibrary.org/b/id/12642132-L.jpg', 1),
+((SELECT id_libro FROM libros WHERE titulo = 'Sapiens: De animales a dioses'), 'https://covers.openlibrary.org/b/id/12918451-L.jpg', 1),
+((SELECT id_libro FROM libros WHERE titulo = 'Padre Rico, Padre Pobre'), 'https://covers.openlibrary.org/b/id/12967681-L.jpg', 1),
+((SELECT id_libro FROM libros WHERE titulo = 'El amor en los tiempos del cólera'), 'https://covers.openlibrary.org/b/id/12754622-L.jpg', 1),
+((SELECT id_libro FROM libros WHERE titulo = 'Breve historia del tiempo'), 'https://covers.openlibrary.org/b/id/10414133-L.jpg', 1),
+((SELECT id_libro FROM libros WHERE titulo = 'Crimen y castigo'), 'https://covers.openlibrary.org/b/id/12655122-L.jpg', 1),
+((SELECT id_libro FROM libros WHERE titulo = 'El Señor de los Anillos: La Comunidad del Anillo'), 'https://covers.openlibrary.org/b/id/12836262-L.jpg', 1),
+((SELECT id_libro FROM libros WHERE titulo = 'Harry Potter y la piedra filosofal'), 'https://covers.openlibrary.org/b/id/10521270-L.jpg', 1),
+((SELECT id_libro FROM libros WHERE titulo = 'Fahrenheit 451'), 'https://covers.openlibrary.org/b/id/12923521-L.jpg', 1),
+((SELECT id_libro FROM libros WHERE titulo = 'Crónicas de Narnia: El león, la bruja y el ropero'), 'https://covers.openlibrary.org/b/id/12788523-L.jpg', 1),
+((SELECT id_libro FROM libros WHERE titulo = 'Un mundo feliz'), 'https://covers.openlibrary.org/b/id/12814522-L.jpg', 1),
+((SELECT id_libro FROM libros WHERE titulo = 'El Hobbit'), 'https://covers.openlibrary.org/b/id/12546521-L.jpg', 1),
+((SELECT id_libro FROM libros WHERE titulo = 'Steve Jobs'), 'https://covers.openlibrary.org/b/id/8394017-L.jpg', 1),
+((SELECT id_libro FROM libros WHERE titulo = 'Hábitos Atómicos'), 'https://covers.openlibrary.org/b/id/12885449-L.jpg', 1),
+((SELECT id_libro FROM libros WHERE titulo = 'El infinito en un junco'), 'https://covers.openlibrary.org/b/id/10214152-L.jpg', 1),
+((SELECT id_libro FROM libros WHERE titulo = 'Frida Kahlo: Una biografía'), 'https://covers.openlibrary.org/b/id/11252110-L.jpg', 1),
+((SELECT id_libro FROM libros WHERE titulo = 'Moderna de Pueblo: Idiotizadas'), 'https://covers.openlibrary.org/b/id/9521142-L.jpg', 1),
+((SELECT id_libro FROM libros WHERE titulo = 'El Resplandor'), 'https://covers.openlibrary.org/b/id/11440713-L.jpg', 1),
+((SELECT id_libro FROM libros WHERE titulo = 'Drácula'), 'https://covers.openlibrary.org/b/id/12612142-L.jpg', 1),
+((SELECT id_libro FROM libros WHERE titulo = 'It (Eso)'), 'https://covers.openlibrary.org/b/id/12852110-L.jpg', 1),
+((SELECT id_libro FROM libros WHERE titulo = 'Don Quijote de la Mancha'), 'https://covers.openlibrary.org/b/id/12752210-L.jpg', 1),
+((SELECT id_libro FROM libros WHERE titulo = 'Frankenstein'), 'https://covers.openlibrary.org/b/id/12711225-L.jpg', 1),
+((SELECT id_libro FROM libros WHERE titulo = 'Maus'), 'https://covers.openlibrary.org/b/id/12390124-L.jpg', 1),
+((SELECT id_libro FROM libros WHERE titulo = 'Orgullo y Prejuicio'), 'https://covers.openlibrary.org/b/id/12739345-L.jpg', 1),
+((SELECT id_libro FROM libros WHERE titulo = 'Heartstopper: Volumen 1'), 'https://covers.openlibrary.org/b/id/12845621-L.jpg', 1),
+((SELECT id_libro FROM libros WHERE titulo = 'Bajo la misma estrella'), 'https://covers.openlibrary.org/b/id/12411542-L.jpg', 1),
+((SELECT id_libro FROM libros WHERE titulo = 'Kimetsu no Yaiba - Tomo 1'), 'https://covers.openlibrary.org/b/id/10322110-L.jpg', 1),
+((SELECT id_libro FROM libros WHERE titulo = 'El principito'), 'https://covers.openlibrary.org/b/id/12688412-L.jpg', 1);
+
+-- =============================================================================
+-- 6. VARIANTES DE LIBROS (Formatos, Precios y Stocks correspondientes)
+-- =============================================================================
+INSERT INTO libro_variantes (id_libro, tipo_tapa, idioma, edicion, isbn, precio_variante, stock_variante, peso_gramos, numero_paginas, activa) VALUES
+((SELECT id_libro FROM libros WHERE titulo = 'Cien años de soledad'), 'Tapa Blanda', 'Español', 'Edición Conmemorativa', '9780307474728', 45000.00, 10, 450, 496, 1),
+((SELECT id_libro FROM libros WHERE titulo = '1984'), 'Tapa Blanda', 'Español', 'Primera Edición', '9780451524935', 35000.00, 15, 300, 328, 1),
+((SELECT id_libro FROM libros WHERE titulo = 'Sapiens: De animales a dioses'), 'Tapa Dura', 'Español', 'Décima Impresión', '9780062316097', 59000.00, 7, 600, 496, 1),
+((SELECT id_libro FROM libros WHERE titulo = 'Padre Rico, Padre Pobre'), 'Tapa Blanda', 'Español', 'Edición Ampliada', '9781612680194', 38000.00, 0, 250, 207, 1),
+((SELECT id_libro FROM libros WHERE titulo = 'El amor en los tiempos del cólera'), 'Tapa Blanda', 'Español', 'Edición Especial', '9780307387264', 42000.00, 4, 380, 368, 1),
+((SELECT id_libro FROM libros WHERE titulo = 'Breve historia del tiempo'), 'Tapa Blanda', 'Español', 'Crítica', '9780553380163', 39000.00, 3, 280, 256, 1),
+((SELECT id_libro FROM libros WHERE titulo = 'Crimen y castigo'), 'Tapa Dura', 'Español', 'Clásicos Universales', '9788497940122', 32000.00, 2, 700, 608, 1),
+((SELECT id_libro FROM libros WHERE titulo = 'El Señor de los Anillos: La Comunidad del Anillo'), 'Tapa Dura', 'Español', 'Ilustrada', '9780618346257', 55000.00, 8, 800, 423, 1),
+((SELECT id_libro FROM libros WHERE titulo = 'Harry Potter y la piedra filosofal'), 'Tapa Blanda', 'Español', 'Salamandra', '9780747532699', 42000.00, 12, 310, 223, 1),
+((SELECT id_libro FROM libros WHERE titulo = 'Fahrenheit 451'), 'Tapa Blanda', 'Español', 'Debolsillo', '9780345342966', 29000.00, 6, 200, 176, 1),
+((SELECT id_libro FROM libros WHERE titulo = 'Crónicas de Narnia: El león, la bruja y el ropero'), 'Tapa Blanda', 'Español', 'Destino', '9780064471046', 34000.00, 11, 220, 206, 1),
+((SELECT id_libro FROM libros WHERE titulo = 'Un mundo feliz'), 'Tapa Blanda', 'Español', 'Plaza & Janés', '9780060850524', 31000.00, 5, 270, 288, 1),
+((SELECT id_libro FROM libros WHERE titulo = 'El Hobbit'), 'Tapa Dura', 'Español', 'Minotauro', '9780261102217', 48000.00, 9, 400, 310, 1),
+((SELECT id_libro FROM libros WHERE titulo = 'Steve Jobs'), 'Tapa Dura', 'Español', 'Biografías Debate', '9781451648539', 65000.00, 5, 900, 744, 1),
+((SELECT id_libro FROM libros WHERE titulo = 'Hábitos Atómicos'), 'Tapa Blanda', 'Español', 'Diana', '9780525538288', 49000.00, 20, 340, 320, 1),
+((SELECT id_libro FROM libros WHERE titulo = 'El infinito en un junco'), 'Tapa Dura', 'Español', 'Siruela Colección', '9788417860790', 69000.00, 4, 520, 452, 1),
+((SELECT id_libro FROM libros WHERE titulo = 'Frida Kahlo: Una biografía'), 'Tapa Blanda', 'Español', 'Circe', '9780060085896', 45000.00, 2, 580, 528, 1),
+((SELECT id_libro FROM libros WHERE titulo = 'Moderna de Pueblo: Idiotizadas'), 'Tapa Blanda', 'Español', 'Zenith Cómic', '9788408176886', 38000.00, 6, 410, 208, 1),
+((SELECT id_libro FROM libros WHERE titulo = 'El Resplandor'), 'Tapa Blanda', 'Español', 'Best Seller', '9780385121682', 25000.00, 1, 460, 447, 1),
+((SELECT id_libro FROM libros WHERE titulo = 'Drácula'), 'Tapa Blanda', 'Español', 'Penguin Clásicos', '9780141439846', 22000.00, 3, 400, 416, 1),
+((SELECT id_libro FROM libros WHERE titulo = 'It (Eso)'), 'Tapa Blanda', 'Español', 'DeBolsillo Max', '9780450411434', 68000.00, 4, 1100, 1138, 1),
+((SELECT id_libro FROM libros WHERE titulo = 'Don Quijote de la Mancha'), 'Tapa Dura', 'Español', 'RAE Centenario', '9788420412146', 50000.00, 2, 1300, 1056, 1),
+((SELECT id_libro FROM libros WHERE titulo = 'Frankenstein'), 'Tapa Blanda', 'Español', 'Austral', '9780141439471', 18000.00, 5, 260, 288, 1),
+((SELECT id_libro FROM libros WHERE titulo = 'Maus'), 'Tapa Blanda', 'Español', 'Completa', '9780304747231', 75000.00, 4, 480, 296, 1),
+((SELECT id_libro FROM libros WHERE titulo = 'Orgullo y Prejuicio'), 'Tapa Dura', 'Español', 'Alba Clásicos', '9780141439518', 28000.00, 6, 440, 432, 1),
+((SELECT id_libro FROM libros WHERE titulo = 'Heartstopper: Volumen 1'), 'Tapa Blanda', 'Español', 'Crossbooks', '9781510106284', 52000.00, 9, 320, 288, 1),
+((SELECT id_libro FROM libros WHERE titulo = 'Bajo la misma estrella'), 'Tapa Blanda', 'Español', 'Nube de Tinta', '9780316055437', 25000.00, 12, 330, 313, 1),
+((SELECT id_libro FROM libros WHERE titulo = 'Kimetsu no Yaiba - Tomo 1'), 'Tapa Blanda', 'Español', 'Norma Editorial', '9781974700523', 35000.00, 18, 180, 192, 1),
+((SELECT id_libro FROM libros WHERE titulo = 'El principito'), 'Tapa Blanda', 'Español', 'Salamandra Infantil', '9780156012195', 20000.00, 25, 120, 96, 1),
+((SELECT id_libro FROM libros WHERE titulo = 'Libro de Prueba Oculto'), 'Tapa Blanda', 'Español', 'Demo', '1111111111111', 15000.00, 5, 150, 100, 1);
+
+-- =============================================================================
+-- 7. RESEÑAS DE LIBROS
+-- =============================================================================
+INSERT INTO resenas_libros (id_usuario, id_libro, calificacion, comentario, fecha_resena) VALUES
+((SELECT id_usuario FROM usuarios WHERE correo_usuario = 'camila.rojas@gmail.com'), (SELECT id_libro FROM libros WHERE titulo = 'El amor en los tiempos del cólera'), 5, 'Gabo tiene una forma única de narrar el romance. Hermosa edición.', '2025-05-01'),
+((SELECT id_usuario FROM usuarios WHERE correo_usuario = 'andres.gomez@hotmail.com'), (SELECT id_libro FROM libros WHERE titulo = 'Breve historia del tiempo'), 4, 'Un poco complejo en algunas partes, pero Hawking lo hace bastante accesible.', '2025-05-04'),
+((SELECT id_usuario FROM usuarios WHERE correo_usuario = 'valentina.castro@gmail.com'), (SELECT id_libro FROM libros WHERE titulo = 'El Hobbit'), 5, 'Una aventura fantástica perfecta. Ideal para leer antes de la trilogía principal.', '2025-05-10'),
+((SELECT id_usuario FROM usuarios WHERE correo_usuario = 'jp.martinez@outlook.com'), (SELECT id_libro FROM libros WHERE titulo = 'Fahrenheit 451'), 4, 'Una distopía impresionante que te pone a pensar sobre el valor de la cultura.', '2025-05-15'),
+((SELECT id_usuario FROM usuarios WHERE correo_usuario = 'laura.perez@gmail.com'), (SELECT id_libro FROM libros WHERE titulo = 'Un mundo feliz'), 4, 'Excelente crítica social. El contraste con 1984 es fascinante.', '2025-05-18'),
+((SELECT id_usuario FROM usuarios WHERE correo_usuario = 'santiago.ramirez@gmail.com'), (SELECT id_libro FROM libros WHERE titulo = 'El Señor de los Anillos: La Comunidad del Anillo'), 5, 'La mejor obra de fantasía jamás escrita. El nivel de detalle del mundo es increíble.', '2025-05-22'),
+((SELECT id_usuario FROM usuarios WHERE correo_usuario = 'mariana.lopez@yahoo.com'), (SELECT id_libro FROM libros WHERE titulo = 'Orgullo y Prejuicio'), 5, 'Mi novela romántica favorita. Los diálogos entre Elizabeth y Darcy son magníficos.', '2025-05-26'),
+((SELECT id_usuario FROM usuarios WHERE correo_usuario = 'daniel.torres@gmail.com'), (SELECT id_libro FROM libros WHERE titulo = 'Drácula'), 4, 'El formato epistolar (por cartas y diarios) hace que la atmósfera sea muy inmersiva.', '2025-06-01'),
+((SELECT id_usuario FROM usuarios WHERE correo_usuario = 'isabella.sanchez@gmail.com'), (SELECT id_libro FROM libros WHERE titulo = 'Heartstopper: Volumen 1'), 5, 'Una historia preciosa, ligera y con ilustraciones hermosas. Se lee de una sentada.', '2025-06-05'),
+((SELECT id_usuario FROM usuarios WHERE correo_usuario = 'nicolas.vargas@hotmail.com'), (SELECT id_libro FROM libros WHERE titulo = 'Kimetsu no Yaiba - Tomo 1'), 4, 'Gran inicio para este manga, el arte de las batallas está muy bien logrado.', '2025-06-12'),
+((SELECT id_usuario FROM usuarios WHERE correo_usuario = 'camila.rojas@gmail.com'), (SELECT id_libro FROM libros WHERE titulo = 'Bajo la misma estrella'), 3, 'Es una historia conmovedora, pero cae en demasiados clichés adolescentes.', '2025-06-18'),
+((SELECT id_usuario FROM usuarios WHERE correo_usuario = 'andres.gomez@hotmail.com'), (SELECT id_libro FROM libros WHERE titulo = 'It (Eso)'), 5, 'Una obra maestra del terror. King logra construir un pueblo entero lleno de miedos.', '2025-06-22');
+
+-- =============================================================================
+-- 8. FAVORITOS (Los 10 registros completos del script)
+-- =============================================================================
+INSERT INTO favoritos (id_usuario, id_libro, fecha) VALUES
+((SELECT id_usuario FROM usuarios WHERE correo_usuario = 'camila.rojas@gmail.com'), (SELECT id_libro FROM libros WHERE titulo = 'Cien años de soledad'), '2026-01-15'),
+((SELECT id_usuario FROM usuarios WHERE correo_usuario = 'camila.rojas@gmail.com'), (SELECT id_libro FROM libros WHERE titulo = '1984'), '2026-01-20'),
+((SELECT id_usuario FROM usuarios WHERE correo_usuario = 'camila.rojas@gmail.com'), (SELECT id_libro FROM libros WHERE titulo = 'El amor en los tiempos del cólera'), '2026-02-02'),
+((SELECT id_usuario FROM usuarios WHERE correo_usuario = 'andres.gomez@hotmail.com'), (SELECT id_libro FROM libros WHERE titulo = '1984'), '2026-01-22'),
+((SELECT id_usuario FROM usuarios WHERE correo_usuario = 'andres.gomez@hotmail.com'), (SELECT id_libro FROM libros WHERE titulo = 'Breve historia del tiempo'), '2026-02-10'),
+((SELECT id_usuario FROM usuarios WHERE correo_usuario = 'andres.gomez@hotmail.com'), (SELECT id_libro FROM libros WHERE titulo = 'It (Eso)'), '2026-03-05'),
+((SELECT id_usuario FROM usuarios WHERE correo_usuario = 'valentina.castro@gmail.com'), (SELECT id_libro FROM libros WHERE titulo = 'Harry Potter y la piedra filosofal'), '2026-01-25'),
+((SELECT id_usuario FROM usuarios WHERE correo_usuario = 'valentina.castro@gmail.com'), (SELECT id_libro FROM libros WHERE titulo = 'El Hobbit'), '2026-02-18'),
+((SELECT id_usuario FROM usuarios WHERE correo_usuario = 'valentina.castro@gmail.com'), (SELECT id_libro FROM libros WHERE titulo = 'Crónicas de Narnia: El león, la bruja y el ropero'), '2026-03-12'),
+((SELECT id_usuario FROM usuarios WHERE correo_usuario = 'jp.martinez@outlook.com'), (SELECT id_libro FROM libros WHERE titulo = 'Hábitos Atómicos'), '2026-02-01'),
+((SELECT id_usuario FROM usuarios WHERE correo_usuario = 'jp.martinez@outlook.com'), (SELECT id_libro FROM libros WHERE titulo = 'Fahrenheit 451'), '2026-02-15'),
+((SELECT id_usuario FROM usuarios WHERE correo_usuario = 'laura.perez@gmail.com'), (SELECT id_libro FROM libros WHERE titulo = 'Padre Rico, Padre Pobre'), '2026-02-28'),
+((SELECT id_usuario FROM usuarios WHERE correo_usuario = 'laura.perez@gmail.com'), (SELECT id_libro FROM libros WHERE titulo = 'Un mundo feliz'), '2026-03-20'),
+((SELECT id_usuario FROM usuarios WHERE correo_usuario = 'santiago.ramirez@gmail.com'), (SELECT id_libro FROM libros WHERE titulo = 'Sapiens: De animales a dioses'), '2026-01-30'),
+((SELECT id_usuario FROM usuarios WHERE correo_usuario = 'santiago.ramirez@gmail.com'), (SELECT id_libro FROM libros WHERE titulo = 'El Señor de los Anillos: La Comunidad del Anillo'), '2026-02-25'),
+((SELECT id_usuario FROM usuarios WHERE correo_usuario = 'mariana.lopez@yahoo.com'), (SELECT id_libro FROM libros WHERE titulo = 'Orgullo y Prejuicio'), '2026-03-01'),
+((SELECT id_usuario FROM usuarios WHERE correo_usuario = 'mariana.lopez@yahoo.com'), (SELECT id_libro FROM libros WHERE titulo = 'El Resplandor'), '2026-03-15'),
+((SELECT id_usuario FROM usuarios WHERE correo_usuario = 'daniel.torres@gmail.com'), (SELECT id_libro FROM libros WHERE titulo = 'Maus'), '2026-03-22'),
+((SELECT id_usuario FROM usuarios WHERE correo_usuario = 'isabella.sanchez@gmail.com'), (SELECT id_libro FROM libros WHERE titulo = 'Heartstopper: Volumen 1'), '2026-04-02'),
+((SELECT id_usuario FROM usuarios WHERE correo_usuario = 'nicolas.vargas@hotmail.com'), (SELECT id_libro FROM libros WHERE titulo = 'Kimetsu no Yaiba - Tomo 1'), '2026-04-10');
+
+-- =============================================================================
+-- 9. OFERTAS
+-- =============================================================================
+INSERT INTO ofertas (id_tienda, nombre_oferta, tipo_descuento, valor_descuento, fecha_inicio, fecha_fin) VALUES
+((SELECT id_tienda FROM tiendas WHERE nombre_tienda = 'Librería El Sótano'), 'Black Friday Literario', 'Porcentaje', 20.00, '2026-11-20 00:00:00', '2026-11-27 23:59:59'),
+((SELECT id_tienda FROM tiendas WHERE nombre_tienda = 'Librería El Sótano'), 'Descuento Clásicos', 'Fijo', 5000.00, '2026-06-01 08:00:00', '2026-07-01 18:00:00'),
+((SELECT id_tienda FROM tiendas WHERE nombre_tienda = 'Librería El Sótano'), 'Bono Universitario', 'Porcentaje', 15.00, '2026-01-10 00:00:00', '2026-12-31 23:59:59'),
+
+((SELECT id_tienda FROM tiendas WHERE nombre_tienda = 'Página Trece'), 'Mes de la Ciencia Ficción', 'Porcentaje', 25.00, '2026-07-01 00:00:00', '2026-07-31 23:59:59'),
+((SELECT id_tienda FROM tiendas WHERE nombre_tienda = 'Página Trece'), 'Especial Fantasía Juvenil', 'Fijo', 8000.00, '2026-06-15 00:00:00', '2026-07-15 23:59:59'),
+
+((SELECT id_tienda FROM tiendas WHERE nombre_tienda = 'El Rincón Literario'), 'Semana del Arte y Fotografía', 'Porcentaje', 30.00, '2026-08-05 09:00:00', '2026-08-12 21:00:00'),
+((SELECT id_tienda FROM tiendas WHERE nombre_tienda = 'El Rincón Literario'), 'Descuento Biografías', 'Fijo', 6000.00, '2026-06-20 00:00:00', '2026-07-20 23:59:59'),
+((SELECT id_tienda FROM tiendas WHERE nombre_tienda = 'El Rincón Literario'), 'Feria del Libro Local', 'Porcentaje', 10.00, '2026-04-15 00:00:00', '2026-04-30 23:59:59'),
+
+((SELECT id_tienda FROM tiendas WHERE nombre_tienda = 'Libros Usados Medellín'), 'Liquidación de Joyas Ocultas', 'Porcentaje', 40.00, '2026-06-25 00:00:00', '2026-07-05 23:59:59'),
+((SELECT id_tienda FROM tiendas WHERE nombre_tienda = 'Libros Usados Medellín'), 'Bono Lector Frecuente', 'Fijo', 4000.00, '2026-01-01 00:00:00', '2026-12-31 23:59:59'),
+
+((SELECT id_tienda FROM tiendas WHERE nombre_tienda = 'Universo de Tinta'), 'Otaku Day Especial Manga', 'Porcentaje', 15.00, '2026-06-26 00:00:00', '2026-06-28 23:59:59'),
+((SELECT id_tienda FROM tiendas WHERE nombre_tienda = 'Universo de Tinta'), 'Semana de la Novela Gráfica', 'Fijo', 7000.00, '2026-09-10 00:00:00', '2026-09-17 23:59:59'),
+((SELECT id_tienda FROM tiendas WHERE nombre_tienda = 'Universo de Tinta'), 'Promo Orgullo Geek', 'Porcentaje', 20.00, '2026-05-20 00:00:00', '2026-05-30 23:59:59'),
+
+((SELECT id_tienda FROM tiendas WHERE nombre_tienda = 'Tienda Test Pausada'), 'Oferta Expirada de Prueba', 'Porcentaje', 50.00, '2025-11-01 00:00:00', '2025-11-30 23:59:59'),
+((SELECT id_tienda FROM tiendas WHERE nombre_tienda = 'Librería El Sótano'), 'Navidad Anticipada', 'Porcentaje', 18.00, '2026-12-01 00:00:00', '2026-12-24 23:59:59');
+-- =============================================================================
+-- 10. OFERTA_LIBROS
+-- =============================================================================
+INSERT INTO oferta_libros (id_oferta, id_libro) VALUES
+-- 1. Black Friday Literario (Librería El Sótano) -> Cien años de soledad, 1984, Sapiens
+((SELECT id_oferta FROM ofertas WHERE nombre_oferta = 'Black Friday Literario' LIMIT 1), (SELECT id_libro FROM libros WHERE titulo = 'Cien años de soledad' LIMIT 1)),
+((SELECT id_oferta FROM ofertas WHERE nombre_oferta = 'Black Friday Literario' LIMIT 1), (SELECT id_libro FROM libros WHERE titulo = '1984' LIMIT 1)),
+((SELECT id_oferta FROM ofertas WHERE nombre_oferta = 'Black Friday Literario' LIMIT 1), (SELECT id_libro FROM libros WHERE titulo = 'Sapiens: De animales a dioses' LIMIT 1)),
+
+-- 2. Descuento Clásicos (Librería El Sótano) -> El amor en los tiempos del cólera, Crimen y castigo
+((SELECT id_oferta FROM ofertas WHERE nombre_oferta = 'Descuento Clásicos' LIMIT 1), (SELECT id_libro FROM libros WHERE titulo = 'El amor en los tiempos del cólera' LIMIT 1)),
+((SELECT id_oferta FROM ofertas WHERE nombre_oferta = 'Descuento Clásicos' LIMIT 1), (SELECT id_libro FROM libros WHERE titulo = 'Crimen y castigo' LIMIT 1)),
+
+-- 3. Mes de la Ciencia Ficción (Página Trece) -> Fahrenheit 451, Un mundo feliz
+((SELECT id_oferta FROM ofertas WHERE nombre_oferta = 'Mes de la Ciencia Ficción' LIMIT 1), (SELECT id_libro FROM libros WHERE titulo = 'Fahrenheit 451' LIMIT 1)),
+((SELECT id_oferta FROM ofertas WHERE nombre_oferta = 'Mes de la Ciencia Ficción' LIMIT 1), (SELECT id_libro FROM libros WHERE titulo = 'Un mundo feliz' LIMIT 1)),
+
+-- 4. Especial Fantasía Juvenil (Página Trece) -> El Señor de los Anillos, Harry Potter, El Hobbit
+((SELECT id_oferta FROM ofertas WHERE nombre_oferta = 'Especial Fantasía Juvenil' LIMIT 1), (SELECT id_libro FROM libros WHERE titulo = 'El Señor de los Anillos: La Comunidad del Anillo' LIMIT 1)),
+((SELECT id_oferta FROM ofertas WHERE nombre_oferta = 'Especial Fantasía Juvenil' LIMIT 1), (SELECT id_libro FROM libros WHERE titulo = 'Harry Potter y la piedra filosofal' LIMIT 1)),
+((SELECT id_oferta FROM ofertas WHERE nombre_oferta = 'Especial Fantasía Juvenil' LIMIT 1), (SELECT id_libro FROM libros WHERE titulo = 'El Hobbit' LIMIT 1)),
+
+-- 5. Semana del Arte y Fotografía (El Rincón Literario) -> El infinito en un junco, Moderna de Pueblo
+((SELECT id_oferta FROM ofertas WHERE nombre_oferta = 'Semana del Arte y Fotografía' LIMIT 1), (SELECT id_libro FROM libros WHERE titulo = 'El infinito en un junco' LIMIT 1)),
+((SELECT id_oferta FROM ofertas WHERE nombre_oferta = 'Semana del Arte y Fotografía' LIMIT 1), (SELECT id_libro FROM libros WHERE titulo = 'Moderna de Pueblo: Idiotizadas' LIMIT 1)),
+
+-- 6. Descuento Biografías (El Rincón Literario) -> Steve Jobs, Frida Kahlo
+((SELECT id_oferta FROM ofertas WHERE nombre_oferta = 'Descuento Biografías' LIMIT 1), (SELECT id_libro FROM libros WHERE titulo = 'Steve Jobs' LIMIT 1)),
+((SELECT id_oferta FROM ofertas WHERE nombre_oferta = 'Descuento Biografías' LIMIT 1), (SELECT id_libro FROM libros WHERE titulo = 'Frida Kahlo: Una biografía' LIMIT 1)),
+
+-- 7. Liquidación de Joyas Ocultas (Libros Usados Medellín) -> El Resplandor, Drácula, Don Quijote
+((SELECT id_oferta FROM ofertas WHERE nombre_oferta = 'Liquidación de Joyas Ocultas' LIMIT 1), (SELECT id_libro FROM libros WHERE titulo = 'El Resplandor' LIMIT 1)),
+((SELECT id_oferta FROM ofertas WHERE nombre_oferta = 'Liquidación de Joyas Ocultas' LIMIT 1), (SELECT id_libro FROM libros WHERE titulo = 'Drácula' LIMIT 1)),
+((SELECT id_oferta FROM ofertas WHERE nombre_oferta = 'Liquidación de Joyas Ocultas' LIMIT 1), (SELECT id_libro FROM libros WHERE titulo = 'Don Quijote de la Mancha' LIMIT 1)),
+
+-- 8. Otaku Day Especial Manga (Universo de Tinta) -> Kimetsu no Yaiba
+((SELECT id_oferta FROM ofertas WHERE nombre_oferta = 'Otaku Day Especial Manga' LIMIT 1), (SELECT id_libro FROM libros WHERE titulo = 'Kimetsu no Yaiba - Tomo 1' LIMIT 1)),
+
+-- 9. Semana de la Novela Gráfica (Universo de Tinta) -> Maus, Heartstopper
+((SELECT id_oferta FROM ofertas WHERE nombre_oferta = 'Semana de la Novela Gráfica' LIMIT 1), (SELECT id_libro FROM libros WHERE titulo = 'Maus' LIMIT 1)),
+((SELECT id_oferta FROM ofertas WHERE nombre_oferta = 'Semana de la Novela Gráfica' LIMIT 1), (SELECT id_libro FROM libros WHERE titulo = 'Heartstopper: Volumen 1' LIMIT 1));
+
+-- =============================================================================
+-- 11. CARRITO_COMPRAS
+-- =============================================================================
+INSERT INTO carrito_compras (id_usuario, id_libro, cantidad, fecha_agregado) VALUES
+((SELECT id_usuario FROM usuarios WHERE correo_usuario = 'camila.rojas@gmail.com'), (SELECT id_libro FROM libros WHERE titulo = 'Sapiens: De animales a dioses' LIMIT 1), 1, NOW()),
+((SELECT id_usuario FROM usuarios WHERE correo_usuario = 'camila.rojas@gmail.com'), (SELECT id_libro FROM libros WHERE titulo = 'El Hobbit' LIMIT 1), 1, NOW()),
+((SELECT id_usuario FROM usuarios WHERE correo_usuario = 'andres.gomez@hotmail.com'), (SELECT id_libro FROM libros WHERE titulo = 'Don Quijote de la Mancha' LIMIT 1), 1, NOW()),
+((SELECT id_usuario FROM usuarios WHERE correo_usuario = 'valentina.castro@gmail.com'), (SELECT id_libro FROM libros WHERE titulo = 'Kimetsu no Yaiba - Tomo 1' LIMIT 1), 3, NOW()),
+((SELECT id_usuario FROM usuarios WHERE correo_usuario = 'valentina.castro@gmail.com'), (SELECT id_libro FROM libros WHERE titulo = 'Heartstopper: Volumen 1' LIMIT 1), 1, NOW()),
+((SELECT id_usuario FROM usuarios WHERE correo_usuario = 'jp.martinez@outlook.com'), (SELECT id_libro FROM libros WHERE titulo = 'Padre Rico, Padre Pobre' LIMIT 1), 1, NOW()),
+((SELECT id_usuario FROM usuarios WHERE correo_usuario = 'jp.martinez@outlook.com'), (SELECT id_libro FROM libros WHERE titulo = 'Hábitos Atómicos' LIMIT 1), 2, NOW()),
+((SELECT id_usuario FROM usuarios WHERE correo_usuario = 'laura.perez@gmail.com'), (SELECT id_libro FROM libros WHERE titulo = '1984' LIMIT 1), 1, NOW()),
+((SELECT id_usuario FROM usuarios WHERE correo_usuario = 'laura.perez@gmail.com'), (SELECT id_libro FROM libros WHERE titulo = 'Un mundo feliz' LIMIT 1), 1, NOW()),
+((SELECT id_usuario FROM usuarios WHERE correo_usuario = 'santiago.ramirez@gmail.com'), (SELECT id_libro FROM libros WHERE titulo = 'El Resplandor' LIMIT 1), 1, NOW()),
+((SELECT id_usuario FROM usuarios WHERE correo_usuario = 'santiago.ramirez@gmail.com'), (SELECT id_libro FROM libros WHERE titulo = 'Drácula' LIMIT 1), 1, NOW()),
+((SELECT id_usuario FROM usuarios WHERE correo_usuario = 'mariana.lopez@yahoo.com'), (SELECT id_libro FROM libros WHERE titulo = 'El infinito en un junco' LIMIT 1), 1, NOW()),
+((SELECT id_usuario FROM usuarios WHERE correo_usuario = 'daniel.torres@gmail.com'), (SELECT id_libro FROM libros WHERE titulo = 'Maus' LIMIT 1), 1, NOW()),
+((SELECT id_usuario FROM usuarios WHERE correo_usuario = 'daniel.torres@gmail.com'), (SELECT id_libro FROM libros WHERE titulo = 'Crimen y castigo' LIMIT 1), 1, NOW()),
+((SELECT id_usuario FROM usuarios WHERE correo_usuario = 'isabella.sanchez@gmail.com'), (SELECT id_libro FROM libros WHERE titulo = 'Bajo la misma estrella' LIMIT 1), 1, NOW());
+
+-- =============================================================================
+-- 12. ORDENES COMPRAS (Las 10 órdenes completas del script)
+-- =============================================================================
+INSERT INTO ordenes_compra (id_usuario, id_direccion_envio, fecha_orden, total, estado_orden) VALUES
+((SELECT id_usuario FROM usuarios WHERE correo_usuario = 'camila.rojas@gmail.com'), 1, '2026-05-10 14:22:00', 80000.00, 'Entregado'),
+((SELECT id_usuario FROM usuarios WHERE correo_usuario = 'andres.gomez@hotmail.com'), 1, '2026-05-15 09:45:00', 35000.00, 'Entregado'),
+((SELECT id_usuario FROM usuarios WHERE correo_usuario = 'valentina.castro@gmail.com'), 1, '2026-05-20 18:30:00', 126000.00, 'Enviado'),
+((SELECT id_usuario FROM usuarios WHERE correo_usuario = 'jp.martinez@outlook.com'), 1, '2026-06-01 11:15:00', 147000.00, 'Entregado'),
+((SELECT id_usuario FROM usuarios WHERE correo_usuario = 'laura.perez@gmail.com'), 1, '2026-06-12 16:05:00', 31000.00, 'Procesando'),
+((SELECT id_usuario FROM usuarios WHERE correo_usuario = 'santiago.ramirez@gmail.com'), 1, '2026-06-18 20:10:00', 114000.00, 'Entregado'),
+((SELECT id_usuario FROM usuarios WHERE correo_usuario = 'mariana.lopez@yahoo.com'), 1, '2026-06-22 13:40:00', 25000.00, 'Cancelado'),
+((SELECT id_usuario FROM usuarios WHERE correo_usuario = 'daniel.torres@gmail.com'), 1, '2026-06-25 10:00:00', 75000.00, 'Procesando');
+
+-- =========================================================================
+-- 2. INSERTAR DESGLOSE DE PRODUCTOS (detalle_orden)
+-- =========================================================================
+INSERT INTO detalle_orden (id_orden, id_libro, cantidad, precio_unitario, porcentaje_descuento, precio_final) VALUES
+(1, 1, 1, 45000.00, 0.00, 45000.00),
+(1, 2, 1, 35000.00, 0.00, 35000.00),
+(2, 2, 1, 35000.00, 0.00, 35000.00),
+(3, 28, 3, 35000.00, 20.00, 84000.00),
+(3, 9, 1, 42000.00, 0.00, 42000.00),
+(4, 15, 3, 49000.00, 0.00, 147000.00),
+(5, 12, 1, 31000.00, 0.00, 31000.00),
+(6, 3, 1, 59000.00, 0.00, 59000.00),
+(6, 8, 1, 55000.00, 0.00, 55000.00),
+(7, 19, 1, 25000.00, 0.00, 25000.00),
+(8, 24, 1, 75000.00, 0.00, 75000.00);
+
+-- =========================================================================
+-- 3. INSERTAR ESTADO FINANCIERO (pagos)
+-- =========================================================================
+INSERT INTO pagos (id_orden, metodo_pago, monto, referencia_transaccion, fecha_pago, estado_pago) VALUES
+(1, 'Tarjeta de Crédito', 80000.00, 'REF-99238411', '2026-05-10 14:25:00', 'Aprobado'),
+(2, 'PSE', 35000.00, 'PSE-88123049', '2026-05-15 09:48:00', 'Aprobado'),
+(3, 'Tarjeta de Débito', 126000.00, 'REF-44102933', '2026-05-20 18:32:00', 'Aprobado'),
+(4, 'PSE', 147000.00, 'PSE-11029485', '2026-06-01 11:18:00', 'Aprobado'),
+(5, 'Efectivo (Baloto)', 31000.00, 'BAL-55291048', '2026-06-12 17:30:00', 'Aprobado'),
+(6, 'Tarjeta de Crédito', 114000.00, 'REF-33948102', '2026-06-18 20:12:00', 'Aprobado'),
+(7, 'PSE', 25000.00, 'PSE-77382910', '2026-06-22 13:41:00', 'Rechazado'),
+(8, 'Tarjeta de Crédito', 75000.00, 'REF-55102934', '2026-06-25 10:02:00', 'Aprobado');
+
+SET FOREIGN_KEY_CHECKS = 1;
+
+SELECT '=== BooKyHome LISTA PARA USAR ===' AS '';
+select * from usuarios;
 
 -- Agregar la columna oculto a la tabla libros
 ALTER TABLE libros 
@@ -2705,3 +3031,12 @@ BEGIN
     INNER JOIN tiendas t ON l.id_tienda = t.id_tienda;
 END$$
 DELIMITER ;
+
+-- configurar contraseñas
+SET FOREIGN_KEY_CHECKS = 0;
+
+UPDATE usuarios 
+SET contrasena_usuario = '$2b$12$K7wEjaD8lR1Wif1XySzWF.VaudwNItv8Mxuf8j8uHLhVyJcdrWHVe' 
+WHERE id_usuario > 0;
+
+SET FOREIGN_KEY_CHECKS = 1;
