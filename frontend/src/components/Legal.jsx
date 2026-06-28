@@ -22,8 +22,11 @@ export function LegalModal({ open, onClose, onAccept, title, accepted, children 
         <div style={{ display: 'flex', gap: '0.8rem', marginTop: '1.5rem' }}>
           {!accepted ? (
             <>
-              <button className="btn btn-vinotinto" style={{ flex: 1 }} onClick={onAccept}>
-                ✓ Acepto
+              <button className="btn btn-vinotinto" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }} onClick={onAccept}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                Acepto
               </button>
               <button onClick={onClose}
                 style={{ flex: 1, padding: '0.85rem', borderRadius: '6px', border: '1.5px solid #ccc', background: 'none', cursor: 'pointer', fontFamily: 'Montserrat, sans-serif', fontWeight: '600', color: '#666' }}>

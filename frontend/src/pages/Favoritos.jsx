@@ -16,7 +16,12 @@ const Favoritos = () => {
 
   return (
     <main className="layout-container catalogo-main">
-      <h1 style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: '4px' }}>❤️ Mis favoritos</h1>
+      <h1 style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+        </svg>
+        Mis favoritos
+      </h1>
       <p style={{ fontSize: '0.82rem', color: '#999', margin: '4px 0 16px' }}>
         {favoritos.length === 0 ? 'Aún no tienes favoritos' : `${favoritos.length} libro${favoritos.length !== 1 ? 's' : ''} guardado${favoritos.length !== 1 ? 's' : ''}`}
       </p>
