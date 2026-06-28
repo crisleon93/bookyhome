@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const IMAGENES_CATEGORIA = {
@@ -20,6 +20,29 @@ const IMG_DEFAULT = 'https://images.unsplash.com/photo-1512820790803-83ca734da79
 const LibroCard = ({ libro, onAdd, adding = false, onVerDetalles }) => {
   const navigate = useNavigate();
   const [addMsg, setAddMsg] = useState('');
+  const [esFavorito, setEsFavorito] = useState(false);
+
+  // Verificar si el libro es favorito al montar
+  useEffect(() => {
+    if (!libro) return;
+    const favoritos = JSON.parse(localStorage.getItem('favoritos')) || [];
+    const existe = favoritos.some((f) => f.id_libro === libro.id_libro);
+    setEsFavorito(existe);
+  }, [libro]);
+
+  const toggleFavorito = () => {
+    const favoritos = JSON.parse(localStorage.getItem('favoritos')) || [];
+    const existe = favoritos.some((f) => f.id_libro === libro.id_libro);
+    if (existe) {
+      const nuevosFavoritos = favoritos.filter((f) => f.id_libro !== libro.id_libro);
+      localStorage.setItem('favoritos', JSON.stringify(nuevosFavoritos));
+      setEsFavorito(false);
+    } else {
+      favoritos.push(libro);
+      localStorage.setItem('favoritos', JSON.stringify(favoritos));
+      setEsFavorito(true);
+    }
+  };
 
   if (!libro) return null;
 
@@ -102,6 +125,29 @@ const LibroCard = ({ libro, onAdd, adding = false, onVerDetalles }) => {
           style={{ marginTop: 'auto' }}
         >
           Ver detalles
+        </button>
+
+        {/* Botón favorito */}
+        <button
+          onClick={toggleFavorito}
+          style={{
+            width: '100%',
+            padding: '8px',
+            border: '1.5px solid #7A1E3A',
+            background: 'white',
+            color: '#7A1E3A',
+            borderRadius: '6px',
+            fontSize: '0.8rem',
+            fontWeight: '600',
+            cursor: 'pointer',
+            marginTop: '6px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '5px'
+          }}
+        >
+          {esFavorito ? '♥ Quitar' : '♡ Favorito'}
         </button>
 
         {addMsg && <p className="card-feedback">{addMsg}</p>}

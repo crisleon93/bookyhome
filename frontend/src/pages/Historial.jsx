@@ -63,7 +63,7 @@ export default function Historial() {
   // ============= NAVEGAR =============
   const handleClickLibro = (item) => {
     if (item.id_libro) {
-      navigate(`/catalogo/${item.id_libro}`);
+      navigate('/catalogo');
     }
   };
 

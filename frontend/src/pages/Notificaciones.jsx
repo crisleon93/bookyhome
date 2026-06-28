@@ -80,10 +80,10 @@ export default function Notificaciones({ embedded = false, onOpenReference = nul
           navigate(`/chat/${notif.referencia_id}`);
           break;
         case "resena":
-          navigate(`/catalogo/${notif.referencia_id}`);
+          navigate('/catalogo');
           break;
         case "oferta":
-          navigate(`/catalogo/${notif.referencia_id}`);
+          navigate('/catalogo');
           break;
         case "pedido":
         case "entrega":
