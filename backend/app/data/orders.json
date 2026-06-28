@@ -86,5 +86,58 @@
       "estado": "pagado",
       "metodo_pago": "Tarjeta de Crédito"
     }
+  ],
+  "1": [
+    {
+      "id_orden": 3,
+      "fecha": "2026-06-28T08:25:59.742733Z",
+      "items": [
+        {
+          "id_libro": 44,
+          "titulo": "El principito",
+          "autor_libro": "Antoine de Saint-Exupéry",
+          "precio_libro": 20000.0,
+          "cantidad": 1,
+          "imagen": "https://covers.openlibrary.org/b/id/12688412-L.jpg"
+        }
+      ],
+      "total": 20000.0,
+      "estado": "pagado",
+      "metodo_pago": "Tarjeta de Crédito"
+    },
+    {
+      "id_orden": 6,
+      "fecha": "2026-06-28T08:39:58.279335Z",
+      "items": [
+        {
+          "id_libro": 45,
+          "titulo": "Libro de Prueba Oculto",
+          "autor_libro": "Autor Anónimo",
+          "precio_libro": 15000.0,
+          "cantidad": 1,
+          "imagen": null
+        }
+      ],
+      "total": 15000.0,
+      "estado": "pagado",
+      "metodo_pago": "Tarjeta de Crédito"
+    },
+    {
+      "id_orden": 8,
+      "fecha": "2026-06-28T08:46:12.777102Z",
+      "items": [
+        {
+          "id_libro": 43,
+          "titulo": "Kimetsu no Yaiba - Tomo 1",
+          "autor_libro": "Koyoharu Gotouge",
+          "precio_libro": 35000.0,
+          "cantidad": 1,
+          "imagen": "https://covers.openlibrary.org/b/id/10322110-L.jpg"
+        }
+      ],
+      "total": 35000.0,
+      "estado": "pagado",
+      "metodo_pago": "Tarjeta de Crédito"
+    }
   ]
 }

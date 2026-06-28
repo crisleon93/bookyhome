@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
-import { getUsuarios, getCarrito, checkoutCarrito, getOrdenes, addToCart } from "../services/api";
+import { getUsuarios, getCarrito, checkoutCarrito, getOrdenes, addToCart, getOrden, postPayment, sendConfirmationEmail, cancelOrder } from "../services/api";
 import CompradorSidebar from "../components/CompradorSidebar";
 import FiltrosCatalogo from "../components/FiltrosCatalogo";
 import LibroCard from "../components/LibroCard";
@@ -62,6 +62,12 @@ export default function PostLogin() {
   const [cartLoading, setCartLoading]         = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [checkoutError, setCheckoutError]     = useState(null);
+  const [mostrarCheckout, setMostrarCheckout] = useState(false);
+  const [orderId, setOrderId]                 = useState(null);
+  const [paymentMethod, setPaymentMethod]     = useState("tarjeta");
+  const [paymentProcessing, setPaymentProcessing] = useState(false);
+  const [paymentSuccess, setPaymentSuccess]   = useState(false);
+  const [order, setOrder]                     = useState(null);
 
   const [ordenes, setOrdenes]               = useState([]);
   const [ordenesLoading, setOrdenesLoading] = useState(false);
@@ -79,6 +85,18 @@ export default function PostLogin() {
     es_principal: false
   });
   const [guardando, setGuardando] = useState(false);
+
+  // Payment form states
+  const [cardNumber, setCardNumber] = useState("");
+  const [cardName, setCardName] = useState("");
+  const [cardExpiry, setCardExpiry] = useState("");
+  const [cardCvv, setCardCvv] = useState("");
+  const [formErrors, setFormErrors] = useState({});
+  const [showPaypalModal, setShowPaypalModal] = useState(false);
+  const [paypalEmail, setPaypalEmail] = useState("");
+  const [paypalPassword, setPaypalPassword] = useState("");
+  const [paypalError, setPaypalError] = useState("");
+  const [paypalProcessing, setPaypalProcessing] = useState(false);
 
   // Estado del catálogo
   const [libros, setLibros] = useState([]);
@@ -139,8 +157,11 @@ export default function PostLogin() {
     if (activeSide === "Carrito" && userId) {
       setCartLoading(true);
       setCheckoutError(null);
-      getCarrito()
-        .then((res) => setCarrito(res.data))
+      Promise.all([getCarrito(), getOrdenes()])
+        .then(([carritoRes, ordenesRes]) => {
+          setCarrito(carritoRes.data);
+          setOrdenes(ordenesRes.data);
+        })
         .catch((err) => console.error(err))
         .finally(() => setCartLoading(false));
     }
@@ -262,7 +283,15 @@ export default function PostLogin() {
     checkoutCarrito()
       .then((res) => {
         if (res.data?.ok) {
-          navigate(`/checkout/${res.data.order.id_orden}`);
+          setOrderId(res.data.order.id_orden);
+          setOrder(res.data.order);
+          setMostrarCheckout(true);
+          // Load order details
+          getOrden(res.data.order.id_orden)
+            .then((orderRes) => {
+              setOrder(orderRes.data);
+            })
+            .catch((err) => console.error(err));
         } else {
           setCheckoutError("No se pudo procesar el pago. Intenta de nuevo.");
         }
@@ -272,6 +301,130 @@ export default function PostLogin() {
         setCheckoutError(err.response?.data?.detail || "Error al realizar el checkout. Intenta de nuevo.");
       })
       .finally(() => setCheckoutLoading(false));
+  };
+
+  const handleVolverCarrito = () => {
+    setMostrarCheckout(false);
+    setOrderId(null);
+    setOrder(null);
+    setPaymentSuccess(false);
+    // Reset form
+    setCardNumber("");
+    setCardName("");
+    setCardExpiry("");
+    setCardCvv("");
+    setFormErrors({});
+  };
+
+  // Payment form handlers
+  const handleCardNumberChange = (e) => {
+    let value = e.target.value.replace(/\D/g, "");
+    if (value.length > 16) value = value.slice(0, 16);
+    let formatted = value.match(/.{1,4}/g)?.join(" ") || "";
+    setCardNumber(formatted);
+    setFormErrors((prev) => ({ ...prev, cardNumber: "" }));
+  };
+
+  const handleExpiryChange = (e) => {
+    let value = e.target.value.replace(/\D/g, "");
+    if (value.length > 4) value = value.slice(0, 4);
+    if (value.length > 2) {
+      value = `${value.slice(0, 2)}/${value.slice(2)}`;
+    }
+    setCardExpiry(value);
+    setFormErrors((prev) => ({ ...prev, cardExpiry: "" }));
+  };
+
+  const handleCvvChange = (e) => {
+    let value = e.target.value.replace(/\D/g, "");
+    if (value.length > 3) value = value.slice(0, 3);
+    setCardCvv(value);
+    setFormErrors((prev) => ({ ...prev, cardCvv: "" }));
+  };
+
+  const validateCardForm = () => {
+    const errors = {};
+    const rawCardNumber = cardNumber.replace(/\s/g, "");
+    if (rawCardNumber.length !== 16) {
+      errors.cardNumber = "Número de tarjeta inválido (deben ser 16 dígitos)";
+    }
+    if (!cardName.trim()) {
+      errors.cardName = "Nombre completo es requerido";
+    }
+    if (cardExpiry.length !== 5) {
+      errors.cardExpiry = "Fecha inválida (MM/AA)";
+    } else {
+      const [month] = cardExpiry.split("/");
+      const m = parseInt(month, 10);
+      if (m < 1 || m > 12) {
+        errors.cardExpiry = "Mes inválido";
+      }
+    }
+    if (cardCvv.length !== 3) {
+      errors.cardCvv = "CVV inválido (3 dígitos)";
+    }
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const processPaymentApi = async (method) => {
+    setPaymentProcessing(true);
+    setCheckoutError("");
+
+    try {
+      const payload = {
+        order_id: parseInt(orderId),
+        amount: parseFloat(order.total),
+        payment_method: method
+      };
+
+      const res = await postPayment(payload);
+      if (res.data && res.data.ok) {
+        try {
+          await sendConfirmationEmail(orderId);
+        } catch (emailErr) {
+          console.warn("Correo no enviado:", emailErr);
+        }
+        // Recargar órdenes para actualizar el estado
+        getOrdenes()
+          .then((res) => setOrdenes(res.data))
+          .catch((err) => console.error(err));
+        setPaymentSuccess(true);
+      } else {
+        setCheckoutError("El pago fue rechazado por la pasarela de pagos.");
+      }
+    } catch (err) {
+      console.error(err);
+      setCheckoutError(err.response?.data?.detail || "Ocurrió un error inesperado al procesar tu pago.");
+    } finally {
+      setPaymentProcessing(false);
+    }
+  };
+
+  const handleCardSubmit = (e) => {
+    e.preventDefault();
+    if (!validateCardForm()) return;
+    
+    setPaymentProcessing(true);
+    setTimeout(() => {
+      processPaymentApi("Tarjeta de Crédito");
+    }, 2000);
+  };
+
+  const handlePaypalSubmit = (e) => {
+    e.preventDefault();
+    if (!paypalEmail || !paypalPassword) {
+      setPaypalError("Ingresa tu correo y contraseña");
+      return;
+    }
+    setPaypalError("");
+    setPaypalProcessing(true);
+    
+    setTimeout(() => {
+      setPaypalProcessing(false);
+      setShowPaypalModal(false);
+      processPaymentApi("PayPal");
+    }, 2000);
   };
 
   const handleGoToCatalog = () => handleSelectSection("Catálogo");
@@ -338,7 +491,7 @@ export default function PostLogin() {
 
                   {favoritos.slice(0, 5).map((libro) => (
                     <div key={libro.id_libro} className="pl-order-row" style={{ cursor: 'pointer' }}
-                      onClick={() => navigate(`/catalogo/${libro.id_libro}`)}>
+                      onClick={() => setActiveSide('Catálogo')}>
                       <div className="pl-order-left">
                         <span className="pl-order-emoji" style={{ display: 'flex', alignItems: 'center' }}>
                           <IconBook width={24} height={24} strokeWidth={2} style={{ color: '#7A1E3A' }} />
@@ -404,14 +557,449 @@ export default function PostLogin() {
 
             {cartLoading ? (
               <div className="empty-state"><p>Cargando carrito...</p></div>
-            ) : carrito.length === 0 ? (
+            ) : carrito.length === 0 && ordenes.filter(o => o.estado === 'pendiente').length === 0 ? (
               <div className="pl-card" style={{ padding: "40px" }}>
                 <CartEmptyState onGoToCatalog={handleGoToCatalog} />
               </div>
-            ) : (
-              /* Cuadrícula organizada con las tarjetas visuales estilizadas del compañero */
+            ) : mostrarCheckout ? (
+              /* CHECKOUT VIEW */
               <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "20px" }}>
-                {carrito.map((item) => (
+                {order && (
+                  <div style={{ marginTop: "0" }}>
+                    <button
+                      onClick={handleVolverCarrito}
+                      style={{
+                        background: 'var(--vinotinto)',
+                        color: 'white',
+                        border: 'none',
+                        padding: '0.7rem 1.5rem',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        marginBottom: '1rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px'
+                      }}
+                    >
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <line x1="19" y1="12" x2="5" y2="12"></line>
+                        <polyline points="12 19 5 12 12 5"></polyline>
+                      </svg>
+                      Volver al carrito
+                    </button>
+
+                    {paymentSuccess ? (
+                      <div style={{
+                        background: "var(--blanco)",
+                        padding: "40px",
+                        borderRadius: "16px",
+                        boxShadow: "var(--sombra-suave)",
+                        border: "1px solid #e0dbd4",
+                        textAlign: "center"
+                      }}>
+                        <div style={{
+                          width: 80, height: 80,
+                          borderRadius: "50%",
+                          background: "#fdf0f2",
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          margin: "0 auto 20px"
+                        }}>
+                          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#C5425A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                          </svg>
+                        </div>
+                        <h1 style={{ fontWeight: 800, color: "var(--vinotinto)", margin: "0 0 8px", fontSize: "1.8rem" }}>
+                          ¡Compra Confirmada!
+                        </h1>
+                        <p style={{ color: "#666", fontSize: "0.95rem", marginBottom: "28px" }}>
+                          Tu pago fue procesado exitosamente. Te enviamos un correo con los detalles de tu pedido.
+                        </p>
+                        <div style={{
+                          background: "#fcfaf7",
+                          padding: "20px",
+                          borderRadius: "10px",
+                          border: "1px solid #e0dbd4",
+                          textAlign: "left",
+                          marginBottom: "16px"
+                        }}>
+                          <p style={{ margin: "0 0 4px", fontSize: "11px", fontWeight: 700, color: "#aaa", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                            Resumen de tu orden
+                          </p>
+                          <div style={{ margin: "12px 0", display: "grid", gap: "8px" }}>
+                            {order.items?.map((item) => (
+                              <div key={item.id_libro} style={{ display: "flex", justifyContent: "space-between", fontSize: "0.9rem" }}>
+                                <span style={{ color: "#444" }}>📖 {item.titulo} <span style={{ color: "#999" }}>x{item.cantidad}</span></span>
+                                <span style={{ fontWeight: 600 }}>
+                                  {Number(item.precio_libro * item.cantidad).toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 })}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                          <div style={{ borderTop: "1px solid #e0dbd4", paddingTop: "12px", marginTop: "4px", display: "grid", gap: "6px", fontSize: "0.9rem" }}>
+                            <div style={{ display: "flex", justifyContent: "space-between" }}>
+                              <span style={{ color: "#666" }}>ID Orden</span>
+                              <span style={{ fontWeight: 600 }}>#{order.id_orden}</span>
+                            </div>
+                            <div style={{ display: "flex", justifyContent: "space-between", borderTop: "1px solid #e0dbd4", paddingTop: "10px", marginTop: "4px" }}>
+                              <span style={{ fontWeight: 700 }}>Total pagado</span>
+                              <span style={{ fontWeight: 800, color: "var(--rojo-suave)", fontSize: "1.05rem" }}>
+                                {Number(order.total).toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 })}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        <button className="btn btn-vinotinto" onClick={() => setActiveSide("Mis Compras")} style={{ width: "100%" }}>
+                          Ir a Mis Compras
+                        </button>
+                      </div>
+                    ) : (
+                      <div style={{ display: "grid", gridTemplateColumns: "1.2fr 0.8fr", gap: "30px", alignItems: "start" }}>
+                        {/* LEFT COLUMN: Payment details */}
+                        <div style={{
+                          background: "var(--blanco)",
+                          padding: "30px",
+                          borderRadius: "12px",
+                          boxShadow: "var(--sombra-suave)",
+                          border: "1px solid #e0dbd4"
+                        }}>
+                          <h2 style={{ fontWeight: 700, margin: "0 0 20px 0", fontSize: "1.3rem" }}>Método de Pago</h2>
+
+                          <div style={{ display: "flex", gap: "15px", marginBottom: "30px" }}>
+                            <button
+                              onClick={() => setPaymentMethod("tarjeta")}
+                              style={{
+                                flex: 1,
+                                padding: "15px",
+                                borderRadius: "8px",
+                                border: paymentMethod === "tarjeta" ? "2px solid var(--vinotinto)" : "1px solid #e0dbd4",
+                                background: paymentMethod === "tarjeta" ? "#fbf7f8" : "var(--blanco)",
+                                cursor: "pointer",
+                                display: "flex",
+                                flexDirection: "column",
+                                alignItems: "center",
+                                gap: "8px",
+                                fontWeight: 600,
+                                color: paymentMethod === "tarjeta" ? "var(--vinotinto)" : "var(--gris-carbon)",
+                                transition: "var(--transition)"
+                              }}
+                            >
+                              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                                <line x1="1" y1="10" x2="23" y2="10"></line>
+                              </svg>
+                              Tarjeta Crédito/Débito
+                            </button>
+
+                            <button
+                              onClick={() => setPaymentMethod("paypal")}
+                              style={{
+                                flex: 1,
+                                padding: "15px",
+                                borderRadius: "8px",
+                                border: paymentMethod === "paypal" ? "2px solid var(--vinotinto)" : "1px solid #e0dbd4",
+                                background: paymentMethod === "paypal" ? "#fbf7f8" : "var(--blanco)",
+                                cursor: "pointer",
+                                display: "flex",
+                                flexDirection: "column",
+                                alignItems: "center",
+                                gap: "8px",
+                                fontWeight: 600,
+                                color: paymentMethod === "paypal" ? "var(--vinotinto)" : "var(--gris-carbon)",
+                                transition: "var(--transition)"
+                              }}
+                            >
+                              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M12 2H7.5a2.5 2.5 0 0 0-2.5 2.5v13a1.5 1.5 0 0 0 1.5 1.5h3.5a1.5 1.5 0 0 0 1.5-1.5v-3.5h2.5a4.5 4.5 0 0 0 4.5-4.5V6.5A4.5 4.5 0 0 0 12 2z"></path>
+                              </svg>
+                              PayPal
+                            </button>
+                          </div>
+
+                          {paymentMethod === "tarjeta" ? (
+                            <form onSubmit={handleCardSubmit}>
+                              <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "15px" }}>
+                                <div>
+                                  <label style={{ display: "block", fontSize: "0.85rem", fontWeight: 600, marginBottom: "5px" }}>Nombre del Titular</label>
+                                  <input
+                                    type="text"
+                                    placeholder="Juan Pérez"
+                                    value={cardName}
+                                    onChange={(e) => { setCardName(e.target.value); setFormErrors(p => ({ ...p, cardName: "" })); }}
+                                    style={{
+                                      width: "100%", padding: "10px", borderRadius: "6px", border: formErrors.cardName ? "1.5px solid red" : "1.5px solid #e0dbd4", outline: "none", fontFamily: "'Montserrat', sans-serif"
+                                    }}
+                                  />
+                                  {formErrors.cardName && <span style={{ color: "red", fontSize: "0.75rem" }}>{formErrors.cardName}</span>}
+                                </div>
+
+                                <div>
+                                  <label style={{ display: "block", fontSize: "0.85rem", fontWeight: 600, marginBottom: "5px" }}>Número de Tarjeta</label>
+                                  <input
+                                    type="text"
+                                    placeholder="0000 0000 0000 0000"
+                                    value={cardNumber}
+                                    onChange={handleCardNumberChange}
+                                    style={{
+                                      width: "100%", padding: "10px", borderRadius: "6px", border: formErrors.cardNumber ? "1.5px solid red" : "1.5px solid #e0dbd4", outline: "none", fontFamily: "'Montserrat', sans-serif"
+                                    }}
+                                  />
+                                  {formErrors.cardNumber && <span style={{ color: "red", fontSize: "0.75rem" }}>{formErrors.cardNumber}</span>}
+                                </div>
+
+                                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "15px" }}>
+                                  <div>
+                                    <label style={{ display: "block", fontSize: "0.85rem", fontWeight: 600, marginBottom: "5px" }}>Vencimiento</label>
+                                    <input
+                                      type="text"
+                                      placeholder="MM/AA"
+                                      value={cardExpiry}
+                                      onChange={handleExpiryChange}
+                                      maxLength={5}
+                                      style={{
+                                        width: "100%", padding: "10px", borderRadius: "6px", 
+                                        border: formErrors.cardExpiry ? "1.5px solid red" : "1.5px solid #e0dbd4", 
+                                        outline: "none", fontFamily: "'Montserrat', sans-serif"
+                                      }}
+                                    />
+                                    {formErrors.cardExpiry && <span style={{ color: "red", fontSize: "0.75rem" }}>{formErrors.cardExpiry}</span>}
+                                  </div>
+
+                                  <div>
+                                    <label style={{ display: "block", fontSize: "0.85rem", fontWeight: 600, marginBottom: "5px" }}>Cvv (Seguridad)</label>
+                                    <input
+                                      type="password"
+                                      placeholder="123"
+                                      value={cardCvv}
+                                      onChange={handleCvvChange}
+                                      style={{
+                                        width: "100%", padding: "10px", borderRadius: "6px", border: formErrors.cardCvv ? "1.5px solid red" : "1.5px solid #e0dbd4", outline: "none", fontFamily: "'Montserrat', sans-serif"
+                                      }}
+                                    />
+                                    {formErrors.cardCvv && <span style={{ color: "red", fontSize: "0.75rem" }}>{formErrors.cardCvv}</span>}
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div style={{ display: "flex", alignItems: "center", gap: "8px", margin: "25px 0", color: "#666", fontSize: "0.85rem" }}>
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                                </svg>
+                                <span>Sus datos bancarios están encriptados y procesados de manera segura.</span>
+                              </div>
+
+                              <button type="submit" className="btn btn-vinotinto" style={{ width: "100%", marginTop: "10px" }}>
+                                Pagar {Number(order.total).toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 })}
+                              </button>
+                            </form>
+                          ) : (
+                            <div style={{ textAlign: "center", padding: "20px 0" }}>
+                              <p style={{ color: "#666", marginBottom: "25px", fontSize: "0.95rem" }}>
+                                Al dar click al botón, abriremos un simulador de pago seguro para que apruebes la transacción desde tu cuenta de PayPal.
+                              </p>
+                              <button
+                                onClick={() => setShowPaypalModal(true)}
+                                className="btn btn-primary"
+                                style={{
+                                  background: "#FFC439",
+                                  borderColor: "#FFC439",
+                                  color: "#111",
+                                  width: "100%",
+                                  maxWidth: "350px",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  gap: "10px",
+                                  fontWeight: 700
+                                }}
+                              >
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  <path d="M12 2H7.5a2.5 2.5 0 0 0-2.5 2.5v13a1.5 1.5 0 0 0 1.5 1.5h3.5a1.5 1.5 0 0 0 1.5-1.5v-3.5h2.5a4.5 4.5 0 0 0 4.5-4.5V6.5A4.5 4.5 0 0 0 12 2z"></path>
+                                </svg>
+                                Pagar con PayPal
+                              </button>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* RIGHT COLUMN: Order summary */}
+                        <div style={{
+                          background: "var(--beige)",
+                          padding: "30px",
+                          borderRadius: "12px",
+                          border: "1px solid #e0dbd4"
+                        }}>
+                          <h2 style={{ fontWeight: 700, margin: "0 0 20px 0", fontSize: "1.3rem", color: "var(--gris-carbon)" }}>Resumen de Orden</h2>
+
+                          <div style={{ maxHeight: "300px", overflowY: "auto", display: "grid", gap: "15px", marginBottom: "20px" }}>
+                            {order.items?.map((item) => (
+                              <div key={item.id_libro} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.9rem" }}>
+                                <div style={{ maxWidth: "70%" }}>
+                                  <p style={{ margin: "0", fontWeight: 600 }}>{item.titulo}</p>
+                                  <p style={{ margin: "2px 0 0 0", color: "#666", fontSize: "0.8rem" }}>Cant: {item.cantidad}</p>
+                                </div>
+                                <div>
+                                  <span style={{ fontWeight: 700 }}>
+                                    {Number(item.precio_libro * item.cantidad).toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 })}
+                                  </span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+
+                          <div style={{ borderTop: "1.5px solid #e0dbd4", paddingTop: "20px", display: "grid", gap: "10px" }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.95rem" }}>
+                              <span>Subtotal</span>
+                              <span>{Number(order.total).toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 })}</span>
+                            </div>
+                            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.95rem" }}>
+                              <span>Envío</span>
+                              <span style={{ color: "green", fontWeight: 600 }}>Gratis</span>
+                            </div>
+                            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "1.2rem", fontWeight: 800, marginTop: "10px", borderTop: "1px solid #e0dbd4", paddingTop: "15px" }}>
+                              <span>Total</span>
+                              <span style={{ color: "var(--rojo-suave)" }}>
+                                {Number(order.total).toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 })}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* PAYPAL SIMULATOR MODAL */}
+                    {showPaypalModal && (
+                      <div style={{
+                        position: "fixed",
+                        inset: 0,
+                        background: "rgba(0,0,0,0.5)",
+                        zIndex: 1100,
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        padding: "15px"
+                      }}>
+                        <div style={{
+                          background: "#fff",
+                          maxWidth: "450px",
+                          width: "100%",
+                          borderRadius: "12px",
+                          padding: "30px",
+                          boxShadow: "0 10px 30px rgba(0,0,0,0.2)"
+                        }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px", borderBottom: "1.5px solid #f0f0f0", paddingBottom: "10px" }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M12 2H7.5a2.5 2.5 0 0 0-2.5 2.5v13a1.5 1.5 0 0 0 1.5 1.5h3.5a1.5 1.5 0 0 0 1.5-1.5v-3.5h2.5a4.5 4.5 0 0 0 4.5-4.5V6.5A4.5 4.5 0 0 0 12 2z"></path>
+                              </svg>
+                              <span style={{ fontSize: "1.2rem", fontWeight: 800, color: "#003087" }}>PayPal Sandbox</span>
+                            </div>
+                            <button
+                              onClick={() => setShowPaypalModal(false)}
+                              style={{ background: "none", border: "none", fontSize: "1.5rem", cursor: "pointer", fontWeight: 800, color: "#666" }}
+                            >
+                              &times;
+                            </button>
+                          </div>
+
+                          {paypalError && (
+                            <p style={{ color: "red", fontSize: "0.85rem", marginBottom: "15px", fontWeight: 600 }}>{paypalError}</p>
+                          )}
+
+                          <form onSubmit={handlePaypalSubmit}>
+                            <div style={{ display: "grid", gap: "15px", marginBottom: "25px" }}>
+                              <div>
+                                <label style={{ display: "block", fontSize: "0.85rem", fontWeight: 600, marginBottom: "5px" }}>Correo electrónico PayPal</label>
+                                <input
+                                  type="email"
+                                  placeholder="comprador-sandbox@example.com"
+                                  value={paypalEmail}
+                                  onChange={(e) => setPaypalEmail(e.target.value)}
+                                  style={{ width: "100%", padding: "10px", borderRadius: "6px", border: "1.5px solid #e0dbd4", outline: "none" }}
+                                />
+                              </div>
+                              <div>
+                                <label style={{ display: "block", fontSize: "0.85rem", fontWeight: 600, marginBottom: "5px" }}>Contraseña Sandbox</label>
+                                <input
+                                  type="password"
+                                  placeholder="••••••••"
+                                  value={paypalPassword}
+                                  onChange={(e) => setPaypalPassword(e.target.value)}
+                                  style={{ width: "100%", padding: "10px", borderRadius: "6px", border: "1.5px solid #e0dbd4", outline: "none" }}
+                                />
+                              </div>
+                            </div>
+
+                            <div style={{ display: "flex", gap: "10px" }}>
+                              <button
+                                type="button"
+                                onClick={() => setShowPaypalModal(false)}
+                                style={{ flex: 1, padding: "12px", background: "#f0f0f0", border: "none", borderRadius: "6px", fontWeight: 700, cursor: "pointer" }}
+                              >
+                                Cancelar
+                              </button>
+                              <button
+                                type="submit"
+                                disabled={paypalProcessing}
+                                style={{
+                                  flex: 1,
+                                  padding: "12px",
+                                  background: "#0070ba",
+                                  color: "#fff",
+                                  border: "none",
+                                  borderRadius: "6px",
+                                  fontWeight: 700,
+                                  cursor: paypalProcessing ? "not-allowed" : "pointer",
+                                  opacity: paypalProcessing ? 0.7 : 1
+                                }}
+                              >
+                                {paypalProcessing ? "Validando..." : `Pagar ${Number(order.total).toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 })}`}
+                              </button>
+                            </div>
+                          </form>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Payment processing overlay */}
+                    {paymentProcessing && (
+                      <div style={{
+                        position: "fixed",
+                        inset: 0,
+                        background: "rgba(255,255,255,0.9)",
+                        zIndex: 1000,
+                        display: "flex",
+                        flexDirection: "column",
+                        justifyContent: "center",
+                        alignItems: "center"
+                      }}>
+                        <div style={{
+                          border: "4px solid #f4ede2",
+                          borderTop: "4px solid var(--vinotinto)",
+                          borderRadius: "50%",
+                          width: "50px",
+                          height: "50px",
+                          animation: "spin 1s linear infinite"
+                        }}></div>
+                        <h2 style={{ fontWeight: 800, marginTop: "20px", color: "var(--gris-carbon)" }}>Procesando Pago de forma segura</h2>
+                        <p style={{ color: "#666" }}>Conectando con la pasarela de pago bancaria...</p>
+                      </div>
+                    )}
+
+                    <style>{`
+                      @keyframes spin {
+                        0% { transform: rotate(0deg); }
+                        100% { transform: rotate(360deg); }
+                      }
+                    `}</style>
+                  </div>
+                )}
+              </div>
+            ) : (
+              /* CART ITEMS VIEW */
+              <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "20px" }}>
+                {carrito.length > 0 ? (
+                  carrito.map((item) => (
                   <div
                     key={item.id_libro}
                     style={{
@@ -446,9 +1034,95 @@ export default function PostLogin() {
                       </p>
                     </div>
                   </div>
-                ))}
+                ))
+                ) : (
+                  /* Show pending orders when cart is empty */
+                  ordenes.filter(o => o.estado === 'pendiente').map((orden) => (
+                    <div
+                      key={orden.id_orden}
+                      style={{
+                        background: "#fff5f7",
+                        border: "2px solid var(--vinotinto)",
+                        borderRadius: "8px",
+                        padding: "20px",
+                        boxShadow: "var(--sombra-suave)",
+                      }}
+                    >
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "15px" }}>
+                        <div>
+                          <h3 style={{ margin: "0 0 5px 0", fontWeight: 700, color: "var(--vinotinto)" }}>Orden #{orden.id_orden}</h3>
+                          <p style={{ margin: "0", color: "#666", fontSize: "0.9rem" }}>
+                            {orden.fecha ? new Date(orden.fecha).toLocaleDateString("es-CO") : ""}
+                          </p>
+                        </div>
+                        <span style={{
+                          background: "var(--vinotinto)",
+                          color: "white",
+                          padding: "4px 12px",
+                          borderRadius: "20px",
+                          fontSize: "0.75rem",
+                          fontWeight: 700
+                        }}>
+                          Pendiente de pago
+                        </span>
+                      </div>
 
-                {/* Bloque de Cierre de Caja y Botones de Acción */}
+                      <div style={{ marginBottom: "15px" }}>
+                        {orden.items?.map((item) => (
+                          <div key={item.id_libro} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid #e0dbd4" }}>
+                            <span>{item.titulo} x{item.cantidad}</span>
+                            <span style={{ fontWeight: 600 }}>
+                              {Number(item.precio_libro * item.cantidad).toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 })}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
+                        <button
+                          onClick={() => {
+                            setOrderId(orden.id_orden);
+                            setOrder(orden);
+                            setMostrarCheckout(true);
+                          }}
+                          className="btn btn-vinotinto"
+                          style={{ padding: "8px 16px", fontSize: "0.85rem" }}
+                        >
+                          Continuar con el pago
+                        </button>
+                        <button
+                          onClick={async () => {
+                            if (confirm('¿Estás seguro de que deseas cancelar esta orden?')) {
+                              try {
+                                await cancelOrder(orden.id_orden);
+                                setOrdenes(ordenes.filter(o => o.id_orden !== orden.id_orden));
+                                notify('Orden cancelada exitosamente', 'success');
+                              } catch (err) {
+                                const msg = err.response?.data?.detail || 'No se pudo cancelar la orden';
+                                notify(msg, 'error');
+                              }
+                            }
+                          }}
+                          style={{
+                            background: "none",
+                            border: "1.5px solid #e53935",
+                            color: "#e53935",
+                            borderRadius: "8px",
+                            padding: "8px 16px",
+                            fontWeight: 700,
+                            fontSize: "0.85rem",
+                            cursor: "pointer"
+                          }}
+                        >
+                          Cancelar orden
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+
+                {/* Bloque de Cierre de Caja y Botones de Acción - solo para carrito normal */}
+                {carrito.length > 0 && (
                 <div style={{
                   marginTop: "30px",
                   borderTop: "2px solid #e0dbd4",
@@ -498,6 +1172,7 @@ export default function PostLogin() {
                     Seguir comprando
                   </button>
                 </div>
+                )}
               </div>
             )}
           </>
@@ -563,6 +1238,36 @@ export default function PostLogin() {
 
             {(() => {
               const favoritos = JSON.parse(localStorage.getItem('favoritos')) || [];
+              
+              const IMAGENES_CATEGORIA = {
+                'Fantasía':    'https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=400&q=80',
+                'Romance':     'https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?w=400&q=80',
+                'Ciencia':     'https://images.unsplash.com/photo-1462331940025-496dfbfc7564?w=400&q=80',
+                'Tecnología':  'https://images.unsplash.com/photo-1515879218367-8466d910aaa4?w=400&q=80',
+                'Historia':    'https://images.unsplash.com/photo-1461360370896-922624d12aa1?w=400&q=80',
+                'Infantil':    'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=400&q=80',
+                'Aventura':    'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=400&q=80',
+                'Terror':      'https://images.unsplash.com/photo-1509248961158-e54f6934749c?w=400&q=80',
+                'Biografía':   'https://images.unsplash.com/photo-1516979187457-637abb4f9353?w=400&q=80',
+                'Educación':   'https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?w=400&q=80',
+                'Arte':        'https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?w=400&q=80',
+                'Comedia':     'https://images.unsplash.com/photo-1516321497487-e288fb19713f?w=400&q=80',
+              };
+              const IMG_DEFAULT = 'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=400&q=80';
+
+              const obtenerImagen = (libro) => {
+                if (libro?.imagen_url) return libro.imagen_url;
+                if (libro?.imagen_principal) return libro.imagen_principal;
+                if (libro?.imagenes?.[0]) return libro.imagenes[0];
+                return IMAGENES_CATEGORIA[libro?.nombre_categoria] || IMG_DEFAULT;
+              };
+
+              const handleEliminarFavorito = (id_libro) => {
+                const nuevos = favoritos.filter((f) => f.id_libro !== id_libro);
+                localStorage.setItem('favoritos', JSON.stringify(nuevos));
+                window.location.reload();
+              };
+
               return favoritos.length === 0 ? (
                 <div className="empty-state">
                   <p>No tienes libros en favoritos. ¡Agrega algunos desde el catálogo!</p>
@@ -572,24 +1277,162 @@ export default function PostLogin() {
                   </button>
                 </div>
               ) : (
-                <div className="pl-card">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                   {favoritos.map((libro) => (
-                    <div key={libro.id_libro} className="pl-order-row">
-                      <div className="pl-order-left">
-                        <span className="pl-order-emoji" style={{ display: 'flex', alignItems: 'center' }}>
-                          <IconBook width={24} height={24} strokeWidth={2} style={{ color: '#7A1E3A' }} />
-                        </span>
-                        <div>
-                          <p className="pl-order-title">{libro.titulo}</p>
-                          <p className="pl-order-meta">
-                            {libro.autor_libro || libro.autor} · {libro.nombre_categoria}
+                    <div 
+                      key={libro.id_libro}
+                      style={{
+                        display: 'grid',
+                        gridTemplateColumns: '200px 1fr',
+                        gap: '24px',
+                        padding: '24px',
+                        background: 'white',
+                        borderRadius: '12px',
+                        border: '1px solid #e0dbd4',
+                        boxShadow: 'var(--sombra-suave)'
+                      }}
+                    >
+                      {/* Foto del libro */}
+                      <div>
+                        <img
+                          src={obtenerImagen(libro)}
+                          alt={libro.titulo}
+                          style={{
+                            width: '100%',
+                            height: 'auto',
+                            borderRadius: '8px',
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                            objectFit: 'cover'
+                          }}
+                        />
+                      </div>
+
+                      {/* Detalles del libro */}
+                      <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        {libro.nombre_categoria && (
+                          <span style={{
+                            display: 'inline-block',
+                            padding: '4px 12px',
+                            borderRadius: '20px',
+                            background: '#fce4ec',
+                            color: '#8b0000',
+                            fontSize: '0.75rem',
+                            fontWeight: '700',
+                            marginBottom: '8px',
+                            width: 'fit-content'
+                          }}>
+                            {libro.nombre_categoria}
+                          </span>
+                        )}
+                        
+                        <h2 style={{
+                          fontSize: '1.4rem',
+                          fontWeight: '700',
+                          margin: '0 0 4px 0',
+                          lineHeight: '1.2',
+                          color: '#2c2c2c'
+                        }}>
+                          {libro.titulo}
+                        </h2>
+                        
+                        <p style={{
+                          fontSize: '1rem',
+                          color: '#666',
+                          fontWeight: '600',
+                          margin: '0 0 12px 0'
+                        }}>
+                          {libro.autor_libro || libro.autor || 'Autor no disponible'}
+                        </p>
+
+                        {/* Detalles adicionales */}
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '12px', marginBottom: '16px' }}>
+                          <div style={{ padding: '12px', background: '#faf8f6', borderRadius: '8px', border: '1px solid #e0dbd4' }}>
+                            <p style={{ fontSize: '0.75rem', color: '#999', margin: '0 0 4px 0' }}>Precio</p>
+                            <p style={{ fontSize: '1.1rem', fontWeight: '700', color: '#8b0000', margin: 0 }}>
+                              ${Number(libro.precio_libro || libro.precio || 0).toLocaleString('es-CO')}
+                            </p>
+                          </div>
+                          <div style={{ padding: '12px', background: '#faf8f6', borderRadius: '8px', border: '1px solid #e0dbd4' }}>
+                            <p style={{ fontSize: '0.75rem', color: '#999', margin: '0 0 4px 0' }}>Stock</p>
+                            <p style={{ 
+                              fontSize: '1rem', 
+                              fontWeight: '600', 
+                              color: libro.stock > 0 ? '#4caf50' : '#e53935', 
+                              margin: 0 
+                            }}>
+                              {libro.stock > 0 ? `${libro.stock} disponibles` : 'Agotado'}
+                            </p>
+                          </div>
+                          {libro.nombre_tienda && (
+                            <div style={{ padding: '12px', background: '#faf8f6', borderRadius: '8px', border: '1px solid #e0dbd4' }}>
+                              <p style={{ fontSize: '0.75rem', color: '#999', margin: '0 0 4px 0' }}>Tienda</p>
+                              <p style={{ fontSize: '0.9rem', fontWeight: '600', color: '#2c2c2c', margin: 0 }}>
+                                {libro.nombre_tienda}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Descripción */}
+                        <div style={{ marginBottom: '16px' }}>
+                          <h3 style={{ fontSize: '1rem', fontWeight: '700', margin: '0 0 8px 0', color: '#2c2c2c' }}>
+                            Descripción
+                          </h3>
+                          <p style={{
+                            fontSize: '0.9rem',
+                            color: '#555',
+                            lineHeight: '1.6',
+                            margin: 0,
+                            display: '-webkit-box',
+                            WebkitLineClamp: 3,
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden'
+                          }}>
+                            {libro.descripcion_libro || 'Este libro es una excelente adición a tu colección. Escrito por un autor reconocido, ofrece una narrativa cautivadora que te mantendrá enganchado desde la primera página hasta la última.'}
                           </p>
                         </div>
-                      </div>
-                      <div className="pl-order-right">
-                        <span className="pl-order-price">
-                          ${Number(libro.precio_libro ?? libro.precio ?? 0).toLocaleString('es-CO')}
-                        </span>
+
+                        {/* Botones */}
+                        <div style={{ display: 'flex', gap: '12px', marginTop: 'auto', flexWrap: 'wrap' }}>
+                          <button
+                            onClick={() => setActiveSide('Catálogo')}
+                            className="btn btn-vinotinto"
+                            style={{
+                              flex: 1,
+                              minWidth: '140px',
+                              padding: '12px 24px',
+                              fontSize: '0.95rem',
+                              fontWeight: '600'
+                            }}
+                          >
+                            Ver en catálogo
+                          </button>
+                          <button
+                            onClick={() => handleEliminarFavorito(libro.id_libro)}
+                            style={{
+                              minWidth: '140px',
+                              background: 'white',
+                              color: '#e53935',
+                              border: '2px solid #e53935',
+                              padding: '12px 24px',
+                              borderRadius: '8px',
+                              cursor: 'pointer',
+                              fontSize: '0.95rem',
+                              fontWeight: '600',
+                              transition: 'all 0.2s ease',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: '6px'
+                            }}
+                          >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="3 6 5 6 21 6"></polyline>
+                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                            </svg>
+                            Quitar de favoritos
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))}

@@ -1,5 +1,4 @@
 // src/App.jsx
-import Favoritos from './pages/Favoritos';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 
 import Header from './components/Header';
@@ -20,7 +19,6 @@ import PrivateRoute from './components/PrivateRoute';
 import Checkout from './pages/Checkout';
 import StoredProcedurePage from './pages/StoredProcedurePage';
 import PublicarLibro from './pages/PublicarLibro';
-import DetalleLibro from './pages/DetalleLibro';
 import AdminDashboard from './pages/AdminDashboard';
 import Chat from './pages/Chat';
 import Notificaciones from './pages/Notificaciones';
@@ -67,8 +65,6 @@ function MainLayout() {
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/libros" element={<StoredProcedurePage />} />
         <Route path="/catalogo" element={<Catalogo />} />
-        <Route path="/catalogo/:id" element={<DetalleLibro />} />
-        <Route path="/favoritos" element={<Favoritos />} />
         <Route path="/legal" element={<LegalPage />} />
 
         {/* ── RUTAS PROTEGIDAS GENERALES (Cualquier usuario logueado) ── */}

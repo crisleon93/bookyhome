@@ -85,3 +85,27 @@ def registrar_pago(id_usuario, id_orden, amount, payment_method):
     _save_store(PAYMENT_FILE, payments)
 
     return {'ok': True, 'transaction': transaction}
+
+
+def cancelar_orden(id_usuario, id_orden):
+    orders = _load_store(ORDER_FILE)
+    user_orders = orders.get(str(id_usuario), [])
+
+    target_order = None
+    for order in user_orders:
+        if order.get('id_orden') == int(id_orden):
+            target_order = order
+            break
+
+    if not target_order:
+        return {'ok': False, 'error': 'Orden no encontrada'}
+
+    if target_order.get('estado') != 'pendiente':
+        return {'ok': False, 'error': f'Solo se pueden cancelar órdenes en estado pendiente. Estado actual: {target_order.get("estado")}'}
+
+    # Eliminar la orden de la lista
+    user_orders = [o for o in user_orders if o.get('id_orden') != int(id_orden)]
+    orders[str(id_usuario)] = user_orders
+    _save_store(ORDER_FILE, orders)
+
+    return {'ok': True, 'message': 'Orden cancelada exitosamente'}
