@@ -1,5 +1,15 @@
 {
   "22": [],
   "17": [],
-  "18": []
+  "18": [],
+  "1": [
+    {
+      "id_libro": 44,
+      "titulo": "El principito",
+      "autor_libro": "Antoine de Saint-Exupéry",
+      "precio_libro": 20000.0,
+      "cantidad": 1,
+      "imagen": "https://covers.openlibrary.org/b/id/12688412-L.jpg"
+    }
+  ]
 }

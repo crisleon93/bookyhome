@@ -25,16 +25,16 @@ class TipoNotificacion(str, Enum):
 class NotificacionCreate(BaseModel):
     tipo: TipoNotificacion
     titulo: str
-    descripcion: str
-    referencia_id: int | None = None
+    cuerpo: str
+    id_referencia: int | None = None
 
 class NotificacionResponse(BaseModel):
     id_notificacion: int
     id_usuario: int
     tipo: str
     titulo: str
-    descripcion: str
-    referencia_id: int | None
+    cuerpo: str
+    id_referencia: int | None
     leida: bool
     fecha_creacion: str
 
@@ -66,10 +66,10 @@ def obtener_notificaciones_usuario(
                 n.id_usuario,
                 n.tipo,
                 n.titulo,
-                n.descripcion,
-                n.referencia_id,
+                n.cuerpo,
+                n.id_referencia,
                 n.leida,
-                DATE_FORMAT(n.fecha_creacion, '%Y-%m-%d %H:%i:%s') as fecha_creacion
+                n.fecha_creacion
             FROM notificaciones n
             WHERE n.id_usuario = %s
         """
@@ -83,6 +83,11 @@ def obtener_notificaciones_usuario(
         
         cursor.execute(query, params)
         notificaciones = cursor.fetchall()
+        
+        # Formatear fechas en Python
+        for notif in notificaciones:
+            if notif["fecha_creacion"]:
+                notif["fecha_creacion"] = notif["fecha_creacion"].strftime("%Y-%m-%d %H:%M:%S")
         
         # Contar total no leídas
         cursor.execute("""
@@ -107,9 +112,9 @@ def crear_notificacion(data: NotificacionCreate, user_id: int = Depends(get_curr
     try:
         cursor.execute("""
             INSERT INTO notificaciones 
-            (id_usuario, tipo, titulo, descripcion, referencia_id, leida, fecha_creacion)
+            (id_usuario, tipo, titulo, cuerpo, id_referencia, leida, fecha_creacion)
             VALUES (%s, %s, %s, %s, %s, FALSE, NOW())
-        """, (user_id, data.tipo.value, data.titulo, data.descripcion, data.referencia_id))
+        """, (user_id, data.tipo.value, data.titulo, data.cuerpo, data.id_referencia))
         
         db.commit()
         notif_id = cursor.lastrowid

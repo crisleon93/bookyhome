@@ -17,7 +17,7 @@ const IMAGENES_CATEGORIA = {
 };
 const IMG_DEFAULT = 'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=400&q=80';
 
-const LibroCard = ({ libro, onAdd, adding = false }) => {
+const LibroCard = ({ libro, onAdd, adding = false, onVerDetalles }) => {
   const navigate = useNavigate();
   const [addMsg, setAddMsg] = useState('');
 
@@ -54,17 +54,42 @@ const LibroCard = ({ libro, onAdd, adding = false }) => {
       />
 
       <div className="libro-card-body">
-        {categoria && <span className="categoria-badge">{categoria}</span>}
+        {categoria && (
+          <span className="categoria-badge">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+            </svg>
+            {categoria}
+          </span>
+        )}
 
         <h3>{libro.titulo}</h3>
         <p className="autor">{author}</p>
 
         {libro.nombre_tienda && (
-          <p className="tienda">📍 {libro.nombre_tienda}</p>
+          <p className="tienda">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+              <circle cx="12" cy="10" r="3"></circle>
+            </svg>
+            {libro.nombre_tienda}
+          </p>
         )}
 
         <p className="disponibilidad">
-          <span className={outOfStock ? 'punto-rojo' : 'punto-verde'}>●</span>
+          {outOfStock ? (
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#e53935" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="15" y1="9" x2="9" y2="15"></line>
+              <line x1="9" y1="9" x2="15" y2="15"></line>
+            </svg>
+          ) : (
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4caf50" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+              <polyline points="22 4 12 14.01 9 11.01"></polyline>
+            </svg>
+          )}
           {outOfStock ? ' Sin stock' : ' Disponible'}
         </p>
 
@@ -73,23 +98,11 @@ const LibroCard = ({ libro, onAdd, adding = false }) => {
         {/* Botón principal */}
         <button
           className="btn btn-vinotinto"
-          onClick={() => navigate(`/catalogo/${libro.id_libro}`)}
+          onClick={() => onVerDetalles && onVerDetalles(libro)}
           style={{ marginTop: 'auto' }}
         >
           Ver detalles
         </button>
-
-        {/* Botón secundario de carrito — solo si se pasa onAdd */}
-        {onAdd && (
-          <button
-            className="btn btn-outline"
-            onClick={handleAdd}
-            disabled={adding || outOfStock}
-            style={{ marginTop: '6px' }}
-          >
-            {outOfStock ? 'Sin stock' : adding ? 'Agregando…' : '🛒 Al carrito'}
-          </button>
-        )}
 
         {addMsg && <p className="card-feedback">{addMsg}</p>}
       </div>

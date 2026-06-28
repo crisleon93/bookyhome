@@ -277,21 +277,21 @@ INSERT INTO libros (id_tienda, titulo, autor_libro, descripcion_libro, precio_li
 (7,'Biografia de un Genio','F. Ruiz','Historia de vida real',80000,3,15,'Disponible','2024-04-01','2025-03-01');
 
 INSERT INTO imagenes_libro (id_libro, url_imagen, es_principal) VALUES
-(1,'https://bookyhome.com/images/castillo.jpg',TRUE),
-(2,'https://bookyhome.com/images/amor_invierno.jpg',TRUE),
-(3,'https://bookyhome.com/images/sombra.jpg',TRUE),
-(4,'https://bookyhome.com/images/orion.jpg',TRUE),
-(5,'https://bookyhome.com/images/universo.jpg',TRUE),
-(6,'https://bookyhome.com/images/codigo.jpg',TRUE),
-(7,'https://bookyhome.com/images/ingenieria.jpg',TRUE),
-(8,'https://bookyhome.com/images/cuentos.jpg',TRUE),
-(9,'https://bookyhome.com/images/juventud.jpg',TRUE),
-(10,'https://bookyhome.com/images/aventura.jpg',TRUE),
-(11,'https://bookyhome.com/images/civilizaciones.jpg',TRUE),
-(12,'https://bookyhome.com/images/matematicas.jpg',TRUE),
-(13,'https://bookyhome.com/images/arte.jpg',TRUE),
-(14,'https://bookyhome.com/images/humor.jpg',TRUE),
-(15,'https://bookyhome.com/images/biografia.jpg',TRUE);
+(1,'https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=400&q=80',TRUE),
+(2,'https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?w=400&q=80',TRUE),
+(3,'https://images.unsplash.com/photo-1509248961158-e54f6934749c?w=400&q=80',TRUE),
+(4,'https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?w=400&q=80',TRUE),
+(5,'https://images.unsplash.com/photo-1462331940025-496dfbfc7564?w=400&q=80',TRUE),
+(6,'https://images.unsplash.com/photo-1515879218367-8466d910aaa4?w=400&q=80',TRUE),
+(7,'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=400&q=80',TRUE),
+(8,'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=400&q=80',TRUE),
+(9,'https://images.unsplash.com/photo-1516979187457-637abb4f9353?w=400&q=80',TRUE),
+(10,'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=400&q=80',TRUE),
+(11,'https://images.unsplash.com/photo-1461360370896-922624d12aa1?w=400&q=80',TRUE),
+(12,'https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?w=400&q=80',TRUE),
+(13,'https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?w=400&q=80',TRUE),
+(14,'https://images.unsplash.com/photo-1516321497487-e288fb19713f?w=400&q=80',TRUE),
+(15,'https://images.unsplash.com/photo-1516979187457-637abb4f9353?w=400&q=80',TRUE);
 
 INSERT INTO ofertas (id_tienda, nombre_oferta, tipo_descuento, valor_descuento, fecha_inicio, fecha_fin) VALUES
 (1,'Lanzamiento Fantasia','porcentaje',15.00,'2024-03-01 00:00:00','2024-03-31 23:59:59'),
