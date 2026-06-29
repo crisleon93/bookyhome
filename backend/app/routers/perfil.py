@@ -55,7 +55,7 @@ def obtener_perfil(user_id: int = Depends(get_current_user)):
                 correo_usuario,
                 telefono,
                 rol,
-                DATE_FORMAT(fecha_registro, '%Y-%m-%d') as fecha_registro,
+                fecha_registro as fecha_registro,
                 foto_perfil,
                 preferencias
             FROM usuarios
@@ -166,7 +166,7 @@ def obtener_historial_compras(user_id: int = Depends(get_current_user)):
             LEFT JOIN detalle_orden do ON oc.id_orden = do.id_orden
             LEFT JOIN libros l ON do.id_libro = l.id_libro
             WHERE oc.id_usuario = %s
-            GROUP BY oc.id_orden
+            GROUP BY oc.id_orden, oc.fecha_orden, oc.total, oc.estado_orden
             ORDER BY oc.fecha_orden DESC
             LIMIT 20
         """

@@ -66,7 +66,7 @@ def obtener_historial_usuario(
                 h.id_libro,
                 h.id_tienda,
                 h.descripcion,
-                DATE_FORMAT(h.fecha_interaccion, '%Y-%m-%d %H:%i:%s') as fecha_interaccion,
+                h.fecha_interaccion as fecha_interaccion,
                 l.titulo as nombre_libro,
                 t.nombre_tienda
             FROM historial_interacciones h

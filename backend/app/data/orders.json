@@ -139,5 +139,32 @@
       "estado": "pagado",
       "metodo_pago": "Tarjeta de Crédito"
     }
+  ],
+  "3": [
+    {
+      "id_orden": 1,
+      "fecha": "2026-06-29T17:37:58.875948Z",
+      "items": [
+        {
+          "id_libro": 45,
+          "titulo": "Libro de Prueba Oculto",
+          "autor_libro": "Autor Anónimo",
+          "precio_libro": 15000.0,
+          "cantidad": 1,
+          "imagen": null
+        },
+        {
+          "id_libro": 14,
+          "titulo": "Humor y Vida",
+          "autor_libro": "T. Gomez",
+          "precio_libro": 20000.0,
+          "cantidad": 1,
+          "imagen": "https://images.unsplash.com/photo-1516321497487-e288fb19713f?w=400&q=80"
+        }
+      ],
+      "total": 35000.0,
+      "estado": "pagado",
+      "metodo_pago": "PayPal"
+    }
   ]
 }

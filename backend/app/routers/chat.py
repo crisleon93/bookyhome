@@ -54,9 +54,9 @@ def obtener_salas_usuario(user_id: int = Depends(get_current_user)):
                 sc.id_sala,
                 sc.id_usuario,
                 sc.id_tienda,
-                t.nombre_tienda,
-                m.mensaje as ultimo_mensaje,
-                DATE_FORMAT(m.enviado_en, '%Y-%m-%d %H:%i:%s') as fecha_ultimo_mensaje,
+                ANY_VALUE(t.nombre_tienda) as nombre_tienda,
+                ANY_VALUE(m.mensaje) as ultimo_mensaje,
+                ANY_VALUE(m.enviado_en) as fecha_ultimo_mensaje,
                 COUNT(CASE WHEN m.mensaje_leido = FALSE THEN 1 END) as no_leidos
             FROM salasChats sc
             LEFT JOIN tiendas t ON sc.id_tienda = t.id_tienda
@@ -68,7 +68,7 @@ def obtener_salas_usuario(user_id: int = Depends(get_current_user)):
                 )
             WHERE sc.id_usuario = %s
             GROUP BY sc.id_sala
-            ORDER BY m.enviado_en DESC
+            ORDER BY ANY_VALUE(m.enviado_en) DESC
         """
         cursor.execute(query, (user_id,))
         salas = cursor.fetchall()
@@ -134,7 +134,7 @@ def obtener_mensajes_sala(id_sala: int, limit: int = 50, offset: int = 0):
                 m.id_remitente,
                 u.nombre_usuario as nombre_remitente,
                 m.mensaje,
-                DATE_FORMAT(m.enviado_en, '%Y-%m-%d %H:%i:%s') as enviado_en,
+                m.enviado_en as enviado_en,
                 m.mensaje_leido
             FROM mensajes m
             JOIN usuarios u ON m.id_remitente = u.id_usuario
