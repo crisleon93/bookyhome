@@ -12,6 +12,7 @@ import {
   IconBooks,
   IconChartBar,
   IconStar,
+  IconUser,
   IconSettings,
   IconCheck,
   IconLock,
@@ -277,6 +278,7 @@ export default function MiTienda() {
   const navigate = useNavigate();
   const handleLogout = () => { localStorage.removeItem("token"); navigate("/"); };
   const [userName,      setUserName]      = useState("");
+  const [userPhotoUrl,  setUserPhotoUrl]  = useState(null);
   const [loading,       setLoading]       = useState(true);
   const [activeSide,    setActiveSide]    = useState("Inicio");
   const [selectedSalaInChat, setSelectedSalaInChat] = useState(null);
@@ -311,11 +313,32 @@ export default function MiTienda() {
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) { navigate("/login"); return; }
+
+    let mounted = true;
     try {
       const payload = jwtDecode(token);
       setUserName(payload.nombre || "Vendedor");
-    } catch { setUserName("Vendedor"); }
-    finally { setLoading(false); }
+    } catch {
+      setUserName("Vendedor");
+    }
+    setLoading(false);
+
+    api.get("/perfil/mi-perfil")
+      .then((res) => {
+        if (!mounted || !res?.data) return;
+        const fotoPerfil = res.data.foto_perfil;
+        if (fotoPerfil) {
+          setUserPhotoUrl(fotoPerfil.startsWith("http") ? fotoPerfil : `${getApiBaseUrl()}${fotoPerfil}`);
+        }
+        if (res.data.nombre_usuario) {
+          setUserName(res.data.nombre_usuario);
+        }
+      })
+      .catch((err) => {
+        console.error("Error cargando perfil del vendedor:", err);
+      });
+
+    return () => { mounted = false; };
   }, [navigate]);
 
   // Si llegamos con un query param `seccion`, abrir esa subsección.
@@ -819,14 +842,82 @@ export default function MiTienda() {
     </>
   );
 
+  const renderPerfil = () => (
+    <>
+      <div className="welcome-card">
+        <h1 style={{ fontSize: "1.55rem", marginBottom: "4px", display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <IconUser width={24} height={24} strokeWidth={2} style={{ color: '#7A1E3A' }} />
+          Perfil del negocio
+        </h1>
+        <p style={{ margin: 0 }}>Resumen de tu tienda y tus datos públicos.</p>
+      </div>
+
+      <div className="pl-card" style={{ padding: "2rem", marginTop: "20px", maxWidth: "720px" }}>
+        {!tiendaInfo ? (
+          <p style={{ color: "#888" }}>Cargando información de la tienda...</p>
+        ) : (
+          <div style={{ display: "grid", gap: "18px" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+              <div>
+                <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>Nombre de la tienda</label>
+                <div style={{ padding: "12px 14px", borderRadius: "8px", background: "#fafafa", border: "1px solid #ddd" }}>
+                  {tiendaInfo.nombre_tienda || "--"}
+                </div>
+              </div>
+              <div>
+                <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>Teléfono</label>
+                <div style={{ padding: "12px 14px", borderRadius: "8px", background: "#fafafa", border: "1px solid #ddd" }}>
+                  {tiendaInfo.telefono || "--"}
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>Dirección</label>
+              <div style={{ padding: "12px 14px", borderRadius: "8px", background: "#fafafa", border: "1px solid #ddd" }}>
+                {tiendaInfo.direccion || "--"}
+              </div>
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+              <div>
+                <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>Miembro desde</label>
+                <div style={{ padding: "12px 14px", borderRadius: "8px", background: "#fafafa", border: "1px solid #ddd" }}>
+                  {tiendaInfo.fecha_creacion || "--"}
+                </div>
+              </div>
+              <div>
+                <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>Libros publicados</label>
+                <div style={{ padding: "12px 14px", borderRadius: "8px", background: "#fafafa", border: "1px solid #ddd" }}>
+                  {statsLibros.totalLibros}
+                </div>
+              </div>
+            </div>
+
+            <button
+              style={{
+                background: "var(--vinotinto)", color: "white", border: "none",
+                padding: "12px 24px", borderRadius: "8px", fontWeight: 700,
+                fontSize: "0.95rem", cursor: "pointer", fontFamily: "Montserrat, sans-serif", width: "fit-content"
+              }}
+              onClick={() => setActiveSide("Configuración")}
+            >
+              Editar configuración
+            </button>
+          </div>
+        )}
+      </div>
+    </>
+  );
+
   const renderConfiguracion = () => (
     <>
       <div className="welcome-card">
         <h1 style={{ fontSize: "1.55rem", marginBottom: "4px", display: 'flex', alignItems: 'center', gap: '10px' }}>
           <IconSettings width={24} height={24} strokeWidth={2} style={{ color: '#7A1E3A' }} />
-          Perfil del negocio
+          Configuración del negocio
         </h1>
-        <p style={{ margin: 0 }}>Información de tu tienda en BookyHome</p>
+        <p style={{ margin: 0 }}>Actualiza los datos de tu tienda en BookyHome</p>
       </div>
 
       <div className="pl-card" style={{ padding: "2rem", marginTop: "20px" }}>
@@ -1093,7 +1184,8 @@ export default function MiTienda() {
       case "Ventas":        return renderVentas();
       case "Pedidos":       return renderPedidos();
       case "Clientes":      return renderProximamente("Clientes");
-      case "Perfil":        return renderConfiguracion();
+      case "Configuración": return renderConfiguracion();
+      case "Perfil":        return renderPerfil();
       case "Promociones":   return <SeccionOfertas />;
       default:              return renderInicio();
     }
@@ -1103,6 +1195,7 @@ export default function MiTienda() {
     <div className="dashboard-container">
       <SellerSidebar
         userName={userName}
+        userPhotoUrl={userPhotoUrl}
         activeSide={activeSide}
         setActiveSide={setActiveSide}
         handleLogout={handleLogout}
