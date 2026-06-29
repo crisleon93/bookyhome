@@ -52,5 +52,131 @@
     "metodo_pago": "PayPal",
     "fecha_pago": "2026-06-29T17:38:41.751261Z",
     "estado": "aprobado"
+  },
+  {
+    "id_pago": 7,
+    "id_usuario": 3,
+    "id_orden": 2,
+    "monto": 95000.0,
+    "metodo_pago": "Tarjeta de Crédito",
+    "fecha_pago": "2026-06-29T18:44:45.854114Z",
+    "estado": "aprobado"
+  },
+  {
+    "id_pago": 8,
+    "id_usuario": 3,
+    "id_orden": 3,
+    "monto": 18000.0,
+    "metodo_pago": "Nequi/Daviplata",
+    "fecha_pago": "2026-06-29T19:24:52.977568Z",
+    "estado": "aprobado"
+  },
+  {
+    "id_pago": 9,
+    "id_usuario": 3,
+    "id_orden": 4,
+    "monto": 20000.0,
+    "metodo_pago": "Pago en Sucursal",
+    "fecha_pago": "2026-06-29T19:26:29.714203Z",
+    "estado": "aprobado"
+  },
+  {
+    "id_pago": 10,
+    "id_usuario": 3,
+    "id_orden": 5,
+    "monto": 20000.0,
+    "metodo_pago": "PSE",
+    "fecha_pago": "2026-06-29T19:31:57.869566Z",
+    "estado": "aprobado"
+  },
+  {
+    "id_pago": 11,
+    "id_usuario": 3,
+    "id_orden": 6,
+    "monto": 20000.0,
+    "metodo_pago": "Pago en Efecty",
+    "fecha_pago": "2026-06-29T19:36:22.965821Z",
+    "estado": "aprobado"
+  },
+  {
+    "id_pago": 12,
+    "id_usuario": 3,
+    "id_orden": 7,
+    "monto": 15000.0,
+    "metodo_pago": "PSE",
+    "fecha_pago": "2026-06-29T19:37:08.659185Z",
+    "estado": "aprobado"
+  },
+  {
+    "id_pago": 13,
+    "id_usuario": 3,
+    "id_orden": 8,
+    "monto": 20000.0,
+    "metodo_pago": "PSE",
+    "fecha_pago": "2026-06-29T19:40:40.793906Z",
+    "estado": "aprobado"
+  },
+  {
+    "id_pago": 14,
+    "id_usuario": 3,
+    "id_orden": 9,
+    "monto": 40000.0,
+    "metodo_pago": "PSE",
+    "fecha_pago": "2026-06-29T19:45:43.728667Z",
+    "estado": "aprobado"
+  },
+  {
+    "id_pago": 15,
+    "id_usuario": 3,
+    "id_orden": 10,
+    "monto": 80000.0,
+    "metodo_pago": "PSE",
+    "fecha_pago": "2026-06-29T20:12:58.871772Z",
+    "estado": "aprobado"
+  },
+  {
+    "id_pago": 16,
+    "id_usuario": 3,
+    "id_orden": 11,
+    "monto": 15000.0,
+    "metodo_pago": "Pago en Efecty",
+    "fecha_pago": "2026-06-29T21:28:11.765604Z",
+    "estado": "aprobado"
+  },
+  {
+    "id_pago": 17,
+    "id_usuario": 3,
+    "id_orden": 12,
+    "monto": 15000.0,
+    "metodo_pago": "Pago en Efecty",
+    "fecha_pago": "2026-06-29T21:30:47.418234Z",
+    "estado": "aprobado"
+  },
+  {
+    "id_pago": 18,
+    "id_usuario": 3,
+    "id_orden": 13,
+    "monto": 20000.0,
+    "metodo_pago": "Pago en Efecty",
+    "fecha_pago": "2026-06-29T21:34:00.856415Z",
+    "estado": "aprobado"
+  },
+  {
+    "id_pago": 19,
+    "id_usuario": 3,
+    "id_orden": 14,
+    "monto": 20000.0,
+    "metodo_pago": "Transferencia Bancaria",
+    "fecha_pago": "2026-06-29T21:35:19.761841Z",
+    "estado": "aprobado"
+  },
+  {
+    "id_pago": 20,
+    "id_usuario": 3,
+    "id_orden": 15,
+    "monto": 20000.0,
+    "metodo_pago": "Pago en Efecty",
+    "fecha_pago": "2026-06-29T21:38:21.353891Z",
+    "estado": "aprobado"
   }
 ]

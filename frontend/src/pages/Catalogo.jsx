@@ -53,7 +53,6 @@ const Catalogo = () => {
       setPagina(response.data.pagina || 1);
     } catch (error) {
       console.error('Error al cargar catálogo:', error);
-      notify('Error al cargar el catálogo', 'error');
     } finally {
       setLoading(false);
     }

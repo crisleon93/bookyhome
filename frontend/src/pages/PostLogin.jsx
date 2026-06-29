@@ -71,6 +71,9 @@ export default function PostLogin() {
 
   const [ordenes, setOrdenes]               = useState([]);
   const [ordenesLoading, setOrdenesLoading] = useState(false);
+  const [mostrarBaucher, setMostrarBaucher] = useState(false);
+  const [ordenSeleccionada, setOrdenSeleccionada] = useState(null);
+  const [baucherLoading, setBaucherLoading] = useState(false);
 
   const [estadisticas, setEstadisticas] = useState(null);
   const [categoriasFavoritas, setCategoriasFavoritas] = useState([]);
@@ -97,6 +100,16 @@ export default function PostLogin() {
   const [paypalPassword, setPaypalPassword] = useState("");
   const [paypalError, setPaypalError] = useState("");
   const [paypalProcessing, setPaypalProcessing] = useState(false);
+
+  // Estados para nuevos métodos de pago
+  const [sucursalCodigo, setSucursalCodigo] = useState("");
+  const [sucursalPuntos, setSucursalPuntos] = useState([]);
+  const [sucursalPagoConfirmado, setSucursalPagoConfirmado] = useState(false);
+  const [sucursalEsperandoConfirmacion, setSucursalEsperandoConfirmacion] = useState(false);
+  const [nequiPhone, setNequiPhone] = useState("");
+  const [nequiSelected, setNequiSelected] = useState(false);
+  const [pseBanco, setPseBanco] = useState("");
+  const [pseRedirecting, setPseRedirecting] = useState(false);
 
   // Estado del catálogo
   const [libros, setLibros] = useState([]);
@@ -238,7 +251,6 @@ export default function PostLogin() {
       setCatalogoPagina(response.data.pagina || 1);
     } catch (error) {
       console.error('Error al cargar catálogo:', error);
-      notify('Error al cargar el catálogo', 'error');
     } finally {
       setCatalogoLoading(false);
     }
@@ -302,6 +314,14 @@ export default function PostLogin() {
   const handleCheckout = () => {
     setCheckoutLoading(true);
     setCheckoutError(null);
+    // Limpiar estados de métodos de pago anteriores
+    setSucursalCodigo("");
+    setSucursalPuntos([]);
+    setSucursalPagoConfirmado(false);
+    setSucursalEsperandoConfirmacion(false);
+    setPseBanco("");
+    setPseRedirecting(false);
+    setPaymentMethod("tarjeta");
     checkoutCarrito()
       .then((res) => {
         if (res.data?.ok) {
@@ -336,6 +356,132 @@ export default function PostLogin() {
     setCardExpiry("");
     setCardCvv("");
     setFormErrors({});
+    // Limpiar estados de métodos de pago
+    setSucursalCodigo("");
+    setSucursalPuntos([]);
+    setSucursalPagoConfirmado(false);
+    setSucursalEsperandoConfirmacion(false);
+    setPseBanco("");
+    setPseRedirecting(false);
+    // Recargar carrito y órdenes para detectar pendientes
+    Promise.all([getCarrito(), getOrdenes()])
+      .then(([carritoRes, ordenesRes]) => {
+        setCarrito(carritoRes.data);
+        setOrdenes(ordenesRes.data);
+      })
+      .catch((err) => console.error(err));
+  };
+
+  const handleVerBaucher = async (orden) => {
+    setBaucherLoading(true);
+    setOrdenSeleccionada(orden);
+    setMostrarBaucher(true);
+    try {
+      const res = await getOrden(orden.id_orden);
+      setOrdenSeleccionada(res.data);
+    } catch (err) {
+      console.error('Error al cargar detalles de orden:', err);
+      notify('No se pudo cargar los detalles de la orden', 'error');
+    } finally {
+      setBaucherLoading(false);
+    }
+  };
+
+  const handleCerrarBaucher = () => {
+    setMostrarBaucher(false);
+    setOrdenSeleccionada(null);
+  };
+
+  // Función para generar código de pago para Efecty
+  const generarCodigoPago = () => {
+    const codigo = Math.random().toString(36).substring(2, 12).toUpperCase();
+    setSucursalCodigo(codigo);
+  };
+
+  // Función para obtener puntos Efecty cercanos (simulado)
+  const obtenerPuntosEfecty = () => {
+    const puntosSimulados = [
+      { id: 1, nombre: "Efecty Centro", direccion: "Calle 10 #5-20", ciudad: "Bogotá" },
+      { id: 2, nombre: "Efecty Norte", direccion: "Carrera 15 #20-30", ciudad: "Bogotá" },
+      { id: 3, nombre: "Efecty Sur", direccion: "Avenida 1 #30-40", ciudad: "Bogotá" },
+      { id: 4, nombre: "Efecty Plaza", direccion: "Calle 50 #15-25", ciudad: "Medellín" },
+      { id: 5, nombre: "Efecty Centro", direccion: "Carrera 10 #20-30", ciudad: "Medellín" },
+    ];
+    setSucursalPuntos(puntosSimulados);
+  };
+
+  // Redirigir a Nequi
+  const handleNequiRedirect = () => {
+    const nequiUrl = `nequi://pagar?valor=${order.total}&referencia=${order.id_orden}`;
+    window.location.href = nequiUrl;
+    // Fallback si no está instalado
+    setTimeout(() => {
+      if (!nequiSelected) {
+        window.open('https://www.nequi.com.co', '_blank');
+      }
+    }, 2000);
+  };
+
+  // Redirigir a Daviplata
+  const handleDaviplataRedirect = () => {
+    const daviplataUrl = `daviplata://pagar?valor=${order.total}&referencia=${order.id_orden}`;
+    window.location.href = daviplataUrl;
+    // Fallback si no está instalado
+    setTimeout(() => {
+      if (!nequiSelected) {
+        window.open('https://www.daviplata.com', '_blank');
+      }
+    }, 2000);
+  };
+
+  // Iniciar proceso de pago en sucursal
+  const handleSucursalPago = () => {
+    generarCodigoPago();
+    obtenerPuntosEfecty();
+    setSucursalEsperandoConfirmacion(true);
+    // Simular confirmación automática del pago
+    verificarPagoEfecty();
+  };
+
+  // Simular confirmación de pago desde Efecty (en producción esto sería un webhook)
+  const verificarPagoEfecty = () => {
+    // Simulación: después de 0.5 segundos, Efecty confirma el pago
+    setTimeout(() => {
+      setSucursalPagoConfirmado(true);
+      setSucursalEsperandoConfirmacion(false);
+      processPaymentApi("Pago en Efecty");
+    }, 500);
+  };
+
+  // Lista de bancos para PSE
+  const bancosPSE = [
+    { codigo: "001", nombre: "Bancolombia" },
+    { codigo: "002", nombre: "Banco de Bogotá" },
+    { codigo: "003", nombre: "Banco Popular" },
+    { codigo: "004", nombre: "BBVA Colombia" },
+    { codigo: "005", nombre: "Davivienda" },
+    { codigo: "006", nombre: "Banco de Occidente" },
+    { codigo: "007", nombre: "Scotiabank Colpatria" },
+    { codigo: "008", nombre: "Banco AV Villas" },
+    { codigo: "009", nombre: "Banco Caja Social" },
+    { codigo: "010", nombre: "Banco Falabella" },
+  ];
+
+  // Redirigir a PSE
+  const handlePseRedirect = () => {
+    if (!pseBanco) {
+      notify("Por favor selecciona un banco", "error");
+      return;
+    }
+    setPseRedirecting(true);
+    // Simular redirección a PSE
+    const pseUrl = `https://www.pse.com.co/portal/pagos?banco=${pseBanco}&valor=${order.total}&referencia=${order.id_orden}`;
+    window.open(pseUrl, '_blank');
+    // Simular confirmación después de redirección
+    setTimeout(() => {
+      setPseRedirecting(false);
+      processPaymentApi("PSE");
+    }, 5000);
   };
 
   // Payment form handlers
@@ -410,6 +556,10 @@ export default function PostLogin() {
         // Recargar órdenes para actualizar el estado
         getOrdenes()
           .then((res) => setOrdenes(res.data))
+          .catch((err) => console.error(err));
+        // Recargar carrito para vaciarlo después del pago
+        getCarrito()
+          .then((res) => setCarrito(res.data))
           .catch((err) => console.error(err));
         setPaymentSuccess(true);
       } else {
@@ -579,6 +729,87 @@ export default function PostLogin() {
 
             {cartLoading ? (
               <div className="empty-state"><p>Cargando carrito...</p></div>
+            ) : paymentSuccess && !mostrarCheckout ? (
+              /* COMPRA REALIZADA */
+              <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "20px" }}>
+                <div style={{ marginTop: "0" }}>
+                  <button
+                    onClick={handleVolverCarrito}
+                    style={{
+                      background: 'var(--vinotinto)',
+                      color: 'white',
+                      border: 'none',
+                      padding: '0.7rem 1.5rem',
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                      marginBottom: '1rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px'
+                    }}
+                  >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="19" y1="12" x2="5" y2="12"></line>
+                      <polyline points="12 19 5 12 12 5"></polyline>
+                    </svg>
+                    Volver al carrito
+                  </button>
+
+                  <div style={{
+                    background: "var(--blanco)",
+                    padding: "40px",
+                    borderRadius: "16px",
+                    boxShadow: "var(--sombra-suave)",
+                    border: "1px solid #e0dbd4",
+                    textAlign: "center"
+                  }}>
+                    <div style={{
+                      width: 80, height: 80,
+                      borderRadius: "50%",
+                      background: "#fdf0f2",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      margin: "0 auto 20px"
+                    }}>
+                      <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#C5425A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                      </svg>
+                    </div>
+                    <h1 style={{ fontWeight: 800, color: "var(--vinotinto)", margin: "0 0 8px", fontSize: "1.8rem" }}>
+                      ¡Compra Confirmada!
+                    </h1>
+                    <p style={{ color: "#666", fontSize: "0.95rem", marginBottom: "28px" }}>
+                      Tu pago fue procesado exitosamente. Te enviamos un correo con los detalles de tu pedido.
+                    </p>
+                    <div style={{
+                      background: "#fcfaf7",
+                      padding: "20px",
+                      borderRadius: "10px",
+                      border: "1px solid #e0dbd4",
+                      textAlign: "left",
+                      marginBottom: "16px"
+                    }}>
+                      <p style={{ margin: "0 0 4px", fontSize: "11px", fontWeight: 700, color: "#aaa", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                        Resumen de tu orden
+                      </p>
+                      <div style={{ margin: "12px 0", display: "grid", gap: "8px" }}>
+                        {order.items?.map((item) => (
+                          <div key={item.id_libro} style={{ display: "flex", justifyContent: "space-between", fontSize: "0.9rem" }}>
+                            <span>{item.titulo} x{item.cantidad}</span>
+                            <span>{Number(item.precio_libro * item.cantidad).toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 })}</span>
+                          </div>
+                        ))}
+                      </div>
+                      <div style={{ marginTop: "16px", paddingTop: "16px", borderTop: "2px solid #e0dbd4", display: "flex", justifyContent: "space-between", fontWeight: 700, fontSize: "1.1rem" }}>
+                        <span>Total</span>
+                        <span style={{ color: "var(--vinotinto)" }}>
+                          {Number(order.total).toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 })}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             ) : carrito.length === 0 && ordenes.filter(o => o.estado === 'pendiente').length === 0 ? (
               <div className="pl-card" style={{ padding: "40px" }}>
                 <CartEmptyState onGoToCatalog={handleGoToCatalog} />
@@ -687,11 +918,10 @@ export default function PostLogin() {
                         }}>
                           <h2 style={{ fontWeight: 700, margin: "0 0 20px 0", fontSize: "1.3rem" }}>Método de Pago</h2>
 
-                          <div style={{ display: "flex", gap: "15px", marginBottom: "30px" }}>
+                          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "12px", marginBottom: "30px" }}>
                             <button
                               onClick={() => setPaymentMethod("tarjeta")}
                               style={{
-                                flex: 1,
                                 padding: "15px",
                                 borderRadius: "8px",
                                 border: paymentMethod === "tarjeta" ? "2px solid var(--vinotinto)" : "1px solid #e0dbd4",
@@ -703,20 +933,20 @@ export default function PostLogin() {
                                 gap: "8px",
                                 fontWeight: 600,
                                 color: paymentMethod === "tarjeta" ? "var(--vinotinto)" : "var(--gris-carbon)",
-                                transition: "var(--transition)"
+                                transition: "var(--transition)",
+                                fontSize: "0.85rem"
                               }}
                             >
                               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                 <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
                                 <line x1="1" y1="10" x2="23" y2="10"></line>
                               </svg>
-                              Tarjeta Crédito/Débito
+                              Tarjeta
                             </button>
 
                             <button
                               onClick={() => setPaymentMethod("paypal")}
                               style={{
-                                flex: 1,
                                 padding: "15px",
                                 borderRadius: "8px",
                                 border: paymentMethod === "paypal" ? "2px solid var(--vinotinto)" : "1px solid #e0dbd4",
@@ -728,13 +958,116 @@ export default function PostLogin() {
                                 gap: "8px",
                                 fontWeight: 600,
                                 color: paymentMethod === "paypal" ? "var(--vinotinto)" : "var(--gris-carbon)",
-                                transition: "var(--transition)"
+                                transition: "var(--transition)",
+                                fontSize: "0.85rem"
                               }}
                             >
                               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                 <path d="M12 2H7.5a2.5 2.5 0 0 0-2.5 2.5v13a1.5 1.5 0 0 0 1.5 1.5h3.5a1.5 1.5 0 0 0 1.5-1.5v-3.5h2.5a4.5 4.5 0 0 0 4.5-4.5V6.5A4.5 4.5 0 0 0 12 2z"></path>
                               </svg>
                               PayPal
+                            </button>
+
+                            <button
+                              onClick={() => setPaymentMethod("sucursal")}
+                              style={{
+                                padding: "15px",
+                                borderRadius: "8px",
+                                border: paymentMethod === "sucursal" ? "2px solid var(--vinotinto)" : "1px solid #e0dbd4",
+                                background: paymentMethod === "sucursal" ? "#fbf7f8" : "var(--blanco)",
+                                cursor: "pointer",
+                                display: "flex",
+                                flexDirection: "column",
+                                alignItems: "center",
+                                gap: "8px",
+                                fontWeight: 600,
+                                color: paymentMethod === "sucursal" ? "var(--vinotinto)" : "var(--gris-carbon)",
+                                transition: "var(--transition)",
+                                fontSize: "0.85rem"
+                              }}
+                            >
+                              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M3 21h18"></path>
+                                <path d="M5 21V7l8-4 8 4v14"></path>
+                                <path d="M17 21v-8.5a.5.5 0 0 0-.5-.5h-9a.5.5 0 0 0-.5.5V21"></path>
+                              </svg>
+                              En Sucursal
+                            </button>
+
+                            <button
+                              onClick={() => setPaymentMethod("pse")}
+                              style={{
+                                padding: "15px",
+                                borderRadius: "8px",
+                                border: paymentMethod === "pse" ? "2px solid var(--vinotinto)" : "1px solid #e0dbd4",
+                                background: paymentMethod === "pse" ? "#fbf7f8" : "var(--blanco)",
+                                cursor: "pointer",
+                                display: "flex",
+                                flexDirection: "column",
+                                alignItems: "center",
+                                gap: "8px",
+                                fontWeight: 600,
+                                color: paymentMethod === "pse" ? "var(--vinotinto)" : "var(--gris-carbon)",
+                                transition: "var(--transition)",
+                                fontSize: "0.85rem"
+                              }}
+                            >
+                              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <rect x="2" y="5" width="20" height="14" rx="2"></rect>
+                                <line x1="2" y1="10" x2="22" y2="10"></line>
+                              </svg>
+                              PSE
+                            </button>
+
+                            <button
+                              onClick={() => setPaymentMethod("nequi")}
+                              style={{
+                                padding: "15px",
+                                borderRadius: "8px",
+                                border: paymentMethod === "nequi" ? "2px solid var(--vinotinto)" : "1px solid #e0dbd4",
+                                background: paymentMethod === "nequi" ? "#fbf7f8" : "var(--blanco)",
+                                cursor: "pointer",
+                                display: "flex",
+                                flexDirection: "column",
+                                alignItems: "center",
+                                gap: "8px",
+                                fontWeight: 600,
+                                color: paymentMethod === "nequi" ? "var(--vinotinto)" : "var(--gris-carbon)",
+                                transition: "var(--transition)",
+                                fontSize: "0.85rem"
+                              }}
+                            >
+                              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"></path>
+                              </svg>
+                              Nequi/Daviplata
+                            </button>
+
+                            <button
+                              onClick={() => setPaymentMethod("transferencia")}
+                              style={{
+                                padding: "15px",
+                                borderRadius: "8px",
+                                border: paymentMethod === "transferencia" ? "2px solid var(--vinotinto)" : "1px solid #e0dbd4",
+                                background: paymentMethod === "transferencia" ? "#fbf7f8" : "var(--blanco)",
+                                cursor: "pointer",
+                                display: "flex",
+                                flexDirection: "column",
+                                alignItems: "center",
+                                gap: "8px",
+                                fontWeight: 600,
+                                color: paymentMethod === "transferencia" ? "var(--vinotinto)" : "var(--gris-carbon)",
+                                transition: "var(--transition)",
+                                fontSize: "0.85rem"
+                              }}
+                            >
+                              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="9" cy="7" r="4"></circle>
+                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                              </svg>
+                              Transferencia
                             </button>
                           </div>
 
@@ -814,7 +1147,7 @@ export default function PostLogin() {
                                 Pagar {Number(order.total).toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 })}
                               </button>
                             </form>
-                          ) : (
+                          ) : paymentMethod === "paypal" ? (
                             <div style={{ textAlign: "center", padding: "20px 0" }}>
                               <p style={{ color: "#666", marginBottom: "25px", fontSize: "0.95rem" }}>
                                 Al dar click al botón, abriremos un simulador de pago seguro para que apruebes la transacción desde tu cuenta de PayPal.
@@ -841,7 +1174,457 @@ export default function PostLogin() {
                                 Pagar con PayPal
                               </button>
                             </div>
-                          )}
+                          ) : paymentMethod === "sucursal" ? (
+                            <div style={{ padding: "20px 0" }}>
+                              {!sucursalCodigo ? (
+                                <>
+                                  <div style={{
+                                    background: "#fcfaf7",
+                                    padding: "20px",
+                                    borderRadius: "8px",
+                                    marginBottom: "20px",
+                                    border: "1px solid #e0dbd4"
+                                  }}>
+                                    <h3 style={{ margin: "0 0 15px", color: "var(--vinotinto)", fontSize: "1.1rem" }}>
+                                      Pago en Efecty
+                                    </h3>
+                                    <p style={{ color: "#666", fontSize: "0.9rem", marginBottom: "15px" }}>
+                                      Generaremos un código de pago único para que puedas pagar en cualquier punto Efecty cercano.
+                                    </p>
+                                    <div style={{ display: "grid", gap: "10px", fontSize: "0.9rem" }}>
+                                      <div style={{ display: "flex", justifyContent: "space-between" }}>
+                                        <span style={{ color: "#666" }}>Número de Orden:</span>
+                                        <span style={{ fontWeight: 700 }}>#{order.id_orden}</span>
+                                      </div>
+                                      <div style={{ display: "flex", justifyContent: "space-between" }}>
+                                        <span style={{ color: "#666" }}>Total a pagar:</span>
+                                        <span style={{ fontWeight: 700, color: "var(--vinotinto)" }}>
+                                          {Number(order.total).toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 })}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <button
+                                    onClick={handleSucursalPago}
+                                    className="btn btn-vinotinto"
+                                    style={{ width: "100%" }}
+                                  >
+                                    Generar Código de Pago
+                                  </button>
+                                </>
+                              ) : (
+                                <>
+                                  <div style={{
+                                    background: sucursalPagoConfirmado ? "#e8f5e9" : "#e3f2fd",
+                                    padding: "25px",
+                                    borderRadius: "8px",
+                                    marginBottom: "20px",
+                                    border: `2px solid ${sucursalPagoConfirmado ? "#4caf50" : "#2196f3"}`,
+                                    textAlign: "center"
+                                  }}>
+                                    {sucursalPagoConfirmado ? (
+                                      <>
+                                        <h3 style={{ margin: "0 0 10px", color: "#2e7d32", fontSize: "1.2rem" }}>
+                                          ¡Pago Confirmado!
+                                        </h3>
+                                        <div style={{
+                                          background: "#fff",
+                                          padding: "20px",
+                                          borderRadius: "8px",
+                                          marginBottom: "15px"
+                                        }}>
+                                          <p style={{ margin: "0 0 10px", color: "#666", fontSize: "0.9rem" }}>
+                                            Efecty ha confirmado tu pago exitosamente.
+                                          </p>
+                                          <div style={{ display: "flex", justifyContent: "center", gap: "10px" }}>
+                                            <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="#4caf50" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                              <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                                            </svg>
+                                          </div>
+                                        </div>
+                                      </>
+                                    ) : sucursalEsperandoConfirmacion ? (
+                                      <>
+                                        <h3 style={{ margin: "0 0 10px", color: "#1976d2", fontSize: "1.2rem" }}>
+                                          Esperando Confirmación de Efecty
+                                        </h3>
+                                        <div style={{
+                                          background: "#fff",
+                                          padding: "20px",
+                                          borderRadius: "8px",
+                                          marginBottom: "15px",
+                                          border: "2px dashed #2196f3"
+                                        }}>
+                                          <p style={{ margin: "0 0 10px", color: "#666", fontSize: "0.9rem" }}>
+                                            Presenta este código en cualquier punto Efecty:
+                                          </p>
+                                          <p style={{
+                                            margin: "0",
+                                            fontSize: "2rem",
+                                            fontWeight: 800,
+                                            color: "#1976d2",
+                                            letterSpacing: "4px",
+                                            fontFamily: "monospace"
+                                          }}>
+                                            {sucursalCodigo}
+                                          </p>
+                                        </div>
+                                        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "10px" }}>
+                                          <div style={{
+                                            border: "4px solid #f3f3f3",
+                                            borderTop: "4px solid #2196f3",
+                                            borderRadius: "50%",
+                                            width: "30px",
+                                            height: "30px",
+                                            animation: "spin 1s linear infinite"
+                                          }}></div>
+                                          <p style={{ margin: 0, color: "#666", fontSize: "0.9rem" }}>
+                                            Esperando confirmación de pago...
+                                          </p>
+                                        </div>
+                                        <button
+                                          onClick={verificarPagoEfecty}
+                                          style={{
+                                            marginTop: "15px",
+                                            padding: "10px 20px",
+                                            borderRadius: "6px",
+                                            border: "1px solid #2196f3",
+                                            background: "#fff",
+                                            color: "#2196f3",
+                                            fontWeight: 600,
+                                            cursor: "pointer",
+                                            fontSize: "0.85rem"
+                                          }}
+                                        >
+                                          Simular Confirmación (Demo)
+                                        </button>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <h3 style={{ margin: "0 0 10px", color: "#2e7d32", fontSize: "1.2rem" }}>
+                                          ¡Código Generado!
+                                        </h3>
+                                        <div style={{
+                                          background: "#fff",
+                                          padding: "20px",
+                                          borderRadius: "8px",
+                                          marginBottom: "15px",
+                                          border: "2px dashed #4caf50"
+                                        }}>
+                                          <p style={{ margin: "0 0 10px", color: "#666", fontSize: "0.9rem" }}>
+                                            Presenta este código en cualquier punto Efecty:
+                                          </p>
+                                          <p style={{
+                                            margin: "0",
+                                            fontSize: "2rem",
+                                            fontWeight: 800,
+                                            color: "#2e7d32",
+                                            letterSpacing: "4px",
+                                            fontFamily: "monospace"
+                                          }}>
+                                            {sucursalCodigo}
+                                          </p>
+                                        </div>
+                                        <div style={{ display: "grid", gap: "10px", fontSize: "0.85rem", textAlign: "left" }}>
+                                          <div style={{ display: "flex", justifyContent: "space-between" }}>
+                                            <span style={{ color: "#666" }}>Orden:</span>
+                                            <span style={{ fontWeight: 700 }}>#{order.id_orden}</span>
+                                          </div>
+                                          <div style={{ display: "flex", justifyContent: "space-between" }}>
+                                            <span style={{ color: "#666" }}>Valor:</span>
+                                            <span style={{ fontWeight: 700, color: "#2e7d32" }}>
+                                              {Number(order.total).toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 })}
+                                            </span>
+                                          </div>
+                                        </div>
+                                      </>
+                                    )}
+                                  </div>
+
+                                  <div style={{
+                                    background: "#fcfaf7",
+                                    padding: "20px",
+                                    borderRadius: "8px",
+                                    marginBottom: "20px",
+                                    border: "1px solid #e0dbd4"
+                                  }}>
+                                    <h4 style={{ margin: "0 0 15px", color: "var(--vinotinto)", fontSize: "1rem" }}>
+                                      Puntos Efecty Cercanos
+                                    </h4>
+                                    <div style={{ display: "grid", gap: "10px", maxHeight: "200px", overflowY: "auto" }}>
+                                      {sucursalPuntos.map((punto) => (
+                                        <div key={punto.id} style={{
+                                          padding: "12px",
+                                          background: "#fff",
+                                          borderRadius: "6px",
+                                          border: "1px solid #e0dbd4"
+                                        }}>
+                                          <p style={{ margin: "0 0 5px", fontWeight: 700, color: "var(--gris-carbon)" }}>
+                                            {punto.nombre}
+                                          </p>
+                                          <p style={{ margin: "0 0 3px", color: "#666", fontSize: "0.85rem" }}>
+                                            {punto.direccion}
+                                          </p>
+                                          <p style={{ margin: 0, color: "#666", fontSize: "0.85rem" }}>
+                                            {punto.ciudad}
+                                          </p>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+
+                                  {!sucursalPagoConfirmado && (
+                                    <button
+                                      onClick={() => {
+                                        setSucursalCodigo("");
+                                        setSucursalPuntos([]);
+                                        setSucursalEsperandoConfirmacion(false);
+                                      }}
+                                      style={{
+                                        width: "100%",
+                                        padding: "14px",
+                                        borderRadius: "8px",
+                                        border: "2px solid var(--vinotinto)",
+                                        background: "var(--blanco)",
+                                        color: "var(--vinotinto)",
+                                        fontWeight: 700,
+                                        cursor: "pointer"
+                                      }}
+                                    >
+                                      Cancelar
+                                    </button>
+                                  )}
+                                </>
+                              )}
+                            </div>
+                          ) : paymentMethod === "pse" ? (
+                            <div style={{ padding: "20px 0" }}>
+                              <div style={{
+                                background: "#fcfaf7",
+                                padding: "20px",
+                                borderRadius: "8px",
+                                marginBottom: "20px",
+                                border: "1px solid #e0dbd4"
+                              }}>
+                                <h3 style={{ margin: "0 0 15px", color: "var(--vinotinto)", fontSize: "1.1rem" }}>
+                                  Pago con PSE
+                                </h3>
+                                <p style={{ color: "#666", fontSize: "0.9rem", marginBottom: "15px" }}>
+                                  Selecciona tu banco para ser redirigido a la plataforma de PSE:
+                                </p>
+                                <div style={{ display: "grid", gap: "10px", fontSize: "0.9rem" }}>
+                                  <div style={{ display: "flex", justifyContent: "space-between" }}>
+                                    <span style={{ color: "#666" }}>Número de Orden:</span>
+                                    <span style={{ fontWeight: 700 }}>#{order.id_orden}</span>
+                                  </div>
+                                  <div style={{ display: "flex", justifyContent: "space-between" }}>
+                                    <span style={{ color: "#666" }}>Total a pagar:</span>
+                                    <span style={{ fontWeight: 700, color: "var(--vinotinto)" }}>
+                                      {Number(order.total).toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 })}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div style={{ marginBottom: "20px" }}>
+                                <label style={{ display: "block", fontSize: "0.85rem", fontWeight: 600, marginBottom: "8px" }}>
+                                  Selecciona tu banco:
+                                </label>
+                                <select
+                                  value={pseBanco}
+                                  onChange={(e) => setPseBanco(e.target.value)}
+                                  style={{
+                                    width: "100%",
+                                    padding: "12px",
+                                    borderRadius: "6px",
+                                    border: "1.5px solid #e0dbd4",
+                                    outline: "none",
+                                    fontFamily: "'Montserrat', sans-serif",
+                                    fontSize: "0.95rem"
+                                  }}
+                                >
+                                  <option value="">-- Selecciona un banco --</option>
+                                  {bancosPSE.map((banco) => (
+                                    <option key={banco.codigo} value={banco.codigo}>
+                                      {banco.nombre}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+
+                              <button
+                                onClick={handlePseRedirect}
+                                disabled={pseRedirecting || !pseBanco}
+                                className="btn btn-vinotinto"
+                                style={{
+                                  width: "100%",
+                                  opacity: pseRedirecting || !pseBanco ? 0.7 : 1,
+                                  cursor: pseRedirecting || !pseBanco ? "not-allowed" : "pointer",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  gap: "10px"
+                                }}
+                              >
+                                {pseRedirecting ? (
+                                  <>
+                                    <div style={{
+                                      border: "3px solid #f3f3f3",
+                                      borderTop: "3px solid #fff",
+                                      borderRadius: "50%",
+                                      width: "20px",
+                                      height: "20px",
+                                      animation: "spin 1s linear infinite"
+                                    }}></div>
+                                    Redirigiendo a PSE...
+                                  </>
+                                ) : (
+                                  <>
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                      <rect x="2" y="5" width="20" height="14" rx="2"></rect>
+                                      <line x1="2" y1="10" x2="22" y2="10"></line>
+                                    </svg>
+                                    Continuar a PSE
+                                  </>
+                                )}
+                              </button>
+
+                              <p style={{ color: "#666", fontSize: "0.8rem", marginTop: "15px", textAlign: "center" }}>
+                                Serás redirigido a la plataforma segura de PSE para completar el pago.
+                              </p>
+                            </div>
+                          ) : paymentMethod === "nequi" ? (
+                            <div style={{ padding: "20px 0" }}>
+                              <div style={{
+                                background: "#fcfaf7",
+                                padding: "20px",
+                                borderRadius: "8px",
+                                marginBottom: "20px",
+                                border: "1px solid #e0dbd4"
+                              }}>
+                                <h3 style={{ margin: "0 0 15px", color: "var(--vinotinto)", fontSize: "1.1rem" }}>
+                                  Pago con Nequi/Daviplata
+                                </h3>
+                                <p style={{ color: "#666", fontSize: "0.9rem", marginBottom: "15px" }}>
+                                  Selecciona tu billetera digital para ser redirigido a la aplicación:
+                                </p>
+                                <div style={{ display: "grid", gap: "10px", fontSize: "0.9rem" }}>
+                                  <div style={{ display: "flex", justifyContent: "space-between" }}>
+                                    <span style={{ color: "#666" }}>Número de Orden:</span>
+                                    <span style={{ fontWeight: 700 }}>#{order.id_orden}</span>
+                                  </div>
+                                  <div style={{ display: "flex", justifyContent: "space-between" }}>
+                                    <span style={{ color: "#666" }}>Total a pagar:</span>
+                                    <span style={{ fontWeight: 700, color: "var(--vinotinto)" }}>
+                                      {Number(order.total).toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 })}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                              <div style={{ display: "grid", gap: "12px" }}>
+                                <button
+                                  onClick={handleNequiRedirect}
+                                  style={{
+                                    padding: "16px",
+                                    borderRadius: "8px",
+                                    border: "2px solid #2d7d3a",
+                                    background: "#fff",
+                                    color: "#2d7d3a",
+                                    fontWeight: 700,
+                                    cursor: "pointer",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    gap: "10px",
+                                    transition: "all 0.2s"
+                                  }}
+                                  onMouseEnter={(e) => { e.target.style.background = "#f0f9f2"; }}
+                                  onMouseLeave={(e) => { e.target.style.background = "#fff"; }}
+                                >
+                                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2d7d3a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"></path>
+                                  </svg>
+                                  Pagar con Nequi
+                                </button>
+                                <button
+                                  onClick={handleDaviplataRedirect}
+                                  style={{
+                                    padding: "16px",
+                                    borderRadius: "8px",
+                                    border: "2px solid #e65100",
+                                    background: "#fff",
+                                    color: "#e65100",
+                                    fontWeight: 700,
+                                    cursor: "pointer",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    gap: "10px",
+                                    transition: "all 0.2s"
+                                  }}
+                                  onMouseEnter={(e) => { e.target.style.background = "#fff8f0"; }}
+                                  onMouseLeave={(e) => { e.target.style.background = "#fff"; }}
+                                >
+                                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#e65100" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"></path>
+                                  </svg>
+                                  Pagar con Daviplata
+                                </button>
+                              </div>
+                              <p style={{ color: "#666", fontSize: "0.8rem", marginTop: "15px", textAlign: "center" }}>
+                                Si no tienes la aplicación instalada, se abrirá la página web correspondiente.
+                              </p>
+                            </div>
+                          ) : paymentMethod === "transferencia" ? (
+                            <div style={{ padding: "20px 0" }}>
+                              <div style={{
+                                background: "#fcfaf7",
+                                padding: "20px",
+                                borderRadius: "8px",
+                                marginBottom: "20px",
+                                border: "1px solid #e0dbd4"
+                              }}>
+                                <h3 style={{ margin: "0 0 15px", color: "var(--vinotinto)", fontSize: "1.1rem" }}>
+                                  Transferencia Bancaria
+                                </h3>
+                                <p style={{ color: "#666", fontSize: "0.9rem", marginBottom: "15px" }}>
+                                  Realiza una transferencia bancaria a la siguiente cuenta:
+                                </p>
+                                <div style={{ display: "grid", gap: "10px", fontSize: "0.9rem", background: "#fff", padding: "15px", borderRadius: "6px" }}>
+                                  <div style={{ display: "flex", justifyContent: "space-between" }}>
+                                    <span style={{ color: "#666" }}>Banco:</span>
+                                    <span style={{ fontWeight: 700 }}>Bancolombia</span>
+                                  </div>
+                                  <div style={{ display: "flex", justifyContent: "space-between" }}>
+                                    <span style={{ color: "#666" }}>Tipo de cuenta:</span>
+                                    <span style={{ fontWeight: 700 }}>Ahorros</span>
+                                  </div>
+                                  <div style={{ display: "flex", justifyContent: "space-between" }}>
+                                    <span style={{ color: "#666" }}>Número de cuenta:</span>
+                                    <span style={{ fontWeight: 700 }}>123-456789-0</span>
+                                  </div>
+                                  <div style={{ display: "flex", justifyContent: "space-between" }}>
+                                    <span style={{ color: "#666" }}>Titular:</span>
+                                    <span style={{ fontWeight: 700 }}>BookyHome S.A.S</span>
+                                  </div>
+                                  <div style={{ display: "flex", justifyContent: "space-between", borderTop: "1px solid #e0dbd4", paddingTop: "10px", marginTop: "5px" }}>
+                                    <span style={{ color: "#666" }}>Total a pagar:</span>
+                                    <span style={{ fontWeight: 700, color: "var(--vinotinto)" }}>
+                                      {Number(order.total).toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 })}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                              <button
+                                onClick={() => processPaymentApi("Transferencia Bancaria")}
+                                className="btn btn-vinotinto"
+                                style={{ width: "100%" }}
+                              >
+                                Confirmar Transferencia
+                              </button>
+                            </div>
+                          ) : null}
                         </div>
 
                         {/* RIGHT COLUMN: Order summary */}
@@ -1020,8 +1803,76 @@ export default function PostLogin() {
             ) : (
               /* CART ITEMS VIEW */
               <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "20px" }}>
-                {carrito.length > 0 ? (
-                  carrito.map((item) => (
+                {ordenes.filter(o => o.estado === 'pendiente').map((orden) => (
+                  <div key={orden.id_orden} style={{
+                    background: "#fff3e0",
+                    padding: "20px",
+                    borderRadius: "12px",
+                    border: "1px solid #ff9800",
+                    marginBottom: "15px"
+                  }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "15px" }}>
+                      <div>
+                        <p style={{ margin: "0 0 5px", fontWeight: 700, color: "#ff9800", fontSize: "0.9rem" }}>
+                          Orden pendiente de pago
+                        </p>
+                        <p style={{ margin: 0, color: "#666", fontSize: "0.85rem" }}>
+                          Orden #{orden.id_orden} - {Number(orden.total).toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 })}
+                        </p>
+                      </div>
+                      <div style={{ display: "flex", gap: "10px" }}>
+                        <button
+                          onClick={() => {
+                            setOrderId(orden.id_orden);
+                            setOrder(orden);
+                            setMostrarCheckout(true);
+                          }}
+                          className="btn btn-vinotinto"
+                          style={{
+                            padding: "10px 16px",
+                            fontSize: "0.85rem",
+                            fontWeight: 700,
+                            height: "40px",
+                            minWidth: "120px",
+                            borderRadius: "8px",
+                            cursor: "pointer"
+                          }}
+                        >
+                          Continuar Pago
+                        </button>
+                        <button
+                          onClick={async () => {
+                            if (confirm('¿Estás seguro de que deseas cancelar esta orden?')) {
+                              try {
+                                await cancelOrder(orden.id_orden);
+                                setOrdenes(ordenes.filter(o => o.id_orden !== orden.id_orden));
+                                notify('Orden cancelada exitosamente', 'success');
+                              } catch (err) {
+                                const msg = err.response?.data?.detail || 'No se pudo cancelar la orden';
+                                notify(msg, 'error');
+                              }
+                            }
+                          }}
+                          style={{
+                            background: "#fff5f7",
+                            border: "2px solid #e53935",
+                            color: "#e53935",
+                            borderRadius: "8px",
+                            padding: "10px 16px",
+                            fontWeight: 700,
+                            fontSize: "0.85rem",
+                            cursor: "pointer",
+                            height: "40px",
+                            minWidth: "120px"
+                          }}
+                        >
+                          Cancelar compra
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {carrito.length > 0 && carrito.map((item) => (
                   <div
                     key={item.id_libro}
                     style={{
@@ -1056,92 +1907,7 @@ export default function PostLogin() {
                       </p>
                     </div>
                   </div>
-                ))
-                ) : (
-                  /* Show pending orders when cart is empty */
-                  ordenes.filter(o => o.estado === 'pendiente').map((orden) => (
-                    <div
-                      key={orden.id_orden}
-                      style={{
-                        background: "#fff5f7",
-                        border: "2px solid var(--vinotinto)",
-                        borderRadius: "8px",
-                        padding: "20px",
-                        boxShadow: "var(--sombra-suave)",
-                      }}
-                    >
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "15px" }}>
-                        <div>
-                          <h3 style={{ margin: "0 0 5px 0", fontWeight: 700, color: "var(--vinotinto)" }}>Orden #{orden.id_orden}</h3>
-                          <p style={{ margin: "0", color: "#666", fontSize: "0.9rem" }}>
-                            {orden.fecha ? new Date(orden.fecha).toLocaleDateString("es-CO") : ""}
-                          </p>
-                        </div>
-                        <span style={{
-                          background: "var(--vinotinto)",
-                          color: "white",
-                          padding: "4px 12px",
-                          borderRadius: "20px",
-                          fontSize: "0.75rem",
-                          fontWeight: 700
-                        }}>
-                          Pendiente de pago
-                        </span>
-                      </div>
-
-                      <div style={{ marginBottom: "15px" }}>
-                        {orden.items?.map((item) => (
-                          <div key={item.id_libro} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid #e0dbd4" }}>
-                            <span>{item.titulo} x{item.cantidad}</span>
-                            <span style={{ fontWeight: 600 }}>
-                              {Number(item.precio_libro * item.cantidad).toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 })}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-
-                      <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
-                        <button
-                          onClick={() => {
-                            setOrderId(orden.id_orden);
-                            setOrder(orden);
-                            setMostrarCheckout(true);
-                          }}
-                          className="btn btn-vinotinto"
-                          style={{ padding: "8px 16px", fontSize: "0.85rem" }}
-                        >
-                          Continuar con el pago
-                        </button>
-                        <button
-                          onClick={async () => {
-                            if (confirm('¿Estás seguro de que deseas cancelar esta orden?')) {
-                              try {
-                                await cancelOrder(orden.id_orden);
-                                setOrdenes(ordenes.filter(o => o.id_orden !== orden.id_orden));
-                                notify('Orden cancelada exitosamente', 'success');
-                              } catch (err) {
-                                const msg = err.response?.data?.detail || 'No se pudo cancelar la orden';
-                                notify(msg, 'error');
-                              }
-                            }
-                          }}
-                          style={{
-                            background: "none",
-                            border: "1.5px solid #e53935",
-                            color: "#e53935",
-                            borderRadius: "8px",
-                            padding: "8px 16px",
-                            fontWeight: 700,
-                            fontSize: "0.85rem",
-                            cursor: "pointer"
-                          }}
-                        >
-                          Cancelar orden
-                        </button>
-                      </div>
-                    </div>
-                  ))
-                )}
+                ))}
 
                 {/* Bloque de Cierre de Caja y Botones de Acción - solo para carrito normal */}
                 {carrito.length > 0 && (
@@ -1234,12 +2000,40 @@ export default function PostLogin() {
                         </p>
                       </div>
                     </div>
-                    <div className="pl-order-right">
+                    <div className="pl-order-right" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                       <span className="pl-order-price">
                         {Number(orden.total || 0).toLocaleString("es-CO", {
                           style: "currency", currency: "COP", maximumFractionDigits: 0,
                         })}
                       </span>
+                      {orden.estado === "pagado" && (
+                        <button
+                          onClick={() => handleVerBaucher(orden)}
+                          className="btn btn-vinotinto"
+                          style={{
+                            padding: "6px 12px",
+                            fontSize: "0.8rem",
+                            borderRadius: "6px",
+                            background: "var(--vinotinto)",
+                            color: "white",
+                            border: "none",
+                            cursor: "pointer",
+                            fontWeight: 600,
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "6px"
+                          }}
+                        >
+                          <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                            <polyline points="10 9 9 9 8 9"></polyline>
+                          </svg>
+                          Ver Baucher
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -1908,6 +2702,268 @@ export default function PostLogin() {
             <p>Esta sección estará disponible próximamente.</p>
           </div>
         )}
+
+        {/* ── MODAL BAUCHER DE COMPRA ── */}
+        {mostrarBaucher && (
+          <div style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.6)",
+            zIndex: 2000,
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            padding: "20px"
+          }}>
+            <div className="baucher-modal" style={{
+              background: "var(--blanco)",
+              maxWidth: "600px",
+              width: "100%",
+              borderRadius: "16px",
+              padding: "40px",
+              boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
+              maxHeight: "90vh",
+              overflowY: "auto",
+              scrollbarWidth: "none",
+              msOverflowStyle: "none"
+            }}>
+              {baucherLoading ? (
+                <div style={{ textAlign: "center", padding: "40px" }}>
+                  <div style={{
+                    border: "4px solid #f3f3f3",
+                    borderTop: "4px solid var(--vinotinto)",
+                    borderRadius: "50%",
+                    width: "50px",
+                    height: "50px",
+                    animation: "spin 1s linear infinite",
+                    margin: "0 auto 20px"
+                  }}></div>
+                  <p style={{ color: "#666" }}>Cargando baucher...</p>
+                </div>
+              ) : ordenSeleccionada ? (
+                <>
+                  {/* Header del baucher */}
+                  <div style={{
+                    borderBottom: "2px solid #e0dbd4",
+                    paddingBottom: "20px",
+                    marginBottom: "20px",
+                    textAlign: "center"
+                  }}>
+                    <div style={{
+                      width: "70px",
+                      height: "70px",
+                      borderRadius: "50%",
+                      background: "#fdf0f2",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      margin: "0 auto 15px"
+                    }}>
+                      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#C5425A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                      </svg>
+                    </div>
+                    <h2 style={{
+                      fontWeight: 800,
+                      color: "var(--vinotinto)",
+                      margin: "0 0 8px",
+                      fontSize: "1.6rem"
+                    }}>
+                      ¡Compra Exitosa!
+                    </h2>
+                    <p style={{ color: "#666", margin: 0, fontSize: "0.95rem" }}>
+                      Gracias por tu compra en BookyHome
+                    </p>
+                  </div>
+
+                  {/* Información de la orden */}
+                  <div style={{
+                    background: "#fcfaf7",
+                    padding: "20px",
+                    borderRadius: "12px",
+                    marginBottom: "20px",
+                    border: "1px solid #e0dbd4"
+                  }}>
+                    <div style={{ display: "grid", gap: "12px", marginBottom: "16px" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between" }}>
+                        <span style={{ color: "#666", fontSize: "0.9rem" }}>Número de Orden</span>
+                        <span style={{ fontWeight: 700, color: "var(--gris-carbon)" }}>#{ordenSeleccionada.id_orden}</span>
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between" }}>
+                        <span style={{ color: "#666", fontSize: "0.9rem" }}>Fecha</span>
+                        <span style={{ fontWeight: 600, color: "var(--gris-carbon)" }}>
+                          {ordenSeleccionada.fecha ? new Date(ordenSeleccionada.fecha).toLocaleDateString("es-CO", {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          }) : ''}
+                        </span>
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between" }}>
+                        <span style={{ color: "#666", fontSize: "0.9rem" }}>Método de Pago</span>
+                        <span style={{ fontWeight: 600, color: "var(--gris-carbon)" }}>
+                          {ordenSeleccionada.metodo_pago || "Tarjeta de Crédito"}
+                        </span>
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between" }}>
+                        <span style={{ color: "#666", fontSize: "0.9rem" }}>Estado</span>
+                        <span style={{
+                          fontWeight: 700,
+                          color: "green",
+                          background: "#e8f5e9",
+                          padding: "4px 12px",
+                          borderRadius: "20px",
+                          fontSize: "0.85rem"
+                        }}>
+                          {ordenSeleccionada.estado}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Lista de productos */}
+                  <div style={{ marginBottom: "20px" }}>
+                    <h3 style={{
+                      fontWeight: 700,
+                      color: "var(--gris-carbon)",
+                      margin: "0 0 15px",
+                      fontSize: "1.1rem"
+                    }}>
+                      Productos Comprados
+                    </h3>
+                    <div style={{ display: "grid", gap: "12px" }}>
+                      {ordenSeleccionada.items?.map((item) => (
+                        <div key={item.id_libro} style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          padding: "12px",
+                          background: "#faf8f6",
+                          borderRadius: "8px",
+                          border: "1px solid #e0dbd4"
+                        }}>
+                          <div style={{ flex: 1 }}>
+                            <p style={{ margin: "0 0 4px", fontWeight: 600, color: "var(--gris-carbon)" }}>
+                              {item.titulo}
+                            </p>
+                            <p style={{ margin: 0, color: "#666", fontSize: "0.85rem" }}>
+                              {item.autor_libro} · Cantidad: {item.cantidad}
+                            </p>
+                          </div>
+                          <span style={{
+                            fontWeight: 700,
+                            color: "var(--vinotinto)",
+                            fontSize: "1rem"
+                          }}>
+                            {Number(item.precio_libro * item.cantidad).toLocaleString("es-CO", {
+                              style: "currency",
+                              currency: "COP",
+                              maximumFractionDigits: 0
+                            })}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Total */}
+                  <div style={{
+                    borderTop: "2px solid #e0dbd4",
+                    paddingTop: "20px",
+                    marginTop: "20px"
+                  }}>
+                    <div style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      fontSize: "1.3rem",
+                      fontWeight: 800
+                    }}>
+                      <span style={{ color: "var(--gris-carbon)" }}>Total Pagado</span>
+                      <span style={{
+                        color: "var(--rojo-suave)",
+                        fontSize: "1.5rem"
+                      }}>
+                        {Number(ordenSeleccionada.total).toLocaleString("es-CO", {
+                          style: "currency",
+                          currency: "COP",
+                          maximumFractionDigits: 0
+                        })}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Botones de acción */}
+                  <div style={{
+                    display: "flex",
+                    gap: "12px",
+                    marginTop: "30px"
+                  }}>
+                    <button
+                      onClick={handleCerrarBaucher}
+                      style={{
+                        flex: 1,
+                        padding: "14px",
+                        borderRadius: "8px",
+                        border: "2px solid var(--vinotinto)",
+                        background: "var(--blanco)",
+                        color: "var(--vinotinto)",
+                        fontWeight: 700,
+                        fontSize: "0.95rem",
+                        cursor: "pointer",
+                        transition: "all 0.2s"
+                      }}
+                      onMouseEnter={(e) => { e.target.style.background = "#f5eaed"; }}
+                      onMouseLeave={(e) => { e.target.style.background = "var(--blanco)"; }}
+                    >
+                      Cerrar
+                    </button>
+                    <button
+                      onClick={() => {
+                        window.print();
+                      }}
+                      style={{
+                        flex: 1,
+                        padding: "14px",
+                        borderRadius: "8px",
+                        border: "none",
+                        background: "var(--vinotinto)",
+                        color: "white",
+                        fontWeight: 700,
+                        fontSize: "0.95rem",
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: "8px"
+                      }}
+                    >
+                      <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="6 9 6 2 18 2 18 9"></polyline>
+                        <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                        <rect x="6" y="14" width="12" height="8"></rect>
+                      </svg>
+                      Imprimir
+                    </button>
+                  </div>
+                </>
+              ) : null}
+            </div>
+          </div>
+        )}
+
+        <style>{`
+          .baucher-modal::-webkit-scrollbar {
+            display: none;
+          }
+          .baucher-modal {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+          }
+        `}</style>
 
       </main>
     </div>

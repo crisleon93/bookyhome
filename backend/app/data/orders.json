@@ -165,6 +165,284 @@
       "total": 35000.0,
       "estado": "pagado",
       "metodo_pago": "PayPal"
+    },
+    {
+      "id_orden": 2,
+      "fecha": "2026-06-29T18:42:16.125984Z",
+      "items": [
+        {
+          "id_libro": 45,
+          "titulo": "Libro de Prueba Oculto",
+          "autor_libro": "Autor Anónimo",
+          "precio_libro": 15000.0,
+          "cantidad": 5,
+          "imagen": null
+        },
+        {
+          "id_libro": 44,
+          "titulo": "El principito",
+          "autor_libro": "Antoine de Saint-Exupéry",
+          "precio_libro": 20000.0,
+          "cantidad": 1,
+          "imagen": "https://covers.openlibrary.org/b/id/12688412-L.jpg"
+        }
+      ],
+      "total": 95000.0,
+      "estado": "pagado",
+      "metodo_pago": "Tarjeta de Crédito"
+    },
+    {
+      "id_orden": 3,
+      "fecha": "2026-06-29T19:18:50.893663Z",
+      "items": [
+        {
+          "id_libro": 38,
+          "titulo": "Frankenstein",
+          "autor_libro": "Mary Shelley",
+          "precio_libro": 18000.0,
+          "cantidad": 1,
+          "imagen": "https://covers.openlibrary.org/b/id/12711225-L.jpg"
+        }
+      ],
+      "total": 18000.0,
+      "estado": "pagado",
+      "metodo_pago": "Nequi/Daviplata"
+    },
+    {
+      "id_orden": 4,
+      "fecha": "2026-06-29T19:25:56.148893Z",
+      "items": [
+        {
+          "id_libro": 44,
+          "titulo": "El principito",
+          "autor_libro": "Antoine de Saint-Exupéry",
+          "precio_libro": 20000.0,
+          "cantidad": 1,
+          "imagen": "https://covers.openlibrary.org/b/id/12688412-L.jpg"
+        }
+      ],
+      "total": 20000.0,
+      "estado": "pagado",
+      "metodo_pago": "Pago en Sucursal"
+    },
+    {
+      "id_orden": 5,
+      "fecha": "2026-06-29T19:31:00.358256Z",
+      "items": [
+        {
+          "id_libro": 44,
+          "titulo": "El principito",
+          "autor_libro": "Antoine de Saint-Exupéry",
+          "precio_libro": 20000.0,
+          "cantidad": 1,
+          "imagen": "https://covers.openlibrary.org/b/id/12688412-L.jpg"
+        }
+      ],
+      "total": 20000.0,
+      "estado": "pagado",
+      "metodo_pago": "PSE"
+    },
+    {
+      "id_orden": 6,
+      "fecha": "2026-06-29T19:32:14.808445Z",
+      "items": [
+        {
+          "id_libro": 44,
+          "titulo": "El principito",
+          "autor_libro": "Antoine de Saint-Exupéry",
+          "precio_libro": 20000.0,
+          "cantidad": 1,
+          "imagen": "https://covers.openlibrary.org/b/id/12688412-L.jpg"
+        }
+      ],
+      "total": 20000.0,
+      "estado": "pagado",
+      "metodo_pago": "Pago en Efecty"
+    },
+    {
+      "id_orden": 7,
+      "fecha": "2026-06-29T19:36:49.525339Z",
+      "items": [
+        {
+          "id_libro": 45,
+          "titulo": "Libro de Prueba Oculto",
+          "autor_libro": "Autor Anónimo",
+          "precio_libro": 15000.0,
+          "cantidad": 1,
+          "imagen": null
+        }
+      ],
+      "total": 15000.0,
+      "estado": "pagado",
+      "metodo_pago": "PSE"
+    },
+    {
+      "id_orden": 8,
+      "fecha": "2026-06-29T19:37:41.600962Z",
+      "items": [
+        {
+          "id_libro": 44,
+          "titulo": "El principito",
+          "autor_libro": "Antoine de Saint-Exupéry",
+          "precio_libro": 20000.0,
+          "cantidad": 1,
+          "imagen": "https://covers.openlibrary.org/b/id/12688412-L.jpg"
+        }
+      ],
+      "total": 20000.0,
+      "estado": "pagado",
+      "metodo_pago": "PSE"
+    },
+    {
+      "id_orden": 9,
+      "fecha": "2026-06-29T19:44:37.946845Z",
+      "items": [
+        {
+          "id_libro": 44,
+          "titulo": "El principito",
+          "autor_libro": "Antoine de Saint-Exupéry",
+          "precio_libro": 20000.0,
+          "cantidad": 2,
+          "imagen": "https://covers.openlibrary.org/b/id/12688412-L.jpg"
+        }
+      ],
+      "total": 40000.0,
+      "estado": "pagado",
+      "metodo_pago": "PSE"
+    },
+    {
+      "id_orden": 10,
+      "fecha": "2026-06-29T20:12:18.126261Z",
+      "items": [
+        {
+          "id_libro": 44,
+          "titulo": "El principito",
+          "autor_libro": "Antoine de Saint-Exupéry",
+          "precio_libro": 20000.0,
+          "cantidad": 1,
+          "imagen": "https://covers.openlibrary.org/b/id/12688412-L.jpg"
+        },
+        {
+          "id_libro": 43,
+          "titulo": "Kimetsu no Yaiba - Tomo 1",
+          "autor_libro": "Koyoharu Gotouge",
+          "precio_libro": 35000.0,
+          "cantidad": 1,
+          "imagen": "https://covers.openlibrary.org/b/id/10322110-L.jpg"
+        },
+        {
+          "id_libro": 42,
+          "titulo": "Bajo la misma estrella",
+          "autor_libro": "John Green",
+          "precio_libro": 25000.0,
+          "cantidad": 1,
+          "imagen": "https://covers.openlibrary.org/b/id/12411542-L.jpg"
+        }
+      ],
+      "total": 80000.0,
+      "estado": "pagado",
+      "metodo_pago": "PSE"
+    },
+    {
+      "id_orden": 11,
+      "fecha": "2026-06-29T21:20:28.205253Z",
+      "items": [
+        {
+          "id_libro": 45,
+          "titulo": "Libro de Prueba Oculto",
+          "autor_libro": "Autor Anónimo",
+          "precio_libro": 15000.0,
+          "cantidad": 1,
+          "imagen": null
+        }
+      ],
+      "total": 15000.0,
+      "estado": "pagado",
+      "metodo_pago": "Pago en Efecty"
+    },
+    {
+      "id_orden": 12,
+      "fecha": "2026-06-29T21:29:04.322443Z",
+      "items": [
+        {
+          "id_libro": 45,
+          "titulo": "Libro de Prueba Oculto",
+          "autor_libro": "Autor Anónimo",
+          "precio_libro": 15000.0,
+          "cantidad": 1,
+          "imagen": null
+        }
+      ],
+      "total": 15000.0,
+      "estado": "pagado",
+      "metodo_pago": "Pago en Efecty"
+    },
+    {
+      "id_orden": 13,
+      "fecha": "2026-06-29T21:33:56.572316Z",
+      "items": [
+        {
+          "id_libro": 44,
+          "titulo": "El principito",
+          "autor_libro": "Antoine de Saint-Exupéry",
+          "precio_libro": 20000.0,
+          "cantidad": 1,
+          "imagen": "https://covers.openlibrary.org/b/id/12688412-L.jpg"
+        }
+      ],
+      "total": 20000.0,
+      "estado": "pagado",
+      "metodo_pago": "Pago en Efecty"
+    },
+    {
+      "id_orden": 14,
+      "fecha": "2026-06-29T21:35:06.753842Z",
+      "items": [
+        {
+          "id_libro": 44,
+          "titulo": "El principito",
+          "autor_libro": "Antoine de Saint-Exupéry",
+          "precio_libro": 20000.0,
+          "cantidad": 1,
+          "imagen": "https://covers.openlibrary.org/b/id/12688412-L.jpg"
+        }
+      ],
+      "total": 20000.0,
+      "estado": "pagado",
+      "metodo_pago": "Transferencia Bancaria"
+    },
+    {
+      "id_orden": 15,
+      "fecha": "2026-06-29T21:38:13.688570Z",
+      "items": [
+        {
+          "id_libro": 44,
+          "titulo": "El principito",
+          "autor_libro": "Antoine de Saint-Exupéry",
+          "precio_libro": 20000.0,
+          "cantidad": 1,
+          "imagen": "https://covers.openlibrary.org/b/id/12688412-L.jpg"
+        }
+      ],
+      "total": 20000.0,
+      "estado": "pagado",
+      "metodo_pago": "Pago en Efecty"
+    },
+    {
+      "id_orden": 18,
+      "fecha": "2026-06-29T21:47:04.684848Z",
+      "items": [
+        {
+          "id_libro": 44,
+          "titulo": "El principito",
+          "autor_libro": "Antoine de Saint-Exupéry",
+          "precio_libro": 20000.0,
+          "cantidad": 1,
+          "imagen": "https://covers.openlibrary.org/b/id/12688412-L.jpg"
+        }
+      ],
+      "total": 20000.0,
+      "estado": "pendiente"
     }
   ]
 }
