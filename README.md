@@ -145,22 +145,7 @@ Cuando se usa Docker, este script se ejecuta automaticamente la primera vez que 
 
 1. Clonar el repositorio.
 
-2. Crear un archivo `.env` en `backend/` con el siguiente contenido. Ajusta los valores de correo segun corresponda:
-
-```dotenv
-MAIL_USERNAME=tu_correo@gmail.com
-MAIL_PASSWORD=tu_app_password
-MAIL_FROM=tu_correo@gmail.com
-MAIL_SERVER=smtp.gmail.com
-MAIL_PORT=587
-
-# Variables de la Base de Datos para Docker y Backend
-DB_HOST=mysql
-DB_PORT=3306
-DB_USER=root
-DB_PASSWORD=root
-DB_NAME=bookyhome
-```
+2. Crear un archivo `.env` en `backend/` basándose en el archivo `.env.example` de ejemplo. Ajusta los valores de correo y base de datos según corresponda.
 
 3. Desde la raiz del proyecto, ejecutar:
 

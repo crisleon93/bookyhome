@@ -6,9 +6,10 @@ import { getReviewsForBook, createReview } from '../services/api';
 
 export default function BookDetail({ route, navigation }) {
   const { book } = route.params;
-  const { addToCart } = useContext(CartContext);
+  const { addToCart, removeFromCart } = useContext(CartContext);
   const { user, loading: authLoading } = useContext(AuthContext);
   const [adding, setAdding] = useState(false);
+  const [addedToCart, setAddedToCart] = useState(false);
   const [reviews, setReviews] = useState([]);
   const [promedio, setPromedio] = useState(0);
   const [total, setTotal] = useState(0);
@@ -23,9 +24,26 @@ export default function BookDetail({ route, navigation }) {
     setAdding(true);
     await addToCart(book);
     setAdding(false);
+    setAddedToCart(true);
     Alert.alert(
       'Carrito',
-      '¡Libro agregado al carrito con éxito!',
+      'AGREGADO AL CARRITO',
+      [
+        { text: 'Seguir mirando', style: 'cancel' },
+        { text: 'Ver Carrito', onPress: () => navigation.navigate('Cart') },
+      ]
+    );
+  };
+
+  const handleRemoveFromCart = async () => {
+    setAdding(true);
+    const bookId = book.id_libro || book.id || book.idBook || book.id_book;
+    await removeFromCart(bookId);
+    setAdding(false);
+    setAddedToCart(false);
+    Alert.alert(
+      'Carrito',
+      'Eliminado del carrito',
       [
         { text: 'Seguir mirando', style: 'cancel' },
         { text: 'Ver Carrito', onPress: () => navigation.navigate('Cart') },
@@ -110,11 +128,11 @@ export default function BookDetail({ route, navigation }) {
         </Text>
 
         <TouchableOpacity 
-          style={[styles.button, adding && styles.buttonDisabled]} 
-          onPress={handleAddToCart}
+          style={[styles.button, adding && styles.buttonDisabled, addedToCart && styles.buttonRemove]} 
+          onPress={addedToCart ? handleRemoveFromCart : handleAddToCart}
           disabled={adding}
         >
-          <Text style={styles.buttonText}>{adding ? 'Agregando...' : 'Agregar al Carrito'}</Text>
+          <Text style={styles.buttonText}>{adding ? 'Procesando...' : addedToCart ? 'Eliminar de carrito' : 'Agregar al Carrito'}</Text>
         </TouchableOpacity>
 
         <View style={{ width: '100%', marginTop: 20 }}>
@@ -177,6 +195,7 @@ const styles = StyleSheet.create({
   sectionTitle: { alignSelf: 'flex-start', fontSize: 16, fontWeight: '700', color: '#2A2A2A', marginBottom: 8 },
   description: { alignSelf: 'flex-start', fontSize: 14, color: '#555', lineHeight: 20, marginBottom: 25 },
   button: { backgroundColor: '#7A1E3A', paddingVertical: 14, paddingHorizontal: 30, borderRadius: 8, width: '100%', alignItems: 'center' },
+  buttonRemove: { backgroundColor: '#e53935' },
   buttonDisabled: { opacity: 0.7 },
   buttonText: { color: '#fff', fontSize: 16, fontWeight: '700' },
 });

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
-import { getUsuarios, getCarrito, checkoutCarrito, getOrdenes, addToCart, getOrden, postPayment, sendConfirmationEmail, cancelOrder } from "../services/api";
+import { getUsuarios, getCarrito, checkoutCarrito, getOrdenes, addToCart, removeFromCart, getOrden, postPayment, sendConfirmationEmail, cancelOrder } from "../services/api";
 import CompradorSidebar from "../components/CompradorSidebar";
 import FiltrosCatalogo from "../components/FiltrosCatalogo";
 import LibroCard from "../components/LibroCard";
@@ -104,6 +104,7 @@ export default function PostLogin() {
   const [catalogoPagina, setCatalogoPagina] = useState(1);
   const [catalogoTotalPaginas, setCatalogoTotalPaginas] = useState(1);
   const [catalogoAddingId, setCatalogoAddingId] = useState(null);
+  const [catalogoAddedToCartIds, setCatalogoAddedToCartIds] = useState(new Set());
   const [catalogoFiltros, setCatalogoFiltros] = useState({
     q: '',
     categoria_id: null,
@@ -264,8 +265,9 @@ export default function PostLogin() {
         precio_libro: libro.precio_libro,
         imagen: libro.imagen_url || null,
       });
-      notify(`"${libro.titulo}" agregado al carrito ✓`, 'success');
+      notify('AGREGADO AL CARRITO', 'success');
       window.dispatchEvent(new Event('cart-updated'));
+      setCatalogoAddedToCartIds(prev => new Set(prev).add(libro.id_libro));
     } catch (err) {
       const msg = err.response?.data?.detail || 'No se pudo agregar al carrito';
       notify(msg, 'error');
@@ -274,9 +276,29 @@ export default function PostLogin() {
     }
   };
 
-  // ========================
-  // Manejadores de acciones
-  // ========================
+  const handleCatalogoRemoveFromCart = async (libro) => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      notify('Debes iniciar sesión', 'error');
+      return;
+    }
+    setCatalogoAddingId(libro.id_libro);
+    try {
+      await removeFromCart(libro.id_libro);
+      setCatalogoAddedToCartIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(libro.id_libro);
+        return newSet;
+      });
+      notify('Eliminado del carrito', 'success');
+      window.dispatchEvent(new Event('cart-updated'));
+    } catch (err) {
+      const msg = err.response?.data?.detail || 'No se pudo eliminar del carrito';
+      notify(msg, 'error');
+    } finally {
+      setCatalogoAddingId(null);
+    }
+  };
   const handleCheckout = () => {
     setCheckoutLoading(true);
     setCheckoutError(null);

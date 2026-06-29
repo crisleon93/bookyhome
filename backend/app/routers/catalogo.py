@@ -109,7 +109,7 @@ def busqueda_avanzada(
             LEFT JOIN tiendas t ON l.id_tienda = t.id_tienda
             LEFT JOIN resenas_libros r ON l.id_libro = r.id_libro
             WHERE {where_clause}
-            GROUP BY l.id_libro
+            GROUP BY l.id_libro, l.titulo, l.autor_libro, l.precio_libro, l.stock, l.descripcion_libro, l.fecha_listado, c.nombre_categoria, t.nombre_tienda, t.id_tienda
             ORDER BY {order_clause}
             LIMIT %s OFFSET %s
         """
@@ -187,7 +187,7 @@ def obtener_categorias():
                 COUNT(l.id_libro) as cantidad_libros
             FROM categorias c
             LEFT JOIN libros l ON c.id_categoria = l.id_categoria AND l.stock > 0
-            GROUP BY c.id_categoria
+            GROUP BY c.id_categoria, c.nombre_categoria
             ORDER BY c.nombre_categoria
         """
         cursor.execute(query)

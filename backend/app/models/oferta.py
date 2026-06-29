@@ -70,7 +70,7 @@ def obtener_ofertas_tienda(id_tienda: int):
             FROM ofertas o
             LEFT JOIN oferta_libros ol ON o.id_oferta = ol.id_oferta
             WHERE o.id_tienda = %s
-            GROUP BY o.id_oferta
+            GROUP BY o.id_oferta, o.nombre_oferta, o.descripcion, o.porcentaje_descuento, o.fecha_inicio, o.fecha_fin
             ORDER BY o.fecha_inicio DESC
         """, (id_tienda,))
         return cursor.fetchall()
@@ -110,7 +110,7 @@ def obtener_oferta_detalle(id_oferta: int, id_tienda: int):
             JOIN libros l       ON ol.id_libro  = l.id_libro
             LEFT JOIN imagenes_libro i ON l.id_libro = i.id_libro
             WHERE ol.id_oferta = %s
-            GROUP BY l.id_libro
+            GROUP BY l.id_libro, l.titulo, l.autor_libro, l.precio_libro, l.stock
         """, (id_oferta,))
         libros = cursor.fetchall()
         for libro in libros:

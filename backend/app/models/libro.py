@@ -64,7 +64,7 @@ def obtener_libros_por_tienda(id_tienda: int):
             LEFT JOIN categorias c ON l.id_categoria = c.id_categoria
             LEFT JOIN imagenes_libro i ON l.id_libro = i.id_libro
             WHERE l.id_tienda = %s 
-            GROUP BY l.id_libro
+            GROUP BY l.id_libro, c.nombre_categoria
             ORDER BY l.fecha_listado DESC
         """, (id_tienda,))
         libros = cursor.fetchall()
@@ -90,7 +90,7 @@ def obtener_libros_visibles_por_tienda(id_tienda: int):
             LEFT JOIN imagenes_libro i ON l.id_libro = i.id_libro
             WHERE l.id_tienda = %s 
               AND l.oculto = 0  -- 🎯 CANDADO: Filtra para que NO salgan los ocultos en el catálogo
-            GROUP BY l.id_libro
+            GROUP BY l.id_libro, c.nombre_categoria
             ORDER BY l.fecha_listado DESC
         """, (id_tienda,))
         libros = cursor.fetchall()
@@ -329,7 +329,7 @@ def obtener_top_vendidos(id_tienda: int, limite: int = 5):
             LEFT JOIN ordenes_compra o  ON d.id_orden      = o.id_orden
                 AND o.estado_orden NOT IN ('cancelada', 'rechazada')
             WHERE l.id_tienda = %s
-            GROUP BY l.id_libro
+            GROUP BY l.id_libro, l.titulo, l.autor_libro, l.precio_libro, l.estado_libro, c.nombre_categoria
             ORDER BY unidades_vendidas DESC
             LIMIT %s
         """, (id_tienda, limite))

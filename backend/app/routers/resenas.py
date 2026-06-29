@@ -49,7 +49,7 @@ def obtener_resenas_libro(id_libro: int):
                 r.id_libro,
                 r.calificacion,
                 r.comentario,
-                DATE_FORMAT(r.fecha_resena, '%Y-%m-%d %H:%i:%s') as fecha_resena
+                r.fecha_resena as fecha_resena
             FROM resenas_libros r
             JOIN usuarios u ON r.id_usuario = u.id_usuario
             WHERE r.id_libro = %s
