@@ -52,11 +52,13 @@ function SidebarIcon(props) {
   );
 }
 
-export default function VendedorSidebar({ userName = 'Vendedor', activeSide = 'Inicio', setActiveSide, handleLogout }) {
+export default function VendedorSidebar({ userName = 'Vendedor', profileImage = null, activeSide = 'Inicio', setActiveSide, handleLogout }) {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [noLeidosNotif, setNoLeidosNotif] = useState(0);
   const [noLeidosMensajes, setNoLeidosMensajes] = useState(0);
+  const avatarSrc = profileImage || null;
+  const avatarAlt = `${userName || 'Vendedor'} avatar`;
 
   // Cargar contadores de notificaciones y mensajes
   useEffect(() => {
@@ -112,6 +114,9 @@ export default function VendedorSidebar({ userName = 'Vendedor', activeSide = 'I
     navigate('/');
   });
 
+  const avatarSize = sidebarOpen ? 48 : 36;
+  const iconSize = sidebarOpen ? 22 : 18;
+
   return (
     <aside className={`dashboard-sidebar ${sidebarOpen ? '' : 'collapsed'}`} style={{
       width: sidebarOpen ? '250px' : '76px',
@@ -123,18 +128,47 @@ export default function VendedorSidebar({ userName = 'Vendedor', activeSide = 'I
     }}>
       {/* Header */}
       <div style={{
-        display: 'flex', alignItems: 'center',
-        justifyContent: sidebarOpen ? 'space-between' : 'center',
-        marginBottom: '26px', paddingLeft: sidebarOpen ? '10px' : 0,
+        position: 'relative',
+        marginBottom: '22px',
+        padding: sidebarOpen ? '0 10px' : '0',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
       }}>
-        {sidebarOpen && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span style={{ fontSize: '1.05rem', fontWeight: 800 }}>Vendedor</span>
-          </div>
-        )}
+        <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
+          {avatarSrc ? (
+            <img
+              src={avatarSrc}
+              alt={avatarAlt}
+              style={{
+                width: `${avatarSize}px`,
+                height: `${avatarSize}px`,
+                borderRadius: '50%',
+                objectFit: 'cover',
+                border: '2px solid rgba(255,255,255,0.35)',
+              }}
+            />
+          ) : (
+            <div style={{
+              width: `${avatarSize}px`,
+              height: `${avatarSize}px`,
+              borderRadius: '50%',
+              background: 'rgba(255,255,255,0.15)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              border: '2px solid rgba(255,255,255,0.35)',
+            }}>
+              <IconUser width={iconSize} height={iconSize} strokeWidth={2.2} style={{ color: WHITE }} />
+            </div>
+          )}
+        </div>
+
         <button
           onClick={() => setSidebarOpen(!sidebarOpen)}
           style={{
+            position: 'absolute',
+            right: 0,
             background: 'rgba(255,255,255,0.12)', border: 'none', color: WHITE,
             width: '34px', height: '34px', borderRadius: '8px', cursor: 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
@@ -165,13 +199,13 @@ export default function VendedorSidebar({ userName = 'Vendedor', activeSide = 'I
           <button
             key={item.name}
             onClick={() => {
-              // Preferir setActiveSide para evitar saltos de página cuando el dashboard maneja la vista
-              if (setActiveSide) {
-                setActiveSide(item.name);
+              if (item.path) {
+                if (setActiveSide) setActiveSide(item.name);
+                navigate(item.path);
                 return;
               }
-              if (item.path) {
-                navigate(item.path);
+              if (setActiveSide) {
+                setActiveSide(item.name);
                 return;
               }
             }}
