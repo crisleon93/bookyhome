@@ -429,8 +429,8 @@
       "metodo_pago": "Pago en Efecty"
     },
     {
-      "id_orden": 18,
-      "fecha": "2026-06-29T21:47:04.684848Z",
+      "id_orden": 16,
+      "fecha": "2026-06-30T00:28:45.578057Z",
       "items": [
         {
           "id_libro": 44,
@@ -442,7 +442,110 @@
         }
       ],
       "total": 20000.0,
-      "estado": "pendiente"
+      "estado": "pagado",
+      "metodo_pago": "Transferencia Bancaria"
+    },
+    {
+      "id_orden": 17,
+      "fecha": "2026-06-30T00:35:45.782996Z",
+      "items": [
+        {
+          "id_libro": 45,
+          "titulo": "Libro de Prueba Oculto",
+          "autor_libro": "Autor Anónimo",
+          "precio_libro": 15000.0,
+          "cantidad": 1,
+          "imagen": null
+        }
+      ],
+      "total": 15000.0,
+      "estado": "pagado",
+      "metodo_pago": "PayPal"
+    },
+    {
+      "id_orden": 18,
+      "fecha": "2026-06-30T00:47:40.877910Z",
+      "items": [
+        {
+          "id_libro": 45,
+          "titulo": "Libro de Prueba Oculto",
+          "autor_libro": "Autor Anónimo",
+          "precio_libro": 15000.0,
+          "cantidad": 1,
+          "imagen": null
+        }
+      ],
+      "total": 15000.0,
+      "estado": "pagado",
+      "metodo_pago": "Tarjeta de Crédito"
+    },
+    {
+      "id_orden": 19,
+      "fecha": "2026-06-30T00:51:07.365062Z",
+      "items": [
+        {
+          "id_libro": 45,
+          "titulo": "Libro de Prueba Oculto",
+          "autor_libro": "Autor Anónimo",
+          "precio_libro": 15000.0,
+          "cantidad": 1,
+          "imagen": null
+        }
+      ],
+      "total": 15000.0,
+      "estado": "pagado",
+      "metodo_pago": "Tarjeta de Crédito"
+    },
+    {
+      "id_orden": 20,
+      "fecha": "2026-06-30T07:19:35.598982Z",
+      "items": [
+        {
+          "id_libro": 44,
+          "titulo": "El principito",
+          "autor_libro": "Antoine de Saint-Exupéry",
+          "precio_libro": 20000.0,
+          "cantidad": 1,
+          "imagen": "https://covers.openlibrary.org/b/id/12688412-L.jpg"
+        }
+      ],
+      "total": 20000.0,
+      "estado": "pagado",
+      "metodo_pago": "Pago en Efecty"
+    },
+    {
+      "id_orden": 21,
+      "fecha": "2026-06-30T07:56:15.527982Z",
+      "items": [
+        {
+          "id_libro": 41,
+          "titulo": "Heartstopper: Volumen 1",
+          "autor_libro": "Alice Oseman",
+          "precio_libro": 52000.0,
+          "cantidad": 1,
+          "imagen": "https://covers.openlibrary.org/b/id/12845621-L.jpg"
+        }
+      ],
+      "total": 52000.0,
+      "estado": "pagado",
+      "metodo_pago": "Tarjeta de Crédito"
+    },
+    {
+      "id_orden": 22,
+      "fecha": "2026-06-30T08:00:20.553538Z",
+      "items": [
+        {
+          "id_libro": 44,
+          "titulo": "El principito",
+          "autor_libro": "Antoine de Saint-Exupéry",
+          "precio_libro": 20000.0,
+          "cantidad": 1,
+          "imagen": "https://covers.openlibrary.org/b/id/12688412-L.jpg"
+        }
+      ],
+      "total": 20000.0,
+      "estado": "pagado",
+      "metodo_pago": "Tarjeta de Crédito"
     }
   ]
 }

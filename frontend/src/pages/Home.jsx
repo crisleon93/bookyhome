@@ -40,7 +40,7 @@ const IconArrow = () => (
 // ── Datos ─────────────────────────────────────────────────────────────────────
 
 const STATS = [
-  { icon: 'M4 19.5A2.5 2.5 0 0 1 6.5 17H20M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z', color: 'icon-vinotinto', num: '+10,000', label: 'Libros disponibles' },
+  { icon: 'M4 19.5A2.5 2.5 0 0 1 6.5 17H20M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2ZM12 6v12M8 10h4M8 14h3', color: 'icon-vinotinto', num: '+10,000', label: 'Libros disponibles' },
   { icon: 'M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM9 22V12h6v10', color: 'icon-rojo', num: '+150', label: 'Librerías asociadas' },
   { icon: <IconUsers />, color: 'icon-vinotinto', num: '+50,000', label: 'Usuarios activos' },
   { icon: 'M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z', color: 'icon-rojo', num: '4.8', label: 'Calificación promedio' },
@@ -58,7 +58,7 @@ const BENEFITS = [
     desc: 'Envío gratis en compras mayores a $30.000. Seguimiento en tiempo real y entrega garantizada.',
   },
   {
-    icon: 'M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2zM22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z',
+    icon: 'M4 19.5A2.5 2.5 0 0 1 6.5 17H20M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2ZM12 6v12M8 10h4M8 14h3',
     title: 'Amplio Catálogo',
     desc: 'Desde clásicos hasta novedades. Encuentra libros nuevos, usados y de colección de múltiples librerías.',
   },

@@ -9,7 +9,7 @@ import { getUserRole } from "../hooks/useAuth";
 import { notify } from "../components/ToastProvider";
 import {
   IconChartBar,
-  IconBooks,
+  IconBookOpen,
   IconBook,
   IconStar,
   IconSettings,
@@ -17,14 +17,19 @@ import {
   IconLocation,
   IconCart,
   IconPackage,
+  IconShoppingBag,
   IconUser,
   IconCheck,
-  IconLock
+  IconLock,
+  IconMessage,
+  IconCreditCard,
+  IconTruck,
+  IconGift,
+  IconInfo
 } from "../components/Icons";
 
 import Catalogo from './Catalogo';
 import Chat from './Chat';
-import Notificaciones from './Notificaciones';
 
 // Componente especializado con el SVG profesional para carrito vacío
 const CartEmptyState = ({ onGoToCatalog }) => (
@@ -47,6 +52,98 @@ const CartEmptyState = ({ onGoToCatalog }) => (
     </button>
   </div>
 );
+
+function ModalCancelarOrden({ orden, onClose, onCancelado }) {
+  const [cargando, setCargando] = useState(false);
+  const [error, setError] = useState("");
+
+  const totalFormatted = Number(orden.total).toLocaleString("es-CO", {
+    style: "currency",
+    currency: "COP",
+    maximumFractionDigits: 0
+  });
+
+  const confirmar = async () => {
+    setCargando(true);
+    setError("");
+    try {
+      await cancelOrder(orden.id_orden);
+      onCancelado(orden.id_orden);
+    } catch (err) {
+      setError(err.response?.data?.detail || "No se pudo cancelar la orden");
+      setCargando(false);
+    }
+  };
+
+  return (
+    <div className="modal-overlay open" onClick={onClose}>
+      <div className="modal-box modal-box--confirm" onClick={(e) => e.stopPropagation()}>
+        <button
+          className="modal-close"
+          onClick={onClose}
+          disabled={cargando}
+          aria-label="Cerrar"
+        >
+          ×
+        </button>
+
+        <div className="modal-cancel-compra__header">
+          <div className="modal-cancel-compra__icon">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+          </div>
+          <h2 className="modal-cancel-compra__title">Cancelar compra</h2>
+          <p className="modal-cancel-compra__subtitle">
+            ¿Estás seguro de que deseas cancelar esta orden?
+          </p>
+        </div>
+
+        <div className="modal-cancel-compra__body">
+          <div className="modal-cancel-compra__summary">
+            <div>
+              <p className="modal-cancel-compra__summary-label">Orden</p>
+              <p className="modal-cancel-compra__summary-order">#{orden.id_orden}</p>
+            </div>
+            <div style={{ textAlign: "right" }}>
+              <p className="modal-cancel-compra__summary-label">Total</p>
+              <p className="modal-cancel-compra__summary-total">{totalFormatted}</p>
+            </div>
+          </div>
+          <p className="modal-cancel-compra__warning">Esta acción no se puede deshacer.</p>
+        </div>
+
+        {error && (
+          <div className="modal-cancel-compra__error">
+            <IconLock width={16} height={16} strokeWidth={2} />
+            {error}
+          </div>
+        )}
+
+        <div className="modal-cancel-compra__actions">
+          <button
+            type="button"
+            className="modal-cancel-compra__btn-back"
+            onClick={onClose}
+            disabled={cargando}
+          >
+            No, volver
+          </button>
+          <button
+            type="button"
+            className="modal-cancel-compra__btn-confirm"
+            onClick={confirmar}
+            disabled={cargando}
+          >
+            {cargando ? "Cancelando…" : "Sí, cancelar"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function PostLogin() {
   // ========================
@@ -71,6 +168,7 @@ export default function PostLogin() {
 
   const [ordenes, setOrdenes]               = useState([]);
   const [ordenesLoading, setOrdenesLoading] = useState(false);
+  const [ordenACancelar, setOrdenACancelar] = useState(null);
   const [mostrarBaucher, setMostrarBaucher] = useState(false);
   const [ordenSeleccionada, setOrdenSeleccionada] = useState(null);
   const [baucherLoading, setBaucherLoading] = useState(false);
@@ -88,6 +186,15 @@ export default function PostLogin() {
     es_principal: false
   });
   const [guardando, setGuardando] = useState(false);
+
+  // Estados de notificaciones
+  const [notificaciones, setNotificaciones] = useState([]);
+  const [notificacionesLoading, setNotificacionesLoading] = useState(false);
+  const [notificacionesFilter, setNotificacionesFilter] = useState("todas");
+  const [notificacionesLeidasAutomaticas, setNotificacionesLeidasAutomaticas] = useState(new Set());
+  const [notificacionesEliminadasAutomaticas, setNotificacionesEliminadasAutomaticas] = useState(new Set());
+  const [notificacionAEliminar, setNotificacionAEliminar] = useState(null);
+  const [mostrarModalEliminar, setMostrarModalEliminar] = useState(false);
 
   // Payment form states
   const [cardNumber, setCardNumber] = useState("");
@@ -140,7 +247,7 @@ export default function PostLogin() {
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const seccion = params.get("seccion");
-    if (seccion) setActiveSide(seccion);
+    if (seccion) setActiveSide(seccion === "Direcciones" ? "Mi Perfil" : seccion);
   }, [location]);
 
   useEffect(() => {
@@ -218,7 +325,7 @@ export default function PostLogin() {
   };
 
   useEffect(() => {
-    if (activeSide === "Mi Perfil" || activeSide === "Direcciones") {
+    if (activeSide === "Mi Perfil") {
       cargarDatosPerfil();
     }
   }, [activeSide, userId]);
@@ -561,6 +668,12 @@ export default function PostLogin() {
         getCarrito()
           .then((res) => setCarrito(res.data))
           .catch((err) => console.error(err));
+        // Recargar notificaciones para mostrar la compra realizada
+        if (activeSide === "Notificaciones") {
+          cargarNotificaciones(true);
+        }
+        // Ocultar checkout y mostrar pantalla de compra realizada
+        setMostrarCheckout(false);
         setPaymentSuccess(true);
       } else {
         setCheckoutError("El pago fue rechazado por la pasarela de pagos.");
@@ -606,6 +719,191 @@ export default function PostLogin() {
     navigate(`/post-login?seccion=${encodeURIComponent(seccion)}`, { replace: true });
   };
 
+  // ============= FUNCIONES DE NOTIFICACIONES =============
+  const generarNotificacionesOrdenes = () => {
+    const notificacionesGeneradas = [];
+    
+    ordenes.forEach((orden) => {
+      if (orden.estado === 'pendiente') {
+        const idNotif = `orden-pendiente-${orden.id_orden}`;
+        // No generar si fue eliminada por el usuario
+        if (notificacionesEliminadasAutomaticas.has(idNotif)) return;
+        
+        const estaLeida = notificacionesLeidasAutomaticas.has(idNotif);
+        notificacionesGeneradas.push({
+          id_notificacion: idNotif,
+          tipo: 'pago',
+          titulo: 'Pago Pendiente',
+          descripcion: `Tienes un pago pendiente de ${Number(orden.total).toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 })} para la orden #${orden.id_orden}`,
+          fecha_creacion: orden.fecha || new Date().toISOString(),
+          leida: estaLeida,
+          referencia_id: orden.id_orden,
+          es_automatica: true
+        });
+      } else if (orden.estado === 'completada' || orden.estado === 'pagada' || orden.estado === 'pagado') {
+        const idNotif = `orden-completada-${orden.id_orden}`;
+        // No generar si fue eliminada por el usuario
+        if (notificacionesEliminadasAutomaticas.has(idNotif)) return;
+        
+        const estaLeida = notificacionesLeidasAutomaticas.has(idNotif);
+        notificacionesGeneradas.push({
+          id_notificacion: idNotif,
+          tipo: 'pedido',
+          titulo: 'Compra Realizada',
+          descripcion: `Tu compra #${orden.id_orden} ha sido completada exitosamente por ${Number(orden.total).toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 })}`,
+          fecha_creacion: orden.fecha || new Date().toISOString(),
+          leida: estaLeida,
+          referencia_id: orden.id_orden,
+          es_automatica: true
+        });
+      }
+    });
+    
+    return notificacionesGeneradas;
+  };
+
+  const cargarNotificaciones = async (silent = false) => {
+    try {
+      if (!silent) setNotificacionesLoading(true);
+      const data = await notificacionesService.obtener(false, 50, 0);
+      const notificacionesAPI = data.notificaciones || [];
+      
+      const notificacionesOrdenes = generarNotificacionesOrdenes();
+      const todasNotificaciones = [...notificacionesOrdenes, ...notificacionesAPI];
+      
+      if (notificacionesFilter === "no_leidas") {
+        setNotificaciones(todasNotificaciones.filter(n => !n.leida));
+      } else {
+        setNotificaciones(todasNotificaciones);
+      }
+    } catch (err) {
+      console.error("Error cargando notificaciones:", err);
+      const notificacionesOrdenes = generarNotificacionesOrdenes();
+      if (notificacionesFilter === "no_leidas") {
+        setNotificaciones(notificacionesOrdenes.filter(n => !n.leida));
+      } else {
+        setNotificaciones(notificacionesOrdenes);
+      }
+    } finally {
+      if (!silent) setNotificacionesLoading(false);
+    }
+  };
+
+  const handleMarcarLeida = async (id_notificacion) => {
+    try {
+      const notif = notificaciones.find(n => n.id_notificacion === id_notificacion);
+      if (notif?.es_automatica) {
+        setNotificacionesLeidasAutomaticas(prev => new Set([...prev, id_notificacion]));
+        setNotificaciones(prev => prev.map(n => 
+          n.id_notificacion === id_notificacion ? { ...n, leida: true } : n
+        ));
+      } else {
+        await notificacionesService.marcarLeida(id_notificacion);
+        await cargarNotificaciones(true);
+      }
+    } catch (err) {
+      console.error("Error marcando como leída:", err);
+    }
+  };
+
+  const handleMarcarTodasLeidas = async () => {
+    try {
+      const automaticasIds = notificaciones.filter(n => n.es_automatica).map(n => n.id_notificacion);
+      setNotificacionesLeidasAutomaticas(prev => new Set([...prev, ...automaticasIds]));
+      setNotificaciones(prev => prev.map(n => ({ ...n, leida: true })));
+      await notificacionesService.marcarTodasLeidas();
+      await cargarNotificaciones(true);
+    } catch (err) {
+      console.error("Error marcando todas como leídas:", err);
+    }
+  };
+
+  const handleEliminar = async (id_notificacion) => {
+    setNotificacionAEliminar(id_notificacion);
+    setMostrarModalEliminar(true);
+  };
+
+  const confirmarEliminar = async () => {
+    if (!notificacionAEliminar) return;
+    
+    try {
+      const notif = notificaciones.find(n => n.id_notificacion === notificacionAEliminar);
+      if (notif?.es_automatica) {
+        // Agregar al Set de eliminadas para que no se vuelva a generar
+        setNotificacionesEliminadasAutomaticas(prev => new Set([...prev, notificacionAEliminar]));
+        setNotificacionesLeidasAutomaticas(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(notificacionAEliminar);
+          return newSet;
+        });
+        setNotificaciones(prev => prev.filter(n => n.id_notificacion !== notificacionAEliminar));
+      } else {
+        await notificacionesService.eliminar(notificacionAEliminar);
+        await cargarNotificaciones(true);
+      }
+    } catch (err) {
+      console.error("Error eliminando notificación:", err);
+    } finally {
+      setMostrarModalEliminar(false);
+      setNotificacionAEliminar(null);
+    }
+  };
+
+  const cancelarEliminar = () => {
+    setMostrarModalEliminar(false);
+    setNotificacionAEliminar(null);
+  };
+
+  const handleClickNotificacion = (notif) => {
+    if (notif.es_automatica) {
+      if (notif.tipo === 'pago') {
+        handleSelectSection('Carrito');
+      } else if (notif.tipo === 'pedido') {
+        handleSelectSection('Mis Compras');
+      }
+    } else {
+      switch (notif.tipo) {
+        case "mensaje":
+          handleSelectSection('Mensajes');
+          break;
+        case "resena":
+          handleSelectSection('Catálogo');
+          break;
+        case "oferta":
+          handleSelectSection('Catálogo');
+          break;
+        case "pedido":
+        case "entrega":
+        case "pago":
+          handleSelectSection('Mis Compras');
+          break;
+        default:
+          break;
+      }
+    }
+    handleMarcarLeida(notif.id_notificacion);
+  };
+
+  const getIconoTipo = (tipo) => {
+    const iconos = {
+      mensaje: <IconMessage width={24} height={24} strokeWidth={1.5} style={{ color: '#7A1E3A' }} />,
+      resena: <IconStar width={24} height={24} strokeWidth={1.5} style={{ color: '#FFA500' }} />,
+      oferta: <IconGift width={24} height={24} strokeWidth={1.5} style={{ color: '#7A1E3A' }} />,
+      pedido: <IconShoppingBag width={24} height={24} strokeWidth={1.5} style={{ color: '#7A1E3A' }} />,
+      entrega: <IconTruck width={24} height={24} strokeWidth={1.5} style={{ color: '#7A1E3A' }} />,
+      pago: <IconCreditCard width={24} height={24} strokeWidth={1.5} style={{ color: '#7A1E3A' }} />,
+      sistema: <IconInfo width={24} height={24} strokeWidth={1.5} style={{ color: '#666' }} />,
+    };
+    return iconos[tipo] || <IconShoppingBag width={24} height={24} strokeWidth={1.5} style={{ color: '#7A1E3A' }} />;
+  };
+
+  // Cargar notificaciones cuando se selecciona esa sección
+  useEffect(() => {
+    if (activeSide === "Notificaciones" && userId) {
+      cargarNotificaciones(false);
+    }
+  }, [activeSide, userId, notificacionesFilter]);
+
   const totalCarrito = carrito.reduce(
     (acc, item) => acc + Number(item.precio_libro || 0) * Number(item.cantidad || 1),
     0
@@ -642,7 +940,7 @@ export default function PostLogin() {
                   <div className="empty-state">
                     <p>Agrega libros a favoritos para recibir recomendaciones personalizadas</p>
                     <button className="btn btn-vinotinto btn-catalog" onClick={() => setActiveSide('Catálogo')} style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
-                      <IconBooks width={18} height={18} strokeWidth={2} style={{ color: 'white' }} />
+                      <IconBookOpen width={18} height={18} strokeWidth={2} style={{ color: 'white' }} />
                       Explorar catálogo
                     </button>
                   </div>
@@ -692,7 +990,7 @@ export default function PostLogin() {
 
                   <div style={{ marginTop: '16px', textAlign: 'center' }}>
                     <button className="btn btn-vinotinto btn-catalog" onClick={() => setActiveSide('Catálogo')} style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
-                      <IconBooks width={18} height={18} strokeWidth={2} style={{ color: 'white' }} />
+                      <IconBookOpen width={18} height={18} strokeWidth={2} style={{ color: 'white' }} />
                       Ver más libros
                     </button>
                   </div>
@@ -714,8 +1012,407 @@ export default function PostLogin() {
 
         {/* ── NOTIFICACIONES EN DASHBOARD (sin salto de página) ── */}
         {activeSide === "Notificaciones" && (
-          <Notificaciones />
+          <div className="pl-card" style={{ padding: "2.5rem 2rem", background: "linear-gradient(135deg, #faf8f6 0%, #f5f0eb 100%)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "2rem", background: "linear-gradient(135deg, #fff 0%, #faf8f6 100%)", border: "2px solid #e8e4df", borderRadius: "20px", padding: "24px 28px", boxShadow: "0 4px 16px rgba(0, 0, 0, 0.06)" }}>
+              <h2 style={{ margin: 0, display: "flex", alignItems: "center", gap: "12px", fontSize: "1.8rem", fontWeight: 800, color: "#7A1E3A", letterSpacing: "-0.5px" }}>
+                <div style={{
+                  width: "48px",
+                  height: "48px",
+                  borderRadius: "12px",
+                  background: "linear-gradient(135deg, #7A1E3A 0%, #9C2F4A 100%)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center"
+                }}>
+                  <IconPackage width={24} height={24} strokeWidth={2} style={{ color: 'white' }} />
+                </div>
+                Notificaciones
+              </h2>
+              {notificaciones.some((n) => !n.leida) && (
+                <button
+                  onClick={handleMarcarTodasLeidas}
+                  style={{
+                    background: "linear-gradient(135deg, #7A1E3A 0%, #5e1629 100%)",
+                    color: "white",
+                    border: "none",
+                    padding: "12px 24px",
+                    borderRadius: "12px",
+                    fontSize: "0.9rem",
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    boxShadow: "0 4px 12px rgba(122, 30, 58, 0.2)",
+                    transition: "all 0.3s ease"
+                  }}
+                  onMouseOver={(e) => {
+                    e.target.style.transform = "translateY(-2px)";
+                    e.target.style.boxShadow = "0 6px 16px rgba(122, 30, 58, 0.3)";
+                  }}
+                  onMouseOut={(e) => {
+                    e.target.style.transform = "translateY(0)";
+                    e.target.style.boxShadow = "0 4px 12px rgba(122, 30, 58, 0.2)";
+                  }}
+                >
+                  Marcar todas como leídas
+                </button>
+              )}
+            </div>
+
+            <div style={{ display: "flex", gap: "10px", marginBottom: "2rem" }}>
+              <button
+                onClick={() => setNotificacionesFilter("todas")}
+                style={{
+                  flex: 1,
+                  padding: "12px 24px",
+                  borderRadius: "30px",
+                  border: "2px solid #e0dbd4",
+                  background: notificacionesFilter === "todas" ? "linear-gradient(135deg, #7A1E3A 0%, #5e1629 100%)" : "white",
+                  color: notificacionesFilter === "todas" ? "white" : "#555",
+                  fontSize: "0.9rem",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  boxShadow: notificacionesFilter === "todas" ? "0 4px 12px rgba(122, 30, 58, 0.25)" : "0 2px 8px rgba(0, 0, 0, 0.05)",
+                  transition: "all 0.3s ease"
+                }}
+                onMouseOver={(e) => {
+                  if (notificacionesFilter !== "todas") {
+                    e.target.style.borderColor = "#7A1E3A";
+                    e.target.style.color = "#7A1E3A";
+                    e.target.style.transform = "translateY(-1px)";
+                    e.target.style.boxShadow = "0 4px 12px rgba(122, 30, 58, 0.15)";
+                  }
+                }}
+                onMouseOut={(e) => {
+                  if (notificacionesFilter !== "todas") {
+                    e.target.style.borderColor = "#e0dbd4";
+                    e.target.style.color = "#555";
+                    e.target.style.transform = "translateY(0)";
+                    e.target.style.boxShadow = "0 2px 8px rgba(0, 0, 0, 0.05)";
+                  }
+                }}
+              >
+                Todas
+              </button>
+              <button
+                onClick={() => setNotificacionesFilter("no_leidas")}
+                style={{
+                  flex: 1,
+                  padding: "12px 24px",
+                  borderRadius: "30px",
+                  border: "2px solid #e0dbd4",
+                  background: notificacionesFilter === "no_leidas" ? "linear-gradient(135deg, #7A1E3A 0%, #5e1629 100%)" : "white",
+                  color: notificacionesFilter === "no_leidas" ? "white" : "#555",
+                  fontSize: "0.9rem",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  boxShadow: notificacionesFilter === "no_leidas" ? "0 4px 12px rgba(122, 30, 58, 0.25)" : "0 2px 8px rgba(0, 0, 0, 0.05)",
+                  transition: "all 0.3s ease"
+                }}
+                onMouseOver={(e) => {
+                  if (notificacionesFilter !== "no_leidas") {
+                    e.target.style.borderColor = "#7A1E3A";
+                    e.target.style.color = "#7A1E3A";
+                    e.target.style.transform = "translateY(-1px)";
+                    e.target.style.boxShadow = "0 4px 12px rgba(122, 30, 58, 0.15)";
+                  }
+                }}
+                onMouseOut={(e) => {
+                  if (notificacionesFilter !== "no_leidas") {
+                    e.target.style.borderColor = "#e0dbd4";
+                    e.target.style.color = "#555";
+                    e.target.style.transform = "translateY(0)";
+                    e.target.style.boxShadow = "0 2px 8px rgba(0, 0, 0, 0.05)";
+                  }
+                }}
+              >
+                No leídas
+              </button>
+            </div>
+
+            <div style={{ maxHeight: "65vh", overflowY: "auto", paddingRight: "8px", scrollbarWidth: "none", msOverflowStyle: "none", WebkitScrollbar: "none" }} className="notificaciones-scroll-container">
+              {notificacionesLoading ? (
+                <div style={{ textAlign: "center", padding: "60px 20px", color: "#666" }}>
+                  <div style={{
+                    width: "48px",
+                    height: "48px",
+                    border: "3px solid #e0dbd4",
+                    borderTop: "3px solid #7A1E3A",
+                    borderRadius: "50%",
+                    animation: "spin 1s linear infinite",
+                    margin: "0 auto 16px"
+                  }} />
+                  <p style={{ fontSize: "0.95rem", fontWeight: 500 }}>Cargando notificaciones...</p>
+                </div>
+              ) : notificaciones.length === 0 ? (
+                <div style={{ textAlign: "center", padding: "80px 40px", color: "#888", background: "white", borderRadius: "20px", border: "2px dashed #e0dbd4", boxShadow: "0 4px 16px rgba(0, 0, 0, 0.05)" }}>
+                  <div style={{
+                    width: "80px",
+                    height: "80px",
+                    borderRadius: "50%",
+                    background: "linear-gradient(135deg, #faf8f6 0%, #f5f0eb 100%)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    margin: "0 auto 20px",
+                    border: "2px solid #e8e4df"
+                  }}>
+                    <IconPackage width={40} height={40} strokeWidth={1.5} style={{ color: '#ccc' }} />
+                  </div>
+                  <p style={{ fontSize: "1.1rem", fontWeight: 500, color: "#666" }}>
+                    {notificacionesFilter === "no_leidas"
+                      ? "No tienes notificaciones sin leer"
+                      : "No tienes notificaciones"}
+                  </p>
+                </div>
+              ) : (
+                notificaciones.map((notif) => (
+                  <div
+                    key={notif.id_notificacion}
+                    onClick={() => handleClickNotificacion(notif)}
+                    style={{
+                      padding: "24px",
+                      borderRadius: "16px",
+                      background: notif.leida ? "white" : "linear-gradient(135deg, #fff8f5 0%, #fff 100%)",
+                      border: notif.leida ? "1px solid #e8e4df" : "2px solid #e8e4df",
+                      marginBottom: "16px",
+                      cursor: "pointer",
+                      transition: "all 0.3s ease",
+                      display: "flex",
+                      gap: "18px",
+                      alignItems: "flex-start",
+                      boxShadow: "0 2px 12px rgba(0, 0, 0, 0.06)",
+                      position: "relative",
+                      borderLeft: notif.leida ? "5px solid transparent" : "5px solid #7A1E3A"
+                    }}
+                    onMouseOver={(e) => {
+                      e.target.style.transform = "translateY(-3px)";
+                      e.target.style.boxShadow = "0 8px 24px rgba(0, 0, 0, 0.1)";
+                      e.target.style.borderColor = "#d4a574";
+                    }}
+                    onMouseOut={(e) => {
+                      e.target.style.transform = "translateY(0)";
+                      e.target.style.boxShadow = "0 2px 12px rgba(0, 0, 0, 0.06)";
+                      e.target.style.borderColor = notif.leida ? "#e8e4df" : "#e8e4df";
+                    }}
+                  >
+                    <div style={{
+                      width: "56px",
+                      height: "56px",
+                      borderRadius: "16px",
+                      background: "linear-gradient(135deg, #faf8f6 0%, #f5f0eb 100%)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      flexShrink: 0,
+                      border: "2px solid #e8e4df",
+                      boxShadow: "0 4px 12px rgba(0, 0, 0, 0.08)",
+                      transition: "all 0.3s ease"
+                    }}
+                    onMouseOver={(e) => {
+                      e.target.style.transform = "scale(1.05)";
+                      e.target.style.boxShadow = "0 6px 16px rgba(0, 0, 0, 0.12)";
+                    }}
+                    onMouseOut={(e) => {
+                      e.target.style.transform = "scale(1)";
+                      e.target.style.boxShadow = "0 4px 12px rgba(0, 0, 0, 0.08)";
+                    }}>
+                      {getIconoTipo(notif.tipo)}
+                    </div>
+
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <h4 style={{
+                        margin: "0 0 8px 0",
+                        fontSize: "1.05rem",
+                        fontWeight: 700,
+                        color: "#2c2c2c",
+                        letterSpacing: "-0.3px"
+                      }}>
+                        {notif.titulo}
+                      </h4>
+                      <p style={{
+                        margin: "0 0 10px 0",
+                        fontSize: "0.95rem",
+                        color: "#555",
+                        lineHeight: "1.5"
+                      }}>
+                        {notif.descripcion}
+                      </p>
+                      <div style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "4px",
+                        fontSize: "0.85rem",
+                        color: "#999",
+                        fontWeight: 500
+                      }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <circle cx="12" cy="12" r="10"/>
+                      <polyline points="12 6 12 12 16 14"/>
+                    </svg>
+                    {new Date(notif.fecha_creacion).toLocaleString('es-CO', {
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </div>
+                </div>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px", alignItems: "flex-end" }}>
+                  {!notif.leida && (
+                    <div style={{
+                      width: "8px",
+                      height: "8px",
+                      borderRadius: "50%",
+                      background: "#7A1E3A",
+                      flexShrink: 0
+                    }} />
+                  )}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleEliminar(notif.id_notificacion);
+                    }}
+                    style={{
+                      background: "linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%)",
+                      color: "#dc2626",
+                      border: "2px solid #fecaca",
+                      padding: "8px",
+                      cursor: "pointer",
+                      transition: "all 0.3s ease",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      borderRadius: "10px",
+                      width: "38px",
+                      height: "38px"
+                    }}
+                    onMouseOver={(e) => {
+                      e.target.style.background = "linear-gradient(135deg, #dc2626 0%, #ef4444 100%)";
+                      e.target.style.color = "white";
+                      e.target.style.borderColor = "#dc2626";
+                      e.target.style.transform = "scale(1.1)";
+                    }}
+                    onMouseOut={(e) => {
+                      e.target.style.background = "linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%)";
+                      e.target.style.color = "#dc2626";
+                      e.target.style.borderColor = "#fecaca";
+                      e.target.style.transform = "scale(1)";
+                    }}
+                  >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Modal de confirmación para eliminar notificación */}
+        {mostrarModalEliminar && (
+          <div style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.6)",
+            backdropFilter: "blur(4px)",
+            zIndex: 3000,
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            padding: "20px",
+            animation: "fadeIn 0.2s ease-out"
+          }}>
+            <div style={{
+              background: "white",
+              borderRadius: "20px",
+              maxWidth: "420px",
+              width: "100%",
+              padding: "32px",
+              boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)",
+              animation: "slideUp 0.3s ease-out"
+            }}>
+              <div style={{ textAlign: "center", marginBottom: "24px" }}>
+                <div style={{
+                  width: "72px",
+                  height: "72px",
+                  borderRadius: "50%",
+                  background: "linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  margin: "0 auto 20px"
+                }}>
+                  <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                </div>
+                <h3 style={{ margin: "0 0 10px 0", fontSize: "1.5rem", fontWeight: 700, color: "#2c2c2c" }}>
+                  Eliminar notificación
+                </h3>
+                <p style={{ margin: 0, fontSize: "1rem", color: "#666", lineHeight: "1.6" }}>
+                  ¿Estás seguro de que deseas eliminar esta notificación? Esta acción no se puede deshacer.
+                </p>
+              </div>
+              <div style={{ display: "flex", gap: "12px" }}>
+                <button
+                  onClick={cancelarEliminar}
+                  style={{
+                    flex: 1,
+                    padding: "14px 20px",
+                    borderRadius: "10px",
+                    border: "2px solid #e0dbd4",
+                    background: "white",
+                    color: "#666",
+                    fontSize: "1rem",
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    transition: "all 0.2s"
+                  }}
+                  onMouseOver={(e) => {
+                    e.target.style.background = "#f5f5f5";
+                    e.target.style.borderColor = "#ccc";
+                  }}
+                  onMouseOut={(e) => {
+                    e.target.style.background = "white";
+                    e.target.style.borderColor = "#e0dbd4";
+                  }}
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={confirmarEliminar}
+                  style={{
+                    flex: 1,
+                    padding: "14px 20px",
+                    borderRadius: "10px",
+                    border: "none",
+                    background: "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)",
+                    color: "white",
+                    fontSize: "1rem",
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    boxShadow: "0 4px 12px rgba(239, 68, 68, 0.3)",
+                    transition: "all 0.2s"
+                  }}
+                  onMouseOver={(e) => {
+                    e.target.style.transform = "translateY(-2px)";
+                    e.target.style.boxShadow = "0 6px 16px rgba(239, 68, 68, 0.4)";
+                  }}
+                  onMouseOut={(e) => {
+                    e.target.style.transform = "translateY(0)";
+                    e.target.style.boxShadow = "0 4px 12px rgba(239, 68, 68, 0.3)";
+                  }}
+                >
+                  Eliminar
+                </button>
+              </div>
+            </div>
+          </div>
         )}
+      </div>
+    )}
 
         {/* ── CARRITO (FUSIONADO Y OPTIMIZADO) ── */}
         {activeSide === "Carrito" && (
@@ -1829,41 +2526,40 @@ export default function PostLogin() {
                           }}
                           className="btn btn-vinotinto"
                           style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            width: "auto",
+                            marginTop: 0,
                             padding: "10px 16px",
                             fontSize: "0.85rem",
                             fontWeight: 700,
-                            height: "40px",
-                            minWidth: "120px",
+                            minHeight: "40px",
+                            minWidth: "150px",
                             borderRadius: "8px",
-                            cursor: "pointer"
+                            cursor: "pointer",
+                            whiteSpace: "nowrap"
                           }}
                         >
                           Continuar Pago
                         </button>
                         <button
-                          onClick={async () => {
-                            if (confirm('¿Estás seguro de que deseas cancelar esta orden?')) {
-                              try {
-                                await cancelOrder(orden.id_orden);
-                                setOrdenes(ordenes.filter(o => o.id_orden !== orden.id_orden));
-                                notify('Orden cancelada exitosamente', 'success');
-                              } catch (err) {
-                                const msg = err.response?.data?.detail || 'No se pudo cancelar la orden';
-                                notify(msg, 'error');
-                              }
-                            }
-                          }}
+                          onClick={() => setOrdenACancelar(orden)}
+                          className="btn btn-rojo"
                           style={{
-                            background: "#fff5f7",
-                            border: "2px solid #e53935",
-                            color: "#e53935",
-                            borderRadius: "8px",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            width: "auto",
+                            marginTop: 0,
                             padding: "10px 16px",
-                            fontWeight: 700,
                             fontSize: "0.85rem",
+                            fontWeight: 700,
+                            minHeight: "40px",
+                            minWidth: "150px",
+                            borderRadius: "8px",
                             cursor: "pointer",
-                            height: "40px",
-                            minWidth: "120px"
+                            whiteSpace: "nowrap"
                           }}
                         >
                           Cancelar compra
@@ -1956,7 +2652,7 @@ export default function PostLogin() {
                     onMouseEnter={(e) => { e.target.style.background = "#f5eaed"; }}
                     onMouseLeave={(e) => { e.target.style.background = "none"; }}
                   >
-                    <IconBooks width={18} height={18} strokeWidth={2} style={{ color: '#7A1E3A' }} />
+                    <IconBookOpen width={18} height={18} strokeWidth={2} style={{ color: '#7A1E3A' }} />
                     Seguir comprando
                   </button>
                 </div>
@@ -2088,7 +2784,7 @@ export default function PostLogin() {
                 <div className="empty-state">
                   <p>No tienes libros en favoritos. ¡Agrega algunos desde el catálogo!</p>
                   <button className="btn btn-vinotinto btn-catalog" onClick={handleGoToCatalog} style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
-                    <IconBooks width={18} height={18} strokeWidth={2} style={{ color: 'white' }} />
+                    <IconBookOpen width={18} height={18} strokeWidth={2} style={{ color: 'white' }} />
                     Ir al catálogo
                   </button>
                 </div>
@@ -2293,7 +2989,7 @@ export default function PostLogin() {
             {/* Categorías Favoritas */}
             <div className="pl-card" style={{ padding: "2rem", marginBottom: 20 }}>
               <h3 style={{ margin: "0 0 0.5rem 0", color: "var(--vinotinto)", fontSize: "1.2rem", display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <IconBooks width={24} height={24} strokeWidth={2} style={{ color: '#7A1E3A' }} />
+                <IconBookOpen width={24} height={24} strokeWidth={2} style={{ color: '#7A1E3A' }} />
                 Categorías Favoritas
               </h3>
               <p style={{ color: "#666", fontSize: "0.9rem", marginBottom: "1rem" }}>Basado en tu historial de compras</p>
@@ -2440,173 +3136,173 @@ export default function PostLogin() {
                 </button>
               </div>
             </div>
-          </>
-        )}
 
-        {/* ── DIRECCIONES ── */}
-        {activeSide === "Direcciones" && (
-          <>
-            <div className="pl-card" style={{ padding: "2.5rem 2rem", marginBottom: 24 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                <IconLocation width={28} height={28} strokeWidth={2} style={{ color: '#7A1E3A' }} />
-                <h2 style={{ margin: 0 }}>Direcciones de Envío</h2>
-              </div>
-            </div>
+            {/* Dirección de envío */}
+            <div className="pl-card" style={{ padding: "2rem", marginTop: 20 }}>
+              <h3 style={{ margin: "0 0 1rem 0", color: "var(--vinotinto)", fontSize: "1.2rem", display: "flex", alignItems: "center", gap: "10px" }}>
+                <IconLocation width={24} height={24} strokeWidth={2} style={{ color: "#7A1E3A" }} />
+                Dirección de envío
+              </h3>
 
-            {mostrarFormDireccion ? (
-              <div className="pl-card" style={{ padding: "2rem", marginBottom: 20 }}>
-                <h3 style={{ margin: "0 0 1rem 0", color: "var(--vinotinto)", fontSize: "1.2rem" }}>Agregar Nueva Dirección</h3>
-                <div style={{ display: "flex", flexDirection: "column", gap: "16px", maxWidth: "500px" }}>
-                  <div>
-                    <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>Dirección</label>
-                    <input
-                      type="text"
-                      value={direccionForm.direccion}
-                      onChange={(e) => setDireccionForm({...direccionForm, direccion: e.target.value})}
-                      style={{
-                        width: "100%", padding: "10px 14px", borderRadius: "8px",
-                        border: "1px solid #ddd", fontSize: "0.95rem", fontFamily: "Montserrat, sans-serif"
-                      }}
-                    />
-                  </div>
-                  <div>
-                    <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>Ciudad</label>
-                    <input
-                      type="text"
-                      value={direccionForm.ciudad}
-                      onChange={(e) => setDireccionForm({...direccionForm, ciudad: e.target.value})}
-                      style={{
-                        width: "100%", padding: "10px 14px", borderRadius: "8px",
-                        border: "1px solid #ddd", fontSize: "0.95rem", fontFamily: "Montserrat, sans-serif"
-                      }}
-                    />
-                  </div>
-                  <div>
-                    <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>Departamento</label>
-                    <input
-                      type="text"
-                      value={direccionForm.departamento}
-                      onChange={(e) => setDireccionForm({...direccionForm, departamento: e.target.value})}
-                      style={{
-                        width: "100%", padding: "10px 14px", borderRadius: "8px",
-                        border: "1px solid #ddd", fontSize: "0.95rem", fontFamily: "Montserrat, sans-serif"
-                      }}
-                    />
-                  </div>
-                  <div>
-                    <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>Código Postal</label>
-                    <input
-                      type="text"
-                      value={direccionForm.codigo_postal}
-                      onChange={(e) => setDireccionForm({...direccionForm, codigo_postal: e.target.value})}
-                      style={{
-                        width: "100%", padding: "10px 14px", borderRadius: "8px",
-                        border: "1px solid #ddd", fontSize: "0.95rem", fontFamily: "Montserrat, sans-serif"
-                      }}
-                    />
-                  </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                    <input
-                      type="checkbox"
-                      checked={direccionForm.es_principal}
-                      onChange={(e) => setDireccionForm({...direccionForm, es_principal: e.target.checked})}
-                    />
-                    <label style={{ fontWeight: 600, color: "#444", margin: 0 }}>Marcar como dirección principal</label>
-                  </div>
-                  <div style={{ display: "flex", gap: "12px", marginTop: "8px" }}>
-                    <button
-                      style={{
-                        background: "var(--vinotinto)", color: "white", border: "none",
-                        padding: "12px 24px", borderRadius: "8px", fontWeight: 700,
-                        fontSize: "0.95rem", cursor: "pointer",
-                        fontFamily: "Montserrat, sans-serif"
-                      }}
-                      onClick={() => {
-                        notify("Dirección agregada (simulado)", "success");
-                        setMostrarFormDireccion(false);
-                        setDireccionForm({ direccion: '', ciudad: '', departamento: '', codigo_postal: '', es_principal: false });
-                      }}
-                    >
-                      Guardar Dirección
-                    </button>
-                    <button
-                      style={{
-                        background: "none", border: "1.5px solid var(--vinotinto)",
-                        color: "var(--vinotinto)", borderRadius: "8px", padding: "12px 24px",
-                        fontWeight: 700, fontSize: "0.95rem", cursor: "pointer",
-                        fontFamily: "Montserrat, sans-serif"
-                      }}
-                      onClick={() => {
-                        setMostrarFormDireccion(false);
-                        setDireccionForm({ direccion: '', ciudad: '', departamento: '', codigo_postal: '', es_principal: false });
-                      }}
-                    >
-                      Cancelar
-                    </button>
+              {mostrarFormDireccion ? (
+                <div style={{ marginTop: "8px" }}>
+                  <h4 style={{ margin: "0 0 1rem 0", color: "#444", fontSize: "1rem" }}>Agregar nueva dirección</h4>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "16px", maxWidth: "500px" }}>
+                    <div>
+                      <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>Dirección</label>
+                      <input
+                        type="text"
+                        value={direccionForm.direccion}
+                        onChange={(e) => setDireccionForm({ ...direccionForm, direccion: e.target.value })}
+                        style={{
+                          width: "100%", padding: "10px 14px", borderRadius: "8px",
+                          border: "1px solid #ddd", fontSize: "0.95rem", fontFamily: "Montserrat, sans-serif"
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>Ciudad</label>
+                      <input
+                        type="text"
+                        value={direccionForm.ciudad}
+                        onChange={(e) => setDireccionForm({ ...direccionForm, ciudad: e.target.value })}
+                        style={{
+                          width: "100%", padding: "10px 14px", borderRadius: "8px",
+                          border: "1px solid #ddd", fontSize: "0.95rem", fontFamily: "Montserrat, sans-serif"
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>Departamento</label>
+                      <input
+                        type="text"
+                        value={direccionForm.departamento}
+                        onChange={(e) => setDireccionForm({ ...direccionForm, departamento: e.target.value })}
+                        style={{
+                          width: "100%", padding: "10px 14px", borderRadius: "8px",
+                          border: "1px solid #ddd", fontSize: "0.95rem", fontFamily: "Montserrat, sans-serif"
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>Código postal</label>
+                      <input
+                        type="text"
+                        value={direccionForm.codigo_postal}
+                        onChange={(e) => setDireccionForm({ ...direccionForm, codigo_postal: e.target.value })}
+                        style={{
+                          width: "100%", padding: "10px 14px", borderRadius: "8px",
+                          border: "1px solid #ddd", fontSize: "0.95rem", fontFamily: "Montserrat, sans-serif"
+                        }}
+                      />
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      <input
+                        type="checkbox"
+                        checked={direccionForm.es_principal}
+                        onChange={(e) => setDireccionForm({ ...direccionForm, es_principal: e.target.checked })}
+                      />
+                      <label style={{ fontWeight: 600, color: "#444", margin: 0 }}>Marcar como dirección principal</label>
+                    </div>
+                    <div style={{ display: "flex", gap: "12px", marginTop: "8px" }}>
+                      <button
+                        style={{
+                          background: "var(--vinotinto)", color: "white", border: "none",
+                          padding: "12px 24px", borderRadius: "8px", fontWeight: 700,
+                          fontSize: "0.95rem", cursor: "pointer",
+                          fontFamily: "Montserrat, sans-serif"
+                        }}
+                        onClick={() => {
+                          notify("Dirección agregada (simulado)", "success");
+                          setMostrarFormDireccion(false);
+                          setDireccionForm({ direccion: "", ciudad: "", departamento: "", codigo_postal: "", es_principal: false });
+                        }}
+                      >
+                        Guardar dirección
+                      </button>
+                      <button
+                        style={{
+                          background: "none", border: "1.5px solid var(--vinotinto)",
+                          color: "var(--vinotinto)", borderRadius: "8px", padding: "12px 24px",
+                          fontWeight: 700, fontSize: "0.95rem", cursor: "pointer",
+                          fontFamily: "Montserrat, sans-serif"
+                        }}
+                        onClick={() => {
+                          setMostrarFormDireccion(false);
+                          setDireccionForm({ direccion: "", ciudad: "", departamento: "", codigo_postal: "", es_principal: false });
+                        }}
+                      >
+                        Cancelar
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ) : (
-              <button
-                style={{
-                  background: "var(--vinotinto)", color: "white", border: "none",
-                  padding: "12px 24px", borderRadius: "8px", fontWeight: 700,
-                  fontSize: "0.95rem", cursor: "pointer", marginBottom: 20,
-                  fontFamily: "Montserrat, sans-serif"
-                }}
-                onClick={() => setMostrarFormDireccion(true)}
-              >
-                + Agregar Nueva Dirección
-              </button>
-            )}
+              ) : (
+                <button
+                  style={{
+                    background: "var(--vinotinto)", color: "white", border: "none",
+                    padding: "12px 24px", borderRadius: "8px", fontWeight: 700,
+                    fontSize: "0.95rem", cursor: "pointer", marginBottom: 20,
+                    fontFamily: "Montserrat, sans-serif"
+                  }}
+                  onClick={() => setMostrarFormDireccion(true)}
+                >
+                  + Agregar dirección
+                </button>
+              )}
 
-            {direcciones.length === 0 ? (
-              <div className="pl-card" style={{ padding: "40px", textAlign: "center" }}>
-                <p style={{ fontWeight: 700, color: "#444", marginBottom: "6px" }}>No tienes direcciones guardadas</p>
-                <p style={{ fontSize: "0.85rem", color: "#888", marginBottom: "12px" }}>Agrega una dirección para envíos más rápidos</p>
-              </div>
-            ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-                {direcciones.map((dir) => (
-                  <div key={dir.id_direccion} className="pl-card" style={{ padding: "1.5rem", border: dir.es_principal ? "2px solid var(--vinotinto)" : "1px solid #e0dbd4" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                      <div>
-                        {dir.es_principal && <span style={{ background: "var(--vinotinto)", color: "white", padding: "4px 10px", borderRadius: "12px", fontSize: "0.75rem", fontWeight: 600, display: "inline-block", marginBottom: "8px" }}>Principal</span>}
-                        <p style={{ margin: "4px 0", fontWeight: 600 }}>{dir.direccion}</p>
-                        <p style={{ margin: "2px 0", color: "#666" }}>{dir.ciudad}{dir.departamento ? `, ${dir.departamento}` : ''}</p>
-                        {dir.codigo_postal && <p style={{ margin: "2px 0", color: "#888", fontSize: "0.85rem" }}>CP: {dir.codigo_postal}</p>}
-                      </div>
-                      <div style={{ display: "flex", gap: "8px" }}>
-                        {!dir.es_principal && (
+              {direcciones.length === 0 ? (
+                <div style={{ padding: "24px", textAlign: "center", background: "#faf8f6", borderRadius: "8px", border: "1px solid #e0dbd4" }}>
+                  <p style={{ fontWeight: 700, color: "#444", marginBottom: "6px" }}>No tienes direcciones guardadas</p>
+                  <p style={{ fontSize: "0.85rem", color: "#888", margin: 0 }}>Agrega una dirección para envíos más rápidos</p>
+                </div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                  {direcciones.map((dir) => (
+                    <div key={dir.id_direccion} className="pl-card" style={{ padding: "1.5rem", border: dir.es_principal ? "2px solid var(--vinotinto)" : "1px solid #e0dbd4" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                        <div>
+                          {dir.es_principal && (
+                            <span style={{ background: "var(--vinotinto)", color: "white", padding: "4px 10px", borderRadius: "12px", fontSize: "0.75rem", fontWeight: 600, display: "inline-block", marginBottom: "8px" }}>
+                              Principal
+                            </span>
+                          )}
+                          <p style={{ margin: "4px 0", fontWeight: 600 }}>{dir.direccion}</p>
+                          <p style={{ margin: "2px 0", color: "#666" }}>{dir.ciudad}{dir.departamento ? `, ${dir.departamento}` : ""}</p>
+                          {dir.codigo_postal && <p style={{ margin: "2px 0", color: "#888", fontSize: "0.85rem" }}>CP: {dir.codigo_postal}</p>}
+                        </div>
+                        <div style={{ display: "flex", gap: "8px" }}>
+                          {!dir.es_principal && (
+                            <button
+                              style={{
+                                background: "var(--vinotinto)", color: "white", border: "none",
+                                padding: "8px 16px", borderRadius: "6px", fontWeight: 600,
+                                fontSize: "0.85rem", cursor: "pointer",
+                                fontFamily: "Montserrat, sans-serif"
+                              }}
+                              onClick={() => notify("Dirección principal actualizada (simulado)", "success")}
+                            >
+                              Hacer principal
+                            </button>
+                          )}
                           <button
                             style={{
-                              background: "var(--vinotinto)", color: "white", border: "none",
+                              background: "#dc2626", color: "white", border: "none",
                               padding: "8px 16px", borderRadius: "6px", fontWeight: 600,
                               fontSize: "0.85rem", cursor: "pointer",
                               fontFamily: "Montserrat, sans-serif"
                             }}
-                            onClick={() => notify("Dirección principal actualizada (simulado)", "success")}
+                            onClick={() => notify("Dirección eliminada (simulado)", "success")}
                           >
-                            Hacer Principal
+                            Eliminar
                           </button>
-                        )}
-                        <button
-                          style={{
-                            background: "#dc2626", color: "white", border: "none",
-                            padding: "8px 16px", borderRadius: "6px", fontWeight: 600,
-                            fontSize: "0.85rem", cursor: "pointer",
-                            fontFamily: "Montserrat, sans-serif"
-                          }}
-                          onClick={() => notify("Dirección eliminada (simulado)", "success")}
-                        >
-                          Eliminar
-                        </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
+                  ))}
+                </div>
+              )}
+            </div>
           </>
         )}
 
@@ -2696,7 +3392,7 @@ export default function PostLogin() {
         )}
 
         {/* ── OTRAS SECCIONES ── */}
-        {!["Inicio", "Catálogo", "Carrito", "Mis Compras", "Favoritos", "Mi Perfil", "Direcciones", "Configuración"].includes(activeSide) && (
+        {!["Inicio", "Catálogo", "Carrito", "Mis Compras", "Favoritos", "Mi Perfil", "Configuración", "Notificaciones", "Mensajes"].includes(activeSide) && (
           <div className="welcome-card">
             <h1>{activeSide}</h1>
             <p>Esta sección estará disponible próximamente.</p>
@@ -2964,6 +3660,18 @@ export default function PostLogin() {
             scrollbar-width: none;
           }
         `}</style>
+
+        {ordenACancelar && (
+          <ModalCancelarOrden
+            orden={ordenACancelar}
+            onClose={() => setOrdenACancelar(null)}
+            onCancelado={(id) => {
+              setOrdenes(ordenes.filter(o => o.id_orden !== id));
+              setOrdenACancelar(null);
+              notify("Orden cancelada exitosamente", "success");
+            }}
+          />
+        )}
 
       </main>
     </div>
