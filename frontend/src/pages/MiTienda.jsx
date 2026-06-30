@@ -26,6 +26,51 @@ import {
 const formatPrecio = (valor) =>
   "$" + String(parseInt(valor)).replace(/\B(?=(\d{3})+(?!\d))/g, ".") + " COP";
 
+const resolveImageUrl = (value) => {
+  if (!value || typeof value !== "string") return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) return trimmed;
+  if (trimmed.startsWith("/")) return `${getApiBaseUrl()}${trimmed}`;
+  return `${getApiBaseUrl()}/${trimmed}`;
+};
+
+const resolveLibroCandidate = (candidate) => {
+  if (!candidate) return null;
+  if (Array.isArray(candidate)) {
+    for (const item of candidate) {
+      const resolved = resolveImageUrl(item);
+      if (resolved) return resolved;
+    }
+    return null;
+  }
+  if (typeof candidate === "string" && candidate.includes(",")) {
+    for (const part of candidate.split(",")) {
+      const resolved = resolveImageUrl(part);
+      if (resolved) return resolved;
+    }
+    return null;
+  }
+  return resolveImageUrl(candidate);
+};
+
+const getLibroImageUrl = (libro) => {
+  const candidates = [
+    libro?.imagen_url,
+    libro?.imagen_principal,
+    libro?.imagen_principal_url,
+    libro?.imagenes,
+    libro?.foto,
+  ];
+
+  for (const candidate of candidates) {
+    const resolved = resolveLibroCandidate(candidate);
+    if (resolved) return resolved;
+  }
+
+  return null;
+};
+
 const ESTADOS = [
   { value: "nuevo",             label: "Nuevo" },
   { value: "usado_buen_estado", label: "Usado — buen estado" },
@@ -328,7 +373,7 @@ export default function MiTienda() {
         if (!mounted || !res?.data) return;
         const fotoPerfil = res.data.foto_perfil;
         if (fotoPerfil) {
-          setUserPhotoUrl(fotoPerfil.startsWith("http") ? fotoPerfil : `${getApiBaseUrl()}${fotoPerfil}`);
+          setUserPhotoUrl(resolveImageUrl(fotoPerfil));
         }
         if (res.data.nombre_usuario) {
           setUserName(res.data.nombre_usuario);
@@ -486,6 +531,10 @@ export default function MiTienda() {
         const miTienda = r.data;
         if (miTienda && typeof miTienda === "object") {
           setTiendaInfo(miTienda);
+          const fotoTienda = miTienda.foto_tienda || miTienda.foto_perfil || miTienda.foto || null;
+          if (fotoTienda) {
+            setUserPhotoUrl(resolveImageUrl(fotoTienda));
+          }
           setTiendaForm({
             nombre_tienda: miTienda.nombre_tienda || "",
             direccion: miTienda.direccion || "",
@@ -677,27 +726,30 @@ export default function MiTienda() {
           </div>
         ) : (
           <div className="recent-books-list">
-            {libros.slice(0, 3).map((libro) => (
-              <div key={libro.id_libro} className="recent-book-item">
-                <div className="recent-book-left">
-                  <div className="recent-book-cover">
-                    {libro.imagenes?.[0] ? (
-                      <img src={`${getApiBaseUrl()}${libro.imagenes[0]}`} alt={libro.titulo} />
-                    ) : (
-                      <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}><IconBook width={24} height={24} strokeWidth={2} style={{ color: '#7A1E3A' }} /></span>
-                    )}
+            {libros.slice(0, 3).map((libro) => {
+              const libroImageUrl = getLibroImageUrl(libro);
+              return (
+                <div key={libro.id_libro} className="recent-book-item">
+                  <div className="recent-book-left">
+                    <div className="recent-book-cover">
+                      {libroImageUrl ? (
+                        <img src={libroImageUrl} alt={libro.titulo} />
+                      ) : (
+                        <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}><IconBook width={24} height={24} strokeWidth={2} style={{ color: '#7A1E3A' }} /></span>
+                      )}
+                    </div>
+                    <div>
+                      <strong>{libro.titulo}</strong>
+                      <p>{libro.autor_libro}</p>
+                    </div>
                   </div>
-                  <div>
-                    <strong>{libro.titulo}</strong>
-                    <p>{libro.autor_libro}</p>
+                  <div className="recent-book-meta">
+                    <span>{libro.nombre_categoria}</span>
+                    <strong>{formatPrecio(libro.precio_libro)}</strong>
                   </div>
                 </div>
-                <div className="recent-book-meta">
-                  <span>{libro.nombre_categoria}</span>
-                  <strong>{formatPrecio(libro.precio_libro)}</strong>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
@@ -760,25 +812,28 @@ export default function MiTienda() {
             <p style={{ fontSize: "0.85rem", color: "#888" }}>Cuando se registren ventas, aparecerán aquí los más populares</p>
           </div>
         )}
-        {!loadingTop && topVendidos.map((libro, i) => (
-          <div key={libro.id_libro} className="book-row">
-            <div className="top-rank">#{i + 1}</div>
-            <div className="book-cover-mini">
-              {libro.imagenes?.[0]
-                ? <img src={`${getApiBaseUrl()}${libro.imagenes[0]}`} alt={libro.titulo} />
-                : <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}><IconBook width={24} height={24} strokeWidth={2} style={{ color: '#7A1E3A' }} /></span>}
+        {!loadingTop && topVendidos.map((libro, i) => {
+          const libroImageUrl = getLibroImageUrl(libro);
+          return (
+            <div key={libro.id_libro} className="book-row">
+              <div className="top-rank">#{i + 1}</div>
+              <div className="book-cover-mini">
+                {libroImageUrl
+                  ? <img src={libroImageUrl} alt={libro.titulo} />
+                  : <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}><IconBook width={24} height={24} strokeWidth={2} style={{ color: '#7A1E3A' }} /></span>}
+              </div>
+              <div className="book-info" style={{ flex: 1 }}>
+                <h4>{libro.titulo}</h4>
+                <p>{libro.autor_libro}</p>
+              </div>
+              <BadgeEstado estado={libro.estado_libro} />
+              <div style={{ textAlign: "right", minWidth: "110px" }}>
+                <div className="book-price">{formatPrecio(libro.precio_libro)}</div>
+                <div style={{ fontSize: "0.78rem", color: "#888", marginTop: "2px" }}>{libro.unidades_vendidas} vendido(s)</div>
+              </div>
             </div>
-            <div className="book-info" style={{ flex: 1 }}>
-              <h4>{libro.titulo}</h4>
-              <p>{libro.autor_libro}</p>
-            </div>
-            <BadgeEstado estado={libro.estado_libro} />
-            <div style={{ textAlign: "right", minWidth: "110px" }}>
-              <div className="book-price">{formatPrecio(libro.precio_libro)}</div>
-              <div style={{ fontSize: "0.78rem", color: "#888", marginTop: "2px" }}>{libro.unidades_vendidas} vendido(s)</div>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </>
   );
@@ -810,34 +865,37 @@ export default function MiTienda() {
             </button>
           </div>
         )}
-        {!loadingLibros && libros.map((libro) => (
-          <div key={libro.id_libro} className="book-row">
-            <div className="book-cover-mini">
-              {libro.imagenes?.[0]
-                ? <img src={`${getApiBaseUrl()}${libro.imagenes[0]}`} alt={libro.titulo} />
-                : <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}><IconBook width={24} height={24} strokeWidth={2} style={{ color: '#7A1E3A' }} /></span>}
+        {!loadingLibros && libros.map((libro) => {
+          const libroImageUrl = getLibroImageUrl(libro);
+          return (
+            <div key={libro.id_libro} className="book-row">
+              <div className="book-cover-mini">
+                {libroImageUrl
+                  ? <img src={libroImageUrl} alt={libro.titulo} />
+                  : <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}><IconBook width={24} height={24} strokeWidth={2} style={{ color: '#7A1E3A' }} /></span>}
+              </div>
+              <div className="book-info" style={{ flex: 1 }}>
+                <h4>{libro.titulo}</h4>
+                <p>{libro.autor_libro} · {libro.nombre_categoria}</p>
+              </div>
+              <BadgeEstado estado={libro.estado_libro} />
+              <div className="book-price">{formatPrecio(libro.precio_libro)}</div>
+              <div style={{
+                fontSize: "0.85rem", minWidth: "70px",
+                color: libro.stock === 0 ? "#b91c1c" : libro.stock <= 3 ? "#92400e" : "#777",
+                fontWeight: libro.stock <= 3 ? 700 : 400,
+              }}>
+                Stock: <strong>{libro.stock}</strong>
+                {libro.stock === 0 && <span style={{ marginLeft: "4px", display: 'flex', alignItems: 'center' }}><IconLock width={16} height={16} strokeWidth={2} style={{ color: '#b91c1c' }} /></span>}
+              </div>
+              <div className="book-actions">
+                <button className="btn-accion btn-stock" onClick={() => setModalStock(libro)}>Stock</button>
+                <button className="btn-accion btn-editar" onClick={() => setModalEditar(libro)}>Editar</button>
+                <button className="btn-accion btn-eliminar-sm" onClick={() => setModalEliminar(libro)}>Eliminar</button>
+              </div>
             </div>
-            <div className="book-info" style={{ flex: 1 }}>
-              <h4>{libro.titulo}</h4>
-              <p>{libro.autor_libro} · {libro.nombre_categoria}</p>
-            </div>
-            <BadgeEstado estado={libro.estado_libro} />
-            <div className="book-price">{formatPrecio(libro.precio_libro)}</div>
-            <div style={{
-              fontSize: "0.85rem", minWidth: "70px",
-              color: libro.stock === 0 ? "#b91c1c" : libro.stock <= 3 ? "#92400e" : "#777",
-              fontWeight: libro.stock <= 3 ? 700 : 400,
-            }}>
-              Stock: <strong>{libro.stock}</strong>
-              {libro.stock === 0 && <span style={{ marginLeft: "4px", display: 'flex', alignItems: 'center' }}><IconLock width={16} height={16} strokeWidth={2} style={{ color: '#b91c1c' }} /></span>}
-            </div>
-            <div className="book-actions">
-              <button className="btn-accion btn-stock" onClick={() => setModalStock(libro)}>Stock</button>
-              <button className="btn-accion btn-editar" onClick={() => setModalEditar(libro)}>Editar</button>
-              <button className="btn-accion btn-eliminar-sm" onClick={() => setModalEliminar(libro)}>Eliminar</button>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </>
   );
