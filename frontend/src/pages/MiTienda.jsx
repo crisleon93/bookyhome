@@ -9,7 +9,7 @@ import Chat from './Chat';
 import Notificaciones from './Notificaciones';
 import {
   IconBook,
-  IconBooks,
+  IconBookOpen,
   IconChartBar,
   IconStar,
   IconSettings,
@@ -647,7 +647,7 @@ export default function MiTienda() {
         ) : libros.length === 0 ? (
           <div className="empty-state" style={{ padding: "30px 20px" }}>
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: "10px" }}>
-              <IconBooks width={48} height={48} strokeWidth={2} style={{ color: '#7A1E3A' }} />
+              <IconBookOpen width={48} height={48} strokeWidth={2} style={{ color: '#7A1E3A' }} />
             </div>
             <p style={{ fontWeight: 700, color: "#444", marginBottom: "6px" }}>No hay libros publicados aún</p>
             <p style={{ fontSize: "0.85rem", color: "#888" }}>Publica tu primer libro para verlo aquí.</p>
@@ -779,7 +779,7 @@ export default function MiTienda() {
         {!loadingLibros && libros.length === 0 && (
           <div className="empty-state">
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: "12px" }}>
-              <IconBooks width={48} height={48} strokeWidth={2} style={{ color: '#7A1E3A' }} />
+              <IconBookOpen width={48} height={48} strokeWidth={2} style={{ color: '#7A1E3A' }} />
             </div>
             <p style={{ fontWeight: 700, color: "#444", marginBottom: "8px" }}>No tienes libros publicados</p>
             <button className="btn btn-vinotinto btn-header" onClick={() => navigate("/vendedor/publicar")}>

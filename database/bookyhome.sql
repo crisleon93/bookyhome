@@ -55,6 +55,11 @@ CREATE TABLE usuarios (
     correo_usuario VARCHAR(100) UNIQUE NOT NULL,
     contrasena_usuario VARCHAR(255) NOT NULL,
     rol VARCHAR(50) NOT NULL,
+    telefono VARCHAR(50),
+    estado_usuario VARCHAR(50) DEFAULT 'Activo',
+    email_verificado BOOLEAN DEFAULT FALSE,
+    token_verificacion VARCHAR(255),
+    fecha_verificacion DATE,
     fecha_registro DATE
 );
 

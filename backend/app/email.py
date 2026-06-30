@@ -47,6 +47,35 @@ async def enviar_email_recuperacion(email: str, token: str):
     await fm.send_message(mensaje)
 
 
+async def enviar_email_confirmacion_registro(email: str, token: str):
+    frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173").rstrip("/")
+    enlace = f"{frontend_url}/verify-email?token={token}"
+
+    mensaje = MessageSchema(
+        subject="Confirma tu correo electrónico — BookyHome",
+        recipients=[email],
+        body=f"""
+        <html>
+        <body style="font-family: Montserrat, sans-serif; padding: 2rem; color: #2A2A2A;">
+            <div style="max-width: 500px; margin: 0 auto; background: #fff; border-radius: 12px; padding: 2rem; box-shadow: 0 4px 20px rgba(0,0,0,0.08);">
+                <h2 style="color: #7A1E3A;">BookyHome</h2>
+                <p>¡Gracias por registrarte en BookyHome!</p>
+                <p>Para completar tu registro y evitar spam, por favor confirma tu correo electrónico haciendo clic en el botón:</p>
+                <a href="{enlace}" style="display: inline-block; background: #7A1E3A; color: white; padding: 0.85rem 2rem; border-radius: 6px; text-decoration: none; font-weight: 700; margin: 1rem 0;">
+                    Confirmar correo
+                </a>
+                <p style="color: #888; font-size: 0.85rem;">Este enlace expira en 24 horas. Si no creaste esta cuenta, ignora este email.</p>
+            </div>
+        </body>
+        </html>
+        """,
+        subtype="html"
+    )
+
+    fm = FastMail(conf)
+    await fm.send_message(mensaje)
+
+
 async def enviar_email_confirmacion(email: str, orden: dict):
     items_html = "".join([
         f"""
@@ -96,6 +125,37 @@ async def enviar_email_confirmacion(email: str, orden: dict):
                 </div>
                 <p style="color: #888; font-size: 0.8rem; margin-top: 24px; border-top: 1px solid #f0ece8; padding-top: 16px;">
                     Si tienes alguna duda sobre tu pedido, contáctanos. Este correo es generado automáticamente, por favor no respondas a este mensaje.
+                </p>
+            </div>
+        </body>
+        </html>
+        """,
+        subtype="html"
+    )
+
+    fm = FastMail(conf)
+    await fm.send_message(mensaje)
+
+
+async def enviar_email_agradecimiento_confirmacion(email: str):
+    frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173").rstrip("/")
+    login_url = f"{frontend_url}/login"
+
+    mensaje = MessageSchema(
+        subject="¡Correo confirmado! — BookyHome",
+        recipients=[email],
+        body=f"""
+        <html>
+        <body style="font-family: Montserrat, sans-serif; padding: 2rem; color: #2A2A2A;">
+            <div style="max-width: 500px; margin: 0 auto; background: #fff; border-radius: 12px; padding: 2rem; box-shadow: 0 4px 20px rgba(0,0,0,0.08);">
+                <h2 style="color: #7A1E3A;">BookyHome</h2>
+                <h3 style="margin: 0 0 8px;">¡Gracias por confirmar tu correo! 🎉</h3>
+                <p>Tu cuenta ha sido verificada exitosamente. Ahora puedes iniciar sesión y comenzar a disfrutar de BookyHome.</p>
+                <a href="{login_url}" style="display: inline-block; background: #7A1E3A; color: white; padding: 0.85rem 2rem; border-radius: 6px; text-decoration: none; font-weight: 700; margin: 1rem 0;">
+                    Iniciar sesión
+                </a>
+                <p style="color: #888; font-size: 0.85rem; margin-top: 24px;">
+                    Si tienes alguna pregunta, no dudes en contactarnos. Este correo es generado automáticamente, por favor no respondas a este mensaje.
                 </p>
             </div>
         </body>

@@ -1,19 +1,18 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { 
-  IconStoreAlt as IconHome, 
-  IconBook, 
-  IconFavoritesAlt as IconFavorites, 
-  IconCartAlt as IconCart, 
-  IconPackage, 
+import {
+  IconStoreAlt as IconHome,
+  IconBookOpen,
+  IconFavoritesAlt as IconFavorites,
+  IconCartAlt as IconCart,
+  IconShoppingBag,
   IconUser,
   IconSettings,
   IconChevronLeft,
   IconMenu,
   IconLogOut,
-  IconMapPin,
   IconMail,
-  IconPhone
+  IconBell
 } from "./Icons";
 import { notificacionesService } from '../services/notificaciones';
 import { chatService } from '../services/chat';
@@ -23,12 +22,11 @@ const WHITE = '#FFFFFF';
 
 const ICONS = {
   "Inicio": <IconHome width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
-  "Catálogo": <IconBook width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
+  "Catálogo": <IconBookOpen width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
   "Favoritos": <IconFavorites width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
   "Carrito": <IconCart width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
-  "Mis Compras": <IconPackage width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
-  "Direcciones": <IconMapPin width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
-  "Notificaciones": <IconPhone className="" width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
+  "Mis Compras": <IconShoppingBag width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
+  "Notificaciones": <IconBell className="" width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
   "Mensajes": <IconMail className="" width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
   "Mi Perfil": <IconUser width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
   "Configuración": <IconSettings width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
@@ -40,7 +38,6 @@ const MENU_LINKS = [
   { name: "Favoritos", label: "Favoritos" },
   { name: "Carrito", label: "Carrito" },
   { name: "Mis Compras", label: "Mis compras" },
-  { name: "Direcciones", label: "Direcciones" },
   { name: "Notificaciones", label: "Notificaciones" },
   { name: "Mensajes", label: "Mensajes" },
   { name: "Mi Perfil", label: "Perfil" },

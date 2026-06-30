@@ -2,16 +2,16 @@ import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import logo from '../assets/logo.png';
 import logo2 from '../assets/logo2.png';
-import { 
-  IconSearch, 
-  IconUser, 
-  IconUserPlus, 
-  IconLocationTopBar as IconLocation, 
-  IconClose, 
-  IconArrow, 
-  IconBooks, 
-  IconFavorites, 
-  IconCart, 
+import {
+  IconSearch,
+  IconUser,
+  IconUserPlus,
+  IconLocationTopBar as IconLocation,
+  IconClose,
+  IconArrow,
+  IconBookOpen,
+  IconFavorites,
+  IconCart,
   IconMenu,
   IconMail,
   IconLock,

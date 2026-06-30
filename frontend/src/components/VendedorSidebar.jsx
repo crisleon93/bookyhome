@@ -2,14 +2,14 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   IconStoreAlt as IconHome,
-  IconBook,
+  IconBookOpen,
   IconPlus,
   IconCartAlt as IconCart,
-  IconPackage,
+  IconShoppingBag,
   IconUser,
   IconSettings,
   IconMail,
-  IconPhone,
+  IconBell,
   IconTag,
   IconChevronLeft,
   IconMenu,
@@ -34,12 +34,12 @@ const MENU_LINKS = [
 
 const ICONS = {
   Inicio: <IconHome width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
-  'Mis Libros': <IconBook width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
+  'Mis Libros': <IconBookOpen width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
   'Publicar Libro': <IconPlus width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
   Promociones: <IconTag width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
   Ventas: <IconCart width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
-  Pedidos: <IconPackage width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
-  Notificaciones: <IconPhone className="" width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
+  Pedidos: <IconShoppingBag width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
+  Notificaciones: <IconBell className="" width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
   Mensajes: <IconMail className="" width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
   Perfil: <IconUser width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
   Configuración: <IconSettings width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,

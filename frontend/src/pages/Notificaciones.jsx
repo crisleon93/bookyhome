@@ -3,6 +3,16 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getToken } from "../hooks/useAuth";
 import { notificacionesService } from "../services/notificaciones";
+import { getOrdenes } from "../services/api";
+import {
+  IconMessage,
+  IconStar,
+  IconGift,
+  IconShoppingBag,
+  IconTruck,
+  IconCreditCard,
+  IconInfo
+} from "../components/Icons";
 import "../styles/Notificaciones.css";
 
 export default function Notificaciones({ embedded = false, onOpenReference = null }) {
@@ -12,59 +22,171 @@ export default function Notificaciones({ embedded = false, onOpenReference = nul
   const [notificaciones, setNotificaciones] = useState([]);
   const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState("todas"); // todas, no_leidas
-  const [error, setError] = useState(null);
+  const [ordenes, setOrdenes] = useState([]);
+  const [notificacionesLeidasAutomaticas, setNotificacionesLeidasAutomaticas] = useState(new Set());
 
   // ============= CARGAR NOTIFICACIONES =============
   useEffect(() => {
     if (!token) {
-      navigate("/login");
+      if (!embedded) navigate("/login");
       return;
     }
-    cargarNotificaciones();
-    const interval = setInterval(cargarNotificaciones, 5000);
+    cargarNotificaciones(false);
+    cargarOrdenes();
+    const interval = setInterval(() => cargarNotificaciones(true), 5000);
     return () => clearInterval(interval);
-  }, [token, filter]);
+  }, [token, embedded]);
 
-  const cargarNotificaciones = async () => {
-    try {
-      setLoading(true);
-      const soloNoLeidas = filter === "no_leidas";
-      const data = await notificacionesService.obtener(soloNoLeidas, 50, 0);
-      setNotificaciones(data.notificaciones || []);
-    } catch (err) {
-      console.error("Error:", err);
-      setError("Error cargando notificaciones");
-    } finally {
-      setLoading(false);
+  // Recargar cuando cambia el filtro
+  useEffect(() => {
+    if (ordenes.length > 0) {
+      cargarNotificaciones(false);
     }
+  }, [filter]);
+
+  const cargarOrdenes = async () => {
+    try {
+      const res = await getOrdenes();
+      setOrdenes(res.data || []);
+    } catch (err) {
+      console.error("Error cargando órdenes:", err);
+    }
+  };
+
+  const cargarNotificaciones = async (silent = false) => {
+    try {
+      if (!silent) setLoading(true);
+      // Siempre cargar todas las notificaciones de la API, filtrar localmente
+      console.log("Cargando notificaciones de la API...");
+      const data = await notificacionesService.obtener(false, 50, 0);
+      console.log("Respuesta de API:", data);
+      const notificacionesAPI = data.notificaciones || [];
+      console.log("Notificaciones de API:", notificacionesAPI);
+      if (notificacionesAPI.length > 0) {
+        console.log("Detalle de primera notificación API:", notificacionesAPI[0]);
+      }
+      
+      // Generar notificaciones automáticas basadas en órdenes (siempre no leídas inicialmente)
+      const notificacionesOrdenes = generarNotificacionesOrdenes();
+      console.log("Notificaciones automáticas:", notificacionesOrdenes);
+      
+      // Combinar notificaciones
+      const todasNotificaciones = [...notificacionesOrdenes, ...notificacionesAPI];
+      console.log("Todas las notificaciones combinadas:", todasNotificaciones);
+      
+      // Filtrar localmente según el filtro seleccionado
+      if (filter === "no_leidas") {
+        setNotificaciones(todasNotificaciones.filter(n => !n.leida));
+      } else {
+        // En "Todas", mostrar todas sin importar estado
+        setNotificaciones(todasNotificaciones);
+      }
+    } catch (err) {
+      console.error("Error cargando notificaciones:", err);
+      console.error("Detalle del error:", err.response?.data || err.message);
+      // En caso de error, al menos mostrar las notificaciones de órdenes
+      const notificacionesOrdenes = generarNotificacionesOrdenes();
+      if (filter === "no_leidas") {
+        setNotificaciones(notificacionesOrdenes.filter(n => !n.leida));
+      } else {
+        setNotificaciones(notificacionesOrdenes);
+      }
+    } finally {
+      if (!silent) setLoading(false);
+    }
+  };
+
+  const generarNotificacionesOrdenes = () => {
+    const notificacionesGeneradas = [];
+    console.log("Generando notificaciones automáticas. Set de leídas:", notificacionesLeidasAutomaticas);
+    
+    ordenes.forEach((orden) => {
+      if (orden.estado === 'pendiente') {
+        const idNotif = `orden-pendiente-${orden.id_orden}`;
+        const estaLeida = notificacionesLeidasAutomaticas.has(idNotif);
+        console.log(`Orden ${orden.id_orden} pendiente - ID: ${idNotif}, Leída: ${estaLeida}`);
+        notificacionesGeneradas.push({
+          id_notificacion: idNotif,
+          tipo: 'pago',
+          titulo: 'Pago Pendiente',
+          descripcion: `Tienes un pago pendiente de ${Number(orden.total).toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 })} para la orden #${orden.id_orden}`,
+          fecha_creacion: orden.fecha || new Date().toISOString(),
+          leida: estaLeida, // Respetar estado de lectura
+          referencia_id: orden.id_orden,
+          es_automatica: true
+        });
+      } else if (orden.estado === 'completada' || orden.estado === 'pagada' || orden.estado === 'pagado') {
+        const idNotif = `orden-completada-${orden.id_orden}`;
+        const estaLeida = notificacionesLeidasAutomaticas.has(idNotif);
+        console.log(`Orden ${orden.id_orden} completada - ID: ${idNotif}, Leída: ${estaLeida}`);
+        notificacionesGeneradas.push({
+          id_notificacion: idNotif,
+          tipo: 'pedido',
+          titulo: 'Compra Realizada',
+          descripcion: `Tu compra #${orden.id_orden} ha sido completada exitosamente por ${Number(orden.total).toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 })}`,
+          fecha_creacion: orden.fecha || new Date().toISOString(),
+          leida: estaLeida, // Respetar estado de lectura
+          referencia_id: orden.id_orden,
+          es_automatica: true
+        });
+      }
+    });
+    
+    console.log("Notificaciones automáticas generadas:", notificacionesGeneradas);
+    return notificacionesGeneradas;
   };
 
   // ============= ACCIONES =============
   const handleMarcarLeida = async (id_notificacion) => {
     try {
-      await notificacionesService.marcarLeida(id_notificacion);
-      await cargarNotificaciones();
+      const notif = notificaciones.find(n => n.id_notificacion === id_notificacion);
+      if (notif?.es_automatica) {
+        // Para notificaciones automáticas, agregar al Set y actualizar estado local
+        setNotificacionesLeidasAutomaticas(prev => new Set([...prev, id_notificacion]));
+        setNotificaciones(prev => prev.map(n => 
+          n.id_notificacion === id_notificacion ? { ...n, leida: true } : n
+        ));
+      } else {
+        await notificacionesService.marcarLeida(id_notificacion);
+        await cargarNotificaciones(true);
+      }
     } catch (err) {
-      setError("Error marcando como leída");
+      console.error("Error marcando como leída:", err);
     }
   };
 
   const handleMarcarTodasLeidas = async () => {
     try {
+      // Marcar automáticas localmente
+      const automaticasIds = notificaciones.filter(n => n.es_automatica).map(n => n.id_notificacion);
+      setNotificacionesLeidasAutomaticas(prev => new Set([...prev, ...automaticasIds]));
+      setNotificaciones(prev => prev.map(n => ({ ...n, leida: true })));
+      // Marcar las de la API
       await notificacionesService.marcarTodasLeidas();
-      await cargarNotificaciones();
+      await cargarNotificaciones(true);
     } catch (err) {
-      setError("Error marcando todas como leídas");
+      console.error("Error marcando todas como leídas:", err);
     }
   };
 
   const handleEliminar = async (id_notificacion) => {
     if (confirm("¿Eliminar notificación?")) {
       try {
-        await notificacionesService.eliminar(id_notificacion);
-        await cargarNotificaciones();
+        const notif = notificaciones.find(n => n.id_notificacion === id_notificacion);
+        if (notif?.es_automatica) {
+          // Para notificaciones automáticas, eliminar del Set y localmente
+          setNotificacionesLeidasAutomaticas(prev => {
+            const newSet = new Set(prev);
+            newSet.delete(id_notificacion);
+            return newSet;
+          });
+          setNotificaciones(prev => prev.filter(n => n.id_notificacion !== id_notificacion));
+        } else {
+          await notificacionesService.eliminar(id_notificacion);
+          await cargarNotificaciones(true);
+        }
       } catch (err) {
-        setError("Error eliminando notificación");
+        console.error("Error eliminando notificación:", err);
       }
     }
   };
@@ -75,23 +197,35 @@ export default function Notificaciones({ embedded = false, onOpenReference = nul
     if (onOpenReference) {
       onOpenReference(notif);
     } else {
-      switch (notif.tipo) {
-        case "mensaje":
-          navigate(`/chat/${notif.referencia_id}`);
-          break;
-        case "resena":
-          navigate('/catalogo');
-          break;
-        case "oferta":
-          navigate('/catalogo');
-          break;
-        case "pedido":
-        case "entrega":
-        case "pago":
-          navigate("/perfil");
-          break;
-        default:
-          break;
+      // Para notificaciones automáticas de órdenes
+      if (notif.es_automatica) {
+        if (notif.tipo === 'pago') {
+          // Navegar a Carrito para pagos pendientes
+          navigate('/post-login?seccion=Carrito');
+        } else if (notif.tipo === 'pedido') {
+          // Navegar a Mis Compras para compras completadas
+          navigate('/post-login?seccion=Mis Compras');
+        }
+      } else {
+        // Para notificaciones regulares, navegar dentro del dashboard
+        switch (notif.tipo) {
+          case "mensaje":
+            navigate('/post-login?seccion=Mensajes');
+            break;
+          case "resena":
+            navigate('/post-login?seccion=Catálogo');
+            break;
+          case "oferta":
+            navigate('/post-login?seccion=Catálogo');
+            break;
+          case "pedido":
+          case "entrega":
+          case "pago":
+            navigate('/post-login?seccion=Mis Compras');
+            break;
+          default:
+            break;
+        }
       }
     }
     handleMarcarLeida(notif.id_notificacion);
@@ -100,23 +234,23 @@ export default function Notificaciones({ embedded = false, onOpenReference = nul
   // ============= RENDERIZAR ICONO =============
   const getIconoTipo = (tipo) => {
     const iconos = {
-      mensaje: "💬",
-      resena: "⭐",
-      oferta: "🎉",
-      pedido: "📦",
-      entrega: "🚚",
-      pago: "💳",
-      sistema: "ℹ️",
+      mensaje: <IconMessage width={24} height={24} strokeWidth={1.5} style={{ color: '#7A1E3A' }} />,
+      resena: <IconStar width={24} height={24} strokeWidth={1.5} style={{ color: '#FFA500' }} />,
+      oferta: <IconGift width={24} height={24} strokeWidth={1.5} style={{ color: '#7A1E3A' }} />,
+      pedido: <IconShoppingBag width={24} height={24} strokeWidth={1.5} style={{ color: '#7A1E3A' }} />,
+      entrega: <IconTruck width={24} height={24} strokeWidth={1.5} style={{ color: '#7A1E3A' }} />,
+      pago: <IconCreditCard width={24} height={24} strokeWidth={1.5} style={{ color: '#7A1E3A' }} />,
+      sistema: <IconInfo width={24} height={24} strokeWidth={1.5} style={{ color: '#666' }} />,
     };
-    return iconos[tipo] || "🔔";
+    return iconos[tipo] || <IconShoppingBag width={24} height={24} strokeWidth={1.5} style={{ color: '#7A1E3A' }} />;
   };
 
   // ============= UI =============
   return (
-    <div className="notificaciones-container">
+    <div className={`notificaciones-container${embedded ? " notificaciones-container--embedded" : ""}`}>
       <div className="notificaciones-wrapper">
         {/* HEADER */}
-        <div className="notif-header">
+        <div className={`notif-header${embedded ? " notif-header--embedded" : ""}`}>
           <h1>Notificaciones</h1>
           {notificaciones.some((n) => !n.leida) && (
             <button
@@ -143,9 +277,6 @@ export default function Notificaciones({ embedded = false, onOpenReference = nul
             No leídas
           </button>
         </div>
-
-        {/* ERROR */}
-        {error && <div className="error-message">{error}</div>}
 
         {/* LISTA */}
         <div className="notif-lista">

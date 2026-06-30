@@ -1,9 +1,11 @@
 from fastapi import APIRouter, HTTPException
 from app.schemas import UsuarioRegistro, UsuarioLogin, Token
-from app.models.usuarios import crear_usuario, login_usuario, obtener_todos_usuarios, bloquear_usuario
+from app.models.usuarios import crear_usuario, login_usuario, obtener_todos_usuarios, bloquear_usuario, verificar_email_usuario
 from app.models.tiendas import obtener_tienda_por_usuario
 from app.auth import create_token
+from app.email import enviar_email_confirmacion_registro
 from pydantic import BaseModel
+import secrets
 
 router = APIRouter()
 
@@ -11,9 +13,12 @@ router = APIRouter()
 # Registro e inicio de sesión
 # ========================
 @router.post("/register")
-def register(data: UsuarioRegistro):
-    """Registra un nuevo usuario y devuelve un mensaje de éxito o error."""
-    resultado = crear_usuario(data.nombre, data.email, data.password, data.telefono, data.rol)
+async def register(data: UsuarioRegistro):
+    """Registra un nuevo usuario y envía un email de confirmación."""
+    # Generar token de verificación único
+    token_verificacion = secrets.token_urlsafe(32)
+    
+    resultado = crear_usuario(data.nombre, data.email, data.password, data.telefono, data.rol, token_verificacion)
 
     if not resultado["ok"]:
         if "Duplicate" in str(resultado.get("error", "")):
@@ -22,7 +27,15 @@ def register(data: UsuarioRegistro):
         print(f"❌ Error interno en modelo crear_usuario: {resultado.get('error')}", flush=True)
         raise HTTPException(status_code=500, detail="Error interno al crear la cuenta en la base de datos")
 
-    return {"mensaje": "Cuenta creada exitosamente"}
+    # Enviar email de confirmación
+    try:
+        await enviar_email_confirmacion_registro(data.email, token_verificacion)
+        print(f"✅ Correo de confirmación enviado a {data.email}", flush=True)
+    except Exception as exc:
+        print(f"❌ Error enviando correo de confirmación a {data.email}: {exc}", flush=True)
+        # No fallamos el registro si el email no se envía, pero lo registramos
+
+    return {"mensaje": "Cuenta creada exitosamente. Por favor verifica tu correo electrónico para completar el registro."}
 
 
 @router.post("/login", response_model=Token)
