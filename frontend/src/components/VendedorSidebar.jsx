@@ -52,12 +52,12 @@ function SidebarIcon(props) {
   );
 }
 
-export default function VendedorSidebar({ userName = 'Vendedor', profileImage = null, activeSide = 'Inicio', setActiveSide, handleLogout }) {
+export default function VendedorSidebar({ userName = 'Vendedor', profileImage = null, userPhotoUrl = null, activeSide = 'Inicio', setActiveSide, handleLogout }) {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [noLeidosNotif, setNoLeidosNotif] = useState(0);
   const [noLeidosMensajes, setNoLeidosMensajes] = useState(0);
-  const avatarSrc = profileImage || null;
+  const avatarSrc = profileImage || userPhotoUrl || null;
   const avatarAlt = `${userName || 'Vendedor'} avatar`;
 
   // Cargar contadores de notificaciones y mensajes

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { getApiBaseUrl } from '../services/api';
 
 const IMAGENES_CATEGORIA = {
   'Fantasía':    'https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=400&q=80',
@@ -16,6 +17,35 @@ const IMAGENES_CATEGORIA = {
   'Comedia':     'https://images.unsplash.com/photo-1516321497487-e288fb19713f?w=400&q=80',
 };
 const IMG_DEFAULT = 'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=400&q=80';
+
+// Resolver URLs relativas a absolutas
+const resolveImageUrl = (value) => {
+  if (!value || typeof value !== "string") return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) return trimmed;
+  if (trimmed.startsWith("/")) return `${getApiBaseUrl()}${trimmed}`;
+  return `${getApiBaseUrl()}/${trimmed}`;
+};
+
+const resolveLibroCandidate = (candidate) => {
+  if (!candidate) return null;
+  if (Array.isArray(candidate)) {
+    for (const item of candidate) {
+      const resolved = resolveImageUrl(item);
+      if (resolved) return resolved;
+    }
+    return null;
+  }
+  if (typeof candidate === "string" && candidate.includes(",")) {
+    for (const part of candidate.split(",")) {
+      const resolved = resolveImageUrl(part);
+      if (resolved) return resolved;
+    }
+    return null;
+  }
+  return resolveImageUrl(candidate);
+};
 
 const LibroCard = ({ libro, onAdd, adding = false, onVerDetalles }) => {
   const navigate = useNavigate();
@@ -48,9 +78,9 @@ const LibroCard = ({ libro, onAdd, adding = false, onVerDetalles }) => {
 
   // Imagen: preferir la real, caer en fallback por categoría
   const imageUrl =
-    libro.imagen_url ||
-    libro.imagen_principal ||
-    libro.imagenes?.[0] ||
+    resolveLibroCandidate(libro.imagen_url) ||
+    resolveLibroCandidate(libro.imagen_principal) ||
+    resolveLibroCandidate(libro.imagenes) ||
     IMAGENES_CATEGORIA[libro.nombre_categoria] ||
     IMG_DEFAULT;
 
