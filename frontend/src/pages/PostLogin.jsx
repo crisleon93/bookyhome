@@ -1,11 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
-import { getUsuarios, getCarrito, checkoutCarrito, getOrdenes, addToCart, removeFromCart, getOrden, postPayment, sendConfirmationEmail, cancelOrder } from "../services/api";
+import { getUsuarios, getCarrito, checkoutCarrito, getOrdenes, getOrden, postPayment, sendConfirmationEmail, cancelOrder } from "../services/api";
+import api from "../services/api";
+import { notificacionesService } from "../services/notificaciones";
 import CompradorSidebar from "../components/CompradorSidebar";
 import FiltrosCatalogo from "../components/FiltrosCatalogo";
 import LibroCard from "../components/LibroCard";
-import { getUserRole } from "../hooks/useAuth";
 import { notify } from "../components/ToastProvider";
 import {
   IconChartBar,
@@ -43,7 +44,7 @@ const CartEmptyState = ({ onGoToCatalog }) => (
     </div>
     <h2 style={{ fontWeight: 700, color: "var(--gris-carbon)" }}>Tu carrito está vacío</h2>
     <p style={{ color: "#666", marginBottom: "20px" }}>Explora el catálogo y encuentra tu próxima lectura favorita.</p>
-    <button className="btn btn-vinotinto" onClick={onGoToCatalog} style={{ display: "inline-block", width: "auto", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
+    <button className="btn btn-vinotinto" onClick={onGoToCatalog} style={{ width: "auto", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
         <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
@@ -185,7 +186,6 @@ export default function PostLogin() {
     codigo_postal: '',
     es_principal: false
   });
-  const [guardando, setGuardando] = useState(false);
 
   // Estados de notificaciones
   const [notificaciones, setNotificaciones] = useState([]);
@@ -213,19 +213,13 @@ export default function PostLogin() {
   const [sucursalPuntos, setSucursalPuntos] = useState([]);
   const [sucursalPagoConfirmado, setSucursalPagoConfirmado] = useState(false);
   const [sucursalEsperandoConfirmacion, setSucursalEsperandoConfirmacion] = useState(false);
-  const [nequiPhone, setNequiPhone] = useState("");
-  const [nequiSelected, setNequiSelected] = useState(false);
+  const nequiSelected = false;
   const [pseBanco, setPseBanco] = useState("");
   const [pseRedirecting, setPseRedirecting] = useState(false);
 
   // Estado del catálogo
-  const [libros, setLibros] = useState([]);
-  const [catalogoLoading, setCatalogoLoading] = useState(true);
-  const [catalogoPagina, setCatalogoPagina] = useState(1);
-  const [catalogoTotalPaginas, setCatalogoTotalPaginas] = useState(1);
-  const [catalogoAddingId, setCatalogoAddingId] = useState(null);
-  const [catalogoAddedToCartIds, setCatalogoAddedToCartIds] = useState(new Set());
-  const [catalogoFiltros, setCatalogoFiltros] = useState({
+  const [catalogoPagina] = useState(1);
+  const [catalogoFiltros] = useState({
     q: '',
     categoria_id: null,
     precio_min: 0,
@@ -298,7 +292,7 @@ export default function PostLogin() {
     }
   }, [activeSide]);
 
-  const cargarDatosPerfil = async () => {
+  const cargarDatosPerfil = useCallback(async () => {
     try {
       // Cargar estadísticas
       try {
@@ -322,23 +316,15 @@ export default function PostLogin() {
     } catch (error) {
       console.error('Error cargando datos del perfil:', error);
     }
-  };
+  }, [userId]);
 
   useEffect(() => {
     if (activeSide === "Mi Perfil") {
       cargarDatosPerfil();
     }
-  }, [activeSide, userId]);
+  }, [activeSide, cargarDatosPerfil]);
 
-  // Cargar catálogo cuando se selecciona esa sección
-  useEffect(() => {
-    if (activeSide === "Catálogo") {
-      cargarCatalogo();
-    }
-  }, [activeSide, catalogoFiltros, catalogoPagina]);
-
-  const cargarCatalogo = async () => {
-    setCatalogoLoading(true);
+  const cargarCatalogo = useCallback(async () => {
     try {
       const params = new URLSearchParams();
       
@@ -352,72 +338,19 @@ export default function PostLogin() {
       params.append('pagina', catalogoPagina);
       params.append('limite', 20);
 
-      const response = await api.get(`/catalogo/busqueda-avanzada?${params}`);
-      setLibros(response.data.libros || []);
-      setCatalogoTotalPaginas(response.data.total_paginas || 1);
-      setCatalogoPagina(response.data.pagina || 1);
+      await api.get(`/catalogo/busqueda-avanzada?${params}`);
     } catch (error) {
       console.error('Error al cargar catálogo:', error);
-    } finally {
-      setCatalogoLoading(false);
     }
-  };
+  }, [catalogoFiltros, catalogoPagina]);
 
-  const handleCatalogoFiltrosChange = (nuevosFiltros) => {
-    setCatalogoFiltros(nuevosFiltros);
-    setCatalogoPagina(1);
-  };
+  // Cargar catálogo cuando se selecciona esa sección
+  useEffect(() => {
+    if (activeSide === "Catálogo") {
+      cargarCatalogo();
+    }
+  }, [activeSide, cargarCatalogo]);
 
-  const handleCatalogoAddToCart = async (libro) => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      notify('Debes iniciar sesión para agregar al carrito', 'error');
-      return;
-    }
-    setCatalogoAddingId(libro.id_libro);
-    try {
-      await addToCart({
-        id_libro: libro.id_libro,
-        cantidad: 1,
-        titulo: libro.titulo,
-        autor_libro: libro.autor_libro,
-        precio_libro: libro.precio_libro,
-        imagen: libro.imagen_url || null,
-      });
-      notify('AGREGADO AL CARRITO', 'success');
-      window.dispatchEvent(new Event('cart-updated'));
-      setCatalogoAddedToCartIds(prev => new Set(prev).add(libro.id_libro));
-    } catch (err) {
-      const msg = err.response?.data?.detail || 'No se pudo agregar al carrito';
-      notify(msg, 'error');
-    } finally {
-      setCatalogoAddingId(null);
-    }
-  };
-
-  const handleCatalogoRemoveFromCart = async (libro) => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      notify('Debes iniciar sesión', 'error');
-      return;
-    }
-    setCatalogoAddingId(libro.id_libro);
-    try {
-      await removeFromCart(libro.id_libro);
-      setCatalogoAddedToCartIds(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(libro.id_libro);
-        return newSet;
-      });
-      notify('Eliminado del carrito', 'success');
-      window.dispatchEvent(new Event('cart-updated'));
-    } catch (err) {
-      const msg = err.response?.data?.detail || 'No se pudo eliminar del carrito';
-      notify(msg, 'error');
-    } finally {
-      setCatalogoAddingId(null);
-    }
-  };
   const handleCheckout = () => {
     setCheckoutLoading(true);
     setCheckoutError(null);
@@ -720,7 +653,7 @@ export default function PostLogin() {
   };
 
   // ============= FUNCIONES DE NOTIFICACIONES =============
-  const generarNotificacionesOrdenes = () => {
+  const generarNotificacionesOrdenes = useCallback(() => {
     const notificacionesGeneradas = [];
     
     ordenes.forEach((orden) => {
@@ -760,9 +693,9 @@ export default function PostLogin() {
     });
     
     return notificacionesGeneradas;
-  };
+  }, [ordenes, notificacionesLeidasAutomaticas, notificacionesEliminadasAutomaticas]);
 
-  const cargarNotificaciones = async (silent = false) => {
+  const cargarNotificaciones = useCallback(async (silent = false) => {
     try {
       if (!silent) setNotificacionesLoading(true);
       const data = await notificacionesService.obtener(false, 50, 0);
@@ -787,7 +720,7 @@ export default function PostLogin() {
     } finally {
       if (!silent) setNotificacionesLoading(false);
     }
-  };
+  }, [notificacionesFilter, generarNotificacionesOrdenes]);
 
   const handleMarcarLeida = async (id_notificacion) => {
     try {
@@ -902,7 +835,7 @@ export default function PostLogin() {
     if (activeSide === "Notificaciones" && userId) {
       cargarNotificaciones(false);
     }
-  }, [activeSide, userId, notificacionesFilter]);
+  }, [activeSide, userId, cargarNotificaciones]);
 
   const totalCarrito = carrito.reduce(
     (acc, item) => acc + Number(item.precio_libro || 0) * Number(item.cantidad || 1),

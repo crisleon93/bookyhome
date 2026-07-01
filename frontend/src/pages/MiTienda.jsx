@@ -1,5 +1,5 @@
 // src/pages/MiTienda.jsx
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import api, { getApiBaseUrl } from "../services/api";
@@ -321,8 +321,20 @@ export default function MiTienda() {
   // Estado local principal
   // ========================
   const navigate = useNavigate();
+  const location = useLocation();
   const handleLogout = () => { localStorage.removeItem("token"); navigate("/"); };
-  const [userName,      setUserName]      = useState("");
+  const [userName,      setUserName]      = useState(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      try {
+        const payload = jwtDecode(token);
+        return payload.nombre || "Vendedor";
+      } catch {
+        return "Vendedor";
+      }
+    }
+    return "Vendedor";
+  });
   const [userPhotoUrl,  setUserPhotoUrl]  = useState(null);
   const [loading,       setLoading]       = useState(true);
   const [activeSide,    setActiveSide]    = useState("Inicio");
@@ -360,12 +372,7 @@ export default function MiTienda() {
     if (!token) { navigate("/login"); return; }
 
     let mounted = true;
-    try {
-      const payload = jwtDecode(token);
-      setUserName(payload.nombre || "Vendedor");
-    } catch {
-      setUserName("Vendedor");
-    }
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(false);
 
     api.get("/perfil/mi-perfil")
@@ -387,18 +394,15 @@ export default function MiTienda() {
   }, [navigate]);
 
   // Si llegamos con un query param `seccion`, abrir esa subsección.
-  const location = useLocation();
   useEffect(() => {
-    try {
-      const params = new URLSearchParams(location.search);
-      const seccion = params.get('seccion');
-      if (seccion) setActiveSide(seccion);
-    } catch {
-      // ignore
+    const seccionFromUrl = new URLSearchParams(location.search).get('seccion');
+    if (seccionFromUrl && seccionFromUrl !== activeSide) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setActiveSide(seccionFromUrl);
     }
-  }, [location.search]);
+  }, [location.search, activeSide]);
 
-  const cargarLibros = () => {
+  const cargarLibros = useCallback(() => {
     setLoadingLibros(true);
     api.get("/libros/mis-libros")
       .then((res) => {
@@ -414,9 +418,9 @@ export default function MiTienda() {
         setLibros([]);
       })
       .finally(() => setLoadingLibros(false));
-  };
+  }, []);
 
-  const cargarPedidos = () => {
+  const cargarPedidos = useCallback(() => {
     setLoadingPedidos(true);
     api.get("/libros/mis-pedidos")
       .then((res) => {
@@ -432,9 +436,9 @@ export default function MiTienda() {
         setPedidos([]);
       })
       .finally(() => setLoadingPedidos(false));
-  };
+  }, []);
 
-  const cargarVentas = () => {
+  const cargarVentas = useCallback(() => {
     setLoadingVentas(true);
     api.get("/libros/mis-ventas")
       .then((res) => {
@@ -450,20 +454,23 @@ export default function MiTienda() {
         setVentas([]);
       })
       .finally(() => setLoadingVentas(false));
-  };
+  }, []);
+
  
   // ========================
   // Efectos de carga inicial y actualizacion por sección
   // ========================
-  useEffect(() => { cargarLibros(); }, []);
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { cargarLibros(); }, [cargarLibros]);
 
   useEffect(() => {
     if (activeSide === "Pedidos") {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       cargarPedidos();
     } else if (activeSide === "Ventas") {
       cargarVentas();
     }
-  }, [activeSide]);
+  }, [activeSide, cargarPedidos, cargarVentas]);
 
   useEffect(() => {
     api.get("/libros/categorias")
@@ -479,7 +486,10 @@ export default function MiTienda() {
         console.error("Error cargando categorías:", err);
         setCategorias([]);
       });
+  }, []);
 
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoadingStats(true);
     api.get("/libros/stats")
       .then((r) => {
@@ -495,7 +505,10 @@ export default function MiTienda() {
         setStats(null);
       })
       .finally(() => setLoadingStats(false));
+  }, []);
 
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoadingTop(true);
     api.get("/libros/top-vendidos")
       .then((r) => {
@@ -511,7 +524,9 @@ export default function MiTienda() {
         setTopVendidos([]);
       })
       .finally(() => setLoadingTop(false));
+  }, []);
 
+  useEffect(() => {
     api.get(`/libros/alertas-stock?umbral=${stockUmbral}`)
       .then((r) => {
         if (Array.isArray(r.data)) {
@@ -525,7 +540,9 @@ export default function MiTienda() {
         console.error("Error cargando alertas de stock:", err);
         setAlertasStock([]);
       });
+  }, [stockUmbral]);
 
+  useEffect(() => {
     api.get("/tiendas/mi-tienda")
       .then((r) => {
         const miTienda = r.data;
@@ -546,7 +563,7 @@ export default function MiTienda() {
         console.error("Error cargando información de tienda:", err);
         setTiendaInfo(null);
       });
-  }, [stockUmbral]);
+  }, []);
 
   const cargarAlertas = () => {
     api.get(`/libros/alertas-stock?umbral=${stockUmbral}`)
