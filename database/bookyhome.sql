@@ -2677,24 +2677,24 @@ SET FOREIGN_KEY_CHECKS = 0;
 -- 1. USUARIOS (Compradores, Vendedores y 1 Admin)
 -- Contraseña para ingresar a cualquiera: La tuya encriptada con Bcrypt
 -- =============================================================================
-INSERT INTO usuarios (nombre_usuario, correo_usuario, telefono, foto_perfil, estado_usuario, contrasena_usuario, rol, fecha_registro) VALUES
-('Camila Rojas',        'camila.rojas@gmail.com',     '3001234567', NULL, 'Activo', '$2b$12$quJWnYOoFcA4JVMhaYKIvu7lLc2ZLFlQF8nCPTvAWPgnwoNMOWVNW', 'comprador', '2025-01-15'),
-('Andres Felipe Gomez',  'andres.gomez@hotmail.com',   '3012345678', NULL, 'Activo', '$2b$12$quJWnYOoFcA4JVMhaYKIvu7lLc2ZLFlQF8nCPTvAWPgnwoNMOWVNW', 'comprador', '2025-01-20'),
-('Valentina Castro',     'valentina.castro@gmail.com', '3023456789', NULL, 'Activo', '$2b$12$quJWnYOoFcA4JVMhaYKIvu7lLc2ZLFlQF8nCPTvAWPgnwoNMOWVNW', 'comprador', '2025-02-02'),
-('Juan Pablo Martinez',  'jp.martinez@outlook.com',    '3034567890', NULL, 'Activo', '$2b$12$quJWnYOoFcA4JVMhaYKIvu7lLc2ZLFlQF8nCPTvAWPgnwoNMOWVNW', 'comprador', '2025-02-10'),
-('Laura Daniela Perez',  'laura.perez@gmail.com',      '3045678901', NULL, 'Activo', '$2b$12$quJWnYOoFcA4JVMhaYKIvu7lLc2ZLFlQF8nCPTvAWPgnwoNMOWVNW', 'comprador', '2025-02-18'),
-('Santiago Ramirez',     'santiago.ramirez@gmail.com', '3056789012', NULL, 'Activo', '$2b$12$quJWnYOoFcA4JVMhaYKIvu7lLc2ZLFlQF8nCPTvAWPgnwoNMOWVNW', 'comprador', '2025-03-01'),
-('Mariana Lopez',        'mariana.lopez@yahoo.com',    '3067890123', NULL, 'Activo', '$2b$12$quJWnYOoFcA4JVMhaYKIvu7lLc2ZLFlQF8nCPTvAWPgnwoNMOWVNW', 'comprador', '2025-03-12'),
-('Daniel Esteban Torres','daniel.torres@gmail.com',    '3078901234', NULL, 'Activo', '$2b$12$quJWnYOoFcA4JVMhaYKIvu7lLc2ZLFlQF8nCPTvAWPgnwoNMOWVNW', 'comprador', '2025-03-20'),
-('Isabella Sanchez',     'isabella.sanchez@gmail.com', '3089012345', NULL, 'Activo', '$2b$12$quJWnYOoFcA4JVMhaYKIvu7lLc2ZLFlQF8nCPTvAWPgnwoNMOWVNW', 'comprador', '2025-04-05'),
-('Nicolas Vargas',       'nicolas.vargas@hotmail.com', '3090123456', NULL, 'Activo', '$2b$12$quJWnYOoFcA4JVMhaYKIvu7lLc2ZLFlQF8nCPTvAWPgnwoNMOWVNW', 'comprador', '2025-04-22'),
-('Libreria El Sotano SAS',     'contacto@elsotano.co',       '3101111111', NULL, 'Activo', '$2b$12$quJWnYOoFcA4JVMhaYKIvu7lLc2ZLFlQF8nCPTvAWPgnwoNMOWVNW', 'vendedor', '2024-11-10'),
-('Pagina Trece Libros',        'ventas@paginatrece.co',      '3102222222', NULL, 'Activo', '$2b$12$quJWnYOoFcA4JVMhaYKIvu7lLc2ZLFlQF8nCPTvAWPgnwoNMOWVNW', 'vendedor', '2024-11-15'),
-('Rincon Literario Bogota',    'info@rinconliterario.co',    '3103333333', NULL, 'Activo', '$2b$12$quJWnYOoFcA4JVMhaYKIvu7lLc2ZLFlQF8nCPTvAWPgnwoNMOWVNW', 'vendedor', '2024-12-01'),
-('Libros Usados Medellin',     'contacto@librosusadosmed.co','3104444444', NULL, 'Activo', '$2b$12$quJWnYOoFcA4JVMhaYKIvu7lLc2ZLFlQF8nCPTvAWPgnwoNMOWVNW', 'vendedor', '2024-12-10'),
-('Universo de Tinta',          'hola@universodetinta.co',    '3105555555', NULL, 'Activo', '$2b$12$quJWnYOoFcA4JVMhaYKIvu7lLc2ZLFlQF8nCPTvAWPgnwoNMOWVNW', 'vendedor', '2025-01-05'),
-('Tienda en Vacaciones Test',  'pausa@vacacionestest.co',    '3106666666', NULL, 'Suspendido', '$2b$12$quJWnYOoFcA4JVMhaYKIvu7lLc2ZLFlQF8nCPTvAWPgnwoNMOWVNW', 'vendedor', '2025-01-08'),
-('Administrador BookyHome', 'admin@bookyhome.co', '3000000000', NULL, 'Activo', '$2b$12$quJWnYOoFcA4JVMhaYKIvu7lLc2ZLFlQF8nCPTvAWPgnwoNMOWVNW', 'admin', '2024-10-01');
+INSERT INTO usuarios (nombre_usuario, correo_usuario, telefono, estado_usuario, contrasena_usuario, rol, fecha_registro, email_verificado) VALUES
+('Camila Rojas',        'camila.rojas@gmail.com',     '3001234567', 'Activo', '$2b$12$quJWnYOoFcA4JVMhaYKIvu7lLc2ZLFlQF8nCPTvAWPgnwoNMOWVNW', 'comprador', '2025-01-15', TRUE),
+('Andres Felipe Gomez',  'andres.gomez@hotmail.com',   '3012345678', 'Activo', '$2b$12$quJWnYOoFcA4JVMhaYKIvu7lLc2ZLFlQF8nCPTvAWPgnwoNMOWVNW', 'comprador', '2025-01-20', TRUE),
+('Valentina Castro',     'valentina.castro@gmail.com', '3023456789', 'Activo', '$2b$12$quJWnYOoFcA4JVMhaYKIvu7lLc2ZLFlQF8nCPTvAWPgnwoNMOWVNW', 'comprador', '2025-02-02', TRUE),
+('Juan Pablo Martinez',  'jp.martinez@outlook.com',    '3034567890', 'Activo', '$2b$12$quJWnYOoFcA4JVMhaYKIvu7lLc2ZLFlQF8nCPTvAWPgnwoNMOWVNW', 'comprador', '2025-02-10', TRUE),
+('Laura Daniela Perez',  'laura.perez@gmail.com',      '3045678901', 'Activo', '$2b$12$quJWnYOoFcA4JVMhaYKIvu7lLc2ZLFlQF8nCPTvAWPgnwoNMOWVNW', 'comprador', '2025-02-18', TRUE),
+('Santiago Ramirez',     'santiago.ramirez@gmail.com', '3056789012', 'Activo', '$2b$12$quJWnYOoFcA4JVMhaYKIvu7lLc2ZLFlQF8nCPTvAWPgnwoNMOWVNW', 'comprador', '2025-03-01', TRUE),
+('Mariana Lopez',        'mariana.lopez@yahoo.com',    '3067890123', 'Activo', '$2b$12$quJWnYOoFcA4JVMhaYKIvu7lLc2ZLFlQF8nCPTvAWPgnwoNMOWVNW', 'comprador', '2025-03-12', TRUE),
+('Daniel Esteban Torres','daniel.torres@gmail.com',    '3078901234', 'Activo', '$2b$12$quJWnYOoFcA4JVMhaYKIvu7lLc2ZLFlQF8nCPTvAWPgnwoNMOWVNW', 'comprador', '2025-03-20', TRUE),
+('Isabella Sanchez',     'isabella.sanchez@gmail.com', '3089012345', 'Activo', '$2b$12$quJWnYOoFcA4JVMhaYKIvu7lLc2ZLFlQF8nCPTvAWPgnwoNMOWVNW', 'comprador', '2025-04-05', TRUE),
+('Nicolas Vargas',       'nicolas.vargas@hotmail.com', '3090123456', 'Activo', '$2b$12$quJWnYOoFcA4JVMhaYKIvu7lLc2ZLFlQF8nCPTvAWPgnwoNMOWVNW', 'comprador', '2025-04-22', TRUE),
+('Libreria El Sotano SAS',     'contacto@elsotano.co',       '3101111111', 'Activo', '$2b$12$quJWnYOoFcA4JVMhaYKIvu7lLc2ZLFlQF8nCPTvAWPgnwoNMOWVNW', 'vendedor', '2024-11-10', TRUE),
+('Pagina Trece Libros',        'ventas@paginatrece.co',      '3102222222', 'Activo', '$2b$12$quJWnYOoFcA4JVMhaYKIvu7lLc2ZLFlQF8nCPTvAWPgnwoNMOWVNW', 'vendedor', '2024-11-15', TRUE),
+('Rincon Literario Bogota',    'info@rinconliterario.co',    '3103333333', 'Activo', '$2b$12$quJWnYOoFcA4JVMhaYKIvu7lLc2ZLFlQF8nCPTvAWPgnwoNMOWVNW', 'vendedor', '2024-12-01', TRUE),
+('Libros Usados Medellin',     'contacto@librosusadosmed.co','3104444444', 'Activo', '$2b$12$quJWnYOoFcA4JVMhaYKIvu7lLc2ZLFlQF8nCPTvAWPgnwoNMOWVNW', 'vendedor', '2024-12-10', TRUE),
+('Universo de Tinta',          'hola@universodetinta.co',    '3105555555', 'Activo', '$2b$12$quJWnYOoFcA4JVMhaYKIvu7lLc2ZLFlQF8nCPTvAWPgnwoNMOWVNW', 'vendedor', '2025-01-05', TRUE),
+('Tienda en Vacaciones Test',  'pausa@vacacionestest.co',    '3106666666', 'Suspendido', '$2b$12$quJWnYOoFcA4JVMhaYKIvu7lLc2ZLFlQF8nCPTvAWPgnwoNMOWVNW', 'vendedor', '2025-01-08', TRUE),
+('Administrador BookyHome', 'admin@bookyhome.co', '3000000000', 'Activo', '$2b$12$quJWnYOoFcA4JVMhaYKIvu7lLc2ZLFlQF8nCPTvAWPgnwoNMOWVNW', 'admin', '2024-10-01', TRUE);
 
 -- =============================================================================
 -- 2. TIENDAS

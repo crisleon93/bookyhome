@@ -38,5 +38,6 @@ export const getLibroById = (id) => api.get(`/api/stored/libros/${id}`)
 export const getUsuarios = () => api.get('/usuarios')
 export const sendConfirmationEmail = (orderId) => api.post(`/api/v1/orders/${orderId}/send-confirmation`)
 export const actualizarEstadoTienda = (idTienda, estado) => api.patch(`/tiendas/${idTienda}/estado`, { estado })
+export const checkEmailVerification = (email) => api.get('/check-email-verification', { params: { email } })
 
 export default api

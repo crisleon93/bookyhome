@@ -23,6 +23,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import Chat from './pages/Chat';
 import Notificaciones from './pages/Notificaciones';
 import Historial from './pages/Historial';
+import VerifyEmail from './pages/VerifyEmail';
 
 import { getUserRole } from './hooks/useAuth';
 import LegalPage from './pages/LegalPage';
@@ -60,6 +61,7 @@ function MainLayout() {
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/verify-email" element={<VerifyEmail />} />
         <Route path="/libreria" element={<Libreria />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
