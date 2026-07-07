@@ -129,37 +129,41 @@ export default function VendedorSidebar({ userName = 'Vendedor', profileImage = 
       {/* Header */}
       <div style={{
         position: 'relative',
-        marginBottom: '22px',
+        marginBottom: sidebarOpen ? '22px' : '20px',
         padding: sidebarOpen ? '0 10px' : '0',
         display: 'flex',
-        justifyContent: 'center',
+        justifyContent: sidebarOpen ? 'flex-start' : 'center',
         alignItems: 'center',
+        minHeight: sidebarOpen ? undefined : '110px',
+        paddingTop: sidebarOpen ? '0' : '50px',
       }}>
-        <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
+        <div style={{ display: 'flex', justifyContent: sidebarOpen ? 'flex-start' : 'center', width: '100%' }}>
           {avatarSrc ? (
             <img
               src={avatarSrc}
               alt={avatarAlt}
               style={{
-                width: `${avatarSize}px`,
-                height: `${avatarSize}px`,
+                width: sidebarOpen ? '64px' : `${avatarSize}px`,
+                height: sidebarOpen ? '64px' : `${avatarSize}px`,
                 borderRadius: '50%',
                 objectFit: 'cover',
                 border: '2px solid rgba(255,255,255,0.35)',
+                marginTop: sidebarOpen ? '0' : '0',
               }}
             />
           ) : (
             <div style={{
-              width: `${avatarSize}px`,
-              height: `${avatarSize}px`,
+              width: sidebarOpen ? '64px' : `${avatarSize}px`,
+              height: sidebarOpen ? '64px' : `${avatarSize}px`,
               borderRadius: '50%',
               background: 'rgba(255,255,255,0.15)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               border: '2px solid rgba(255,255,255,0.35)',
+              marginTop: sidebarOpen ? '0' : '0',
             }}>
-              <IconUser width={iconSize} height={iconSize} strokeWidth={2.2} style={{ color: WHITE }} />
+              <IconUser width={sidebarOpen ? 24 : iconSize} height={sidebarOpen ? 24 : iconSize} strokeWidth={2.2} style={{ color: WHITE }} />
             </div>
           )}
         </div>
@@ -168,10 +172,14 @@ export default function VendedorSidebar({ userName = 'Vendedor', profileImage = 
           onClick={() => setSidebarOpen(!sidebarOpen)}
           style={{
             position: 'absolute',
-            right: 0,
-            background: 'rgba(255,255,255,0.12)', border: 'none', color: WHITE,
+            right: sidebarOpen ? '0' : '8px',
+            top: sidebarOpen ? 'auto' : '12px',
+            background: 'rgba(255,255,255,0.16)',
+            border: '1px solid rgba(255,255,255,0.2)',
+            color: WHITE,
             width: '34px', height: '34px', borderRadius: '8px', cursor: 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+            boxShadow: sidebarOpen ? 'none' : '0 4px 14px rgba(0,0,0,0.15)',
           }}
           title={sidebarOpen ? 'Contraer menú' : 'Expandir menú'}
         >

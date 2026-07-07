@@ -1,50 +1,57 @@
 /* src/styles/Chat.css */
 
 .chat-container {
-  min-height: calc(100vh - 200px);
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-  padding: 20px;
+  min-height: 100vh;
+  background: var(--beige);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .chat-wrapper {
   display: flex;
   gap: 0;
-  max-width: 1400px;
-  margin: 0 auto;
-  background: white;
-  border-radius: 12px;
+  margin: 0;
+  background: var(--blanco);
+  border-radius: 0;
   overflow: hidden;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
-  height: calc(100vh - 240px);
+  box-shadow: none;
+  flex: 1;
+  flex-grow: 1;
+  height: 100%;
 }
 
 /* ============= PANEL IZQUIERDO - SALAS ============= */
 
 .chat-salas {
-  width: 320px;
-  border-right: 1px solid #e0e0e0;
+  width: 400px;
+  border-right: 1px solid #e0dbd4;
   display: flex;
   flex-direction: column;
-  background: #f9f9f9;
+  background: var(--blanco);
+  height: 100%;
 }
 
 .salas-header {
-  padding: 20px;
-  border-bottom: 1px solid #e0e0e0;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e0dbd4;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  background: var(--vinotinto);
 }
 
 .salas-header h2 {
   margin: 0;
   font-size: 20px;
-  color: #7A1E3A;
+  color: var(--blanco);
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 700;
 }
 
 .salas-count {
-  background: #7A1E3A;
-  color: white;
+  background: var(--rojo-suave);
+  color: var(--blanco);
   padding: 4px 8px;
   border-radius: 20px;
   font-size: 12px;
@@ -73,33 +80,34 @@
 }
 
 .sala-item {
-  padding: 15px 20px;
-  border-bottom: 1px solid #f0f0f0;
+  padding: 12px 20px;
+  border-bottom: 1px solid #e0dbd4;
   cursor: pointer;
   transition: all 0.3s ease;
   position: relative;
+  background: var(--blanco);
 }
 
 .sala-item:hover {
-  background: #f0f0f0;
+  background: #f5f0eb;
 }
 
 .sala-item.active {
-  background: #fff;
-  border-left: 4px solid #7A1E3A;
+  background: #f5f0eb;
+  border-left: 4px solid var(--vinotinto);
 }
 
 .sala-info h4 {
   margin: 0;
   font-size: 14px;
-  color: #333;
+  color: var(--gris-carbon);
   font-weight: 600;
 }
 
 .sala-preview {
   margin: 5px 0 0 0;
   font-size: 12px;
-  color: #999;
+  color: #666;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -123,18 +131,23 @@
   flex: 1;
   display: flex;
   flex-direction: column;
+  background: var(--blanco);
+  height: 100%;
+  overflow: hidden;
 }
 
 .chat-header {
-  padding: 20px;
-  border-bottom: 1px solid #e0e0e0;
-  background: linear-gradient(135deg, #7A1E3A 0%, #5a142a 100%);
-  color: white;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e0dbd4;
+  background: var(--vinotinto);
+  color: var(--blanco);
 }
 
 .chat-header h2 {
   margin: 0;
   font-size: 18px;
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 600;
 }
 
 .chat-empty {
@@ -152,8 +165,10 @@
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 15px;
-  background: #fafafa;
+  gap: 8px;
+  background: var(--blanco);
+  background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect fill="%23FFFFFF" width="100" height="100"/><circle fill="%23f5f0eb" cx="50" cy="50" r="40" opacity="0.08"/></svg>');
+  background-size: 300px;
 }
 
 .mensaje {
@@ -166,36 +181,54 @@
 }
 
 .mensaje-body {
-  max-width: 60%;
-  padding: 12px 16px;
-  border-radius: 12px;
+  max-width: 65%;
+  padding: 8px 12px;
+  border-radius: 8px;
   word-wrap: break-word;
 }
 
 .mensaje.propio .mensaje-body {
-  background: linear-gradient(135deg, #7A1E3A 0%, #5a142a 100%);
-  color: white;
-  border-radius: 12px 0 12px 12px;
+  background: var(--vinotinto);
+  color: var(--blanco);
+  border-radius: 8px 0 8px 8px;
 }
 
 .mensaje.otro .mensaje-body {
-  background: white;
-  color: #333;
-  border-radius: 0 12px 12px 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  background: #f5f0eb;
+  color: var(--gris-carbon);
+  border-radius: 0 8px 8px 8px;
+  box-shadow: none;
 }
 
 .mensaje-texto {
   margin: 0;
   font-size: 14px;
   line-height: 1.4;
+  font-family: 'Montserrat', sans-serif;
+}
+
+.mensaje.propio .mensaje-texto {
+  color: var(--blanco);
+}
+
+.mensaje.otro .mensaje-texto {
+  color: var(--gris-carbon);
 }
 
 .mensaje-hora {
   display: block;
   font-size: 11px;
-  margin-top: 5px;
-  opacity: 0.7;
+  margin-top: 4px;
+  opacity: 0.8;
+  color: #666;
+}
+
+.mensaje.propio .mensaje-hora {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.mensaje.otro .mensaje-hora {
+  color: #666;
 }
 
 .mensajes-empty {
@@ -212,46 +245,49 @@
 .chat-input-form {
   display: flex;
   gap: 10px;
-  padding: 15px 20px;
-  border-top: 1px solid #e0e0e0;
-  background: white;
+  padding: 12px 20px;
+  border-top: 1px solid #e0dbd4;
+  background: var(--blanco);
 }
 
 .chat-input-form input {
   flex: 1;
   padding: 12px 16px;
-  border: 1px solid #ddd;
-  border-radius: 24px;
+  border: 1.5px solid #e0dbd4;
+  border-radius: 8px;
   font-size: 14px;
   outline: none;
   transition: all 0.3s ease;
+  font-family: 'Montserrat', sans-serif;
+  background: var(--blanco);
+  color: var(--gris-carbon);
 }
 
 .chat-input-form input:focus {
-  border-color: #7A1E3A;
-  box-shadow: 0 0 0 3px rgba(122, 30, 58, 0.1);
+  border-color: var(--vinotinto);
+  background: var(--blanco);
 }
 
 .chat-input-form input:disabled {
-  background: #f5f5f5;
+  background: #f5f0eb;
   color: #999;
 }
 
 .chat-input-form button {
   padding: 12px 24px;
-  background: linear-gradient(135deg, #7A1E3A 0%, #5a142a 100%);
-  color: white;
+  background: var(--vinotinto);
+  color: var(--blanco);
   border: none;
-  border-radius: 24px;
+  border-radius: 8px;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
+  font-family: 'Montserrat', sans-serif;
 }
 
 .chat-input-form button:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(122, 30, 58, 0.3);
+  background: #5e1629;
 }
 
 .chat-input-form button:disabled {
@@ -266,6 +302,29 @@
   border-radius: 8px;
   margin: 10px;
   font-size: 14px;
+}
+
+/* ============= CHAT EN DASHBOARD COMPRADOR ============= */
+/* Chat embebido en dashboard del comprador */
+.chat-container.embedded {
+  background: transparent;
+  min-height: calc(100vh - 112px);
+}
+
+.chat-container.embedded .chat-wrapper {
+  background: var(--blanco);
+  border-radius: 12px;
+  box-shadow: var(--sombra-suave);
+  overflow: hidden;
+  height: calc(100vh - 140px);
+}
+
+.chat-container.embedded .chat-salas {
+  border-radius: 12px 0 0 12px;
+}
+
+.chat-container.embedded .chat-conversacion {
+  border-radius: 0 12px 12px 0;
 }
 
 /* ============= RESPONSIVE ============= */

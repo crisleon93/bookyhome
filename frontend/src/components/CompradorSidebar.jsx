@@ -98,13 +98,15 @@ export default function CompradorSidebar({ userName, userEmail, profilePhotoUrl,
         display: 'flex', alignItems: 'center',
         justifyContent: sidebarOpen ? 'space-between' : 'center',
         marginBottom: sidebarOpen ? '26px' : '20px',
-        paddingLeft: '10px', position: 'relative',
-        minHeight: sidebarOpen ? undefined : '80px',
+        paddingLeft: sidebarOpen ? '10px' : '0',
+        position: 'relative',
+        minHeight: sidebarOpen ? undefined : '110px',
+        paddingTop: sidebarOpen ? '0' : '50px',
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: sidebarOpen ? 'flex-start' : 'center', width: '100%' }}>
           <div style={{
-            width: sidebarOpen ? '54px' : '42px',
-            height: sidebarOpen ? '54px' : '42px',
+            width: sidebarOpen ? '64px' : '42px',
+            height: sidebarOpen ? '64px' : '42px',
             borderRadius: '50%',
             overflow: 'hidden',
             background: sidebarOpen ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.28)',
@@ -115,8 +117,9 @@ export default function CompradorSidebar({ userName, userEmail, profilePhotoUrl,
             fontWeight: 700,
             color: WHITE,
             textTransform: 'uppercase',
-            fontSize: sidebarOpen ? '1.2rem' : '1rem',
-            boxShadow: sidebarOpen ? 'none' : '0 0 0 1px rgba(255,255,255,0.08)'
+            fontSize: sidebarOpen ? '1.4rem' : '1rem',
+            boxShadow: sidebarOpen ? 'none' : '0 0 0 1px rgba(255,255,255,0.08)',
+            marginTop: sidebarOpen ? '0' : '0'
           }}>
             {profilePhotoUrl ? (
               <img
@@ -134,10 +137,9 @@ export default function CompradorSidebar({ userName, userEmail, profilePhotoUrl,
           style={{
             position: sidebarOpen ? 'static' : 'absolute',
             right: sidebarOpen ? undefined : '8px',
-            top: sidebarOpen ? undefined : '50%',
-            transform: sidebarOpen ? undefined : 'translateY(-50%)',
-            background: sidebarOpen ? 'rgba(255,255,255,0.16)' : 'rgba(0,0,0,0.4)',
-            border: '1px solid rgba(255,255,255,0.2)',
+            top: sidebarOpen ? undefined : '12px',
+            background: sidebarOpen ? 'rgba(255,255,255,0.16)' : 'rgba(255,255,255,0.16)',
+            border: sidebarOpen ? '1px solid rgba(255,255,255,0.2)' : '1px solid rgba(255,255,255,0.2)',
             color: WHITE,
             width: '34px', height: '34px', borderRadius: '10px', cursor: 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,

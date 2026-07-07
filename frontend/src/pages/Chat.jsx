@@ -4,6 +4,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { getToken } from "../hooks/useAuth";
 import { chatService } from "../services/chat";
+import { jwtDecode } from "jwt-decode";
 import "../styles/Chat.css";
 
 export default function Chat({ embedded = false, selectedSalaProp = null, onSelectSala = null }) {
@@ -20,6 +21,19 @@ export default function Chat({ embedded = false, selectedSalaProp = null, onSele
   const [error, setError] = useState(null);
   const messagesEndRef = useRef(null);
   const [usuarioActual, setUsuarioActual] = useState(null);
+  const [shouldScrollToBottom, setShouldScrollToBottom] = useState(false);
+
+  // Obtener ID del usuario desde el token JWT
+  useEffect(() => {
+    if (token) {
+      try {
+        const decoded = jwtDecode(token);
+        setUsuarioActual({ id_usuario: parseInt(decoded.sub) });
+      } catch (err) {
+        console.error("Error decodificando token:", err);
+      }
+    }
+  }, [token]);
 
   // ============= OBTENER SALAS =============
   useEffect(() => {
@@ -41,38 +55,25 @@ export default function Chat({ embedded = false, selectedSalaProp = null, onSele
     }
   };
 
-  // ============= OBTENER DATOS DEL USUARIO =============
-  useEffect(() => {
-    const obtenerUsuarioActual = async () => {
-      try {
-        const res = await axios.get(
-          import.meta.env.VITE_API_BASE_URL + "/perfil" || "http://127.0.0.1:8000/perfil",
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
-        setUsuarioActual(res.data);
-      } catch (err) {
-        console.error("Error:", err);
-      }
-    };
-    if (token) obtenerUsuarioActual();
-  }, [token]);
-
   // ============= CARGAR MENSAJES =============
   useEffect(() => {
     if (selectedSala) {
-      cargarMensajes();
-      const interval = setInterval(cargarMensajes, 2000);
+      cargarMensajes(true); // Primera carga con scroll
+      const interval = setInterval(() => cargarMensajes(false), 2000); // Actualizaciones sin scroll
       return () => clearInterval(interval);
     }
   }, [selectedSala]);
 
-  const cargarMensajes = async () => {
+  const cargarMensajes = async (scrollToBottom = false) => {
     if (!selectedSala) return;
     try {
       const data = await chatService.obtenerMensajes(selectedSala, 50, 0);
       setMensajes(data.mensajes || []);
+      
+      // Scroll al fondo solo si es la primera carga
+      if (scrollToBottom) {
+        setShouldScrollToBottom(true);
+      }
       
       // Marcar como leídos
       await chatService.marcarSalaLeida(selectedSala);
@@ -83,8 +84,11 @@ export default function Chat({ embedded = false, selectedSalaProp = null, onSele
 
   // ============= AUTO-SCROLL =============
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [mensajes]);
+    if (shouldScrollToBottom) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      setShouldScrollToBottom(false);
+    }
+  }, [shouldScrollToBottom]);
 
   // ============= ENVIAR MENSAJE =============
   const handleEnviarMensaje = async (e) => {
@@ -107,6 +111,7 @@ export default function Chat({ embedded = false, selectedSalaProp = null, onSele
   // ============= SELECCIONAR SALA =============
   const handleSeleccionarSala = (sala) => {
     setSelectedSala(sala.id_sala);
+    setShouldScrollToBottom(true);
     if (onSelectSala) {
       try { onSelectSala(sala.id_sala); } catch (e) { /* ignore */ }
     }
@@ -115,7 +120,7 @@ export default function Chat({ embedded = false, selectedSalaProp = null, onSele
 
   // ============= UI =============
   return (
-    <div className="chat-container">
+    <div className={`chat-container ${embedded ? 'embedded' : ''}`}>
       <div className="chat-wrapper">
         {/* PANEL IZQUIERDO - SALAS */}
         <div className="chat-salas">

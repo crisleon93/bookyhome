@@ -198,6 +198,9 @@ export default function PostLogin() {
   const [notificacionAEliminar, setNotificacionAEliminar] = useState(null);
   const [mostrarModalEliminar, setMostrarModalEliminar] = useState(false);
 
+  // Estado para el chat embebido
+  const [selectedSalaInChat, setSelectedSalaInChat] = useState(null);
+
   // Payment form states
   const [cardNumber, setCardNumber] = useState("");
   const [cardName, setCardName] = useState("");
@@ -983,7 +986,7 @@ export default function PostLogin() {
 
         {/* ── MENSAJES EN DASHBOARD (sin salto de página) ── */}
         {activeSide === "Mensajes" && (
-          <Chat />
+          <Chat embedded={true} selectedSalaProp={selectedSalaInChat} onSelectSala={(id) => setSelectedSalaInChat(id)} />
         )}
 
         {/* ── NOTIFICACIONES EN DASHBOARD (sin salto de página) ── */}
