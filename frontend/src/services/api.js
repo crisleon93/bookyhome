@@ -36,6 +36,11 @@ export const cancelOrder = (orderId) => api.delete(`/api/v1/orders/${orderId}`)
 export const getStoredLibros = () => api.get('/api/stored/libros')
 export const getLibroById = (id) => api.get(`/api/stored/libros/${id}`)
 export const getUsuarios = () => api.get('/usuarios')
+export const uploadProfilePhoto = (formData) => api.post('/perfil/foto-perfil', formData, {
+  headers: {
+    'Content-Type': 'multipart/form-data'
+  }
+})
 export const sendConfirmationEmail = (orderId) => api.post(`/api/v1/orders/${orderId}/send-confirmation`)
 export const actualizarEstadoTienda = (idTienda, estado) => api.patch(`/tiendas/${idTienda}/estado`, { estado })
 export const checkEmailVerification = (email) => api.get('/check-email-verification', { params: { email } })

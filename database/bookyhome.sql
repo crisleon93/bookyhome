@@ -56,7 +56,9 @@ CREATE TABLE usuarios (
     contrasena_usuario VARCHAR(255) NOT NULL,
     rol VARCHAR(50) NOT NULL,
     telefono VARCHAR(50),
+    foto_perfil VARCHAR(255),
     estado_usuario VARCHAR(50) DEFAULT 'Activo',
+    preferencias TEXT,
     email_verificado BOOLEAN DEFAULT FALSE,
     token_verificacion VARCHAR(255),
     fecha_verificacion DATE,
@@ -1482,11 +1484,35 @@ SELECT '--- TRIGGERS Y FUNCIONES CREADOS ---' AS '';
 -- ▸ SECCIoN 7: MEJORAS Y NUEVAS TABLAS
 -- =====================================================
 
--- ALTER TABLE: agrega telefono, foto_perfil y estado_usuario
-ALTER TABLE usuarios
-    ADD COLUMN telefono VARCHAR(20) DEFAULT NULL AFTER correo_usuario,
-    ADD COLUMN foto_perfil VARCHAR(255) DEFAULT NULL AFTER telefono,
-    ADD COLUMN estado_usuario VARCHAR(20) DEFAULT 'Activo' AFTER foto_perfil;
+-- ALTER TABLE: agrega telefono, foto_perfil y estado_usuario solo si faltan
+SET @schema := DATABASE();
+
+SELECT IF(
+    (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = @schema AND table_name = 'usuarios' AND column_name = 'telefono') = 0,
+    'ALTER TABLE usuarios ADD COLUMN telefono VARCHAR(20) DEFAULT NULL AFTER correo_usuario',
+    'SELECT 1'
+) INTO @sql;
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SELECT IF(
+    (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = @schema AND table_name = 'usuarios' AND column_name = 'foto_perfil') = 0,
+    'ALTER TABLE usuarios ADD COLUMN foto_perfil VARCHAR(255) DEFAULT NULL AFTER telefono',
+    'SELECT 1'
+) INTO @sql;
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SELECT IF(
+    (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = @schema AND table_name = 'usuarios' AND column_name = 'estado_usuario') = 0,
+    'ALTER TABLE usuarios ADD COLUMN estado_usuario VARCHAR(20) DEFAULT ''Activo'' AFTER foto_perfil',
+    'SELECT 1'
+) INTO @sql;
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
 
 UPDATE usuarios SET telefono='3011111111', estado_usuario='Activo' WHERE id_usuario=1;
 UPDATE usuarios SET telefono='3022222222', estado_usuario='Activo' WHERE id_usuario=2;
