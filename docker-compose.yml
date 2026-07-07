@@ -23,6 +23,7 @@ services:
       context: ./backend
     volumes:
       - ./backend:/app
+      - uploads_data:/app/uploads
     container_name: contenedor-back
     ports:
       - "8000:8000"
@@ -55,3 +56,4 @@ services:
 volumes:
   mysql_data:
   frontend_node_modules:
+  uploads_data:

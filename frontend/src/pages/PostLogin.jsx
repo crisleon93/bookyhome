@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
-import { getUsuarios, getCarrito, checkoutCarrito, getOrdenes, getOrden, postPayment, sendConfirmationEmail, cancelOrder } from "../services/api";
+import { getUsuarios, getCarrito, checkoutCarrito, getOrdenes, getOrden, postPayment, sendConfirmationEmail, cancelOrder, uploadProfilePhoto } from "../services/api";
 import api from "../services/api";
 import { notificacionesService } from "../services/notificaciones";
 import CompradorSidebar from "../components/CompradorSidebar";
@@ -153,6 +153,8 @@ export default function PostLogin() {
   const [userName, setUserName]     = useState("");
   const [userEmail, setUserEmail]   = useState("");
   const [userId, setUserId]         = useState(null);
+  const [profilePhotoUrl, setProfilePhotoUrl] = useState(null);
+  const [photoUploading, setPhotoUploading] = useState(false);
   const [loading, setLoading]       = useState(true);
   const [activeSide, setActiveSide] = useState("Inicio");
 
@@ -318,11 +320,51 @@ export default function PostLogin() {
     }
   }, [userId]);
 
+  const resolveImageUrl = (path) => {
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
+    if (!path) return null;
+    return `${baseUrl}/${path.replace(/^\//, '')}`;
+  };
+
+  const cargarPerfil = useCallback(async () => {
+    try {
+      const res = await api.get('/perfil/mi-perfil');
+      if (res.data?.foto_perfil) {
+        setProfilePhotoUrl(resolveImageUrl(res.data.foto_perfil));
+      }
+    } catch (error) {
+      console.error('Error cargando perfil:', error);
+    }
+  }, []);
+
   useEffect(() => {
     if (activeSide === "Mi Perfil") {
       cargarDatosPerfil();
+      cargarPerfil();
     }
-  }, [activeSide, cargarDatosPerfil]);
+  }, [activeSide, cargarDatosPerfil, cargarPerfil]);
+
+  const handleProfilePhotoChange = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    setPhotoUploading(true);
+    try {
+      const res = await uploadProfilePhoto(formData);
+      if (res.data?.url) {
+        setProfilePhotoUrl(resolveImageUrl(res.data.url));
+        notify('Foto de perfil actualizada', 'success');
+      }
+    } catch (error) {
+      console.error('Error subiendo foto de perfil:', error);
+      notify('No se pudo subir la foto', 'error');
+    } finally {
+      setPhotoUploading(false);
+    }
+  };
 
   const cargarCatalogo = useCallback(async () => {
     try {
@@ -849,6 +891,7 @@ export default function PostLogin() {
       <CompradorSidebar
         userName={userName}
         userEmail={userEmail}
+        profilePhotoUrl={profilePhotoUrl}
         activeSide={activeSide}
         onSelect={handleSelectSection}
       />
@@ -2984,21 +3027,35 @@ export default function PostLogin() {
               {/* Foto de Perfil */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '2rem', marginBottom: '2rem', paddingBottom: '2rem', borderBottom: '1px solid #e0dbd4' }}>
                 <div style={{ flexShrink: 0 }}>
-                  <div style={{ 
-                    width: '100px', 
-                    height: '100px', 
-                    borderRadius: '50%', 
-                    background: '#e0dbd4', 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'center',
-                    fontSize: '2rem',
-                    color: '#7A1E3A',
-                    fontWeight: 'bold',
-                    border: '3px solid #7A1E3A'
-                  }}>
-                    {userName?.charAt(0).toUpperCase() || 'U'}
-                  </div>
+                  {profilePhotoUrl ? (
+                    <img
+                      src={profilePhotoUrl}
+                      alt="Foto de perfil"
+                      style={{
+                        width: '100px',
+                        height: '100px',
+                        borderRadius: '50%',
+                        objectFit: 'cover',
+                        border: '3px solid #7A1E3A'
+                      }}
+                    />
+                  ) : (
+                    <div style={{ 
+                      width: '100px', 
+                      height: '100px', 
+                      borderRadius: '50%', 
+                      background: '#e0dbd4', 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'center',
+                      fontSize: '2rem',
+                      color: '#7A1E3A',
+                      fontWeight: 'bold',
+                      border: '3px solid #7A1E3A'
+                    }}>
+                      {userName?.charAt(0).toUpperCase() || 'U'}
+                    </div>
+                  )}
                 </div>
                 <div>
                   <h3 style={{ margin: '0 0 0.5rem 0' }}>Foto de Perfil</h3>
@@ -3010,6 +3067,7 @@ export default function PostLogin() {
                     id="foto-perfil-input"
                     accept="image/*"
                     style={{ display: 'none' }}
+                    onChange={handleProfilePhotoChange}
                   />
                   <label 
                     htmlFor="foto-perfil-input"
@@ -3023,7 +3081,7 @@ export default function PostLogin() {
                       display: 'inline-block'
                     }}
                   >
-                    Cambiar Foto
+                    {photoUploading ? 'Subiendo...' : 'Cambiar Foto'}
                   </label>
                 </div>
               </div>

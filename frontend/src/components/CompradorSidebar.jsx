@@ -51,7 +51,7 @@ function SidebarIcon(props) {
   );
 }
 
-export default function CompradorSidebar({ userName, userEmail, activeSide, onSelect }) {
+export default function CompradorSidebar({ userName, userEmail, profilePhotoUrl, activeSide, onSelect }) {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [noLeidosNotif, setNoLeidosNotif] = useState(0);
@@ -97,19 +97,51 @@ export default function CompradorSidebar({ userName, userEmail, activeSide, onSe
       <div style={{
         display: 'flex', alignItems: 'center',
         justifyContent: sidebarOpen ? 'space-between' : 'center',
-        marginBottom: '26px', paddingLeft: sidebarOpen ? '10px' : 0,
+        marginBottom: sidebarOpen ? '26px' : '20px',
+        paddingLeft: '10px', position: 'relative',
+        minHeight: sidebarOpen ? undefined : '80px',
       }}>
-        {sidebarOpen && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span style={{ fontSize: '1.05rem', fontWeight: 800 }}>Panel</span>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
+          <div style={{
+            width: sidebarOpen ? '54px' : '42px',
+            height: sidebarOpen ? '54px' : '42px',
+            borderRadius: '50%',
+            overflow: 'hidden',
+            background: sidebarOpen ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.28)',
+            border: sidebarOpen ? '2px solid rgba(255,255,255,0.35)' : '2px solid rgba(255,255,255,0.45)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontWeight: 700,
+            color: WHITE,
+            textTransform: 'uppercase',
+            fontSize: sidebarOpen ? '1.2rem' : '1rem',
+            boxShadow: sidebarOpen ? 'none' : '0 0 0 1px rgba(255,255,255,0.08)'
+          }}>
+            {profilePhotoUrl ? (
+              <img
+                src={profilePhotoUrl}
+                alt={userName || 'Usuario'}
+                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+              />
+            ) : (
+              (userName || 'U').charAt(0)
+            )}
           </div>
-        )}
+        </div>
         <button
           onClick={() => setSidebarOpen(!sidebarOpen)}
           style={{
-            background: 'rgba(255,255,255,0.12)', border: 'none', color: WHITE,
-            width: '34px', height: '34px', borderRadius: '8px', cursor: 'pointer',
+            position: sidebarOpen ? 'static' : 'absolute',
+            right: sidebarOpen ? undefined : '8px',
+            top: sidebarOpen ? undefined : '50%',
+            transform: sidebarOpen ? undefined : 'translateY(-50%)',
+            background: sidebarOpen ? 'rgba(255,255,255,0.16)' : 'rgba(0,0,0,0.4)',
+            border: '1px solid rgba(255,255,255,0.2)',
+            color: WHITE,
+            width: '34px', height: '34px', borderRadius: '10px', cursor: 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+            boxShadow: sidebarOpen ? 'none' : '0 4px 14px rgba(0,0,0,0.15)'
           }}
           title={sidebarOpen ? 'Contraer menú' : 'Expandir menú'}
         >
