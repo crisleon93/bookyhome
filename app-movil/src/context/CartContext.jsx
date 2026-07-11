@@ -20,13 +20,15 @@ export function CartProvider({ children }) {
       setCart(res.data || []);
     } catch (e) {
       console.log('Error loading cart', e.message);
+      console.log('Error response', e.response?.status, e.response?.data);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadCart();
+    // Temporalmente desactivado para depurar
+    // loadCart();
   }, [user]);
 
   const addToCart = async (book, qty = 1) => {

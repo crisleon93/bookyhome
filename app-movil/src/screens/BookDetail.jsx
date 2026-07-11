@@ -109,7 +109,7 @@ export default function BookDetail({ route, navigation }) {
     <ScrollView style={styles.container}>
       <View style={styles.card}>
         {book.imagen ? (
-          <Image source={{ uri: book.imagen }} style={styles.image} resizeMode="contain" />
+          <Image source={{ uri: book.imagen }} style={styles.image} resizeMode="cover" />
         ) : (
           <View style={[styles.image, styles.imagePlaceholder]} />
         )}

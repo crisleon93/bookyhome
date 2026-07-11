@@ -72,7 +72,7 @@ export default function Login({ navigation }) {
                   </View>
                   <TextInput
                     style={styles.input}
-                    placeholder="tu@email.com"
+                    placeholder="ejemplo@gmail.com"
                     placeholderTextColor="#aaa"
                     value={email}
                     onChangeText={setEmail}
@@ -91,7 +91,7 @@ export default function Login({ navigation }) {
                   </View>
                   <TextInput
                     style={styles.input}
-                    placeholder="Tu contraseña"
+                    placeholder="Contraseña"
                     placeholderTextColor="#aaa"
                     value={password}
                     onChangeText={setPassword}

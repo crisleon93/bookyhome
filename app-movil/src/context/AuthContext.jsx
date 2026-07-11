@@ -69,8 +69,10 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     if (token) {
       api.defaults.headers.common.Authorization = `Bearer ${token}`;
+      console.log('Token set in headers:', token.substring(0, 20) + '...');
     } else {
       delete api.defaults.headers.common.Authorization;
+      console.log('Token removed from headers');
     }
   }, [token]);
 

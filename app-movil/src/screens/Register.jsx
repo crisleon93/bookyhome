@@ -210,7 +210,7 @@ export default function Register({ navigation }) {
                       </View>
                       <TextInput
                         style={styles.input}
-                        placeholder="tu@email.com"
+                        placeholder="ejemplo@gmail.com"
                         placeholderTextColor="#aaa"
                         value={email}
                         onChangeText={setEmail}
@@ -229,7 +229,7 @@ export default function Register({ navigation }) {
                       </View>
                       <TextInput
                         style={styles.input}
-                        placeholder="Tu teléfono"
+                        placeholder="3001234567"
                         placeholderTextColor="#aaa"
                         value={telefono}
                         onChangeText={setTelefono}

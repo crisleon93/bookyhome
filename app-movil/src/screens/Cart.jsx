@@ -31,7 +31,7 @@ export default function Cart({ navigation }) {
   const renderItem = ({ item }) => (
     <View style={styles.card}>
       {item.imagen ? (
-        <Image source={{ uri: item.imagen }} style={styles.image} />
+        <Image source={{ uri: item.imagen }} style={styles.image} resizeMode="cover" />
       ) : (
         <View style={[styles.image, styles.imagePlaceholder]} />
       )}

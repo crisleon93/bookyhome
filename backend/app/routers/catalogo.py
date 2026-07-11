@@ -14,7 +14,7 @@ def busqueda_avanzada(
     precio_max: Optional[float] = Query(None, ge=0, description="Precio máximo"),
     calificacion_min: Optional[float] = Query(None, ge=0, le=5, description="Calificación mínima"),
     disponible: Optional[bool] = Query(None, description="Solo libros con stock"),
-    ordenar_por: Optional[str] = Query("relevancia", regex="^(relevancia|precio_asc|precio_desc|calificacion|recientes)$"),
+    ordenar_por: Optional[str] = Query("relevancia", pattern="^(relevancia|precio_asc|precio_desc|calificacion|recientes)$"),
     pagina: int = Query(1, ge=1),
     limite: int = Query(20, ge=1, le=100)
 ):

@@ -2,7 +2,7 @@
 import React from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
-  TouchableOpacity, SafeAreaView, Dimensions, ImageBackground,
+  TouchableOpacity, SafeAreaView, Dimensions, ImageBackground, Image,
 } from 'react-native';
 import Svg, { Path, Circle, Polygon, Polyline } from 'react-native-svg';
 import Header from '../components/Header';
@@ -17,6 +17,8 @@ const BEIGE      = '#F0E8DB';
 const WHITE      = '#FFFFFF';
 const DARK       = '#2A2A2A';
 const GRAY       = '#666';
+
+import { LinearGradient } from 'expo-linear-gradient';
 
 const CATEGORIES = [
   { label: 'Ficción',    img: require('../assets/ficcion.png') },
@@ -93,20 +95,22 @@ export default function Home({ navigation }) {
       <ScrollView showsVerticalScrollIndicator={false}>
 
         {/* ── HERO ── */}
-        <View style={styles.hero}>
-          <Text style={styles.heroTitle}>El marketplace que conecta lectores con librerías</Text>
-          <Text style={styles.heroSub}>
-            Miles de títulos de las mejores librerías independientes del país. Todo en un solo lugar.
-          </Text>
-          <View style={styles.heroButtons}>
-            <TouchableOpacity style={styles.heroBtnPrimary} onPress={() => navigation.navigate('Register')} activeOpacity={0.85}>
-              <Text style={styles.heroBtnPrimaryText}>Comenzar a comprar</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.heroBtnSecondary} onPress={() => navigation.navigate('RegisterLibrary')} activeOpacity={0.85}>
-              <Text style={styles.heroBtnSecondaryText}>Vender libros</Text>
-            </TouchableOpacity>
+        <LinearGradient colors={[VINOTINTO, DARK]} style={styles.hero}>
+          <View style={styles.heroText}>
+            <Text style={styles.heroTitle}>El marketplace que conecta lectores con librerías</Text>
+            <Text style={styles.heroSub}>
+              Miles de títulos de las mejores librerías independientes del país. Todo en un solo lugar.
+            </Text>
+            <View style={styles.heroButtons}>
+              <TouchableOpacity style={styles.heroBtnPrimary} onPress={() => navigation.navigate('Register')} activeOpacity={0.85}>
+                <Text style={styles.heroBtnPrimaryText}>Comenzar a comprar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.heroBtnSecondary} onPress={() => navigation.navigate('RegisterLibrary')} activeOpacity={0.85}>
+                <Text style={styles.heroBtnSecondaryText}>Vender libros</Text>
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
+        </LinearGradient>
 
         {/* ── STATS ── */}
         <View style={styles.statsSection}>
@@ -155,6 +159,7 @@ export default function Home({ navigation }) {
                   source={cat.img}
                   style={styles.catCardBg}
                   imageStyle={styles.catCardImg}
+                  resizeMode="cover"
                 >
                   <View style={styles.catOverlay} />
                   <Text style={styles.catLabel}>{cat.label}</Text>
@@ -186,7 +191,7 @@ export default function Home({ navigation }) {
         </View>
 
         {/* ── LIBRERÍA CTA ── */}
-        <View style={styles.libCta}>
+        <LinearGradient colors={[VINOTINTO, VINOTINTO2]} style={styles.libCta}>
           <Text style={styles.libCtaTitle}>¿Tienes una librería?</Text>
           <Text style={styles.libCtaSub}>
             Únete a nuestra red de librerías y alcanza a miles de lectores en todo el país.
@@ -194,7 +199,7 @@ export default function Home({ navigation }) {
           <TouchableOpacity style={styles.libCtaBtn} onPress={() => navigation.navigate('RegisterLibrary')} activeOpacity={0.85}>
             <Text style={styles.libCtaBtnText}>Registrar mi librería</Text>
           </TouchableOpacity>
-        </View>
+        </LinearGradient>
 
         <Footer onLinkPress={(link) => console.log('Footer link:', link)} />
 
@@ -207,7 +212,8 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: WHITE },
 
   /* Hero */
-  hero:                 { backgroundColor: VINOTINTO, paddingHorizontal: 20, paddingTop: 24, paddingBottom: 28 },
+  hero:                 { paddingHorizontal: 20, paddingTop: 24, paddingBottom: 28 },
+  heroText:             { flex: 1 },
   heroTitle:            { color: WHITE, fontSize: 24, fontWeight: '800', lineHeight: 32, marginBottom: 12 },
   heroSub:              { color: 'rgba(255,255,255,0.85)', fontSize: 14, lineHeight: 21, marginBottom: 24 },
   heroButtons:          { flexDirection: 'row', gap: 12 },
@@ -257,7 +263,7 @@ const styles = StyleSheet.create({
   stepDesc:    { fontSize: 11, color: GRAY, lineHeight: 17, textAlign: 'center' },
 
   /* Librería CTA */
-  libCta:        { backgroundColor: VINOTINTO2, paddingHorizontal: 24, paddingVertical: 36, alignItems: 'center' },
+  libCta:        { paddingHorizontal: 24, paddingVertical: 36, alignItems: 'center' },
   libCtaTitle:   { color: WHITE, fontSize: 21, fontWeight: '800', textAlign: 'center', marginBottom: 10 },
   libCtaSub:     { color: 'rgba(255,255,255,0.8)', fontSize: 14, textAlign: 'center', lineHeight: 20, marginBottom: 22 },
   libCtaBtn:     { backgroundColor: WHITE, borderRadius: 10, paddingHorizontal: 28, paddingVertical: 13 },
