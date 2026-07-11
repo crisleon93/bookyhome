@@ -30,6 +30,9 @@ def create_token(data: dict):
 
 def verify_token(token: str):
     try:
-        return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-    except Exception:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        print(f"✅ Token verificado correctamente: {payload.get('sub')}", flush=True)
+        return payload
+    except Exception as e:
+        print(f"❌ Error verificando token: {e}", flush=True)
         return None

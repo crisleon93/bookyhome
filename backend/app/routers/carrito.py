@@ -22,13 +22,13 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
     return payload
 
 
-@router.get("/carrito")
+@router.get("/")
 def get_my_carrito(user=Depends(get_current_user)):
     id_usuario = int(user["sub"])
     return obtener_carrito(id_usuario)
 
 
-@router.post("/carrito")
+@router.post("/")
 def add_to_cart(data: dict, user=Depends(get_current_user)):
     id_usuario = int(user["sub"])
     id_libro = data.get("id_libro")
@@ -49,13 +49,13 @@ def add_to_cart(data: dict, user=Depends(get_current_user)):
     return agregar_al_carrito(id_usuario, item)
 
 
-@router.delete("/carrito/{id_libro}")
+@router.delete("/{id_libro}")
 def remove_from_cart(id_libro: int, user=Depends(get_current_user)):
     id_usuario = int(user["sub"])
     return eliminar_item_carrito(id_usuario, id_libro)
 
 
-@router.post("/carrito/checkout")
+@router.post("/checkout")
 def checkout(user=Depends(get_current_user)):
     id_usuario = int(user["sub"])
     resultado = checkout_carrito(id_usuario)
@@ -64,7 +64,7 @@ def checkout(user=Depends(get_current_user)):
     return resultado
 
 
-@router.post("/carrito/clear")
+@router.post("/clear")
 def clear_my_cart(user=Depends(get_current_user)):
     id_usuario = int(user["sub"])
     return vaciar_carrito(id_usuario)

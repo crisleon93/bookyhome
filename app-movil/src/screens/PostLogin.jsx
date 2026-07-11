@@ -74,34 +74,38 @@ export default function PostLogin({ navigation }) {
     }
   };
 
-  const renderBook = ({ item }) => (
-    <TouchableOpacity
-      style={styles.card}
-      activeOpacity={0.85}
-      onPress={() => navigation.navigate('BookDetail', { book: item })}
-    >
-      {item.imagen
-        ? <Image source={{ uri: item.imagen }} style={styles.cardImg} />
-        : <View style={[styles.cardImg, styles.cardImgPlaceholder]}>
-            <Text style={{ fontSize: 28 }}>📚</Text>
-          </View>
-      }
-      <View style={styles.cardInfo}>
-        <Text style={styles.cardTitle} numberOfLines={2}>
-          {item.titulo || item.nombre || 'Sin título'}
-        </Text>
-        <Text style={styles.cardAuthor} numberOfLines={1}>
-          {item.autor_libro || item.autor || ''}
-        </Text>
-        <Text style={styles.cardPrice}>
-          ${Number(item.precio ?? 0).toLocaleString('es-CO')}
-        </Text>
-        <TouchableOpacity style={styles.addBtn} activeOpacity={0.8}>
-          <Text style={styles.addBtnText}>Agregar al carrito</Text>
-        </TouchableOpacity>
-      </View>
-    </TouchableOpacity>
-  );
+  const renderBook = ({ item }) => {
+    const imageUrl = item.imagen || item.imagen_url;
+
+    return (
+      <TouchableOpacity
+        style={styles.card}
+        activeOpacity={0.85}
+        onPress={() => navigation.navigate('BookDetail', { book: item })}
+      >
+        {imageUrl
+          ? <Image source={{ uri: imageUrl }} style={styles.cardImg} resizeMode="cover" />
+          : <View style={[styles.cardImg, styles.cardImgPlaceholder]}>
+              <Text style={{ fontSize: 28 }}>📚</Text>
+            </View>
+        }
+        <View style={styles.cardInfo}>
+          <Text style={styles.cardTitle} numberOfLines={2}>
+            {item.titulo || item.nombre || 'Sin título'}
+          </Text>
+          <Text style={styles.cardAuthor} numberOfLines={1}>
+            {item.autor_libro || item.autor || ''}
+          </Text>
+          <Text style={styles.cardPrice}>
+            ${Number(item.precio ?? 0).toLocaleString('es-CO')}
+          </Text>
+          <TouchableOpacity style={styles.addBtn} activeOpacity={0.8}>
+            <Text style={styles.addBtnText}>Agregar al carrito</Text>
+          </TouchableOpacity>
+        </View>
+      </TouchableOpacity>
+    );
+  };
 
   // El greeting va aquí dentro del ListHeader, no en el Header
   const ListHeader = () => (

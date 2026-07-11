@@ -19,7 +19,8 @@ const styles = StyleSheet.create({
     backgroundColor: VINOTINTO,
     paddingVertical: 12,
     paddingHorizontal: 20,
-    alignItems: 'flex-start',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  logo: { width: 40, height: 40 },
+  logo: { width: 140, height: 44, resizeMode: 'contain' },
 });

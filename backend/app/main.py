@@ -42,7 +42,7 @@ app.add_middleware(
 app.include_router(usuarios_router)
 app.include_router(libreria_router)
 app.include_router(auth_router)
-app.include_router(carrito_router)
+app.include_router(carrito_router, prefix="/carrito", tags=["Carrito"])
 app.include_router(stored_router)
 app.include_router(payments_router)
 app.include_router(libros.router, prefix="/libros", tags=["Libros"])

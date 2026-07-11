@@ -66,7 +66,7 @@ export default function Header({
         {/* Logo */}
         <TouchableOpacity
           style={styles.logoArea}
-          onPress={() => navigation?.navigate?.('Home')}
+          onPress={() => navigation?.navigate?.(isDashboard ? 'PostLogin' : 'Home')}
           activeOpacity={0.8}
         >
           <Image
@@ -74,9 +74,6 @@ export default function Header({
             style={styles.logoImg}
             resizeMode="contain"
           />
-          <Text style={[styles.logoText, isDashboard && styles.logoTextWhite]}>
-            BookyHome
-          </Text>
         </TouchableOpacity>
 
         {/* Acciones — public */}
@@ -124,7 +121,7 @@ export default function Header({
           <IconSearch size={18} color={isDashboard ? 'rgba(255,255,255,0.7)' : VINOTINTO} />
           <TextInput
             style={[styles.searchInput, isDashboard && styles.searchInputDark]}
-            placeholder="Buscar libros, autores..."
+            placeholder="Buscar libros..."
             placeholderTextColor={isDashboard ? 'rgba(255,255,255,0.5)' : '#AAA'}
             value={search}
             onChangeText={handleSearch}
@@ -185,8 +182,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14, paddingVertical: 10,
     borderBottomWidth: 0,               // sin línea entre filas
   },
-  logoArea:      { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  logoImg:       { width: 36, height: 36, borderRadius: 8 },
+  logoArea:      { flexDirection: 'row', alignItems: 'center', flexShrink: 1 },
+  logoImg:       { width: 132, height: 44, resizeMode: 'contain' },
   logoText:      { fontSize: 17, fontWeight: '800', color: VINOTINTO },
   logoTextWhite: { color: WHITE },
 
