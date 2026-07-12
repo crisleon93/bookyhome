@@ -45,43 +45,44 @@ const STEPS = [
   { num: '3', title: 'Compra seguro',     desc: 'Paga de forma segura y recibe tu libro en la puerta de tu casa con envío protegido.',                                 color: VINOTINTO  },
 ];
 
+// ── Stat icons: mismos SVG paths que el sitio web ──────────────────────────
+
 const IconLibro = () => (
-  <Svg width="28" height="28" viewBox="0 0 24 24" fill="none"
+  <Svg width="24" height="24" viewBox="0 0 24 24" fill="none"
     stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <Path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
-    <Path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+    <Path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2ZM12 6v12M8 10h4M8 14h3"/>
   </Svg>
 );
 
 const IconLibreria = () => (
-  <Svg width="28" height="28" viewBox="0 0 24 24" fill="none"
+  <Svg width="24" height="24" viewBox="0 0 24 24" fill="none"
     stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <Path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-    <Polyline points="9 22 9 12 15 12 15 22"/>
+    <Path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+    <Path d="M9 22V12h6v10"/>
   </Svg>
 );
 
 const IconUsuarios = () => (
-  <Svg width="28" height="28" viewBox="0 0 24 24" fill="none"
+  <Svg width="24" height="24" viewBox="0 0 24 24" fill="none"
     stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <Path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+    <Path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
     <Circle cx="9" cy="7" r="4"/>
-    <Path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+    <Path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
     <Path d="M16 3.13a4 4 0 0 1 0 7.75"/>
   </Svg>
 );
 
 const IconEstrella = () => (
-  <Svg width="28" height="28" viewBox="0 0 24 24" fill="none"
+  <Svg width="24" height="24" viewBox="0 0 24 24" fill="none"
     stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <Polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+    <Path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
   </Svg>
 );
 
 const STATS = [
-  { val: '+10.000', lbl: 'Libros disponibles',   Icon: IconLibro,    iconBg: VINOTINTO },
-  { val: '+150',    lbl: 'Librerías asociadas',   Icon: IconLibreria, iconBg: VINOTINTO },
-  { val: '+50.000', lbl: 'Usuarios activos',      Icon: IconUsuarios, iconBg: '#C5425A' },
+  { val: '+10,000', lbl: 'Libros disponibles',   Icon: IconLibro,    iconBg: VINOTINTO },
+  { val: '+150',    lbl: 'Librerías asociadas',   Icon: IconLibreria, iconBg: '#C5425A' },
+  { val: '+50,000', lbl: 'Usuarios activos',      Icon: IconUsuarios, iconBg: VINOTINTO },
   { val: '4.8',     lbl: 'Calificación promedio', Icon: IconEstrella, iconBg: '#C5425A' },
 ];
 
@@ -176,10 +177,12 @@ export default function Home({ navigation }) {
               </TouchableOpacity>
             ))}
           </View>
-          <TouchableOpacity onPress={() => navigation.navigate('Login')} activeOpacity={0.7}>
-            <Text style={{ color: '#7A1E3A', fontWeight: '700', textAlign: 'center', fontSize: 14, marginTop: 8, marginBottom: 4 }}>
-              Inicia sesión para ver el catálogo completo
-            </Text>
+          <TouchableOpacity 
+            style={styles.catalogBtn}
+            onPress={() => navigation.navigate('Login')} 
+            activeOpacity={0.85}
+          >
+            <Text style={styles.catalogBtnText}>Ver catálogo completo</Text>
           </TouchableOpacity>
         </View>
 
@@ -224,33 +227,33 @@ const styles = StyleSheet.create({
   hero: { paddingHorizontal: 20, paddingTop: 24, paddingBottom: 28 },
   heroInner: { gap: 18 },
   heroText: { flex: 1 },
-  heroTitle: { color: WHITE, fontSize: 24, fontWeight: '800', lineHeight: 32, marginBottom: 12 },
-  heroSub: { color: 'rgba(255,255,255,0.85)', fontSize: 14, lineHeight: 21, marginBottom: 24 },
-  heroButtons: { flexDirection: 'row', gap: 12, flexWrap: 'wrap' },
-  heroBtnPrimary: { backgroundColor: WHITE, borderRadius: 10, paddingHorizontal: 16, paddingVertical: 12, flex: 1, alignItems: 'center', minWidth: 140 },
-  heroBtnPrimaryText: { color: VINOTINTO, fontWeight: '800', fontSize: 14 },
-  heroBtnSecondary: { borderWidth: 2, borderColor: WHITE, borderRadius: 10, paddingHorizontal: 16, paddingVertical: 12, flex: 1, alignItems: 'center', minWidth: 140 },
-  heroBtnSecondaryText: { color: WHITE, fontWeight: '700', fontSize: 14 },
-  heroImageWrap: { borderRadius: 16, overflow: 'hidden', backgroundColor: 'rgba(255,255,255,0.12)' },
+  heroTitle: { color: WHITE, fontSize: 32, fontWeight: '800', lineHeight: 38, marginBottom: 12 },
+  heroSub: { color: 'rgba(255,255,255,0.85)', fontSize: 15, lineHeight: 22, marginBottom: 24 },
+  heroButtons: { flexDirection: 'column', gap: 12 },
+  heroBtnPrimary: { backgroundColor: WHITE, borderRadius: 6, paddingVertical: 14, alignItems: 'center' },
+  heroBtnPrimaryText: { color: VINOTINTO, fontWeight: '800', fontSize: 15 },
+  heroBtnSecondary: { borderWidth: 2, borderColor: WHITE, borderRadius: 6, paddingVertical: 14, alignItems: 'center' },
+  heroBtnSecondaryText: { color: WHITE, fontWeight: '700', fontSize: 15 },
+  heroImageWrap: { borderRadius: 12, overflow: 'hidden', backgroundColor: 'rgba(255,255,255,0.12)' },
   heroImage: { width: '100%', height: 180, resizeMode: 'cover' },
 
   /* Stats */
   statsSection: {
     backgroundColor: WHITE,
-    paddingVertical: 28, paddingHorizontal: 10,
+    paddingVertical: 24, paddingHorizontal: 16,
     borderBottomWidth: 1, borderBottomColor: '#F0EBE5',
   },
   statsGrid:      { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-around', gap: 16 },
-  statItem:       { alignItems: 'center', minWidth: (width / 2) - 30 },
-  statIconCircle: { width: 60, height: 60, borderRadius: 30, justifyContent: 'center', alignItems: 'center', marginBottom: 10 },
+  statItem:       { alignItems: 'center', width: '42%', marginVertical: 12 },
+  statIconCircle: { width: 65, height: 65, borderRadius: 32.5, justifyContent: 'center', alignItems: 'center', marginBottom: 12 },
   statEmoji:      { fontSize: 26 },
-  statVal:        { fontSize: 18, fontWeight: '800', color: DARK },
-  statLbl:        { fontSize: 11, color: GRAY, marginTop: 3, textAlign: 'center' },
+  statVal:        { fontSize: 24, fontWeight: '800', color: DARK },
+  statLbl:        { fontSize: 13, color: GRAY, marginTop: 4, textAlign: 'center', fontWeight: '500' },
 
   /* Sections */
-  section:      { paddingHorizontal: 16, paddingVertical: 28 },
-  sectionTitle: { fontSize: 19, fontWeight: '800', color: DARK, textAlign: 'center', marginBottom: 6 },
-  sectionSub:   { fontSize: 13, color: GRAY, textAlign: 'center', marginBottom: 20 },
+  section:      { paddingHorizontal: 16, paddingVertical: 32 },
+  sectionTitle: { fontSize: 22, fontWeight: '800', color: DARK, textAlign: 'center', marginBottom: 8 },
+  sectionSub:   { fontSize: 14, color: GRAY, textAlign: 'center', marginBottom: 24 },
 
   /* Features */
   featureCard:     { flexDirection: 'row', alignItems: 'flex-start', gap: 14, backgroundColor: WHITE, borderRadius: 14, padding: 16, marginBottom: 12, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
@@ -265,6 +268,8 @@ const styles = StyleSheet.create({
   catCardImg: { borderRadius: 12 },
   catOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.38)', borderRadius: 12 },
   catLabel:   { color: WHITE, fontWeight: '700', fontSize: 13, padding: 10 },
+  catalogBtn: { backgroundColor: VINOTINTO, paddingVertical: 14, paddingHorizontal: 24, borderRadius: 6, alignItems: 'center', alignSelf: 'center', marginTop: 12, marginBottom: 8, width: '100%' },
+  catalogBtnText: { color: WHITE, fontWeight: '800', fontSize: 15 },
 
   /* Steps */
   stepsRow:    { flexDirection: 'row', gap: 12, marginTop: 10 },
@@ -276,8 +281,8 @@ const styles = StyleSheet.create({
 
   /* Librería CTA */
   libCta:        { paddingHorizontal: 24, paddingVertical: 36, alignItems: 'center' },
-  libCtaTitle:   { color: WHITE, fontSize: 21, fontWeight: '800', textAlign: 'center', marginBottom: 10 },
-  libCtaSub:     { color: 'rgba(255,255,255,0.8)', fontSize: 14, textAlign: 'center', lineHeight: 20, marginBottom: 22 },
-  libCtaBtn:     { backgroundColor: WHITE, borderRadius: 10, paddingHorizontal: 28, paddingVertical: 13 },
+  libCtaTitle:   { color: WHITE, fontSize: 24, fontWeight: '800', textAlign: 'center', marginBottom: 10 },
+  libCtaSub:     { color: 'rgba(255,255,255,0.8)', fontSize: 15, textAlign: 'center', lineHeight: 22, marginBottom: 24 },
+  libCtaBtn:     { backgroundColor: WHITE, borderRadius: 6, paddingHorizontal: 28, paddingVertical: 14 },
   libCtaBtnText: { color: VINOTINTO, fontWeight: '800', fontSize: 15 },
 });

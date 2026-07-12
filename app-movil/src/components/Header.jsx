@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, Image,
-  StyleSheet, Modal, StatusBar,
+  StyleSheet, Modal, StatusBar, Alert,
 } from 'react-native';
 import { IconSearch, IconUser, IconUserPlus, IconLocation, IconClose, IconChevronRight, IconBook } from './Icons';
 
@@ -35,6 +35,8 @@ export default function Header({
 }) {
   const [search, setSearch]           = useState('');
   const [modalVisible, setModalVisible] = useState(false);
+  const [locationModalVisible, setLocationModalVisible] = useState(false);
+  const [selectedLocation, setSelectedLocation] = useState('Todo el país (Colombia)');
   const isPublic    = variant === 'public';
   const isDashboard = variant === 'dashboard';
   const topBar      = showTopBar !== undefined ? showTopBar : isPublic;
@@ -55,12 +57,12 @@ export default function Header({
         backgroundColor={VINOTINTO}
       />
 
-      {/* FILA 0 — Top bar "Envíos a todo el país" */}
       {topBar && (
-        <View style={styles.topBar}>
+        <TouchableOpacity style={[styles.topBar, { flexDirection: 'row', justifyContent: 'center', alignItems: 'center' }]} activeOpacity={0.7} onPress={() => setLocationModalVisible(true)}>
           <IconLocation size={14} color={WHITE} />
-          <Text style={styles.topBarText}>  Envíos a todo el país</Text>
-        </View>
+          <Text style={styles.topBarText}>  Enviar a: {selectedLocation}</Text>
+          <Text style={{ color: WHITE, fontSize: 10, marginLeft: 6 }}>▼</Text>
+        </TouchableOpacity>
       )}
 
       {/* FILA 1 — Logo + acciones */}
@@ -169,6 +171,47 @@ export default function Header({
           </View>
         </TouchableOpacity>
       </Modal>
+
+      {/* Modal: Elige tu ubicación */}
+      <Modal visible={locationModalVisible} transparent animationType="fade" onRequestClose={() => setLocationModalVisible(false)}>
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setLocationModalVisible(false)}
+        >
+          <View style={[styles.modalCard, { maxHeight: '80%' }]} onStartShouldSetResponder={() => true}>
+            <TouchableOpacity style={styles.modalClose} onPress={() => setLocationModalVisible(false)}>
+              <IconClose size={20} color={CARBON} />
+            </TouchableOpacity>
+            <Text style={styles.modalTitle}>Elige tu ubicación</Text>
+            <Text style={styles.modalSubtitle}>Selecciona dónde quieres recibir tus compras.</Text>
+            <View style={{ marginTop: 15, width: '100%' }}>
+              {['Todo el país (Colombia)', 'Bogotá', 'Medellín', 'Cali', 'Barranquilla', 'Cartagena', 'Bucaramanga'].map((city, idx) => (
+                <TouchableOpacity
+                  key={idx}
+                  style={{
+                    paddingVertical: 12,
+                    paddingHorizontal: 15,
+                    backgroundColor: selectedLocation === city ? '#F4EDE2' : 'transparent',
+                    borderWidth: 1.5,
+                    borderColor: '#E0DBD4',
+                    borderRadius: 8,
+                    marginBottom: 10,
+                  }}
+                  onPress={() => {
+                    setSelectedLocation(city);
+                    setLocationModalVisible(false);
+                  }}
+                >
+                  <Text style={{ fontSize: 15, fontWeight: selectedLocation === city ? 'bold' : 'normal', color: CARBON }}>
+                    {city}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </>
   );
 }
@@ -191,20 +234,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 6,
-    minHeight: 70,
+    paddingTop: 4,
+    paddingBottom: 4,
+    minHeight: 50,
   },
   logoArea: {
     flexDirection: 'row',
     alignItems: 'center',
     flexShrink: 1,
-    marginLeft: -42,
+    marginLeft: -54,
     justifyContent: 'flex-start',
-    minWidth: 150,
-    maxWidth: 200,
+    minWidth: 160,
+    maxWidth: 220,
   },
-  logoImg: { width: 170, height: 92, resizeMode: 'contain' },
+  logoImg: { width: 220, height: 120, resizeMode: 'contain', marginTop: -35, marginBottom: -35 },
   logoText: { fontSize: 17, fontWeight: '800', color: VINOTINTO },
   logoTextWhite: { color: WHITE },
 
