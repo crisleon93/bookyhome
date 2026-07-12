@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import ReactDOM from 'react-dom';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import logo from '../assets/logo.png';
 import logo2 from '../assets/logo2.png';
@@ -65,6 +66,8 @@ function Header({ variant }) {
   const location = useLocation();
   const navigate = useNavigate();
   const [modalOpen, setModalOpen] = useState(false);
+  const [locationOpen, setLocationOpen] = useState(false);
+  const [selectedLocation, setSelectedLocation] = useState(localStorage.getItem('bookyhome_location') || 'Todo el país (Colombia)');
   const [loginOpen, setLoginOpen] = useState(false);
   const [registerOpen, setRegisterOpen] = useState(false);
   const [libreriaOpen, setLibreriaOpen] = useState(false);
@@ -166,10 +169,11 @@ function Header({ variant }) {
       >
         {isHome && (
           <div className="top-bar">
-            <div className="top-bar-container">
-              <div className="location">
+            <div className="layout-container" style={{ display: 'flex', alignItems: 'center', minHeight: '32px' }}>
+              <div className="location" style={{ cursor: 'pointer', userSelect: 'none' }} onClick={(e) => { e.stopPropagation(); setLocationOpen(prev => !prev); }}>
                 <IconLocation />
-                Envíos a todo el país
+                <span>Enviar a: {selectedLocation}</span>
+                <span style={{ fontSize: '10px', marginLeft: '6px' }}>▼</span>
               </div>
             </div>
           </div>
@@ -400,6 +404,57 @@ function Header({ variant }) {
             />
           </div>
         </div>
+      )}
+      {ReactDOM.createPortal(
+        locationOpen ? (
+          <div
+            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 99999 }}
+            onMouseDown={() => setLocationOpen(false)}
+          >
+            <div
+              style={{ background: '#fff', borderRadius: '12px', padding: '2rem', width: '100%', maxWidth: '380px', position: 'relative', boxShadow: '0 20px 60px rgba(0,0,0,0.25)', margin: '0 20px' }}
+              onMouseDown={e => e.stopPropagation()}
+            >
+              <button
+                onMouseDown={() => setLocationOpen(false)}
+                style={{ position: 'absolute', top: '12px', right: '12px', background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.4rem', color: '#aaa', lineHeight: 1 }}
+              >✕</button>
+              <h2 style={{ margin: '0 0 0.3rem', fontSize: '1.3rem', fontWeight: 800, color: '#2A2A2A', textAlign: 'center' }}>Elige tu ubicación</h2>
+              <p style={{ textAlign: 'center', color: '#888', fontSize: '0.85rem', marginBottom: '1.2rem' }}>Selecciona dónde quieres recibir tus compras.</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {['Todo el país (Colombia)', 'Bogotá', 'Medellín', 'Cali', 'Barranquilla', 'Cartagena', 'Bucaramanga'].map((city) => (
+                  <button
+                    key={city}
+                    onMouseDown={(e) => {
+                      e.stopPropagation();
+                      setSelectedLocation(city);
+                      setLocationOpen(false);
+                      localStorage.setItem('bookyhome_location', city);
+                      notify(`Ubicación actualizada a ${city}`, 'success');
+                    }}
+                    style={{
+                      width: '100%',
+                      padding: '12px 16px',
+                      textAlign: 'left',
+                      background: selectedLocation === city ? '#F4EDE2' : '#fff',
+                      border: selectedLocation === city ? '2px solid #7A1E3A' : '1.5px solid #e5e0d8',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      fontFamily: 'inherit',
+                      fontSize: '15px',
+                      fontWeight: selectedLocation === city ? 700 : 400,
+                      color: '#2A2A2A',
+                    }}
+                  >
+                    {selectedLocation === city && <span style={{ color: '#7A1E3A', marginRight: '8px' }}>✓</span>}
+                    {city}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        ) : null,
+        document.body
       )}
     </>
   );

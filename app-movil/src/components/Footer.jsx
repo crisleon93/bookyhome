@@ -9,19 +9,19 @@ const VINOTINTO = '#7A1E3A';
 const COLUMNS = [
   {
     title: 'BookyHome',
-    links: ['Catálogo de libros', 'Cómo comprar', 'Métodos de pago', 'Envíos y entregas'],
+    links: ['Acerca de nosotros', 'Contacto', 'Términos y condiciones', 'Política de privacidad'],
   },
   {
     title: 'Comprar',
-    links: ['Catálogo de libros', 'Cómo comprar', 'Métodos de pago', 'Envíos y entregas'],
+    links: ['Explorar catálogo', 'Cómo comprar', 'Envíos y entregas', 'Devoluciones'],
   },
   {
     title: 'Vender',
-    links: ['Vender en BookyHome', 'Cómo funciona', 'Planes y precios', 'Centro de vendedores'],
+    links: ['Vender en BookyHome', 'Planes y tarifas', 'Centro de vendedores', 'FAQ vendedores'],
   },
   {
-    title: 'Ayuda',
-    links: ['Centro de ayuda', 'Preguntas frecuentes', 'Contacto', 'Devoluciones'],
+    title: 'Mi Cuenta',
+    links: ['Iniciar sesión / Registro', 'Mis compras', 'Mis favoritos', 'Ayuda y Soporte'],
   },
 ];
 
