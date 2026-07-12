@@ -547,5 +547,31 @@
       "estado": "pagado",
       "metodo_pago": "Tarjeta de Crédito"
     }
+  ],
+  "16": [
+    {
+      "id_orden": 1,
+      "fecha": "2026-07-12T21:15:55.460321Z",
+      "items": [
+        {
+          "id_libro": 45,
+          "titulo": "Libro de Prueba Oculto",
+          "autor_libro": "Autor Anónimo",
+          "precio_libro": 15000.0,
+          "cantidad": 1,
+          "imagen": null
+        },
+        {
+          "id_libro": 44,
+          "titulo": "El principito",
+          "autor_libro": "Antoine de Saint-Exupéry",
+          "precio_libro": 20000.0,
+          "cantidad": 1,
+          "imagen": "https://covers.openlibrary.org/b/id/12688412-L.jpg"
+        }
+      ],
+      "total": 35000.0,
+      "estado": "pendiente"
+    }
   ]
 }

@@ -47,8 +47,7 @@ const resolveLibroCandidate = (candidate) => {
   return resolveImageUrl(candidate);
 };
 
-const LibroCard = ({ libro, onAdd, adding = false, onVerDetalles }) => {
-  const navigate = useNavigate();
+const LibroCard = ({ libro, onAdd, onVerDetalles }) => {
   const [addMsg, setAddMsg] = useState('');
   const [esFavorito, setEsFavorito] = useState(false);
 
@@ -88,13 +87,6 @@ const LibroCard = ({ libro, onAdd, adding = false, onVerDetalles }) => {
   const price     = Number(libro.precio_libro ?? libro.precio ?? 0);
   const outOfStock = Number(libro.stock ?? 0) <= 0;
   const categoria  = libro.nombre_categoria || '';
-
-  const handleAdd = async () => {
-    if (!onAdd) return;
-    await onAdd(libro);
-    setAddMsg('¡Agregado!');
-    setTimeout(() => setAddMsg(''), 2000);
-  };
 
   return (
     <div className="libro-card">

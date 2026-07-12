@@ -22,11 +22,7 @@ function ResenaLibro({ idLibro, idUsuario }) {
   const [comentario, setComentario] = useState('');
   const [enviando, setEnviando] = useState(false);
 
-  useEffect(() => {
-    cargarResenas();
-  }, [idLibro]);
-
-  const cargarResenas = async () => {
+  const cargarResenas = React.useCallback(async () => {
     try {
       const response = await api.get(`/resenas/libro/${idLibro}`);
       setResenas(response.data.resenas || []);
@@ -42,7 +38,11 @@ function ResenaLibro({ idLibro, idUsuario }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [idLibro, idUsuario]);
+
+  useEffect(() => {
+    cargarResenas();
+  }, [cargarResenas]);
 
   const handleEnviarResena = async (e) => {
     e.preventDefault();
