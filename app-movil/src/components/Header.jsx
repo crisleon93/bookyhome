@@ -44,13 +44,15 @@ export default function Header({
     onSearch?.(text);
   };
 
-  const bgColor = isDashboard ? VINOTINTO : WHITE;
+  const bgColor = VINOTINTO;
+  const fgColor = WHITE;
+  const isPublicHeader = isPublic;
 
   return (
     <>
       <StatusBar
-        barStyle={isDashboard ? 'light-content' : 'dark-content'}
-        backgroundColor={isDashboard ? VINOTINTO : WHITE}
+        barStyle="light-content"
+        backgroundColor={VINOTINTO}
       />
 
       {/* FILA 0 — Top bar "Envíos a todo el país" */}
@@ -84,16 +86,16 @@ export default function Header({
               onPress={() => navigation?.navigate?.('Login')}
               activeOpacity={0.8}
             >
-              <IconUser size={22} color={VINOTINTO} />
-              <Text style={styles.actionText}>Ingresa</Text>
+              <IconUser size={22} color={fgColor} />
+              <Text style={[styles.actionText, { color: fgColor }]}>Ingresa</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.actionBtn}
               onPress={() => setModalVisible(true)}
               activeOpacity={0.8}
             >
-              <IconUserPlus size={22} color={VINOTINTO} />
-              <Text style={styles.actionText}>Crear cuenta</Text>
+              <IconUserPlus size={22} color={fgColor} />
+              <Text style={[styles.actionText, { color: fgColor }]}>Crear cuenta</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -173,24 +175,50 @@ export default function Header({
 
 const styles = StyleSheet.create({
   /* Top bar */
-  topBar:     { backgroundColor: VINOTINTO, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', paddingVertical: 7 },
-  topBarText: { color: WHITE, fontSize: 12, fontWeight: '500' },
+  topBar: {
+    backgroundColor: VINOTINTO,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 6,
+    paddingHorizontal: 16,
+  },
+  topBarText: { color: WHITE, fontSize: 12, fontWeight: '600', letterSpacing: 0.2 },
 
   /* Fila 1 — logo + acciones */
   row1: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 14, paddingVertical: 10,
-    borderBottomWidth: 0,               // sin línea entre filas
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 6,
+    minHeight: 70,
   },
-  logoArea:      { flexDirection: 'row', alignItems: 'center', flexShrink: 1 },
-  logoImg:       { width: 132, height: 44, resizeMode: 'contain' },
-  logoText:      { fontSize: 17, fontWeight: '800', color: VINOTINTO },
+  logoArea: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexShrink: 1,
+    marginLeft: -42,
+    justifyContent: 'flex-start',
+    minWidth: 150,
+    maxWidth: 200,
+  },
+  logoImg: { width: 170, height: 92, resizeMode: 'contain' },
+  logoText: { fontSize: 17, fontWeight: '800', color: VINOTINTO },
   logoTextWhite: { color: WHITE },
 
   /* Acciones public */
-  actions:    { flexDirection: 'row', gap: 20 },
-  actionBtn:  { alignItems: 'center', gap: 3 },
-  actionText: { fontSize: 10, color: VINOTINTO, fontWeight: '600' },
+  actions: { flexDirection: 'row', alignItems: 'center', gap: 6, justifyContent: 'center', marginLeft: 6 },
+  actionBtn: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 60,
+    paddingVertical: 2,
+    paddingHorizontal: 2,
+    borderRadius: 8,
+  },
+  actionText: { fontSize: 10, color: WHITE, fontWeight: '700', marginTop: 2, textAlign: 'center' },
 
   /* Dashboard derecha */
   dashRight:    { flexDirection: 'row', alignItems: 'center', gap: 10 },
@@ -200,15 +228,24 @@ const styles = StyleSheet.create({
 
   /* Fila 2 — búsqueda */
   row2: {
-    paddingHorizontal: 14, paddingBottom: 12, paddingTop: 4,
-    borderBottomWidth: 1, borderBottomColor: '#EEE',
-    shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 6, elevation: 3,
+    paddingHorizontal: 14,
+    paddingTop: 2,
+    paddingBottom: 6,
+    shadowColor: '#000',
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 2,
   },
   searchWrapper: {
-    flexDirection: 'row', alignItems: 'center', gap: 10,
-    backgroundColor: '#F5F5F5', borderRadius: 12,
-    paddingHorizontal: 14, height: 44,
-    borderWidth: 1, borderColor: '#E0DBD4',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#F5F5F5',
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    height: 40,
+    borderWidth: 1,
+    borderColor: '#E0DBD4',
   },
   searchWrapperDark: { backgroundColor: 'rgba(255,255,255,0.15)', borderColor: 'rgba(255,255,255,0.2)' },
   searchInput:       { flex: 1, fontSize: 14, color: '#222', paddingVertical: 0 },

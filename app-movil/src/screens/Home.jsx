@@ -85,6 +85,10 @@ const STATS = [
   { val: '4.8',     lbl: 'Calificación promedio', Icon: IconEstrella, iconBg: '#C5425A' },
 ];
 
+const HERO_IMAGE = {
+  uri: 'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=800&q=80',
+};
+
 const CARD_W = (width - 48) / 2;
 
 export default function Home({ navigation }) {
@@ -96,18 +100,23 @@ export default function Home({ navigation }) {
 
         {/* ── HERO ── */}
         <LinearGradient colors={[VINOTINTO, DARK]} style={styles.hero}>
-          <View style={styles.heroText}>
-            <Text style={styles.heroTitle}>El marketplace que conecta lectores con librerías</Text>
-            <Text style={styles.heroSub}>
-              Miles de títulos de las mejores librerías independientes del país. Todo en un solo lugar.
-            </Text>
-            <View style={styles.heroButtons}>
-              <TouchableOpacity style={styles.heroBtnPrimary} onPress={() => navigation.navigate('Register')} activeOpacity={0.85}>
-                <Text style={styles.heroBtnPrimaryText}>Comenzar a comprar</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.heroBtnSecondary} onPress={() => navigation.navigate('RegisterLibrary')} activeOpacity={0.85}>
-                <Text style={styles.heroBtnSecondaryText}>Vender libros</Text>
-              </TouchableOpacity>
+          <View style={styles.heroInner}>
+            <View style={styles.heroText}>
+              <Text style={styles.heroTitle}>El marketplace que conecta lectores con librerías</Text>
+              <Text style={styles.heroSub}>
+                Miles de títulos de las mejores librerías independientes del país. Todo en un solo lugar.
+              </Text>
+              <View style={styles.heroButtons}>
+                <TouchableOpacity style={styles.heroBtnPrimary} onPress={() => navigation.navigate('Register')} activeOpacity={0.85}>
+                  <Text style={styles.heroBtnPrimaryText}>Comenzar a comprar</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.heroBtnSecondary} onPress={() => navigation.navigate('RegisterLibrary')} activeOpacity={0.85}>
+                  <Text style={styles.heroBtnSecondaryText}>Vender libros</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+            <View style={styles.heroImageWrap}>
+              <Image source={HERO_IMAGE} style={styles.heroImage} />
             </View>
           </View>
         </LinearGradient>
@@ -212,15 +221,18 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: WHITE },
 
   /* Hero */
-  hero:                 { paddingHorizontal: 20, paddingTop: 24, paddingBottom: 28 },
-  heroText:             { flex: 1 },
-  heroTitle:            { color: WHITE, fontSize: 24, fontWeight: '800', lineHeight: 32, marginBottom: 12 },
-  heroSub:              { color: 'rgba(255,255,255,0.85)', fontSize: 14, lineHeight: 21, marginBottom: 24 },
-  heroButtons:          { flexDirection: 'row', gap: 12 },
-  heroBtnPrimary:       { backgroundColor: WHITE, borderRadius: 10, paddingHorizontal: 16, paddingVertical: 12, flex: 1, alignItems: 'center' },
-  heroBtnPrimaryText:   { color: VINOTINTO, fontWeight: '800', fontSize: 14 },
-  heroBtnSecondary:     { borderWidth: 2, borderColor: WHITE, borderRadius: 10, paddingHorizontal: 16, paddingVertical: 12, flex: 1, alignItems: 'center' },
+  hero: { paddingHorizontal: 20, paddingTop: 24, paddingBottom: 28 },
+  heroInner: { gap: 18 },
+  heroText: { flex: 1 },
+  heroTitle: { color: WHITE, fontSize: 24, fontWeight: '800', lineHeight: 32, marginBottom: 12 },
+  heroSub: { color: 'rgba(255,255,255,0.85)', fontSize: 14, lineHeight: 21, marginBottom: 24 },
+  heroButtons: { flexDirection: 'row', gap: 12, flexWrap: 'wrap' },
+  heroBtnPrimary: { backgroundColor: WHITE, borderRadius: 10, paddingHorizontal: 16, paddingVertical: 12, flex: 1, alignItems: 'center', minWidth: 140 },
+  heroBtnPrimaryText: { color: VINOTINTO, fontWeight: '800', fontSize: 14 },
+  heroBtnSecondary: { borderWidth: 2, borderColor: WHITE, borderRadius: 10, paddingHorizontal: 16, paddingVertical: 12, flex: 1, alignItems: 'center', minWidth: 140 },
   heroBtnSecondaryText: { color: WHITE, fontWeight: '700', fontSize: 14 },
+  heroImageWrap: { borderRadius: 16, overflow: 'hidden', backgroundColor: 'rgba(255,255,255,0.12)' },
+  heroImage: { width: '100%', height: 180, resizeMode: 'cover' },
 
   /* Stats */
   statsSection: {
