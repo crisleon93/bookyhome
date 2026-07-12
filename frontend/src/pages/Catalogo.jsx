@@ -8,7 +8,7 @@ import '../styles/catalogo.css';
 
 
 const Catalogo = () => {
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const [libros, setLibros] = useState([]);
   const [loading, setLoading] = useState(true);
   const [pagina, setPagina] = useState(1);
@@ -28,11 +28,7 @@ const Catalogo = () => {
     ordenar_por: 'relevancia'
   });
 
-  useEffect(() => {
-    cargarLibros();
-  }, [filtros, pagina]);
-
-  const cargarLibros = async () => {
+  const cargarLibros = React.useCallback(async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
@@ -56,7 +52,11 @@ const Catalogo = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filtros, pagina]);
+
+  useEffect(() => {
+    cargarLibros();
+  }, [cargarLibros]);
 
   const handleFiltrosChange = (nuevosFiltros) => {
     setFiltros(nuevosFiltros);

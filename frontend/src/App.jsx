@@ -10,18 +10,13 @@ import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Libreria from './pages/Libreria';
-import Catalogo from './pages/Catalogo';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/Resetpassword';
 import PostLogin from './pages/PostLogin';
 import MiTienda from './pages/MiTienda';
 import PrivateRoute from './components/PrivateRoute';
-import Checkout from './pages/Checkout';
-import StoredProcedurePage from './pages/StoredProcedurePage';
 import PublicarLibro from './pages/PublicarLibro';
 import AdminDashboard from './pages/AdminDashboard';
-import Chat from './pages/Chat';
-import Notificaciones from './pages/Notificaciones';
 import Historial from './pages/Historial';
 import VerifyEmail from './pages/VerifyEmail';
 
@@ -65,18 +60,12 @@ function MainLayout() {
         <Route path="/libreria" element={<Libreria />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
-        <Route path="/libros" element={<StoredProcedurePage />} />
-        <Route path="/catalogo" element={<Catalogo />} />
         <Route path="/legal" element={<LegalPage />} />
 
         {/* ── RUTAS PROTEGIDAS GENERALES (Cualquier usuario logueado) ── */}
         <Route element={<PrivateRoute />}>
           <Route path="/post-login" element={<PostLogin />} />
           <Route path="/carrito" element={<Navigate to="/post-login?seccion=Carrito" replace />} />
-          <Route path="/checkout/:orderId" element={<Checkout />} />
-          <Route path="/chat" element={<Chat />} />
-          <Route path="/chat/:id_sala" element={<Chat />} />
-          <Route path="/notificaciones" element={<Notificaciones />} />
           <Route path="/historial" element={<Historial />} />
         </Route>
 

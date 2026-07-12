@@ -213,6 +213,19 @@ export default function PostLogin() {
   const [paypalError, setPaypalError] = useState("");
   const [paypalProcessing, setPaypalProcessing] = useState(false);
 
+  // Cupón
+  const [couponCode, setCouponCode] = useState("");
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [couponError, setCouponError] = useState("");
+  const [couponSuccess, setCouponSuccess] = useState("");
+  const [discountAmount, setDiscountAmount] = useState(0);
+
+  const formatCurrency = (value) =>
+    Number(value || 0).toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
+
+  const baseTotal = order ? Number(order.total || 0) : 0;
+  const totalToPay = Math.max(0, baseTotal - discountAmount);
+
   // Estados para nuevos métodos de pago
   const [sucursalCodigo, setSucursalCodigo] = useState("");
   const [sucursalPuntos, setSucursalPuntos] = useState([]);
@@ -620,15 +633,71 @@ export default function PostLogin() {
     return Object.keys(errors).length === 0;
   };
 
+  const handleValidateCoupon = async (e) => {
+    e?.preventDefault();
+    const code = couponCode.trim();
+
+    if (!code) {
+      setCouponError("Ingresa un código de cupón.");
+      setCouponSuccess("");
+      setDiscountAmount(0);
+      return;
+    }
+
+    setCouponLoading(true);
+    setCouponError("");
+    setCouponSuccess("");
+
+    try {
+      const res = await api.post("/cupones/validar", {
+        codigo: code,
+        order_id: Number(orderId),
+        total: baseTotal
+      });
+
+      const payload = res.data?.data || res.data || {};
+      const serverMessage = payload?.mensaje || payload?.message || "";
+      const discountValue = Number(payload?.descuento ?? payload?.discount_amount ?? payload?.valor_descuento ?? payload?.value ?? 0);
+
+      if (payload?.valido === false || payload?.valid === false || payload?.ok === false) {
+        const message = String(serverMessage || payload?.detail || "El cupón ingresado no es válido.");
+        const normalized = message.toLowerCase();
+        let friendly = "El cupón ingresado no es válido.";
+        if (/expir|caduc|vigenc/i.test(normalized)) friendly = "El cupón ha expirado.";
+        else if (/usad|reutil|ya/i.test(normalized)) friendly = "Este cupón ya fue usado.";
+        else if (/inválid|incorrect|no existe|no encontrado/i.test(normalized)) friendly = "El cupón ingresado no es válido.";
+        setDiscountAmount(0);
+        setCouponError(friendly);
+        return;
+      }
+
+      setDiscountAmount(Math.max(0, discountValue));
+      setCouponSuccess(serverMessage || "Cupón aplicado correctamente.");
+    } catch (err) {
+      const message = err?.response?.data?.detail || err?.response?.data?.message || err?.response?.data?.error || err?.message || "El cupón ingresado no es válido.";
+      const normalized = String(message).toLowerCase();
+      let friendly = "El cupón ingresado no es válido.";
+      if (/expir|caduc|vigenc/i.test(normalized)) friendly = "El cupón ha expirado.";
+      else if (/usad|reutil|ya/i.test(normalized)) friendly = "Este cupón ya fue usado.";
+      else if (/inválid|incorrect|no existe|no encontrado/i.test(normalized)) friendly = "El cupón ingresado no es válido.";
+      setDiscountAmount(0);
+      setCouponError(friendly);
+    } finally {
+      setCouponLoading(false);
+    }
+  };
+
   const processPaymentApi = async (method) => {
     setPaymentProcessing(true);
     setCheckoutError("");
 
     try {
+      const amountToCharge = Math.max(0, Number(baseTotal || 0) - Number(discountAmount || 0));
       const payload = {
         order_id: parseInt(orderId),
-        amount: parseFloat(order.total),
-        payment_method: method
+        amount: parseFloat(amountToCharge),
+        payment_method: method,
+        ...(couponCode.trim() ? { coupon_code: couponCode.trim() } : {})
       };
 
       const res = await postPayment(payload);
@@ -1594,6 +1663,28 @@ export default function PostLogin() {
                         }}>
                           <h2 style={{ fontWeight: 700, margin: "0 0 20px 0", fontSize: "1.3rem" }}>Método de Pago</h2>
 
+                          <div style={{ marginBottom: "20px", padding: "14px", borderRadius: "8px", border: "1px solid #e8e0d3", background: "#fcfaf7" }}>
+                            <div style={{ display: "flex", gap: "10px", alignItems: "center", marginBottom: "10px" }}>
+                              <input
+                                type="text"
+                                placeholder="Código de cupón"
+                                value={couponCode}
+                                onChange={(e) => {
+                                  setCouponCode(e.target.value.toUpperCase());
+                                  setCouponError("");
+                                  setCouponSuccess("");
+                                  setDiscountAmount(0);
+                                }}
+                                style={{ flex: 1, padding: "10px", borderRadius: "6px", border: "1.5px solid #e0dbd4", outline: "none", fontFamily: "'Montserrat', sans-serif" }}
+                              />
+                              <button type="button" onClick={handleValidateCoupon} disabled={couponLoading} style={{ padding: "10px 14px", borderRadius: "6px", border: "none", background: "var(--vinotinto)", color: "#fff", fontWeight: 700, cursor: couponLoading ? "not-allowed" : "pointer", opacity: couponLoading ? 0.7 : 1 }}>
+                                {couponLoading ? "Validando..." : "Aplicar"}
+                              </button>
+                            </div>
+                            {couponError ? <p style={{ margin: "0 0 8px", color: "#b42318", fontSize: "0.82rem", fontWeight: 600 }}>{couponError}</p> : null}
+                            {couponSuccess ? <p style={{ margin: "0", color: "#057a55", fontSize: "0.82rem", fontWeight: 600 }}>{couponSuccess}</p> : null}
+                          </div>
+
                           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "12px", marginBottom: "30px" }}>
                             <button
                               onClick={() => setPaymentMethod("tarjeta")}
@@ -2337,10 +2428,16 @@ export default function PostLogin() {
                               <span>Envío</span>
                               <span style={{ color: "green", fontWeight: 600 }}>Gratis</span>
                             </div>
+                            {discountAmount > 0 ? (
+                              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.95rem" }}>
+                                <span>Descuento</span>
+                                <span style={{ color: "#057a55", fontWeight: 700 }}>-{formatCurrency(discountAmount)}</span>
+                              </div>
+                            ) : null}
                             <div style={{ display: "flex", justifyContent: "space-between", fontSize: "1.2rem", fontWeight: 800, marginTop: "10px", borderTop: "1px solid #e0dbd4", paddingTop: "15px" }}>
                               <span>Total</span>
                               <span style={{ color: "var(--rojo-suave)" }}>
-                                {Number(order.total).toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 })}
+                                {formatCurrency(totalToPay)}
                               </span>
                             </div>
                           </div>

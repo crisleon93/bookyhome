@@ -16,15 +16,6 @@ export default function Historial() {
   const [error, setError] = useState(null);
 
   // ============= CARGAR DATOS =============
-  useEffect(() => {
-    if (!token) {
-      navigate("/login");
-      return;
-    }
-    cargarHistorial();
-    cargarEstadisticas();
-  }, [token, filter]);
-
   const cargarHistorial = async () => {
     try {
       setLoading(true);
@@ -43,10 +34,19 @@ export default function Historial() {
     try {
       const data = await historialService.obtenerEstadisticas();
       setEstadisticas(data);
-    } catch (err) {
-      console.error("Error:", err);
+    } catch {
+      console.error("Error cargando estadísticas");
     }
   };
+
+  useEffect(() => {
+    if (!token) {
+      navigate("/login");
+      return;
+    }
+    cargarHistorial();
+    cargarEstadisticas();
+  }, [token, filter, navigate]);
 
   // ============= ELIMINAR =============
   const handleEliminar = async (id_interaccion) => {

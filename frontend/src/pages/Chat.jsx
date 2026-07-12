@@ -1,7 +1,6 @@
 // src/pages/Chat.jsx
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import axios from "axios";
 import { getToken } from "../hooks/useAuth";
 import { chatService } from "../services/chat";
 import { jwtDecode } from "jwt-decode";
@@ -29,11 +28,20 @@ export default function Chat({ embedded = false, selectedSalaProp = null, onSele
       try {
         const decoded = jwtDecode(token);
         setUsuarioActual({ id_usuario: parseInt(decoded.sub) });
-      } catch (err) {
-        console.error("Error decodificando token:", err);
+      } catch {
+        console.error("Error decodificando token");
       }
     }
   }, [token]);
+
+  const cargarSalas = useCallback(async () => {
+    try {
+      const data = await chatService.getSalas();
+      setSalas(data.salas || []);
+    } catch {
+      console.error("Error cargando salas");
+    }
+  }, []);
 
   // ============= OBTENER SALAS =============
   useEffect(() => {
@@ -44,43 +52,30 @@ export default function Chat({ embedded = false, selectedSalaProp = null, onSele
     cargarSalas();
     const interval = setInterval(cargarSalas, 5000);
     return () => clearInterval(interval);
-  }, [token]);
-
-  const cargarSalas = async () => {
-    try {
-      const data = await chatService.getSalas();
-      setSalas(data.salas || []);
-    } catch (err) {
-      console.error("Error cargando salas:", err);
-    }
-  };
+  }, [token, navigate, cargarSalas]);
 
   // ============= CARGAR MENSAJES =============
-  useEffect(() => {
-    if (selectedSala) {
-      cargarMensajes(true); // Primera carga con scroll
-      const interval = setInterval(() => cargarMensajes(false), 2000); // Actualizaciones sin scroll
-      return () => clearInterval(interval);
-    }
-  }, [selectedSala]);
-
-  const cargarMensajes = async (scrollToBottom = false) => {
+  const cargarMensajes = useCallback(async (scrollToBottom = false) => {
     if (!selectedSala) return;
     try {
       const data = await chatService.obtenerMensajes(selectedSala, 50, 0);
       setMensajes(data.mensajes || []);
-      
-      // Scroll al fondo solo si es la primera carga
       if (scrollToBottom) {
         setShouldScrollToBottom(true);
       }
-      
-      // Marcar como leídos
       await chatService.marcarSalaLeida(selectedSala);
-    } catch (err) {
+    } catch {
       setError("Error cargando mensajes");
     }
-  };
+  }, [selectedSala]);
+
+  useEffect(() => {
+    if (selectedSala) {
+      cargarMensajes(true);
+      const interval = setInterval(() => cargarMensajes(false), 2000);
+      return () => clearInterval(interval);
+    }
+  }, [selectedSala, cargarMensajes]);
 
   // ============= AUTO-SCROLL =============
   useEffect(() => {
@@ -101,7 +96,7 @@ export default function Chat({ embedded = false, selectedSalaProp = null, onSele
       await chatService.enviarMensaje(selectedSala, nuevoMensaje);
       setNuevoMensaje("");
       await cargarMensajes();
-    } catch (err) {
+    } catch {
       setError("Error enviando mensaje");
     } finally {
       setLoading(false);
@@ -113,7 +108,7 @@ export default function Chat({ embedded = false, selectedSalaProp = null, onSele
     setSelectedSala(sala.id_sala);
     setShouldScrollToBottom(true);
     if (onSelectSala) {
-      try { onSelectSala(sala.id_sala); } catch (e) { /* ignore */ }
+      try { onSelectSala(sala.id_sala); } catch { /* ignore */ }
     }
     if (!embedded) navigate(`/chat/${sala.id_sala}`);
   };

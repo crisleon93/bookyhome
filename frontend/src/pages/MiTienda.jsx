@@ -3,10 +3,10 @@ import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import api, { getApiBaseUrl } from "../services/api";
+import { notificacionesService } from "../services/notificaciones";
 import SeccionOfertas from "../components/SeccionOfertas";
 import SellerSidebar from "../components/VendedorSidebar";
 import Chat from './Chat';
-import Notificaciones from './Notificaciones';
 import {
   IconBook,
   IconBookOpen,
@@ -16,8 +16,15 @@ import {
   IconSettings,
   IconCheck,
   IconLock,
-  IconPackage
+  IconPackage,
+  IconMessage,
+  IconGift,
+  IconShoppingBag,
+  IconTruck,
+  IconCreditCard,
+  IconInfo
 } from "../components/Icons";
+import "../styles/Notificaciones.css";
 
 
 // ========================
@@ -356,6 +363,9 @@ export default function MiTienda() {
   const [loadingVentas, setLoadingVentas] = useState(false);
   const [pedidos,       setPedidos]       = useState([]);
   const [loadingPedidos, setLoadingPedidos] = useState(false);
+  const [notificaciones, setNotificaciones] = useState([]);
+  const [notificacionesLoading, setNotificacionesLoading] = useState(false);
+  const [notificacionesFilter, setNotificacionesFilter] = useState("todas");
 
   const [modalEditar,   setModalEditar]   = useState(null);
   const [modalEliminar, setModalEliminar] = useState(null);
@@ -365,6 +375,81 @@ export default function MiTienda() {
     totalLibros: libros.length,
     stockTotal:  libros.reduce((acc, l) => acc + (l.stock || 0), 0),
     categorias:  [...new Set(libros.map((l) => l.nombre_categoria).filter(Boolean))].length,
+  };
+
+  const cargarNotificaciones = useCallback(async (silent = false) => {
+    try {
+      if (!silent) setNotificacionesLoading(true);
+      const soloNoLeidas = notificacionesFilter === "no_leidas";
+      const data = await notificacionesService.obtener(soloNoLeidas, 50, 0);
+      setNotificaciones(data.notificaciones || []);
+    } catch (err) {
+      console.error("Error cargando notificaciones:", err);
+      setNotificaciones([]);
+    } finally {
+      if (!silent) setNotificacionesLoading(false);
+    }
+  }, [notificacionesFilter]);
+
+  const handleMarcarLeida = async (id_notificacion) => {
+    try {
+      await notificacionesService.marcarLeida(id_notificacion);
+      await cargarNotificaciones(true);
+    } catch (err) {
+      console.error("Error marcando notificación como leída:", err);
+    }
+  };
+
+  const handleMarcarTodasLeidas = async () => {
+    try {
+      await notificacionesService.marcarTodasLeidas();
+      await cargarNotificaciones(true);
+    } catch (err) {
+      console.error("Error marcando todas las notificaciones como leídas:", err);
+    }
+  };
+
+  const handleEliminar = async (id_notificacion) => {
+    if (!window.confirm("¿Eliminar notificación?")) return;
+    try {
+      await notificacionesService.eliminar(id_notificacion);
+      await cargarNotificaciones(true);
+    } catch (err) {
+      console.error("Error eliminando notificación:", err);
+    }
+  };
+
+  const handleClickNotificacion = (notif) => {
+    switch (notif.tipo) {
+      case "mensaje":
+        setActiveSide("Mensajes");
+        break;
+      case "resena":
+      case "oferta":
+        setActiveSide("Promociones");
+        break;
+      case "pedido":
+      case "entrega":
+      case "pago":
+        setActiveSide("Pedidos");
+        break;
+      default:
+        break;
+    }
+    handleMarcarLeida(notif.id_notificacion);
+  };
+
+  const getIconoTipo = (tipo) => {
+    const iconos = {
+      mensaje: <IconMessage width={24} height={24} strokeWidth={1.5} style={{ color: '#7A1E3A' }} />,
+      resena: <IconStar width={24} height={24} strokeWidth={1.5} style={{ color: '#FFA500' }} />,
+      oferta: <IconGift width={24} height={24} strokeWidth={1.5} style={{ color: '#7A1E3A' }} />,
+      pedido: <IconShoppingBag width={24} height={24} strokeWidth={1.5} style={{ color: '#7A1E3A' }} />,
+      entrega: <IconTruck width={24} height={24} strokeWidth={1.5} style={{ color: '#7A1E3A' }} />,
+      pago: <IconCreditCard width={24} height={24} strokeWidth={1.5} style={{ color: '#7A1E3A' }} />,
+      sistema: <IconInfo width={24} height={24} strokeWidth={1.5} style={{ color: '#666' }} />,
+    };
+    return iconos[tipo] || <IconShoppingBag width={24} height={24} strokeWidth={1.5} style={{ color: '#7A1E3A' }} />;
   };
 
   useEffect(() => {
@@ -401,6 +486,12 @@ export default function MiTienda() {
       setActiveSide(seccionFromUrl);
     }
   }, [location.search, activeSide]);
+
+  useEffect(() => {
+    if (activeSide === "Notificaciones") {
+      cargarNotificaciones(false);
+    }
+  }, [activeSide, cargarNotificaciones]);
 
   const cargarLibros = useCallback(() => {
     setLoadingLibros(true);
@@ -1242,19 +1333,68 @@ export default function MiTienda() {
     </>
   );
 
+  const renderNotificaciones = () => (
+    <div className="notificaciones-container notificaciones-container--embedded">
+      <div className="notificaciones-wrapper">
+        <div className="notif-header notif-header--embedded">
+          <h1>Notificaciones</h1>
+          {notificaciones.some((n) => !n.leida) && (
+            <button className="btn-marcar-todas" onClick={handleMarcarTodasLeidas}>
+              Marcar todas como leídas
+            </button>
+          )}
+        </div>
+
+        <div className="notif-filtros">
+          <button className={`filtro ${notificacionesFilter === "todas" ? "active" : ""}`} onClick={() => setNotificacionesFilter("todas")}>
+            Todas
+          </button>
+          <button className={`filtro ${notificacionesFilter === "no_leidas" ? "active" : ""}`} onClick={() => setNotificacionesFilter("no_leidas")}>
+            No leídas
+          </button>
+        </div>
+
+        <div className="notif-lista">
+          {notificacionesLoading ? (
+            <div className="loading">Cargando...</div>
+          ) : notificaciones.length === 0 ? (
+            <div className="notif-empty">
+              <p>{notificacionesFilter === "no_leidas" ? "No tienes notificaciones sin leer" : "No tienes notificaciones"}</p>
+            </div>
+          ) : (
+            notificaciones.map((notif) => (
+              <div key={notif.id_notificacion} className={`notif-item ${notif.leida ? "" : "no-leida"}`} onClick={() => handleClickNotificacion(notif)}>
+                <div className="notif-icono">
+                  <span>{getIconoTipo(notif.tipo)}</span>
+                </div>
+                <div className="notif-contenido">
+                  <h3>{notif.titulo}</h3>
+                  <p>{notif.descripcion}</p>
+                  <small>{new Date(notif.fecha_creacion).toLocaleString()}</small>
+                </div>
+                <div className="notif-acciones">
+                  {!notif.leida && (
+                    <button className="btn-marcar" onClick={(e) => { e.stopPropagation(); handleMarcarLeida(notif.id_notificacion); }}>
+                      ✓
+                    </button>
+                  )}
+                  <button className="btn-eliminar" onClick={(e) => { e.stopPropagation(); handleEliminar(notif.id_notificacion); }}>
+                    ✕
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+    </div>
+  );
+
   const renderContenido = () => {
     switch (activeSide) {
       case "Inicio":        return renderInicio();
       case "Mensajes":      return <Chat embedded={true} selectedSalaProp={selectedSalaInChat} onSelectSala={(id) => setSelectedSalaInChat(id)} />;
-      case "Notificaciones":return <Notificaciones embedded={true} onOpenReference={(notif) => {
-                              if (notif.tipo === 'mensaje') {
-                                setActiveSide('Mensajes');
-                                setSelectedSalaInChat(notif.referencia_id);
-                              } else if (notif.tipo === 'resena' || notif.tipo === 'oferta') {
-                                // abrir catálogo en sección del vendedor
-                                setActiveSide('Promociones');
-                              }
-                            }} />;
+      case "Notificaciones":return renderNotificaciones();
       case "Mis Libros":    return renderMisLibros();
       case "Ventas":        return renderVentas();
       case "Pedidos":       return renderPedidos();
