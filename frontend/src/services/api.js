@@ -65,4 +65,18 @@ export const crearCupon = (payload) => api.post('/cupones', payload)
 export const editarCupon = (idCupon, payload) => api.patch(`/cupones/${idCupon}`, payload)
 export const eliminarCupon = (idCupon) => api.delete(`/cupones/${idCupon}`)
 
-export default api
+// Direcciones de envío
+export const getDirecciones = () => api.get('/direcciones')
+export const crearDireccion = (payload) => api.post('/direcciones', payload)
+export const actualizarDireccion = (id, payload) => api.put(`/direcciones/${id}`, payload)
+export const eliminarDireccion = (id) => api.delete(`/direcciones/${id}`)
+export const marcarDireccionPredeterminada = (id) => api.patch(`/direcciones/${id}/default`)
+
+// Suscripciones de tienda
+export const getMiSuscripcion = () => api.get('/suscripciones/mi-suscripcion')
+export const getSuscripcionVigente = () => api.get('/suscripciones/vigente')
+export const getHistorialSuscripciones = () => api.get('/suscripciones/historial')
+export const crearSuscripcion = (payload) => api.post('/suscripciones', payload)
+export const cancelarSuscripcion = (id) => api.delete(`/suscripciones/${id}`)
+
+export default api

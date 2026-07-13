@@ -31,6 +31,7 @@ const MENU_LINKS = [
   { name: 'Mensajes' },
   { name: 'Perfil' },
   { name: 'Configuración' },
+  { name: 'Suscripciones' },
 ];
 
 const ICONS = {
@@ -52,6 +53,11 @@ const ICONS = {
   Mensajes: <IconMail className="" width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
   Perfil: <IconUser width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
   Configuración: <IconSettings width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
+  Suscripciones: (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={WHITE} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
+    </svg>
+  ),
 };
 
 function SidebarIcon(props) {
