@@ -1,6 +1,6 @@
 // src/pages/MiTienda.jsx
 import { useState, useEffect, useCallback } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import api, { getApiBaseUrl } from "../services/api";
 import { notificacionesService } from "../services/notificaciones";
@@ -325,11 +325,7 @@ function ModalStock({ libro, onClose, onActualizado }) {
 
 /* ================= COMPONENTE PRINCIPAL ================= */
 export default function MiTienda() {
-  // ========================
-  // Estado local principal
-  // ========================
   const navigate = useNavigate();
-  const location = useLocation();
   const handleLogout = () => { localStorage.removeItem("token"); navigate("/"); };
   const [userName,      setUserName]      = useState(() => {
     const token = localStorage.getItem("token");
@@ -344,7 +340,7 @@ export default function MiTienda() {
     return "Vendedor";
   });
   const [userPhotoUrl,  setUserPhotoUrl]  = useState(null);
-  const [loading,       setLoading]       = useState(false);
+  const [loading]                 = useState(false);
   const [activeSide,    setActiveSide]    = useState(() => {
     const seccion = new URLSearchParams(window.location.search).get('seccion');
     return seccion || 'Inicio';
@@ -360,6 +356,12 @@ export default function MiTienda() {
   const [alertasStock,  setAlertasStock]  = useState([]);
   const [stockUmbral,   setStockUmbral]   = useState(() => Number(localStorage.getItem('stockUmbral')) || 3);
   const [tiendaInfo,    setTiendaInfo]    = useState(null);
+  const [configForm,    setConfigForm]    = useState({
+    horario_atencion: "",
+    politica_devoluciones: "",
+    politica_envios: "",
+    tiempo_despacho_dias: 2
+  });
   const [tiendaForm,    setTiendaForm]    = useState({ nombre_tienda: "", direccion: "", telefono: "" });
   const [tiendaMsg,     setTiendaMsg]     = useState("");
 
@@ -552,7 +554,6 @@ export default function MiTienda() {
   // ========================
   // Efectos de carga inicial y actualizacion por sección
   // ========================
-  // eslint-disable-next-line react-hooks/set-state-in-effect
   // Cargar libros únicamente al montar el componente
   useEffect(() => {
     cargarLibros();
@@ -585,7 +586,6 @@ export default function MiTienda() {
   }, []);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoadingStats(true);
     api.get("/libros/stats")
       .then((r) => {
@@ -604,7 +604,6 @@ export default function MiTienda() {
   }, []);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoadingTop(true);
     api.get("/libros/top-vendidos")
       .then((r) => {
@@ -658,6 +657,22 @@ export default function MiTienda() {
       .catch((err) => {
         console.error("Error cargando información de tienda:", err);
         setTiendaInfo(null);
+      });
+
+    // Cargar configuración avanzada
+    api.get("/configuracion")
+      .then((r) => {
+        if (r.data) {
+          setConfigForm({
+            horario_atencion: r.data.horario_atencion || "",
+            politica_devoluciones: r.data.politica_devoluciones || "",
+            politica_envios: r.data.politica_envios || "",
+            tiempo_despacho_dias: r.data.tiempo_despacho_dias || 2
+          });
+        }
+      })
+      .catch((err) => {
+        console.error("Error cargando configuración avanzada:", err);
       });
   }, []);
 
@@ -1095,8 +1110,11 @@ export default function MiTienda() {
         {!tiendaInfo ? (
           <p style={{ color: "#888" }}>Cargando información de la tienda...</p>
         ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: "16px", maxWidth: "500px" }}>
-            <div>
+          <>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "40px" }}>
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "16px", minWidth: "300px", maxWidth: "500px" }}>
+              <h3 style={{ fontSize: "1.1rem", margin: "10px 0 0 0", color: "var(--vinotinto)" }}>Información Básica</h3>
+              <div>
               <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>
                 Nombre de la tienda
               </label>
@@ -1156,40 +1174,115 @@ export default function MiTienda() {
                 }}
               />
             </div>
-
-            {tiendaMsg && <p style={{ color: "green", fontWeight: 600 }}>{tiendaMsg}</p>}
-
-            <button
-              style={{
-                background: "var(--vinotinto)", color: "white", border: "none",
-                padding: "12px 24px", borderRadius: "8px", fontWeight: 700,
-                fontSize: "0.95rem", cursor: "pointer", fontFamily: "Montserrat, sans-serif"
-              }}
-              onClick={() => {
-                if (!tiendaForm.nombre_tienda?.trim()) {
-                  setTiendaMsg("El nombre de la tienda es obligatorio");
-                  return;
-                }
-                if (tiendaForm.nombre_tienda.trim().length < 3) {
-                  setTiendaMsg("El nombre debe tener al menos 3 caracteres");
-                  return;
-                }
-                api.put("/tiendas/mi-tienda", tiendaForm)
-                  .then(() => {
-                    setTiendaMsg("Perfil del negocio actualizado");
-                    setTimeout(() => setTiendaMsg(""), 3000);
-                    setTiendaInfo(prev => ({ ...prev, ...tiendaForm }));
-                  })
-                  .catch((err) => {
-                    console.error("Error actualizando tienda:", err);
-                    setTiendaMsg("Error al guardar cambios: " + (err.response?.data?.detail || err.message));
-                    setTimeout(() => setTiendaMsg(""), 4000);
-                  });
-              }}
-            >
-              Guardar cambios
-            </button>
           </div>
+
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "16px", minWidth: "300px" }}>
+            <h3 style={{ fontSize: "1.1rem", margin: "10px 0 0 0", color: "var(--vinotinto)" }}>Ajustes Avanzados</h3>
+            
+            <div>
+              <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>
+                Horario de atención
+              </label>
+              <input
+                type="text"
+                placeholder="Ej: Lunes a Viernes 8am a 5pm"
+                value={configForm.horario_atencion}
+                onChange={(e) => setConfigForm({ ...configForm, horario_atencion: e.target.value })}
+                style={{
+                  width: "100%", padding: "10px 14px", borderRadius: "8px",
+                  border: "1px solid #ddd", fontSize: "0.95rem", fontFamily: "Montserrat, sans-serif"
+                }}
+              />
+            </div>
+
+            <div>
+              <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>
+                Días de despacho
+              </label>
+              <input
+                type="number"
+                min="1"
+                max="30"
+                value={configForm.tiempo_despacho_dias}
+                onChange={(e) => setConfigForm({ ...configForm, tiempo_despacho_dias: parseInt(e.target.value) || 2 })}
+                style={{
+                  width: "100%", padding: "10px 14px", borderRadius: "8px",
+                  border: "1px solid #ddd", fontSize: "0.95rem", fontFamily: "Montserrat, sans-serif"
+                }}
+              />
+            </div>
+
+            <div>
+              <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>
+                Política de envíos
+              </label>
+              <textarea
+                rows="3"
+                value={configForm.politica_envios}
+                onChange={(e) => setConfigForm({ ...configForm, politica_envios: e.target.value })}
+                style={{
+                  width: "100%", padding: "10px 14px", borderRadius: "8px",
+                  border: "1px solid #ddd", fontSize: "0.95rem", fontFamily: "Montserrat, sans-serif", resize: "vertical"
+                }}
+              />
+            </div>
+
+            <div>
+              <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>
+                Política de devoluciones
+              </label>
+              <textarea
+                rows="3"
+                value={configForm.politica_devoluciones}
+                onChange={(e) => setConfigForm({ ...configForm, politica_devoluciones: e.target.value })}
+                style={{
+                  width: "100%", padding: "10px 14px", borderRadius: "8px",
+                  border: "1px solid #ddd", fontSize: "0.95rem", fontFamily: "Montserrat, sans-serif", resize: "vertical"
+                }}
+              />
+            </div>
+          </div>
+        </div>
+
+        <div style={{ marginTop: "24px", display: "flex", alignItems: "center", gap: "16px" }}>
+          <button
+            style={{
+              background: "var(--vinotinto)", color: "white", border: "none",
+              padding: "12px 24px", borderRadius: "8px", fontWeight: 700,
+              fontSize: "0.95rem", cursor: "pointer", fontFamily: "Montserrat, sans-serif"
+            }}
+            onClick={() => {
+              if (!tiendaForm.nombre_tienda?.trim()) {
+                setTiendaMsg("El nombre de la tienda es obligatorio");
+                return;
+              }
+              if (tiendaForm.nombre_tienda.trim().length < 3) {
+                setTiendaMsg("El nombre debe tener al menos 3 caracteres");
+                return;
+              }
+              
+              Promise.all([
+                api.put("/tiendas/mi-tienda", tiendaForm),
+                api.put("/configuracion", configForm)
+              ])
+                .then(() => {
+                  setTiendaMsg("¡Configuración actualizada con éxito!");
+                  setTimeout(() => setTiendaMsg(""), 3000);
+                  setTiendaInfo(prev => ({ ...prev, ...tiendaForm }));
+                })
+                .catch((err) => {
+                  console.error("Error actualizando configuración:", err);
+                  setTiendaMsg("Error: " + (err.response?.data?.detail || err.message));
+                  setTimeout(() => setTiendaMsg(""), 4000);
+                });
+            }}
+          >
+            Guardar cambios
+          </button>
+          
+          {tiendaMsg && <p style={{ color: "green", fontWeight: 600, margin: 0 }}>{tiendaMsg}</p>}
+        </div>
+          </>
         )}
       </div>
     </>
