@@ -229,8 +229,8 @@ function Header({ variant }) {
                     >
                       Dashboard
                     </Link>
-                    <Link to="/favoritos" className="user-dropdown-item" onClick={() => setDropdownOpen(false)}>
-                      Favoritos
+                    <Link to="/post-login?seccion=Lista%20de%20Deseos" className="user-dropdown-item" onClick={() => setDropdownOpen(false)}>
+                      Lista de deseos
                     </Link>
                     <Link to="/carrito" className="user-dropdown-item" onClick={() => setDropdownOpen(false)}>
                       Carrito

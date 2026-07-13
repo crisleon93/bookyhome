@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { getApiBaseUrl } from '../services/api';
+import { getApiBaseUrl, getListasDeseos, agregarLibroListaDeseos, eliminarLibroListaDeseos } from '../services/api';
+import { notify } from './ToastProvider';
 
 const IMAGENES_CATEGORIA = {
   'Fantasía':    'https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=400&q=80',
@@ -18,7 +18,6 @@ const IMAGENES_CATEGORIA = {
 };
 const IMG_DEFAULT = 'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=400&q=80';
 
-// Resolver URLs relativas a absolutas
 const resolveImageUrl = (value) => {
   if (!value || typeof value !== "string") return null;
   const trimmed = value.trim();
@@ -49,33 +48,112 @@ const resolveLibroCandidate = (candidate) => {
 
 const LibroCard = ({ libro, onAdd, onVerDetalles }) => {
   const [addMsg, setAddMsg] = useState('');
-  const [esFavorito, setEsFavorito] = useState(false);
+  const [enListaDeseos, setEnListaDeseos] = useState(false);
+  const [listaDeseosId, setListaDeseosId] = useState(null);
+  const [mostrarSelectorLista, setMostrarSelectorLista] = useState(false);
+  const [listasDisponibles, setListasDisponibles] = useState([]);
+  const [wishlistLoading, setWishlistLoading] = useState(false);
 
-  // Verificar si el libro es favorito al montar
   useEffect(() => {
-    if (!libro) return;
-    const favoritos = JSON.parse(localStorage.getItem('favoritos')) || [];
-    const existe = favoritos.some((f) => f.id_libro === libro.id_libro);
-    setEsFavorito(existe);
+    if (!libro?.id_libro) return;
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    const cargarEstado = async () => {
+      try {
+        const res = await getListasDeseos();
+        const listas = res.data || [];
+        for (const lista of listas) {
+          const librosRes = await import('../services/api').then((m) => m.getLibrosListaDeseos(lista.id_lista));
+          const libros = librosRes.data || [];
+          const encontrado = libros.find((item) => item.id_libro === libro.id_libro);
+          if (encontrado) {
+            setEnListaDeseos(true);
+            setListaDeseosId(lista.id_lista);
+            break;
+          }
+        }
+      } catch {
+        // Sin listas o sin sesión válida
+      }
+    };
+
+    cargarEstado();
   }, [libro]);
 
-  const toggleFavorito = () => {
-    const favoritos = JSON.parse(localStorage.getItem('favoritos')) || [];
-    const existe = favoritos.some((f) => f.id_libro === libro.id_libro);
-    if (existe) {
-      const nuevosFavoritos = favoritos.filter((f) => f.id_libro !== libro.id_libro);
-      localStorage.setItem('favoritos', JSON.stringify(nuevosFavoritos));
-      setEsFavorito(false);
-    } else {
-      favoritos.push(libro);
-      localStorage.setItem('favoritos', JSON.stringify(favoritos));
-      setEsFavorito(true);
+  const cargarListas = async () => {
+    const res = await getListasDeseos();
+    return res.data || [];
+  };
+
+  const agregarALista = async (idLista) => {
+    setWishlistLoading(true);
+    try {
+      await agregarLibroListaDeseos(idLista, { id_libro: libro.id_libro });
+      setEnListaDeseos(true);
+      setListaDeseosId(idLista);
+      setMostrarSelectorLista(false);
+      notify('Libro agregado a la lista de deseos', 'success');
+      window.dispatchEvent(new Event('wishlist-updated'));
+    } catch (err) {
+      const msg = err.response?.data?.detail || 'No se pudo agregar a la lista';
+      notify(msg, 'error');
+    } finally {
+      setWishlistLoading(false);
+    }
+  };
+
+  const quitarDeLista = async () => {
+    if (!listaDeseosId) return;
+    setWishlistLoading(true);
+    try {
+      await eliminarLibroListaDeseos(listaDeseosId, libro.id_libro);
+      setEnListaDeseos(false);
+      setListaDeseosId(null);
+      notify('Libro eliminado de la lista', 'success');
+      window.dispatchEvent(new Event('wishlist-updated'));
+    } catch (err) {
+      const msg = err.response?.data?.detail || 'No se pudo quitar de la lista';
+      notify(msg, 'error');
+    } finally {
+      setWishlistLoading(false);
+    }
+  };
+
+  const toggleListaDeseos = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      notify('Debes iniciar sesión para usar listas de deseos', 'error');
+      return;
+    }
+
+    if (enListaDeseos) {
+      await quitarDeLista();
+      return;
+    }
+
+    setWishlistLoading(true);
+    try {
+      const listas = await cargarListas();
+      if (listas.length === 0) {
+        notify('Crea una lista de deseos desde tu dashboard primero', 'error');
+        return;
+      }
+      if (listas.length === 1) {
+        await agregarALista(listas[0].id_lista);
+        return;
+      }
+      setListasDisponibles(listas);
+      setMostrarSelectorLista(true);
+    } catch (err) {
+      notify(err.response?.data?.detail || 'No se pudieron cargar las listas', 'error');
+    } finally {
+      setWishlistLoading(false);
     }
   };
 
   if (!libro) return null;
 
-  // Imagen: preferir la real, caer en fallback por categoría
   const imageUrl =
     resolveLibroCandidate(libro.imagen_url) ||
     resolveLibroCandidate(libro.imagen_principal) ||
@@ -90,7 +168,6 @@ const LibroCard = ({ libro, onAdd, onVerDetalles }) => {
 
   return (
     <div className="libro-card">
-      {/* Imagen */}
       <img
         className="libro-card-img"
         src={imageUrl}
@@ -140,7 +217,6 @@ const LibroCard = ({ libro, onAdd, onVerDetalles }) => {
 
         <p className="precio">${price.toLocaleString('es-CO')}</p>
 
-        {/* Botón principal */}
         <button
           className="btn btn-vinotinto"
           onClick={() => onVerDetalles && onVerDetalles(libro)}
@@ -149,9 +225,9 @@ const LibroCard = ({ libro, onAdd, onVerDetalles }) => {
           Ver detalles
         </button>
 
-        {/* Botón favorito */}
         <button
-          onClick={toggleFavorito}
+          onClick={toggleListaDeseos}
+          disabled={wishlistLoading}
           style={{
             width: '100%',
             padding: '8px',
@@ -161,16 +237,52 @@ const LibroCard = ({ libro, onAdd, onVerDetalles }) => {
             borderRadius: '6px',
             fontSize: '0.8rem',
             fontWeight: '600',
-            cursor: 'pointer',
+            cursor: wishlistLoading ? 'not-allowed' : 'pointer',
             marginTop: '6px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            gap: '5px'
+            gap: '5px',
+            opacity: wishlistLoading ? 0.7 : 1,
           }}
         >
-          {esFavorito ? '♥ Quitar' : '♡ Favorito'}
+          {wishlistLoading ? 'Procesando…' : enListaDeseos ? '♥ En lista' : '♡ Lista de deseos'}
         </button>
+
+        {mostrarSelectorLista && (
+          <div style={{ marginTop: '8px', padding: '10px', border: '1px solid #e0dbd4', borderRadius: '8px', background: '#faf8f6' }}>
+            <p style={{ margin: '0 0 8px', fontSize: '0.78rem', fontWeight: 700, color: '#444' }}>Elegir lista</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              {listasDisponibles.map((lista) => (
+                <button
+                  key={lista.id_lista}
+                  type="button"
+                  onClick={() => agregarALista(lista.id_lista)}
+                  disabled={wishlistLoading}
+                  style={{
+                    background: 'white',
+                    border: '1px solid #ddd',
+                    borderRadius: '6px',
+                    padding: '8px 10px',
+                    textAlign: 'left',
+                    cursor: 'pointer',
+                    fontSize: '0.8rem',
+                    fontWeight: 600,
+                  }}
+                >
+                  {lista.nombre_lista}
+                </button>
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={() => setMostrarSelectorLista(false)}
+              style={{ marginTop: '8px', background: 'none', border: 'none', color: '#666', fontSize: '0.75rem', cursor: 'pointer' }}
+            >
+              Cancelar
+            </button>
+          </div>
+        )}
 
         {addMsg && <p className="card-feedback">{addMsg}</p>}
       </div>

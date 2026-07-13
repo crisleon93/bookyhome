@@ -52,7 +52,7 @@ function Footer() {
           <ul>
             <li><Link to="/login">Iniciar sesión / Registro</Link></li>
             <li><Link to="/post-login?seccion=Mis Compras">Mis compras</Link></li>
-            <li><Link to="/favoritos">Mis favoritos</Link></li>
+            <li><Link to="/post-login?seccion=Lista%20de%20Deseos">Lista de deseos</Link></li>
             <li><Link to="/soporte">Ayuda y Soporte</Link></li>
           </ul>
         </div>

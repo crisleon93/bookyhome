@@ -19,6 +19,8 @@ import PublicarLibro from './pages/PublicarLibro';
 import AdminDashboard from './pages/AdminDashboard';
 import Historial from './pages/Historial';
 import VerifyEmail from './pages/VerifyEmail';
+import ListaDeseos from './pages/ListaDeseos';
+import Devoluciones from './pages/Devoluciones';
 
 import { getUserRole } from './hooks/useAuth';
 import LegalPage from './pages/LegalPage';
@@ -67,6 +69,9 @@ function MainLayout() {
           <Route path="/post-login" element={<PostLogin />} />
           <Route path="/carrito" element={<Navigate to="/post-login?seccion=Carrito" replace />} />
           <Route path="/historial" element={<Historial />} />
+          <Route path="/lista-deseos" element={<ListaDeseos />} />
+          <Route path="/devoluciones" element={<Devoluciones />} />
+          <Route path="/favoritos" element={<Navigate to="/lista-deseos" replace />} />
         </Route>
 
         {/* ── RUTAS EXCLUSIVAS DE VENDEDOR ── */}

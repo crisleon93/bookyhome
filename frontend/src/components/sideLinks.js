@@ -2,7 +2,7 @@ export const SIDE_LINKS = [
   { name: "Inicio" },
   { name: "Mis Compras" },
   { name: "Mi Perfil" },
-  { name: "Favoritos" },
+  { name: "Lista de Deseos" },
   { name: "Carrito" },
   { name: "Configuración" },
 ];

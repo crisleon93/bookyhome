@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import api from '../services/api'
 import { IconCheck, IconLock } from '../components/Icons'
@@ -9,9 +9,11 @@ function VerifyEmail() {
   const token = searchParams.get('token')
   const [status, setStatus] = useState(token ? 'loading' : 'error')
   const [message, setMessage] = useState(token ? '' : 'Token de verificación no encontrado')
+  const verificationStarted = useRef(false)
 
   useEffect(() => {
-    if (!token) return
+    if (!token || verificationStarted.current) return
+    verificationStarted.current = true
 
     const verifyEmail = async () => {
       try {
