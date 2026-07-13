@@ -31,6 +31,7 @@ import {
 
 import Catalogo from './Catalogo';
 import Chat from './Chat';
+import LeafletAddressPickerModal from '../components/LeafletAddressPickerModal';
 
 // Componente especializado con el SVG profesional para carrito vacío
 const CartEmptyState = ({ onGoToCatalog }) => (
@@ -181,7 +182,12 @@ export default function PostLogin() {
   const [nivelFidelizacion, setNivelFidelizacion] = useState(null);
   const [direcciones, setDirecciones] = useState([]);
   const [mostrarFormDireccion, setMostrarFormDireccion] = useState(false);
+  const [mostrarModalDireccion, setMostrarModalDireccion] = useState(false);
+  const [direccionEditingId, setDireccionEditingId] = useState(null);
+  const [direccionLoading, setDireccionLoading] = useState(false);
+  const [direccionError, setDireccionError] = useState('');
   const [direccionForm, setDireccionForm] = useState({
+    alias_direccion: '',
     direccion: '',
     ciudad: '',
     departamento: '',
@@ -310,6 +316,16 @@ export default function PostLogin() {
     }
   }, [activeSide]);
 
+  const cargarDirecciones = useCallback(async () => {
+    try {
+      const res = await api.get('/perfil/direcciones');
+      setDirecciones(res.data || []);
+    } catch (error) {
+      console.error('Error cargando direcciones:', error);
+      setDirecciones([]);
+    }
+  }, []);
+
   const cargarDatosPerfil = useCallback(async () => {
     try {
       // Cargar estadísticas
@@ -329,12 +345,11 @@ export default function PostLogin() {
       // Cargar nivel de fidelización (simulado)
       setNivelFidelizacion({ nivel: 'Bronce', puntos: 0, siguiente_nivel: 'Plata', puntos_para_siguiente: 5 });
 
-      // Cargar direcciones (simulado)
-      setDirecciones([]);
+      await cargarDirecciones();
     } catch (error) {
       console.error('Error cargando datos del perfil:', error);
     }
-  }, [userId]);
+  }, [userId, cargarDirecciones]);
 
   const resolveImageUrl = (path) => {
     const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
@@ -359,6 +374,98 @@ export default function PostLogin() {
       cargarPerfil();
     }
   }, [activeSide, cargarDatosPerfil, cargarPerfil]);
+
+  const resetDireccionForm = () => {
+    setMostrarFormDireccion(false);
+    setDireccionEditingId(null);
+    setDireccionError('');
+    setDireccionForm({ alias_direccion: '', direccion: '', ciudad: '', departamento: '', codigo_postal: '', es_principal: false });
+  };
+
+  const openNewDireccionForm = () => {
+    resetDireccionForm();
+    setMostrarModalDireccion(true);
+  };
+
+  const handleAddressSelected = (data) => {
+    setDireccionForm((prev) => ({
+      ...prev,
+      direccion: data.direccion || prev.direccion,
+      ciudad: data.ciudad || prev.ciudad,
+      departamento: data.departamento || prev.departamento,
+      codigo_postal: data.codigo_postal || prev.codigo_postal,
+    }));
+    setMostrarFormDireccion(true);
+  };
+
+  const openEditDireccionForm = (direccion) => {
+    setDireccionEditingId(direccion.id_direccion);
+    setDireccionForm({
+      alias_direccion: direccion.alias_direccion || '',
+      direccion: direccion.direccion || '',
+      ciudad: direccion.ciudad || '',
+      departamento: direccion.departamento || '',
+      codigo_postal: direccion.codigo_postal || '',
+      es_principal: Boolean(direccion.es_principal)
+    });
+    setDireccionError('');
+    setMostrarFormDireccion(true);
+  };
+
+  const handleSaveDireccion = async () => {
+    if (!direccionForm.direccion?.trim()) {
+      setDireccionError('La dirección es obligatoria');
+      return;
+    }
+
+    setDireccionLoading(true);
+    setDireccionError('');
+    try {
+      const payload = {
+        alias_direccion: direccionForm.alias_direccion?.trim() || 'Dirección',
+        direccion: direccionForm.direccion.trim(),
+        ciudad: direccionForm.ciudad?.trim() || '',
+        codigo_postal: direccionForm.codigo_postal?.trim() || '',
+        departamento: direccionForm.departamento?.trim() || '',
+        es_principal: direccionForm.es_principal
+      };
+
+      if (direccionEditingId) {
+        await api.put(`/perfil/direcciones/${direccionEditingId}`, payload);
+        notify('Dirección actualizada', 'success');
+      } else {
+        await api.post('/perfil/direcciones', payload);
+        notify('Dirección guardada', 'success');
+      }
+
+      await cargarDirecciones();
+      resetDireccionForm();
+    } catch (error) {
+      setDireccionError(error.response?.data?.detail || 'No se pudo guardar la dirección');
+    } finally {
+      setDireccionLoading(false);
+    }
+  };
+
+  const handleSetPrincipalDireccion = async (id) => {
+    try {
+      await api.put(`/perfil/direcciones/${id}`, { es_principal: true });
+      await cargarDirecciones();
+      notify('Dirección marcada como principal', 'success');
+    } catch (error) {
+      notify(error.response?.data?.detail || 'No se pudo actualizar la dirección', 'error');
+    }
+  };
+
+  const handleDeleteDireccion = async (id) => {
+    try {
+      await api.delete(`/perfil/direcciones/${id}`);
+      await cargarDirecciones();
+      notify('Dirección eliminada', 'success');
+    } catch (error) {
+      notify(error.response?.data?.detail || 'No se pudo eliminar la dirección', 'error');
+    }
+  };
 
   const handleProfilePhotoChange = async (event) => {
     const file = event.target.files?.[0];
@@ -3235,20 +3342,35 @@ export default function PostLogin() {
                 Dirección de envío
               </h3>
 
+              {mostrarModalDireccion && (
+                <LeafletAddressPickerModal
+                  isOpen={mostrarModalDireccion}
+                  onClose={() => setMostrarModalDireccion(false)}
+                  onSelect={handleAddressSelected}
+                />
+              )}
+
               {mostrarFormDireccion ? (
                 <div style={{ marginTop: "8px" }}>
-                  <h4 style={{ margin: "0 0 1rem 0", color: "#444", fontSize: "1rem" }}>Agregar nueva dirección</h4>
+                  <h4 style={{ margin: "0 0 1rem 0", color: "#444", fontSize: "1rem" }}>{direccionEditingId ? 'Editar dirección' : 'Agregar nueva dirección'}</h4>
                   <div style={{ display: "flex", flexDirection: "column", gap: "16px", maxWidth: "500px" }}>
+                    <div>
+                      <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>Alias</label>
+                      <input
+                        type="text"
+                        value={direccionForm.alias_direccion}
+                        onChange={(e) => setDireccionForm({ ...direccionForm, alias_direccion: e.target.value })}
+                        placeholder="Ej. Casa, Oficina"
+                        style={{ width: "100%", padding: "10px 14px", borderRadius: "8px", border: "1px solid #ddd", fontSize: "0.95rem", fontFamily: "Montserrat, sans-serif" }}
+                      />
+                    </div>
                     <div>
                       <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>Dirección</label>
                       <input
                         type="text"
                         value={direccionForm.direccion}
                         onChange={(e) => setDireccionForm({ ...direccionForm, direccion: e.target.value })}
-                        style={{
-                          width: "100%", padding: "10px 14px", borderRadius: "8px",
-                          border: "1px solid #ddd", fontSize: "0.95rem", fontFamily: "Montserrat, sans-serif"
-                        }}
+                        style={{ width: "100%", padding: "10px 14px", borderRadius: "8px", border: "1px solid #ddd", fontSize: "0.95rem", fontFamily: "Montserrat, sans-serif" }}
                       />
                     </div>
                     <div>
@@ -3257,10 +3379,7 @@ export default function PostLogin() {
                         type="text"
                         value={direccionForm.ciudad}
                         onChange={(e) => setDireccionForm({ ...direccionForm, ciudad: e.target.value })}
-                        style={{
-                          width: "100%", padding: "10px 14px", borderRadius: "8px",
-                          border: "1px solid #ddd", fontSize: "0.95rem", fontFamily: "Montserrat, sans-serif"
-                        }}
+                        style={{ width: "100%", padding: "10px 14px", borderRadius: "8px", border: "1px solid #ddd", fontSize: "0.95rem", fontFamily: "Montserrat, sans-serif" }}
                       />
                     </div>
                     <div>
@@ -3269,10 +3388,7 @@ export default function PostLogin() {
                         type="text"
                         value={direccionForm.departamento}
                         onChange={(e) => setDireccionForm({ ...direccionForm, departamento: e.target.value })}
-                        style={{
-                          width: "100%", padding: "10px 14px", borderRadius: "8px",
-                          border: "1px solid #ddd", fontSize: "0.95rem", fontFamily: "Montserrat, sans-serif"
-                        }}
+                        style={{ width: "100%", padding: "10px 14px", borderRadius: "8px", border: "1px solid #ddd", fontSize: "0.95rem", fontFamily: "Montserrat, sans-serif" }}
                       />
                     </div>
                     <div>
@@ -3281,10 +3397,7 @@ export default function PostLogin() {
                         type="text"
                         value={direccionForm.codigo_postal}
                         onChange={(e) => setDireccionForm({ ...direccionForm, codigo_postal: e.target.value })}
-                        style={{
-                          width: "100%", padding: "10px 14px", borderRadius: "8px",
-                          border: "1px solid #ddd", fontSize: "0.95rem", fontFamily: "Montserrat, sans-serif"
-                        }}
+                        style={{ width: "100%", padding: "10px 14px", borderRadius: "8px", border: "1px solid #ddd", fontSize: "0.95rem", fontFamily: "Montserrat, sans-serif" }}
                       />
                     </div>
                     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
@@ -3295,33 +3408,27 @@ export default function PostLogin() {
                       />
                       <label style={{ fontWeight: 600, color: "#444", margin: 0 }}>Marcar como dirección principal</label>
                     </div>
+                    {direccionError ? <p style={{ color: '#b42318', margin: 0 }}>{direccionError}</p> : null}
                     <div style={{ display: "flex", gap: "12px", marginTop: "8px" }}>
                       <button
-                        style={{
-                          background: "var(--vinotinto)", color: "white", border: "none",
-                          padding: "12px 24px", borderRadius: "8px", fontWeight: 700,
-                          fontSize: "0.95rem", cursor: "pointer",
-                          fontFamily: "Montserrat, sans-serif"
-                        }}
-                        onClick={() => {
-                          notify("Dirección agregada (simulado)", "success");
-                          setMostrarFormDireccion(false);
-                          setDireccionForm({ direccion: "", ciudad: "", departamento: "", codigo_postal: "", es_principal: false });
-                        }}
+                        style={{ background: "var(--vinotinto)", color: "white", border: "none", padding: "12px 24px", borderRadius: "8px", fontWeight: 700, fontSize: "0.95rem", cursor: direccionLoading ? 'not-allowed' : 'pointer', opacity: direccionLoading ? 0.7 : 1, fontFamily: "Montserrat, sans-serif" }}
+                        onClick={handleSaveDireccion}
+                        disabled={direccionLoading}
                       >
-                        Guardar dirección
+                        {direccionLoading ? 'Guardando...' : direccionEditingId ? 'Actualizar dirección' : 'Guardar dirección'}
                       </button>
                       <button
-                        style={{
-                          background: "none", border: "1.5px solid var(--vinotinto)",
-                          color: "var(--vinotinto)", borderRadius: "8px", padding: "12px 24px",
-                          fontWeight: 700, fontSize: "0.95rem", cursor: "pointer",
-                          fontFamily: "Montserrat, sans-serif"
-                        }}
+                        style={{ background: "none", border: "1.5px solid var(--vinotinto)", color: "var(--vinotinto)", borderRadius: "8px", padding: "12px 24px", fontWeight: 700, fontSize: "0.95rem", cursor: "pointer", fontFamily: "Montserrat, sans-serif" }}
                         onClick={() => {
-                          setMostrarFormDireccion(false);
-                          setDireccionForm({ direccion: "", ciudad: "", departamento: "", codigo_postal: "", es_principal: false });
+                          setMostrarModalDireccion(true);
+                          setDireccionError('');
                         }}
+                      >
+                        Elegir otra dirección
+                      </button>
+                      <button
+                        style={{ background: "none", border: "1.5px solid var(--vinotinto)", color: "var(--vinotinto)", borderRadius: "8px", padding: "12px 24px", fontWeight: 700, fontSize: "0.95rem", cursor: "pointer", fontFamily: "Montserrat, sans-serif" }}
+                        onClick={resetDireccionForm}
                       >
                         Cancelar
                       </button>
@@ -3330,13 +3437,8 @@ export default function PostLogin() {
                 </div>
               ) : (
                 <button
-                  style={{
-                    background: "var(--vinotinto)", color: "white", border: "none",
-                    padding: "12px 24px", borderRadius: "8px", fontWeight: 700,
-                    fontSize: "0.95rem", cursor: "pointer", marginBottom: 20,
-                    fontFamily: "Montserrat, sans-serif"
-                  }}
-                  onClick={() => setMostrarFormDireccion(true)}
+                  style={{ background: "var(--vinotinto)", color: "white", border: "none", padding: "12px 24px", borderRadius: "8px", fontWeight: 700, fontSize: "0.95rem", cursor: "pointer", marginBottom: 20, fontFamily: "Montserrat, sans-serif" }}
+                  onClick={openNewDireccionForm}
                 >
                   + Agregar dirección
                 </button>
@@ -3351,39 +3453,41 @@ export default function PostLogin() {
                 <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
                   {direcciones.map((dir) => (
                     <div key={dir.id_direccion} className="pl-card" style={{ padding: "1.5rem", border: dir.es_principal ? "2px solid var(--vinotinto)" : "1px solid #e0dbd4" }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "12px" }}>
                         <div>
                           {dir.es_principal && (
                             <span style={{ background: "var(--vinotinto)", color: "white", padding: "4px 10px", borderRadius: "12px", fontSize: "0.75rem", fontWeight: 600, display: "inline-block", marginBottom: "8px" }}>
                               Principal
                             </span>
                           )}
+                          {dir.alias_direccion ? <p style={{ margin: "4px 0", fontWeight: 700 }}>{dir.alias_direccion}</p> : null}
                           <p style={{ margin: "4px 0", fontWeight: 600 }}>{dir.direccion}</p>
-                          <p style={{ margin: "2px 0", color: "#666" }}>{dir.ciudad}{dir.departamento ? `, ${dir.departamento}` : ""}</p>
+                          <p style={{ margin: "2px 0", color: "#666" }}>
+                            {[
+                              dir.ciudad && dir.ciudad !== dir.direccion ? dir.ciudad : null,
+                              dir.departamento && dir.departamento !== dir.direccion ? dir.departamento : null,
+                            ].filter(Boolean).join(', ')}
+                          </p>
                           {dir.codigo_postal && <p style={{ margin: "2px 0", color: "#888", fontSize: "0.85rem" }}>CP: {dir.codigo_postal}</p>}
                         </div>
-                        <div style={{ display: "flex", gap: "8px" }}>
+                        <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
                           {!dir.es_principal && (
                             <button
-                              style={{
-                                background: "var(--vinotinto)", color: "white", border: "none",
-                                padding: "8px 16px", borderRadius: "6px", fontWeight: 600,
-                                fontSize: "0.85rem", cursor: "pointer",
-                                fontFamily: "Montserrat, sans-serif"
-                              }}
-                              onClick={() => notify("Dirección principal actualizada (simulado)", "success")}
+                              style={{ background: "var(--vinotinto)", color: "white", border: "none", padding: "8px 16px", borderRadius: "6px", fontWeight: 600, fontSize: "0.85rem", cursor: "pointer", fontFamily: "Montserrat, sans-serif" }}
+                              onClick={() => handleSetPrincipalDireccion(dir.id_direccion)}
                             >
                               Hacer principal
                             </button>
                           )}
                           <button
-                            style={{
-                              background: "#dc2626", color: "white", border: "none",
-                              padding: "8px 16px", borderRadius: "6px", fontWeight: 600,
-                              fontSize: "0.85rem", cursor: "pointer",
-                              fontFamily: "Montserrat, sans-serif"
-                            }}
-                            onClick={() => notify("Dirección eliminada (simulado)", "success")}
+                            style={{ background: "#8b5a2b", color: "white", border: "none", padding: "8px 16px", borderRadius: "6px", fontWeight: 600, fontSize: "0.85rem", cursor: "pointer", fontFamily: "Montserrat, sans-serif" }}
+                            onClick={() => openEditDireccionForm(dir)}
+                          >
+                            Editar
+                          </button>
+                          <button
+                            style={{ background: "#dc2626", color: "white", border: "none", padding: "8px 16px", borderRadius: "6px", fontWeight: 600, fontSize: "0.85rem", cursor: "pointer", fontFamily: "Montserrat, sans-serif" }}
+                            onClick={() => handleDeleteDireccion(dir.id_direccion)}
                           >
                             Eliminar
                           </button>

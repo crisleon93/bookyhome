@@ -18,6 +18,18 @@ class PerfilActualizar(BaseModel):
     direccion: str = None
     fecha_nacimiento: str = None  # YYYY-MM-DD
 
+class DireccionBase(BaseModel):
+    alias_direccion: str = None
+    direccion: str = None
+    ciudad: str = None
+    codigo_postal: str = None
+    departamento: str = None
+    es_principal: bool = None
+
+class DireccionCrear(DireccionBase):
+    direccion: str
+    es_principal: bool = False
+
 class PreferenciasUsuario(BaseModel):
     notificaciones_promociones: bool = True
     notificaciones_pedidos: bool = True
@@ -41,6 +53,185 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
     return int(payload.get("sub"))
 
 # ============= ENDPOINTS =============
+
+@router.get("/direcciones")
+def listar_direcciones(user_id: int = Depends(get_current_user)):
+    """Obtiene las direcciones de envío del usuario autenticado"""
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    try:
+        query = """
+            SELECT
+                id_direccion,
+                id_usuario,
+                alias_direccion,
+                direccion_completa AS direccion,
+                ciudad,
+                codigo_postal,
+                es_principal
+            FROM direcciones_envio
+            WHERE id_usuario = %s
+            ORDER BY es_principal DESC, id_direccion DESC
+        """
+        cursor.execute(query, (user_id,))
+        direcciones = cursor.fetchall() or []
+        return direcciones
+    finally:
+        cursor.close()
+        db.close()
+
+@router.post("/direcciones")
+def crear_direccion(data: DireccionCrear, user_id: int = Depends(get_current_user)):
+    """Crea una nueva dirección de envío para el usuario"""
+    if not data.direccion or not str(data.direccion).strip():
+        raise HTTPException(status_code=400, detail="La dirección es obligatoria")
+
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    try:
+        if data.es_principal:
+            cursor.execute("UPDATE direcciones_envio SET es_principal = FALSE WHERE id_usuario = %s", (user_id,))
+
+        detalle = [part for part in [
+            str(data.direccion).strip(),
+        ] if part]
+        direccion_completa = ", ".join(detalle)
+        alias = str(data.alias_direccion).strip() if data.alias_direccion else "Dirección"
+
+        cursor.execute(
+            """
+            INSERT INTO direcciones_envio (
+                id_usuario, alias_direccion, direccion_completa, ciudad, codigo_postal, es_principal
+            ) VALUES (%s, %s, %s, %s, %s, %s)
+            """,
+            (user_id, alias, direccion_completa, data.ciudad.strip() if data.ciudad else None, data.codigo_postal.strip() if data.codigo_postal else None, 1 if data.es_principal else 0),
+        )
+        db.commit()
+        cursor.execute(
+            """
+            SELECT id_direccion, id_usuario, alias_direccion, direccion_completa AS direccion, ciudad, codigo_postal, es_principal
+            FROM direcciones_envio
+            WHERE id_direccion = LAST_INSERT_ID()
+            """
+        )
+        return cursor.fetchone()
+    except Exception as exc:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(exc))
+    finally:
+        cursor.close()
+        db.close()
+
+@router.put("/direcciones/{id_direccion}")
+def actualizar_direccion(id_direccion: int, data: DireccionBase, user_id: int = Depends(get_current_user)):
+    """Actualiza una dirección de envío del usuario"""
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    try:
+        cursor.execute(
+            "SELECT id_direccion FROM direcciones_envio WHERE id_direccion = %s AND id_usuario = %s",
+            (id_direccion, user_id),
+        )
+        if not cursor.fetchone():
+            raise HTTPException(status_code=404, detail="Dirección no encontrada")
+
+        if data.es_principal is not None and data.es_principal:
+            cursor.execute("UPDATE direcciones_envio SET es_principal = FALSE WHERE id_usuario = %s", (user_id,))
+
+        campos = []
+        valores = []
+
+        if data.alias_direccion is not None:
+            campos.append("alias_direccion = %s")
+            valores.append(data.alias_direccion.strip() if data.alias_direccion else "Dirección")
+
+        if data.direccion is not None:
+            campos.append("direccion_completa = %s")
+            detalle = [part for part in [
+                str(data.direccion).strip(),
+            ] if part]
+            valores.append(", ".join(detalle))
+
+        if data.ciudad is not None:
+            campos.append("ciudad = %s")
+            valores.append(data.ciudad.strip() if data.ciudad else None)
+
+        if data.codigo_postal is not None:
+            campos.append("codigo_postal = %s")
+            valores.append(data.codigo_postal.strip() if data.codigo_postal else None)
+
+        if data.es_principal is not None:
+            campos.append("es_principal = %s")
+            valores.append(1 if data.es_principal else 0)
+
+        if not campos:
+            raise HTTPException(status_code=400, detail="No hay campos para actualizar")
+
+        valores.append(id_direccion)
+        valores.append(user_id)
+        query = f"UPDATE direcciones_envio SET {', '.join(campos)} WHERE id_direccion = %s AND id_usuario = %s"
+        cursor.execute(query, valores)
+        db.commit()
+
+        cursor.execute(
+            """
+            SELECT id_direccion, id_usuario, alias_direccion, direccion_completa AS direccion, ciudad, codigo_postal, es_principal
+            FROM direcciones_envio
+            WHERE id_direccion = %s AND id_usuario = %s
+            """,
+            (id_direccion, user_id),
+        )
+        return cursor.fetchone()
+    except HTTPException:
+        raise
+    except Exception as exc:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(exc))
+    finally:
+        cursor.close()
+        db.close()
+
+@router.delete("/direcciones/{id_direccion}")
+def eliminar_direccion(id_direccion: int, user_id: int = Depends(get_current_user)):
+    """Elimina una dirección de envío del usuario"""
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    try:
+        cursor.execute(
+            "SELECT id_direccion, es_principal FROM direcciones_envio WHERE id_direccion = %s AND id_usuario = %s",
+            (id_direccion, user_id),
+        )
+        direccion = cursor.fetchone()
+        if not direccion:
+            raise HTTPException(status_code=404, detail="Dirección no encontrada")
+
+        cursor.execute("DELETE FROM direcciones_envio WHERE id_direccion = %s AND id_usuario = %s", (id_direccion, user_id))
+        if direccion.get("es_principal"):
+            cursor.execute(
+                """
+                SELECT id_direccion FROM direcciones_envio
+                WHERE id_usuario = %s
+                ORDER BY id_direccion ASC
+                LIMIT 1
+                """,
+                (user_id,),
+            )
+            siguiente = cursor.fetchone()
+            if siguiente:
+                cursor.execute(
+                    "UPDATE direcciones_envio SET es_principal = TRUE WHERE id_direccion = %s AND id_usuario = %s",
+                    (siguiente["id_direccion"], user_id),
+                )
+        db.commit()
+        return {"ok": True, "mensaje": "Dirección eliminada correctamente"}
+    except HTTPException:
+        raise
+    except Exception as exc:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(exc))
+    finally:
+        cursor.close()
+        db.close()
 
 @router.get("/mi-perfil")
 def obtener_perfil(user_id: int = Depends(get_current_user)):
