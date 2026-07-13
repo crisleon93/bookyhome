@@ -45,4 +45,15 @@ export const sendConfirmationEmail = (orderId) => api.post(`/api/v1/orders/${ord
 export const actualizarEstadoTienda = (idTienda, estado) => api.patch(`/tiendas/${idTienda}/estado`, { estado })
 export const checkEmailVerification = (email) => api.get('/check-email-verification', { params: { email } })
 
+export const getListasDeseos = () => api.get('/lista-deseos')
+export const crearListaDeseos = (payload) => api.post('/lista-deseos', payload)
+export const eliminarListaDeseos = (idLista) => api.delete(`/lista-deseos/${idLista}`)
+export const getLibrosListaDeseos = (idLista) => api.get(`/lista-deseos/${idLista}/libros`)
+export const agregarLibroListaDeseos = (idLista, payload) => api.post(`/lista-deseos/${idLista}/libros`, payload)
+export const eliminarLibroListaDeseos = (idLista, idLibro) => api.delete(`/lista-deseos/${idLista}/libros/${idLibro}`)
+
+export const getDevoluciones = () => api.get('/devoluciones')
+export const getPedidosElegiblesDevolucion = () => api.get('/devoluciones/elegibles')
+export const solicitarDevolucion = (payload) => api.post('/devoluciones', payload)
+
 export default api

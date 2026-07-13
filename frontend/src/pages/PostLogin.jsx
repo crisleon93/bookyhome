@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
-import { getUsuarios, getCarrito, checkoutCarrito, getOrdenes, getOrden, postPayment, sendConfirmationEmail, cancelOrder, uploadProfilePhoto } from "../services/api";
+import { getUsuarios, getCarrito, checkoutCarrito, getOrdenes, getOrden, postPayment, sendConfirmationEmail, cancelOrder, uploadProfilePhoto, getListasDeseos, crearListaDeseos, eliminarListaDeseos, getLibrosListaDeseos, eliminarLibroListaDeseos } from "../services/api";
 import api from "../services/api";
 import { notificacionesService } from "../services/notificaciones";
 import CompradorSidebar from "../components/CompradorSidebar";
@@ -31,6 +31,7 @@ import {
 
 import Catalogo from './Catalogo';
 import Chat from './Chat';
+import ListaDeseos from './ListaDeseos';
 import LeafletAddressPickerModal from '../components/LeafletAddressPickerModal';
 
 // Componente especializado con el SVG profesional para carrito vacío
@@ -195,6 +196,17 @@ export default function PostLogin() {
     es_principal: false
   });
 
+  const [listasDeseos, setListasDeseos] = useState([]);
+  const [listaDeseosLoading, setListaDeseosLoading] = useState(false);
+  const [listaSeleccionadaId, setListaSeleccionadaId] = useState(null);
+  const [librosListaDeseos, setLibrosListaDeseos] = useState([]);
+  const [librosListaLoading, setLibrosListaLoading] = useState(false);
+  const [nuevaListaNombre, setNuevaListaNombre] = useState('');
+  const [mostrarFormNuevaLista, setMostrarFormNuevaLista] = useState(false);
+  const [listaDeseosError, setListaDeseosError] = useState('');
+  const [catalogoLibroInicial, setCatalogoLibroInicial] = useState(null);
+  const [librosRecomendados, setLibrosRecomendados] = useState([]);
+
   // Estados de notificaciones
   const [notificaciones, setNotificaciones] = useState([]);
   const [notificacionesLoading, setNotificacionesLoading] = useState(false);
@@ -326,6 +338,73 @@ export default function PostLogin() {
     }
   }, []);
 
+  const cargarListasDeseos = useCallback(async () => {
+    setListaDeseosLoading(true);
+    setListaDeseosError('');
+    try {
+      const res = await getListasDeseos();
+      const listas = res.data || [];
+      setListasDeseos(listas);
+      if (listas.length > 0 && !listaSeleccionadaId) {
+        setListaSeleccionadaId(listas[0].id_lista);
+      }
+      if (listas.length === 0) {
+        setListaSeleccionadaId(null);
+        setLibrosListaDeseos([]);
+      }
+    } catch (error) {
+      console.error('Error cargando listas de deseos:', error);
+      setListaDeseosError(error.response?.data?.detail || 'No se pudieron cargar las listas');
+      setListasDeseos([]);
+    } finally {
+      setListaDeseosLoading(false);
+    }
+  }, [listaSeleccionadaId]);
+
+  const cargarLibrosLista = useCallback(async (idLista) => {
+    if (!idLista) {
+      setLibrosListaDeseos([]);
+      return;
+    }
+    setLibrosListaLoading(true);
+    try {
+      const res = await getLibrosListaDeseos(idLista);
+      setLibrosListaDeseos(res.data || []);
+    } catch (error) {
+      console.error('Error cargando libros de la lista:', error);
+      setLibrosListaDeseos([]);
+    } finally {
+      setLibrosListaLoading(false);
+    }
+  }, []);
+
+  const cargarRecomendacionesDeseos = useCallback(async () => {
+    try {
+      const res = await getListasDeseos();
+      const listas = res.data || [];
+      if (listas.length === 0) {
+        setLibrosRecomendados([]);
+        return;
+      }
+      const librosAcumulados = [];
+      for (const lista of listas.slice(0, 3)) {
+        const librosRes = await getLibrosListaDeseos(lista.id_lista);
+        librosAcumulados.push(...(librosRes.data || []));
+      }
+      const unicos = [];
+      const vistos = new Set();
+      for (const libro of librosAcumulados) {
+        if (!vistos.has(libro.id_libro)) {
+          vistos.add(libro.id_libro);
+          unicos.push(libro);
+        }
+      }
+      setLibrosRecomendados(unicos.slice(0, 5));
+    } catch {
+      setLibrosRecomendados([]);
+    }
+  }, []);
+
   const cargarDatosPerfil = useCallback(async () => {
     try {
       // Cargar estadísticas
@@ -374,6 +453,36 @@ export default function PostLogin() {
       cargarPerfil();
     }
   }, [activeSide, cargarDatosPerfil, cargarPerfil]);
+
+  useEffect(() => {
+    if (activeSide === "Lista de Deseos") {
+      cargarListasDeseos();
+    }
+  }, [activeSide, cargarListasDeseos]);
+
+  useEffect(() => {
+    if (activeSide === "Lista de Deseos" && listaSeleccionadaId) {
+      cargarLibrosLista(listaSeleccionadaId);
+    }
+  }, [activeSide, listaSeleccionadaId, cargarLibrosLista]);
+
+  useEffect(() => {
+    if (activeSide === "Inicio") {
+      cargarRecomendacionesDeseos();
+    }
+  }, [activeSide, cargarRecomendacionesDeseos]);
+
+  useEffect(() => {
+    const handler = () => {
+      if (activeSide === "Lista de Deseos") {
+        cargarListasDeseos();
+        if (listaSeleccionadaId) cargarLibrosLista(listaSeleccionadaId);
+      }
+      if (activeSide === "Inicio") cargarRecomendacionesDeseos();
+    };
+    window.addEventListener('wishlist-updated', handler);
+    return () => window.removeEventListener('wishlist-updated', handler);
+  }, [activeSide, listaSeleccionadaId, cargarListasDeseos, cargarLibrosLista, cargarRecomendacionesDeseos]);
 
   const resetDireccionForm = () => {
     setMostrarFormDireccion(false);
@@ -868,6 +977,63 @@ export default function PostLogin() {
 
   const handleGoToCatalog = () => handleSelectSection("Catálogo");
 
+  const handleVerDetalleLibro = (libro) => {
+    setCatalogoLibroInicial(libro);
+    handleSelectSection("Catálogo");
+  };
+
+  const handleCrearListaDeseos = async () => {
+    const nombre = nuevaListaNombre.trim();
+    if (!nombre) {
+      setListaDeseosError('El nombre de la lista es obligatorio');
+      return;
+    }
+    setListaDeseosLoading(true);
+    setListaDeseosError('');
+    try {
+      const res = await crearListaDeseos({ nombre_lista: nombre, publica: false });
+      setNuevaListaNombre('');
+      setMostrarFormNuevaLista(false);
+      await cargarListasDeseos();
+      if (res.data?.id_lista) setListaSeleccionadaId(res.data.id_lista);
+      notify('Lista creada', 'success');
+    } catch (error) {
+      setListaDeseosError(error.response?.data?.detail || 'No se pudo crear la lista');
+    } finally {
+      setListaDeseosLoading(false);
+    }
+  };
+
+  const handleEliminarListaDeseos = async (idLista) => {
+    if (!window.confirm('¿Eliminar esta lista de deseos?')) return;
+    setListaDeseosLoading(true);
+    try {
+      await eliminarListaDeseos(idLista);
+      if (listaSeleccionadaId === idLista) {
+        setListaSeleccionadaId(null);
+        setLibrosListaDeseos([]);
+      }
+      await cargarListasDeseos();
+      notify('Lista eliminada', 'success');
+    } catch (error) {
+      notify(error.response?.data?.detail || 'No se pudo eliminar la lista', 'error');
+    } finally {
+      setListaDeseosLoading(false);
+    }
+  };
+
+  const handleEliminarLibroLista = async (idLibro) => {
+    if (!listaSeleccionadaId) return;
+    try {
+      await eliminarLibroListaDeseos(listaSeleccionadaId, idLibro);
+      await cargarLibrosLista(listaSeleccionadaId);
+      await cargarListasDeseos();
+      notify('Libro eliminado de la lista', 'success');
+    } catch (error) {
+      notify(error.response?.data?.detail || 'No se pudo eliminar el libro', 'error');
+    }
+  };
+
   const handleSelectSection = (seccion) => {
     setActiveSide(seccion);
     navigate(`/post-login?seccion=${encodeURIComponent(seccion)}`, { replace: true });
@@ -1086,78 +1252,72 @@ export default function PostLogin() {
             </div>
 
             {/* RECOMENDACIONES PERSONALIZADAS */}
-            {(() => {
-              const favoritos = JSON.parse(localStorage.getItem('favoritos')) || [];
-              const categoriasVistas = [...new Set(favoritos.map(f => f.nombre_categoria).filter(Boolean))];
-
-              if (favoritos.length === 0) {
-                return (
-                  <div className="empty-state">
-                    <p>Agrega libros a favoritos para recibir recomendaciones personalizadas</p>
-                    <button className="btn btn-vinotinto btn-catalog" onClick={() => setActiveSide('Catálogo')} style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
-                      <IconBookOpen width={18} height={18} strokeWidth={2} style={{ color: 'white' }} />
-                      Explorar catálogo
-                    </button>
-                  </div>
-                );
-              }
-
-              return (
-                <div className="pl-card" style={{ padding: '2rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
-                    <IconStar width={28} height={28} strokeWidth={2} style={{ color: '#7A1E3A' }} />
-                    <div>
-                      <h2 style={{ margin: 0 }}>Recomendados para ti</h2>
-                      <p style={{ margin: 0, color: '#888', fontSize: '0.85rem' }}>
-                        Basado en tus categorías favoritas: {categoriasVistas.join(', ')}
-                      </p>
-                    </div>
-                  </div>
-
-                  {favoritos.slice(0, 5).map((libro) => (
-                    <div key={libro.id_libro} className="pl-order-row" style={{ cursor: 'pointer' }}
-                      onClick={() => setActiveSide('Catálogo')}>
-                      <div className="pl-order-left">
-                        <span className="pl-order-emoji" style={{ display: 'flex', alignItems: 'center' }}>
-                          <IconBook width={24} height={24} strokeWidth={2} style={{ color: '#7A1E3A' }} />
-                        </span>
-                        <div>
-                          <p className="pl-order-title">{libro.titulo}</p>
-                          <p className="pl-order-meta">
-                            {libro.autor_libro || libro.autor} · {libro.nombre_categoria}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="pl-order-right">
-                        <span className="pl-order-price">
-                          ${Number(libro.precio_libro ?? libro.precio ?? 0).toLocaleString('es-CO')}
-                        </span>
-                        <span style={{
-                          background: '#6b1a2a', color: 'white', padding: '4px 10px',
-                          borderRadius: '20px', fontSize: '0.75rem', fontWeight: 600, marginLeft: '10px', display: 'flex', alignItems: 'center', gap: '4px'
-                        }}>
-                          <IconFavorites width={12} height={12} strokeWidth={2} style={{ color: 'white' }} />
-                          Favorito
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-
-                  <div style={{ marginTop: '16px', textAlign: 'center' }}>
-                    <button className="btn btn-vinotinto btn-catalog" onClick={() => setActiveSide('Catálogo')} style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
-                      <IconBookOpen width={18} height={18} strokeWidth={2} style={{ color: 'white' }} />
-                      Ver más libros
-                    </button>
+            {librosRecomendados.length === 0 ? (
+              <div className="empty-state">
+                <p>Agrega libros a tu lista de deseos para recibir recomendaciones personalizadas</p>
+                <button className="btn btn-vinotinto btn-catalog" onClick={() => handleSelectSection('Lista de Deseos')} style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
+                  <IconBookOpen width={18} height={18} strokeWidth={2} style={{ color: 'white' }} />
+                  Ir a lista de deseos
+                </button>
+              </div>
+            ) : (
+              <div className="pl-card" style={{ padding: '2rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+                  <IconStar width={28} height={28} strokeWidth={2} style={{ color: '#7A1E3A' }} />
+                  <div>
+                    <h2 style={{ margin: 0 }}>Recomendados para ti</h2>
+                    <p style={{ margin: 0, color: '#888', fontSize: '0.85rem' }}>
+                      Basado en tus listas de deseos
+                    </p>
                   </div>
                 </div>
-              );
-            })()}
+
+                {librosRecomendados.map((libro) => (
+                  <div key={libro.id_libro} className="pl-order-row" style={{ cursor: 'pointer' }}
+                    onClick={() => handleVerDetalleLibro(libro)}>
+                    <div className="pl-order-left">
+                      <span className="pl-order-emoji" style={{ display: 'flex', alignItems: 'center' }}>
+                        <IconBook width={24} height={24} strokeWidth={2} style={{ color: '#7A1E3A' }} />
+                      </span>
+                      <div>
+                        <p className="pl-order-title">{libro.titulo}</p>
+                        <p className="pl-order-meta">
+                          {libro.autor_libro || libro.autor} · {libro.nombre_categoria}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="pl-order-right">
+                      <span className="pl-order-price">
+                        ${Number(libro.precio_libro ?? libro.precio ?? 0).toLocaleString('es-CO')}
+                      </span>
+                      <span style={{
+                        background: '#6b1a2a', color: 'white', padding: '4px 10px',
+                        borderRadius: '20px', fontSize: '0.75rem', fontWeight: 600, marginLeft: '10px', display: 'flex', alignItems: 'center', gap: '4px'
+                      }}>
+                        <IconFavorites width={12} height={12} strokeWidth={2} style={{ color: 'white' }} />
+                        Lista de deseos
+                      </span>
+                    </div>
+                  </div>
+                ))}
+
+                <div style={{ marginTop: '16px', textAlign: 'center' }}>
+                  <button className="btn btn-vinotinto btn-catalog" onClick={handleGoToCatalog} style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
+                    <IconBookOpen width={18} height={18} strokeWidth={2} style={{ color: 'white' }} />
+                    Ver más libros
+                  </button>
+                </div>
+              </div>
+            )}
           </>
         )}
 
         {/* ── CATÁLOGO EN DASHBOARD (sin salto de página) ── */}
         {activeSide === "Catálogo" && (
-          <Catalogo />
+          <Catalogo
+            libroInicial={catalogoLibroInicial}
+            onLibroInicialConsumido={() => setCatalogoLibroInicial(null)}
+          />
         )}
 
         {/* ── MENSAJES EN DASHBOARD (sin salto de página) ── */}
@@ -2921,6 +3081,11 @@ export default function PostLogin() {
           </>
         )}
 
+        {/* ── LISTA DE DESEOS ── */}
+        {activeSide === "Lista de Deseos" && (
+          <ListaDeseos embedded onVerLibro={handleVerDetalleLibro} />
+        )}
+
         {/* ── FAVORITOS ── */}
         {activeSide === "Favoritos" && (
           <>
@@ -3587,7 +3752,7 @@ export default function PostLogin() {
         )}
 
         {/* ── OTRAS SECCIONES ── */}
-        {!["Inicio", "Catálogo", "Carrito", "Mis Compras", "Favoritos", "Mi Perfil", "Configuración", "Notificaciones", "Mensajes"].includes(activeSide) && (
+        {!["Inicio", "Catálogo", "Carrito", "Mis Compras", "Lista de Deseos", "Favoritos", "Mi Perfil", "Configuración", "Notificaciones", "Mensajes"].includes(activeSide) && (
           <div className="welcome-card">
             <h1>{activeSide}</h1>
             <p>Esta sección estará disponible próximamente.</p>

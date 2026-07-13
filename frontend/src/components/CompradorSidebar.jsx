@@ -23,7 +23,7 @@ const WHITE = '#FFFFFF';
 const ICONS = {
   "Inicio": <IconHome width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
   "Catálogo": <IconBookOpen width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
-  "Favoritos": <IconFavorites width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
+  "Lista de Deseos": <IconFavorites width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
   "Carrito": <IconCart width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
   "Mis Compras": <IconShoppingBag width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
   "Notificaciones": <IconBell className="" width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
@@ -35,7 +35,7 @@ const ICONS = {
 const MENU_LINKS = [
   { name: "Inicio", label: "Inicio" },
   { name: "Catálogo", label: "Catálogo" },
-  { name: "Favoritos", label: "Favoritos" },
+  { name: "Lista de Deseos", label: "Lista de deseos" },
   { name: "Carrito", label: "Carrito" },
   { name: "Mis Compras", label: "Mis compras" },
   { name: "Notificaciones", label: "Notificaciones" },

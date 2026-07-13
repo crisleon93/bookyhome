@@ -241,5 +241,14 @@
     "metodo_pago": "Tarjeta de Crédito",
     "fecha_pago": "2026-06-30T08:00:42.519411Z",
     "estado": "aprobado"
+  },
+  {
+    "id_pago": 28,
+    "id_usuario": 16,
+    "id_orden": 1,
+    "monto": 35000.0,
+    "metodo_pago": "Tarjeta de Crédito",
+    "fecha_pago": "2026-07-13T01:23:30.552826Z",
+    "estado": "aprobado"
   }
 ]

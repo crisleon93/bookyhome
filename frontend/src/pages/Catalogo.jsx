@@ -7,7 +7,7 @@ import LibroCard from '../components/LibroCard';
 import '../styles/catalogo.css';
 
 
-const Catalogo = () => {
+const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
   const [searchParams] = useSearchParams();
   const [libros, setLibros] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -27,6 +27,14 @@ const Catalogo = () => {
     disponible: true,
     ordenar_por: 'relevancia'
   });
+
+  useEffect(() => {
+    if (!libroInicial) return;
+    setLibroSeleccionado(libroInicial);
+    setMostrarDetalles(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    onLibroInicialConsumido?.();
+  }, [libroInicial, onLibroInicialConsumido]);
 
   const cargarLibros = React.useCallback(async () => {
     setLoading(true);
