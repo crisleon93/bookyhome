@@ -22,6 +22,7 @@ from app.routers.notificaciones import router as notificaciones_router
 from app.routers.historial_interacciones import router as historial_router
 from app.routers.lista_deseos import router as lista_deseos_router
 from app.routers.devoluciones import router as devoluciones_router
+from app.routers.cupones import router as cupones_router
 
 load_dotenv()
 
@@ -57,6 +58,7 @@ app.include_router(notificaciones_router)
 app.include_router(historial_router)
 app.include_router(lista_deseos_router)
 app.include_router(devoluciones_router)
+app.include_router(cupones_router)
 
 @app.get("/")
 def root():

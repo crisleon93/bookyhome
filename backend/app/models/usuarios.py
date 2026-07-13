@@ -74,6 +74,26 @@ def obtener_usuario_por_email(email: str):
         cursor.close()
         db.close()
 
+
+def obtener_usuario_por_id(id_usuario: int):
+    """Busca un usuario por su ID y devuelve sus datos de rol y estado."""
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    try:
+        query = """
+            SELECT id_usuario, nombre_usuario, correo_usuario, rol, estado_usuario
+            FROM usuarios
+            WHERE id_usuario = %s
+        """
+        cursor.execute(query, (id_usuario,))
+        return cursor.fetchone()
+    except Exception as e:
+        print(f"Error al obtener usuario por id: {e}")
+        return None
+    finally:
+        cursor.close()
+        db.close()
+
 def login_usuario(email: str, password: str):
     """Valida la contraseña de un usuario y devuelve sus datos si es correcto."""
     user = obtener_usuario_por_email(email)

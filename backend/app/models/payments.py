@@ -38,7 +38,7 @@ def obtener_ordenes_usuario(id_usuario):
     return sorted(user_orders, key=lambda o: o.get('fecha', ''), reverse=True)
 
 
-def registrar_pago(id_usuario, id_orden, amount, payment_method):
+def registrar_pago(id_usuario, id_orden, amount, payment_method, coupon_code=None):
     orders = _load_store(ORDER_FILE)
     user_orders = orders.get(str(id_usuario), [])
 
@@ -54,12 +54,19 @@ def registrar_pago(id_usuario, id_orden, amount, payment_method):
     if target_order.get('estado') != 'pendiente':
         return {'ok': False, 'error': f'La orden ya se encuentra en estado: {target_order.get("estado")}'}
 
-    if abs(float(target_order.get('total', 0)) - float(amount)) > 0.01:
-        return {'ok': False, 'error': f'El monto enviado ({amount}) no coincide con el total de la orden ({target_order.get("total")})'}
+    order_total = float(target_order.get('total', 0))
+    amount_paid = float(amount)
+
+    # Aceptar monto igual al total o menor (si hay cupón aplicado)
+    if amount_paid > order_total + 0.01:
+        return {'ok': False, 'error': f'El monto enviado ({amount_paid}) supera el total de la orden ({order_total})'}
 
     # Actualizar estado de la orden
     target_order['estado'] = 'pagado'
     target_order['metodo_pago'] = payment_method
+    if coupon_code:
+        target_order['cupon_aplicado'] = coupon_code
+        target_order['total_con_descuento'] = amount_paid
     orders[str(id_usuario)] = user_orders
     _save_store(ORDER_FILE, orders)
 
@@ -70,14 +77,12 @@ def registrar_pago(id_usuario, id_orden, amount, payment_method):
         'id_pago': payment_id,
         'id_usuario': id_usuario,
         'id_orden': id_orden,
-        'monto': float(amount),
+        'monto': amount_paid,
         'metodo_pago': payment_method,
         'fecha_pago': datetime.utcnow().isoformat() + 'Z',
         'estado': 'aprobado'
     }
     
-    # Podemos guardar las transacciones indexadas por id_usuario o como una lista global.
-    # Usemos lista global para reportar transacciones generales si es necesario.
     if isinstance(payments, dict):
         payments = []
     

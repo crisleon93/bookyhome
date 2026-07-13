@@ -36,3 +36,45 @@ def verify_token(token: str):
     except Exception as e:
         print(f"❌ Error verificando token: {e}", flush=True)
         return None
+
+
+# ========================
+# Dependencias de Roles y Autorización
+# ========================
+from fastapi import Depends, HTTPException, status
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+
+security = HTTPBearer()
+
+def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)) -> dict:
+    payload = verify_token(credentials.credentials)
+    if not payload:
+        raise HTTPException(status_code=401, detail="Token inválido o expirado")
+    
+    from app.models.usuarios import obtener_usuario_por_id
+    from app.models.tiendas import obtener_tienda_por_usuario
+
+    usuario = obtener_usuario_por_id(int(payload["sub"]))
+    if not usuario:
+        raise HTTPException(status_code=401, detail="Usuario no encontrado")
+        
+    if usuario.get("estado_usuario") != "Activo":
+        raise HTTPException(status_code=403, detail="El usuario está bloqueado o inactivo")
+        
+    # Si es vendedor, le inyectamos los datos de su tienda
+    if usuario.get("rol") == "vendedor":
+        tienda = obtener_tienda_por_usuario(usuario["id_usuario"])
+        usuario["id_tienda"] = tienda["id_tienda"] if tienda else None
+        
+    return usuario
+
+
+def require_role(*roles_permitidos: str):
+    def dependency(usuario: dict = Depends(get_current_user)):
+        if usuario.get("rol") not in roles_permitidos:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="No tienes permiso para realizar esta acción"
+            )
+        return usuario
+    return dependency

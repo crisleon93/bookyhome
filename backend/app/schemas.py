@@ -84,6 +84,7 @@ class PagoRequest(BaseModel):
     order_id: int
     amount: float
     payment_method: str
+    coupon_code: Optional[str] = None
 
 
 # ===========================

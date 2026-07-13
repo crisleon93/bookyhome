@@ -5,6 +5,7 @@ import { jwtDecode } from "jwt-decode";
 import api, { getApiBaseUrl } from "../services/api";
 import { notificacionesService } from "../services/notificaciones";
 import SeccionOfertas from "../components/SeccionOfertas";
+import SeccionCuponesVendedor from "../components/SeccionCuponesVendedor";
 import SellerSidebar from "../components/VendedorSidebar";
 import Chat from './Chat';
 import {
@@ -1402,6 +1403,7 @@ export default function MiTienda() {
       case "Configuración": return renderConfiguracion();
       case "Perfil":        return renderPerfil();
       case "Promociones":   return <SeccionOfertas />;
+      case "Cupones":       return <SeccionCuponesVendedor tiendaId={tiendaInfo?.id_tienda} />;
       default:              return renderInicio();
     }
   };

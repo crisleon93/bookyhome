@@ -24,6 +24,7 @@ const MENU_LINKS = [
   { name: 'Mis Libros' },
   { name: 'Publicar Libro', path: '/vendedor/publicar' },
   { name: 'Promociones' },
+  { name: 'Cupones' },
   { name: 'Ventas' },
   { name: 'Pedidos' },
   { name: 'Notificaciones' },
@@ -37,6 +38,14 @@ const ICONS = {
   'Mis Libros': <IconBookOpen width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
   'Publicar Libro': <IconPlus width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
   Promociones: <IconTag width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
+  Cupones: (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={WHITE} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M15 5v2"></path>
+      <path d="M15 11v2"></path>
+      <path d="M15 17v2"></path>
+      <path d="M5 5h14a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-3a2 2 0 0 0 0-4V7a2 2 0 0 1 2-2z"></path>
+    </svg>
+  ),
   Ventas: <IconCart width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
   Pedidos: <IconShoppingBag width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
   Notificaciones: <IconBell className="" width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,

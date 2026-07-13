@@ -56,4 +56,13 @@ export const getDevoluciones = () => api.get('/devoluciones')
 export const getPedidosElegiblesDevolucion = () => api.get('/devoluciones/elegibles')
 export const solicitarDevolucion = (payload) => api.post('/devoluciones', payload)
 
+// Cupones
+export const getCuponesDisponibles = () => api.get('/cupones/disponibles')
+export const validarCupon = (payload) => api.post('/cupones/validar', payload)
+export const aplicarCupon = (payload) => api.post('/cupones/aplicar', payload)
+export const getCuponesTienda = (idTienda) => api.get(`/cupones/tienda/${idTienda}`)
+export const crearCupon = (payload) => api.post('/cupones', payload)
+export const editarCupon = (idCupon, payload) => api.patch(`/cupones/${idCupon}`, payload)
+export const eliminarCupon = (idCupon) => api.delete(`/cupones/${idCupon}`)
+
 export default api
