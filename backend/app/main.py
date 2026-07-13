@@ -16,6 +16,7 @@ from app.routers.payments import router as payments_router
 from app.routers import ofertas
 from app.routers.resenas import router as resenas_router
 from app.routers.perfil import router as perfil_router
+from app.routers.tienda_configuracion import router as configuracion_router
 from app.routers.catalogo import router as catalogo_router
 from app.routers.chat import router as chat_router
 from app.routers.notificaciones import router as notificaciones_router
@@ -46,12 +47,13 @@ app.include_router(usuarios_router)
 app.include_router(libreria_router)
 app.include_router(auth_router)
 app.include_router(carrito_router, prefix="/carrito", tags=["Carrito"])
-app.include_router(stored_router)
+app.include_router(stored_router, prefix="/stored", tags=["Stored Procedures"])
 app.include_router(payments_router)
 app.include_router(libros.router, prefix="/libros", tags=["Libros"])
 app.include_router(ofertas.router, prefix="/ofertas", tags=["ofertas"])
-app.include_router(resenas_router)
+app.include_router(resenas_router, prefix="/resenas", tags=["Reseñas"])
 app.include_router(perfil_router)
+app.include_router(configuracion_router, prefix="/configuracion", tags=["Configuración de Tienda"])
 app.include_router(catalogo_router)
 app.include_router(chat_router)
 app.include_router(notificaciones_router)
