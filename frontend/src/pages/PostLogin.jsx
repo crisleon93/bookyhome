@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
-import { getUsuarios, getCarrito, checkoutCarrito, getOrdenes, getOrden, postPayment, sendConfirmationEmail, cancelOrder, uploadProfilePhoto, getListasDeseos, crearListaDeseos, eliminarListaDeseos, getLibrosListaDeseos, eliminarLibroListaDeseos } from "../services/api";
+import { getUsuarios, getCarrito, checkoutCarrito, getOrdenes, getOrden, postPayment, sendConfirmationEmail, cancelOrder, uploadProfilePhoto, getListasDeseos, crearListaDeseos, eliminarListaDeseos, getLibrosListaDeseos, eliminarLibroListaDeseos, aplicarCupon } from "../services/api";
 import api from "../services/api";
 import { notificacionesService } from "../services/notificaciones";
 import CompradorSidebar from "../components/CompradorSidebar";
@@ -32,6 +32,7 @@ import {
 import Catalogo from './Catalogo';
 import Chat from './Chat';
 import ListaDeseos from './ListaDeseos';
+import CouponsList from '../components/CouponsList';
 import LeafletAddressPickerModal from '../components/LeafletAddressPickerModal';
 
 // Componente especializado con el SVG profesional para carrito vacío
@@ -918,6 +919,20 @@ export default function PostLogin() {
 
       const res = await postPayment(payload);
       if (res.data && res.data.ok) {
+        // --- Registrar uso del cupón si se aplicó uno ---
+        if (couponCode.trim() && discountAmount > 0) {
+          try {
+            await aplicarCupon({
+              codigo: couponCode.trim(),
+              id_orden: parseInt(orderId),
+              total: parseFloat(baseTotal)
+            });
+          } catch (couponErr) {
+            // No bloquear el flujo si el registro del cupón falla
+            console.warn("No se pudo registrar el uso del cupón:", couponErr);
+          }
+        }
+
         try {
           await sendConfirmationEmail(orderId);
         } catch (emailErr) {
@@ -1309,6 +1324,9 @@ export default function PostLogin() {
                 </div>
               </div>
             )}
+
+            {/* LISTA DE CUPONES DISPONIBLES */}
+            <CouponsList />
           </>
         )}
 
@@ -1812,11 +1830,23 @@ export default function PostLogin() {
                           </div>
                         ))}
                       </div>
-                      <div style={{ marginTop: "16px", paddingTop: "16px", borderTop: "2px solid #e0dbd4", display: "flex", justifyContent: "space-between", fontWeight: 700, fontSize: "1.1rem" }}>
-                        <span>Total</span>
-                        <span style={{ color: "var(--vinotinto)" }}>
-                          {Number(order.total).toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 })}
-                        </span>
+                      <div style={{ marginTop: "16px", paddingTop: "16px", borderTop: "2px solid #e0dbd4", display: "grid", gap: "8px" }}>
+                        {discountAmount > 0 && (
+                          <>
+                            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.9rem" }}>
+                              <span style={{ color: "#666" }}>Subtotal</span>
+                              <span style={{ fontWeight: 600 }}>{formatCurrency(baseTotal)}</span>
+                            </div>
+                            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.9rem", background: "#f0faf0", padding: "6px 10px", borderRadius: "6px", border: "1px solid #c8e6c9" }}>
+                              <span style={{ color: "#2e7d32" }}>🏷️ Cupón {couponCode}</span>
+                              <span style={{ color: "#2e7d32", fontWeight: 700 }}>-{formatCurrency(discountAmount)}</span>
+                            </div>
+                          </>
+                        )}
+                        <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 700, fontSize: "1.1rem" }}>
+                          <span>Total pagado</span>
+                          <span style={{ color: "var(--vinotinto)" }}>{formatCurrency(totalToPay)}</span>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1901,15 +1931,27 @@ export default function PostLogin() {
                               </div>
                             ))}
                           </div>
-                          <div style={{ borderTop: "1px solid #e0dbd4", paddingTop: "12px", marginTop: "4px", display: "grid", gap: "6px", fontSize: "0.9rem" }}>
+                          <div style={{ borderTop: "1px solid #e0dbd4", paddingTop: "12px", marginTop: "4px", display: "grid", gap: "8px", fontSize: "0.9rem" }}>
                             <div style={{ display: "flex", justifyContent: "space-between" }}>
                               <span style={{ color: "#666" }}>ID Orden</span>
                               <span style={{ fontWeight: 600 }}>#{order.id_orden}</span>
                             </div>
+                            {discountAmount > 0 && (
+                              <>
+                                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                                  <span style={{ color: "#666" }}>Subtotal</span>
+                                  <span style={{ fontWeight: 600 }}>{formatCurrency(baseTotal)}</span>
+                                </div>
+                                <div style={{ display: "flex", justifyContent: "space-between", background: "#f0faf0", padding: "6px 10px", borderRadius: "6px", border: "1px solid #c8e6c9" }}>
+                                  <span style={{ color: "#2e7d32" }}>🏷️ Cupón {couponCode}</span>
+                                  <span style={{ color: "#2e7d32", fontWeight: 700 }}>-{formatCurrency(discountAmount)}</span>
+                                </div>
+                              </>
+                            )}
                             <div style={{ display: "flex", justifyContent: "space-between", borderTop: "1px solid #e0dbd4", paddingTop: "10px", marginTop: "4px" }}>
                               <span style={{ fontWeight: 700 }}>Total pagado</span>
                               <span style={{ fontWeight: 800, color: "var(--rojo-suave)", fontSize: "1.05rem" }}>
-                                {Number(order.total).toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 })}
+                                {formatCurrency(totalToPay)}
                               </span>
                             </div>
                           </div>
@@ -2233,7 +2275,7 @@ export default function PostLogin() {
                                       <div style={{ display: "flex", justifyContent: "space-between" }}>
                                         <span style={{ color: "#666" }}>Total a pagar:</span>
                                         <span style={{ fontWeight: 700, color: "var(--vinotinto)" }}>
-                                          {Number(order.total).toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 })}
+                                          {formatCurrency(totalToPay)}
                                         </span>
                                       </div>
                                     </div>
@@ -2368,7 +2410,7 @@ export default function PostLogin() {
                                           <div style={{ display: "flex", justifyContent: "space-between" }}>
                                             <span style={{ color: "#666" }}>Valor:</span>
                                             <span style={{ fontWeight: 700, color: "#2e7d32" }}>
-                                              {Number(order.total).toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 })}
+                                              {formatCurrency(totalToPay)}
                                             </span>
                                           </div>
                                         </div>
@@ -2455,7 +2497,7 @@ export default function PostLogin() {
                                   <div style={{ display: "flex", justifyContent: "space-between" }}>
                                     <span style={{ color: "#666" }}>Total a pagar:</span>
                                     <span style={{ fontWeight: 700, color: "var(--vinotinto)" }}>
-                                      {Number(order.total).toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 })}
+                                      {formatCurrency(totalToPay)}
                                     </span>
                                   </div>
                                 </div>
@@ -2551,7 +2593,7 @@ export default function PostLogin() {
                                   <div style={{ display: "flex", justifyContent: "space-between" }}>
                                     <span style={{ color: "#666" }}>Total a pagar:</span>
                                     <span style={{ fontWeight: 700, color: "var(--vinotinto)" }}>
-                                      {Number(order.total).toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 })}
+                                      {formatCurrency(totalToPay)}
                                     </span>
                                   </div>
                                 </div>
@@ -2645,7 +2687,7 @@ export default function PostLogin() {
                                   <div style={{ display: "flex", justifyContent: "space-between", borderTop: "1px solid #e0dbd4", paddingTop: "10px", marginTop: "5px" }}>
                                     <span style={{ color: "#666" }}>Total a pagar:</span>
                                     <span style={{ fontWeight: 700, color: "var(--vinotinto)" }}>
-                                      {Number(order.total).toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 })}
+                                      {formatCurrency(totalToPay)}
                                     </span>
                                   </div>
                                 </div>
@@ -3929,24 +3971,53 @@ export default function PostLogin() {
                   <div style={{
                     borderTop: "2px solid #e0dbd4",
                     paddingTop: "20px",
-                    marginTop: "20px"
+                    marginTop: "20px",
+                    display: "grid",
+                    gap: "10px"
                   }}>
+                    {/* Subtotal */}
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.95rem" }}>
+                      <span style={{ color: "#666" }}>Subtotal</span>
+                      <span style={{ fontWeight: 600 }}>
+                        {Number(ordenSeleccionada.total).toLocaleString("es-CO", {
+                          style: "currency", currency: "COP", maximumFractionDigits: 0
+                        })}
+                      </span>
+                    </div>
+
+                    {/* Descuento aplicado */}
+                    {ordenSeleccionada.cupon_aplicado && ordenSeleccionada.total_con_descuento != null && (
+                      <div style={{
+                        display: "flex", justifyContent: "space-between", fontSize: "0.95rem",
+                        background: "#f0faf0", padding: "8px 12px", borderRadius: "8px",
+                        border: "1px solid #c8e6c9"
+                      }}>
+                        <span style={{ color: "#2e7d32", display: "flex", alignItems: "center", gap: "6px" }}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2e7d32" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M15 5v2"/><path d="M15 11v2"/><path d="M15 17v2"/>
+                            <path d="M5 5h14a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-3a2 2 0 0 0 0-4V7a2 2 0 0 1 2-2z"/>
+                          </svg>
+                          Cupón <strong>{ordenSeleccionada.cupon_aplicado}</strong>
+                        </span>
+                        <span style={{ color: "#2e7d32", fontWeight: 700 }}>
+                          -{Number(ordenSeleccionada.total - ordenSeleccionada.total_con_descuento).toLocaleString("es-CO", {
+                            style: "currency", currency: "COP", maximumFractionDigits: 0
+                          })}
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Total final pagado */}
                     <div style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      fontSize: "1.3rem",
-                      fontWeight: 800
+                      display: "flex", justifyContent: "space-between", alignItems: "center",
+                      fontSize: "1.3rem", fontWeight: 800
                     }}>
                       <span style={{ color: "var(--gris-carbon)" }}>Total Pagado</span>
-                      <span style={{
-                        color: "var(--rojo-suave)",
-                        fontSize: "1.5rem"
-                      }}>
-                        {Number(ordenSeleccionada.total).toLocaleString("es-CO", {
-                          style: "currency",
-                          currency: "COP",
-                          maximumFractionDigits: 0
+                      <span style={{ color: "var(--rojo-suave)", fontSize: "1.5rem" }}>
+                        {Number(
+                          ordenSeleccionada.total_con_descuento ?? ordenSeleccionada.total
+                        ).toLocaleString("es-CO", {
+                          style: "currency", currency: "COP", maximumFractionDigits: 0
                         })}
                       </span>
                     </div>

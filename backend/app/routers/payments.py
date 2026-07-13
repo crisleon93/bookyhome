@@ -22,11 +22,13 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
 @router.post("/api/v1/payments")
 def process_payment(data: PagoRequest, user=Depends(get_current_user)):
     id_usuario = int(user["sub"])
+    coupon_code = getattr(data, 'coupon_code', None)
     resultado = registrar_pago(
         id_usuario=id_usuario,
         id_orden=data.order_id,
         amount=data.amount,
-        payment_method=data.payment_method
+        payment_method=data.payment_method,
+        coupon_code=coupon_code
     )
     if not resultado["ok"]:
         raise HTTPException(status_code=400, detail=resultado["error"])
