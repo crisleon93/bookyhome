@@ -344,8 +344,11 @@ export default function MiTienda() {
     return "Vendedor";
   });
   const [userPhotoUrl,  setUserPhotoUrl]  = useState(null);
-  const [loading,       setLoading]       = useState(true);
-  const [activeSide,    setActiveSide]    = useState("Inicio");
+  const [loading,       setLoading]       = useState(false);
+  const [activeSide,    setActiveSide]    = useState(() => {
+    const seccion = new URLSearchParams(window.location.search).get('seccion');
+    return seccion || 'Inicio';
+  });
   const [selectedSalaInChat, setSelectedSalaInChat] = useState(null);
   const [libros,        setLibros]        = useState([]);
   const [loadingLibros, setLoadingLibros] = useState(false);
@@ -458,8 +461,6 @@ export default function MiTienda() {
     if (!token) { navigate("/login"); return; }
 
     let mounted = true;
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setLoading(false);
 
     api.get("/perfil/mi-perfil")
       .then((res) => {
@@ -479,14 +480,13 @@ export default function MiTienda() {
     return () => { mounted = false; };
   }, [navigate]);
 
-  // Si llegamos con un query param `seccion`, abrir esa subsección.
-  useEffect(() => {
-    const seccionFromUrl = new URLSearchParams(location.search).get('seccion');
-    if (seccionFromUrl && seccionFromUrl !== activeSide) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setActiveSide(seccionFromUrl);
-    }
-  }, [location.search, activeSide]);
+  // Sincronizar activeSide con la URL: usamos history.replaceState en lugar de
+  // navigate() para no disparar el ciclo de re-render de React Router (que causa
+  // el parpadeo blanco al cambiar de sección).
+  const cambiarSeccion = (nuevaSeccion) => {
+    setActiveSide(nuevaSeccion);
+    window.history.replaceState(null, '', `/mi-tienda?seccion=${encodeURIComponent(nuevaSeccion)}`);
+  };
 
   useEffect(() => {
     if (activeSide === "Notificaciones") {
@@ -553,16 +553,20 @@ export default function MiTienda() {
   // Efectos de carga inicial y actualizacion por sección
   // ========================
   // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(() => { cargarLibros(); }, [cargarLibros]);
+  // Cargar libros únicamente al montar el componente
+  useEffect(() => {
+    cargarLibros();
+  }, [cargarLibros]);
 
   useEffect(() => {
     if (activeSide === "Pedidos") {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       cargarPedidos();
     } else if (activeSide === "Ventas") {
       cargarVentas();
+    } else if (activeSide === "Mis Libros" || activeSide === "Inicio") {
+      cargarLibros();
     }
-  }, [activeSide, cargarPedidos, cargarVentas]);
+  }, [activeSide, cargarPedidos, cargarVentas, cargarLibros]);
 
   useEffect(() => {
     api.get("/libros/categorias")
@@ -1238,8 +1242,8 @@ export default function MiTienda() {
                 </tr>
               </thead>
               <tbody>
-                {pedidos.map((pedido) => (
-                  <tr key={pedido.id_orden} style={{ borderBottom: "1px solid #f0ebe4" }}>
+                {pedidos.map((pedido, idx) => (
+                  <tr key={`${pedido.id_orden}-${idx}`} style={{ borderBottom: "1px solid #f0ebe4" }}>
                     <td style={{ padding: "12px", fontWeight: 600 }}>#{pedido.id_orden}</td>
                     <td style={{ padding: "12px", fontSize: "0.9rem" }}>
                       {pedido.fecha ? new Date(pedido.fecha).toLocaleDateString("es-CO") : "Reciente"}
@@ -1414,7 +1418,7 @@ export default function MiTienda() {
         userName={userName}
         userPhotoUrl={userPhotoUrl}
         activeSide={activeSide}
-        setActiveSide={setActiveSide}
+        setActiveSide={cambiarSeccion}
         handleLogout={handleLogout}
       />
 

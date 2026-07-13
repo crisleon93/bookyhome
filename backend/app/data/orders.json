@@ -695,5 +695,34 @@
       "total": 72000.0,
       "estado": "pendiente"
     }
+  ],
+  "37": [
+    {
+      "id_orden": 1,
+      "fecha": "2026-07-13T19:52:18.499104Z",
+      "items": [
+        {
+          "id_libro": 44,
+          "titulo": "El principito",
+          "autor_libro": "Antoine de Saint-Exupéry",
+          "precio_libro": 20000.0,
+          "cantidad": 1,
+          "imagen": "https://covers.openlibrary.org/b/id/12688412-L.jpg"
+        },
+        {
+          "id_libro": 43,
+          "titulo": "Kimetsu no Yaiba - Tomo 1",
+          "autor_libro": "Koyoharu Gotouge",
+          "precio_libro": 35000.0,
+          "cantidad": 1,
+          "imagen": "https://covers.openlibrary.org/b/id/10322110-L.jpg"
+        }
+      ],
+      "total": 55000.0,
+      "estado": "pagado",
+      "metodo_pago": "Pago en Efecty",
+      "cupon_aplicado": "BIENVENIDO10",
+      "total_con_descuento": 49500.0
+    }
   ]
 }
