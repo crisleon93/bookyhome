@@ -52,7 +52,7 @@ def get_tienda(user):
 
 # GET /ofertas
 # Lista todas las ofertas de la tienda del vendedor
-@router.get("/")
+@router.get("")
 def listar_ofertas(user=Depends(get_current_user)):
     tienda = get_tienda(user)
     return obtener_ofertas_tienda(tienda["id_tienda"])
@@ -60,7 +60,7 @@ def listar_ofertas(user=Depends(get_current_user)):
 
 # POST /ofertas
 # Crear oferta + asignar libros en un solo paso
-@router.post("/")
+@router.post("")
 def crear(
     nombre_oferta:   str   = Form(...),
     tipo_descuento:  str   = Form(...),

@@ -277,5 +277,14 @@
     "metodo_pago": "Tarjeta de Crédito",
     "fecha_pago": "2026-07-13T19:35:24.993555Z",
     "estado": "aprobado"
+  },
+  {
+    "id_pago": 32,
+    "id_usuario": 37,
+    "id_orden": 1,
+    "monto": 49500.0,
+    "metodo_pago": "Pago en Efecty",
+    "fecha_pago": "2026-07-13T19:52:26.762024Z",
+    "estado": "aprobado"
   }
 ]

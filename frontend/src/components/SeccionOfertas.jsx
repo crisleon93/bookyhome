@@ -100,7 +100,7 @@ function FormOferta({ libros, ofertaEditar, onGuardado, onCancelar }) {
             headers: { "Content-Type": "multipart/form-data" },
         });
         } else {
-        await api.post("/ofertas/", data, {
+        await api.post("/ofertas", data, {
             headers: { "Content-Type": "multipart/form-data" },
         });
         }
@@ -295,7 +295,7 @@ export default function SeccionOfertas() {
     setLoading(true);
     try {
       const [resOfertas, resLibros] = await Promise.all([
-        api.get("/ofertas/"),
+        api.get("/ofertas"),
         api.get("/libros/mis-libros"),
       ]);
       setOfertas(resOfertas.data);

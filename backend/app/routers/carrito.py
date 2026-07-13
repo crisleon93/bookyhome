@@ -22,13 +22,13 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
     return payload
 
 
-@router.get("/")
+@router.get("")
 def get_my_carrito(user=Depends(get_current_user)):
     id_usuario = int(user["sub"])
     return obtener_carrito(id_usuario)
 
 
-@router.post("/")
+@router.post("")
 def add_to_cart(data: dict, user=Depends(get_current_user)):
     id_usuario = int(user["sub"])
     id_libro = data.get("id_libro")

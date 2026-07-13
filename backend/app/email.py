@@ -119,9 +119,21 @@ async def enviar_email_confirmacion(email: str, orden: dict):
                         {items_html}
                     </tbody>
                 </table>
-                <div style="display:flex; justify-content:space-between; font-size: 1.1rem; font-weight: 800; padding-top: 12px; border-top: 2px solid #e0dbd4;">
-                    <span>Total pagado</span>
-                    <span style="color: #C5425A;">${'{:,.0f}'.format(orden['total'])} COP</span>
+                <div style="border-top: 2px solid #e0dbd4; padding-top: 12px; font-size: 0.95rem;">
+                    {f'''
+                    <div style="display:flex; justify-content:space-between; margin-bottom: 6px;">
+                        <span style="color: #666;">Subtotal</span>
+                        <span>${'{:,.0f}'.format(orden['total'])} COP</span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; margin-bottom: 12px; background: #f0faf0; padding: 6px 10px; border-radius: 6px; border: 1px solid #c8e6c9;">
+                        <span style="color: #2e7d32;">🏷️ Cupón {orden['cupon_aplicado']}</span>
+                        <span style="color: #2e7d32; font-weight:700;">-${'{:,.0f}'.format(orden['total'] - orden['total_con_descuento'])} COP</span>
+                    </div>
+                    ''' if orden.get('cupon_aplicado') and orden.get('total_con_descuento') is not None else ''}
+                    <div style="display:flex; justify-content:space-between; font-size: 1.15rem; font-weight: 800;">
+                        <span>Total pagado</span>
+                        <span style="color: #C5425A;">${'{:,.0f}'.format(orden.get('total_con_descuento', orden['total']))} COP</span>
+                    </div>
                 </div>
                 <p style="color: #888; font-size: 0.8rem; margin-top: 24px; border-top: 1px solid #f0ece8; padding-top: 16px;">
                     Si tienes alguna duda sobre tu pedido, contáctanos. Este correo es generado automáticamente, por favor no respondas a este mensaje.

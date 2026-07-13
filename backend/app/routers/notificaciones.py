@@ -49,7 +49,7 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
 
 # ============= ENDPOINTS =============
 
-@router.get("/")
+@router.get("")
 def obtener_notificaciones_usuario(
     user_id: int = Depends(get_current_user),
     solo_no_leidas: bool = False,
@@ -104,7 +104,7 @@ def obtener_notificaciones_usuario(
         cursor.close()
         db.close()
 
-@router.post("/")
+@router.post("")
 def crear_notificacion(data: NotificacionCreate, user_id: int = Depends(get_current_user)):
     """Crea una notificación para el usuario actual (sistema)"""
     db = get_db()

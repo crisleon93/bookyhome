@@ -449,7 +449,7 @@ export default function PostLogin() {
   }, []);
 
   useEffect(() => {
-    if (activeSide === "Mi Perfil") {
+    if (activeSide === "Mi Perfil" || activeSide === "Mis Direcciones") {
       cargarDatosPerfil();
       cargarPerfil();
     }
@@ -3541,14 +3541,21 @@ export default function PostLogin() {
                 </button>
               </div>
             </div>
+          </>
+        )}
 
+        {/* ── MIS DIRECCIONES ── */}
+        {activeSide === "Mis Direcciones" && (
+          <>
             {/* Dirección de envío */}
-            <div className="pl-card" style={{ padding: "2rem", marginTop: 20 }}>
-              <h3 style={{ margin: "0 0 1rem 0", color: "var(--vinotinto)", fontSize: "1.2rem", display: "flex", alignItems: "center", gap: "10px" }}>
-                <IconLocation width={24} height={24} strokeWidth={2} style={{ color: "#7A1E3A" }} />
-                Dirección de envío
-              </h3>
+            <div className="pl-card" style={{ padding: "2.5rem 2rem", marginBottom: 24 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                <IconLocation width={28} height={28} strokeWidth={2} style={{ color: '#7A1E3A' }} />
+                <h2 style={{ margin: 0 }}>Mis Direcciones de Envío</h2>
+              </div>
+            </div>
 
+            <div className="pl-card" style={{ padding: "2rem" }}>
               {mostrarModalDireccion && (
                 <LeafletAddressPickerModal
                   isOpen={mostrarModalDireccion}
@@ -3794,7 +3801,7 @@ export default function PostLogin() {
         )}
 
         {/* ── OTRAS SECCIONES ── */}
-        {!["Inicio", "Catálogo", "Carrito", "Mis Compras", "Lista de Deseos", "Favoritos", "Mi Perfil", "Configuración", "Notificaciones", "Mensajes"].includes(activeSide) && (
+        {!["Inicio", "Catálogo", "Carrito", "Mis Compras", "Lista de Deseos", "Favoritos", "Mi Perfil", "Mis Direcciones", "Configuración", "Notificaciones", "Mensajes"].includes(activeSide) && (
           <div className="welcome-card">
             <h1>{activeSide}</h1>
             <p>Esta sección estará disponible próximamente.</p>

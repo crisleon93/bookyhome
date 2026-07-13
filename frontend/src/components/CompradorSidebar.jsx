@@ -12,7 +12,8 @@ import {
   IconMenu,
   IconLogOut,
   IconMail,
-  IconBell
+  IconBell,
+  IconMapPin as IconLocation
 } from "./Icons";
 import { notificacionesService } from '../services/notificaciones';
 import { chatService } from '../services/chat';
@@ -29,6 +30,7 @@ const ICONS = {
   "Notificaciones": <IconBell className="" width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
   "Mensajes": <IconMail className="" width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
   "Mi Perfil": <IconUser width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
+  "Mis Direcciones": <IconLocation width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
   "Configuración": <IconSettings width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
 };
 
@@ -41,6 +43,7 @@ const MENU_LINKS = [
   { name: "Notificaciones", label: "Notificaciones" },
   { name: "Mensajes", label: "Mensajes" },
   { name: "Mi Perfil", label: "Perfil" },
+  { name: "Mis Direcciones", label: "Direcciones" },
   { name: "Configuración", label: "Configuración" },
 ];
 

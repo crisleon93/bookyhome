@@ -70,7 +70,7 @@ def obtener_ofertas_tienda(id_tienda: int):
             FROM ofertas o
             LEFT JOIN oferta_libros ol ON o.id_oferta = ol.id_oferta
             WHERE o.id_tienda = %s
-            GROUP BY o.id_oferta, o.nombre_oferta, o.descripcion, o.porcentaje_descuento, o.fecha_inicio, o.fecha_fin
+            GROUP BY o.id_oferta, o.nombre_oferta, o.tipo_descuento, o.valor_descuento, o.fecha_inicio, o.fecha_fin
             ORDER BY o.fecha_inicio DESC
         """, (id_tienda,))
         return cursor.fetchall()

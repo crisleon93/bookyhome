@@ -83,7 +83,7 @@ def aplicar(data: dict, usuario: dict = Depends(get_current_user)):
 # GET /cupones
 # Lista todos los cupones (solo admin)
 # ========================
-@router.get("/", dependencies=[Depends(require_role("admin"))])
+@router.get("", dependencies=[Depends(require_role("admin"))])
 def listar_cupones():
     """Devuelve todos los cupones registrados en el sistema."""
     cupones = obtener_todos_cupones()
@@ -99,7 +99,7 @@ def listar_cupones():
 # POST /cupones
 # Crea un nuevo cupón (admin o vendedor)
 # ========================
-@router.post("/", dependencies=[Depends(require_role("admin", "vendedor"))])
+@router.post("", dependencies=[Depends(require_role("admin", "vendedor"))])
 def crear(data: dict, usuario: dict = Depends(get_current_user)):
     """
     Crea un nuevo cupón de descuento.

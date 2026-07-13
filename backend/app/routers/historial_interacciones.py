@@ -47,7 +47,7 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
 
 # ============= ENDPOINTS =============
 
-@router.get("/")
+@router.get("")
 def obtener_historial_usuario(
     user_id: int = Depends(get_current_user),
     tipo: str | None = None,
@@ -91,7 +91,7 @@ def obtener_historial_usuario(
         cursor.close()
         db.close()
 
-@router.post("/")
+@router.post("")
 def registrar_interaccion(data: InteraccionCreate, user_id: int = Depends(get_current_user)):
     """Registra una interacción del usuario"""
     db = get_db()
