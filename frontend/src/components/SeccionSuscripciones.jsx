@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import api from "../services/api";
 
-export default function SeccionSuscripciones({ tiendaId }) {
+export default function SeccionSuscripciones({ tiendaId, onNavegar }) {
   const [planes, setPlanes] = useState([]);
   const [miSuscripcion, setMiSuscripcion] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -281,6 +281,26 @@ export default function SeccionSuscripciones({ tiendaId }) {
           </div>
         </div>
       )}
+
+      {/* Puente hacia Impulsos */}
+      <div style={{ marginTop: "32px", padding: "20px 24px", background: "white", borderRadius: "12px", borderLeft: "5px solid var(--vinotinto)", boxShadow: "0 2px 10px rgba(122,30,58,0.1)", display: "flex", flexWrap: "wrap", alignItems: "center", gap: "20px", justifyContent: "space-between" }}>
+        <div style={{ flex: "1 1 260px" }}>
+          <h3 style={{ margin: "0 0 6px 0", color: "var(--vinotinto)", display: "flex", alignItems: "center", gap: "8px", fontSize: "1rem" }}>
+            <span>⚡</span> ¿Para qué sirve el descuento en Impulsos?
+          </h3>
+          <p style={{ margin: 0, fontSize: "0.88rem", color: "#555", lineHeight: "1.6" }}>
+            Los <strong>Impulsos</strong> son espacios publicitarios dentro de BookyHome: destaca tu libro en la página principal, aparece como banner en categorías o llega por email a miles de compradores. Tu plan te da ese descuento de forma automática en cada compra.
+          </p>
+        </div>
+        {onNavegar && (
+          <button
+            onClick={() => onNavegar("Impulsos")}
+            style={{ padding: "12px 24px", backgroundColor: "var(--vinotinto)", color: "white", border: "none", borderRadius: "8px", fontWeight: 700, cursor: "pointer", fontFamily: "Montserrat, sans-serif", whiteSpace: "nowrap", fontSize: "0.9rem" }}
+          >
+            🚀 Ver y contratar Impulsos
+          </button>
+        )}
+      </div>
     </>
   );
 }

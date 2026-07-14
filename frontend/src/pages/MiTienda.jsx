@@ -7,6 +7,7 @@ import { notificacionesService } from "../services/notificaciones";
 import SeccionOfertas from "../components/SeccionOfertas";
 import SeccionCuponesVendedor from "../components/SeccionCuponesVendedor";
 import SeccionSuscripciones from "../components/SeccionSuscripciones";
+import SeccionImpulsos from "../components/SeccionImpulsos";
 import SellerSidebar from "../components/VendedorSidebar";
 import Chat from './Chat';
 import {
@@ -1502,7 +1503,8 @@ export default function MiTienda() {
       case "Perfil":        return renderPerfil();
       case "Promociones":   return <SeccionOfertas />;
       case "Cupones":       return <SeccionCuponesVendedor tiendaId={tiendaInfo?.id_tienda} />;
-      case "Suscripciones": return <SeccionSuscripciones tiendaId={tiendaInfo?.id_tienda} />;
+      case "Suscripciones": return <SeccionSuscripciones tiendaId={tiendaInfo?.id_tienda} onNavegar={cambiarSeccion} />;
+      case "Impulsos":      return <SeccionImpulsos tiendaId={tiendaInfo?.id_tienda} onNavegar={cambiarSeccion} />;
       default:              return renderInicio();
     }
   };

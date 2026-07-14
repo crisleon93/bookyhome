@@ -32,6 +32,7 @@ const MENU_LINKS = [
   { name: 'Perfil' },
   { name: 'Configuración' },
   { name: 'Suscripciones' },
+  { name: 'Impulsos' },
 ];
 
 const ICONS = {
@@ -56,6 +57,11 @@ const ICONS = {
   Suscripciones: (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={WHITE} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
+    </svg>
+  ),
+  Impulsos: (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={WHITE} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path>
     </svg>
   ),
 };
