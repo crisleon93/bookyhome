@@ -1,10 +1,12 @@
 // src/components/Header.jsx
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, Image,
   StyleSheet, Modal, StatusBar, Alert,
 } from 'react-native';
-import { IconSearch, IconUser, IconUserPlus, IconLocation, IconClose, IconChevronRight, IconBook } from './Icons';
+import { AuthContext } from '../context/AuthContext';
+import { IconSearch, IconUser, IconUserPlus, IconLocation, IconClose, IconChevronRight, IconBook, IconMenu, IconCart } from './Icons';
+import SidebarMenu from './SidebarMenu';
 
 const VINOTINTO  = '#7A1E3A';
 const WHITE      = '#FFFFFF';
@@ -37,6 +39,10 @@ export default function Header({
   const [modalVisible, setModalVisible] = useState(false);
   const [locationModalVisible, setLocationModalVisible] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState('Todo el país (Colombia)');
+  const [drawerVisible, setDrawerVisible] = useState(false);
+  
+  const { user } = useContext(AuthContext);
+
   const isPublic    = variant === 'public';
   const isDashboard = variant === 'dashboard';
   const topBar      = showTopBar !== undefined ? showTopBar : isPublic;
@@ -67,18 +73,28 @@ export default function Header({
 
       {/* FILA 1 — Logo + acciones */}
       <View style={[styles.row1, { backgroundColor: bgColor }]}>
-        {/* Logo */}
-        <TouchableOpacity
-          style={styles.logoArea}
-          onPress={() => navigation?.navigate?.(isDashboard ? 'PostLogin' : 'Home')}
-          activeOpacity={0.8}
-        >
-          <Image
-            source={require('../assets/logo.png')}
-            style={styles.logoImg}
-            resizeMode="contain"
-          />
-        </TouchableOpacity>
+        {/* Logo y Menú */}
+        <View style={styles.logoArea}>
+          {isDashboard && (
+            <TouchableOpacity 
+              style={styles.menuIconBtn} 
+              onPress={() => setDrawerVisible(true)}
+              activeOpacity={0.8}
+            >
+              <IconMenu size={26} color={WHITE} />
+            </TouchableOpacity>
+          )}
+          <TouchableOpacity
+            onPress={() => navigation?.navigate?.(isDashboard ? 'PostLogin' : 'Home')}
+            activeOpacity={0.8}
+          >
+            <Image
+              source={require('../assets/logo.png')}
+              style={[styles.logoImg, isDashboard && styles.logoImgDash]}
+              resizeMode="contain"
+            />
+          </TouchableOpacity>
+        </View>
 
         {/* Acciones — public */}
         {isPublic && (
@@ -105,16 +121,13 @@ export default function Header({
         {/* Acciones — dashboard */}
         {isDashboard && (
           <View style={styles.dashRight}>
-            {userName && (
-              <Text style={styles.dashGreeting} numberOfLines={1}>
-                Hola, {userName} 👋
-              </Text>
-            )}
-            {onSignOut && (
-              <TouchableOpacity style={styles.signOutBtn} onPress={onSignOut} activeOpacity={0.8}>
-                <Text style={styles.signOutText}>Salir</Text>
-              </TouchableOpacity>
-            )}
+            <TouchableOpacity 
+              style={styles.cartIconBtn} 
+              onPress={() => navigation?.navigate?.('Cart')} // Asumiendo que haya una vista Cart o la crearemos
+              activeOpacity={0.8}
+            >
+              <IconCart size={24} color={WHITE} />
+            </TouchableOpacity>
           </View>
         )}
       </View>
@@ -212,6 +225,17 @@ export default function Header({
           </View>
         </TouchableOpacity>
       </Modal>
+
+      {/* Menú lateral (Drawer) para Dashboard */}
+      {isDashboard && (
+        <SidebarMenu 
+          visible={drawerVisible} 
+          onClose={() => setDrawerVisible(false)} 
+          user={user} 
+          navigation={navigation}
+          onSignOut={onSignOut}
+        />
+      )}
     </>
   );
 }
@@ -242,12 +266,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     flexShrink: 1,
-    marginLeft: -54,
+    marginLeft: -5,
     justifyContent: 'flex-start',
-    minWidth: 160,
-    maxWidth: 220,
   },
-  logoImg: { width: 220, height: 120, resizeMode: 'contain', marginTop: -35, marginBottom: -35 },
+  menuIconBtn: {
+    padding: 8,
+    marginRight: 2,
+    marginLeft: -10,
+  },
+  logoImg: { width: 180, height: 100, resizeMode: 'contain', marginTop: -25, marginBottom: -25, marginLeft: -25 },
+  logoImgDash: { width: 140, height: 80, marginTop: -20, marginBottom: -20, marginLeft: 0 },
   logoText: { fontSize: 17, fontWeight: '800', color: VINOTINTO },
   logoTextWhite: { color: WHITE },
 
@@ -264,10 +292,8 @@ const styles = StyleSheet.create({
   actionText: { fontSize: 10, color: WHITE, fontWeight: '700', marginTop: 2, textAlign: 'center' },
 
   /* Dashboard derecha */
-  dashRight:    { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  dashGreeting: { color: WHITE, fontSize: 13, fontWeight: '600', maxWidth: 160 },
-  signOutBtn:   { backgroundColor: 'rgba(255,255,255,0.18)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 18 },
-  signOutText:  { color: WHITE, fontSize: 12, fontWeight: '700' },
+  dashRight:    { flexDirection: 'row', alignItems: 'center', marginRight: 5 },
+  cartIconBtn:  { padding: 6 },
 
   /* Fila 2 — búsqueda */
   row2: {

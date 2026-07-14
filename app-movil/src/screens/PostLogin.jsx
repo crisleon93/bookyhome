@@ -8,6 +8,7 @@ import {
 import { getBooks } from '../services/api';
 import { AuthContext } from '../context/AuthContext';
 import Header from '../components/Header';
+import { IconBooks, IconStore, IconStar, IconCart } from '../components/Icons';
 
 const PRIMARY = '#7A1E3A';
 const BG      = '#F9F6F1';
@@ -100,6 +101,7 @@ export default function PostLogin({ navigation }) {
             ${Number(item.precio ?? 0).toLocaleString('es-CO')}
           </Text>
           <TouchableOpacity style={styles.addBtn} activeOpacity={0.8}>
+            <IconCart size={14} color={WHITE} />
             <Text style={styles.addBtnText}>Agregar al carrito</Text>
           </TouchableOpacity>
         </View>
@@ -118,26 +120,15 @@ export default function PostLogin({ navigation }) {
         <Text style={styles.greetingSub}>¿Qué libro buscas hoy?</Text>
       </View>
 
-      <View style={styles.quickActions}>
-        <TouchableOpacity style={styles.quickAction} onPress={() => navigation.navigate('Profile')}>
-          <Text style={styles.quickActionLabel}>Perfil</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.quickAction} onPress={() => navigation.navigate('History')}>
-          <Text style={styles.quickActionLabel}>Historial</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.quickAction} onPress={() => navigation.navigate('Notifications')}>
-          <Text style={styles.quickActionLabel}>Notificaciones</Text>
-        </TouchableOpacity>
-      </View>
-
       {/* Stats strip */}
       <View style={styles.statsStrip}>
         {[
-          { value: '+10.000', label: 'Libros' },
-          { value: '+150',    label: 'Librerías' },
-          { value: '4.8 ⭐',  label: 'Calificación' },
+          { value: '+10.000', label: 'Libros', icon: <IconBooks size={18} color={PRIMARY} /> },
+          { value: '+150',    label: 'Librerías', icon: <IconStore size={18} color={PRIMARY} /> },
+          { value: '4.8',     label: 'Calificación', icon: <IconStar size={18} color={PRIMARY} /> },
         ].map((s, i) => (
           <View key={i} style={styles.statItem}>
+            <View style={styles.statIconWrap}>{s.icon}</View>
             <Text style={styles.statValue}>{s.value}</Text>
             <Text style={styles.statLabel}>{s.label}</Text>
           </View>
@@ -234,6 +225,7 @@ const styles = StyleSheet.create({
     shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 6, elevation: 2,
   },
   statItem:  { alignItems: 'center' },
+  statIconWrap: { marginBottom: 4, opacity: 0.9 },
   statValue: { fontSize: 16, fontWeight: '800', color: PRIMARY },
   statLabel: { fontSize: 11, color: GRAY, marginTop: 2 },
 
@@ -268,31 +260,11 @@ const styles = StyleSheet.create({
   cardTitle:  { fontSize: 13, fontWeight: '700', color: '#1A1A1A', marginBottom: 3 },
   cardAuthor: { fontSize: 11, color: GRAY, marginBottom: 6 },
   cardPrice:  { fontSize: 15, fontWeight: '800', color: PRIMARY, marginBottom: 8 },
-  addBtn:     { backgroundColor: PRIMARY, borderRadius: 8, paddingVertical: 7, alignItems: 'center' },
+  addBtn:     { 
+    backgroundColor: PRIMARY, borderRadius: 8, paddingVertical: 7, 
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 
+  },
   addBtnText: { color: WHITE, fontSize: 11, fontWeight: '700' },
-
-  quickActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginHorizontal: 16,
-    marginBottom: 18,
-  },
-  quickAction: {
-    flex: 1,
-    backgroundColor: WHITE,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: BORDER,
-    paddingVertical: 12,
-    alignItems: 'center',
-    marginHorizontal: 4,
-  },
-  quickActionLabel: {
-    color: PRIMARY,
-    fontWeight: '700',
-    fontSize: 12,
-  },
 
   /* Misc */
   loadingWrap: { flex: 1, justifyContent: 'center', alignItems: 'center' },
