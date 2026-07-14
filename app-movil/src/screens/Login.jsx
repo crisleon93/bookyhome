@@ -37,7 +37,7 @@ export default function Login({ navigation }) {
       const token = res.data?.access_token;
       if (!token) throw new Error('No se recibió token');
       await signIn(token);
-      navigation.replace('PostLogin');
+      // El AppNavigator detecta el token y cambia al stack autenticado automáticamente
     } catch (err) {
       const msg = err.response?.data?.detail || err.message || 'Error';
       Alert.alert('Error', String(msg));

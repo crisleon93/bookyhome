@@ -13,6 +13,12 @@ import History from '../screens/History';
 import Notifications from '../screens/Notifications';
 import { AuthContext } from '../context/AuthContext';
 import RegisterLibrary from '../screens/RegisterLibrary';
+import ListaDeseos from '../screens/ListaDeseos';
+import Libreria from '../screens/Libreria';
+import PublicarLibro from '../screens/PublicarLibro';
+import MiTienda from '../screens/MiTienda';
+import ResetPassword from '../screens/ResetPassword';
+import VerifyEmail from '../screens/VerifyEmail';
 
 const Stack = createNativeStackNavigator();
 
@@ -31,6 +37,8 @@ export default function AppNavigator() {
           <Stack.Screen name="Register" component={Register} options={{ headerShown: false }} />
           <Stack.Screen name="ForgotPassword" component={ForgotPassword} options={{ headerShown: false }} />
           <Stack.Screen name="RegisterLibrary" component={RegisterLibrary} options={{ headerShown: false }} />
+          <Stack.Screen name="ResetPassword" component={ResetPassword} options={{ headerShown: false }} />
+          <Stack.Screen name="VerifyEmail" component={VerifyEmail} options={{ headerShown: false }} />
         </>
       ) : (
         <>
@@ -41,6 +49,10 @@ export default function AppNavigator() {
           <Stack.Screen name="BookDetail" component={BookDetail} options={{ title: 'Detalle del libro' }} />
           <Stack.Screen name="Cart" component={Cart} options={{ title: 'Mi Carrito' }} />
           <Stack.Screen name="Checkout" component={Checkout} options={{ title: 'Pago Seguro' }} />
+          <Stack.Screen name="ListaDeseos" component={ListaDeseos} options={{ title: 'Lista de Deseos' }} />
+          <Stack.Screen name="Libreria" component={Libreria} options={{ title: 'Mi Librería' }} />
+          <Stack.Screen name="PublicarLibro" component={PublicarLibro} options={{ title: 'Publicar Libro' }} />
+          <Stack.Screen name="MiTienda" component={MiTienda} options={{ headerShown: false }} />
         </>
       )}
     </Stack.Navigator>

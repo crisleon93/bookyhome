@@ -3,6 +3,15 @@
 import React from 'react';
 import Svg, { Path, Circle, Line, Polyline, Polygon, Rect } from 'react-native-svg';
 
+export const IconMenu = ({ size = 24, color = '#FFFFFF' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+    stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <Line x1="3" y1="12" x2="21" y2="12" stroke={color}/>
+    <Line x1="3" y1="6" x2="21" y2="6" stroke={color}/>
+    <Line x1="3" y1="18" x2="21" y2="18" stroke={color}/>
+  </Svg>
+);
+
 // ── Búsqueda ──────────────────────────────────────────────────────────────────
 export const IconSearch = ({ size = 20, color = '#7A1E3A' }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none"
@@ -227,6 +236,15 @@ export const IconHome = ({ size = 22, color = '#7A1E3A' }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none"
     stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
     <Path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1v-5m10-10l2 2m-2-2v10a1 1 0 01-1 1v-5m-6 0a1 1 0 001-1v5" stroke={color}/>
+  </Svg>
+);
+
+// ── Books (Libros) ────────────────────────────────────────────────────────────
+export const IconBooks = ({ size = 18, color = '#7A1E3A' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+    stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <Path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" stroke={color}/>
+    <Path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z" stroke={color}/>
   </Svg>
 );
 
