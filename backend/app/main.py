@@ -27,6 +27,7 @@ from app.routers.cupones import router as cupones_router
 from app.routers.direcciones import router as direcciones_router
 from app.routers.suscripciones_tienda import router as suscripciones_router
 from app.routers.herramientas import router as herramientas_router
+from app.routers.impulsos import router as impulsos_router
 
 load_dotenv()
 
@@ -67,6 +68,7 @@ app.include_router(cupones_router)
 app.include_router(direcciones_router)
 app.include_router(suscripciones_router)
 app.include_router(herramientas_router)
+app.include_router(impulsos_router)
 
 @app.get("/")
 def root():
