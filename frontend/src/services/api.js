@@ -72,6 +72,10 @@ export const actualizarDireccion = (id, payload) => api.put(`/direcciones/${id}`
 export const eliminarDireccion = (id) => api.delete(`/direcciones/${id}`)
 export const marcarDireccionPredeterminada = (id) => api.patch(`/direcciones/${id}/default`)
 
+// Envíos y tracking manual
+export const getEmpresasMensajeria = () => api.get('/envios/empresas')
+export const registrarEnvio = (idOrden, payload) => api.put(`/envios/orden/${idOrden}`, payload)
+
 // Suscripciones de tienda
 export const getMiSuscripcion = () => api.get('/suscripciones/mi-suscripcion')
 export const getSuscripcionVigente = () => api.get('/suscripciones/vigente')
@@ -79,4 +83,4 @@ export const getHistorialSuscripciones = () => api.get('/suscripciones/historial
 export const crearSuscripcion = (payload) => api.post('/suscripciones', payload)
 export const cancelarSuscripcion = (id) => api.delete(`/suscripciones/${id}`)
 
-export default api
+export default api

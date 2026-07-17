@@ -33,6 +33,8 @@ def obtener_orden(id_usuario, id_orden):
     return None
 
 def obtener_ordenes_usuario(id_usuario):
+    from app.models.envios import limpiar_envios_no_pagados
+    limpiar_envios_no_pagados()
     orders = _load_store(ORDER_FILE)
     user_orders = orders.get(str(id_usuario), [])
     return sorted(user_orders, key=lambda o: o.get('fecha', ''), reverse=True)
