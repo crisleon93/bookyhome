@@ -1,5 +1,6 @@
 import json
 import os
+import uuid
 from datetime import datetime
 
 STORAGE_DIR = os.path.join(os.path.dirname(__file__), '..', 'data')
@@ -81,6 +82,7 @@ def checkout_carrito(id_usuario):
 
     order = {
         'id_orden': order_id,
+        'codigo_compra': f"BH-{uuid.uuid4().hex[:10].upper()}",
         'fecha': datetime.utcnow().isoformat() + 'Z',
         'items': cart,
         'total': total,

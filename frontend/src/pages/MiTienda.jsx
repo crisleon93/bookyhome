@@ -371,6 +371,12 @@ export default function MiTienda() {
   const [loadingVentas, setLoadingVentas] = useState(false);
   const [pedidos,       setPedidos]       = useState([]);
   const [loadingPedidos, setLoadingPedidos] = useState(false);
+  const [filtroEnvios, setFiltroEnvios] = useState("");
+  const [empresasMensajeria, setEmpresasMensajeria] = useState([]);
+  const [pedidoEnvio, setPedidoEnvio] = useState(null);
+  const [envioForm, setEnvioForm] = useState({ id_empresa: "", numero_guia: "" });
+  const [guardandoEnvio, setGuardandoEnvio] = useState(false);
+  const [envioError, setEnvioError] = useState("");
   const [notificaciones, setNotificaciones] = useState([]);
   const [notificacionesLoading, setNotificacionesLoading] = useState(false);
   const [notificacionesFilter, setNotificacionesFilter] = useState("todas");
@@ -534,6 +540,45 @@ export default function MiTienda() {
       .finally(() => setLoadingPedidos(false));
   }, []);
 
+  const abrirRegistroEnvio = async (pedido) => {
+    setPedidoEnvio(pedido);
+    setEnvioError("");
+    setEnvioForm({
+      id_empresa: pedido.envio?.id_empresa ? String(pedido.envio.id_empresa) : "",
+      numero_guia: pedido.envio?.numero_guia || ""
+    });
+    if (empresasMensajeria.length === 0) {
+      try {
+        const res = await api.get("/envios/empresas");
+        setEmpresasMensajeria(res.data);
+      } catch {
+        setEnvioError("No se pudo cargar el listado de empresas de mensajería.");
+      }
+    }
+  };
+
+  const guardarEnvio = async () => {
+    if (!envioForm.id_empresa || !envioForm.numero_guia.trim()) {
+      setEnvioError("Selecciona una empresa e ingresa el número de guía.");
+      return;
+    }
+    setGuardandoEnvio(true);
+    setEnvioError("");
+    try {
+      await api.put(`/envios/orden/${pedidoEnvio.id_orden}`, {
+        id_comprador: pedidoEnvio.id_comprador,
+        id_empresa: Number(envioForm.id_empresa),
+        numero_guia: envioForm.numero_guia.trim()
+      });
+      setPedidoEnvio(null);
+      cargarPedidos();
+    } catch (err) {
+      setEnvioError(err.response?.data?.detail || "No se pudo registrar la guía.");
+    } finally {
+      setGuardandoEnvio(false);
+    }
+  };
+
   const cargarVentas = useCallback(() => {
     setLoadingVentas(true);
     api.get("/libros/mis-ventas")
@@ -562,7 +607,7 @@ export default function MiTienda() {
   }, [cargarLibros]);
 
   useEffect(() => {
-    if (activeSide === "Pedidos") {
+    if (activeSide === "Pedidos" || activeSide === "Envios") {
       cargarPedidos();
     } else if (activeSide === "Ventas") {
       cargarVentas();
@@ -1333,13 +1378,14 @@ export default function MiTienda() {
                   <th style={{ padding: "12px", fontWeight: 700 }}>Cliente</th>
                   <th style={{ padding: "12px", fontWeight: 700 }}>Productos</th>
                   <th style={{ padding: "12px", fontWeight: 700 }}>Estado</th>
+                  <th style={{ padding: "12px", fontWeight: 700 }}>Guía / envío</th>
                   <th style={{ padding: "12px", fontWeight: 700, textAlign: "right" }}>Total Tienda</th>
                 </tr>
               </thead>
               <tbody>
                 {pedidos.map((pedido, idx) => (
                   <tr key={`${pedido.id_orden}-${idx}`} style={{ borderBottom: "1px solid #f0ebe4" }}>
-                    <td style={{ padding: "12px", fontWeight: 600 }}>#{pedido.id_orden}</td>
+                    <td style={{ padding: "12px", fontWeight: 600 }}>#{pedido.id_orden}<br /><span style={{ color: "#777", fontWeight: 500, fontSize: "0.72rem" }}>{pedido.codigo_compra}</span></td>
                     <td style={{ padding: "12px", fontSize: "0.9rem" }}>
                       {pedido.fecha ? new Date(pedido.fecha).toLocaleDateString("es-CO") : "Reciente"}
                     </td>
@@ -1359,6 +1405,21 @@ export default function MiTienda() {
                         {pedido.estado}
                       </span>
                     </td>
+                    <td style={{ padding: "12px", minWidth: "145px" }}>
+                      {pedido.envio && pedido.estado === "pagado" && (
+                        <div style={{ marginBottom: "7px", fontSize: "0.78rem", lineHeight: 1.35 }}>
+                          <strong style={{ display: "block", color: "#4b2733" }}>{pedido.envio.empresa_mensajeria}</strong>
+                          <span style={{ color: "#6d6265" }}>Guía {pedido.envio.numero_guia}</span>
+                        </div>
+                      )}
+                      <button
+                        onClick={() => abrirRegistroEnvio(pedido)}
+                        disabled={pedido.estado !== "pagado"}
+                        style={{ border: pedido.envio && pedido.estado === "pagado" ? "1px solid #9b4d65" : "none", borderRadius: "999px", padding: "7px 11px", cursor: pedido.estado === "pagado" ? "pointer" : "not-allowed", background: pedido.envio && pedido.estado === "pagado" ? "#fff" : pedido.estado === "pagado" ? "#7A1E3A" : "#e7e1e2", color: pedido.envio && pedido.estado === "pagado" ? "#7A1E3A" : pedido.estado === "pagado" ? "white" : "#7b7073", fontWeight: 700, fontSize: "0.75rem", whiteSpace: "nowrap" }}
+                      >
+                        {pedido.envio && pedido.estado === "pagado" ? "Editar guía" : pedido.estado === "pagado" ? "+ Registrar guía" : "Pendiente de pago"}
+                      </button>
+                    </td>
                     <td style={{ padding: "12px", textAlign: "right", fontWeight: 700, color: "var(--gris-carbon)" }}>
                       {formatPrecio(pedido.total_tienda)}
                     </td>
@@ -1369,8 +1430,87 @@ export default function MiTienda() {
           </div>
         )}
       </div>
+      {pedidoEnvio && (
+        <div className="modal-overlay open" onClick={() => !guardandoEnvio && setPedidoEnvio(null)}>
+          <div className="modal-box" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "460px", padding: "28px" }}>
+            <h2 style={{ marginTop: 0 }}>Registrar guía de envío · Orden #{pedidoEnvio.id_orden}</h2>
+            <p style={{ color: "#666", fontSize: "0.9rem" }}>Elige la transportadora acordada e ingresa el número de guía que ella te entregó. BookyHome no realiza ni controla el transporte.</p>
+            <label style={{ display: "block", fontWeight: 600, marginTop: "18px" }}>Empresa de mensajería</label>
+            <select value={envioForm.id_empresa} onChange={(e) => setEnvioForm({ ...envioForm, id_empresa: e.target.value })} style={{ width: "100%", marginTop: "6px", padding: "10px", borderRadius: "6px" }}>
+              <option value="">Selecciona una empresa</option>
+              {empresasMensajeria.map((empresa) => <option key={empresa.id_empresa} value={empresa.id_empresa}>{empresa.nombre_empresa}</option>)}
+            </select>
+            <label style={{ display: "block", fontWeight: 600, marginTop: "14px" }}>Número de guía</label>
+            <input value={envioForm.numero_guia} onChange={(e) => setEnvioForm({ ...envioForm, numero_guia: e.target.value })} maxLength={80} placeholder="Ej. 123456789" style={{ width: "100%", marginTop: "6px", padding: "10px", borderRadius: "6px", boxSizing: "border-box" }} />
+            {envioError && <p style={{ color: "#b42318", fontSize: "0.85rem" }}>{envioError}</p>}
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "22px" }}>
+              <button onClick={() => setPedidoEnvio(null)} disabled={guardandoEnvio}>Cancelar</button>
+              <button className="btn btn-vinotinto" onClick={guardarEnvio} disabled={guardandoEnvio}>{guardandoEnvio ? "Guardando..." : "Guardar guía"}</button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
+
+  const renderEnvios = () => {
+    const texto = filtroEnvios.trim().toLowerCase();
+    const envios = pedidos.filter((pedido) => {
+      if (!pedido.envio || pedido.estado !== "pagado") return false;
+      if (!texto) return true;
+      return [pedido.codigo_compra, pedido.id_orden, pedido.cliente, pedido.correo_cliente, pedido.envio.empresa_mensajeria, pedido.envio.numero_guia]
+        .some((valor) => String(valor || "").toLowerCase().includes(texto));
+    });
+
+    return (
+      <>
+        <div className="welcome-card">
+          <h1 style={{ fontSize: "1.55rem", marginBottom: "4px", display: "flex", alignItems: "center", gap: "10px" }}>
+            <IconTruck width={28} height={28} strokeWidth={2} style={{ color: "#7A1E3A" }} />
+            Envíos y seguimiento
+          </h1>
+          <p style={{ margin: 0 }}>Consulta las guías registradas y abre el rastreo oficial de cada transportadora.</p>
+        </div>
+
+        <div className="seller-books" style={{ marginTop: "20px", padding: "20px" }}>
+          <label style={{ display: "block", fontWeight: 700, color: "#4b2733", marginBottom: "8px" }}>Buscar envío</label>
+          <input
+            value={filtroEnvios}
+            onChange={(e) => setFiltroEnvios(e.target.value)}
+            placeholder="Compra, guía, comprador o transportadora"
+            style={{ width: "100%", maxWidth: "520px", padding: "11px 13px", border: "1px solid #d9cfd1", borderRadius: "8px", boxSizing: "border-box" }}
+          />
+        </div>
+
+        {loadingPedidos ? <p style={{ color: "#777", padding: "20px 0" }}>Cargando envíos...</p> : envios.length === 0 ? (
+          <div className="empty-state"><p>No hay envíos que coincidan con la búsqueda.</p></div>
+        ) : (
+          <div style={{ display: "grid", gap: "14px", marginTop: "18px" }}>
+            {envios.map((pedido) => (
+              <article key={`${pedido.id_comprador}-${pedido.id_orden}`} className="seller-books" style={{ padding: "20px", borderLeft: "4px solid #7A1E3A" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "14px", flexWrap: "wrap" }}>
+                  <div>
+                    <strong style={{ display: "block", color: "#4b2733" }}>Compra {pedido.codigo_compra}</strong>
+                    <span style={{ color: "#666", fontSize: "0.86rem" }}>Pedido #{pedido.id_orden} · {pedido.cliente}</span>
+                  </div>
+                  <span className="pl-badge pl-badge--entregado">{pedido.envio.estado_envio || "Guía registrada"}</span>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "end", gap: "16px", flexWrap: "wrap", borderTop: "1px solid #eee", marginTop: "16px", paddingTop: "14px" }}>
+                  <div>
+                    <strong style={{ display: "block" }}>{pedido.envio.empresa_mensajeria}</strong>
+                    <span style={{ color: "#666", fontSize: "0.86rem" }}>Guía: {pedido.envio.numero_guia}</span>
+                  </div>
+                  <a href={pedido.envio.url_rastreo || pedido.envio.sitio_web} target="_blank" rel="noreferrer" className="btn btn-vinotinto" style={{ width: "auto", padding: "9px 14px", fontSize: "0.82rem" }}>
+                    Rastrear con la transportadora
+                  </a>
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
+      </>
+    );
+  };
 
   const renderVentas = () => (
     <>
@@ -1498,6 +1638,7 @@ export default function MiTienda() {
       case "Mis Libros":    return renderMisLibros();
       case "Ventas":        return renderVentas();
       case "Pedidos":       return renderPedidos();
+      case "Envios":        return renderEnvios();
       case "Clientes":      return renderProximamente("Clientes");
       case "Configuración": return renderConfiguracion();
       case "Perfil":        return renderPerfil();
@@ -1518,6 +1659,16 @@ export default function MiTienda() {
         setActiveSide={cambiarSeccion}
         handleLogout={handleLogout}
       />
+
+      <button
+        type="button"
+        className="dashboard-tracking-shortcut"
+        onClick={() => cambiarSeccion("Envios")}
+        aria-label="Gestionar envíos"
+      >
+        <IconTruck width={22} height={22} strokeWidth={2} />
+        <span>Envíos</span>
+      </button>
 
       <main className="dashboard-main">{renderContenido()}</main>
 

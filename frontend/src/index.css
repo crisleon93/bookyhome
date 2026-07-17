@@ -290,6 +290,67 @@ header.scrolled { box-shadow: 0 2px 20px rgba(122, 30, 58, 0.15); }
   flex-shrink: 0;
 }
 
+/* Acceso directo al seguimiento dentro del encabezado del comprador. */
+.header-tracking-access {
+  margin-left: auto;
+  border: 0;
+  background: transparent;
+  color: var(--vinotinto);
+  cursor: pointer;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-width: 88px;
+  padding: 5px 10px;
+  border-radius: 9px;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.header-tracking-access:hover,
+.header-tracking-access:focus-visible {
+  background: #f7e8ed;
+  outline: none;
+}
+
+.header-tracking-access svg {
+  width: 23px;
+  height: 23px;
+}
+
+/* Acceso persistente sobre la franja superior de ambos dashboards. */
+.dashboard-tracking-shortcut {
+  position: fixed;
+  top: 8px;
+  right: 28px;
+  z-index: 1200;
+  min-width: 98px;
+  padding: 5px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.38);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.11);
+  color: #fff;
+  cursor: pointer;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.7rem;
+  font-weight: 700;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+}
+
+.dashboard-tracking-shortcut:hover,
+.dashboard-tracking-shortcut:focus-visible {
+  background: rgba(255, 255, 255, 0.22);
+  outline: 2px solid rgba(255, 255, 255, 0.7);
+  outline-offset: 2px;
+}
+
 .btn-header {
   width: auto;
   display: inline-block;

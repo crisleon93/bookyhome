@@ -494,6 +494,10 @@ def _load_orders():
         return {}
 
 def obtener_pedidos_tienda(id_tienda: int):
+    # Nunca se expone una guía mientras la compra no esté pagada, incluso si
+    # existe un dato heredado de una versión anterior del flujo.
+    from app.models.envios import limpiar_envios_no_pagados
+    limpiar_envios_no_pagados()
     # 1. Obtener todos los libros de la tienda
     db = get_db()
     cursor = db.cursor(dictionary=True)
@@ -553,13 +557,16 @@ def obtener_pedidos_tienda(id_tienda: int):
             if items_tienda:
                 pedidos.append({
                     "id_orden": order.get("id_orden"),
+                    "codigo_compra": order.get("codigo_compra", f"BH-{user_id}-{order.get('id_orden')}"),
+                    "id_comprador": user_id,
                     "fecha": order.get("fecha"),
                     "estado": order.get("estado"),
                     "cliente": cliente_info["nombre"],
                     "correo_cliente": cliente_info["correo"],
                     "items": items_tienda,
                     "total_tienda": total_tienda,
-                    "total_orden": order.get("total")
+                    "total_orden": order.get("total"),
+                    "envio": order.get("envio") if str(order.get("estado", "")).lower() == "pagado" else None
                 })
                 
     return sorted(pedidos, key=lambda p: p.get("fecha", ""), reverse=True)
