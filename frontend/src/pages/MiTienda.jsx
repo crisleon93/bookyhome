@@ -10,6 +10,8 @@ import SeccionSuscripciones from "../components/SeccionSuscripciones";
 import SeccionImpulsos from "../components/SeccionImpulsos";
 import SellerSidebar from "../components/VendedorSidebar";
 import Chat from './Chat';
+import QuejasVendedor from './QuejasVendedor';
+import Soporte from './Soporte';
 import {
   IconBook,
   IconBookOpen,
@@ -1638,6 +1640,8 @@ export default function MiTienda() {
       case "Mis Libros":    return renderMisLibros();
       case "Ventas":        return renderVentas();
       case "Pedidos":       return renderPedidos();
+      case "Quejas y reclamos": return <QuejasVendedor />;
+      case "Soporte técnico": return <Soporte />;
       case "Envios":        return renderEnvios();
       case "Clientes":      return renderProximamente("Clientes");
       case "Configuración": return renderConfiguracion();

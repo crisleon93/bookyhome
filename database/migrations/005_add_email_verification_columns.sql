@@ -32,6 +32,8 @@ EXECUTE stmt;
 DEALLOCATE PREPARE stmt;
 
 -- Para no romper cuentas existentes, se marcan como verificadas si no tienen token pendiente.
+SET SQL_SAFE_UPDATES = 0;
+
 UPDATE usuarios
 SET email_verificado = TRUE
 WHERE COALESCE(email_verificado, FALSE) = FALSE
@@ -40,4 +42,7 @@ WHERE COALESCE(email_verificado, FALSE) = FALSE
 -- Limpiar tokens vacíos para evitar inconsistencias.
 UPDATE usuarios
 SET token_verificacion = NULL
-WHERE token_verificacion IS NOT NULL AND TRIM(token_verificacion) = '';
+WHERE token_verificacion IS NOT NULL
+  AND TRIM(token_verificacion) = '';
+
+SET SQL_SAFE_UPDATES = 1;

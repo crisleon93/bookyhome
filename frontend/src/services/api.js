@@ -55,6 +55,15 @@ export const eliminarLibroListaDeseos = (idLista, idLibro) => api.delete(`/lista
 export const getDevoluciones = () => api.get('/devoluciones')
 export const getPedidosElegiblesDevolucion = () => api.get('/devoluciones/elegibles')
 export const solicitarDevolucion = (payload) => api.post('/devoluciones', payload)
+export const getQuejas = () => api.get('/quejas')
+export const crearQueja = (formData) => api.post('/quejas', formData, { headers: { 'Content-Type': 'multipart/form-data' } })
+export const getQuejasAdmin = () => api.get('/quejas/admin/todas')
+export const resolverQueja = (id, payload) => api.patch(`/quejas/admin/${id}`, payload)
+export const getQuejasVendedor = () => api.get('/quejas/vendedor')
+export const getMensajesReclamo = (id) => api.get(`/quejas/${id}/mensajes`)
+export const enviarMensajeReclamo = (id, mensaje) => api.post(`/quejas/${id}/mensajes`, { mensaje })
+export const getSoporte = () => api.get('/quejas/soporte')
+export const crearSoporte = (payload) => api.post('/quejas/soporte', payload)
 
 // Cupones
 export const getCuponesDisponibles = () => api.get('/cupones/disponibles')

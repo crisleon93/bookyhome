@@ -771,3 +771,35 @@ export const IconBookOpen = ({ className = "", width = 22, height = 22, strokeWi
   </svg>
 
 );
+
+
+
+export const IconTool = ({ className = "", width = 22, height = 22, strokeWidth = 1.5, ...props }) => (
+
+  <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+
+    stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" width={width} height={height} {...props}>
+
+    <path d="M14.7 6.3a5 5 0 0 0-6.9 6.9L3 18a2.1 2.1 0 1 0 3 3l4.8-4.8a5 5 0 0 0 6.9-6.9l-3.1 3.1-2.6-.5-.5-2.6 3.2-3Z" />
+
+  </svg>
+
+);
+
+
+
+export const IconAlertTriangle = ({ className = "", width = 22, height = 22, strokeWidth = 1.5, ...props }) => (
+
+  <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+
+    stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" width={width} height={height} {...props}>
+
+    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+
+    <line x1="12" y1="9" x2="12" y2="13" />
+
+    <line x1="12" y1="17" x2="12.01" y2="17" />
+
+  </svg>
+
+);
