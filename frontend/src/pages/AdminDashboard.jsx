@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getUserRole } from '../hooks/useAuth';
-import api from '../services/api';
+import api, { getApiBaseUrl } from '../services/api';
 import { notify } from '../components/ToastProvider';
 import {
   IconLayoutDashboard, IconTrendingUp, IconUser, IconBook, IconStore, IconPackage,
   IconSettings, IconChevronLeft, IconMenu, IconLogOut, IconLock, IconUnlock,
-  IconCheck, IconBan, IconEye, IconTrash, IconDollar, IconCart,
+  IconCheck, IconBan, IconEye, IconTrash, IconDollar, IconCart, IconTool, IconAlertTriangle,
 } from '../components/Icons';
 
 const VINOTINTO = '#7A1E3A';
@@ -27,6 +27,8 @@ const NAV_ITEMS = [
   { id: 'libros',    label: 'Libros',    Icon: IconBook },
   { id: 'tiendas',   label: 'Tiendas',   Icon: IconStore },
   { id: 'ordenes',   label: 'Órdenes',   Icon: IconPackage },
+  { id: 'reclamos',  label: 'Quejas y reclamos', Icon: IconAlertTriangle },
+  { id: 'soporte',   label: 'Soporte técnico', Icon: IconTool },
 ];
 
 // Ícono de sidebar: tamaño y color fijos, ignora className/defaults de cada ícono
@@ -45,6 +47,13 @@ export default function AdminDashboard() {
   const [libros, setLibros] = useState([]);
   const [ordenes, setOrdenes] = useState([]);
   const [tiendas, setTiendas] = useState([]);
+  const [reclamos, setReclamos] = useState([]);
+  const [soporte, setSoporte] = useState([]);
+  const [vistaSoporte, setVistaSoporte] = useState('compradores');
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalReclamo, setModalReclamo] = useState(null);
+  const [modalRespuesta, setModalRespuesta] = useState('');
+  const [evidenciaPreview, setEvidenciaPreview] = useState(null);
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [filtroRol, setFiltroRol] = useState('todos');
@@ -54,6 +63,64 @@ export default function AdminDashboard() {
   const [paginaTiendas, setPaginaTiendas] = useState(1);
 
   const registrosPorPagina = 10;
+
+  const cargarReclamos = async () => {
+    try {
+      const res = await api.get('/quejas/admin/todas');
+      setReclamos(res.data || []);
+    } catch (error) {
+      notify(error.response?.data?.detail || 'No se pudieron cargar los reclamos', 'error');
+    }
+  };
+
+  const cargarSoporte = async () => {
+    try {
+      const res = await api.get('/quejas/admin/todas');
+      setSoporte(res.data || []);
+    } catch (error) {
+      notify(error.response?.data?.detail || 'No se pudieron cargar los tickets de soporte', 'error');
+    }
+  };
+
+  useEffect(() => {
+    if (activeSection === 'reclamos') cargarReclamos();
+    if (activeSection === 'soporte') cargarSoporte();
+  }, [activeSection]);
+
+  useEffect(() => {
+    const refrescar = () => {
+      if (activeSection === 'reclamos') cargarReclamos();
+      if (activeSection === 'soporte') cargarSoporte();
+    };
+    window.addEventListener('bookyhome-complaint-updated', refrescar);
+    const intervalId = window.setInterval(refrescar, 10000);
+    return () => {
+      window.removeEventListener('bookyhome-complaint-updated', refrescar);
+      window.clearInterval(intervalId);
+    };
+  }, [activeSection]);
+
+  const abrirModal = (reclamo, estado) => {
+    setModalReclamo({ ...reclamo, estado });
+    setModalRespuesta(reclamo.respuesta || '');
+    setModalOpen(true);
+  };
+
+  const resolverReclamo = async () => {
+    if (!modalRespuesta?.trim()) {
+      notify('Por favor ingresa una respuesta', 'error');
+      return;
+    }
+    try {
+      await api.patch(`/quejas/admin/${modalReclamo.id_solicitud}`, { estado: modalReclamo.estado, respuesta: modalRespuesta.trim() });
+      notify('Solicitud actualizada y usuario notificado', 'success');
+      setModalOpen(false);
+      if (activeSection === 'reclamos') cargarReclamos();
+      if (activeSection === 'soporte') cargarSoporte();
+    } catch (error) {
+      notify(error.response?.data?.detail || 'No se pudo resolver la solicitud', 'error');
+    }
+  };
 
   useEffect(() => {
     const role = getUserRole();
@@ -212,8 +279,14 @@ export default function AdminDashboard() {
     libros: 'Gestión de Libros',
     tiendas: 'Gestión de Tiendas',
     ordenes: 'Gestión de Órdenes',
+    reclamos: 'Quejas y Reclamos',
+    soporte: 'Soporte Técnico',
   };
   const ActiveIcon = NAV_ITEMS.find((i) => i.id === activeSection)?.Icon;
+  const reclamosClientes = reclamos.filter((item) => item.tipo_solicitud === 'reclamo');
+  const soporteCompradores = soporte.filter((item) => item.tipo_solicitud === 'soporte' && (item.rol_usuario || '').toLowerCase() === 'comprador');
+  const soporteVendedores = soporte.filter((item) => item.tipo_solicitud === 'soporte' && (item.rol_usuario || '').toLowerCase() === 'vendedor');
+  const soporteMostrado = vistaSoporte === 'compradores' ? soporteCompradores : soporteVendedores;
 
   // USUARIOS
   const usuariosFiltrados = usuarios.filter(
@@ -943,6 +1016,91 @@ export default function AdminDashboard() {
           </div>
         )}
 
+        {/* QUEJAS Y RECLAMOS */}
+        {activeSection === 'reclamos' && (
+          <div style={{ display: 'grid', gap: '20px' }}>
+            {reclamosClientes.length === 0 ? (
+              <div style={{ background: WHITE, borderRadius: 14, padding: 40, textAlign: 'center', color: GRAY, border: `1px solid ${BORDER}` }}>
+                <p style={{ margin: 0, fontSize: '1.1rem' }}>No hay quejas y reclamos pendientes.</p>
+              </div>
+            ) : (
+              reclamosClientes.map((reclamo) => (
+                <article key={reclamo.id_solicitud} style={{ background: WHITE, border: `1px solid ${BORDER}`, borderRadius: 16, padding: 24, boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, marginBottom: 16 }}>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                        <strong style={{ fontSize: '1.1rem', color: VINOTINTO }}>Reclamo #{reclamo.id_solicitud}</strong>
+                        {reclamo.id_orden && <span style={{ background: '#f7e9ee', color: VINOTINTO, padding: '4px 10px', borderRadius: 12, fontSize: '0.85rem', fontWeight: 600 }}>Orden #{reclamo.id_orden}</span>}
+                      </div>
+                      <p style={{ margin: '4px 0', color: GRAY, fontSize: '0.95rem' }}>{reclamo.comprador} · {reclamo.nombre_tienda || 'BookyHome'}</p>
+                    </div>
+                    <span style={{ background: reclamo.estado === 'Resuelto' ? '#dcfce7' : reclamo.estado === 'En revisión' ? '#fff7ed' : '#f3f4f6', color: CARBON, padding: '6px 12px', borderRadius: 20, fontSize: '0.85rem', fontWeight: 700, whiteSpace: 'nowrap' }}>{reclamo.estado}</span>
+                  </div>
+                  <p style={{ margin: '0 0 8px', fontWeight: 700, fontSize: '1rem', color: CARBON }}>{reclamo.asunto}</p>
+                  <p style={{ margin: '0 0 12px', color: '#555', lineHeight: 1.5 }}>{reclamo.descripcion}</p>
+                  {reclamo.evidencia_url && (
+                    <button onClick={() => setEvidenciaPreview(`${getApiBaseUrl()}${reclamo.evidencia_url}`)} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 12, color: VINOTINTO, fontWeight: 700, border: 0, background: 'none', padding: 0, cursor: 'pointer', fontSize: '0.9rem' }}>
+                      <IconEye width={16} height={16} style={{ color: VINOTINTO }} /> Ver evidencia adjunta
+                    </button>
+                  )}
+                  {reclamo.respuesta && (
+                    <div style={{ margin: '12px 0', padding: 14, background: BEIGE, borderRadius: 10, borderLeft: `4px solid ${VINOTINTO}` }}>
+                      <strong style={{ color: VINOTINTO, display: 'block', marginBottom: 4 }}>Respuesta del administrador:</strong>
+                      <p style={{ margin: 0, color: '#555', lineHeight: 1.5 }}>{reclamo.respuesta}</p>
+                    </div>
+                  )}
+                  <div style={{ display: 'flex', gap: 12, marginTop: 16, paddingTop: 16, borderTop: '1px solid #f0f0f0' }}>
+                    <button onClick={() => abrirModal(reclamo, 'En revisión')} style={{ border: `1px solid ${VINOTINTO}`, background: WHITE, color: VINOTINTO, borderRadius: 8, padding: '10px 16px', cursor: 'pointer', fontWeight: 600, fontSize: '0.9rem', transition: 'all 0.2s' }}>En revisión</button>
+                    <button onClick={() => abrirModal(reclamo, 'Resuelto')} style={{ border: 0, background: VINOTINTO, color: WHITE, borderRadius: 8, padding: '10px 16px', cursor: 'pointer', fontWeight: 600, fontSize: '0.9rem', transition: 'all 0.2s' }}>Resolver y notificar</button>
+                  </div>
+                </article>
+              ))
+            )}
+          </div>
+        )}
+
+        {/* SOPORTE TÉCNICO */}
+        {activeSection === 'soporte' && (
+          <div style={{ display: 'grid', gap: '20px' }}>
+            <div style={{ display: 'flex', gap: 12, marginBottom: 8 }}>
+              <button onClick={() => setVistaSoporte('compradores')} style={{ border: vistaSoporte === 'compradores' ? `2px solid ${VINOTINTO}` : `1px solid ${BORDER}`, background: vistaSoporte === 'compradores' ? VINOTINTO : WHITE, color: vistaSoporte === 'compradores' ? WHITE : VINOTINTO, borderRadius: 10, padding: '12px 20px', cursor: 'pointer', fontWeight: 700, fontSize: '0.95rem', transition: 'all 0.2s' }}>Soporte · Compradores</button>
+              <button onClick={() => setVistaSoporte('vendedores')} style={{ border: vistaSoporte === 'vendedores' ? `2px solid ${VINOTINTO}` : `1px solid ${BORDER}`, background: vistaSoporte === 'vendedores' ? VINOTINTO : WHITE, color: vistaSoporte === 'vendedores' ? WHITE : VINOTINTO, borderRadius: 10, padding: '12px 20px', cursor: 'pointer', fontWeight: 700, fontSize: '0.95rem', transition: 'all 0.2s' }}>Soporte · Vendedores</button>
+            </div>
+            {soporteMostrado.length === 0 ? (
+              <div style={{ background: WHITE, borderRadius: 14, padding: 40, textAlign: 'center', color: GRAY, border: `1px solid ${BORDER}` }}>
+                <p style={{ margin: 0, fontSize: '1.1rem' }}>No hay tickets de soporte pendientes para {vistaSoporte === 'compradores' ? 'compradores' : 'vendedores'}.</p>
+              </div>
+            ) : (
+              soporteMostrado.map((ticket) => (
+                <article key={ticket.id_solicitud} style={{ background: WHITE, border: `1px solid ${BORDER}`, borderRadius: 16, padding: 24, boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, marginBottom: 16 }}>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                        <strong style={{ fontSize: '1.1rem', color: VINOTINTO }}>Soporte #{ticket.id_solicitud}</strong>
+                        <span style={{ background: '#e0f2fe', color: '#0369a1', padding: '4px 10px', borderRadius: 12, fontSize: '0.85rem', fontWeight: 600 }}>{(ticket.rol_usuario || '').toLowerCase() === 'vendedor' ? 'Vendedor' : 'Comprador'}</span>
+                      </div>
+                      <p style={{ margin: '4px 0', color: GRAY, fontSize: '0.95rem' }}>{ticket.comprador}</p>
+                    </div>
+                    <span style={{ background: ticket.estado === 'Resuelto' ? '#dcfce7' : ticket.estado === 'En revisión' ? '#fff7ed' : '#f3f4f6', color: CARBON, padding: '6px 12px', borderRadius: 20, fontSize: '0.85rem', fontWeight: 700, whiteSpace: 'nowrap' }}>{ticket.estado}</span>
+                  </div>
+                  <p style={{ margin: '0 0 8px', fontWeight: 700, fontSize: '1rem', color: CARBON }}>{ticket.asunto}</p>
+                  <p style={{ margin: '0 0 12px', color: '#555', lineHeight: 1.5 }}>{ticket.descripcion}</p>
+                  {ticket.respuesta && (
+                    <div style={{ margin: '12px 0', padding: 14, background: BEIGE, borderRadius: 10, borderLeft: `4px solid ${VINOTINTO}` }}>
+                      <strong style={{ color: VINOTINTO, display: 'block', marginBottom: 4 }}>Respuesta del administrador:</strong>
+                      <p style={{ margin: 0, color: '#555', lineHeight: 1.5 }}>{ticket.respuesta}</p>
+                    </div>
+                  )}
+                  <div style={{ display: 'flex', gap: 12, marginTop: 16, paddingTop: 16, borderTop: '1px solid #f0f0f0' }}>
+                    <button onClick={() => abrirModal(ticket, 'En revisión')} style={{ border: `1px solid ${VINOTINTO}`, background: WHITE, color: VINOTINTO, borderRadius: 8, padding: '10px 16px', cursor: 'pointer', fontWeight: 600, fontSize: '0.9rem', transition: 'all 0.2s' }}>En revisión</button>
+                    <button onClick={() => abrirModal(ticket, 'Resuelto')} style={{ border: 0, background: VINOTINTO, color: WHITE, borderRadius: 8, padding: '10px 16px', cursor: 'pointer', fontWeight: 600, fontSize: '0.9rem', transition: 'all 0.2s' }}>Resolver y notificar</button>
+                  </div>
+                </article>
+              ))
+            )}
+          </div>
+        )}
+
         {/* ÓRDENES */}
         {activeSection === 'ordenes' && (
           <div style={{ background: WHITE, borderRadius: '14px', overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.06)', border: `1px solid ${BORDER}` }}>
@@ -979,6 +1137,81 @@ export default function AdminDashboard() {
                 </tbody>
               </table>
             )}
+          </div>
+        )}
+
+        {evidenciaPreview && (
+          <div onClick={() => setEvidenciaPreview(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.7)', zIndex: 3000, display: 'grid', placeItems: 'center', padding: 24 }}>
+            <img onClick={(e) => e.stopPropagation()} src={evidenciaPreview} alt="Evidencia del reclamo" style={{ maxWidth: '90vw', maxHeight: '85vh', borderRadius: 10, background: WHITE }} />
+          </div>
+        )}
+
+        {/* Modal para respuesta */}
+        {modalOpen && (
+          <div onClick={() => setModalOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 4000, display: 'grid', placeItems: 'center', padding: 24 }}>
+            <div onClick={(e) => e.stopPropagation()} style={{ background: WHITE, borderRadius: 16, padding: 32, maxWidth: 500, width: '100%', boxShadow: '0 10px 40px rgba(0,0,0,0.2)' }}>
+              <h2 style={{ margin: '0 0 8px', color: VINOTINTO, fontSize: '1.4rem', fontWeight: 800 }}>
+                {modalReclamo?.estado === 'En revisión' ? 'Marcar como En revisión' : 'Resolver y notificar'}
+              </h2>
+              <p style={{ margin: '0 0 20px', color: GRAY, fontSize: '0.95rem' }}>
+                {modalReclamo?.tipo_solicitud === 'soporte' ? 'Soporte técnico' : 'Reclamo'} #{modalReclamo?.id_solicitud}
+              </p>
+              <label style={{ display: 'block', marginBottom: 8, fontWeight: 700, color: CARBON, fontSize: '0.9rem' }}>
+                Respuesta para el usuario:
+              </label>
+              <textarea
+                value={modalRespuesta}
+                onChange={(e) => setModalRespuesta(e.target.value)}
+                placeholder="Escribe tu respuesta aquí..."
+                rows={5}
+                style={{
+                  width: '100%',
+                  padding: 14,
+                  borderRadius: 10,
+                  border: `1px solid ${BORDER}`,
+                  fontSize: '0.95rem',
+                  fontFamily: "'Montserrat', sans-serif",
+                  resize: 'vertical',
+                  marginBottom: 20,
+                  outline: 'none',
+                  transition: 'border-color 0.2s'
+                }}
+              />
+              <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+                <button
+                  onClick={() => setModalOpen(false)}
+                  style={{
+                    padding: '12px 24px',
+                    borderRadius: 8,
+                    border: `1px solid ${BORDER}`,
+                    background: WHITE,
+                    color: GRAY,
+                    cursor: 'pointer',
+                    fontWeight: 600,
+                    fontSize: '0.95rem',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={resolverReclamo}
+                  style={{
+                    padding: '12px 24px',
+                    borderRadius: 8,
+                    border: 'none',
+                    background: VINOTINTO,
+                    color: WHITE,
+                    cursor: 'pointer',
+                    fontWeight: 600,
+                    fontSize: '0.95rem',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  {modalReclamo?.estado === 'En revisión' ? 'Marcar como En revisión' : 'Resolver y notificar'}
+                </button>
+              </div>
+            </div>
           </div>
         )}
 

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { getDevoluciones, getPedidosElegiblesDevolucion, solicitarDevolucion } from '../services/api';
+import { getDevoluciones, getOrdenes, crearQueja, getQuejas } from '../services/api';
 import { IconPackage, IconCheck, IconInfo } from '../components/Icons';
 
 const MOTIVOS = [
@@ -36,7 +36,7 @@ const formatFecha = (fecha) => {
   });
 };
 
-export default function Devoluciones() {
+export default function Devoluciones({ embedded = false }) {
   const navigate = useNavigate();
   const [elegibles, setElegibles] = useState([]);
   const [devoluciones, setDevoluciones] = useState([]);
@@ -52,12 +52,40 @@ export default function Devoluciones() {
     setLoading(true);
     setError('');
     try {
-      const [elegiblesRes, devolucionesRes] = await Promise.all([
-        getPedidosElegiblesDevolucion(),
+      const [ordenesRes, devolucionesRes, quejasRes] = await Promise.all([
+        getOrdenes(),
         getDevoluciones(),
+        getQuejas(),
       ]);
-      setElegibles(elegiblesRes.data || []);
-      setDevoluciones(devolucionesRes.data || []);
+      const ordenes = ordenesRes.data || [];
+      const reclamos = quejasRes.data || [];
+      const reclamosActivos = new Set(reclamos
+        .filter((reclamo) => ['Abierto', 'En revisión'].includes(reclamo.estado))
+        .map((reclamo) => Number(reclamo.id_orden)));
+      setElegibles(ordenes
+        .filter((orden) => orden.estado === 'pagado' && !reclamosActivos.has(Number(orden.id_orden)))
+        .map((orden) => ({
+          id_orden: orden.id_orden,
+          fecha_orden: orden.fecha,
+          total: orden.total,
+          estado_orden: orden.estado,
+          cantidad_items: (orden.items || []).reduce((total, item) => total + Number(item.cantidad || 0), 0),
+          libros: (orden.items || []).map((item) => item.titulo).join(', '),
+        })));
+      const solicitudes = reclamos.map((reclamo) => {
+        const orden = ordenes.find((item) => Number(item.id_orden) === Number(reclamo.id_orden));
+        return {
+          id_devolucion: `reclamo-${reclamo.id_solicitud}`,
+          id_orden: reclamo.id_orden,
+          motivo: reclamo.asunto,
+          estado_devolucion: reclamo.estado,
+          fecha_solicitud: reclamo.fecha_creacion,
+          notas_vendedor: reclamo.respuesta,
+          total_orden: orden?.total || 0,
+          estado_orden: orden?.estado || 'pagado',
+        };
+      });
+      setDevoluciones([...(devolucionesRes.data || []), ...solicitudes]);
     } catch (err) {
       if (err.response?.status === 401) {
         navigate('/login');
@@ -94,11 +122,11 @@ export default function Devoluciones() {
 
     setEnviando(true);
     try {
-      await solicitarDevolucion({
-        id_orden: Number(ordenSeleccionada),
-        motivo,
-        comentarios: comentarios.trim() || undefined,
-      });
+      const formData = new FormData();
+      formData.append('id_orden', ordenSeleccionada);
+      formData.append('motivo', motivo);
+      formData.append('descripcion', comentarios.trim() || motivo);
+      await crearQueja(formData);
       setOrdenSeleccionada('');
       setMotivo('');
       setComentarios('');
@@ -115,7 +143,7 @@ export default function Devoluciones() {
     ESTADO_STYLES[estado] || { bg: '#f9fafb', color: '#374151', border: '#d1d5db' };
 
   return (
-    <main className="auth-main" style={{ alignItems: 'flex-start', paddingTop: 40, paddingBottom: 60 }}>
+    <main className={embedded ? '' : 'auth-main'} style={{ width: '100%', alignItems: 'flex-start', paddingTop: embedded ? 0 : 40, paddingBottom: 60 }}>
       <div style={{ width: '100%', maxWidth: 900, margin: '0 auto', padding: '0 20px' }}>
         <div className="pl-card" style={{ padding: '2.5rem 2rem', marginBottom: 24 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -288,7 +316,25 @@ export default function Devoluciones() {
                 </div>
               )}
             </div>
+
+            <div className="pl-card" style={{ padding: '2rem', marginTop: 24 }}>
+              <h2 style={{ margin: '0 0 20px', color: 'var(--vinotinto)' }}>Mis quejas y reclamos</h2>
+              {quejas.length === 0 ? <p style={{ color: '#888' }}>No tienes quejas o reclamos previos.</p> : quejas.map((queja) => (
+                <div key={queja.id_solicitud} style={{ borderTop: '1px solid #eee', padding: '14px 0' }}>
+                  <strong>Orden #{queja.id_orden} · {queja.asunto}</strong>
+                  <span style={{ marginLeft: 10, fontSize: '.82rem', color: '#7A1E3A' }}>{queja.estado}</span>
+                  <p style={{ margin: '6px 0', color: '#666' }}>{queja.descripcion}</p>
+                  {queja.evidencia_url && <button onClick={() => setEvidenciaPreview(`${getApiBaseUrl()}${queja.evidencia_url}`)} style={{ color: '#7A1E3A', fontWeight: 700, border: 0, background: 'none', padding: 0, cursor: 'pointer' }}>Ver evidencia</button>}
+                  {queja.respuesta && <p style={{ margin: '8px 0 0', color: '#444' }}><strong>Respuesta del administrador:</strong> {queja.respuesta}</p>}
+                </div>
+              ))}
+            </div>
           </>
+        )}
+        {evidenciaPreview && (
+          <div onClick={() => setEvidenciaPreview(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.7)', zIndex: 3000, display: 'grid', placeItems: 'center', padding: 24 }}>
+            <img onClick={(e) => e.stopPropagation()} src={evidenciaPreview} alt="Evidencia del reclamo" style={{ maxWidth: '90vw', maxHeight: '85vh', borderRadius: 10, background: '#fff' }} />
+          </div>
         )}
       </div>
     </main>

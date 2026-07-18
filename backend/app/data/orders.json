@@ -693,7 +693,61 @@
         }
       ],
       "total": 72000.0,
-      "estado": "pendiente"
+      "estado": "pagado",
+      "metodo_pago": "Tarjeta de Crédito",
+      "envio": {
+        "id_empresa": 3,
+        "empresa_mensajeria": "Coordinadora",
+        "sitio_web": "https://www.coordinadora.com",
+        "url_rastreo": "https://www.coordinadora.com",
+        "numero_guia": "234578901",
+        "estado_envio": "Guía registrada",
+        "actualizado_en": "2026-07-17T07:57:23.113570+00:00"
+      }
+    },
+    {
+      "id_orden": 6,
+      "codigo_compra": "BH-E1A4A84C9A",
+      "fecha": "2026-07-18T02:17:59.446032Z",
+      "items": [
+        {
+          "id_libro": 40,
+          "titulo": "Orgullo y Prejuicio",
+          "autor_libro": "Jane Austen",
+          "precio_libro": 28000.0,
+          "cantidad": 1,
+          "imagen": "https://covers.openlibrary.org/b/id/12739345-L.jpg"
+        },
+        {
+          "id_libro": 45,
+          "titulo": "Libro de Prueba Oculto",
+          "autor_libro": "Autor Anónimo",
+          "precio_libro": 15000.0,
+          "cantidad": 1,
+          "imagen": null
+        }
+      ],
+      "total": 43000.0,
+      "estado": "pagado",
+      "metodo_pago": "Tarjeta de Crédito"
+    },
+    {
+      "id_orden": 7,
+      "codigo_compra": "BH-504320B332",
+      "fecha": "2026-07-18T03:36:37.892562Z",
+      "items": [
+        {
+          "id_libro": 45,
+          "titulo": "Libro de Prueba Oculto",
+          "autor_libro": "Autor Anónimo",
+          "precio_libro": 15000.0,
+          "cantidad": 1,
+          "imagen": null
+        }
+      ],
+      "total": 15000.0,
+      "estado": "pagado",
+      "metodo_pago": "Tarjeta de Crédito"
     }
   ],
   "37": [
@@ -723,6 +777,26 @@
       "metodo_pago": "Pago en Efecty",
       "cupon_aplicado": "BIENVENIDO10",
       "total_con_descuento": 49500.0
+    }
+  ],
+  "13": [
+    {
+      "id_orden": 1,
+      "codigo_compra": "BH-3A07CB992E",
+      "fecha": "2026-07-17T23:25:09.036341Z",
+      "items": [
+        {
+          "id_libro": 45,
+          "titulo": "Libro de Prueba Oculto",
+          "autor_libro": "Autor Anónimo",
+          "precio_libro": 15000.0,
+          "cantidad": 1,
+          "imagen": null
+        }
+      ],
+      "total": 15000.0,
+      "estado": "pagado",
+      "metodo_pago": "Tarjeta de Crédito"
     }
   ]
 }

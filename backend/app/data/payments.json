@@ -286,5 +286,41 @@
     "metodo_pago": "Pago en Efecty",
     "fecha_pago": "2026-07-13T19:52:26.762024Z",
     "estado": "aprobado"
+  },
+  {
+    "id_pago": 33,
+    "id_usuario": 16,
+    "id_orden": 5,
+    "monto": 72000.0,
+    "metodo_pago": "Tarjeta de Crédito",
+    "fecha_pago": "2026-07-17T07:54:49.967018Z",
+    "estado": "aprobado"
+  },
+  {
+    "id_pago": 34,
+    "id_usuario": 13,
+    "id_orden": 1,
+    "monto": 15000.0,
+    "metodo_pago": "Tarjeta de Crédito",
+    "fecha_pago": "2026-07-17T23:25:46.428606Z",
+    "estado": "aprobado"
+  },
+  {
+    "id_pago": 35,
+    "id_usuario": 16,
+    "id_orden": 6,
+    "monto": 43000.0,
+    "metodo_pago": "Tarjeta de Crédito",
+    "fecha_pago": "2026-07-18T02:18:41.222758Z",
+    "estado": "aprobado"
+  },
+  {
+    "id_pago": 36,
+    "id_usuario": 16,
+    "id_orden": 7,
+    "monto": 15000.0,
+    "metodo_pago": "Tarjeta de Crédito",
+    "fecha_pago": "2026-07-18T03:37:06.869016Z",
+    "estado": "aprobado"
   }
 ]
