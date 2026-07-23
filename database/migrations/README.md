@@ -22,7 +22,14 @@ Si usas Docker Compose para levantar el proyecto, abre una terminal en la raíz 
 ```bash
 docker compose exec -T mysql mysql -uroot -proot bookyhome < database/migrations/NOMBRE_DEL_ARCHIVO.sql
 ```
-*(Cambia `NOMBRE_DEL_ARCHIVO.sql` por el nombre real del archivo que quieres aplicar).*
+*(Cambia `NOMBRE_DEL_ARCHIVO.sql` por el nombre real del archivo que quieres aplicar).* 
+
+Si estás en PowerShell, la forma correcta es:
+```powershell
+Get-Content database/migrations/NOMBRE_DEL_ARCHIVO.sql | docker compose exec -T mysql mysql -uroot -proot bookyhome
+```
+
+> En PowerShell no se usa el operador `<` como en Bash; por eso se reemplaza con `Get-Content` y el pipe `|`.
 
 ### Opción 2: Usas un gestor visual (phpMyAdmin, MySQL Workbench, DBeaver)
 1. Abre el gestor visual de tu preferencia y conéctate a tu base de datos local.
@@ -36,6 +43,8 @@ Abre tu consola, asegúrate de tener el comando `mysql` disponible y ejecuta:
 ```bash
 mysql -u root -p bookyhome < database/migrations/NOMBRE_DEL_ARCHIVO.sql
 ```
+
+
 
 ---
 
