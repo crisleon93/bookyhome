@@ -8,10 +8,16 @@ def obtener_tipos_impulso():
     cursor = db.cursor(dictionary=True)
     try:
         cursor.execute("""
-            SELECT id_tipo_impulso, nombre, descripcion, precio, duracion_dias, tipo
-            FROM tipos_impulso
-            WHERE activo = 1
-            ORDER BY precio ASC
+            SELECT t.id_tipo_impulso, t.nombre, t.descripcion, t.precio, t.duracion_dias, t.tipo
+            FROM tipos_impulso t
+            INNER JOIN (
+                SELECT MIN(id_tipo_impulso) AS id_tipo_impulso
+                FROM tipos_impulso
+                WHERE activo = 1
+                GROUP BY tipo
+            ) unicos ON t.id_tipo_impulso = unicos.id_tipo_impulso
+            WHERE t.activo = 1
+            ORDER BY t.precio ASC
         """)
         return cursor.fetchall() or []
     except Exception as e:

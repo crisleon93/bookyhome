@@ -60,6 +60,7 @@ from app.routers.impulsos import router as impulsos_router
 
 from app.routers.envios import router as envios_router
 from app.routers.quejas import router as quejas_router
+from app.routers.bookypago_finanzas import router as bookypago_finanzas_router
 from app.database import ensure_quejas_schema
 
 
@@ -146,6 +147,7 @@ app.include_router(impulsos_router)
 
 app.include_router(envios_router)
 app.include_router(quejas_router)
+app.include_router(bookypago_finanzas_router, prefix="/api/v1/bookypago-finanzas", tags=["BookyPago Finanzas"])
 
 
 @app.get("/")

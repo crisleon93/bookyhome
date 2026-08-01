@@ -21,6 +21,7 @@ import Historial from './pages/Historial';
 import VerifyEmail from './pages/VerifyEmail';
 import ListaDeseos from './pages/ListaDeseos';
 import Devoluciones from './pages/Devoluciones';
+import BookyPagoFinanzas from './pages/BookyPagoFinanzas';
 
 import { getUserRole } from './hooks/useAuth';
 import LegalPage from './pages/LegalPage';
@@ -83,6 +84,7 @@ function MainLayout() {
         {/* ── RUTAS EXCLUSIVAS DE ADMINISTRADOR ── */}
         <Route element={<PrivateRoute allowedRoles={['admin', 'administrador']} />}>
           <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/admin/finanzas" element={<BookyPagoFinanzas />} />
         </Route>
 
         {/* ── REDIRECCIÓN LOGÍSTICA POR ROL ── */}

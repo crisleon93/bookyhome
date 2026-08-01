@@ -18,13 +18,17 @@ Cuando un compañero de equipo (o tú mismo) baje cambios nuevos de Git y vea qu
 Existen varias formas de hacerlo. Elige **SOLO UNA** de las siguientes opciones:
 
 ### Opción 1: Tienes el proyecto corriendo con Docker (Recomendado ⭐)
+
 Si usas Docker Compose para levantar el proyecto, abre una terminal en la raíz del proyecto y corre:
+
 ```bash
 docker compose exec -T mysql mysql -uroot -proot bookyhome < database/migrations/NOMBRE_DEL_ARCHIVO.sql
 ```
-*(Cambia `NOMBRE_DEL_ARCHIVO.sql` por el nombre real del archivo que quieres aplicar).* 
+
+*(Cambia `NOMBRE_DEL_ARCHIVO.sql` por el nombre real del archivo que quieres aplicar).*
 
 Si estás en PowerShell, la forma correcta es:
+
 ```powershell
 Get-Content database/migrations/NOMBRE_DEL_ARCHIVO.sql | docker compose exec -T mysql mysql -uroot -proot bookyhome
 ```
@@ -32,6 +36,7 @@ Get-Content database/migrations/NOMBRE_DEL_ARCHIVO.sql | docker compose exec -T 
 > En PowerShell no se usa el operador `<` como en Bash; por eso se reemplaza con `Get-Content` y el pipe `|`.
 
 ### Opción 2: Usas un gestor visual (phpMyAdmin, MySQL Workbench, DBeaver)
+
 1. Abre el gestor visual de tu preferencia y conéctate a tu base de datos local.
 2. Selecciona la base de datos `bookyhome`.
 3. Abre el archivo `.sql` de la migración (ej. `001_add_usuario_profile_columns.sql`) en tu editor de código.
@@ -39,12 +44,12 @@ Get-Content database/migrations/NOMBRE_DEL_ARCHIVO.sql | docker compose exec -T 
 5. Pégalo en la pestaña "SQL" o "Consola de consultas" de tu gestor visual y dale al botón de **Ejecutar**.
 
 ### Opción 3: Usas XAMPP / WAMP / Línea de comandos pura
+
 Abre tu consola, asegúrate de tener el comando `mysql` disponible y ejecuta:
+
 ```bash
 mysql -u root -p bookyhome < database/migrations/NOMBRE_DEL_ARCHIVO.sql
 ```
-
-
 
 ---
 

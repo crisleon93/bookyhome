@@ -103,6 +103,8 @@ def get_db():
                 user=db_user,
                 password=db_password,
                 database=db_name,
+                charset='utf8mb4',
+                use_unicode=True,
                 connection_timeout=10,
                 use_pure=True
             )

@@ -29,6 +29,7 @@ const MENU_LINKS = [
   { name: 'Cupones' },
   { name: 'Ventas' },
   { name: 'Pedidos' },
+  { name: 'Nómina' },
   { name: 'Quejas y reclamos' },
   { name: 'Soporte técnico' },
   { name: 'Notificaciones' },
@@ -54,6 +55,14 @@ const ICONS = {
   ),
   Ventas: <IconCart width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
   Pedidos: <IconShoppingBag width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
+  Nómina: (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={WHITE} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="5" width="20" height="14" rx="2"></rect>
+      <line x1="2" y1="10" x2="22" y2="10"></line>
+      <line x1="12" y1="19" x2="12" y2="19"></line>
+      <line x1="12" y1="10" x2="12" y2="15"></line>
+    </svg>
+  ),
   'Quejas y reclamos': <IconAlertTriangle width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
   'Soporte técnico': <IconTool width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
   Notificaciones: <IconBell className="" width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,

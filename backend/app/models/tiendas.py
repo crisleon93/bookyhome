@@ -117,3 +117,16 @@ def actualizar_tienda(id_usuario: int, nombre_tienda: str, direccion: str, telef
     finally:
         cursor.close()
         db.close()
+
+
+def obtener_tienda_por_id(id_tienda: int):
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    try:
+        cursor.execute("""
+            SELECT * FROM tiendas WHERE id_tienda = %s
+        """, (id_tienda,))
+        return cursor.fetchone()
+    finally:
+        cursor.close()
+        db.close()
