@@ -322,5 +322,32 @@
     "metodo_pago": "Tarjeta de Crédito",
     "fecha_pago": "2026-07-18T03:37:06.869016Z",
     "estado": "aprobado"
+  },
+  {
+    "id_pago": 37,
+    "id_usuario": 16,
+    "id_orden": 8,
+    "monto": 15000.0,
+    "metodo_pago": "Tarjeta de Crédito",
+    "fecha_pago": "2026-07-31T03:30:47.031552Z",
+    "estado": "aprobado"
+  },
+  {
+    "id_pago": 38,
+    "id_usuario": 16,
+    "id_orden": 9,
+    "monto": 15000.0,
+    "metodo_pago": "Tarjeta de Crédito",
+    "fecha_pago": "2026-07-31T05:05:20.773513Z",
+    "estado": "aprobado"
+  },
+  {
+    "id_pago": 39,
+    "id_usuario": 16,
+    "id_orden": 10,
+    "monto": 15000.0,
+    "metodo_pago": "Tarjeta de Crédito",
+    "fecha_pago": "2026-07-31T05:36:12.721675Z",
+    "estado": "aprobado"
   }
 ]

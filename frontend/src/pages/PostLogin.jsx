@@ -379,6 +379,19 @@ export default function PostLogin() {
 
   const [direccionError, setDireccionError] = useState('');
 
+  const [cuentasBancarias, setCuentasBancarias] = useState([]);
+  const [mostrarFormCuenta, setMostrarFormCuenta] = useState(false);
+  const [cuentaEditingId, setCuentaEditingId] = useState(null);
+  const [cuentaLoading, setCuentaLoading] = useState(false);
+  const [cuentaForm, setCuentaForm] = useState({
+    tipo_cuenta: '',
+    banco: '',
+    numero_cuenta: '',
+    nombre_titular: '',
+    cedula_titular: '',
+    es_principal: false
+  });
+
   const [direccionForm, setDireccionForm] = useState({
 
     alias_direccion: '',
@@ -679,6 +692,16 @@ export default function PostLogin() {
 
   }, []);
 
+  const cargarCuentasBancarias = useCallback(async () => {
+    try {
+      const res = await api.get(`/api/v1/bookypago-finanzas/cuentas-bancarias/${userId}`);
+      setCuentasBancarias(res.data.cuentas || []);
+    } catch (error) {
+      console.error('Error cargando cuentas bancarias:', error);
+      setCuentasBancarias([]);
+    }
+  }, [userId]);
+
 
 
   const cargarListasDeseos = useCallback(async () => {
@@ -854,6 +877,7 @@ export default function PostLogin() {
 
 
       await cargarDirecciones();
+      await cargarCuentasBancarias();
 
     } catch (error) {
 

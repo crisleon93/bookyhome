@@ -27,7 +27,8 @@ import {
   IconShoppingBag,
   IconTruck,
   IconCreditCard,
-  IconInfo
+  IconInfo,
+  IconRefresh
 } from "../components/Icons";
 import "../styles/Notificaciones.css";
 
@@ -35,8 +36,10 @@ import "../styles/Notificaciones.css";
 // ========================
 // Utilidades y constantes
 // ========================
-const formatPrecio = (valor) =>
-  "$" + String(parseInt(valor)).replace(/\B(?=(\d{3})+(?!\d))/g, ".") + " COP";
+const formatPrecio = (valor) => {
+  if (!valor && valor !== 0) return "$0 COP";
+  return "$" + String(Math.floor(valor)).replace(/\B(?=(\d{3})+(?!\d))/g, ".") + " COP";
+};
 
 const resolveImageUrl = (value) => {
   if (!value || typeof value !== "string") return null;
@@ -386,12 +389,148 @@ export default function MiTienda() {
   const [modalEditar,   setModalEditar]   = useState(null);
   const [modalEliminar, setModalEliminar] = useState(null);
   const [modalStock,    setModalStock]    = useState(null);
+  const [cuentasBancarias, setCuentasBancarias] = useState([]);
+  const [mostrarFormCuenta, setMostrarFormCuenta] = useState(false);
+  const [cuentaForm, setCuentaForm] = useState({
+    tipo_cuenta: '',
+    banco: '',
+    numero_cuenta: '',
+    nombre_titular: '',
+    cedula_titular: '',
+    es_principal: false
+  });
+  const [cuentaAEliminar, setCuentaAEliminar] = useState(null);
+  const [mostrarExitoCuenta, setMostrarExitoCuenta] = useState(false);
+  
+  // Estados para nómina
+  const [pagosPendientes, setPagosPendientes] = useState([]);
+  const [historialPagos, setHistorialPagos] = useState([]);
+  const [loadingNomina, setLoadingNomina] = useState(false);
+  const [expandedPayment, setExpandedPayment] = useState(null);
+
+  const cargarCuentasBancarias = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const payload = jwtDecode(token);
+      const userId = payload.sub;
+      
+      const res = await api.get(`/api/v1/bookypago-finanzas/cuentas-bancarias/${userId}`);
+      setCuentasBancarias(res.data.cuentas || []);
+    } catch (error) {
+      console.error('Error cargando cuentas bancarias:', error);
+      setCuentasBancarias([]);
+    }
+  };
+
+  const cargarPagosPendientes = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const payload = jwtDecode(token);
+      const userId = payload.sub;
+
+      console.log('Cargando pagos pendientes para usuario:', userId);
+      const res = await api.get(`/api/v1/bookypago-finanzas/pagos-pendientes/${userId}`);
+      console.log('Respuesta pagos pendientes:', res.data);
+      setPagosPendientes(res.data.pagos_pendientes || []);
+    } catch (error) {
+      console.error('Error cargando pagos pendientes:', error);
+      console.error('Detalle del error:', error.response?.data);
+      setPagosPendientes([]);
+    }
+  };
+
+  const cargarHistorialPagos = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const payload = jwtDecode(token);
+      const userId = payload.sub;
+
+      console.log('Cargando historial de pagos para usuario:', userId);
+      const res = await api.get(`/api/v1/bookypago-finanzas/historial-pagos/${userId}`);
+      console.log('Respuesta historial pagos:', res.data);
+      setHistorialPagos(res.data.historial || []);
+    } catch (error) {
+      console.error('Error cargando historial de pagos:', error);
+      console.error('Detalle del error:', error.response?.data);
+      setHistorialPagos([]);
+    }
+  };
+
+  const handleAgregarCuenta = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const payload = jwtDecode(token);
+      const userId = payload.sub;
+      
+      await api.post(`/api/v1/bookypago-finanzas/cuentas-bancarias/${userId}`, cuentaForm);
+      setMostrarFormCuenta(false);
+      setCuentaForm({
+        tipo_cuenta: '',
+        banco: '',
+        numero_cuenta: '',
+        nombre_titular: '',
+        cedula_titular: '',
+        es_principal: false
+      });
+      setMostrarExitoCuenta(true);
+      cargarCuentasBancarias();
+      
+      // Cerrar el modal de éxito automáticamente después de 3 segundos
+      setTimeout(() => setMostrarExitoCuenta(false), 3000);
+    } catch (error) {
+      alert('Error agregando cuenta bancaria: ' + (error.response?.data?.detail || error.message));
+    }
+  };
+
+  const handleMarcarPrincipal = async (idCuenta) => {
+    try {
+      const token = localStorage.getItem("token");
+      const payload = jwtDecode(token);
+      const userId = payload.sub;
+      
+      await api.put(`/api/v1/bookypago-finanzas/cuentas-bancarias/${userId}/principal/${idCuenta}`);
+      alert('Cuenta principal actualizada');
+      cargarCuentasBancarias();
+    } catch (error) {
+      alert('Error actualizando cuenta principal: ' + (error.response?.data?.detail || error.message));
+    }
+  };
+
+  const handleEliminarCuenta = async (idCuenta) => {
+    try {
+      const token = localStorage.getItem("token");
+      const payload = jwtDecode(token);
+      const userId = payload.sub;
+      
+      await api.delete(`/api/v1/bookypago-finanzas/cuentas-bancarias/${userId}/${idCuenta}`);
+      setCuentaAEliminar(null);
+      cargarCuentasBancarias();
+    } catch (error) {
+      alert('Error eliminando cuenta bancaria: ' + (error.response?.data?.detail || error.message));
+    }
+  };
+
+  const confirmarEliminarCuenta = (cuenta) => {
+    setCuentaAEliminar(cuenta);
+  };
 
   const statsLibros = {
     totalLibros: libros.length,
     stockTotal:  libros.reduce((acc, l) => acc + (l.stock || 0), 0),
     categorias:  [...new Set(libros.map((l) => l.nombre_categoria).filter(Boolean))].length,
   };
+
+  useEffect(() => {
+    cargarCuentasBancarias();
+  }, []);
+
+  useEffect(() => {
+    if (activeSide === 'Nómina') {
+      setLoadingNomina(true);
+      Promise.all([cargarPagosPendientes(), cargarHistorialPagos()])
+        .finally(() => setLoadingNomina(false));
+    }
+  }, [activeSide]);
 
   const cargarNotificaciones = useCallback(async (silent = false) => {
     try {
@@ -1087,7 +1226,7 @@ export default function MiTienda() {
         <p style={{ margin: 0 }}>Resumen de tu tienda y tus datos públicos.</p>
       </div>
 
-      <div className="pl-card" style={{ padding: "2rem", marginTop: "20px", maxWidth: "720px" }}>
+      <div className="pl-card" style={{ padding: "2rem", marginTop: "20px" }}>
         {!tiendaInfo ? (
           <p style={{ color: "#888" }}>Cargando información de la tienda...</p>
         ) : (
@@ -1142,8 +1281,613 @@ export default function MiTienda() {
           </div>
         )}
       </div>
+
+      {/* Sección de Cuentas Bancarias en el Perfil */}
+      <div className="pl-card" style={{ padding: "2rem", marginTop: "20px" }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+          <IconCreditCard width={24} height={24} strokeWidth={2} style={{ color: '#7A1E3A' }} />
+          <h2 style={{ margin: 0, fontSize: "1.3rem" }}>Cuentas Bancarias</h2>
+        </div>
+        
+        {cuentasBancarias.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '30px', background: '#fafafa', borderRadius: '8px' }}>
+            <IconCreditCard width={48} height={48} strokeWidth={1.5} style={{ color: '#ccc', marginBottom: '15px' }} />
+            <p style={{ color: '#666', marginBottom: '15px' }}>No tienes cuentas bancarias registradas</p>
+            <button
+              onClick={() => setMostrarFormCuenta(true)}
+              style={{
+                background: "var(--vinotinto)", color: "white", border: "none",
+                padding: "10px 20px", borderRadius: "6px", fontWeight: 600,
+                cursor: "pointer", fontFamily: "Montserrat, sans-serif"
+              }}
+            >
+              Agregar cuenta bancaria
+            </button>
+          </div>
+        ) : (
+          <div style={{ display: 'grid', gap: '12px' }}>
+            {cuentasBancarias.map((cuenta) => (
+              <div
+                key={cuenta.id_metodo}
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  padding: '16px',
+                  background: cuenta.es_principal ? '#f0f8ff' : '#fafafa',
+                  border: cuenta.es_principal ? '2px solid #4a90e2' : '1px solid #ddd',
+                  borderRadius: '8px'
+                }}
+              >
+                <div>
+                  <div style={{ fontWeight: 600, marginBottom: '4px' }}>
+                    {cuenta.banco} - {cuenta.tipo_cuenta}
+                    {cuenta.es_principal && (
+                      <span style={{
+                        background: '#4a90e2', color: 'white',
+                        padding: '2px 8px', borderRadius: '4px',
+                        fontSize: '0.75rem', marginLeft: '8px'
+                      }}>
+                        Principal
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ color: '#666', fontSize: '0.9rem' }}>
+                    ****{cuenta.numero_cuenta.slice(-4)}
+                  </div>
+                  <div style={{ color: '#888', fontSize: '0.85rem' }}>
+                    {cuenta.titular}
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  {!cuenta.es_principal && (
+                    <button
+                      onClick={() => handleMarcarPrincipal(cuenta.id)}
+                      style={{
+                        background: '#4a90e2', color: 'white', border: 'none',
+                        padding: '6px 12px', borderRadius: '4px', fontSize: '0.85rem',
+                        cursor: 'pointer', fontWeight: 500
+                      }}
+                    >
+                      Principal
+                    </button>
+                  )}
+                  <button
+                    onClick={() => confirmarEliminarCuenta(cuenta)}
+                    style={{
+                      background: '#dc3545', color: 'white', border: 'none',
+                      padding: '6px 12px', borderRadius: '4px', fontSize: '0.85rem',
+                      cursor: 'pointer', fontWeight: 500
+                    }}
+                  >
+                    Eliminar
+                  </button>
+                </div>
+              </div>
+            ))}
+            <button
+              onClick={() => setMostrarFormCuenta(true)}
+              style={{
+                background: 'white', color: 'var(--vinotinto)', border: '2px solid var(--vinotinto)',
+                padding: '10px 20px', borderRadius: '6px', fontWeight: 600,
+                cursor: 'pointer', fontFamily: 'Montserrat, sans-serif', marginTop: '10px'
+              }}
+            >
+              + Agregar nueva cuenta
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Modal para agregar cuenta bancaria */}
+      {mostrarFormCuenta && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(0,0,0,0.6)', display: 'flex',
+          alignItems: 'center', justifyContent: 'center', zIndex: 1000,
+          backdropFilter: 'blur(4px)'
+        }}>
+          <div style={{
+            background: 'white', padding: '30px', borderRadius: '16px',
+            maxWidth: '550px', width: '95%', maxHeight: '90vh', overflowY: 'auto',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+            animation: 'fadeIn 0.3s ease'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px' }}>
+              <h3 style={{ margin: 0, fontSize: '1.4rem', fontWeight: 700, color: '#7A1E3A' }}>
+                Agregar cuenta bancaria
+              </h3>
+              <button
+                onClick={() => setMostrarFormCuenta(false)}
+                style={{
+                  background: 'none', border: 'none', fontSize: '1.5rem',
+                  cursor: 'pointer', color: '#999', padding: '5px',
+                  borderRadius: '50%', width: '35px', height: '35px',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => e.target.style.background = '#f5f5f5'}
+                onMouseLeave={(e) => e.target.style.background = 'none'}
+              >
+                ×
+              </button>
+            </div>
+            <div style={{ display: 'grid', gap: '16px' }}>
+              <div>
+                <label style={{ display: 'block', fontWeight: 600, marginBottom: '6px', color: '#444', fontSize: '0.9rem' }}>
+                  Tipo de cuenta *
+                </label>
+                <select
+                  value={cuentaForm.tipo_cuenta}
+                  onChange={(e) => setCuentaForm({...cuentaForm, tipo_cuenta: e.target.value})}
+                  style={{ padding: '12px 16px', border: '1px solid #ddd', borderRadius: '8px', width: '100%', fontSize: '0.95rem', outline: 'none', transition: 'border-color 0.2s' }}
+                >
+                  <option value="">Selecciona tipo de cuenta</option>
+                  <option value="Ahorros">Ahorros</option>
+                  <option value="Corriente">Corriente</option>
+                  <option value="Nequi">Nequi</option>
+                  <option value="Daviplata">Daviplata</option>
+                </select>
+              </div>
+              <div>
+                <label style={{ display: 'block', fontWeight: 600, marginBottom: '6px', color: '#444', fontSize: '0.9rem' }}>
+                  Banco *
+                </label>
+                <select
+                  value={cuentaForm.banco}
+                  onChange={(e) => setCuentaForm({...cuentaForm, banco: e.target.value})}
+                  style={{ padding: '12px 16px', border: '1px solid #ddd', borderRadius: '8px', width: '100%', fontSize: '0.95rem', outline: 'none', transition: 'border-color 0.2s' }}
+                >
+                  <option value="">Selecciona el banco</option>
+                  <option value="Bancolombia">Bancolombia</option>
+                  <option value="Davivienda">Davivienda</option>
+                  <option value="Banco de Bogotá">Banco de Bogotá</option>
+                  <option value="BBVA Colombia">BBVA Colombia</option>
+                  <option value="Scotiabank Colpatria">Scotiabank Colpatria</option>
+                  <option value="Banco Popular">Banco Popular</option>
+                  <option value="Banco GNB Sudameris">Banco GNB Sudameris</option>
+                  <option value="Citibank Colombia">Citibank Colombia</option>
+                  <option value="HSBC Colombia">HSBC Colombia</option>
+                  <option value="Banco Pichincha">Banco Pichincha</option>
+                  <option value="Bancoomeva">Bancoomeva</option>
+                  <option value="Banco Falabella">Banco Falabella</option>
+                  <option value="Banco Agrario">Banco Agrario</option>
+                  <option value="Banco WWB">Banco WWB</option>
+                  <option value="Caja Social">Caja Social</option>
+                  <option value="Colpatria">Colpatria</option>
+                  <option value="Conavi">Conavi</option>
+                  <option value="Mibanco">Mibanco</option>
+                  <option value="Lulo Bank">Lulo Bank</option>
+                  <option value="Rappi">Rappi</option>
+                  <option value="Nu">Nu</option>
+                  <option value="Nequi">Nequi</option>
+                  <option value="Daviplata">Daviplata</option>
+                  <option value="PSE">PSE</option>
+                  <option value="Efecty">Efecty</option>
+                  <option value="Baloto">Baloto</option>
+                  <option value="Gana">Gana</option>
+                  <option value="AstroPay">AstroPay</option>
+                  <option value="PayU">PayU</option>
+                  <option value="Otro">Otro banco</option>
+                </select>
+              </div>
+              <div>
+                <label style={{ display: 'block', fontWeight: 600, marginBottom: '6px', color: '#444', fontSize: '0.9rem' }}>
+                  Número de cuenta *
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ej: 123-456789-01"
+                  value={cuentaForm.numero_cuenta}
+                  onChange={(e) => setCuentaForm({...cuentaForm, numero_cuenta: e.target.value})}
+                  style={{ padding: '12px 16px', border: '1px solid #ddd', borderRadius: '8px', width: '100%', fontSize: '0.95rem', outline: 'none', transition: 'border-color 0.2s' }}
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontWeight: 600, marginBottom: '6px', color: '#444', fontSize: '0.9rem' }}>
+                  Titular de la cuenta *
+                </label>
+                <input
+                  type="text"
+                  placeholder="Nombre completo del titular"
+                  value={cuentaForm.nombre_titular}
+                  onChange={(e) => setCuentaForm({...cuentaForm, nombre_titular: e.target.value})}
+                  style={{ padding: '12px 16px', border: '1px solid #ddd', borderRadius: '8px', width: '100%', fontSize: '0.95rem', outline: 'none', transition: 'border-color 0.2s' }}
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontWeight: 600, marginBottom: '6px', color: '#444', fontSize: '0.9rem' }}>
+                  Cédula del titular *
+                </label>
+                <input
+                  type="text"
+                  placeholder="Número de documento"
+                  value={cuentaForm.cedula_titular}
+                  onChange={(e) => setCuentaForm({...cuentaForm, cedula_titular: e.target.value})}
+                  style={{ padding: '12px 16px', border: '1px solid #ddd', borderRadius: '8px', width: '100%', fontSize: '0.95rem', outline: 'none', transition: 'border-color 0.2s' }}
+                />
+              </div>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px', background: '#f7e9ee', borderRadius: '8px', border: '1px solid #f0e0e6' }}>
+                <input
+                  type="checkbox"
+                  checked={cuentaForm.es_principal}
+                  onChange={(e) => setCuentaForm({...cuentaForm, es_principal: e.target.checked})}
+                  style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                />
+                <span style={{ fontWeight: 600, color: '#7A1E3A', fontSize: '0.9rem' }}>
+                  Establecer como cuenta principal para recibir pagos
+                </span>
+              </label>
+              <div style={{ display: 'flex', gap: '12px', marginTop: '10px' }}>
+                <button
+                  onClick={handleAgregarCuenta}
+                  style={{
+                    background: 'var(--vinotinto)', color: 'white', border: 'none',
+                    padding: '14px 28px', borderRadius: '8px', fontWeight: 700,
+                    cursor: 'pointer', fontFamily: 'Montserrat, sans-serif', flex: 1,
+                    fontSize: '1rem', transition: 'all 0.2s'
+                  }}
+                  onMouseEnter={(e) => e.target.style.background = '#6a1832'}
+                  onMouseLeave={(e) => e.target.style.background = 'var(--vinotinto)'}
+                >
+                  Guardar cuenta
+                </button>
+                <button
+                  onClick={() => setMostrarFormCuenta(false)}
+                  style={{
+                    background: '#f5f5f5', color: '#333', border: '1px solid #ddd',
+                    padding: '14px 28px', borderRadius: '8px', fontWeight: 600,
+                    cursor: 'pointer', fontFamily: 'Montserrat, sans-serif', flex: 1,
+                    fontSize: '1rem', transition: 'all 0.2s'
+                  }}
+                  onMouseEnter={(e) => e.target.style.background = '#e5e5e5'}
+                  onMouseLeave={(e) => e.target.style.background = '#f5f5f5'}
+                >
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de confirmación para eliminar cuenta */}
+      {cuentaAEliminar && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(0,0,0,0.6)', display: 'flex',
+          alignItems: 'center', justifyContent: 'center', zIndex: 1000,
+          backdropFilter: 'blur(4px)'
+        }}>
+          <div style={{
+            background: 'white', padding: '30px', borderRadius: '16px',
+            maxWidth: '450px', width: '95%',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+            animation: 'fadeIn 0.3s ease'
+          }}>
+            <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+              <div style={{
+                width: '60px', height: '60px', borderRadius: '50%',
+                background: '#fee2e2', display: 'flex', alignItems: 'center',
+                justifyContent: 'center', margin: '0 auto 15px'
+              }}>
+                <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#dc3545" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M3 6h18"></path>
+                  <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+                  <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+                </svg>
+              </div>
+              <h3 style={{ margin: '0 0 10px', fontSize: '1.3rem', fontWeight: 700, color: '#333' }}>
+                ¿Eliminar cuenta bancaria?
+              </h3>
+              <p style={{ margin: 0, color: '#666', fontSize: '0.95rem', lineHeight: 1.5 }}>
+                Estás a punto de eliminar la cuenta <strong>{cuentaAEliminar.banco}</strong> - {cuentaAEliminar.tipo_cuenta} (****{cuentaAEliminar.numero_cuenta?.slice(-4)}).
+              </p>
+              <p style={{ margin: '10px 0 0', color: '#999', fontSize: '0.85rem' }}>
+                Esta acción no se puede deshacer.
+              </p>
+            </div>
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button
+                onClick={() => setCuentaAEliminar(null)}
+                style={{
+                  background: '#f5f5f5', color: '#333', border: '1px solid #ddd',
+                  padding: '12px 24px', borderRadius: '8px', fontWeight: 600,
+                  cursor: 'pointer', fontFamily: 'Montserrat, sans-serif', flex: 1,
+                  fontSize: '0.95rem', transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => e.target.style.background = '#e5e5e5'}
+                onMouseLeave={(e) => e.target.style.background = '#f5f5f5'}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => handleEliminarCuenta(cuentaAEliminar.id_metodo)}
+                style={{
+                  background: '#dc3545', color: 'white', border: 'none',
+                  padding: '12px 24px', borderRadius: '8px', fontWeight: 700,
+                  cursor: 'pointer', fontFamily: 'Montserrat, sans-serif', flex: 1,
+                  fontSize: '0.95rem', transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => e.target.style.background = '#c82333'}
+                onMouseLeave={(e) => e.target.style.background = '#dc3545'}
+              >
+                Eliminar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de éxito al agregar cuenta */}
+      {mostrarExitoCuenta && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(0,0,0,0.6)', display: 'flex',
+          alignItems: 'center', justifyContent: 'center', zIndex: 1000,
+          backdropFilter: 'blur(4px)'
+        }}>
+          <div style={{
+            background: 'white', padding: '30px', borderRadius: '16px',
+            maxWidth: '400px', width: '95%',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+            animation: 'fadeIn 0.3s ease'
+          }}>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{
+                width: '70px', height: '70px', borderRadius: '50%',
+                background: '#dcfce7', display: 'flex', alignItems: 'center',
+                justifyContent: 'center', margin: '0 auto 20px'
+              }}>
+                <svg width="35" height="35" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+              </div>
+              <h3 style={{ margin: '0 0 10px', fontSize: '1.4rem', fontWeight: 700, color: '#16a34a' }}>
+                ¡Cuenta agregada exitosamente!
+              </h3>
+              <p style={{ margin: 0, color: '#666', fontSize: '0.95rem', lineHeight: 1.5 }}>
+                Tu cuenta bancaria ha sido registrada correctamente en el sistema.
+              </p>
+              <button
+                onClick={() => setMostrarExitoCuenta(false)}
+                style={{
+                  background: '#16a34a', color: 'white', border: 'none',
+                  padding: '12px 32px', borderRadius: '8px', fontWeight: 700,
+                  cursor: 'pointer', fontFamily: 'Montserrat, sans-serif',
+                  fontSize: '1rem', marginTop: '20px', transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => e.target.style.background = '#15803d'}
+                onMouseLeave={(e) => e.target.style.background = '#16a34a'}
+              >
+                Aceptar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
+
+  const renderNomina = () => {
+    const token = localStorage.getItem("token");
+    let userId = 'N/A';
+    try {
+      const payload = jwtDecode(token);
+      userId = payload.sub;
+    } catch (e) {
+      console.error('Error decodificando token:', e);
+    }
+
+    return (
+    <>
+      <div className="welcome-card">
+        <h1 style={{ fontSize: "1.55rem", marginBottom: "4px", display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <IconCreditCard width={24} height={24} strokeWidth={2} style={{ color: '#7A1E3A' }} />
+          Nómina y Pagos
+        </h1>
+        <p style={{ margin: 0 }}>Consulta tus pagos pendientes, historial de pagos procesados y estadísticas financieras.</p>
+        <div style={{ fontSize: '0.85rem', color: '#666', marginTop: '8px' }}>
+          ID de Vendedor: <strong>{userId}</strong>
+        </div>
+      </div>
+
+      <div className="pl-card" style={{ padding: "2rem", marginTop: "20px" }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '16px' }}>
+          <button
+            onClick={() => {
+              setLoadingNomina(true);
+              Promise.all([cargarPagosPendientes(), cargarHistorialPagos()])
+                .finally(() => setLoadingNomina(false));
+            }}
+            style={{
+              padding: '8px 16px',
+              backgroundColor: '#7A1E3A',
+              color: 'white',
+              border: 'none',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              fontSize: '14px',
+              fontWeight: '500'
+            }}
+          >
+            <IconRefresh width={16} height={16} strokeWidth={2} />
+            Recargar datos
+          </button>
+        </div>
+
+        {loadingNomina ? (
+          <p style={{ color: "#888" }}>Cargando información de pagos...</p>
+        ) : (
+          <div style={{ display: 'grid', gap: '32px' }}>
+            {/* Resumen General - Similar al Admin */}
+            <div style={{ 
+              padding: '20px', 
+              background: 'linear-gradient(135deg, #7A1E3A 0%, #5e1629 100%)', 
+              borderRadius: '12px', 
+              color: 'white',
+              marginBottom: '24px'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <p style={{ margin: 0, fontSize: '14px', opacity: 0.9 }}>Total Pendiente</p>
+                  <p style={{ margin: '8px 0 0 0', fontSize: '32px', fontWeight: 'bold' }}>
+                    ${formatPrecio(pagosPendientes.reduce((acc, p) => acc + p.monto, 0))}
+                  </p>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <p style={{ margin: 0, fontSize: '14px', opacity: 0.9 }}>Pagos Pendientes</p>
+                  <p style={{ margin: '8px 0 0 0', fontSize: '24px', fontWeight: 'bold' }}>
+                    {pagosPendientes.length}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Estadísticas */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' }}>
+              <div style={{ 
+                padding: '16px', 
+                backgroundColor: '#F4EDE2', 
+                borderRadius: '8px',
+                border: '1px solid #E0DBD4'
+              }}>
+                <p style={{ margin: 0, fontSize: '14px', color: '#666' }}>Total Recibido</p>
+                <p style={{ margin: '8px 0 0 0', fontSize: '24px', fontWeight: 'bold', color: '#16a34a' }}>
+                  ${formatPrecio(historialPagos.reduce((acc, p) => acc + p.monto, 0))}
+                </p>
+              </div>
+              <div style={{ 
+                padding: '16px', 
+                backgroundColor: '#F4EDE2', 
+                borderRadius: '8px',
+                border: '1px solid #E0DBD4'
+              }}>
+                <p style={{ margin: 0, fontSize: '14px', color: '#666' }}>Pagos Procesados</p>
+                <p style={{ margin: '8px 0 0 0', fontSize: '24px', fontWeight: 'bold', color: '#7A1E3A' }}>
+                  {historialPagos.length}
+                </p>
+              </div>
+              <div style={{ 
+                padding: '16px', 
+                backgroundColor: '#F4EDE2', 
+                borderRadius: '8px',
+                border: '1px solid #E0DBD4'
+              }}>
+                <p style={{ margin: 0, fontSize: '14px', color: '#666' }}>Ventas Totales</p>
+                <p style={{ margin: '8px 0 0 0', fontSize: '24px', fontWeight: 'bold', color: '#2A2A2A' }}>
+                  {pagosPendientes.length + historialPagos.reduce((acc, p) => acc + p.num_pagos, 0)}
+                </p>
+              </div>
+            </div>
+
+            {/* Pagos Pendientes */}
+            <div>
+              <h3 style={{ margin: '0 0 16px 0', color: '#7A1E3A', fontSize: '1.3rem', fontWeight: 700 }}>
+                Pagos Pendientes (Ventas individuales)
+              </h3>
+              {pagosPendientes.length === 0 ? (
+                <div style={{ padding: '32px', background: '#fafafa', borderRadius: '8px', textAlign: 'center', border: '1px solid #eee' }}>
+                  <IconCreditCard width={48} height={48} strokeWidth={1.5} style={{ color: '#ccc', marginBottom: '16px' }} />
+                  <p style={{ color: '#666', margin: 0 }}>No tienes pagos pendientes</p>
+                </div>
+              ) : (
+                <div style={{ display: 'grid', gap: '12px' }}>
+                  {pagosPendientes.map((pago) => (
+                    <div key={pago.id} style={{ padding: '16px', background: '#fff', border: '1px solid #ddd', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <div style={{ fontWeight: 600, color: '#333', marginBottom: '4px' }}>
+                          Orden #{pago.id_venta}
+                        </div>
+                        <div style={{ color: '#666', fontSize: '0.9rem' }}>
+                          Fecha: {new Date(pago.fecha_venta).toLocaleDateString('es-CO')}
+                        </div>
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontWeight: 700, color: '#7A1E3A', fontSize: '1.1rem' }}>
+                          ${formatPrecio(pago.monto)}
+                        </div>
+                        <div style={{ color: '#999', fontSize: '0.85rem' }}>
+                          Pendiente
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Historial de Pagos */}
+            <div>
+              <h3 style={{ margin: '0 0 16px 0', color: '#7A1E3A', fontSize: '1.3rem', fontWeight: 700 }}>
+                Historial de Pagos Procesados
+              </h3>
+              {historialPagos.length === 0 ? (
+                <div style={{ padding: '32px', background: '#fafafa', borderRadius: '8px', textAlign: 'center', border: '1px solid #eee' }}>
+                  <IconCreditCard width={48} height={48} strokeWidth={1.5} style={{ color: '#ccc', marginBottom: '16px' }} />
+                  <p style={{ color: '#666', margin: 0 }}>No hay historial de pagos</p>
+                </div>
+              ) : (
+                <div style={{ display: 'grid', gap: '12px' }}>
+                  {historialPagos.map((pago) => (
+                    <div key={pago.id} style={{ padding: '16px', background: '#fff', border: '1px solid #ddd', borderRadius: '8px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }} onClick={() => setExpandedPayment(expandedPayment === pago.id ? null : pago.id)}>
+                        <div>
+                          <div style={{ fontWeight: 600, color: '#333', marginBottom: '4px' }}>
+                            Lote de Pagos - Ref: {pago.referencia}
+                          </div>
+                          <div style={{ color: '#666', fontSize: '0.9rem' }}>
+                            {pago.num_pagos} ventas procesadas • {new Date(pago.fecha).toLocaleDateString('es-CO')}
+                          </div>
+                        </div>
+                        <div style={{ textAlign: 'right' }}>
+                          <div style={{ fontWeight: 700, color: '#16a34a', fontSize: '1.1rem' }}>
+                            ${formatPrecio(pago.monto)}
+                          </div>
+                          <div style={{ color: '#16a34a', fontSize: '0.85rem', fontWeight: 600 }}>
+                            Procesado
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {expandedPayment === pago.id && pago.pagos && (
+                        <div style={{ 
+                          marginTop: '12px', 
+                          paddingTop: '12px', 
+                          borderTop: '1px solid #eee',
+                          fontSize: '12px',
+                          color: '#666'
+                        }}>
+                          <div style={{ fontWeight: 600, marginBottom: '8px', color: '#7A1E3A' }}>
+                            Ventas incluidas en este lote:
+                          </div>
+                          {pago.pagos.map((pagoDetalle, idx) => (
+                            <div key={idx} style={{ 
+                              padding: '4px 0', 
+                              borderBottom: '1px solid #f5f5f5',
+                              display: 'flex',
+                              justifyContent: 'space-between'
+                            }}>
+                              <span>Orden #{pagoDetalle.id_venta}</span>
+                              <span>${formatPrecio(pagoDetalle.monto)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    </>
+    );
+  };
 
   const renderConfiguracion = () => (
     <>
@@ -1332,6 +2076,227 @@ export default function MiTienda() {
           {tiendaMsg && <p style={{ color: "green", fontWeight: 600, margin: 0 }}>{tiendaMsg}</p>}
         </div>
           </>
+        )}
+      </div>
+    </>
+  );
+
+  const renderCuentasBancarias = () => (
+    <>
+      <div className="welcome-card">
+        <h1 style={{ fontSize: "1.55rem", marginBottom: "4px", display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <IconCreditCard width={24} height={24} strokeWidth={2} style={{ color: '#7A1E3A' }} />
+          Cuentas Bancarias
+        </h1>
+        <p style={{ margin: 0 }}>Gestiona tus cuentas bancarias para recibir pagos de nómina.</p>
+      </div>
+
+      <div className="pl-card" style={{ padding: "2rem", marginTop: "20px" }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+          <h3 style={{ margin: 0, color: '#2A2A2A' }}>Mis Cuentas Bancarias</h3>
+          <button
+            onClick={() => setMostrarFormCuenta(true)}
+            style={{
+              background: "var(--vinotinto)", color: "white", border: "none",
+              padding: "10px 20px", borderRadius: "8px", fontWeight: 600,
+              fontSize: "0.9rem", cursor: "pointer"
+            }}
+          >
+            + Agregar Cuenta
+          </button>
+        </div>
+
+        {mostrarFormCuenta && (
+          <div style={{ padding: '20px', background: '#f4f4f4', borderRadius: '8px', marginBottom: '20px' }}>
+            <h4 style={{ margin: '0 0 16px 0', color: '#2A2A2A' }}>Agregar Nueva Cuenta</h4>
+            <div style={{ display: 'grid', gap: '12px' }}>
+              <select
+                value={cuentaForm.tipo_cuenta}
+                onChange={(e) => setCuentaForm({...cuentaForm, tipo_cuenta: e.target.value})}
+                style={{ padding: '10px', border: '1px solid #ddd', borderRadius: '6px' }}
+              >
+                <option value="">Tipo de cuenta</option>
+                <option value="Ahorros">Ahorros</option>
+                <option value="Corriente">Corriente</option>
+                <option value="Nequi">Nequi</option>
+                <option value="Daviplata">Daviplata</option>
+              </select>
+              <select
+                value={cuentaForm.banco}
+                onChange={(e) => setCuentaForm({...cuentaForm, banco: e.target.value})}
+                style={{ padding: '10px', border: '1px solid #ddd', borderRadius: '6px' }}
+              >
+                <option value="">Selecciona el banco</option>
+                <option value="Bancolombia">Bancolombia</option>
+                <option value="Davivienda">Davivienda</option>
+                <option value="Banco de Bogotá">Banco de Bogotá</option>
+                <option value="BBVA Colombia">BBVA Colombia</option>
+                <option value="Scotiabank Colpatria">Scotiabank Colpatria</option>
+                <option value="Banco Popular">Banco Popular</option>
+                <option value="Banco GNB Sudameris">Banco GNB Sudameris</option>
+                <option value="Citibank Colombia">Citibank Colombia</option>
+                <option value="HSBC Colombia">HSBC Colombia</option>
+                <option value="Banco Pichincha">Banco Pichincha</option>
+                <option value="Bancoomeva">Bancoomeva</option>
+                <option value="Banco Falabella">Banco Falabella</option>
+                <option value="Banco Agrario">Banco Agrario</option>
+                <option value="Banco WWB">Banco WWB</option>
+                <option value="Caja Social">Caja Social</option>
+                <option value="Colpatria">Colpatria</option>
+                <option value="Conavi">Conavi</option>
+                <option value="Mibanco">Mibanco</option>
+                <option value="Lulo Bank">Lulo Bank</option>
+                <option value="Rappi">Rappi</option>
+                <option value="Nu">Nu</option>
+                <option value="Nequi">Nequi</option>
+                <option value="Daviplata">Daviplata</option>
+                <option value="PSE">PSE</option>
+                <option value="Efecty">Efecty</option>
+                <option value="Baloto">Baloto</option>
+                <option value="Gana">Gana</option>
+                <option value="AstroPay">AstroPay</option>
+                <option value="PayU">PayU</option>
+                <option value="Otro">Otro banco</option>
+              </select>
+              <input
+                type="text"
+                placeholder="Número de cuenta"
+                value={cuentaForm.numero_cuenta}
+                onChange={(e) => setCuentaForm({...cuentaForm, numero_cuenta: e.target.value})}
+                style={{ padding: '10px', border: '1px solid #ddd', borderRadius: '6px' }}
+              />
+              <input
+                type="text"
+                placeholder="Nombre del titular"
+                value={cuentaForm.nombre_titular}
+                onChange={(e) => setCuentaForm({...cuentaForm, nombre_titular: e.target.value})}
+                style={{ padding: '10px', border: '1px solid #ddd', borderRadius: '6px' }}
+              />
+              <input
+                type="text"
+                placeholder="Cédula del titular"
+                value={cuentaForm.cedula_titular}
+                onChange={(e) => setCuentaForm({...cuentaForm, cedula_titular: e.target.value})}
+                style={{ padding: '10px', border: '1px solid #ddd', borderRadius: '6px' }}
+              />
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <input
+                  type="checkbox"
+                  checked={cuentaForm.es_principal}
+                  onChange={(e) => setCuentaForm({...cuentaForm, es_principal: e.target.checked})}
+                />
+                Marcar como cuenta principal para nómina
+              </label>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button
+                  onClick={handleAgregarCuenta}
+                  style={{
+                    background: "var(--vinotinto)", color: "white", border: "none",
+                    padding: "10px 20px", borderRadius: "6px", fontWeight: 600,
+                    cursor: "pointer"
+                  }}
+                >
+                  Guardar
+                </button>
+                <button
+                  onClick={() => {
+                    setMostrarFormCuenta(false);
+                    setCuentaForm({
+                      tipo_cuenta: '',
+                      banco: '',
+                      numero_cuenta: '',
+                      nombre_titular: '',
+                      cedula_titular: '',
+                      es_principal: false
+                    });
+                  }}
+                  style={{
+                    background: "#ccc", color: "#2A2A2A", border: "none",
+                    padding: "10px 20px", borderRadius: "6px", fontWeight: 600,
+                    cursor: "pointer"
+                  }}
+                >
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {cuentasBancarias.length === 0 ? (
+          <p style={{ color: '#666', textAlign: 'center', padding: '40px' }}>
+            No tienes cuentas bancarias registradas. Agrega tu primera cuenta para empezar a recibir pagos.
+          </p>
+        ) : (
+          <div style={{ display: 'grid', gap: '16px' }}>
+            {cuentasBancarias.map((cuenta) => (
+              <div key={cuenta.id_metodo} style={{
+                padding: '16px',
+                border: '1px solid #ddd',
+                borderRadius: '8px',
+                background: cuenta.es_principal ? '#f0f0f0' : 'white',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center'
+              }}>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                    <h4 style={{ margin: 0, color: '#2A2A2A' }}>{cuenta.banco}</h4>
+                    {cuenta.es_principal && (
+                      <span style={{
+                        padding: '4px 8px',
+                        background: 'var(--vinotinto)',
+                        color: 'white',
+                        borderRadius: '4px',
+                        fontSize: '12px',
+                        fontWeight: 'bold'
+                      }}>
+                        Principal
+                      </span>
+                    )}
+                  </div>
+                  <p style={{ margin: '4px 0', color: '#666', fontSize: '0.9rem' }}>
+                    {cuenta.tipo_cuenta} - {cuenta.numero_cuenta}
+                  </p>
+                  <p style={{ margin: '4px 0', color: '#666', fontSize: '0.9rem' }}>
+                    Titular: {cuenta.nombre_titular}
+                  </p>
+                </div>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  {!cuenta.es_principal && (
+                    <button
+                      onClick={() => handleMarcarPrincipal(cuenta.id_metodo)}
+                      style={{
+                        padding: '6px 12px',
+                        background: '#4caf50',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        fontSize: '0.85rem'
+                      }}
+                    >
+                      Hacer Principal
+                    </button>
+                  )}
+                  <button
+                    onClick={() => confirmarEliminarCuenta(cuenta)}
+                    style={{
+                      padding: '6px 12px',
+                      background: '#f44336',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      fontSize: '0.85rem'
+                    }}
+                  >
+                    Eliminar
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
         )}
       </div>
     </>
@@ -1646,6 +2611,7 @@ export default function MiTienda() {
       case "Clientes":      return renderProximamente("Clientes");
       case "Configuración": return renderConfiguracion();
       case "Perfil":        return renderPerfil();
+      case "Nómina":        return renderNomina();
       case "Promociones":   return <SeccionOfertas />;
       case "Cupones":       return <SeccionCuponesVendedor tiendaId={tiendaInfo?.id_tienda} />;
       case "Suscripciones": return <SeccionSuscripciones tiendaId={tiendaInfo?.id_tienda} onNavegar={cambiarSeccion} />;

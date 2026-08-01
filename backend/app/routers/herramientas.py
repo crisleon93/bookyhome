@@ -54,6 +54,38 @@ def suscribir(data: SuscripcionRequest, user: dict = Depends(get_current_user)):
     )
     if not resultado["ok"]:
         raise HTTPException(status_code=400, detail=resultado["error"])
+    
+    # Hook automático: Registrar ingreso en BookyPago Finanzas
+    try:
+        from app.models.bookypago_finanzas import BookyPagoFinanzas
+        import os
+        from dotenv import load_dotenv
+        
+        load_dotenv()
+        bookypago_config = {
+            'comision_venta': float(os.getenv('BOOKYPAGO_COMISION_VENTA', '0.10')),
+            'comision_impulso': float(os.getenv('BOOKYPAGO_COMISION_IMPULSO', '0.05')),
+            'comision_plan': float(os.getenv('BOOKYPAGO_COMISION_PLAN', '0.02')),
+            'minimo_pago': float(os.getenv('BOOKYPAGO_MINIMO_PAGO', '50000')),
+            'dias_pago': int(os.getenv('BOOKYPAGO_DIAS_PAGO', '7'))
+        }
+        bookypago_finanzas_direct = BookyPagoFinanzas(bookypago_config)
+        
+        resultado_finanzas = bookypago_finanzas_direct.registrar_ingreso_plan(
+            id_tienda=id_tienda,
+            id_plan=data.id_plan,
+            monto_plan=data.monto_pagado,
+            periodicidad="mensual"
+        )
+        
+        if resultado_finanzas.get('ok'):
+            print(f"Ingreso de plan registrado exitosamente en BookyPago Finanzas: Plan #{data.id_plan}")
+        else:
+            print(f"Error registrando ingreso de plan en BookyPago Finanzas: {resultado_finanzas.get('error')}")
+    except Exception as e:
+        # No fallar la suscripción si falla el registro en finanzas, solo loggear
+        print(f"Error registrando ingreso de plan en BookyPago Finanzas: {e}")
+    
     return resultado["suscripcion"]
 
 

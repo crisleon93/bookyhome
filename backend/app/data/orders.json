@@ -1,802 +1,142 @@
 {
-  "22": [
-    {
-      "id_orden": 1,
-      "fecha": "2026-06-19T22:05:18.638504Z",
-      "items": [
-        {
-          "id_libro": 2,
-          "titulo": "Amor en Invierno",
-          "autor_libro": "L. Moreno",
-          "precio_libro": 28000.0,
-          "cantidad": 1,
-          "imagen": null
-        }
-      ],
-      "total": 28000.0,
-      "estado": "pendiente"
-    }
+  "16": [
+    {"id_orden": 1, "fecha": "2026-07-15T13:00:00.000000Z", "items": [{"id_libro": 11, "titulo": "Los Detectives Salvajes", "autor_libro": "Roberto Bolaño", "precio_libro": 85000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/10322110-L.jpg"}], "total": 85000.0, "estado": "pagado", "metodo_pago": "Tarjeta de Crédito"},
+    {"id_orden": 2, "fecha": "2026-07-16T10:30:00.000000Z", "items": [{"id_libro": 12, "titulo": "La Sombra del Viento", "autor_libro": "Carlos Ruiz Zafón", "precio_libro": 55000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/12711225-L.jpg"}], "total": 55000.0, "estado": "Enviado", "metodo_pago": "PSE"},
+    {"id_orden": 3, "fecha": "2026-07-17T11:45:00.000000Z", "items": [{"id_libro": 10, "titulo": "El Aleph", "autor_libro": "Jorge Luis Borges", "precio_libro": 45000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/12688412-L.jpg"}], "total": 45000.0, "estado": "Entregado", "metodo_pago": "Daviplata"},
+    {"id_orden": 4, "fecha": "2026-07-18T09:30:00.000000Z", "items": [{"id_libro": 9, "titulo": "Ficciones", "autor_libro": "Jorge Luis Borges", "precio_libro": 65000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/12711225-L.jpg"}], "total": 65000.0, "estado": "pagado", "metodo_pago": "Nequi"},
+    {"id_orden": 5, "fecha": "2026-07-19T16:20:00.000000Z", "items": [{"id_libro": 8, "titulo": "Rayuela", "autor_libro": "Julio Cortázar", "precio_libro": 70000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/10322110-L.jpg"}], "total": 70000.0, "estado": "pagado", "metodo_pago": "Tarjeta de Crédito"},
+    {"id_orden": 6, "fecha": "2026-07-20T09:00:00.000000Z", "items": [{"id_libro": 3, "titulo": "La Odisea", "autor_libro": "Homero", "precio_libro": 45000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/12711225-L.jpg"}], "total": 45000.0, "estado": "Entregado", "metodo_pago": "Nequi"},
+    {"id_orden": 7, "fecha": "2026-07-21T11:30:00.000000Z", "items": [{"id_libro": 4, "titulo": "Don Quijote de la Mancha", "autor_libro": "Miguel de Cervantes", "precio_libro": 60000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/12688412-L.jpg"}], "total": 60000.0, "estado": "pagado", "metodo_pago": "Daviplata"},
+    {"id_orden": 8, "fecha": "2026-07-22T15:45:00.000000Z", "items": [{"id_libro": 5, "titulo": "La Casa de los Espíritus", "autor_libro": "Isabel Allende", "precio_libro": 55000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/10322110-L.jpg"}], "total": 55000.0, "estado": "Enviado", "metodo_pago": "Tarjeta de Crédito"},
+    {"id_orden": 9, "fecha": "2026-07-23T10:15:00.000000Z", "items": [{"id_libro": 6, "titulo": "Crónica de una Muerte Anunciada", "autor_libro": "Gabriel García Márquez", "precio_libro": 35000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/12711225-L.jpg"}], "total": 35000.0, "estado": "pagado", "metodo_pago": "Efecty"},
+    {"id_orden": 10, "fecha": "2026-07-24T14:00:00.000000Z", "items": [{"id_libro": 7, "titulo": "Pedro Páramo", "autor_libro": "Juan Rulfo", "precio_libro": 40000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/12688412-L.jpg"}], "total": 40000.0, "estado": "Entregado", "metodo_pago": "PSE"},
+    {"id_orden": 11, "fecha": "2026-07-25T10:30:00.000000Z", "items": [{"id_libro": 1, "titulo": "El Principito", "autor_libro": "Antoine de Saint-Exupéry", "precio_libro": 25000.0, "cantidad": 2, "imagen": "https://covers.openlibrary.org/b/id/12688412-L.jpg"}], "total": 50000.0, "estado": "pagado", "metodo_pago": "Tarjeta de Crédito"},
+    {"id_orden": 12, "fecha": "2026-07-26T14:15:00.000000Z", "items": [{"id_libro": 2, "titulo": "Cien Años de Soledad", "autor_libro": "Gabriel García Márquez", "precio_libro": 80000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/10322110-L.jpg"}], "total": 80000.0, "estado": "pagado", "metodo_pago": "PSE"}
   ],
   "17": [
-    {
-      "id_orden": 1,
-      "fecha": "2026-06-23T18:38:40.839432Z",
-      "items": [
-        {
-          "id_libro": 15,
-          "titulo": "Biografia de un Genio",
-          "autor_libro": "F. Ruiz",
-          "precio_libro": 80000.0,
-          "cantidad": 1,
-          "imagen": "https://bookyhome.com/images/biografia.jpg"
-        },
-        {
-          "id_libro": 14,
-          "titulo": "Humor y Vida",
-          "autor_libro": "T. Gomez",
-          "precio_libro": 20000.0,
-          "cantidad": 1,
-          "imagen": "https://bookyhome.com/images/humor.jpg"
-        }
-      ],
-      "total": 100000.0,
-      "estado": "pagado",
-      "metodo_pago": "PayPal"
-    },
-    {
-      "id_orden": 2,
-      "fecha": "2026-06-23T18:40:38.309492Z",
-      "items": [
-        {
-          "id_libro": 15,
-          "titulo": "Biografia de un Genio",
-          "autor_libro": "F. Ruiz",
-          "precio_libro": 80000.0,
-          "cantidad": 1,
-          "imagen": "https://bookyhome.com/images/biografia.jpg"
-        },
-        {
-          "id_libro": 14,
-          "titulo": "Humor y Vida",
-          "autor_libro": "T. Gomez",
-          "precio_libro": 20000.0,
-          "cantidad": 1,
-          "imagen": "https://bookyhome.com/images/humor.jpg"
-        }
-      ],
-      "total": 100000.0,
-      "estado": "pendiente"
-    }
+    {"id_orden": 1, "fecha": "2026-07-15T14:45:00.000000Z", "items": [{"id_libro": 13, "titulo": "El Juego de la Eternidad", "autor_libro": "Matt Haig", "precio_libro": 40000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/10322110-L.jpg"}], "total": 40000.0, "estado": "pagado", "metodo_pago": "Tarjeta de Crédito"},
+    {"id_orden": 2, "fecha": "2026-07-16T09:30:00.000000Z", "items": [{"id_libro": 14, "titulo": "Humor y Vida", "autor_libro": "T. Gomez", "precio_libro": 25000.0, "cantidad": 1, "imagen": "https://images.unsplash.com/photo-1516321497487-e288fb19713f?w=400&q=80"}], "total": 25000.0, "estado": "Enviado", "metodo_pago": "Efecty"},
+    {"id_orden": 3, "fecha": "2026-07-17T11:00:00.000000Z", "items": [{"id_libro": 12, "titulo": "La Sombra del Viento", "autor_libro": "Carlos Ruiz Zafón", "precio_libro": 55000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/12711225-L.jpg"}], "total": 55000.0, "estado": "Entregado", "metodo_pago": "Nequi"},
+    {"id_orden": 4, "fecha": "2026-07-18T13:15:00.000000Z", "items": [{"id_libro": 11, "titulo": "Los Detectives Salvajes", "autor_libro": "Roberto Bolaño", "precio_libro": 75000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/10322110-L.jpg"}], "total": 75000.0, "estado": "pagado", "metodo_pago": "PSE"},
+    {"id_orden": 5, "fecha": "2026-07-19T10:30:00.000000Z", "items": [{"id_libro": 10, "titulo": "El Aleph", "autor_libro": "Jorge Luis Borges", "precio_libro": 40000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/12688412-L.jpg"}], "total": 40000.0, "estado": "pagado", "metodo_pago": "Daviplata"},
+    {"id_orden": 6, "fecha": "2026-07-20T08:00:00.000000Z", "items": [{"id_libro": 5, "titulo": "La Casa de los Espíritus", "autor_libro": "Isabel Allende", "precio_libro": 50000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/10322110-L.jpg"}], "total": 50000.0, "estado": "Entregado", "metodo_pago": "Tarjeta de Crédito"},
+    {"id_orden": 7, "fecha": "2026-07-21T12:15:00.000000Z", "items": [{"id_libro": 6, "titulo": "Crónica de una Muerte Anunciada", "autor_libro": "Gabriel García Márquez", "precio_libro": 30000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/12711225-L.jpg"}], "total": 30000.0, "estado": "pagado", "metodo_pago": "PSE"},
+    {"id_orden": 8, "fecha": "2026-07-22T14:30:00.000000Z", "items": [{"id_libro": 7, "titulo": "Pedro Páramo", "autor_libro": "Juan Rulfo", "precio_libro": 45000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/12688412-L.jpg"}], "total": 45000.0, "estado": "Enviado", "metodo_pago": "Nequi"},
+    {"id_orden": 9, "fecha": "2026-07-23T09:45:00.000000Z", "items": [{"id_libro": 8, "titulo": "Rayuela", "autor_libro": "Julio Cortázar", "precio_libro": 65000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/10322110-L.jpg"}], "total": 65000.0, "estado": "pagado", "metodo_pago": "Efecty"},
+    {"id_orden": 10, "fecha": "2026-07-24T15:00:00.000000Z", "items": [{"id_libro": 9, "titulo": "Ficciones", "autor_libro": "Jorge Luis Borges", "precio_libro": 60000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/12711225-L.jpg"}], "total": 60000.0, "estado": "Entregado", "metodo_pago": "Tarjeta de Crédito"},
+    {"id_orden": 11, "fecha": "2026-07-27T09:45:00.000000Z", "items": [{"id_libro": 3, "titulo": "La Odisea", "autor_libro": "Homero", "precio_libro": 35000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/12711225-L.jpg"}], "total": 35000.0, "estado": "pagado", "metodo_pago": "Nequi"},
+    {"id_orden": 12, "fecha": "2026-07-28T16:20:00.000000Z", "items": [{"id_libro": 4, "titulo": "Don Quijote de la Mancha", "autor_libro": "Miguel de Cervantes", "precio_libro": 80000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/12688412-L.jpg"}], "total": 80000.0, "estado": "pagado", "metodo_pago": "Daviplata"}
   ],
   "18": [
-    {
-      "id_orden": 1,
-      "fecha": "2026-06-23T20:52:32.917262Z",
-      "items": [
-        {
-          "id_libro": 15,
-          "titulo": "Biografia de un Genio",
-          "autor_libro": "F. Ruiz",
-          "precio_libro": 80000.0,
-          "cantidad": 1,
-          "imagen": "https://bookyhome.com/images/biografia.jpg"
-        }
-      ],
-      "total": 80000.0,
-      "estado": "pagado",
-      "metodo_pago": "Tarjeta de Crédito"
-    }
+    {"id_orden": 1, "fecha": "2026-07-19T09:15:00.000000Z", "items": [{"id_libro": 16, "titulo": "Amor en Invierno", "autor_libro": "L. Moreno", "precio_libro": 28000.0, "cantidad": 1, "imagen": null}], "total": 28000.0, "estado": "Entregado", "metodo_pago": "Nequi"},
+    {"id_orden": 2, "fecha": "2026-07-20T14:00:00.000000Z", "items": [{"id_libro": 15, "titulo": "Biografia de un Genio", "autor_libro": "F. Ruiz", "precio_libro": 80000.0, "cantidad": 1, "imagen": "https://bookyhome.com/images/biografia.jpg"}], "total": 80000.0, "estado": "pagado", "metodo_pago": "PSE"},
+    {"id_orden": 3, "fecha": "2026-07-21T13:45:00.000000Z", "items": [{"id_libro": 13, "titulo": "El Juego de la Eternidad", "autor_libro": "Matt Haig", "precio_libro": 35000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/10322110-L.jpg"}], "total": 35000.0, "estado": "pagado", "metodo_pago": "Tarjeta de Crédito"},
+    {"id_orden": 4, "fecha": "2026-07-22T11:30:00.000000Z", "items": [{"id_libro": 14, "titulo": "Humor y Vida", "autor_libro": "T. Gomez", "precio_libro": 25000.0, "cantidad": 1, "imagen": "https://images.unsplash.com/photo-1516321497487-e288fb19713f?w=400&q=80"}], "total": 25000.0, "estado": "Enviado", "metodo_pago": "Daviplata"},
+    {"id_orden": 5, "fecha": "2026-07-23T15:30:00.000000Z", "items": [{"id_libro": 15, "titulo": "Biografia de un Genio", "autor_libro": "F. Ruiz", "precio_libro": 80000.0, "cantidad": 1, "imagen": "https://bookyhome.com/images/biografia.jpg"}], "total": 80000.0, "estado": "Entregado", "metodo_pago": "Tarjeta de Crédito"},
+    {"id_orden": 6, "fecha": "2026-07-24T10:00:00.000000Z", "items": [{"id_libro": 16, "titulo": "Amor en Invierno", "autor_libro": "L. Moreno", "precio_libro": 28000.0, "cantidad": 1, "imagen": null}], "total": 28000.0, "estado": "pagado", "metodo_pago": "Efecty"},
+    {"id_orden": 7, "fecha": "2026-07-25T10:00:00.000000Z", "items": [{"id_libro": 7, "titulo": "Pedro Páramo", "autor_libro": "Juan Rulfo", "precio_libro": 50000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/12688412-L.jpg"}], "total": 50000.0, "estado": "pagado", "metodo_pago": "Nequi"},
+    {"id_orden": 8, "fecha": "2026-07-26T11:30:00.000000Z", "items": [{"id_libro": 8, "titulo": "Rayuela", "autor_libro": "Julio Cortázar", "precio_libro": 70000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/10322110-L.jpg"}], "total": 70000.0, "estado": "Entregado", "metodo_pago": "Daviplata"},
+    {"id_orden": 9, "fecha": "2026-07-27T14:45:00.000000Z", "items": [{"id_libro": 9, "titulo": "Ficciones", "autor_libro": "Jorge Luis Borges", "precio_libro": 60000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/12711225-L.jpg"}], "total": 60000.0, "estado": "pagado", "metodo_pago": "Tarjeta de Crédito"},
+    {"id_orden": 10, "fecha": "2026-07-28T09:15:00.000000Z", "items": [{"id_libro": 10, "titulo": "El Aleph", "autor_libro": "Jorge Luis Borges", "precio_libro": 45000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/12688412-L.jpg"}], "total": 45000.0, "estado": "Enviado", "metodo_pago": "PSE"},
+    {"id_orden": 11, "fecha": "2026-07-29T11:00:00.000000Z", "items": [{"id_libro": 5, "titulo": "La Casa de los Espíritus", "autor_libro": "Isabel Allende", "precio_libro": 40000.0, "cantidad": 3, "imagen": "https://covers.openlibrary.org/b/id/10322110-L.jpg"}], "total": 120000.0, "estado": "pagado", "metodo_pago": "Tarjeta de Crédito"},
+    {"id_orden": 12, "fecha": "2026-07-30T13:30:00.000000Z", "items": [{"id_libro": 6, "titulo": "Crónica de una Muerte Anunciada", "autor_libro": "Gabriel García Márquez", "precio_libro": 6000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/12711225-L.jpg"}], "total": 6000.0, "estado": "Enviado", "metodo_pago": "PSE"}
   ],
-  "1": [
-    {
-      "id_orden": 3,
-      "fecha": "2026-06-28T08:25:59.742733Z",
-      "items": [
-        {
-          "id_libro": 44,
-          "titulo": "El principito",
-          "autor_libro": "Antoine de Saint-Exupéry",
-          "precio_libro": 20000.0,
-          "cantidad": 1,
-          "imagen": "https://covers.openlibrary.org/b/id/12688412-L.jpg"
-        }
-      ],
-      "total": 20000.0,
-      "estado": "pagado",
-      "metodo_pago": "Tarjeta de Crédito"
-    },
-    {
-      "id_orden": 6,
-      "fecha": "2026-06-28T08:39:58.279335Z",
-      "items": [
-        {
-          "id_libro": 45,
-          "titulo": "Libro de Prueba Oculto",
-          "autor_libro": "Autor Anónimo",
-          "precio_libro": 15000.0,
-          "cantidad": 1,
-          "imagen": null
-        }
-      ],
-      "total": 15000.0,
-      "estado": "pagado",
-      "metodo_pago": "Tarjeta de Crédito"
-    },
-    {
-      "id_orden": 8,
-      "fecha": "2026-06-28T08:46:12.777102Z",
-      "items": [
-        {
-          "id_libro": 43,
-          "titulo": "Kimetsu no Yaiba - Tomo 1",
-          "autor_libro": "Koyoharu Gotouge",
-          "precio_libro": 35000.0,
-          "cantidad": 1,
-          "imagen": "https://covers.openlibrary.org/b/id/10322110-L.jpg"
-        }
-      ],
-      "total": 35000.0,
-      "estado": "pagado",
-      "metodo_pago": "Tarjeta de Crédito"
-    }
+  "19": [
+    {"id_orden": 1, "fecha": "2026-07-15T14:00:00.000000Z", "items": [{"id_libro": 17, "titulo": "La Casa Verde", "autor_libro": "Mario Vargas Llosa", "precio_libro": 70000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/10322110-L.jpg"}], "total": 70000.0, "estado": "pagado", "metodo_pago": "Tarjeta de Crédito"},
+    {"id_orden": 2, "fecha": "2026-07-16T09:30:00.000000Z", "items": [{"id_libro": 18, "titulo": "Conversación en la Catedral", "autor_libro": "Mario Vargas Llosa", "precio_libro": 55000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/12711225-L.jpg"}], "total": 55000.0, "estado": "Enviado", "metodo_pago": "Nequi"},
+    {"id_orden": 3, "fecha": "2026-07-17T11:45:00.000000Z", "items": [{"id_libro": 16, "titulo": "Amor en Invierno", "autor_libro": "L. Moreno", "precio_libro": 28000.0, "cantidad": 1, "imagen": null}], "total": 28000.0, "estado": "Entregado", "metodo_pago": "Daviplata"},
+    {"id_orden": 4, "fecha": "2026-07-18T13:15:00.000000Z", "items": [{"id_libro": 15, "titulo": "Biografia de un Genio", "autor_libro": "F. Ruiz", "precio_libro": 80000.0, "cantidad": 1, "imagen": "https://bookyhome.com/images/biografia.jpg"}], "total": 80000.0, "estado": "pagado", "metodo_pago": "PSE"},
+    {"id_orden": 5, "fecha": "2026-07-19T10:30:00.000000Z", "items": [{"id_libro": 14, "titulo": "Humor y Vida", "autor_libro": "T. Gomez", "precio_libro": 25000.0, "cantidad": 1, "imagen": "https://images.unsplash.com/photo-1516321497487-e288fb19713f?w=400&q=80"}], "total": 25000.0, "estado": "Enviado", "metodo_pago": "Efecty"},
+    {"id_orden": 6, "fecha": "2026-07-20T08:15:00.000000Z", "items": [{"id_libro": 13, "titulo": "El Juego de la Eternidad", "autor_libro": "Matt Haig", "precio_libro": 40000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/10322110-L.jpg"}], "total": 40000.0, "estado": "pagado", "metodo_pago": "Tarjeta de Crédito"},
+    {"id_orden": 7, "fecha": "2026-07-21T11:00:00.000000Z", "items": [{"id_libro": 10, "titulo": "El Aleph", "autor_libro": "Jorge Luis Borges", "precio_libro": 45000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/12688412-L.jpg"}], "total": 45000.0, "estado": "Enviado", "metodo_pago": "PSE"},
+    {"id_orden": 8, "fecha": "2026-07-22T14:30:00.000000Z", "items": [{"id_libro": 11, "titulo": "Los Detectives Salvajes", "autor_libro": "Roberto Bolaño", "precio_libro": 75000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/10322110-L.jpg"}], "total": 75000.0, "estado": "pagado", "metodo_pago": "Daviplata"},
+    {"id_orden": 9, "fecha": "2026-07-23T09:45:00.000000Z", "items": [{"id_libro": 12, "titulo": "La Sombra del Viento", "autor_libro": "Carlos Ruiz Zafón", "precio_libro": 55000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/12711225-L.jpg"}], "total": 55000.0, "estado": "Entregado", "metodo_pago": "Tarjeta de Crédito"},
+    {"id_orden": 10, "fecha": "2026-07-24T15:00:00.000000Z", "items": [{"id_libro": 9, "titulo": "Ficciones", "autor_libro": "Jorge Luis Borges", "precio_libro": 60000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/12711225-L.jpg"}], "total": 60000.0, "estado": "pagado", "metodo_pago": "Nequi"},
+    {"id_orden": 11, "fecha": "2026-07-25T15:20:00.000000Z", "items": [{"id_libro": 7, "titulo": "Pedro Páramo", "autor_libro": "Juan Rulfo", "precio_libro": 65000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/12688412-L.jpg"}], "total": 65000.0, "estado": "pagado", "metodo_pago": "Efecty"},
+    {"id_orden": 12, "fecha": "2026-07-27T10:45:00.000000Z", "items": [{"id_libro": 8, "titulo": "Rayuela", "autor_libro": "Julio Cortázar", "precio_libro": 82000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/10322110-L.jpg"}], "total": 82000.0, "estado": "Entregado", "metodo_pago": "Tarjeta de Crédito"}
   ],
-  "3": [
-    {
-      "id_orden": 1,
-      "fecha": "2026-06-29T17:37:58.875948Z",
-      "items": [
-        {
-          "id_libro": 45,
-          "titulo": "Libro de Prueba Oculto",
-          "autor_libro": "Autor Anónimo",
-          "precio_libro": 15000.0,
-          "cantidad": 1,
-          "imagen": null
-        },
-        {
-          "id_libro": 14,
-          "titulo": "Humor y Vida",
-          "autor_libro": "T. Gomez",
-          "precio_libro": 20000.0,
-          "cantidad": 1,
-          "imagen": "https://images.unsplash.com/photo-1516321497487-e288fb19713f?w=400&q=80"
-        }
-      ],
-      "total": 35000.0,
-      "estado": "pagado",
-      "metodo_pago": "PayPal"
-    },
-    {
-      "id_orden": 2,
-      "fecha": "2026-06-29T18:42:16.125984Z",
-      "items": [
-        {
-          "id_libro": 45,
-          "titulo": "Libro de Prueba Oculto",
-          "autor_libro": "Autor Anónimo",
-          "precio_libro": 15000.0,
-          "cantidad": 5,
-          "imagen": null
-        },
-        {
-          "id_libro": 44,
-          "titulo": "El principito",
-          "autor_libro": "Antoine de Saint-Exupéry",
-          "precio_libro": 20000.0,
-          "cantidad": 1,
-          "imagen": "https://covers.openlibrary.org/b/id/12688412-L.jpg"
-        }
-      ],
-      "total": 95000.0,
-      "estado": "pagado",
-      "metodo_pago": "Tarjeta de Crédito"
-    },
-    {
-      "id_orden": 3,
-      "fecha": "2026-06-29T19:18:50.893663Z",
-      "items": [
-        {
-          "id_libro": 38,
-          "titulo": "Frankenstein",
-          "autor_libro": "Mary Shelley",
-          "precio_libro": 18000.0,
-          "cantidad": 1,
-          "imagen": "https://covers.openlibrary.org/b/id/12711225-L.jpg"
-        }
-      ],
-      "total": 18000.0,
-      "estado": "pagado",
-      "metodo_pago": "Nequi/Daviplata"
-    },
-    {
-      "id_orden": 4,
-      "fecha": "2026-06-29T19:25:56.148893Z",
-      "items": [
-        {
-          "id_libro": 44,
-          "titulo": "El principito",
-          "autor_libro": "Antoine de Saint-Exupéry",
-          "precio_libro": 20000.0,
-          "cantidad": 1,
-          "imagen": "https://covers.openlibrary.org/b/id/12688412-L.jpg"
-        }
-      ],
-      "total": 20000.0,
-      "estado": "pagado",
-      "metodo_pago": "Pago en Sucursal"
-    },
-    {
-      "id_orden": 5,
-      "fecha": "2026-06-29T19:31:00.358256Z",
-      "items": [
-        {
-          "id_libro": 44,
-          "titulo": "El principito",
-          "autor_libro": "Antoine de Saint-Exupéry",
-          "precio_libro": 20000.0,
-          "cantidad": 1,
-          "imagen": "https://covers.openlibrary.org/b/id/12688412-L.jpg"
-        }
-      ],
-      "total": 20000.0,
-      "estado": "pagado",
-      "metodo_pago": "PSE"
-    },
-    {
-      "id_orden": 6,
-      "fecha": "2026-06-29T19:32:14.808445Z",
-      "items": [
-        {
-          "id_libro": 44,
-          "titulo": "El principito",
-          "autor_libro": "Antoine de Saint-Exupéry",
-          "precio_libro": 20000.0,
-          "cantidad": 1,
-          "imagen": "https://covers.openlibrary.org/b/id/12688412-L.jpg"
-        }
-      ],
-      "total": 20000.0,
-      "estado": "pagado",
-      "metodo_pago": "Pago en Efecty"
-    },
-    {
-      "id_orden": 7,
-      "fecha": "2026-06-29T19:36:49.525339Z",
-      "items": [
-        {
-          "id_libro": 45,
-          "titulo": "Libro de Prueba Oculto",
-          "autor_libro": "Autor Anónimo",
-          "precio_libro": 15000.0,
-          "cantidad": 1,
-          "imagen": null
-        }
-      ],
-      "total": 15000.0,
-      "estado": "pagado",
-      "metodo_pago": "PSE"
-    },
-    {
-      "id_orden": 8,
-      "fecha": "2026-06-29T19:37:41.600962Z",
-      "items": [
-        {
-          "id_libro": 44,
-          "titulo": "El principito",
-          "autor_libro": "Antoine de Saint-Exupéry",
-          "precio_libro": 20000.0,
-          "cantidad": 1,
-          "imagen": "https://covers.openlibrary.org/b/id/12688412-L.jpg"
-        }
-      ],
-      "total": 20000.0,
-      "estado": "pagado",
-      "metodo_pago": "PSE"
-    },
-    {
-      "id_orden": 9,
-      "fecha": "2026-06-29T19:44:37.946845Z",
-      "items": [
-        {
-          "id_libro": 44,
-          "titulo": "El principito",
-          "autor_libro": "Antoine de Saint-Exupéry",
-          "precio_libro": 20000.0,
-          "cantidad": 2,
-          "imagen": "https://covers.openlibrary.org/b/id/12688412-L.jpg"
-        }
-      ],
-      "total": 40000.0,
-      "estado": "pagado",
-      "metodo_pago": "PSE"
-    },
-    {
-      "id_orden": 10,
-      "fecha": "2026-06-29T20:12:18.126261Z",
-      "items": [
-        {
-          "id_libro": 44,
-          "titulo": "El principito",
-          "autor_libro": "Antoine de Saint-Exupéry",
-          "precio_libro": 20000.0,
-          "cantidad": 1,
-          "imagen": "https://covers.openlibrary.org/b/id/12688412-L.jpg"
-        },
-        {
-          "id_libro": 43,
-          "titulo": "Kimetsu no Yaiba - Tomo 1",
-          "autor_libro": "Koyoharu Gotouge",
-          "precio_libro": 35000.0,
-          "cantidad": 1,
-          "imagen": "https://covers.openlibrary.org/b/id/10322110-L.jpg"
-        },
-        {
-          "id_libro": 42,
-          "titulo": "Bajo la misma estrella",
-          "autor_libro": "John Green",
-          "precio_libro": 25000.0,
-          "cantidad": 1,
-          "imagen": "https://covers.openlibrary.org/b/id/12411542-L.jpg"
-        }
-      ],
-      "total": 80000.0,
-      "estado": "pagado",
-      "metodo_pago": "PSE"
-    },
-    {
-      "id_orden": 11,
-      "fecha": "2026-06-29T21:20:28.205253Z",
-      "items": [
-        {
-          "id_libro": 45,
-          "titulo": "Libro de Prueba Oculto",
-          "autor_libro": "Autor Anónimo",
-          "precio_libro": 15000.0,
-          "cantidad": 1,
-          "imagen": null
-        }
-      ],
-      "total": 15000.0,
-      "estado": "pagado",
-      "metodo_pago": "Pago en Efecty"
-    },
-    {
-      "id_orden": 12,
-      "fecha": "2026-06-29T21:29:04.322443Z",
-      "items": [
-        {
-          "id_libro": 45,
-          "titulo": "Libro de Prueba Oculto",
-          "autor_libro": "Autor Anónimo",
-          "precio_libro": 15000.0,
-          "cantidad": 1,
-          "imagen": null
-        }
-      ],
-      "total": 15000.0,
-      "estado": "pagado",
-      "metodo_pago": "Pago en Efecty"
-    },
-    {
-      "id_orden": 13,
-      "fecha": "2026-06-29T21:33:56.572316Z",
-      "items": [
-        {
-          "id_libro": 44,
-          "titulo": "El principito",
-          "autor_libro": "Antoine de Saint-Exupéry",
-          "precio_libro": 20000.0,
-          "cantidad": 1,
-          "imagen": "https://covers.openlibrary.org/b/id/12688412-L.jpg"
-        }
-      ],
-      "total": 20000.0,
-      "estado": "pagado",
-      "metodo_pago": "Pago en Efecty"
-    },
-    {
-      "id_orden": 14,
-      "fecha": "2026-06-29T21:35:06.753842Z",
-      "items": [
-        {
-          "id_libro": 44,
-          "titulo": "El principito",
-          "autor_libro": "Antoine de Saint-Exupéry",
-          "precio_libro": 20000.0,
-          "cantidad": 1,
-          "imagen": "https://covers.openlibrary.org/b/id/12688412-L.jpg"
-        }
-      ],
-      "total": 20000.0,
-      "estado": "pagado",
-      "metodo_pago": "Transferencia Bancaria"
-    },
-    {
-      "id_orden": 15,
-      "fecha": "2026-06-29T21:38:13.688570Z",
-      "items": [
-        {
-          "id_libro": 44,
-          "titulo": "El principito",
-          "autor_libro": "Antoine de Saint-Exupéry",
-          "precio_libro": 20000.0,
-          "cantidad": 1,
-          "imagen": "https://covers.openlibrary.org/b/id/12688412-L.jpg"
-        }
-      ],
-      "total": 20000.0,
-      "estado": "pagado",
-      "metodo_pago": "Pago en Efecty"
-    },
-    {
-      "id_orden": 16,
-      "fecha": "2026-06-30T00:28:45.578057Z",
-      "items": [
-        {
-          "id_libro": 44,
-          "titulo": "El principito",
-          "autor_libro": "Antoine de Saint-Exupéry",
-          "precio_libro": 20000.0,
-          "cantidad": 1,
-          "imagen": "https://covers.openlibrary.org/b/id/12688412-L.jpg"
-        }
-      ],
-      "total": 20000.0,
-      "estado": "pagado",
-      "metodo_pago": "Transferencia Bancaria"
-    },
-    {
-      "id_orden": 17,
-      "fecha": "2026-06-30T00:35:45.782996Z",
-      "items": [
-        {
-          "id_libro": 45,
-          "titulo": "Libro de Prueba Oculto",
-          "autor_libro": "Autor Anónimo",
-          "precio_libro": 15000.0,
-          "cantidad": 1,
-          "imagen": null
-        }
-      ],
-      "total": 15000.0,
-      "estado": "pagado",
-      "metodo_pago": "PayPal"
-    },
-    {
-      "id_orden": 18,
-      "fecha": "2026-06-30T00:47:40.877910Z",
-      "items": [
-        {
-          "id_libro": 45,
-          "titulo": "Libro de Prueba Oculto",
-          "autor_libro": "Autor Anónimo",
-          "precio_libro": 15000.0,
-          "cantidad": 1,
-          "imagen": null
-        }
-      ],
-      "total": 15000.0,
-      "estado": "pagado",
-      "metodo_pago": "Tarjeta de Crédito"
-    },
-    {
-      "id_orden": 19,
-      "fecha": "2026-06-30T00:51:07.365062Z",
-      "items": [
-        {
-          "id_libro": 45,
-          "titulo": "Libro de Prueba Oculto",
-          "autor_libro": "Autor Anónimo",
-          "precio_libro": 15000.0,
-          "cantidad": 1,
-          "imagen": null
-        }
-      ],
-      "total": 15000.0,
-      "estado": "pagado",
-      "metodo_pago": "Tarjeta de Crédito"
-    },
-    {
-      "id_orden": 20,
-      "fecha": "2026-06-30T07:19:35.598982Z",
-      "items": [
-        {
-          "id_libro": 44,
-          "titulo": "El principito",
-          "autor_libro": "Antoine de Saint-Exupéry",
-          "precio_libro": 20000.0,
-          "cantidad": 1,
-          "imagen": "https://covers.openlibrary.org/b/id/12688412-L.jpg"
-        }
-      ],
-      "total": 20000.0,
-      "estado": "pagado",
-      "metodo_pago": "Pago en Efecty"
-    },
-    {
-      "id_orden": 21,
-      "fecha": "2026-06-30T07:56:15.527982Z",
-      "items": [
-        {
-          "id_libro": 41,
-          "titulo": "Heartstopper: Volumen 1",
-          "autor_libro": "Alice Oseman",
-          "precio_libro": 52000.0,
-          "cantidad": 1,
-          "imagen": "https://covers.openlibrary.org/b/id/12845621-L.jpg"
-        }
-      ],
-      "total": 52000.0,
-      "estado": "pagado",
-      "metodo_pago": "Tarjeta de Crédito"
-    },
-    {
-      "id_orden": 22,
-      "fecha": "2026-06-30T08:00:20.553538Z",
-      "items": [
-        {
-          "id_libro": 44,
-          "titulo": "El principito",
-          "autor_libro": "Antoine de Saint-Exupéry",
-          "precio_libro": 20000.0,
-          "cantidad": 1,
-          "imagen": "https://covers.openlibrary.org/b/id/12688412-L.jpg"
-        }
-      ],
-      "total": 20000.0,
-      "estado": "pagado",
-      "metodo_pago": "Tarjeta de Crédito"
-    }
+  "20": [
+    {"id_orden": 1, "fecha": "2026-07-19T09:15:00.000000Z", "items": [{"id_libro": 20, "titulo": "Bonsái", "autor_libro": "Alejandro Zambra", "precio_libro": 35000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/12711225-L.jpg"}], "total": 35000.0, "estado": "Entregado", "metodo_pago": "Tarjeta de Crédito"},
+    {"id_orden": 2, "fecha": "2026-07-20T14:00:00.000000Z", "items": [{"id_libro": 19, "titulo": "La Ciudad y los Perros", "autor_libro": "Alejandro Zambra", "precio_libro": 45000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/10322110-L.jpg"}], "total": 45000.0, "estado": "pagado", "metodo_pago": "Efecty"},
+    {"id_orden": 3, "fecha": "2026-07-21T11:30:00.000000Z", "items": [{"id_libro": 18, "titulo": "Conversación en la Catedral", "autor_libro": "Mario Vargas Llosa", "precio_libro": 55000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/12711225-L.jpg"}], "total": 55000.0, "estado": "Enviado", "metodo_pago": "Nequi"},
+    {"id_orden": 4, "fecha": "2026-07-22T11:30:00.000000Z", "items": [{"id_libro": 17, "titulo": "La Casa Verde", "autor_libro": "Mario Vargas Llosa", "precio_libro": 70000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/10322110-L.jpg"}], "total": 70000.0, "estado": "pagado", "metodo_pago": "PSE"},
+    {"id_orden": 5, "fecha": "2026-07-23T15:30:00.000000Z", "items": [{"id_libro": 16, "titulo": "Amor en Invierno", "autor_libro": "L. Moreno", "precio_libro": 28000.0, "cantidad": 1, "imagen": null}], "total": 28000.0, "estado": "Entregado", "metodo_pago": "Tarjeta de Crédito"},
+    {"id_orden": 6, "fecha": "2026-07-24T10:00:00.000000Z", "items": [{"id_libro": 15, "titulo": "Biografia de un Genio", "autor_libro": "F. Ruiz", "precio_libro": 80000.0, "cantidad": 1, "imagen": "https://bookyhome.com/images/biografia.jpg"}], "total": 80000.0, "estado": "pagado", "metodo_pago": "Nequi"},
+    {"id_orden": 7, "fecha": "2026-07-25T10:30:00.000000Z", "items": [{"id_libro": 11, "titulo": "Los Detectives Salvajes", "autor_libro": "Roberto Bolaño", "precio_libro": 70000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/10322110-L.jpg"}], "total": 70000.0, "estado": "pagado", "metodo_pago": "Tarjeta de Crédito"},
+    {"id_orden": 8, "fecha": "2026-07-26T11:45:00.000000Z", "items": [{"id_libro": 12, "titulo": "La Sombra del Viento", "autor_libro": "Carlos Ruiz Zafón", "precio_libro": 55000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/12711225-L.jpg"}], "total": 55000.0, "estado": "Entregado", "metodo_pago": "PSE"},
+    {"id_orden": 9, "fecha": "2026-07-27T14:00:00.000000Z", "items": [{"id_libro": 13, "titulo": "El Juego de la Eternidad", "autor_libro": "Matt Haig", "precio_libro": 40000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/10322110-L.jpg"}], "total": 40000.0, "estado": "pagado", "metodo_pago": "Efecty"},
+    {"id_orden": 10, "fecha": "2026-07-28T09:15:00.000000Z", "items": [{"id_libro": 14, "titulo": "Humor y Vida", "autor_libro": "T. Gomez", "precio_libro": 25000.0, "cantidad": 1, "imagen": "https://images.unsplash.com/photo-1516321497487-e288fb19713f?w=400&q=80"}], "total": 25000.0, "estado": "Enviado", "metodo_pago": "Nequi"},
+    {"id_orden": 11, "fecha": "2026-07-30T09:00:00.000000Z", "items": [{"id_libro": 9, "titulo": "Ficciones", "autor_libro": "Jorge Luis Borges", "precio_libro": 95000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/12711225-L.jpg"}], "total": 95000.0, "estado": "pendiente", "metodo_pago": null},
+    {"id_orden": 12, "fecha": "2026-07-31T14:15:00.000000Z", "items": [{"id_libro": 10, "titulo": "El Aleph", "autor_libro": "Jorge Luis Borges", "precio_libro": 31000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/12688412-L.jpg"}], "total": 31000.0, "estado": "Procesando", "metodo_pago": "Nequi"}
   ],
-  "16": [
-    {
-      "id_orden": 1,
-      "fecha": "2026-07-12T21:15:55.460321Z",
-      "items": [
-        {
-          "id_libro": 45,
-          "titulo": "Libro de Prueba Oculto",
-          "autor_libro": "Autor Anónimo",
-          "precio_libro": 15000.0,
-          "cantidad": 1,
-          "imagen": null
-        },
-        {
-          "id_libro": 44,
-          "titulo": "El principito",
-          "autor_libro": "Antoine de Saint-Exupéry",
-          "precio_libro": 20000.0,
-          "cantidad": 1,
-          "imagen": "https://covers.openlibrary.org/b/id/12688412-L.jpg"
-        }
-      ],
-      "total": 35000.0,
-      "estado": "pagado",
-      "metodo_pago": "Tarjeta de Crédito"
-    },
-    {
-      "id_orden": 2,
-      "fecha": "2026-07-13T19:13:05.974080Z",
-      "items": [
-        {
-          "id_libro": 44,
-          "titulo": "El principito",
-          "autor_libro": "Antoine de Saint-Exupéry",
-          "precio_libro": 20000.0,
-          "cantidad": 1,
-          "imagen": "https://covers.openlibrary.org/b/id/12688412-L.jpg"
-        },
-        {
-          "id_libro": 45,
-          "titulo": "Libro de Prueba Oculto",
-          "autor_libro": "Autor Anónimo",
-          "precio_libro": 15000.0,
-          "cantidad": 1,
-          "imagen": null
-        }
-      ],
-      "total": 35000.0,
-      "estado": "pagado",
-      "metodo_pago": "Tarjeta de Crédito",
-      "cupon_aplicado": "BIENVENIDO10",
-      "total_con_descuento": 31500.0
-    },
-    {
-      "id_orden": 3,
-      "fecha": "2026-07-13T19:21:08.396605Z",
-      "items": [
-        {
-          "id_libro": 43,
-          "titulo": "Kimetsu no Yaiba - Tomo 1",
-          "autor_libro": "Koyoharu Gotouge",
-          "precio_libro": 35000.0,
-          "cantidad": 1,
-          "imagen": "https://covers.openlibrary.org/b/id/10322110-L.jpg"
-        },
-        {
-          "id_libro": 44,
-          "titulo": "El principito",
-          "autor_libro": "Antoine de Saint-Exupéry",
-          "precio_libro": 20000.0,
-          "cantidad": 1,
-          "imagen": "https://covers.openlibrary.org/b/id/12688412-L.jpg"
-        }
-      ],
-      "total": 55000.0,
-      "estado": "pagado",
-      "metodo_pago": "Tarjeta de Crédito",
-      "cupon_aplicado": "BIENVENIDO10",
-      "total_con_descuento": 49500.0
-    },
-    {
-      "id_orden": 4,
-      "fecha": "2026-07-13T19:34:57.659089Z",
-      "items": [
-        {
-          "id_libro": 44,
-          "titulo": "El principito",
-          "autor_libro": "Antoine de Saint-Exupéry",
-          "precio_libro": 20000.0,
-          "cantidad": 1,
-          "imagen": "https://covers.openlibrary.org/b/id/12688412-L.jpg"
-        },
-        {
-          "id_libro": 39,
-          "titulo": "Maus",
-          "autor_libro": "Art Spiegelman",
-          "precio_libro": 75000.0,
-          "cantidad": 1,
-          "imagen": "https://covers.openlibrary.org/b/id/12390124-L.jpg"
-        },
-        {
-          "id_libro": 14,
-          "titulo": "Humor y Vida",
-          "autor_libro": "T. Gomez",
-          "precio_libro": 20000.0,
-          "cantidad": 1,
-          "imagen": "https://images.unsplash.com/photo-1516321497487-e288fb19713f?w=400&q=80"
-        }
-      ],
-      "total": 115000.0,
-      "estado": "pagado",
-      "metodo_pago": "Tarjeta de Crédito",
-      "cupon_aplicado": "BIENVENIDO10",
-      "total_con_descuento": 103500.0
-    },
-    {
-      "id_orden": 5,
-      "fecha": "2026-07-13T19:40:17.937231Z",
-      "items": [
-        {
-          "id_libro": 43,
-          "titulo": "Kimetsu no Yaiba - Tomo 1",
-          "autor_libro": "Koyoharu Gotouge",
-          "precio_libro": 35000.0,
-          "cantidad": 1,
-          "imagen": "https://covers.openlibrary.org/b/id/10322110-L.jpg"
-        },
-        {
-          "id_libro": 45,
-          "titulo": "Libro de Prueba Oculto",
-          "autor_libro": "Autor Anónimo",
-          "precio_libro": 15000.0,
-          "cantidad": 1,
-          "imagen": null
-        },
-        {
-          "id_libro": 35,
-          "titulo": "Drácula",
-          "autor_libro": "Bram Stoker",
-          "precio_libro": 22000.0,
-          "cantidad": 1,
-          "imagen": "https://covers.openlibrary.org/b/id/12612142-L.jpg"
-        }
-      ],
-      "total": 72000.0,
-      "estado": "pagado",
-      "metodo_pago": "Tarjeta de Crédito",
-      "envio": {
-        "id_empresa": 3,
-        "empresa_mensajeria": "Coordinadora",
-        "sitio_web": "https://www.coordinadora.com",
-        "url_rastreo": "https://www.coordinadora.com",
-        "numero_guia": "234578901",
-        "estado_envio": "Guía registrada",
-        "actualizado_en": "2026-07-17T07:57:23.113570+00:00"
-      }
-    },
-    {
-      "id_orden": 6,
-      "codigo_compra": "BH-E1A4A84C9A",
-      "fecha": "2026-07-18T02:17:59.446032Z",
-      "items": [
-        {
-          "id_libro": 40,
-          "titulo": "Orgullo y Prejuicio",
-          "autor_libro": "Jane Austen",
-          "precio_libro": 28000.0,
-          "cantidad": 1,
-          "imagen": "https://covers.openlibrary.org/b/id/12739345-L.jpg"
-        },
-        {
-          "id_libro": 45,
-          "titulo": "Libro de Prueba Oculto",
-          "autor_libro": "Autor Anónimo",
-          "precio_libro": 15000.0,
-          "cantidad": 1,
-          "imagen": null
-        }
-      ],
-      "total": 43000.0,
-      "estado": "pagado",
-      "metodo_pago": "Tarjeta de Crédito"
-    },
-    {
-      "id_orden": 7,
-      "codigo_compra": "BH-504320B332",
-      "fecha": "2026-07-18T03:36:37.892562Z",
-      "items": [
-        {
-          "id_libro": 45,
-          "titulo": "Libro de Prueba Oculto",
-          "autor_libro": "Autor Anónimo",
-          "precio_libro": 15000.0,
-          "cantidad": 1,
-          "imagen": null
-        }
-      ],
-      "total": 15000.0,
-      "estado": "pagado",
-      "metodo_pago": "Tarjeta de Crédito"
-    }
+  "21": [
+    {"id_orden": 1, "fecha": "2026-07-16T09:15:00.000000Z", "items": [{"id_libro": 22, "titulo": "El Libro de Lamentaciones", "autor_libro": "Kahlil Gibran", "precio_libro": 30000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/12711225-L.jpg"}], "total": 30000.0, "estado": "pagado", "metodo_pago": "Efecty"},
+    {"id_orden": 2, "fecha": "2026-07-17T14:00:00.000000Z", "items": [{"id_libro": 21, "titulo": "Formas de Volver a Casa", "autor_libro": "Alejandro Zambra", "precio_libro": 40000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/10322110-L.jpg"}], "total": 40000.0, "estado": "Enviado", "metodo_pago": "Nequi"},
+    {"id_orden": 3, "fecha": "2026-07-18T11:30:00.000000Z", "items": [{"id_libro": 20, "titulo": "Bonsái", "autor_libro": "Alejandro Zambra", "precio_libro": 35000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/12711225-L.jpg"}], "total": 35000.0, "estado": "pagado", "metodo_pago": "Tarjeta de Crédito"},
+    {"id_orden": 4, "fecha": "2026-07-19T13:45:00.000000Z", "items": [{"id_libro": 19, "titulo": "La Ciudad y los Perros", "autor_libro": "Alejandro Zambra", "precio_libro": 45000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/10322110-L.jpg"}], "total": 45000.0, "estado": "Entregado", "metodo_pago": "Daviplata"},
+    {"id_orden": 5, "fecha": "2026-07-20T10:00:00.000000Z", "items": [{"id_libro": 18, "titulo": "Conversación en la Catedral", "autor_libro": "Mario Vargas Llosa", "precio_libro": 55000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/12711225-L.jpg"}], "total": 55000.0, "estado": "pagado", "metodo_pago": "PSE"},
+    {"id_orden": 6, "fecha": "2026-07-21T15:30:00.000000Z", "items": [{"id_libro": 17, "titulo": "La Casa Verde", "autor_libro": "Mario Vargas Llosa", "precio_libro": 70000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/10322110-L.jpg"}], "total": 70000.0, "estado": "Enviado", "metodo_pago": "Nequi"},
+    {"id_orden": 7, "fecha": "2026-07-22T09:15:00.000000Z", "items": [{"id_libro": 16, "titulo": "Amor en Invierno", "autor_libro": "L. Moreno", "precio_libro": 28000.0, "cantidad": 1, "imagen": null}], "total": 28000.0, "estado": "pagado", "metodo_pago": "Efecty"},
+    {"id_orden": 8, "fecha": "2026-07-23T15:30:00.000000Z", "items": [{"id_libro": 15, "titulo": "Biografia de un Genio", "autor_libro": "F. Ruiz", "precio_libro": 80000.0, "cantidad": 1, "imagen": "https://bookyhome.com/images/biografia.jpg"}], "total": 80000.0, "estado": "Entregado", "metodo_pago": "Tarjeta de Crédito"},
+    {"id_orden": 9, "fecha": "2026-07-24T10:00:00.000000Z", "items": [{"id_libro": 14, "titulo": "Humor y Vida", "autor_libro": "T. Gomez", "precio_libro": 25000.0, "cantidad": 1, "imagen": "https://images.unsplash.com/photo-1516321497487-e288fb19713f?w=400&q=80"}], "total": 25000.0, "estado": "Enviado", "metodo_pago": "Nequi"},
+    {"id_orden": 10, "fecha": "2026-07-25T11:30:00.000000Z", "items": [{"id_libro": 13, "titulo": "El Juego de la Eternidad", "autor_libro": "Matt Haig", "precio_libro": 45000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/10322110-L.jpg"}], "total": 45000.0, "estado": "pagado", "metodo_pago": "PSE"},
+    {"id_orden": 11, "fecha": "2026-07-26T11:30:00.000000Z", "items": [{"id_libro": 12, "titulo": "La Sombra del Viento", "autor_libro": "Carlos Ruiz Zafón", "precio_libro": 60000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/12711225-L.jpg"}], "total": 60000.0, "estado": "pagado", "metodo_pago": "Nequi"},
+    {"id_orden": 12, "fecha": "2026-07-27T14:45:00.000000Z", "items": [{"id_libro": 11, "titulo": "Los Detectives Salvajes", "autor_libro": "Roberto Bolaño", "precio_libro": 57000.0, "cantidad": 2, "imagen": "https://covers.openlibrary.org/b/id/10322110-L.jpg"}], "total": 114000.0, "estado": "Entregado", "metodo_pago": "Tarjeta de Crédito"}
   ],
-  "37": [
-    {
-      "id_orden": 1,
-      "fecha": "2026-07-13T19:52:18.499104Z",
-      "items": [
-        {
-          "id_libro": 44,
-          "titulo": "El principito",
-          "autor_libro": "Antoine de Saint-Exupéry",
-          "precio_libro": 20000.0,
-          "cantidad": 1,
-          "imagen": "https://covers.openlibrary.org/b/id/12688412-L.jpg"
-        },
-        {
-          "id_libro": 43,
-          "titulo": "Kimetsu no Yaiba - Tomo 1",
-          "autor_libro": "Koyoharu Gotouge",
-          "precio_libro": 35000.0,
-          "cantidad": 1,
-          "imagen": "https://covers.openlibrary.org/b/id/10322110-L.jpg"
-        }
-      ],
-      "total": 55000.0,
-      "estado": "pagado",
-      "metodo_pago": "Pago en Efecty",
-      "cupon_aplicado": "BIENVENIDO10",
-      "total_con_descuento": 49500.0
-    }
+  "22": [
+    {"id_orden": 1, "fecha": "2026-07-17T10:30:00.000000Z", "items": [{"id_libro": 23, "titulo": "El Profeta", "autor_libro": "Kahlil Gibran", "precio_libro": 50000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/12711225-L.jpg"}], "total": 50000.0, "estado": "pagado", "metodo_pago": "Nequi"},
+    {"id_orden": 2, "fecha": "2026-07-18T09:15:00.000000Z", "items": [{"id_libro": 22, "titulo": "El Libro de Lamentaciones", "autor_libro": "Kahlil Gibran", "precio_libro": 30000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/12711225-L.jpg"}], "total": 30000.0, "estado": "Entregado", "metodo_pago": "Tarjeta de Crédito"},
+    {"id_orden": 3, "fecha": "2026-07-19T14:00:00.000000Z", "items": [{"id_libro": 21, "titulo": "Formas de Volver a Casa", "autor_libro": "Alejandro Zambra", "precio_libro": 40000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/10322110-L.jpg"}], "total": 40000.0, "estado": "pagado", "metodo_pago": "Daviplata"},
+    {"id_orden": 4, "fecha": "2026-07-20T11:30:00.000000Z", "items": [{"id_libro": 20, "titulo": "Bonsái", "autor_libro": "Alejandro Zambra", "precio_libro": 35000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/12711225-L.jpg"}], "total": 35000.0, "estado": "Enviado", "metodo_pago": "PSE"},
+    {"id_orden": 5, "fecha": "2026-07-21T13:45:00.000000Z", "items": [{"id_libro": 19, "titulo": "La Ciudad y los Perros", "autor_libro": "Alejandro Zambra", "precio_libro": 45000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/10322110-L.jpg"}], "total": 45000.0, "estado": "pagado", "metodo_pago": "Nequi"},
+    {"id_orden": 6, "fecha": "2026-07-22T10:00:00.000000Z", "items": [{"id_libro": 18, "titulo": "Conversación en la Catedral", "autor_libro": "Mario Vargas Llosa", "precio_libro": 55000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/12711225-L.jpg"}], "total": 55000.0, "estado": "Entregado", "metodo_pago": "Tarjeta de Crédito"},
+    {"id_orden": 7, "fecha": "2026-07-23T15:30:00.000000Z", "items": [{"id_libro": 17, "titulo": "La Casa Verde", "autor_libro": "Mario Vargas Llosa", "precio_libro": 70000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/10322110-L.jpg"}], "total": 70000.0, "estado": "pagado", "metodo_pago": "Efecty"},
+    {"id_orden": 8, "fecha": "2026-07-24T09:15:00.000000Z", "items": [{"id_libro": 16, "titulo": "Amor en Invierno", "autor_libro": "L. Moreno", "precio_libro": 28000.0, "cantidad": 1, "imagen": null}], "total": 28000.0, "estado": "Enviado", "metodo_pago": "Nequi"},
+    {"id_orden": 9, "fecha": "2026-07-25T10:30:00.000000Z", "items": [{"id_libro": 13, "titulo": "El Juego de la Eternidad", "autor_libro": "Matt Haig", "precio_libro": 45000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/10322110-L.jpg"}], "total": 45000.0, "estado": "pagado", "metodo_pago": "Tarjeta de Crédito"},
+    {"id_orden": 10, "fecha": "2026-07-26T11:45:00.000000Z", "items": [{"id_libro": 14, "titulo": "Humor y Vida", "autor_libro": "T. Gomez", "precio_libro": 25000.0, "cantidad": 1, "imagen": "https://images.unsplash.com/photo-1516321497487-e288fb19713f?w=400&q=80"}], "total": 25000.0, "estado": "Entregado", "metodo_pago": "Nequi"},
+    {"id_orden": 11, "fecha": "2026-07-27T14:00:00.000000Z", "items": [{"id_libro": 15, "titulo": "Biografia de un Genio", "autor_libro": "F. Ruiz", "precio_libro": 80000.0, "cantidad": 1, "imagen": "https://bookyhome.com/images/biografia.jpg"}], "total": 80000.0, "estado": "pagado", "metodo_pago": "PSE"},
+    {"id_orden": 12, "fecha": "2026-07-28T16:45:00.000000Z", "items": [{"id_libro": 12, "titulo": "La Sombra del Viento", "autor_libro": "Carlos Ruiz Zafón", "precio_libro": 25000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/12711225-L.jpg"}], "total": 25000.0, "estado": "Cancelado", "metodo_pago": null}
   ],
-  "13": [
-    {
-      "id_orden": 1,
-      "codigo_compra": "BH-3A07CB992E",
-      "fecha": "2026-07-17T23:25:09.036341Z",
-      "items": [
-        {
-          "id_libro": 45,
-          "titulo": "Libro de Prueba Oculto",
-          "autor_libro": "Autor Anónimo",
-          "precio_libro": 15000.0,
-          "cantidad": 1,
-          "imagen": null
-        }
-      ],
-      "total": 15000.0,
-      "estado": "pagado",
-      "metodo_pago": "Tarjeta de Crédito"
-    }
+  "23": [
+    {"id_orden": 1, "fecha": "2026-07-18T10:00:00.000000Z", "items": [{"id_libro": 24, "titulo": "Siddhartha", "autor_libro": "Hermann Hesse", "precio_libro": 45000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/12711225-L.jpg"}], "total": 45000.0, "estado": "pagado", "metodo_pago": "Nequi"},
+    {"id_orden": 2, "fecha": "2026-07-19T15:30:00.000000Z", "items": [{"id_libro": 23, "titulo": "El Profeta", "autor_libro": "Kahlil Gibran", "precio_libro": 50000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/12711225-L.jpg"}], "total": 50000.0, "estado": "Entregado", "metodo_pago": "Tarjeta de Crédito"},
+    {"id_orden": 3, "fecha": "2026-07-20T09:15:00.000000Z", "items": [{"id_libro": 22, "titulo": "El Libro de Lamentaciones", "autor_libro": "Kahlil Gibran", "precio_libro": 30000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/12711225-L.jpg"}], "total": 30000.0, "estado": "pagado", "metodo_pago": "Daviplata"},
+    {"id_orden": 4, "fecha": "2026-07-21T14:00:00.000000Z", "items": [{"id_libro": 21, "titulo": "Formas de Volver a Casa", "autor_libro": "Alejandro Zambra", "precio_libro": 40000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/10322110-L.jpg"}], "total": 40000.0, "estado": "Enviado", "metodo_pago": "Nequi"},
+    {"id_orden": 5, "fecha": "2026-07-22T11:30:00.000000Z", "items": [{"id_libro": 20, "titulo": "Bonsái", "autor_libro": "Alejandro Zambra", "precio_libro": 35000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/12711225-L.jpg"}], "total": 35000.0, "estado": "pagado", "metodo_pago": "PSE"},
+    {"id_orden": 6, "fecha": "2026-07-23T13:45:00.000000Z", "items": [{"id_libro": 19, "titulo": "La Ciudad y los Perros", "autor_libro": "Alejandro Zambra", "precio_libro": 45000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/10322110-L.jpg"}], "total": 45000.0, "estado": "Entregado", "metodo_pago": "Tarjeta de Crédito"},
+    {"id_orden": 7, "fecha": "2026-07-24T10:15:00.000000Z", "items": [{"id_libro": 18, "titulo": "Conversación en la Catedral", "autor_libro": "Mario Vargas Llosa", "precio_libro": 55000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/12711225-L.jpg"}], "total": 55000.0, "estado": "pagado", "metodo_pago": "Efecty"},
+    {"id_orden": 8, "fecha": "2026-07-25T11:30:00.000000Z", "items": [{"id_libro": 14, "titulo": "Humor y Vida", "autor_libro": "T. Gomez", "precio_libro": 25000.0, "cantidad": 1, "imagen": "https://images.unsplash.com/photo-1516321497487-e288fb19713f?w=400&q=80"}], "total": 25000.0, "estado": "Enviado", "metodo_pago": "Tarjeta de Crédito"},
+    {"id_orden": 9, "fecha": "2026-07-26T14:45:00.000000Z", "items": [{"id_libro": 15, "titulo": "Biografia de un Genio", "autor_libro": "F. Ruiz", "precio_libro": 80000.0, "cantidad": 1, "imagen": "https://bookyhome.com/images/biografia.jpg"}], "total": 80000.0, "estado": "pagado", "metodo_pago": "Nequi"},
+    {"id_orden": 10, "fecha": "2026-07-27T09:00:00.000000Z", "items": [{"id_libro": 16, "titulo": "Amor en Invierno", "autor_libro": "L. Moreno", "precio_libro": 28000.0, "cantidad": 1, "imagen": null}], "total": 28000.0, "estado": "Entregado", "metodo_pago": "Daviplata"},
+    {"id_orden": 11, "fecha": "2026-07-28T15:30:00.000000Z", "items": [{"id_libro": 17, "titulo": "La Casa Verde", "autor_libro": "Mario Vargas Llosa", "precio_libro": 70000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/10322110-L.jpg"}], "total": 70000.0, "estado": "pagado", "metodo_pago": "PSE"},
+    {"id_orden": 12, "fecha": "2026-07-29T10:15:00.000000Z", "items": [{"id_libro": 13, "titulo": "El Juego de la Eternidad", "autor_libro": "Matt Haig", "precio_libro": 75000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/10322110-L.jpg"}], "total": 75000.0, "estado": "Procesando", "metodo_pago": "PSE"}
+  ],
+  "24": [
+    {"id_orden": 1, "fecha": "2026-07-19T10:00:00.000000Z", "items": [{"id_libro": 36, "titulo": "Crimen y Castigo", "autor_libro": "Fiodor Dostoyevski", "precio_libro": 40000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/12711225-L.jpg"}], "total": 40000.0, "estado": "Enviado", "metodo_pago": "PSE"},
+    {"id_orden": 2, "fecha": "2026-07-20T15:30:00.000000Z", "items": [{"id_libro": 35, "titulo": "El Señor de los Anillos", "autor_libro": "J.R.R. Tolkien", "precio_libro": 70000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/10322110-L.jpg"}], "total": 70000.0, "estado": "pagado", "metodo_pago": "Nequi"},
+    {"id_orden": 3, "fecha": "2026-07-21T09:15:00.000000Z", "items": [{"id_libro": 34, "titulo": "El Hobbit", "autor_libro": "J.R.R. Tolkien", "precio_libro": 55000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/12711225-L.jpg"}], "total": 55000.0, "estado": "Entregado", "metodo_pago": "Tarjeta de Crédito"},
+    {"id_orden": 4, "fecha": "2026-07-22T14:00:00.000000Z", "items": [{"id_libro": 33, "titulo": "Rebelión en la Granja", "autor_libro": "George Orwell", "precio_libro": 35000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/10322110-L.jpg"}], "total": 35000.0, "estado": "pagado", "metodo_pago": "Daviplata"},
+    {"id_orden": 5, "fecha": "2026-07-23T13:45:00.000000Z", "items": [{"id_libro": 32, "titulo": "1984", "autor_libro": "George Orwell", "precio_libro": 45000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/12711225-L.jpg"}], "total": 45000.0, "estado": "Enviado", "metodo_pago": "PSE"},
+    {"id_orden": 6, "fecha": "2026-07-24T10:00:00.000000Z", "items": [{"id_libro": 31, "titulo": "Matar a un Ruiseñor", "autor_libro": "Harper Lee", "precio_libro": 40000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/12711225-L.jpg"}], "total": 40000.0, "estado": "pagado", "metodo_pago": "Nequi"},
+    {"id_orden": 7, "fecha": "2026-07-25T10:00:00.000000Z", "items": [{"id_libro": 25, "titulo": "La Iliada", "autor_libro": "Homero", "precio_libro": 60000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/12711225-L.jpg"}], "total": 60000.0, "estado": "Entregado", "metodo_pago": "Tarjeta de Crédito"},
+    {"id_orden": 8, "fecha": "2026-07-26T11:30:00.000000Z", "items": [{"id_libro": 26, "titulo": "La Eneida", "autor_libro": "Virgilio", "precio_libro": 55000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/12711225-L.jpg"}], "total": 55000.0, "estado": "pagado", "metodo_pago": "Nequi"},
+    {"id_orden": 9, "fecha": "2026-07-27T14:45:00.000000Z", "items": [{"id_libro": 27, "titulo": "Divina Comedia", "autor_libro": "Dante Alighieri", "precio_libro": 70000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/10322110-L.jpg"}], "total": 70000.0, "estado": "pagado", "metodo_pago": "PSE"},
+    {"id_orden": 10, "fecha": "2026-07-28T09:15:00.000000Z", "items": [{"id_libro": 28, "titulo": "Paraíso Perdido", "autor_libro": "John Milton", "precio_libro": 45000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/12711225-L.jpg"}], "total": 45000.0, "estado": "Enviado", "metodo_pago": "Daviplata"},
+    {"id_orden": 11, "fecha": "2026-07-29T15:30:00.000000Z", "items": [{"id_libro": 29, "titulo": "Don Juan Tenorio", "autor_libro": "Tirso de Molina", "precio_libro": 35000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/12711225-L.jpg"}], "total": 35000.0, "estado": "pagado", "metodo_pago": "Efecty"},
+    {"id_orden": 12, "fecha": "2026-07-30T10:00:00.000000Z", "items": [{"id_libro": 30, "titulo": "La Regenta", "autor_libro": "León Tolstoi", "precio_libro": 50000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/12711225-L.jpg"}], "total": 50000.0, "estado": "Entregado", "metodo_pago": "Tarjeta de Crédito"}
+  ],
+  "25": [
+    {"id_orden": 1, "fecha": "2026-07-19T10:00:00.000000Z", "items": [{"id_libro": 48, "titulo": "El Retrato de Dorian Gray", "autor_libro": "Oscar Wilde", "precio_libro": 35000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/12711225-L.jpg"}], "total": 35000.0, "estado": "Enviado", "metodo_pago": "PSE"},
+    {"id_orden": 2, "fecha": "2026-07-20T15:30:00.000000Z", "items": [{"id_libro": 47, "titulo": "Drácula", "autor_libro": "Bram Stoker", "precio_libro": 40000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/12711225-L.jpg"}], "total": 40000.0, "estado": "pagado", "metodo_pago": "Nequi"},
+    {"id_orden": 3, "fecha": "2026-07-21T09:15:00.000000Z", "items": [{"id_libro": 46, "titulo": "Frankenstein", "autor_libro": "Mary Shelley", "precio_libro": 30000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/12711225-L.jpg"}], "total": 30000.0, "estado": "Entregado", "metodo_pago": "Tarjeta de Crédito"},
+    {"id_orden": 4, "fecha": "2026-07-22T14:00:00.000000Z", "items": [{"id_libro": 45, "titulo": "Libro de Prueba Oculto", "autor_libro": "Autor Anónimo", "precio_libro": 15000.0, "cantidad": 1, "imagen": null}], "total": 15000.0, "estado": "pagado", "metodo_pago": "Daviplata"},
+    {"id_orden": 5, "fecha": "2026-07-23T13:45:00.000000Z", "items": [{"id_libro": 44, "titulo": "El Principito", "autor_libro": "Antoine de Saint-Exupéry", "precio_libro": 20000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/12688412-L.jpg"}], "total": 20000.0, "estado": "Enviado", "metodo_pago": "PSE"},
+    {"id_orden": 6, "fecha": "2026-07-24T11:30:00.000000Z", "items": [{"id_libro": 43, "titulo": "Kimetsu no Yaiba - Tomo 1", "autor_libro": "Koyoharu Gotouge", "precio_libro": 35000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/10322110-L.jpg"}], "total": 35000.0, "estado": "pagado", "metodo_pago": "Nequi"},
+    {"id_orden": 7, "fecha": "2026-07-25T11:00:00.000000Z", "items": [{"id_libro": 37, "titulo": "Los Hermanos Karamazov", "autor_libro": "Fiodor Dostoyevski", "precio_libro": 65000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/12711225-L.jpg"}], "total": 65000.0, "estado": "Entregado", "metodo_pago": "Tarjeta de Crédito"},
+    {"id_orden": 8, "fecha": "2026-07-26T13:30:00.000000Z", "items": [{"id_libro": 38, "titulo": "Anna Karenina", "autor_libro": "León Tolstoi", "precio_libro": 50000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/12711225-L.jpg"}], "total": 50000.0, "estado": "pagado", "metodo_pago": "Nequi"},
+    {"id_orden": 9, "fecha": "2026-07-27T14:45:00.000000Z", "items": [{"id_libro": 39, "titulo": "Guerra y Paz", "autor_libro": "León Tolstoi", "precio_libro": 75000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/12711225-L.jpg"}], "total": 75000.0, "estado": "pagado", "metodo_pago": "PSE"},
+    {"id_orden": 10, "fecha": "2026-07-28T09:00:00.000000Z", "items": [{"id_libro": 40, "titulo": "Madame Bovary", "autor_libro": "Gustave Flaubert", "precio_libro": 45000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/12711225-L.jpg"}], "total": 45000.0, "estado": "Enviado", "metodo_pago": "Daviplata"},
+    {"id_orden": 11, "fecha": "2026-07-29T15:00:00.000000Z", "items": [{"id_libro": 41, "titulo": "Los Miserables", "autor_libro": "Victor Hugo", "precio_libro": 60000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/12711225-L.jpg"}], "total": 60000.0, "estado": "pagado", "metodo_pago": "Efecty"},
+    {"id_orden": 12, "fecha": "2026-07-30T10:30:00.000000Z", "items": [{"id_libro": 42, "titulo": "Notre-Dame de París", "autor_libro": "Victor Hugo", "precio_libro": 55000.0, "cantidad": 1, "imagen": "https://covers.openlibrary.org/b/id/12711225-L.jpg"}], "total": 55000.0, "estado": "Entregado", "metodo_pago": "Tarjeta de Crédito"}
   ]
 }

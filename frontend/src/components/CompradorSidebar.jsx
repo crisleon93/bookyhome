@@ -15,7 +15,8 @@ import {
   IconLogOut,
   IconMail,
   IconBell,
-  IconMapPin as IconLocation
+  IconMapPin as IconLocation,
+  IconCreditCard
 } from "./Icons";
 import { notificacionesService } from '../services/notificaciones';
 import { chatService } from '../services/chat';

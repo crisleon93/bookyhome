@@ -103,6 +103,22 @@ def obtener_libros_visibles_por_tienda(id_tienda: int):
         db.close()
 
 # ──────────────────────────────────────────────
+#  OBTENER LIBRO POR ID
+# ──────────────────────────────────────────────
+def obtener_libro_por_id(id_libro: int):
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    try:
+        cursor.execute("""
+            SELECT * FROM libros WHERE id_libro = %s
+        """, (id_libro,))
+        return cursor.fetchone()
+    finally:
+        cursor.close()
+        db.close()
+
+
+# ──────────────────────────────────────────────
 #  OBTENER TIENDA DEL USUARIO AUTENTICADO
 # ──────────────────────────────────────────────
 def obtener_tienda_por_usuario(id_usuario: int):

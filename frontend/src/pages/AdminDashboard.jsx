@@ -3,10 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { getUserRole } from '../hooks/useAuth';
 import api, { getApiBaseUrl } from '../services/api';
 import { notify } from '../components/ToastProvider';
+import BookyPagoFinanzas from './BookyPagoFinanzas';
 import {
   IconLayoutDashboard, IconTrendingUp, IconUser, IconBook, IconStore, IconPackage,
   IconSettings, IconChevronLeft, IconMenu, IconLogOut, IconLock, IconUnlock,
-  IconCheck, IconBan, IconEye, IconTrash, IconDollar, IconCart, IconTool, IconAlertTriangle,
+  IconCheck, IconBan, IconEye, IconTrash, IconDollar, IconCart, IconTool, IconAlertTriangle, IconWallet,
 } from '../components/Icons';
 
 const VINOTINTO = '#7A1E3A';
@@ -27,6 +28,7 @@ const NAV_ITEMS = [
   { id: 'libros',    label: 'Libros',    Icon: IconBook },
   { id: 'tiendas',   label: 'Tiendas',   Icon: IconStore },
   { id: 'ordenes',   label: 'Órdenes',   Icon: IconPackage },
+  { id: 'finanzas',  label: 'Finanzas',  Icon: IconWallet },
   { id: 'reclamos',  label: 'Quejas y reclamos', Icon: IconAlertTriangle },
   { id: 'soporte',   label: 'Soporte técnico', Icon: IconTool },
 ];
@@ -279,6 +281,7 @@ export default function AdminDashboard() {
     libros: 'Gestión de Libros',
     tiendas: 'Gestión de Tiendas',
     ordenes: 'Gestión de Órdenes',
+    finanzas: 'BookyPago Finanzas',
     reclamos: 'Quejas y Reclamos',
     soporte: 'Soporte Técnico',
   };
@@ -1213,6 +1216,11 @@ export default function AdminDashboard() {
               </div>
             </div>
           </div>
+        )}
+
+        {/* FINANZAS - BOOKYPAGO */}
+        {activeSection === 'finanzas' && (
+          <BookyPagoFinanzas />
         )}
 
       </main>

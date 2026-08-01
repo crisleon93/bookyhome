@@ -234,6 +234,26 @@ export const IconPhone = ({ className = "auth-input-icon", width = 24, height = 
 
 
 
+export const IconWallet = ({ className = "", width = 24, height = 24, strokeWidth = 2, ...props }) => (
+
+  <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+
+    stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" width={width} height={height} {...props}>
+
+    <path d="M21 12V7a2 2 0 00-2-2H5a2 2 0 00-2 2v5"/>
+
+    <path d="M3 12v9a2 2 0 002 2h14a2 2 0 002-2v-9"/>
+
+    <path d="M3 12h18"/>
+
+    <path d="M18 12a2 2 0 00-2 2v4a2 2 0 002 2h2v-8h-2z"/>
+
+  </svg>
+
+);
+
+
+
 export const IconArrow = ({ className = "modal-arrow", width = 24, height = 24, strokeWidth = 2, ...props }) => (
 
   <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none"
@@ -799,6 +819,52 @@ export const IconAlertTriangle = ({ className = "", width = 22, height = 22, str
     <line x1="12" y1="9" x2="12" y2="13" />
 
     <line x1="12" y1="17" x2="12.01" y2="17" />
+
+  </svg>
+
+);
+
+
+
+export const IconArrowDown = ({ className = "", width = 20, height = 20, strokeWidth = 2, ...props }) => (
+
+  <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+
+    stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" width={width} height={height} {...props}>
+
+    <path d="M12 5v14" />
+
+    <path d="m19 12-7 7-7-7" />
+
+  </svg>
+
+);
+
+
+
+export const IconRefresh = ({ className = "", width = 20, height = 20, strokeWidth = 2, ...props }) => (
+
+  <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+
+    stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" width={width} height={height} {...props}>
+
+    <path d="M21 12a9 9 0 1 1-2.64-6.36" />
+
+    <path d="M21 3v6h-6" />
+
+  </svg>
+
+);
+
+
+
+export const IconBolt = ({ className = "", width = 20, height = 20, strokeWidth = 2, ...props }) => (
+
+  <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+
+    stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" width={width} height={height} {...props}>
+
+    <path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z" />
 
   </svg>
 

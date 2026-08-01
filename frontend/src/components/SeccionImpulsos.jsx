@@ -187,7 +187,9 @@ export default function SeccionImpulsos({ tiendaId, onNavegar }) {
       {tab === "contratar" && (
         <div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "16px", marginBottom: "24px" }}>
-            {tipos.map((tipo) => {
+            {tipos.filter((tipo, index, self) =>
+              self.findIndex((t) => t.tipo === tipo.tipo) === index
+            ).map((tipo) => {
               const badge = TIPO_BADGE[tipo.tipo] || {};
               const precioFinal = precioConDescuento(tipo.precio);
               const seleccionado = tipoSeleccionado === tipo.id_tipo_impulso;
