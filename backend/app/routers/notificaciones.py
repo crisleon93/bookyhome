@@ -6,7 +6,7 @@ from app.auth import verify_token
 from datetime import datetime
 from enum import Enum
 
-router = APIRouter(prefix="/notificaciones", tags=["Notificaciones"])
+router = APIRouter(prefix="/notificaciones", tags=["Notificaciones"], redirect_slashes=False)
 security = HTTPBearer()
 
 # ============= ENUMS =============

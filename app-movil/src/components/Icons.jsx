@@ -257,3 +257,13 @@ export const IconHistory = ({ size = 22, color = '#7A1E3A' }) => (
     <Path d="M12 7v5l4 2" stroke={color}/>
   </Svg>
 );
+
+// ── Burbuja de chat ─────────────────────────────────────────────────────────
+export const IconChat = ({ size = 20, color = '#7A1E3A' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path
+      d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm3.75 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm3.75 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z"
+      stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"
+    />
+  </Svg>
+);

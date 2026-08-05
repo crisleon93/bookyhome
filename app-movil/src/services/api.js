@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'http://192.168.0.5:8000',
+  baseURL: 'http://192.168.1.10:8000',
   timeout: 10000,
 });
 
@@ -40,6 +40,9 @@ export const markNotificationRead = (id) => api.put(`/notificaciones/${id}/leer`
 export const markAllNotificationsRead = () => api.put('/notificaciones/marcar-todas-leidas');
 export const deleteNotification = (id) => api.delete(`/notificaciones/${id}`);
 
+export const registerLibrary = (data) => api.post('/libreria', data);
+export const crearSalaChat = (id_tienda) => api.post('/chat/salas', { id_tienda });
+  
 // ===== Reseñas =====
 export const getReviewsForBook = (id) => api.get(`/resenas/resenas/libro/${id}`);
 export const createReview = (payload) => api.post('/resenas/resenas/crear', payload);
@@ -85,3 +88,10 @@ export const deleteLibro = (id) => api.delete(`/libros/${id}`);
 export const getPedidosRecientes = () => api.get('/libros/mis-ventas?limit=5');
 
 export default api;
+
+// ===== Chat =====
+export const getChatHistory = (id_sala, params = { limit: 50, offset: 0 }) =>
+  api.get(`/chat/salas/${id_sala}/mensajes`, { params });
+export const marcarSalaLeida = (id_sala) => api.put(`/chat/salas/${id_sala}/marcar-leidos`);
+export const enviarMensajeChat = (payload) => api.post('/chat/mensajes', payload); 
+export const getSalasUsuario = () => api.get('/chat/salas');

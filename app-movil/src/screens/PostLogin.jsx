@@ -1,14 +1,15 @@
 // src/screens/PostLogin.jsx
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState, useCallback } from 'react';
 import {
   View, Text, FlatList, Image, TouchableOpacity,
   StyleSheet, ActivityIndicator, TextInput,
   ScrollView, SafeAreaView,
 } from 'react-native';
-import { getBooks } from '../services/api';
+import { getBooks, getSalasUsuario  } from '../services/api';
 import { AuthContext } from '../context/AuthContext';
 import Header from '../components/Header';
 import { IconBooks, IconStore, IconStar, IconCart } from '../components/Icons';
+import { useFocusEffect } from '@react-navigation/native';
 
 const PRIMARY = '#7A1E3A';
 const BG      = '#F9F6F1';
@@ -34,6 +35,19 @@ export default function PostLogin({ navigation }) {
   const [search, setSearch]             = useState('');
   const [activeCategory, setActiveCategory] = useState(null);
   const { signOut, user } = useContext(AuthContext);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useFocusEffect(
+    useCallback(() => {
+      getSalasUsuario()
+        .then(({ data }) => {
+          const salas = Array.isArray(data?.salas) ? data.salas : [];
+          const total = salas.reduce((acc, s) => acc + (s.no_leidos || 0), 0);
+          setUnreadCount(total);
+        })
+        .catch(() => {});
+    }, [])
+  );
 
   useEffect(() => {
     const loadBooks = async () => {
@@ -180,6 +194,8 @@ export default function PostLogin({ navigation }) {
         onSignOut={signOut}
         userName={user?.nombre || user?.email?.split('@')[0]}
         onSearch={handleSearch}
+        onMessagesPress={() => navigation.navigate('Messages')}
+        unreadMessagesCount={unreadCount}
       />
 
       {loading ? (

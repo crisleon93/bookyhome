@@ -5,7 +5,7 @@ import {
   StyleSheet, Modal, StatusBar, Alert,
 } from 'react-native';
 import { AuthContext } from '../context/AuthContext';
-import { IconSearch, IconUser, IconUserPlus, IconLocation, IconClose, IconChevronRight, IconBook, IconMenu, IconCart } from './Icons';
+import { IconSearch, IconUser, IconUserPlus, IconLocation, IconClose, IconChevronRight, IconBook, IconMenu, IconCart, IconChat } from './Icons';
 import SidebarMenu from './SidebarMenu';
 
 const VINOTINTO  = '#7A1E3A';
@@ -34,6 +34,8 @@ export default function Header({
   onSearch,
   onSignOut,
   userName,
+  onMessagesPress,
+  unreadMessagesCount = 0,
 }) {
   const [search, setSearch]           = useState('');
   const [modalVisible, setModalVisible] = useState(false);
@@ -128,6 +130,28 @@ export default function Header({
             >
               <IconCart size={24} color={WHITE} />
             </TouchableOpacity>
+            {userName && (
+              <Text style={styles.dashGreeting} numberOfLines={1}>
+                Hola, {userName} 👋
+              </Text>
+            )}
+            {onMessagesPress && (
+              <TouchableOpacity style={styles.messagesBtn} onPress={onMessagesPress} activeOpacity={0.8}>
+                <IconChat size={20} color={WHITE} />
+                {unreadMessagesCount > 0 && (
+                  <View style={styles.messagesBadge}>
+                    <Text style={styles.messagesBadgeText}>
+                      {unreadMessagesCount > 9 ? '9+' : unreadMessagesCount}
+                    </Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            )}
+            {onSignOut && (
+              <TouchableOpacity style={styles.signOutBtn} onPress={onSignOut} activeOpacity={0.8}>
+                <Text style={styles.signOutText}>Salir</Text>
+              </TouchableOpacity>
+            )}
           </View>
         )}
       </View>
@@ -254,13 +278,9 @@ const styles = StyleSheet.create({
 
   /* Fila 1 — logo + acciones */
   row1: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingTop: 4,
-    paddingBottom: 4,
-    minHeight: 50,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: 14, paddingVertical: 10,
+    borderBottomWidth: 0,
   },
   logoArea: {
     flexDirection: 'row',
@@ -294,6 +314,16 @@ const styles = StyleSheet.create({
   /* Dashboard derecha */
   dashRight:    { flexDirection: 'row', alignItems: 'center', marginRight: 5 },
   cartIconBtn:  { padding: 6 },
+
+  /* Botón de mensajes */
+  messagesBtn: { position: 'relative', padding: 4 },
+  messagesBadge: {
+    position: 'absolute', top: -2, right: -2,
+    backgroundColor: '#E53E3E', borderRadius: 8,
+    minWidth: 16, height: 16, alignItems: 'center', justifyContent: 'center',
+    paddingHorizontal: 3,
+  },
+  messagesBadgeText: { color: WHITE, fontSize: 9, fontWeight: '800' },
 
   /* Fila 2 — búsqueda */
   row2: {
