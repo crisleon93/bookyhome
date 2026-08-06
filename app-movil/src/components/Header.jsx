@@ -33,7 +33,6 @@ export default function Header({
   showTopBar,
   onSearch,
   onSignOut,
-  userName,
 }) {
   const [search, setSearch]           = useState('');
   const [modalVisible, setModalVisible] = useState(false);
@@ -121,9 +120,9 @@ export default function Header({
         {/* Acciones — dashboard */}
         {isDashboard && (
           <View style={styles.dashRight}>
-            <TouchableOpacity 
-              style={styles.cartIconBtn} 
-              onPress={() => navigation?.navigate?.('Cart')} // Asumiendo que haya una vista Cart o la crearemos
+            <TouchableOpacity
+              style={styles.cartIconBtn}
+              onPress={() => navigation?.navigate?.('Cart')}
               activeOpacity={0.8}
             >
               <IconCart size={24} color={WHITE} />
@@ -254,13 +253,9 @@ const styles = StyleSheet.create({
 
   /* Fila 1 — logo + acciones */
   row1: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingTop: 4,
-    paddingBottom: 4,
-    minHeight: 50,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: 14, paddingVertical: 10,
+    borderBottomWidth: 0,
   },
   logoArea: {
     flexDirection: 'row',
@@ -292,8 +287,8 @@ const styles = StyleSheet.create({
   actionText: { fontSize: 10, color: WHITE, fontWeight: '700', marginTop: 2, textAlign: 'center' },
 
   /* Dashboard derecha */
-  dashRight:    { flexDirection: 'row', alignItems: 'center', marginRight: 5 },
-  cartIconBtn:  { padding: 6 },
+  dashRight:   { flexDirection: 'row', alignItems: 'center', marginRight: 5 },
+  cartIconBtn: { padding: 6 },
 
   /* Fila 2 — búsqueda */
   row2: {

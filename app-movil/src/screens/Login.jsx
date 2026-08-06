@@ -2,8 +2,9 @@
 import React, { useContext, useState } from 'react';
 import {
   View, Text, TextInput, StyleSheet, Alert, ActivityIndicator,
-  TouchableOpacity, ScrollView, SafeAreaView, KeyboardAvoidingView, Platform,
+  TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import api from '../services/api';
 import { AuthContext } from '../context/AuthContext';
 import AuthHeader from '../components/AuthHeader';
@@ -37,7 +38,6 @@ export default function Login({ navigation }) {
       const token = res.data?.access_token;
       if (!token) throw new Error('No se recibió token');
       await signIn(token);
-      // El AppNavigator detecta el token y cambia al stack autenticado automáticamente
     } catch (err) {
       const msg = err.response?.data?.detail || err.message || 'Error';
       Alert.alert('Error', String(msg));

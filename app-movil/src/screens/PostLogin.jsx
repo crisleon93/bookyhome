@@ -178,7 +178,6 @@ export default function PostLogin({ navigation }) {
         variant="dashboard"
         navigation={navigation}
         onSignOut={signOut}
-        userName={user?.nombre || user?.email?.split('@')[0]}
         onSearch={handleSearch}
       />
 

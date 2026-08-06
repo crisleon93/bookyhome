@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -10,8 +10,7 @@ import {
   Alert,
 } from 'react-native';
 import { getNotifications, markNotificationRead, markAllNotificationsRead, deleteNotification } from '../services/api';
-import { AuthContext } from '../context/AuthContext';
-import Header from '../components/Header';
+import { useNotifications } from '../context/NotificationContext';
 
 const PRIMARY = '#7A1E3A';
 const WHITE = '#FFFFFF';
@@ -21,18 +20,44 @@ const TEXT = '#2A2A2A';
 const MUTED = '#777';
 
 export default function Notifications({ navigation }) {
-  const { user, signOut } = useContext(AuthContext);
+  const { resetearNotif } = useNotifications();
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('todas');
   const [error, setError] = useState(null);
+
+  // Resetear badge al abrir esta pantalla
+  useEffect(() => {
+    resetearNotif();
+  }, []);
+
+  const normalizeNotifications = (items) => {
+    const deduped = [];
+    const seen = new Set();
+
+    for (const item of Array.isArray(items) ? items : []) {
+      const key = [
+        item?.tipo || 'notif',
+        item?.id_referencia ?? item?.id_sala ?? '',
+        item?.titulo || '',
+        item?.cuerpo || item?.descripcion || '',
+        item?.fecha_creacion || '',
+      ].join('::');
+
+      if (seen.has(key)) continue;
+      seen.add(key);
+      deduped.push(item);
+    }
+
+    return deduped;
+  };
 
   const loadNotifications = async () => {
     try {
       setLoading(true);
       const soloNoLeidas = filter === 'no_leidas';
       const res = await getNotifications(soloNoLeidas, 50, 0);
-      setNotifications(res.data?.notificaciones || []);
+      setNotifications(normalizeNotifications(res.data?.notificaciones || []));
     } catch (e) {
       console.log('Error loading notifications', e.message);
       setError('No se pudo cargar las notificaciones');
@@ -88,16 +113,38 @@ export default function Notifications({ navigation }) {
     return icons[type] || '🔔';
   };
 
+  const handleOpenNotification = async (item) => {
+    if (item?.tipo === 'mensaje' && item?.id_referencia) {
+      try {
+        if (!item.leida) {
+          await markNotificationRead(item.id_notificacion);
+          resetearNotif();
+          await loadNotifications();
+        }
+      } catch (_) {
+        // Continuamos aunque falle la marca como leída
+      }
+
+      const nombreTienda = (item.titulo || '').replace(/^Nuevo mensaje de\s+/i, '').trim() || 'Chat';
+      navigation.navigate('Chat', {
+        id_sala: Number(item.id_referencia),
+        nombre_tienda: nombreTienda,
+      });
+    }
+  };
+
   const renderItem = ({ item }) => (
     <View style={[styles.card, !item.leida && styles.cardUnread]}>
-      <View style={styles.cardHeader}>
-        <Text style={styles.cardIcon}>{getIcon(item.tipo)}</Text>
-        <View style={styles.cardTitleRow}>
-          <Text style={styles.cardTitle}>{item.titulo}</Text>
-          <Text style={styles.cardDate}>{item.fecha_creacion}</Text>
+      <TouchableOpacity activeOpacity={0.85} onPress={() => handleOpenNotification(item)}>
+        <View style={styles.cardHeader}>
+          <Text style={styles.cardIcon}>{getIcon(item.tipo)}</Text>
+          <View style={styles.cardTitleRow}>
+            <Text style={styles.cardTitle}>{item.titulo}</Text>
+            <Text style={styles.cardDate}>{item.fecha_creacion}</Text>
+          </View>
         </View>
-      </View>
-      <Text style={styles.cardText}>{item.descripcion}</Text>
+        <Text style={styles.cardText}>{item.cuerpo || item.descripcion}</Text>
+      </TouchableOpacity>
       <View style={styles.actionsRow}>
         {!item.leida && (
           <TouchableOpacity style={styles.actionBtn} onPress={() => handleMarkRead(item.id_notificacion)}>
@@ -113,12 +160,6 @@ export default function Notifications({ navigation }) {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <Header
-        variant="dashboard"
-        navigation={navigation}
-        onSignOut={signOut}
-        userName={user?.nombre || user?.email?.split('@')[0]}
-      />
       <View style={styles.container}>
         <Text style={styles.title}>Notificaciones</Text>
         <Text style={styles.subtitle}>Mantente al día con tus pedidos y mensajes.</Text>

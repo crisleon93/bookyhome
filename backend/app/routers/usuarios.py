@@ -1,12 +1,12 @@
-from fastapi import APIRouter, HTTPException
-
+from fastapi import APIRouter, HTTPException, Depends
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from app.schemas import UsuarioRegistro, UsuarioLogin, Token
 
 from app.models.usuarios import crear_usuario, login_usuario, obtener_todos_usuarios, bloquear_usuario, verificar_email_usuario, obtener_usuario_por_email
 
 from app.models.tiendas import obtener_tienda_por_usuario
 
-from app.auth import create_token
+from app.auth import create_token, verify_token
 
 from app.email import enviar_email_confirmacion_registro
 
@@ -17,6 +17,18 @@ import secrets
 
 
 router = APIRouter()
+security = HTTPBearer()
+
+# ========================
+# Auth helper (mismo patrón que routers/chat.py)
+# ========================
+def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    token = credentials.credentials
+    payload = verify_token(token)
+    if not payload:
+        raise HTTPException(status_code=401, detail="Token inválido")
+    return int(payload.get("sub"))
+
 
 
 
@@ -153,7 +165,6 @@ def login(data: UsuarioLogin):
 
 
 # ========================
-
 # Administración de usuarios
 
 # ========================

@@ -6,6 +6,8 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: bookyhome
+      TZ: America/Bogota
+    command: --default-time-zone='-05:00'
     ports:
       - "3306:3306"
     volumes:
@@ -34,6 +36,7 @@ services:
       DB_USER: root
       DB_PASSWORD: root
       DB_NAME: bookyhome
+      TZ: America/Bogota
     depends_on:
       mysql:
         condition: service_healthy

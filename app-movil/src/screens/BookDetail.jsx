@@ -2,23 +2,34 @@ import React, { useContext, useState, useEffect } from 'react';
 import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity, Alert, TextInput, ActivityIndicator } from 'react-native';
 import { CartContext } from '../context/CartContext';
 import { AuthContext } from '../context/AuthContext';
-import { getReviewsForBook, createReview } from '../services/api';
+import { getReviewsForBook, createReview, crearSalaChat, getBookById } from '../services/api';
 
 export default function BookDetail({ route, navigation }) {
-  const { book } = route.params;
+  const { book: bookParam } = route.params;
   const { addToCart, removeFromCart } = useContext(CartContext);
   const { user, loading: authLoading } = useContext(AuthContext);
+  const [book, setBook] = useState(bookParam);
   const [adding, setAdding] = useState(false);
   const [addedToCart, setAddedToCart] = useState(false);
   const [reviews, setReviews] = useState([]);
   const [promedio, setPromedio] = useState(0);
   const [total, setTotal] = useState(0);
   const [loadingReviews, setLoadingReviews] = useState(true);
+  const [contactando, setContactando] = useState(false);
 
-  // Nuevo estado para crear reseña
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState('');
   const [submittingReview, setSubmittingReview] = useState(false);
+
+  // Si el objeto book que llegó no tiene id_tienda, lo pide al backend
+  useEffect(() => {
+    if (!bookParam.id_tienda) {
+      const id = bookParam.id_libro || bookParam.id;
+      getBookById(id)
+        .then(({ data }) => setBook(data))
+        .catch((e) => console.warn('No se pudo obtener detalle del libro:', e?.message));
+    }
+  }, [bookParam]);
 
   const handleAddToCart = async () => {
     setAdding(true);
@@ -49,6 +60,34 @@ export default function BookDetail({ route, navigation }) {
         { text: 'Ver Carrito', onPress: () => navigation.navigate('Cart') },
       ]
     );
+  };
+
+  const contactarVendedor = async () => {
+    if (!user) {
+      Alert.alert('Inicia sesión', 'Debes iniciar sesión para contactar al vendedor.');
+      return;
+    }
+
+    const id_tienda = book.id_tienda;
+    if (!id_tienda) {
+      console.warn('BookDetail: falta id_tienda en el objeto book', book);
+      Alert.alert('Error', 'No se pudo identificar la tienda de este libro.');
+      return;
+    }
+
+    setContactando(true);
+    try {
+      const { data } = await crearSalaChat(id_tienda);
+      navigation.navigate('Chat', {
+        id_sala: data.id_sala,
+        nombre_tienda: book.nombre_tienda || 'Vendedor',
+      });
+    } catch (e) {
+      console.log('Error creando/abriendo sala de chat', JSON.stringify(e.response?.data, null, 2));
+      Alert.alert('Error', 'No se pudo abrir el chat con el vendedor. Intenta de nuevo.');
+    } finally {
+      setContactando(false);
+    }
   };
 
   useEffect(() => {
@@ -135,6 +174,16 @@ export default function BookDetail({ route, navigation }) {
           <Text style={styles.buttonText}>{adding ? 'Procesando...' : addedToCart ? 'Eliminar de carrito' : 'Agregar al Carrito'}</Text>
         </TouchableOpacity>
 
+        <TouchableOpacity 
+          style={[styles.buttonSecondary, contactando && styles.buttonDisabled]} 
+          onPress={contactarVendedor}
+          disabled={contactando}
+        >
+          <Text style={styles.buttonSecondaryText}>
+            {contactando ? 'Abriendo chat...' : 'Contactar vendedor'}
+          </Text>
+        </TouchableOpacity>
+
         <View style={{ width: '100%', marginTop: 20 }}>
           <Text style={styles.sectionTitle}>Reseñas ({total}) — Promedio: {promedio}</Text>
 
@@ -196,6 +245,8 @@ const styles = StyleSheet.create({
   description: { alignSelf: 'flex-start', fontSize: 14, color: '#555', lineHeight: 20, marginBottom: 25 },
   button: { backgroundColor: '#7A1E3A', paddingVertical: 14, paddingHorizontal: 30, borderRadius: 8, width: '100%', alignItems: 'center' },
   buttonRemove: { backgroundColor: '#e53935' },
+  buttonSecondary: { borderWidth: 1.5, borderColor: '#7A1E3A', paddingVertical: 14, paddingHorizontal: 30, borderRadius: 8, width: '100%', alignItems: 'center', marginTop: 10 },
+  buttonSecondaryText: { color: '#7A1E3A', fontSize: 16, fontWeight: '700' },
   buttonDisabled: { opacity: 0.7 },
   buttonText: { color: '#fff', fontSize: 16, fontWeight: '700' },
 });
