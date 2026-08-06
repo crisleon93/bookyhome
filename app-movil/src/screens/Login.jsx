@@ -2,15 +2,14 @@
 import React, { useContext, useState } from 'react';
 import {
   View, Text, TextInput, StyleSheet, Alert, ActivityIndicator,
-  TouchableOpacity, ScrollView, SafeAreaView, KeyboardAvoidingView, Platform,
+  TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import api from '../services/api';
 import { AuthContext } from '../context/AuthContext';
 import AuthHeader from '../components/AuthHeader';
 import Footer from '../components/Footer';
 import { IconMail, IconLock, IconEye, IconEyeOff, IconGoogle } from '../components/Icons';
-import { registrarPushToken } from '../services/pushNotifications';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 const VINOTINTO = '#7A1E3A';
 const ROJO_SUAVE = '#C5425A';
@@ -39,9 +38,6 @@ export default function Login({ navigation }) {
       const token = res.data?.access_token;
       if (!token) throw new Error('No se recibió token');
       await signIn(token);
-
-      // Best-effort: si falla el registro del push token, no bloqueamos el inicio de sesión
-      registrarPushToken().catch((e) => console.log('Push token no guardado:', e));
     } catch (err) {
       const msg = err.response?.data?.detail || err.message || 'Error';
       Alert.alert('Error', String(msg));

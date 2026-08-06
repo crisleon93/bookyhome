@@ -40,9 +40,6 @@ export const markNotificationRead = (id) => api.put(`/notificaciones/${id}/leer`
 export const markAllNotificationsRead = () => api.put('/notificaciones/marcar-todas-leidas');
 export const deleteNotification = (id) => api.delete(`/notificaciones/${id}`);
 
-export const registerLibrary = (data) => api.post('/libreria', data);
-export const crearSalaChat = (id_tienda) => api.post('/chat/salas', { id_tienda });
-  
 // ===== Reseñas =====
 export const getReviewsForBook = (id) => api.get(`/resenas/resenas/libro/${id}`);
 export const createReview = (payload) => api.post('/resenas/resenas/crear', payload);
@@ -50,7 +47,6 @@ export const updateReview = (id, payload) => api.put(`/resenas/resenas/${id}`, p
 export const deleteReview = (id) => api.delete(`/resenas/resenas/${id}`);
 
 // ===== Lista de Deseos =====
-// El backend maneja listas con id; usamos la lista por defecto del usuario
 export const getListaDeseos = () => api.get('/lista-deseos');
 export const addToListaDeseos = (id_libro, id_lista) => api.post(`/lista-deseos/${id_lista}/libros`, { id_libro });
 export const removeFromListaDeseos = (id_libro, id_lista) => api.delete(`/lista-deseos/${id_lista}/libros/${id_libro}`);
@@ -87,11 +83,12 @@ export const deleteLibro = (id) => api.delete(`/libros/${id}`);
 // ===== Pedidos del vendedor =====
 export const getPedidosRecientes = () => api.get('/libros/mis-ventas?limit=5');
 
-export default api;
-
 // ===== Chat =====
+export const crearSalaChat = (id_tienda) => api.post('/chat/salas', { id_tienda });
 export const getChatHistory = (id_sala, params = { limit: 50, offset: 0 }) =>
   api.get(`/chat/salas/${id_sala}/mensajes`, { params });
 export const marcarSalaLeida = (id_sala) => api.put(`/chat/salas/${id_sala}/marcar-leidos`);
-export const enviarMensajeChat = (payload) => api.post('/chat/mensajes', payload); 
+export const enviarMensajeChat = (payload) => api.post('/chat/mensajes', payload);
 export const getSalasUsuario = () => api.get('/chat/salas');
+
+export default api;

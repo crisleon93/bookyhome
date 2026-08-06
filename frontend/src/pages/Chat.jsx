@@ -33,6 +33,30 @@ export default function Chat({
   const [usuarioActual, setUsuarioActual] = useState(null);
   const [shouldScrollToBottom, setShouldScrollToBottom] = useState(false);
 
+  // helpers de fecha para separadores
+  const formatFechaSeparador = (fechaStr) => {
+    if (!fechaStr) return '';
+    const date = new Date(fechaStr.replace(' ', 'T'));
+    if (isNaN(date.getTime())) return '';
+    const hoy = new Date();
+    const ayer = new Date();
+    ayer.setDate(hoy.getDate() - 1);
+    const mismaFecha = (a, b) =>
+      a.getFullYear() === b.getFullYear() &&
+      a.getMonth() === b.getMonth() &&
+      a.getDate() === b.getDate();
+    if (mismaFecha(date, hoy)) return 'Hoy';
+    if (mismaFecha(date, ayer)) return 'Ayer';
+    return date.toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' });
+  };
+
+  const formatHora = (fechaStr) => {
+    if (!fechaStr) return '';
+    const date = new Date(fechaStr.replace(' ', 'T'));
+    if (isNaN(date.getTime())) return '';
+    return date.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
+  };
+
   // Obtener ID del usuario desde el token JWT
   useEffect(() => {
     if (token) {
@@ -54,7 +78,7 @@ export default function Chat({
     }
   }, []);
 
-  const messagesEndRef = useRef(null);
+  const mensajesContainerRef = useRef(null);
   const wsRef = useRef(null);
   const reconectarTimeoutRef = useRef(null);
   const intentosReconexion = useRef(0);
@@ -231,14 +255,11 @@ export default function Chat({
     cargarMensajes();
   }, [selectedSala, cargarMensajes]);
 
-  // ==========================
-  // SCROLL AUTOMÁTICO
-  // ==========================
-
+  // Scroll automático: mueve solo el panel de mensajes, no la página entera
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({
-      behavior: "smooth",
-    });
+    const el = mensajesContainerRef.current;
+    if (!el) return;
+    el.scrollTop = el.scrollHeight;
   }, [mensajes]);
 
   // ==========================
@@ -246,35 +267,35 @@ export default function Chat({
   // ==========================
 
   const handleEnviarMensaje = async (e) => {
-  e.preventDefault();
-  if (!nuevoMensaje.trim() || !selectedSala) return;
+    e.preventDefault();
+    if (!nuevoMensaje.trim() || !selectedSala) return;
 
-  const textoEnviar = nuevoMensaje;
-  setNuevoMensaje("");
+    const textoEnviar = nuevoMensaje;
+    setNuevoMensaje("");
 
-  if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-    // Envío súper rápido vía WebSocket
-    wsRef.current.send(
-      JSON.stringify({
-        tipo: "mensaje",
-        id_sala: selectedSala,
-        mensaje: textoEnviar,
-      })
-    );
-  } else {
-    // Fallback REST si el socket se desconecta temporalmente
-    try {
-      setLoading(true);
-      await chatService.enviarMensaje(selectedSala, textoEnviar);
-      await cargarMensajes();
-    } catch (err) {
-      console.error(err);
-      setError("Error enviando mensaje");
-    } finally {
-      setLoading(false);
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      // Envío súper rápido vía WebSocket
+      wsRef.current.send(
+        JSON.stringify({
+          tipo: "mensaje",
+          id_sala: selectedSala,
+          mensaje: textoEnviar,
+        })
+      );
+    } else {
+      // Fallback REST si el socket se desconecta temporalmente
+      try {
+        setLoading(true);
+        await chatService.enviarMensaje(selectedSala, textoEnviar);
+        await cargarMensajes();
+      } catch (err) {
+        console.error(err);
+        setError("Error enviando mensaje");
+      } finally {
+        setLoading(false);
+      }
     }
-  }
-};
+  };
 
   // ==========================
   // SELECCIONAR SALA
@@ -293,29 +314,25 @@ export default function Chat({
   };
 
   // ==========================
-  // NOMBRE A MOSTRAR
+  // NOMBRE A MOSTRAR (CORREGIDO)
   // ==========================
 
-  // ==========================
-// NOMBRE A MOSTRAR (CORREGIDO)
-// ==========================
+  const nombreMostrar = (sala) => {
+    if (!sala) return "";
+    const rol = (
+      usuarioActual?.rol ||
+      usuarioActual?.rol_nombre ||
+      usuarioActual?.tipo_usuario ||
+      ""
+    ).toString().toLowerCase();
+    const esVendedor = rol === "vendedor" || usuarioActual?.id_rol === 2;
 
-const nombreMostrar = (sala) => {
-  if (!sala) return "";
-  const rol = (
-    usuarioActual?.rol ||
-    usuarioActual?.rol_nombre ||
-    usuarioActual?.tipo_usuario ||
-    ""
-  ).toString().toLowerCase();
-  const esVendedor = rol === "vendedor" || usuarioActual?.id_rol === 2; 
-
-  if (esVendedor) {
-    return sala.nombre_comprador || sala.nombre_cliente || sala.nombre_usuario || "Comprador";
-  } else {
-    return sala.nombre_tienda || sala.nombre_libreria || sala.nombre_vendedor || "Tienda / Vendedor";
-  }
-};
+    if (esVendedor) {
+      return sala.nombre_comprador || sala.nombre_cliente || sala.nombre_usuario || "Comprador";
+    } else {
+      return sala.nombre_tienda || sala.nombre_libreria || sala.nombre_vendedor || "Tienda / Vendedor";
+    }
+  };
 
   // ==========================
   // UI
@@ -398,46 +415,43 @@ const nombreMostrar = (sala) => {
                 </h2>
               </div>
 
-              <div className="chat-mensajes">
+              <div className="chat-mensajes" ref={mensajesContainerRef}>
                 {mensajes.length === 0 ? (
                   <div className="mensajes-empty">
                     <p>No hay mensajes</p>
                   </div>
                 ) : (
-                  mensajes.map((msg) => (
-                    <div
-                      key={msg.id_mensaje}
-                      className={`mensaje ${
-                        msg.id_remitente ===
-                        usuarioActual?.id_usuario
-                          ? "propio"
-                          : "otro"
-                      }`}
-                    >
-                      <div className="mensaje-body">
-                        <p className="mensaje-texto">
-                          {msg.mensaje}
-                        </p>
+                  mensajes.map((msg, index) => {
+                    const esPropio = msg.id_remitente === usuarioActual?.id_usuario;
+                    const anterior = mensajes[index - 1];
+                    const fechaActual = formatFechaSeparador(msg.enviado_en);
+                    const fechaAnterior = anterior ? formatFechaSeparador(anterior.enviado_en) : null;
+                    const mostrarSeparador = fechaActual && fechaActual !== fechaAnterior;
 
-                        <span className="mensaje-hora">
-                          {msg.enviado_en
-                            ? new Date(
-                                msg.enviado_en
-                              ).toLocaleTimeString(
-                                "es-CO",
-                                {
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                }
-                              )
-                            : ""}
-                        </span>
+                    return (
+                      <div key={msg.id_mensaje}>
+                        {mostrarSeparador && (
+                          <div className="fecha-separador">
+                            <span>{fechaActual}</span>
+                          </div>
+                        )}
+                        <div className={`mensaje ${esPropio ? 'propio' : 'otro'}`}>
+                          <div className="mensaje-body">
+                            {!esPropio && (
+                              <span className="mensaje-remitente">
+                                {msg.nombre_remitente || 'Usuario'}
+                              </span>
+                            )}
+                            <p className="mensaje-texto">{msg.mensaje}</p>
+                            <span className="mensaje-hora">
+                              {formatHora(msg.enviado_en)}
+                            </span>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  ))
+                    );
+                  })
                 )}
-
-                <div ref={messagesEndRef} />
               </div>
 
               <form

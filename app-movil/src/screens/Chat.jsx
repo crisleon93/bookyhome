@@ -12,10 +12,10 @@ import {
 } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { AuthContext } from '../context/AuthContext';
-import api, { getChatHistory, marcarSalaLeida as marcarSalaLeidaApi, enviarMensajeChat } from '../services/api';
+import { useChatSocket } from '../context/ChatSocketContext';
+import { getChatHistory, marcarSalaLeida as marcarSalaLeidaApi, enviarMensajeChat } from '../services/api';
 
-// Deriva la URL del WS a partir de la baseURL de axios (http -> ws, https -> wss)
-const WS_BASE_URL = api.defaults.baseURL.replace(/^http/, 'ws');
+// ─── Helpers de formato ───────────────────────────────────────────────────────
 
 const formatHora = (fechaStr) => {
   if (!fechaStr) return '';
@@ -40,31 +40,39 @@ const formatFechaSeparador = (fechaStr) => {
 
   if (esMismoDia(date, hoy)) return 'Hoy';
   if (esMismoDia(date, ayer)) return 'Ayer';
-
   return date.toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' });
 };
+
+// ─── Componente ──────────────────────────────────────────────────────────────
 
 export default function Chat() {
   const route = useRoute();
   const navigation = useNavigation();
   const { id_sala, nombre_tienda } = route.params;
-  const { user, token } = useContext(AuthContext);
+  const { user } = useContext(AuthContext);
+
+  // Usa el WebSocket compartido del contexto — evita doble conexión
+  const { conectado, suscribirseAMensajes, enviarPorSocket, marcarSalaLeidaLocal } = useChatSocket();
 
   const [mensajes, setMensajes] = useState([]);
   const [texto, setTexto] = useState('');
   const [cargando, setCargando] = useState(true);
-  const [conectado, setConectado] = useState(false);
 
   const flatListRef = useRef(null);
-  const wsRef = useRef(null);
-  const reconectarTimeoutRef = useRef(null);
-  const intentosReconexion = useRef(0);
   const montadoRef = useRef(true);
 
+  // ── Título de la pantalla
   useEffect(() => {
     navigation.setOptions({ title: nombre_tienda || 'Chat' });
   }, [nombre_tienda]);
 
+  // ── Limpieza al desmontar
+  useEffect(() => {
+    montadoRef.current = true;
+    return () => { montadoRef.current = false; };
+  }, []);
+
+  // ── Cargar historial inicial
   const cargarHistorial = useCallback(async () => {
     try {
       const { data } = await getChatHistory(id_sala);
@@ -76,123 +84,81 @@ export default function Chat() {
     }
   }, [id_sala]);
 
-  const marcarSalaLeida = useCallback(async () => {
+  // ── Marcar sala como leída en el backend y en el estado global del contexto
+  const marcarLeida = useCallback(async () => {
+    marcarSalaLeidaLocal(id_sala);
     try {
       await marcarSalaLeidaApi(id_sala);
-    } catch (e) {
-      // No es crítico si falla; no bloqueamos la UI por esto.
+    } catch (_) {
+      // No es crítico
     }
-  }, [id_sala]);
+  }, [id_sala, marcarSalaLeidaLocal]);
 
-  const conectarWebSocket = useCallback(() => {
-    if (!token) return;
+  // ── Efecto principal: historial + suscripción al WS compartido
+  useEffect(() => {
+    cargarHistorial();
+    marcarLeida();
 
-    const ws = new WebSocket(`${WS_BASE_URL}/chat/ws?token=${token}`);
-
-    ws.onopen = () => {
+    // Suscribirse a los eventos del WebSocket compartido del contexto
+    const desuscribirse = suscribirseAMensajes((data) => {
       if (!montadoRef.current) return;
-      setConectado(true);
-      intentosReconexion.current = 0;
-    };
-
-    ws.onmessage = (event) => {
-      if (!montadoRef.current) return;
-      let data;
-      try {
-        data = JSON.parse(event.data);
-      } catch (e) {
-        console.error('Mensaje WS malformado:', event.data);
-        return;
-      }
 
       if (data.tipo === 'nuevo_mensaje' && data.mensaje.id_sala === id_sala) {
         setMensajes((prev) => {
           if (prev.some((m) => m.id_mensaje === data.mensaje.id_mensaje)) return prev;
           return [...prev, data.mensaje];
         });
-        marcarSalaLeida();
-      } else if (data.tipo === 'mensaje_enviado') {
+        marcarLeida();
+      } else if (data.tipo === 'mensaje_enviado' && data.mensaje.id_sala === id_sala) {
         setMensajes((prev) => {
           if (prev.some((m) => m.id_mensaje === data.mensaje.id_mensaje)) return prev;
           return [...prev, data.mensaje];
         });
-      } else if (data.tipo === 'error') {
-        console.warn('Error del servidor de chat:', data.detalle);
       }
-    };
+    });
 
-    ws.onerror = (e) => {
-      console.error('Error en WebSocket de chat:', e.message);
-    };
+    return desuscribirse;
+  }, [id_sala, cargarHistorial, marcarLeida, suscribirseAMensajes]);
 
-    ws.onclose = (event) => {
-        console.log('[WS onclose]', 'code:', event.code, 'reason:', event.reason, 'wasClean:', event.wasClean);
-      if (!montadoRef.current) return;
-      setConectado(false);
-
-      if (event.code === 4401) {
-        // Token inválido/expirado: no reintentamos.
-        // TODO: cuando esté centralizado el logout, redirigir a Login desde acá.
-        console.warn('Token inválido en WS de chat, no se reintenta la conexión');
-        return;
-      }
-
-      intentosReconexion.current += 1;
-      const espera = Math.min(1000 * intentosReconexion.current, 10000);
-      reconectarTimeoutRef.current = setTimeout(conectarWebSocket, espera);
-    };
-
-    wsRef.current = ws;
-  }, [token, id_sala, marcarSalaLeida]);
-
-  useEffect(() => {
-    montadoRef.current = true;
-    cargarHistorial();
-    marcarSalaLeida();
-    conectarWebSocket();
-
-    return () => {
-      montadoRef.current = false;
-      if (reconectarTimeoutRef.current) clearTimeout(reconectarTimeoutRef.current);
-      if (wsRef.current) {
-        wsRef.current.onclose = null; // evita que intente reconectar al desmontar
-        wsRef.current.close();
-      }
-    };
-  }, [conectarWebSocket, cargarHistorial, marcarSalaLeida]);
-
-  const enviarMensaje = () => {
+  // ── Enviar mensaje: primero intenta WS compartido, fallback a REST
+  const enviarMensaje = useCallback(() => {
     const contenido = texto.trim();
     if (!contenido) return;
+    setTexto('');
 
-    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify({ tipo: 'mensaje', id_sala, mensaje: contenido }));
-    } else {
-      // Fallback REST si el WS no está disponible (ej. reconectando)
+    const enviado = enviarPorSocket(id_sala, contenido);
+    if (!enviado) {
+      // WS no disponible (reconectando) → REST como fallback
       enviarMensajeChat({ id_sala, mensaje: contenido })
         .then(() => cargarHistorial())
         .catch((e) => console.error('Error enviando mensaje (fallback REST):', e));
     }
+  }, [texto, id_sala, enviarPorSocket, cargarHistorial]);
 
-    setTexto('');
-  };
-
+  // ── Render de cada mensaje
   const renderItem = ({ item, index }) => {
     const esPropio = Number(item.id_remitente) === Number(user.sub);
     const anterior = mensajes[index - 1];
     const mostrarFecha =
-      !anterior || formatFechaSeparador(anterior.enviado_en) !== formatFechaSeparador(item.enviado_en);
+      !anterior ||
+      formatFechaSeparador(anterior.enviado_en) !== formatFechaSeparador(item.enviado_en);
 
     return (
       <View>
         {mostrarFecha && (
           <View style={styles.fechaSeparador}>
-            <Text style={styles.fechaSeparadorTexto}>{formatFechaSeparador(item.enviado_en)}</Text>
+            <Text style={styles.fechaSeparadorTexto}>
+              {formatFechaSeparador(item.enviado_en)}
+            </Text>
           </View>
         )}
         <View style={[styles.burbuja, esPropio ? styles.burbujaPropia : styles.burbujaAjena]}>
-          {!esPropio && <Text style={styles.nombreRemitente}>{item.nombre_remitente}</Text>}
-          <Text style={esPropio ? styles.textoPropio : styles.textoAjeno}>{item.mensaje}</Text>
+          {!esPropio && (
+            <Text style={styles.nombreRemitente}>{item.nombre_remitente}</Text>
+          )}
+          <Text style={esPropio ? styles.textoPropio : styles.textoAjeno}>
+            {item.mensaje}
+          </Text>
           <Text style={styles.hora}>{formatHora(item.enviado_en)}</Text>
         </View>
       </View>
@@ -244,6 +210,8 @@ export default function Chat() {
     </KeyboardAvoidingView>
   );
 }
+
+// ─── Estilos ─────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
   contenedor: { flex: 1, backgroundColor: '#fff' },
@@ -308,16 +276,16 @@ const styles = StyleSheet.create({
   },
   textoBanner: { color: '#856404', fontSize: 12 },
   fechaSeparador: {
-  alignSelf: 'center',
-  backgroundColor: '#E8E8E8',
-  borderRadius: 12,
-  paddingHorizontal: 12,
-  paddingVertical: 4,
-  marginVertical: 10,
-},
-fechaSeparadorTexto: {
-  fontSize: 12,
-  color: '#555',
-  fontWeight: '600',
-},
+    alignSelf: 'center',
+    backgroundColor: '#E8E8E8',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    marginVertical: 10,
+  },
+  fechaSeparadorTexto: {
+    fontSize: 12,
+    color: '#555',
+    fontWeight: '600',
+  },
 });

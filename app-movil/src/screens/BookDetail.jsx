@@ -2,12 +2,13 @@ import React, { useContext, useState, useEffect } from 'react';
 import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity, Alert, TextInput, ActivityIndicator } from 'react-native';
 import { CartContext } from '../context/CartContext';
 import { AuthContext } from '../context/AuthContext';
-import { getReviewsForBook, createReview, crearSalaChat } from '../services/api';
+import { getReviewsForBook, createReview, crearSalaChat, getBookById } from '../services/api';
 
 export default function BookDetail({ route, navigation }) {
-  const { book } = route.params;
+  const { book: bookParam } = route.params;
   const { addToCart, removeFromCart } = useContext(CartContext);
   const { user, loading: authLoading } = useContext(AuthContext);
+  const [book, setBook] = useState(bookParam);
   const [adding, setAdding] = useState(false);
   const [addedToCart, setAddedToCart] = useState(false);
   const [reviews, setReviews] = useState([]);
@@ -19,6 +20,16 @@ export default function BookDetail({ route, navigation }) {
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState('');
   const [submittingReview, setSubmittingReview] = useState(false);
+
+  // Si el objeto book que llegó no tiene id_tienda, lo pide al backend
+  useEffect(() => {
+    if (!bookParam.id_tienda) {
+      const id = bookParam.id_libro || bookParam.id;
+      getBookById(id)
+        .then(({ data }) => setBook(data))
+        .catch((e) => console.warn('No se pudo obtener detalle del libro:', e?.message));
+    }
+  }, [bookParam]);
 
   const handleAddToCart = async () => {
     setAdding(true);

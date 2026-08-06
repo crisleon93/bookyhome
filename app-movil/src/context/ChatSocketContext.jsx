@@ -1,6 +1,7 @@
 // src/context/ChatSocketContext.jsx
 import React, { createContext, useContext, useState, useRef, useCallback, useEffect } from 'react';
 import { AuthContext } from './AuthContext';
+import { NotificationContext } from './NotificationContext';
 import api, { getSalasUsuario } from '../services/api';
 
 const WS_BASE_URL = api.defaults.baseURL.replace(/^http/, 'ws');
@@ -9,6 +10,7 @@ export const ChatSocketContext = createContext(null);
 
 export function ChatSocketProvider({ children }) {
   const { token } = useContext(AuthContext);
+  const notifCtx = useContext(NotificationContext);
 
   const [conectado, setConectado] = useState(false);
   const [salas, setSalas] = useState([]);
@@ -18,13 +20,21 @@ export function ChatSocketProvider({ children }) {
   const reconectarTimeoutRef = useRef(null);
   const intentosReconexion = useRef(0);
   const montadoRef = useRef(true);
-  const listenersRef = useRef(new Set()); // callbacks de Chat.jsx abiertos
+  const listenersRef = useRef(new Set());
+  const salasRef = useRef([]);
 
   const cargarSalas = useCallback(async () => {
     if (!token) return;
     try {
       const { data } = await getSalasUsuario();
-      if (montadoRef.current) setSalas(Array.isArray(data?.salas) ? data.salas : []);
+      const lista = Array.isArray(data?.salas) ? data.salas : [];
+      if (montadoRef.current) {
+        salasRef.current = lista;
+        setSalas(lista);
+        // Sincronizar badge de mensajes con el total real de no leídos
+        const totalNoLeidos = lista.reduce((acc, s) => acc + (s.no_leidos || 0), 0);
+        notifCtx?.setMsgCount(totalNoLeidos);
+      }
     } catch (e) {
       console.log('Error cargando salas:', e?.message);
     } finally {
@@ -43,13 +53,22 @@ export function ChatSocketProvider({ children }) {
       if (!esPropio) sala.no_leidos = (sala.no_leidos || 0) + 1;
       copia.splice(idx, 1);
       copia.unshift(sala);
+      salasRef.current = copia;
       return copia;
     });
   }, []);
 
   const marcarSalaLeidaLocal = useCallback((id_sala) => {
-    setSalas((prev) => prev.map((s) => (s.id_sala === id_sala ? { ...s, no_leidos: 0 } : s)));
-  }, []);
+    setSalas((prev) => {
+      const next = prev.map((s) => (s.id_sala === id_sala ? { ...s, no_leidos: 0 } : s));
+      salasRef.current = next;
+      return next;
+    });
+
+    const sala = salasRef.current.find((s) => s.id_sala === id_sala);
+    const noLeidos = sala?.no_leidos || 0;
+    if (noLeidos > 0) notifCtx?.resetearMsg(noLeidos);
+  }, [notifCtx]);
 
   const conectarWebSocket = useCallback(() => {
     if (!token) return;
@@ -70,6 +89,12 @@ export function ChatSocketProvider({ children }) {
         const esPropio = data.tipo === 'mensaje_enviado';
         actualizarSalaConMensaje(data.mensaje, esPropio);
         listenersRef.current.forEach((cb) => cb(data)); // avisa a Chat.jsx si está abierto
+
+        // Actualizar badges si el mensaje es ajeno
+        if (!esPropio && notifCtx) {
+          notifCtx.incrementarMsg();      // badge de mensajes en el menú
+          notifCtx.incrementarNotif();    // badge de notificaciones (el backend ya insertó la fila)
+        }
       }
     };
 
@@ -92,6 +117,11 @@ export function ChatSocketProvider({ children }) {
     if (token) {
       cargarSalas();
       conectarWebSocket();
+    } else {
+      // Sin token (no autenticado o logout): limpiar estado
+      setSalas([]);
+      setLoadingSalas(false);
+      setConectado(false);
     }
     return () => {
       montadoRef.current = false;
@@ -123,7 +153,6 @@ export function ChatSocketProvider({ children }) {
     suscribirseAMensajes,
     enviarPorSocket,
   };
-
   return <ChatSocketContext.Provider value={value}>{children}</ChatSocketContext.Provider>;
 }
 

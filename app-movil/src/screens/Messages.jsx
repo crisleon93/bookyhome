@@ -13,7 +13,6 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { IconChevronRight } from '../components/Icons';
 import { useChatSocket } from '../context/ChatSocketContext';
-
 const PRIMARY = '#7A1E3A';
 const BG = '#F9F6F1';
 const WHITE = '#FFFFFF';
@@ -25,7 +24,6 @@ export default function Messages() {
 
   const [refreshing, setRefreshing] = useState(false);
   const { salas, loadingSalas, recargarSalas } = useChatSocket();
-
   const onRefresh = () => {
     setRefreshing(true);
     recargarSalas().finally(() => setRefreshing(false));

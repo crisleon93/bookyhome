@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { AuthContext } from '../context/AuthContext';
-import { getSalasUsuario } from '../services/api'; // ⚠️ nueva función, ver nota abajo
+import { getSalasUsuario } from '../services/api';
 import { useChatSocket } from '../context/ChatSocketContext';
 
 const PRIMARY = '#7A1E3A';

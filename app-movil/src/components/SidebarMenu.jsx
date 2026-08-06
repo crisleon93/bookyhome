@@ -5,8 +5,9 @@ import {
 } from 'react-native';
 import { 
   IconClose, IconUser, IconFavorites, IconHistory, 
-  IconStore, IconPackage, IconLogout, IconChevronRight, IconBell 
+  IconStore, IconPackage, IconLogout, IconChevronRight, IconBell, IconChat
 } from './Icons';
+import { useNotifications } from '../context/NotificationContext';
 
 const { width } = Dimensions.get('window');
 const DRAWER_WIDTH = width * 0.75 > 320 ? 320 : width * 0.75;
@@ -14,6 +15,7 @@ const DRAWER_WIDTH = width * 0.75 > 320 ? 320 : width * 0.75;
 export default function SidebarMenu({ visible, onClose, user, navigation, onSignOut }) {
   const slideAnim = useRef(new Animated.Value(-DRAWER_WIDTH)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
+  const { unreadNotifCount, unreadMsgCount } = useNotifications();
 
   useEffect(() => {
     if (visible) {
@@ -56,9 +58,9 @@ export default function SidebarMenu({ visible, onClose, user, navigation, onSign
 
   const isVendedor = user?.rol === 'vendedor';
 
-  const MenuItem = ({ icon, label, onPress, isLogout }) => (
-    <TouchableOpacity 
-      style={styles.menuItem} 
+  const MenuItem = ({ icon, label, onPress, isLogout, badge }) => (
+    <TouchableOpacity
+      style={styles.menuItem}
       onPress={onPress}
       activeOpacity={0.7}
     >
@@ -68,7 +70,14 @@ export default function SidebarMenu({ visible, onClose, user, navigation, onSign
           {label}
         </Text>
       </View>
-      {!isLogout && <IconChevronRight size={16} color="#ccc" />}
+      <View style={styles.menuItemRight}>
+        {badge > 0 && (
+          <View style={styles.badge}>
+            <Text style={styles.badgeText}>{badge > 99 ? '99+' : badge}</Text>
+          </View>
+        )}
+        {!isLogout && <IconChevronRight size={16} color="#ccc" />}
+      </View>
     </TouchableOpacity>
   );
 
@@ -99,32 +108,33 @@ export default function SidebarMenu({ visible, onClose, user, navigation, onSign
           {/* Lista de opciones */}
           <View style={styles.menuContent}>
             <Text style={styles.sectionTitle}>MI CUENTA</Text>
-            
-            <MenuItem 
-              icon={<IconUser size={22} color="#555" />} 
-              label="Mi Perfil" 
-              onPress={() => {
-                // Aquí podrías navegar a una pantalla de Perfil
-                Alert.alert("En desarrollo", "Pantalla de perfil próximamente");
-              }} 
+
+            <MenuItem
+              icon={<IconUser size={22} color="#555" />}
+              label="Mi Perfil"
+              onPress={() => navigateTo('Profile')}
             />
-            <MenuItem 
-              icon={<IconFavorites size={22} color="#555" />} 
-              label="Lista de Deseos" 
-              onPress={() => navigateTo('ListaDeseos')} 
+            <MenuItem
+              icon={<IconChat size={22} color="#555" />}
+              label="Mensajes"
+              badge={unreadMsgCount}
+              onPress={() => navigateTo('Messages')}
             />
-            <MenuItem 
-              icon={<IconHistory size={22} color="#555" />} 
-              label="Historial de Pedidos" 
-              onPress={() => {
-                // Aquí podrías navegar a una pantalla de Historial
-                Alert.alert("En desarrollo", "Pantalla de historial próximamente");
-              }} 
+            <MenuItem
+              icon={<IconFavorites size={22} color="#555" />}
+              label="Lista de Deseos"
+              onPress={() => navigateTo('ListaDeseos')}
             />
-            <MenuItem 
-              icon={<IconBell size={22} color="#555" />} 
-              label="Notificaciones" 
-              onPress={() => navigateTo('Notifications')} 
+            <MenuItem
+              icon={<IconHistory size={22} color="#555" />}
+              label="Historial de Pedidos"
+              onPress={() => navigateTo('History')}
+            />
+            <MenuItem
+              icon={<IconBell size={22} color="#555" />}
+              label="Notificaciones"
+              badge={unreadNotifCount}
+              onPress={() => navigateTo('Notifications')}
             />
             
             {isVendedor && (
@@ -252,11 +262,30 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
+  menuItemRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
   menuItemText: {
     fontSize: 15,
     color: '#333',
     marginLeft: 15,
     fontWeight: '500',
+  },
+  badge: {
+    backgroundColor: '#7A1E3A',
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 5,
+  },
+  badgeText: {
+    color: '#FFF',
+    fontSize: 11,
+    fontWeight: '800',
   },
   spacer: {
     flex: 1,

@@ -7,8 +7,6 @@ from datetime import datetime
 from fastapi import WebSocket, WebSocketDisconnect
 from fastapi.concurrency import run_in_threadpool
 from app.ws.manager import manager
-from app.models.push_tokens import obtener_tokens_usuario
-from app.services.expo_push import enviar_push_expo
 
 router = APIRouter(prefix="/chat", tags=["Chat"])
 security = HTTPBearer()
@@ -264,6 +262,33 @@ def _guardar_mensaje_sync(id_sala: int, user_id: int, texto: str) -> dict:
                 else participantes["id_comprador"]
             )
 
+        # Insertar notificación persistente en BD para el destinatario
+        if destinatario_id is not None:
+            remitente = mensaje_completo.get("nombre_remitente", "Alguien")
+            preview = texto[:80] + ("…" if len(texto) > 80 else "")
+            try:
+                cursor.execute("""
+                    SELECT id_notificacion
+                    FROM notificaciones
+                    WHERE id_usuario = %s
+                      AND tipo = 'mensaje'
+                      AND id_referencia = %s
+                      AND fecha_creacion >= DATE_SUB(NOW(), INTERVAL 5 MINUTE)
+                    ORDER BY fecha_creacion DESC
+                    LIMIT 1
+                """, (destinatario_id, id_sala))
+                existe = cursor.fetchone()
+
+                if not existe:
+                    cursor.execute("""
+                        INSERT INTO notificaciones
+                        (id_usuario, tipo, titulo, cuerpo, id_referencia, leida, fecha_creacion)
+                        VALUES (%s, 'mensaje', %s, %s, %s, FALSE, NOW())
+                    """, (destinatario_id, f"Nuevo mensaje de {remitente}", preview, id_sala))
+                    db.commit()
+            except Exception:
+                pass  # No interrumpir el flujo si la notificación falla
+
         return {"mensaje": mensaje_completo, "destinatario_id": destinatario_id}
     except HTTPException:
         raise
@@ -282,18 +307,8 @@ async def enviar_y_notificar(id_sala: int, user_id: int, texto: str) -> dict:
 
     payload_ws = {"tipo": "nuevo_mensaje", "mensaje": mensaje}
 
-    entregado_en_vivo = False
     if destinatario_id is not None:
-        entregado_en_vivo = await manager.enviar_a_usuario(destinatario_id, payload_ws)
-
-    if not entregado_en_vivo and destinatario_id is not None:
-        tokens = await run_in_threadpool(obtener_tokens_usuario, destinatario_id)
-        await enviar_push_expo(
-            tokens=tokens,
-            titulo=mensaje["nombre_remitente"],
-            cuerpo=mensaje["mensaje"][:100],
-            data={"id_sala": id_sala, "tipo": "nuevo_mensaje"},
-        )
+        await manager.enviar_a_usuario(destinatario_id, payload_ws)
 
     return mensaje
 

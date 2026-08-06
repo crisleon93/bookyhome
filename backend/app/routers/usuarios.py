@@ -11,7 +11,6 @@ from app.auth import create_token, verify_token
 from app.email import enviar_email_confirmacion_registro
 
 from pydantic import BaseModel
-from app.models.push_tokens import guardar_push_token
 
 import secrets
 
@@ -163,22 +162,6 @@ def login(data: UsuarioLogin):
 
 
 
-
-
-# ========================
-# Push notifications (Expo)
-# ========================
-class PushTokenIn(BaseModel):
-    token: str
-
-
-@router.post("/push-token")
-def registrar_push_token(data: PushTokenIn, user_id: int = Depends(get_current_user)):
-    """Registra o actualiza el token Expo Push del dispositivo del usuario autenticado."""
-    resultado = guardar_push_token(user_id, data.token)
-    if not resultado["ok"]:
-        raise HTTPException(status_code=500, detail=resultado["error"])
-    return {"ok": True, "mensaje": "Token registrado"}
 
 
 # ========================
