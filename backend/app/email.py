@@ -3,8 +3,46 @@ from dotenv import load_dotenv
 import os
 from pathlib import Path
 
-env_path = Path(__file__).parent / ".env"
-load_dotenv(dotenv_path=env_path)
+
+def _load_env_file() -> None:
+    candidates = [
+        Path(__file__).resolve().parents[1] / ".env",
+        Path.cwd() / ".env",
+        Path(__file__).resolve().parent / ".env",
+    ]
+
+    for path in candidates:
+        if path.exists():
+            load_dotenv(dotenv_path=path, override=False)
+            break
+
+
+_load_env_file()
+
+
+def is_smtp_configured() -> bool:
+    return all([
+        os.getenv("MAIL_USERNAME"),
+        os.getenv("MAIL_PASSWORD"),
+        os.getenv("MAIL_FROM"),
+        os.getenv("MAIL_SERVER"),
+    ])
+
+
+def get_public_api_url() -> str:
+    """URL del backend accesible desde dispositivos móviles (no usar localhost)."""
+    return os.getenv(
+        "PUBLIC_API_URL",
+        os.getenv("API_PUBLIC_URL", "http://localhost:8000"),
+    ).rstrip("/")
+
+
+def get_frontend_url() -> str:
+    return os.getenv("FRONTEND_URL", "http://localhost:5173").rstrip("/")
+
+
+mail_starttls = os.getenv("MAIL_STARTTLS", "true").strip().lower() in {"1", "true", "yes", "on"}
+mail_ssl_tls = os.getenv("MAIL_SSL_TLS", "false").strip().lower() in {"1", "true", "yes", "on"}
 
 conf = ConnectionConfig(
     MAIL_USERNAME=os.getenv("MAIL_USERNAME"),
@@ -12,14 +50,14 @@ conf = ConnectionConfig(
     MAIL_FROM=os.getenv("MAIL_FROM"),
     MAIL_SERVER=os.getenv("MAIL_SERVER"),
     MAIL_PORT=int(os.getenv("MAIL_PORT", "587")),
-    MAIL_STARTTLS=True,
-    MAIL_SSL_TLS=False,
+    MAIL_STARTTLS=mail_starttls,
+    MAIL_SSL_TLS=mail_ssl_tls,
     USE_CREDENTIALS=True
 )
 
 
 async def enviar_email_recuperacion(email: str, token: str):
-    frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173").rstrip("/")
+    frontend_url = get_frontend_url()
     enlace = f"{frontend_url}/reset-password?token={token}"
 
     mensaje = MessageSchema(
@@ -48,8 +86,8 @@ async def enviar_email_recuperacion(email: str, token: str):
 
 
 async def enviar_email_confirmacion_registro(email: str, token: str):
-    frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173").rstrip("/")
-    enlace = f"{frontend_url}/verify-email?token={token}"
+    # El enlace debe apuntar al backend (accesible desde el móvil), no al frontend local.
+    enlace = f"{get_public_api_url()}/verify-email?token={token}"
 
     mensaje = MessageSchema(
         subject="Confirma tu correo electrónico — BookyHome",
@@ -150,8 +188,7 @@ async def enviar_email_confirmacion(email: str, orden: dict):
 
 
 async def enviar_email_agradecimiento_confirmacion(email: str):
-    frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173").rstrip("/")
-    login_url = f"{frontend_url}/login"
+    login_url = f"{get_frontend_url()}/login"
 
     mensaje = MessageSchema(
         subject="¡Correo confirmado! — BookyHome",

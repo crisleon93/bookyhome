@@ -12,10 +12,17 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSFaceIDUsageDescription": "BookyHome usa Face ID o Touch ID para desbloquear tu sesión de forma segura."
+      }
     },
     "android": {
       "package": "com.bookyhome.app",
+      "permissions": [
+        "USE_BIOMETRIC",
+        "USE_FINGERPRINT"
+      ],
       "adaptiveIcon": {
         "foregroundImage": "./src/assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
@@ -30,6 +37,14 @@
         "projectId": "b17b90c1-0e24-47ee-8d64-f8f404ccac49"
       }
     },
-    "owner": "liznayibe"
+    "owner": "liznayibe",
+    "plugins": [
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "BookyHome usa Face ID o Touch ID para desbloquear tu sesión de forma segura."
+        }
+      ]
+    ]
   }
 }

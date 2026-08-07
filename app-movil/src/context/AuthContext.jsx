@@ -1,38 +1,11 @@
-import React, { createContext, useEffect, useState } from 'react';
+import React, { createContext, useEffect, useRef, useState } from 'react';
+import { AppState, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as LocalAuthentication from 'expo-local-authentication';
 import { jwtDecode } from 'jwt-decode';
 import api from '../services/api';
 
 export const AuthContext = createContext({});
-
-function base64UrlDecode(str) {
-  const base64 = str.replace(/-/g, '+').replace(/_/g, '/');
-  const needed = (4 - (base64.length % 4)) % 4;
-  const padded = base64 + '='.repeat(needed);
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
-  let output = '';
-
-  for (let i = 0; i < padded.length; i += 4) {
-    const enc1 = chars.indexOf(padded.charAt(i));
-    const enc2 = chars.indexOf(padded.charAt(i + 1));
-    const enc3 = chars.indexOf(padded.charAt(i + 2));
-    const enc4 = chars.indexOf(padded.charAt(i + 3));
-    const chr1 = (enc1 << 2) | (enc2 >> 4);
-    const chr2 = ((enc2 & 15) << 4) | (enc3 >> 2);
-    const chr3 = ((enc3 & 3) << 6) | enc4;
-
-    output += String.fromCharCode(chr1);
-    if (enc3 !== 64) output += String.fromCharCode(chr2);
-    if (enc4 !== 64) output += String.fromCharCode(chr3);
-  }
-
-  return decodeURIComponent(
-    output
-      .split('')
-      .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-      .join('')
-  );
-}
 
 function decodeJwtPayload(token) {
   try {
@@ -46,19 +19,28 @@ export function AuthProvider({ children }) {
   const [token, setToken] = useState(null);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [biometricEnabled, setBiometricEnabled] = useState(false);
+  const [biometricLocked, setBiometricLocked] = useState(false);
+  const [pendingToken, setPendingToken] = useState(null);
+  const appState = useRef(AppState.currentState);
 
   useEffect(() => {
     const restore = async () => {
       try {
         const storedToken = await AsyncStorage.getItem('token');
+        const storedBiometricEnabled = await AsyncStorage.getItem('biometricEnabled');
+
         if (storedToken) {
-          // El header se pone AQUÍ, antes de setToken, para que ya exista
-          // cuando cualquier componente hijo reaccione al cambio de token
-          // (evita la condición de carrera que causaba 401 en carrito/chat).
-          api.defaults.headers.common.Authorization = `Bearer ${storedToken}`;
-          setToken(storedToken);
-          const payload = decodeJwtPayload(storedToken);
-          if (payload) setUser(payload);
+          if (storedBiometricEnabled === 'true') {
+            setPendingToken(storedToken);
+            setBiometricEnabled(true);
+            setBiometricLocked(true);
+          } else {
+            api.defaults.headers.common.Authorization = `Bearer ${storedToken}`;
+            setToken(storedToken);
+            const payload = decodeJwtPayload(storedToken);
+            if (payload) setUser(payload);
+          }
         }
       } catch (error) {
         console.log('Error restoring token', error);
@@ -68,19 +50,41 @@ export function AuthProvider({ children }) {
     };
 
     restore();
+
+    const handleAppStateChange = async (nextAppState) => {
+      if (
+        appState.current.match(/inactive|background/) &&
+        nextAppState === 'active'
+      ) {
+        const storedToken = await AsyncStorage.getItem('token');
+        const storedBiometricEnabled = await AsyncStorage.getItem('biometricEnabled');
+
+        if (storedToken && storedBiometricEnabled === 'true') {
+          setPendingToken(storedToken);
+          setBiometricEnabled(true);
+          setBiometricLocked(true);
+        }
+      }
+
+      appState.current = nextAppState;
+    };
+
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+    return () => subscription.remove();
   }, []);
 
   useEffect(() => {
     if (token) {
       api.defaults.headers.common.Authorization = `Bearer ${token}`;
-      console.log('Token set in headers:', token.substring(0, 20) + '...');
     } else {
       delete api.defaults.headers.common.Authorization;
-      console.log('Token removed from headers');
     }
   }, [token]);
 
-  const signIn = async (newToken) => {
+  const signIn = async (newToken, options = {}) => {
+    if (!newToken) {
+      return;
+    }
     api.defaults.headers.common.Authorization = `Bearer ${newToken}`;
     const payload = decodeJwtPayload(newToken);
     const safeUser = payload || {
@@ -88,20 +92,127 @@ export function AuthProvider({ children }) {
       nombre: 'usuario',
       rol: 'comprador',
     };
+
     setToken(newToken);
     setUser(safeUser);
+    setBiometricLocked(false);
+    setPendingToken(null);
     await AsyncStorage.setItem('token', newToken);
+
+    if (options.enableBiometrics) {
+      await AsyncStorage.setItem('biometricEnabled', 'true');
+      setBiometricEnabled(true);
+    } else {
+      await AsyncStorage.setItem('biometricEnabled', 'false');
+      setBiometricEnabled(false);
+    }
+  };
+
+  const setBiometricPreference = async (enabled) => {
+    setBiometricEnabled(enabled);
+    await AsyncStorage.setItem('biometricEnabled', enabled ? 'true' : 'false');
+  };
+
+  const unlockWithBiometrics = async (method) => {
+    if (!pendingToken) {
+      return { success: false, reason: 'no_session' };
+    }
+
+    try {
+      const hasHardware = await LocalAuthentication.hasHardwareAsync();
+      const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+
+      if (!hasHardware) {
+        return { success: false, reason: 'no_hardware' };
+      }
+
+      if (!isEnrolled) {
+        return { success: false, reason: 'not_enrolled' };
+      }
+
+      const promptMessage =
+        method === 'face'
+          ? 'Desbloquea BookyHome con Face Unlock'
+          : method === 'fingerprint'
+          ? 'Desbloquea BookyHome con tu huella'
+          : 'Desbloquea BookyHome con tu biometría';
+
+      const options = {
+        promptMessage,
+        cancelLabel: 'Cancelar',
+        disableDeviceFallback: true,
+      };
+
+      if (Platform.OS === 'ios') {
+        options.fallbackLabel = '';
+      }
+
+      if (Platform.OS === 'android') {
+        options.promptSubtitle =
+          method === 'face'
+            ? 'Usa tu rostro para desbloquear'
+            : method === 'fingerprint'
+            ? 'Usa tu huella digital'
+            : 'Usa tu biometría';
+        options.promptDescription =
+          method === 'face'
+            ? 'Face Unlock disponible en tu dispositivo'
+            : 'Autentícate con tu huella digital';
+        options.biometricsSecurityLevel = method === 'face' ? 'weak' : 'strong';
+      }
+
+      const result = await LocalAuthentication.authenticateAsync(options);
+
+      if (result.success) {
+        await signIn(pendingToken, { enableBiometrics: true });
+        return { success: true };
+      }
+
+      const cancelErrors = new Set(['user_cancel', 'system_cancel', 'app_cancel']);
+      if (cancelErrors.has(result.error)) {
+        return { success: false, reason: 'cancelled' };
+      }
+
+      return { success: false, reason: 'failed', error: result.error };
+    } catch (error) {
+      console.log('Biometric auth error', error);
+      return { success: false, reason: 'failed', error: error?.message };
+    }
   };
 
   const signOut = async () => {
     delete api.defaults.headers.common.Authorization;
+    const currentToken = token;
     setToken(null);
     setUser(null);
-    await AsyncStorage.removeItem('token');
+
+    if (biometricEnabled && currentToken) {
+      setPendingToken(currentToken);
+      setBiometricLocked(true);
+      // Leave token and biometricEnabled in storage so biometric login can restore it.
+    } else {
+      setBiometricLocked(false);
+      setPendingToken(null);
+      setBiometricEnabled(false);
+      await AsyncStorage.multiRemove(['token', 'biometricEnabled']);
+    }
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, signIn, signOut }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        token,
+        loading,
+        biometricEnabled,
+        biometricLocked,
+        pendingToken,
+        signIn,
+        signOut,
+        unlockWithBiometrics,
+        setBiometricPreference,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
