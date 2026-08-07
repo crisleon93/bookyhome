@@ -5,6 +5,8 @@ import {
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { getCategorias, publicarLibro } from '../services/api';
+import BarcodeScanner from '../components/BarcodeScanner';
+import { IconCamera } from '../components/Icons';
 
 const ESTADOS = ['Nuevo', 'Como nuevo', 'Bueno', 'Aceptable'];
 
@@ -18,12 +20,18 @@ export default function PublicarLibro({ navigation }) {
   const [cargando, setCargando] = useState(false);
   const [loadingCats, setLoadingCats] = useState(true);
   const [errores, setErrores] = useState({});
+  const [barcodeScannerVisible, setBarcodeScannerVisible] = useState(false);
 
   useEffect(() => {
     getCategorias().then(r => setCategorias(r.data || [])).catch(() => {}).finally(() => setLoadingCats(false));
   }, []);
 
   const set = (key, val) => setForm(p => ({ ...p, [key]: val }));
+
+  const handleBarcodeScanned = (isbn) => {
+    setBarcodeScannerVisible(false);
+    set('isbn', isbn);
+  };
 
   const validar = () => {
     const e = {};
@@ -93,7 +101,6 @@ export default function PublicarLibro({ navigation }) {
         {[
           { key: 'titulo', label: 'Título *', placeholder: 'Título del libro' },
           { key: 'autor', label: 'Autor *', placeholder: 'Nombre del autor' },
-          { key: 'isbn', label: 'ISBN', placeholder: 'Código ISBN (opcional)' },
           { key: 'precio', label: 'Precio *', placeholder: '0', keyboardType: 'numeric' },
         ].map(({ key, label, placeholder, keyboardType }) => (
           <View key={key} style={s.fieldGroup}>
@@ -108,6 +115,28 @@ export default function PublicarLibro({ navigation }) {
             {errores[key] && <Text style={s.errorText}>{errores[key]}</Text>}
           </View>
         ))}
+
+        {/* Campo ISBN con botón de escaneo */}
+        <View style={s.fieldGroup}>
+          <Text style={s.fieldLabel}>ISBN (opcional)</Text>
+          <View style={s.isbnContainer}>
+            <TextInput
+              style={[s.input, s.isbnInput, errores.isbn && s.inputError]}
+              placeholder="Escanea o ingresa el ISBN"
+              value={form.isbn}
+              onChangeText={v => set('isbn', v)}
+              keyboardType="default"
+            />
+            <TouchableOpacity 
+              style={s.scanButton} 
+              onPress={() => setBarcodeScannerVisible(true)}
+              activeOpacity={0.8}
+            >
+              <IconCamera size={20} color="#7A1E3A" />
+            </TouchableOpacity>
+          </View>
+          {errores.isbn && <Text style={s.errorText}>{errores.isbn}</Text>}
+        </View>
 
         {/* Categoría */}
         <Text style={s.fieldLabel}>Categoría *</Text>
@@ -157,6 +186,13 @@ export default function PublicarLibro({ navigation }) {
       <TouchableOpacity style={s.publishBtn} onPress={handlePublicar} disabled={cargando}>
         <Text style={s.publishBtnText}>{cargando ? 'Publicando...' : '📚 Publicar libro'}</Text>
       </TouchableOpacity>
+
+      {/* Escáner de códigos de barras */}
+      <BarcodeScanner
+        visible={barcodeScannerVisible}
+        onClose={() => setBarcodeScannerVisible(false)}
+        onBarcodeDetected={handleBarcodeScanned}
+      />
     </ScrollView>
   );
 }
@@ -175,6 +211,18 @@ const s = StyleSheet.create({
   input: { borderWidth: 1, borderColor: '#ddd', borderRadius: 8, padding: 10, fontSize: 15, color: '#222', backgroundColor: '#fafafa' },
   inputError: { borderColor: '#e74c3c' },
   errorText: { color: '#e74c3c', fontSize: 12, marginTop: 3 },
+  isbnContainer: { flexDirection: 'row', alignItems: 'center' },
+  isbnInput: { flex: 1, marginRight: 8 },
+  scanButton: { 
+    width: 44, 
+    height: 44, 
+    backgroundColor: '#f0e8db', 
+    borderRadius: 8, 
+    justifyContent: 'center', 
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#7A1E3A'
+  },
   chip: { paddingVertical: 6, paddingHorizontal: 14, borderRadius: 20, borderWidth: 1, borderColor: '#ddd', backgroundColor: '#f5f5f5', marginRight: 8, marginBottom: 6 },
   chipSelected: { backgroundColor: '#7A1E3A', borderColor: '#7A1E3A' },
   chipText: { fontSize: 13, color: '#555', fontWeight: '500' },

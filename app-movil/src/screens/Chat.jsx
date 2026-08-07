@@ -48,7 +48,7 @@ const formatFechaSeparador = (fechaStr) => {
 export default function Chat() {
   const route = useRoute();
   const navigation = useNavigation();
-  const { id_sala, nombre_tienda } = route.params;
+  const { id_sala, nombre_tienda, nombre_comprador } = route.params;
   const { user } = useContext(AuthContext);
 
   // Usa el WebSocket compartido del contexto — evita doble conexión
@@ -63,8 +63,13 @@ export default function Chat() {
 
   // ── Título de la pantalla
   useEffect(() => {
-    navigation.setOptions({ title: nombre_tienda || 'Chat' });
-  }, [nombre_tienda]);
+    // Detectar rol comparando si el usuario es el dueño de la tienda
+    // Como no tenemos acceso directo a la tienda aquí, usamos los parámetros
+    // Si el usuario es vendedor, mostrar nombre del comprador, si no mostrar nombre de tienda
+    const esVendedor = user?.rol === 'vendedor';
+    const titulo = esVendedor ? (nombre_comprador || 'Comprador') : (nombre_tienda || 'Tienda');
+    navigation.setOptions({ title: titulo || 'Chat' });
+  }, [nombre_tienda, nombre_comprador, user?.rol]);
 
   // ── Limpieza al desmontar
   useEffect(() => {
