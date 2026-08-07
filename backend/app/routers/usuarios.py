@@ -8,7 +8,7 @@ from app.models.tiendas import obtener_tienda_por_usuario
 
 from app.auth import create_token, verify_token
 
-from app.email import enviar_email_confirmacion_registro
+from app.email import enviar_email_confirmacion_registro, is_smtp_configured
 
 from pydantic import BaseModel
 
@@ -68,23 +68,24 @@ async def register(data: UsuarioRegistro):
 
 
 
-    # Enviar email de confirmación
+    # Enviar email de confirmación si el backend tiene SMTP configurado
+    if is_smtp_configured():
+        try:
+            await enviar_email_confirmacion_registro(data.email, token_verificacion)
+            print(f"✅ Correo de confirmación enviado a {data.email}", flush=True)
+        except Exception as exc:
+            print(f"❌ Error enviando correo de confirmación a {data.email}: {exc}", flush=True)
+            return {
+                "mensaje": "Cuenta creada, pero no se pudo enviar el correo de verificación. Revisa la configuración SMTP del backend.",
+                "email_enviado": False,
+            }
+    else:
+        print(f"⚠️ SMTP no configurado para {data.email}; el correo de verificación no se pudo enviar.", flush=True)
 
-    try:
-
-        await enviar_email_confirmacion_registro(data.email, token_verificacion)
-
-        print(f"✅ Correo de confirmación enviado a {data.email}", flush=True)
-
-    except Exception as exc:
-
-        print(f"❌ Error enviando correo de confirmación a {data.email}: {exc}", flush=True)
-
-        # No fallamos el registro si el email no se envía, pero lo registramos
-
-
-
-    return {"mensaje": "Cuenta creada exitosamente. Por favor verifica tu correo electrónico para completar el registro."}
+    return {
+        "mensaje": "Cuenta creada exitosamente. Por favor verifica tu correo electrónico para completar el registro.",
+        "email_enviado": is_smtp_configured(),
+    }
 
 
 

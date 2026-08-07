@@ -10,7 +10,7 @@ export const login = (credentials) => api.post('/login', credentials);
 export const register = (data) => api.post('/register', data);
 export const forgotPassword = (data) => api.post('/forgot-password', data);
 export const resetPassword = (data) => api.post('/reset-password', data);
-export const verifyEmail = (data) => api.post('/verify-email', data);
+export const verifyEmail = ({ token }) => api.get('/verify-email', { params: { token } });
 
 // ===== Catálogo =====
 export const getBooks = (params) => api.get('/stored/api/stored/libros', { params });

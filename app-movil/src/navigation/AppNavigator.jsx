@@ -30,13 +30,13 @@ import AdminHome from '../screens/AdminHome';
 const Stack = createNativeStackNavigator();
 
 export default function AppNavigator() {
-  const { user, token, loading } = useContext(AuthContext);
+  const { user, token, loading, biometricLocked } = useContext(AuthContext);
   const isAuthenticated = Boolean(token || user);
 
   if (loading) return null;
 
   return (
-    <Stack.Navigator>
+    <Stack.Navigator initialRouteName={!isAuthenticated ? 'Home' : undefined}>
       {!isAuthenticated ? (
         // ─── Rutas públicas ──────────────────────────────────────────────────
         <>
