@@ -349,6 +349,7 @@
 .chat-container.embedded {
   background: transparent;
   min-height: calc(100vh - 112px);
+  height: calc(100vh - 112px);
 }
 
 .chat-container.embedded .chat-wrapper {
@@ -356,7 +357,8 @@
   border-radius: 12px;
   box-shadow: var(--sombra-suave);
   overflow: hidden;
-  height: calc(100vh - 140px);
+  height: 100%;
+  min-height: 100%;
 }
 
 .chat-container.embedded .chat-salas {
@@ -365,6 +367,10 @@
 
 .chat-container.embedded .chat-conversacion {
   border-radius: 0 12px 12px 0;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 100%;
 }
 
 /* ============= RESPONSIVE ============= */

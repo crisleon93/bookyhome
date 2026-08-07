@@ -73,10 +73,10 @@ def obtener_salas_usuario(user_id: int = Depends(get_current_user), rol: str = D
                 sc.id_sala,
                 sc.id_usuario,
                 sc.id_tienda,
-                ANY_VALUE(t.nombre_tienda) as nombre_tienda,
-                ANY_VALUE(u.nombre_usuario) as nombre_comprador,
-                ANY_VALUE(m.mensaje) as ultimo_mensaje,
-                ANY_VALUE(DATE_FORMAT(m.enviado_en, '%Y-%m-%d %H:%i:%S')) as fecha_ultimo_mensaje,
+                t.nombre_tienda,
+                u.nombre_usuario as nombre_comprador,
+                m.mensaje as ultimo_mensaje,
+                DATE_FORMAT(m.enviado_en, '%Y-%m-%d %H:%i:%S') as fecha_ultimo_mensaje,
                 COUNT(CASE WHEN m.mensaje_leido = FALSE THEN 1 END) as no_leidos
             FROM salasChats sc
             LEFT JOIN tiendas t ON sc.id_tienda = t.id_tienda
@@ -88,11 +88,18 @@ def obtener_salas_usuario(user_id: int = Depends(get_current_user), rol: str = D
                     WHERE id_sala = sc.id_sala
                 )
             WHERE {filtro} AND m.mensaje IS NOT NULL
-            GROUP BY sc.id_sala
-            ORDER BY ANY_VALUE(m.enviado_en) DESC
+            GROUP BY sc.id_sala, t.nombre_tienda, u.nombre_usuario, m.mensaje, m.enviado_en
+            ORDER BY m.enviado_en DESC
         """
         cursor.execute(query, (user_id,))
         salas = cursor.fetchall()
+        
+        # Log para depuración
+        print(f"Usuario: {user_id}, Rol: {rol}")
+        print(f"Salas encontradas: {len(salas)}")
+        for sala in salas:
+            print(f"Sala {sala['id_sala']}: nombre_tienda={sala.get('nombre_tienda')}, nombre_comprador={sala.get('nombre_comprador')}")
+        
         return {"salas": salas}
     finally:
         cursor.close()

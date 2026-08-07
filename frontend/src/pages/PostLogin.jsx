@@ -571,8 +571,14 @@ export default function PostLogin() {
     const params = new URLSearchParams(location.search);
 
     const seccion = params.get("seccion");
+    const sala = params.get("sala");
 
     if (seccion) setActiveSide(seccion === "Direcciones" ? "Mi Perfil" : seccion);
+    
+    // Si hay un parámetro sala, seleccionar esa sala en el chat
+    if (sala && seccion === "Mensajes") {
+      setSelectedSalaInChat(parseInt(sala));
+    }
 
   }, [location]);
 
@@ -2726,9 +2732,9 @@ export default function PostLogin() {
         {/* ── MENSAJES EN DASHBOARD (sin salto de página) ── */}
 
         {activeSide === "Mensajes" && (
-
-          <Chat embedded={true} selectedSalaProp={selectedSalaInChat} onSelectSala={(id) => setSelectedSalaInChat(id)} />
-
+          <div style={{ height: 'calc(100vh - 120px)', minHeight: 'calc(100vh - 120px)' }}>
+            <Chat embedded={true} selectedSalaProp={selectedSalaInChat} onSelectSala={(id) => setSelectedSalaInChat(id)} />
+          </div>
         )}
 
 

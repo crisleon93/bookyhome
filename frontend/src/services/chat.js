@@ -11,8 +11,8 @@ export const chatService = {
 
   crearSala: async (id_tienda) => {
     const response = await api.post(
-      `/chat/salas?id_tienda=${id_tienda}`,
-      {}
+      "/chat/salas",
+      { id_tienda }
     );
     return response.data;
   },

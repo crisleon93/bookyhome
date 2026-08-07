@@ -38,6 +38,7 @@ export default function PublicarLibro() {
     id_categoria: "",
     titulo: "",
     autor_libro: "",
+    isbn: "",
     descripcion_libro: "",
     precio_libro: "",
     stock: "",
@@ -254,6 +255,20 @@ export default function PublicarLibro() {
                 onChange={handleChange}
               />
               <p className="input-hint">Si es autor colectivo o editorial, escríbelo igual al título.</p>
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="isbn">ISBN (opcional)</label>
+              <input
+                id="isbn"
+                name="isbn"
+                type="text"
+                maxLength={20}
+                placeholder="Ej: 978-3-16-148410-0"
+                value={form.isbn}
+                onChange={handleChange}
+              />
+              <p className="input-hint">El código ISBN permite que los compradores encuentren tu libro escaneando el código de barras. Puedes encontrarlo en la contraportada del libro.</p>
             </div>
 
             <div className="form-group">

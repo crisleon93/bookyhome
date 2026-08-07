@@ -22,6 +22,7 @@ import VerifyEmail from './pages/VerifyEmail';
 import ListaDeseos from './pages/ListaDeseos';
 import Devoluciones from './pages/Devoluciones';
 import BookyPagoFinanzas from './pages/BookyPagoFinanzas';
+import Chat from './pages/Chat';
 
 import { getUserRole } from './hooks/useAuth';
 import LegalPage from './pages/LegalPage';
@@ -73,6 +74,7 @@ function MainLayout() {
           <Route path="/lista-deseos" element={<ListaDeseos />} />
           <Route path="/devoluciones" element={<Devoluciones />} />
           <Route path="/favoritos" element={<Navigate to="/lista-deseos" replace />} />
+          <Route path="/chat/:id_sala" element={<Chat />} />
         </Route>
 
         {/* ── RUTAS EXCLUSIVAS DE VENDEDOR ── */}

@@ -3,9 +3,9 @@ import React, { useContext, useEffect, useState } from 'react';
 import {
   View, Text, FlatList, Image, TouchableOpacity,
   StyleSheet, ActivityIndicator, TextInput,
-  ScrollView, SafeAreaView,
+  ScrollView, SafeAreaView, Alert,
 } from 'react-native';
-import { getBooks } from '../services/api';
+import { getBooks, searchByISBN } from '../services/api';
 import { AuthContext } from '../context/AuthContext';
 import Header from '../components/Header';
 import { IconBooks, IconStore, IconStar, IconCart } from '../components/Icons';
@@ -33,6 +33,7 @@ export default function PostLogin({ navigation }) {
   const [loading, setLoading]           = useState(true);
   const [search, setSearch]             = useState('');
   const [activeCategory, setActiveCategory] = useState(null);
+  const [scanningISBN, setScanningISBN] = useState(false);
   const { signOut, user } = useContext(AuthContext);
 
   useEffect(() => {
@@ -60,6 +61,53 @@ export default function PostLogin({ navigation }) {
       (b.titulo || b.nombre || '').toLowerCase().includes(text.toLowerCase()) ||
       (b.autor_libro || b.autor || '').toLowerCase().includes(text.toLowerCase())
     ));
+  };
+
+  // Handler para ISBN escaneado
+  const handleBarcodeScanned = async (isbn) => {
+    setScanningISBN(true);
+    setSearch(isbn);
+    setActiveCategory(null);
+
+    try {
+      const response = await searchByISBN(isbn);
+      const isbnBooks = response.data?.libros || [];
+
+      if (isbnBooks.length > 0) {
+        // Mostrar resultados del ISBN escaneado
+        setFiltered(isbnBooks);
+        
+        // Mostrar mensaje de éxito
+        const mejorPrecio = isbnBooks[0].precio_libro;
+        const numVendedores = isbnBooks.length;
+        
+        Alert.alert(
+          '¡Libro encontrado!',
+          `Encontramos ${numVendedores} vendedor${numVendedores > 1 ? 'es' : ''} con este libro. Mejor precio: $${Number(mejorPrecio).toLocaleString('es-CO')}`,
+          [{ text: 'OK', style: 'default' }]
+        );
+      } else {
+        // No se encontraron libros con este ISBN
+        Alert.alert(
+          'Libro no encontrado',
+          'No encontramos vendedores en BookyHome con este ISBN. Intenta buscar por título o autor.',
+          [
+            { text: 'OK', onPress: () => setFiltered(books) }
+          ]
+        );
+      }
+    } catch (error) {
+      console.error('Error buscando por ISBN:', error);
+      Alert.alert(
+        'Error de búsqueda',
+        'Hubo un error al buscar el libro. Por favor intenta nuevamente.',
+        [
+          { text: 'OK', onPress: () => setFiltered(books) }
+        ]
+      );
+    } finally {
+      setScanningISBN(false);
+    }
   };
 
   const handleCategory = (cat) => {
@@ -179,6 +227,7 @@ export default function PostLogin({ navigation }) {
         navigation={navigation}
         onSignOut={signOut}
         onSearch={handleSearch}
+        onBarcodeScanned={handleBarcodeScanned}
       />
 
       {loading ? (

@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException, Query
 from app.database import get_db
+from app.models.libro import buscar_libro_por_isbn, validar_y_normalizar_isbn
 from typing import Optional
 
 router = APIRouter(prefix="/catalogo", tags=["Catálogo"])
@@ -196,3 +197,41 @@ def obtener_categorias():
     finally:
         cursor.close()
         db.close()
+
+
+@router.get("/buscar-por-isbn/{isbn}")
+def buscar_por_isbn(isbn: str):
+    """
+    Busca libros por ISBN en todo el catálogo.
+    
+    Útil para escaneo de códigos de barras: el usuario escanea el ISBN de un libro
+    en una librería física y la app busca si hay vendedores en BookyHome con el mismo
+    libro a mejor precio.
+    
+    Retorna una lista de libros con el mismo ISBN de diferentes vendedores,
+    ordenados por precio ascendente para facilitar la comparación.
+    """
+    # Normalizar y validar ISBN
+    isbn_normalizado = validar_y_normalizar_isbn(isbn)
+    
+    if not isbn_normalizado:
+        raise HTTPException(
+            status_code=400, 
+            detail="ISBN inválido. Debe ser ISBN-10 (10 caracteres) o ISBN-13 (13 caracteres)"
+        )
+    
+    # Buscar libros por ISBN
+    libros = buscar_libro_por_isbn(isbn_normalizado)
+    
+    if not libros:
+        raise HTTPException(
+            status_code=404, 
+            detail=f"No se encontraron libros con el ISBN {isbn_normalizado}"
+        )
+    
+    return {
+        "isbn": isbn_normalizado,
+        "total_encontrados": len(libros),
+        "mejor_precio": libros[0]["precio_libro"] if libros else None,
+        "libros": libros
+    }
