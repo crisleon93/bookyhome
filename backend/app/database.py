@@ -1,8 +1,13 @@
 import os
 import time
 import sys
+from pathlib import Path
 import mysql.connector
-from mysql.connector import InterfaceError
+from mysql.connector import Error, InterfaceError
+from dotenv import load_dotenv
+
+
+load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 
 
 def ensure_quejas_schema():
@@ -83,11 +88,17 @@ def get_db():
     # ========================
     # Configuración de conexión
     # ========================
-    db_host = os.getenv('DB_HOST', 'mysql')     
+    db_host = os.getenv('DB_HOST', 'mysql')
     db_port = int(os.getenv('DB_PORT', '3306'))
     db_user = os.getenv('DB_USER', 'root')
-    db_password = os.getenv('DB_PASSWORD', 'root') 
+    db_password = os.getenv('DB_PASSWORD', 'root')
     db_name = os.getenv('DB_NAME', 'bookyhome')
+
+    hosts = [db_host]
+    if db_host in {'mysql', 'localhost'}:
+        hosts.extend(['127.0.0.1', 'localhost'])
+    elif db_host == '127.0.0.1':
+        hosts = ['127.0.0.1', 'localhost']
 
     intentos_maximos = 10
     segundos_espera = 3
@@ -96,28 +107,33 @@ def get_db():
     # Reintentos mientras MySQL se inicializa
     # ========================
     for intento in range(1, intentos_maximos + 1):
-        try:
-            conexion = mysql.connector.connect(
-                host=db_host,
-                port=db_port,
-                user=db_user,
-                password=db_password,
-                database=db_name,
-                charset='utf8mb4',
-                use_unicode=True,
-                connection_timeout=10,
-                use_pure=True
-            )
-            if conexion.is_connected():
-                return conexion
+        last_error = None
+        for host in hosts:
+            try:
+                conexion = mysql.connector.connect(
+                    host=host,
+                    port=db_port,
+                    user=db_user,
+                    password=db_password,
+                    database=db_name,
+                    charset='utf8mb4',
+                    use_unicode=True,
+                    connection_timeout=10,
+                    use_pure=True
+                )
+                if conexion.is_connected():
+                    return conexion
+            except (InterfaceError, Error) as exc:
+                last_error = exc
+                continue
 
-        except InterfaceError:
+        if last_error is not None:
             print(
                 f"[DATABASE] Base de datos en preparación. Intento {intento}/{intentos_maximos}. "
                 f"Esperando {segundos_espera}s...", 
-                file=sys.stderr, 
+                file=sys.stderr,
                 flush=True
             )
             time.sleep(segundos_espera)
 
-    raise Exception("❌ Error: No se pudo conectar a MySQL tras varios intentos.")
+    raise Exception(f"❌ Error: No se pudo conectar a MySQL tras varios intentos. Último error: {last_error}")

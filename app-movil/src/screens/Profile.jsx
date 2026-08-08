@@ -5,11 +5,11 @@ import {
   TextInput,
   TouchableOpacity,
   ScrollView,
-  SafeAreaView,
   StyleSheet,
   ActivityIndicator,
   Alert,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { AuthContext } from '../context/AuthContext';
 import { getProfile, updateProfile, updatePreferences } from '../services/api';
 import Header from '../components/Header';
@@ -167,7 +167,7 @@ export default function Profile({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: BG },
+  safe: { flex: 1, backgroundColor: '#7A1E3A' },
   container: {
     padding: 16,
     paddingBottom: 30,

@@ -4,11 +4,11 @@ import {
   Text,
   TouchableOpacity,
   FlatList,
-  SafeAreaView,
   StyleSheet,
   ActivityIndicator,
   Alert,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { getPurchaseHistory } from '../services/api';
 import { AuthContext } from '../context/AuthContext';
 import Header from '../components/Header';
@@ -99,7 +99,7 @@ export default function History({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: BG },
+  safe: { flex: 1, backgroundColor: '#7A1E3A' },
   container: { flex: 1, padding: 16 },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   title: { fontSize: 22, fontWeight: '800', color: TEXT, marginBottom: 6 },

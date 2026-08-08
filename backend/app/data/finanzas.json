@@ -1436,6 +1436,41 @@
       "monto": 5500.0,
       "fecha": "2026-07-30T10:30:00.000000Z",
       "estado": "procesado"
+    },
+    {
+      "id": 121,
+      "tipo": "plan",
+      "id_tienda": 8,
+      "id_plan": 2,
+      "monto_plan": 29000.0,
+      "comision": 580.0,
+      "monto": 28420.0,
+      "periodicidad": "mensual",
+      "fecha": "2026-08-03T20:46:17.933875Z",
+      "estado": "procesado"
+    },
+    {
+      "id": 122,
+      "tipo": "plan",
+      "id_tienda": 8,
+      "id_plan": 3,
+      "monto_plan": 29000.0,
+      "comision": 580.0,
+      "monto": 28420.0,
+      "periodicidad": "mensual",
+      "fecha": "2026-08-03T20:46:19.357153Z",
+      "estado": "procesado"
+    },
+    {
+      "id": 123,
+      "tipo": "impulso",
+      "id_impulso": 13,
+      "id_tienda": 8,
+      "monto_impulso": 16200.0,
+      "comision": 810.0,
+      "monto": 15390.0,
+      "fecha": "2026-08-03T20:46:25.595006Z",
+      "estado": "procesado"
     }
   ],
   "pagos": [
