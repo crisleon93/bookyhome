@@ -2,8 +2,9 @@
 import React from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
-  TouchableOpacity, SafeAreaView, Dimensions, ImageBackground, Image,
+  TouchableOpacity, Dimensions, ImageBackground, Image,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path, Circle, Polygon, Polyline } from 'react-native-svg';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
@@ -221,7 +222,7 @@ export default function Home({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: WHITE },
+  safe: { flex: 1, backgroundColor: VINOTINTO },
 
   /* Hero */
   hero: { paddingHorizontal: 20, paddingTop: 24, paddingBottom: 28 },

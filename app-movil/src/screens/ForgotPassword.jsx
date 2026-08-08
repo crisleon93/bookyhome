@@ -2,8 +2,9 @@
 import React, { useState } from 'react';
 import {
   View, Text, TextInput, StyleSheet, Alert, ActivityIndicator,
-  TouchableOpacity, ScrollView, SafeAreaView, KeyboardAvoidingView, Platform,
+  TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import api from '../services/api';
 import AuthHeader from '../components/AuthHeader';
 import Footer from '../components/Footer';
@@ -107,7 +108,7 @@ export default function ForgotPassword({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: WHITE },
+  safe: { flex: 1, backgroundColor: '#7A1E3A' },
   scrollContent: { flexGrow: 1 },
 
   authMain: { backgroundColor: BEIGE, paddingVertical: 40, paddingHorizontal: 20, alignItems: 'center' },

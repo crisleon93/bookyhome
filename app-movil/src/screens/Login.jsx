@@ -2,7 +2,7 @@
 import React, { useContext, useEffect, useState } from 'react';
 import {
   View, Text, TextInput, StyleSheet, Alert, ActivityIndicator,
-  TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform,
+  TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as LocalAuthentication from 'expo-local-authentication';
@@ -31,6 +31,8 @@ export default function Login({ navigation }) {
   const [biometricAvailable, setBiometricAvailable] = useState(false);
   const [supportedBiometricTypes, setSupportedBiometricTypes] = useState([]);
   const [biometricLoading, setBiometricLoading] = useState(false);
+  const [biometricModalVisible, setBiometricModalVisible] = useState(false);
+  const [biometricModalOptions, setBiometricModalOptions] = useState([]);
   const {
     signIn,
     biometricEnabled,
@@ -192,35 +194,15 @@ export default function Login({ navigation }) {
 
     const buttons = [];
 
-    buttons.push({
-      text: 'Face ID',
-      onPress: currentFaceSupported
-        ? () => handleBiometricUnlock('face')
-        : () => {
-            Alert.alert(
-              'Face ID no disponible',
-              'Tu dispositivo no reporta Face ID como disponible. Usa huella para desbloquear.',
-              [
-                {
-                  text: 'Usar huella',
-                  onPress: () => handleBiometricUnlock('fingerprint'),
-                },
-                { text: 'Cancelar', style: 'cancel' },
-              ],
-              { cancelable: true }
-            );
-          },
-    });
-
+    if (currentFaceSupported) {
+      buttons.push({ label: 'Face ID', onPress: () => handleBiometricUnlock('face') });
+    }
     if (currentFingerprintSupported) {
-      buttons.push({ text: 'Huella', onPress: () => handleBiometricUnlock('fingerprint') });
+      buttons.push({ label: 'Huella dactilar', onPress: () => handleBiometricUnlock('fingerprint') });
     }
 
-    buttons.push({ text: 'Cancelar', style: 'cancel' });
-
-    Alert.alert('Elige un método', 'Selecciona cómo deseas desbloquear la app.', buttons, {
-      cancelable: true,
-    });
+    setBiometricModalOptions(buttons);
+    setBiometricModalVisible(true);
   };
 
   const canUnlockWithBiometrics = biometricEnabled && pendingToken && biometricAvailable;
@@ -392,16 +374,65 @@ export default function Login({ navigation }) {
           <Footer onLinkPress={(link) => console.log('Footer link:', link)} />
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* Modal biométrico personalizado */}
+      <Modal
+        visible={biometricModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setBiometricModalVisible(false)}
+      >
+        <TouchableOpacity
+          style={styles.bioModalOverlay}
+          activeOpacity={1}
+          onPress={() => setBiometricModalVisible(false)}
+        >
+          <View style={styles.bioModalCard} onStartShouldSetResponder={() => true}>
+            {/* Franja vinotinto superior */}
+            <View style={styles.bioModalHeader}>
+              <Text style={styles.bioModalTitle}>Elige un método</Text>
+            </View>
+            <Text style={styles.bioModalSubtitle}>
+              Selecciona cómo deseas desbloquear la app.
+            </Text>
+            {/* Botones de opciones */}
+            <View style={styles.bioModalOptions}>
+              {biometricModalOptions.map((btn, i) => (
+                <TouchableOpacity
+                  key={i}
+                  style={styles.bioModalOptionBtn}
+                  activeOpacity={0.8}
+                  onPress={() => {
+                    setBiometricModalVisible(false);
+                    btn.onPress();
+                  }}
+                >
+                  <Text style={styles.bioModalOptionText}>{btn.label}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            {/* Cancelar */}
+            <TouchableOpacity
+              style={styles.bioModalCancelBtn}
+              activeOpacity={0.7}
+              onPress={() => setBiometricModalVisible(false)}
+            >
+              <Text style={styles.bioModalCancelText}>Cancelar</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: WHITE },
+  safe: { flex: 1, backgroundColor: '#7A1E3A' },
   scrollContent: { flexGrow: 1 },
   authMain: {
     backgroundColor: BEIGE,
-    paddingVertical: 40,
+    paddingVertical: 20,
     paddingHorizontal: 20,
     alignItems: 'center',
   },
@@ -416,8 +447,8 @@ const styles = StyleSheet.create({
     shadowRadius: 20,
     elevation: 4,
   },
-  heroContainer: { alignItems: 'center', marginBottom: 8 },
-  lottie: { width: 140, height: 140 },
+  heroContainer: { alignItems: 'center', marginBottom: 4 },
+  lottie: { width: 100, height: 100 },
   title: { fontSize: 26, fontWeight: '800', color: CARBON, textAlign: 'center', marginBottom: 8 },
   subtitle: { fontSize: 15, color: GRAY, textAlign: 'center', marginBottom: 24 },
   field: { marginBottom: 18 },
@@ -475,4 +506,41 @@ const styles = StyleSheet.create({
   footerLinks: { marginTop: 22, alignItems: 'center' },
   footerText: { fontSize: 14, color: '#888' },
   footerLink: { color: VINOTINTO, fontWeight: '700' },
+
+  /* Modal biométrico */
+  bioModalOverlay: {
+    flex: 1, backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32,
+  },
+  bioModalCard: {
+    backgroundColor: WHITE, borderRadius: 18, width: '100%',
+    overflow: 'hidden',
+    shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 20, elevation: 8,
+  },
+  bioModalHeader: {
+    backgroundColor: VINOTINTO, paddingVertical: 18, paddingHorizontal: 24,
+  },
+  bioModalTitle: {
+    color: WHITE, fontSize: 18, fontWeight: '800',
+  },
+  bioModalSubtitle: {
+    fontSize: 14, color: GRAY, paddingHorizontal: 24,
+    paddingTop: 16, paddingBottom: 8, lineHeight: 20,
+  },
+  bioModalOptions: {
+    paddingHorizontal: 24, paddingTop: 8, gap: 10,
+  },
+  bioModalOptionBtn: {
+    backgroundColor: VINOTINTO, borderRadius: 10,
+    paddingVertical: 14, alignItems: 'center',
+  },
+  bioModalOptionText: {
+    color: WHITE, fontSize: 15, fontWeight: '700',
+  },
+  bioModalCancelBtn: {
+    paddingVertical: 16, alignItems: 'center', marginTop: 4,
+  },
+  bioModalCancelText: {
+    color: GRAY, fontSize: 14, fontWeight: '600',
+  },
 });

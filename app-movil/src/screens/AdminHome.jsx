@@ -1,6 +1,7 @@
 // src/screens/AdminHome.jsx
 import React, { useContext } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { AuthContext } from '../context/AuthContext';
 
 const PRIMARY = '#7A1E3A';
@@ -31,7 +32,7 @@ export default function AdminHome() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: BG },
+  safe: { flex: 1, backgroundColor: '#7A1E3A' },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',

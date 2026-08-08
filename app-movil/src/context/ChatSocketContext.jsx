@@ -102,12 +102,15 @@ export function ChatSocketProvider({ children }) {
       }
     };
 
-    ws.onerror = (e) => console.log('WS error global:', e.message);
+    ws.onerror = (e) => {
+      if (e?.message) console.log('WS error:', e.message);
+    };
 
     ws.onclose = (event) => {
       if (!montadoRef.current) return;
       setConectado(false);
       if (event.code === 4401) return; // token inválido, no reintentar
+      if (intentosReconexion.current >= 5) return; // máximo 5 reintentos
       intentosReconexion.current += 1;
       const espera = Math.min(1000 * intentosReconexion.current, 10000);
       reconectarTimeoutRef.current = setTimeout(conectarWebSocket, espera);

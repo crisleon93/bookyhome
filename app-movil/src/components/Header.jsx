@@ -69,12 +69,13 @@ export default function Header({
       <StatusBar
         barStyle="light-content"
         backgroundColor={VINOTINTO}
+        translucent={false}
       />
 
       {topBar && (
-        <TouchableOpacity style={[styles.topBar, { flexDirection: 'row', justifyContent: 'center', alignItems: 'center' }]} activeOpacity={0.7} onPress={() => setLocationModalVisible(true)}>
+        <TouchableOpacity style={[styles.topBar, { flexDirection: 'row', justifyContent: 'flex-start', alignItems: 'center' }]} activeOpacity={0.7} onPress={() => setLocationModalVisible(true)}>
           <IconLocation size={14} color={WHITE} />
-          <Text style={styles.topBarText}>  Enviar a: {selectedLocation}</Text>
+          <Text style={styles.topBarText}> Enviar a: {selectedLocation}</Text>
           <Text style={{ color: WHITE, fontSize: 10, marginLeft: 6 }}>▼</Text>
         </TouchableOpacity>
       )}
@@ -143,17 +144,17 @@ export default function Header({
       {/* FILA 2 — Barra de búsqueda a ancho completo */}
       <View style={[styles.row2, { backgroundColor: bgColor }]}>
         <View style={[styles.searchWrapper, isDashboard && styles.searchWrapperDark]}>
-          <IconSearch size={18} color={isDashboard ? 'rgba(255,255,255,0.7)' : VINOTINTO} />
+          <IconSearch size={18} color={isDashboard ? VINOTINTO : VINOTINTO} />
           <TextInput
             style={[styles.searchInput, isDashboard && styles.searchInputDark]}
             placeholder="Buscar libros..."
-            placeholderTextColor={isDashboard ? 'rgba(255,255,255,0.5)' : '#AAA'}
+            placeholderTextColor={isDashboard ? '#AAA' : '#AAA'}
             value={search}
             onChangeText={handleSearch}
           />
           {search.length > 0 && (
             <TouchableOpacity onPress={() => handleSearch('')}>
-              <IconClose size={16} color={isDashboard ? 'rgba(255,255,255,0.7)' : GRAY} />
+              <IconClose size={16} color={GRAY} />
             </TouchableOpacity>
           )}
           {/* Botón de escáner de códigos de barras */}
@@ -270,33 +271,33 @@ const styles = StyleSheet.create({
   topBar: {
     backgroundColor: VINOTINTO,
     flexDirection: 'row',
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     alignItems: 'center',
     paddingVertical: 6,
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
   },
   topBarText: { color: WHITE, fontSize: 12, fontWeight: '600', letterSpacing: 0.2 },
 
   /* Fila 1 — logo + acciones */
   row1: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 14, paddingVertical: 10,
+    paddingHorizontal: 20, paddingVertical: 10,
     borderBottomWidth: 0,
   },
   logoArea: {
     flexDirection: 'row',
     alignItems: 'center',
     flexShrink: 1,
-    marginLeft: -5,
+    marginLeft: 0,
     justifyContent: 'flex-start',
   },
   menuIconBtn: {
     padding: 8,
     marginRight: 2,
-    marginLeft: -10,
+    marginLeft: 0,
   },
-  logoImg: { width: 180, height: 100, resizeMode: 'contain', marginTop: -25, marginBottom: -25, marginLeft: -25 },
-  logoImgDash: { width: 140, height: 80, marginTop: -20, marginBottom: -20, marginLeft: 0 },
+  logoImg: { width: 160, height: 51, resizeMode: 'contain', marginLeft: 0 },
+  logoImgDash: { width: 130, height: 41, resizeMode: 'contain', marginLeft: 0 },
   logoText: { fontSize: 17, fontWeight: '800', color: VINOTINTO },
   logoTextWhite: { color: WHITE },
 
@@ -324,7 +325,7 @@ const styles = StyleSheet.create({
 
   /* Fila 2 — búsqueda */
   row2: {
-    paddingHorizontal: 14,
+    paddingHorizontal: 20,
     paddingTop: 2,
     paddingBottom: 6,
     shadowColor: '#000',
@@ -343,9 +344,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E0DBD4',
   },
-  searchWrapperDark: { backgroundColor: 'rgba(255,255,255,0.15)', borderColor: 'rgba(255,255,255,0.2)' },
+  searchWrapperDark: { backgroundColor: WHITE, borderColor: WHITE },
   searchInput:       { flex: 1, fontSize: 14, color: '#222', paddingVertical: 0 },
-  searchInputDark:   { color: WHITE },
+  searchInputDark:   { color: '#222' },
 
   /* Modal */
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' },

@@ -3,9 +3,10 @@ import React, { useContext, useEffect, useState } from 'react';
 import {
   View, Text, FlatList, Image, TouchableOpacity,
   StyleSheet, ActivityIndicator, TextInput,
-  ScrollView, SafeAreaView, Alert,
+  ScrollView,
 } from 'react-native';
-import { getBooks, searchByISBN } from '../services/api';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { getBooks } from '../services/api';
 import { AuthContext } from '../context/AuthContext';
 import Header from '../components/Header';
 import { IconBooks, IconStore, IconStar, IconCart } from '../components/Icons';
@@ -254,7 +255,7 @@ export default function PostLogin({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: BG },
+  safe: { flex: 1, backgroundColor: PRIMARY },
 
   /* Greeting */
   greetingRow: {
@@ -262,8 +263,8 @@ const styles = StyleSheet.create({
     paddingTop: 18,
     paddingBottom: 10,
   },
-  greetingText: { fontSize: 18, fontWeight: '800', color: '#1A1A1A' },
-  greetingSub:  { fontSize: 13, color: GRAY, marginTop: 2 },
+  greetingText: { fontSize: 18, fontWeight: '800', color: WHITE },
+  greetingSub:  { fontSize: 13, color: 'rgba(255,255,255,0.75)', marginTop: 2 },
 
   /* Stats */
   statsStrip: {
@@ -279,7 +280,7 @@ const styles = StyleSheet.create({
 
   /* Categorías */
   sectionTitle: {
-    fontSize: 16, fontWeight: '700', color: '#222',
+    fontSize: 16, fontWeight: '700', color: WHITE,
     marginHorizontal: 16, marginTop: 22, marginBottom: 10,
   },
   catScroll: { paddingLeft: 16, marginBottom: 4 },
@@ -316,5 +317,5 @@ const styles = StyleSheet.create({
 
   /* Misc */
   loadingWrap: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  emptyText:   { textAlign: 'center', color: GRAY, marginTop: 30, fontSize: 15 },
+  emptyText:   { textAlign: 'center', color: 'rgba(255,255,255,0.75)', marginTop: 30, fontSize: 15 },
 });

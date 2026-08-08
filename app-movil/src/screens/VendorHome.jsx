@@ -5,11 +5,11 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
   ActivityIndicator,
   RefreshControl,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { AuthContext } from '../context/AuthContext';
 import { getSalasUsuario } from '../services/api';
@@ -135,13 +135,13 @@ const totalNoLeidos = salas.reduce((acc, s) => acc + (s.no_leidos || 0), 0);
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: BG },
+  safe: { flex: 1, backgroundColor: '#7A1E3A' },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     backgroundColor: PRIMARY,
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
     paddingVertical: 14,
   },
   storeName: { color: WHITE, fontSize: 18, fontWeight: '800' },
@@ -153,8 +153,8 @@ const styles = StyleSheet.create({
     borderRadius: 18,
   },
   signOutText: { color: WHITE, fontSize: 12, fontWeight: '700' },
-  content: { padding: 16, paddingBottom: 32 },
-  greeting: { fontSize: 18, fontWeight: '700', color: '#1A1A1A', marginBottom: 16 },
+  content: { padding: 16, paddingBottom: 32, flexGrow: 1 },
+  greeting: { fontSize: 18, fontWeight: '700', color: WHITE, marginBottom: 16 },
 
   grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
   card: {
@@ -167,8 +167,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: BORDER,
     alignItems: 'flex-start',
+    shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 6, elevation: 2,
   },
-  cardDisabled: { opacity: 0.5 },
+  cardDisabled: { opacity: 1 },
   cardIcon: { fontSize: 22, marginBottom: 8 },
   cardLabel: { fontSize: 14, fontWeight: '700', color: '#1A1A1A' },
   cardSoon: { fontSize: 10, color: TEXT_MUTED, marginTop: 4 },

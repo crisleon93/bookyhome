@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, TextInput, StyleSheet, ActivityIndicator,
-  TouchableOpacity, ScrollView, SafeAreaView, KeyboardAvoidingView, Platform,
+  TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { registerLibrary } from '../services/api';
 import AuthHeader from '../components/AuthHeader';
 import Footer from '../components/Footer';
@@ -248,7 +249,7 @@ export default function RegisterLibrary({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: WHITE },
+  safe: { flex: 1, backgroundColor: '#7A1E3A' },
   scrollContent: { flexGrow: 1 },
 
   authMain: { backgroundColor: BEIGE, paddingVertical: 40, paddingHorizontal: 20, alignItems: 'center' },

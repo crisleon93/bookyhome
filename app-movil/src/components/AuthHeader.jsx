@@ -6,7 +6,7 @@ const VINOTINTO = '#7A1E3A';
 export default function AuthHeader() {
   return (
     <>
-      <StatusBar barStyle="light-content" backgroundColor={VINOTINTO} />
+      <StatusBar barStyle="light-content" backgroundColor={VINOTINTO} translucent={false} />
       <View style={styles.bar}>
         <Image source={require('../assets/logo.png')} style={styles.logo} resizeMode="contain" />
       </View>
@@ -17,10 +17,10 @@ export default function AuthHeader() {
 const styles = StyleSheet.create({
   bar: {
     backgroundColor: VINOTINTO,
-    paddingVertical: 12,
+    paddingVertical: 10,
     paddingHorizontal: 20,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  logo: { width: 140, height: 44, resizeMode: 'contain' },
+  logo: { width: 160, height: 51, resizeMode: 'contain' },
 });
