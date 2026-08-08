@@ -3,6 +3,8 @@
 # ======================
 backend/venv/
 backend/.venv/
+.venv/
+.venv-1/
 backend/__pycache__/
 backend/**/*.pyc
 backend/.env
