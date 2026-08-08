@@ -1,14 +1,16 @@
 import React, { useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import api, { addToCart, removeFromCart } from '../services/api';
 import { notify } from '../components/ToastProvider';
 import FiltrosCatalogo from '../components/FiltrosCatalogo';
 import LibroCard from '../components/LibroCard';
+import { chatService } from '../services/chat';
 import '../styles/catalogo.css';
 
 
 const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [libros, setLibros] = useState([]);
   const [loading, setLoading] = useState(true);
   const [pagina, setPagina] = useState(1);
@@ -17,6 +19,7 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
   const [addedToCartIds, setAddedToCartIds] = useState(new Set());
   const [libroSeleccionado, setLibroSeleccionado] = useState(null);
   const [mostrarDetalles, setMostrarDetalles] = useState(false);
+  const [contactando, setContactando] = useState(false);
 
   const [filtros, setFiltros] = useState({
     q: searchParams.get('q') || '',
@@ -130,6 +133,40 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
   const handleVolverCatalogo = () => {
     setMostrarDetalles(false);
     setLibroSeleccionado(null);
+  };
+
+  const handleContactar = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      notify('Debes iniciar sesión para contactar al vendedor', 'error');
+      navigate('/login');
+      return;
+    }
+
+    if (!libroSeleccionado?.id_tienda) {
+      notify('No se puede identificar la tienda del vendedor', 'error');
+      return;
+    }
+
+    setContactando(true);
+    try {
+      // Crear o obtener sala de chat con la tienda
+      const response = await chatService.crearSala(libroSeleccionado.id_tienda);
+      const idSala = response.id_sala;
+      
+      if (!idSala) {
+        throw new Error('No se recibió id_sala del servidor');
+      }
+
+      // Navegar a PostLogin con la sección Mensajes y el id_sala seleccionado
+      navigate(`/post-login?seccion=Mensajes&sala=${idSala}`);
+    } catch (error) {
+      console.error('Error al crear sala de chat:', error);
+      const errorMsg = error.response?.data?.detail || error.message || 'No se pudo iniciar el chat. Intenta nuevamente.';
+      notify(errorMsg, 'error');
+    } finally {
+      setContactando(false);
+    }
   };
 
   return (
@@ -260,11 +297,8 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
                   )}
                 </button>
                 <button
-                  onClick={() => {
-                    const mensaje = `Hola, estoy interesado en el libro "${libroSeleccionado.titulo}" de ${libroSeleccionado.autor_libro || libroSeleccionado.autor} que está en tu librería ${libroSeleccionado.nombre_tienda || ''}.`;
-                    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(mensaje)}`;
-                    window.open(whatsappUrl, '_blank');
-                  }}
+                  onClick={handleContactar}
+                  disabled={contactando}
                   style={{
                     flex: 1,
                     minWidth: '180px',
@@ -273,20 +307,32 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
                     border: '2px solid var(--vinotinto, #8b0000)',
                     padding: '16px 32px',
                     borderRadius: '8px',
-                    cursor: 'pointer',
+                    cursor: contactando ? 'not-allowed' : 'pointer',
                     fontSize: '1.1rem',
                     fontWeight: '600',
                     transition: 'all 0.2s ease',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    gap: '8px'
+                    gap: '8px',
+                    opacity: contactando ? 0.65 : 1
                   }}
                 >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
-                  </svg>
-                  Contactar librería
+                  {contactando ? (
+                    <>
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ animation: 'spin 1s linear infinite' }}>
+                        <path d="M21 12a9 9 0 1 1-6.219-8.56"></path>
+                      </svg>
+                      Conectando...
+                    </>
+                  ) : (
+                    <>
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+                      </svg>
+                      Contactar librería
+                    </>
+                  )}
                 </button>
               </div>
             </div>

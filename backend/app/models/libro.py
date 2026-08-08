@@ -1,21 +1,22 @@
 from app.database import get_db
 from datetime import date
+import re
 
 # ──────────────────────────────────────────────
 #  CREAR LIBRO
 # ──────────────────────────────────────────────
 def crear_libro(id_tienda: int, id_categoria: int, titulo: str, autor: str,
-                descripcion: str, precio: float, stock: int, estado: str):
+                descripcion: str, precio: float, stock: int, estado: str, isbn: str = None):
     db = get_db()
     cursor = db.cursor()
     try:
         cursor.execute("""
-            INSERT INTO libros (id_tienda, id_categoria, titulo, autor_libro,
+            INSERT INTO libros (id_tienda, id_categoria, titulo, autor_libro, isbn,
                                 descripcion_libro, precio_libro, stock,
                                 estado_libro, fecha_publicacion, fecha_listado)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         """, (
-            id_tienda, id_categoria, titulo, autor,
+            id_tienda, id_categoria, titulo, autor, isbn,
             descripcion, precio, stock,
             estado, date.today(), date.today()
         ))
@@ -152,7 +153,7 @@ def obtener_categorias():
 #  EDITAR LIBRO
 # ──────────────────────────────────────────────
 def editar_libro(id_libro: int, id_tienda: int, id_categoria: int, titulo: str,
-                 autor: str, descripcion: str, precio: float, stock: int, estado: str):
+                 autor: str, descripcion: str, precio: float, stock: int, estado: str, isbn: str = None):
     db = get_db()
     cursor = db.cursor()
     try:
@@ -164,11 +165,11 @@ def editar_libro(id_libro: int, id_tienda: int, id_categoria: int, titulo: str,
 
         cursor.execute("""
             UPDATE libros
-            SET id_categoria = %s, titulo = %s, autor_libro = %s,
+            SET id_categoria = %s, titulo = %s, autor_libro = %s, isbn = %s,
                 descripcion_libro = %s, precio_libro = %s,
                 stock = %s, estado_libro = %s
             WHERE id_libro = %s
-        """, (id_categoria, titulo, autor, descripcion, precio, stock, estado, id_libro))
+        """, (id_categoria, titulo, autor, isbn, descripcion, precio, stock, estado, id_libro))
         db.commit()
         return {"ok": True}
     except Exception as e:
@@ -606,3 +607,68 @@ def obtener_ventas_tienda(id_tienda: int):
                 "total": item["precio_libro"] * item["cantidad"]
             })
     return ventas
+
+
+# ──────────────────────────────────────────────
+#  BUSCAR LIBRO POR ISBN
+# ──────────────────────────────────────────────
+def buscar_libro_por_isbn(isbn: str):
+    """
+    Busca libros por ISBN en todo el catálogo.
+    Retorna una lista de libros con el mismo ISBN de diferentes vendedores,
+    ordenados por precio ascendente para comparación.
+    """
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    try:
+        cursor.execute("""
+            SELECT l.*, t.nombre_tienda, t.id_tienda, c.nombre_categoria,
+                   GROUP_CONCAT(i.url_imagen) AS imagenes
+            FROM libros l
+            LEFT JOIN tiendas t ON l.id_tienda = t.id_tienda
+            LEFT JOIN categorias c ON l.id_categoria = c.id_categoria
+            LEFT JOIN imagenes_libro i ON l.id_libro = i.id_libro
+            WHERE l.isbn = %s AND l.oculto = 0
+            GROUP BY l.id_libro, t.nombre_tienda, c.nombre_categoria
+            ORDER BY l.precio_libro ASC
+        """, (isbn,))
+        libros = cursor.fetchall()
+        
+        for libro in libros:
+            libro["imagenes"] = libro["imagenes"].split(",") if libro["imagenes"] else []
+        return libros
+    except Exception as e:
+        return []
+    finally:
+        cursor.close()
+        db.close()
+
+
+# ──────────────────────────────────────────────
+#  VALIDAR Y NORMALIZAR ISBN
+# ──────────────────────────────────────────────
+def validar_y_normalizar_isbn(isbn: str) -> str:
+    """
+    Valida y normaliza un ISBN (elimina guiones y espacios).
+    Soporta ISBN-10 e ISBN-13.
+    Retorna el ISBN normalizado o None si es inválido.
+    """
+    if not isbn:
+        return None
+    
+    # Eliminar guiones y espacios
+    isbn_limpio = re.sub(r'[-\s]', '', isbn.upper())
+    
+    # Validar formato ISBN-10 o ISBN-13
+    if len(isbn_limpio) == 10:
+        # ISBN-10: 9 dígitos + X o dígito de verificación
+        if not re.match(r'^\d{9}[\dX]$', isbn_limpio):
+            return None
+    elif len(isbn_limpio) == 13:
+        # ISBN-13: 13 dígitos
+        if not re.match(r'^\d{13}$', isbn_limpio):
+            return None
+    else:
+        return None
+    
+    return isbn_limpio

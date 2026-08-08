@@ -14,14 +14,16 @@
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "NSFaceIDUsageDescription": "BookyHome usa Face ID o Touch ID para desbloquear tu sesión de forma segura."
+        "NSFaceIDUsageDescription": "BookyHome usa Face ID o Touch ID para desbloquear tu sesión de forma segura.",
+        "NSCameraUsageDescription": "BookyHome necesita acceso a la cámara para escanear códigos de barras de libros y buscar mejores precios."
       }
     },
     "android": {
       "package": "com.bookyhome.app",
       "permissions": [
         "USE_BIOMETRIC",
-        "USE_FINGERPRINT"
+        "USE_FINGERPRINT",
+        "CAMERA"
       ],
       "adaptiveIcon": {
         "foregroundImage": "./src/assets/adaptive-icon.png",
@@ -43,6 +45,12 @@
         "expo-local-authentication",
         {
           "faceIDPermission": "BookyHome usa Face ID o Touch ID para desbloquear tu sesión de forma segura."
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "BookyHome necesita acceso a la cámara para escanear códigos de barras de libros y buscar mejores precios."
         }
       ]
     ]

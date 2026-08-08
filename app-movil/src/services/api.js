@@ -18,6 +18,7 @@ export const getBookById = (id) => api.get(`/stored/api/stored/libros/${id}`);
 export const getBookAvailability = (id, cantidad) => api.get(`/libros/${id}/disponibilidad`, { params: { cantidad } });
 export const getBookOffer = (id) => api.get(`/ofertas/libro/${id}/activa`);
 export const getCategorias = () => api.get('/catalogo/categorias');
+export const searchByISBN = (isbn) => api.get(`/catalogo/buscar-por-isbn/${isbn}`);
 
 // ===== Carrito =====
 export const getCart = () => api.get('/carrito');

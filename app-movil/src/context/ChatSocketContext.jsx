@@ -50,6 +50,10 @@ export function ChatSocketProvider({ children }) {
       const sala = { ...copia[idx] };
       sala.ultimo_mensaje = mensaje.mensaje;
       sala.fecha_ultimo_mensaje = mensaje.enviado_en;
+      
+      // NO sobrescribir nombre_comprador ni nombre_tienda
+      // Mantener los campos existentes de nombre
+      
       if (!esPropio) sala.no_leidos = (sala.no_leidos || 0) + 1;
       copia.splice(idx, 1);
       copia.unshift(sala);

@@ -148,6 +148,7 @@ async def publicar_libro(
     precio_libro: float = Form(...),
     stock: int = Form(...),
     estado_libro: str = Form(...),
+    isbn: Optional[str] = Form(None),
     imagenes: Optional[List[UploadFile]] = File(None),
     user=Depends(get_current_user),
 ):
@@ -178,6 +179,7 @@ async def publicar_libro(
         precio=precio_libro,
         stock=stock,
         estado=estado_libro,
+        isbn=isbn,
     )
     if not resultado["ok"]:
         raise HTTPException(status_code=500, detail="Error al crear el libro: " + resultado["error"])
@@ -222,6 +224,7 @@ def editar(
     precio_libro: float = Form(...),
     stock: int = Form(...),
     estado_libro: str = Form(...),
+    isbn: Optional[str] = Form(None),
     user=Depends(get_current_user),
 ):
     id_usuario = int(user["sub"])
@@ -241,6 +244,7 @@ def editar(
         precio=precio_libro,
         stock=stock,
         estado=estado_libro,
+        isbn=isbn,
     )
     if not resultado["ok"]:
         raise HTTPException(

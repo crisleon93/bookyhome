@@ -5,8 +5,9 @@ import {
   StyleSheet, Modal, StatusBar, Alert,
 } from 'react-native';
 import { AuthContext } from '../context/AuthContext';
-import { IconSearch, IconUser, IconUserPlus, IconLocation, IconClose, IconChevronRight, IconBook, IconMenu, IconCart } from './Icons';
+import { IconSearch, IconUser, IconUserPlus, IconLocation, IconClose, IconChevronRight, IconBook, IconMenu, IconCart, IconCamera } from './Icons';
 import SidebarMenu from './SidebarMenu';
+import BarcodeScanner from './BarcodeScanner';
 
 const VINOTINTO  = '#7A1E3A';
 const WHITE      = '#FFFFFF';
@@ -33,12 +34,14 @@ export default function Header({
   showTopBar,
   onSearch,
   onSignOut,
+  onBarcodeScanned,
 }) {
   const [search, setSearch]           = useState('');
   const [modalVisible, setModalVisible] = useState(false);
   const [locationModalVisible, setLocationModalVisible] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState('Todo el país (Colombia)');
   const [drawerVisible, setDrawerVisible] = useState(false);
+  const [barcodeScannerVisible, setBarcodeScannerVisible] = useState(false);
   
   const { user } = useContext(AuthContext);
 
@@ -49,6 +52,12 @@ export default function Header({
   const handleSearch = (text) => {
     setSearch(text);
     onSearch?.(text);
+  };
+
+  const handleBarcodeDetected = async (isbn) => {
+    setBarcodeScannerVisible(false);
+    // Pasar el ISBN detectado al componente padre
+    onBarcodeScanned?.(isbn);
   };
 
   const bgColor = VINOTINTO;
@@ -148,6 +157,16 @@ export default function Header({
               <IconClose size={16} color={GRAY} />
             </TouchableOpacity>
           )}
+          {/* Botón de escáner de códigos de barras */}
+          {isDashboard && (
+            <TouchableOpacity
+              style={styles.barcodeButton}
+              onPress={() => setBarcodeScannerVisible(true)}
+              activeOpacity={0.8}
+            >
+              <IconCamera size={18} color={WHITE} />
+            </TouchableOpacity>
+          )}
         </View>
       </View>
 
@@ -236,6 +255,13 @@ export default function Header({
           onSignOut={onSignOut}
         />
       )}
+
+      {/* Escáner de códigos de barras */}
+      <BarcodeScanner
+        visible={barcodeScannerVisible}
+        onClose={() => setBarcodeScannerVisible(false)}
+        onBarcodeDetected={handleBarcodeDetected}
+      />
     </>
   );
 }
@@ -290,6 +316,12 @@ const styles = StyleSheet.create({
   /* Dashboard derecha */
   dashRight:   { flexDirection: 'row', alignItems: 'center', marginRight: 5 },
   cartIconBtn: { padding: 6 },
+  barcodeButton: {
+    padding: 6,
+    marginLeft: 4,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    borderRadius: 6,
+  },
 
   /* Fila 2 — búsqueda */
   row2: {
