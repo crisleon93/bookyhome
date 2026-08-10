@@ -29,6 +29,7 @@ export const getCarrito = () => api.get('/carrito')
 export const addToCart = (payload) => api.post('/carrito', payload)
 export const removeFromCart = (id_libro) => api.delete(`/carrito/${id_libro}`)
 export const checkoutCarrito = () => api.post('/carrito/checkout')
+export const sincronizarOrdenes = () => api.post('/carrito/sincronizar-ordenes')
 export const postPayment = (payload) => api.post('/api/v1/payments', payload)
 export const getOrden = (orderId) => api.get(`/api/v1/orders/${orderId}`)
 export const getOrdenes = () => api.get('/api/v1/orders')
@@ -80,6 +81,10 @@ export const crearDireccion = (payload) => api.post('/direcciones', payload)
 export const actualizarDireccion = (id, payload) => api.put(`/direcciones/${id}`, payload)
 export const eliminarDireccion = (id) => api.delete(`/direcciones/${id}`)
 export const marcarDireccionPredeterminada = (id) => api.patch(`/direcciones/${id}/default`)
+
+// Perfil y estadísticas
+export const getEstadisticasUsuario = () => api.get('/perfil/estadisticas/usuario')
+export const debugEstadisticas = () => api.get('/perfil/estadisticas/debug')
 
 // Envíos y tracking manual
 export const getEmpresasMensajeria = () => api.get('/envios/empresas')

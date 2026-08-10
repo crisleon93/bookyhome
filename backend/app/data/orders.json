@@ -1654,6 +1654,68 @@
       "total": 75000.0,
       "estado": "Procesando",
       "metodo_pago": "PSE"
+    },
+    {
+      "id_orden": 29,
+      "codigo_compra": "BH-E35620464F",
+      "fecha": "2026-08-10T01:54:27.036791Z",
+      "items": [
+        {
+          "id_libro": 46,
+          "titulo": "La Metafisica de los 24 Elementos",
+          "autor_libro": "Bhaktivedanta",
+          "precio_libro": 45000.0,
+          "cantidad": 1,
+          "imagen": null
+        },
+        {
+          "id_libro": 14,
+          "titulo": "Humor y Vida",
+          "autor_libro": "T. Gomez",
+          "precio_libro": 20000.0,
+          "cantidad": 1,
+          "imagen": "https://images.unsplash.com/photo-1516321497487-e288fb19713f?w=400&q=80"
+        }
+      ],
+      "total": 65000.0,
+      "estado": "pagado",
+      "metodo_pago": "PSE"
+    },
+    {
+      "id_orden": 30,
+      "codigo_compra": "BH-C5A74EACEB",
+      "fecha": "2026-08-10T01:55:23.281403Z",
+      "items": [
+        {
+          "id_libro": 37,
+          "titulo": "Don Quijote de la Mancha",
+          "autor_libro": "Miguel de Cervantes",
+          "precio_libro": 50000.0,
+          "cantidad": 1,
+          "imagen": "https://covers.openlibrary.org/b/id/12752210-L.jpg"
+        }
+      ],
+      "total": 50000.0,
+      "estado": "pagado",
+      "metodo_pago": "Transferencia Bancaria"
+    },
+    {
+      "id_orden": 15,
+      "codigo_compra": "BH-CD1D0224F0",
+      "fecha": "2026-08-10T02:12:20.600071Z",
+      "items": [
+        {
+          "id_libro": 44,
+          "titulo": "El principito",
+          "autor_libro": "Antoine de Saint-Exupéry",
+          "precio_libro": 20000.0,
+          "cantidad": 1,
+          "imagen": "https://covers.openlibrary.org/b/id/12688412-L.jpg"
+        }
+      ],
+      "total": 20000.0,
+      "estado": "pagado",
+      "metodo_pago": "Tarjeta de Crédito"
     }
   ],
   "24": [
@@ -2066,6 +2128,261 @@
       "total": 55000.0,
       "estado": "Entregado",
       "metodo_pago": "Tarjeta de Crédito"
+    },
+    {
+      "id_orden": 13,
+      "codigo_compra": "BH-247EA2609E",
+      "fecha": "2026-08-10T01:00:14.881849Z",
+      "items": [
+        {
+          "id_libro": 46,
+          "titulo": "La Metafisica de los 24 Elementos",
+          "autor_libro": "Bhaktivedanta",
+          "precio_libro": 45000.0,
+          "cantidad": 1,
+          "imagen": null
+        },
+        {
+          "id_libro": 40,
+          "titulo": "Orgullo y Prejuicio",
+          "autor_libro": "Jane Austen",
+          "precio_libro": 28000.0,
+          "cantidad": 1,
+          "imagen": "https://covers.openlibrary.org/b/id/12739345-L.jpg"
+        },
+        {
+          "id_libro": 34,
+          "titulo": "El Resplandor",
+          "autor_libro": "Stephen King",
+          "precio_libro": 25000.0,
+          "cantidad": 1,
+          "imagen": "https://covers.openlibrary.org/b/id/11440713-L.jpg"
+        }
+      ],
+      "total": 98000.0,
+      "estado": "pagado",
+      "metodo_pago": "PSE"
+    },
+    {
+      "id_orden": 14,
+      "codigo_compra": "BH-4C2E7AF165",
+      "fecha": "2026-08-10T01:03:20.461372Z",
+      "items": [
+        {
+          "id_libro": 39,
+          "titulo": "Maus",
+          "autor_libro": "Art Spiegelman",
+          "precio_libro": 75000.0,
+          "cantidad": 1,
+          "imagen": "https://covers.openlibrary.org/b/id/12390124-L.jpg"
+        }
+      ],
+      "total": 75000.0,
+      "estado": "pagado",
+      "metodo_pago": "Tarjeta de Crédito"
+    },
+    {
+      "id_orden": 15,
+      "codigo_compra": "BH-3B7561A245",
+      "fecha": "2026-08-10T01:08:21.513614Z",
+      "items": [
+        {
+          "id_libro": 32,
+          "titulo": "Frida Kahlo: Una biografía",
+          "autor_libro": "Hayden Herrera",
+          "precio_libro": 45000.0,
+          "cantidad": 1,
+          "imagen": "https://covers.openlibrary.org/b/id/11252110-L.jpg"
+        },
+        {
+          "id_libro": 6,
+          "titulo": "Codigo Maquinado",
+          "autor_libro": "P. Castro",
+          "precio_libro": 60000.0,
+          "cantidad": 1,
+          "imagen": "https://images.unsplash.com/photo-1515879218367-8466d910aaa4?w=400&q=80"
+        }
+      ],
+      "total": 105000.0,
+      "estado": "pagado",
+      "metodo_pago": "Tarjeta de Crédito"
+    },
+    {
+      "id_orden": 24,
+      "codigo_compra": "BH-E8B7D70B96",
+      "fecha": "2026-08-10T01:21:44.116846Z",
+      "items": [
+        {
+          "id_libro": 7,
+          "titulo": "Principios de Ingenieria",
+          "autor_libro": "C. Lopez",
+          "precio_libro": 70000.0,
+          "cantidad": 1,
+          "imagen": "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=400&q=80"
+        },
+        {
+          "id_libro": 42,
+          "titulo": "Bajo la misma estrella",
+          "autor_libro": "John Green",
+          "precio_libro": 25000.0,
+          "cantidad": 1,
+          "imagen": "https://covers.openlibrary.org/b/id/12411542-L.jpg"
+        }
+      ],
+      "total": 95000.0,
+      "estado": "Pagada"
+    },
+    {
+      "id_orden": 25,
+      "codigo_compra": "BH-54DD917003",
+      "fecha": "2026-08-10T01:39:54.004692Z",
+      "items": [
+        {
+          "id_libro": 46,
+          "titulo": "La Metafisica de los 24 Elementos",
+          "autor_libro": "Bhaktivedanta",
+          "precio_libro": 45000.0,
+          "cantidad": 1,
+          "imagen": null
+        }
+      ],
+      "total": 45000.0,
+      "estado": "Pagada"
+    },
+    {
+      "id_orden": 26,
+      "codigo_compra": "BH-1EBFCDD094",
+      "fecha": "2026-08-10T01:44:52.459409Z",
+      "items": [
+        {
+          "id_libro": 38,
+          "titulo": "Frankenstein",
+          "autor_libro": "Mary Shelley",
+          "precio_libro": 18000.0,
+          "cantidad": 1,
+          "imagen": "https://covers.openlibrary.org/b/id/12711225-L.jpg"
+        }
+      ],
+      "total": 18000.0,
+      "estado": "Pagada"
+    },
+    {
+      "id_orden": 27,
+      "codigo_compra": "BH-44B2383657",
+      "fecha": "2026-08-10T01:50:04.658727Z",
+      "items": [
+        {
+          "id_libro": 36,
+          "titulo": "It (Eso)",
+          "autor_libro": "Stephen King",
+          "precio_libro": 68000.0,
+          "cantidad": 1,
+          "imagen": "https://covers.openlibrary.org/b/id/12852110-L.jpg"
+        }
+      ],
+      "total": 68000.0,
+      "estado": "pagado",
+      "metodo_pago": "Tarjeta de Crédito"
+    },
+    {
+      "id_orden": 28,
+      "codigo_compra": "BH-19D002F3A3",
+      "fecha": "2026-08-10T01:52:25.194841Z",
+      "items": [
+        {
+          "id_libro": 35,
+          "titulo": "Drácula",
+          "autor_libro": "Bram Stoker",
+          "precio_libro": 22000.0,
+          "cantidad": 1,
+          "imagen": "https://covers.openlibrary.org/b/id/12612142-L.jpg"
+        }
+      ],
+      "total": 22000.0,
+      "estado": "pagado",
+      "metodo_pago": "PayPal"
+    }
+  ],
+  "33": [
+    {
+      "id_orden": 1,
+      "codigo_compra": "BH-DD6502D984",
+      "fecha": "2026-08-10T02:15:14.443506Z",
+      "items": [
+        {
+          "id_libro": 36,
+          "titulo": "It (Eso)",
+          "autor_libro": "Stephen King",
+          "precio_libro": 68000.0,
+          "cantidad": 1,
+          "imagen": "https://covers.openlibrary.org/b/id/12852110-L.jpg"
+        }
+      ],
+      "total": 68000.0,
+      "estado": "pagado",
+      "metodo_pago": "PayPal"
+    },
+    {
+      "id_orden": 2,
+      "codigo_compra": "BH-6DA9082241",
+      "fecha": "2026-08-10T02:30:22.797957Z",
+      "items": [
+        {
+          "id_libro": 27,
+          "titulo": "Un mundo feliz",
+          "autor_libro": "Aldous Huxley",
+          "precio_libro": 31000.0,
+          "cantidad": 1,
+          "imagen": "https://covers.openlibrary.org/b/id/12814522-L.jpg"
+        }
+      ],
+      "total": 31000.0,
+      "estado": "pagado",
+      "metodo_pago": "Tarjeta de Crédito"
+    },
+    {
+      "id_orden": 3,
+      "codigo_compra": "BH-D5C0F85ECC",
+      "fecha": "2026-08-10T02:36:01.308407Z",
+      "items": [
+        {
+          "id_libro": 44,
+          "titulo": "El principito",
+          "autor_libro": "Antoine de Saint-Exupéry",
+          "precio_libro": 20000.0,
+          "cantidad": 1,
+          "imagen": "https://covers.openlibrary.org/b/id/12688412-L.jpg"
+        }
+      ],
+      "total": 20000.0,
+      "estado": "pagado",
+      "metodo_pago": "PayPal"
+    },
+    {
+      "id_orden": 4,
+      "codigo_compra": "BH-ED92A37F9F",
+      "fecha": "2026-08-10T18:49:09.143365Z",
+      "items": [
+        {
+          "id_libro": 42,
+          "titulo": "Bajo la misma estrella",
+          "autor_libro": "John Green",
+          "precio_libro": 25000.0,
+          "cantidad": 1,
+          "imagen": "https://covers.openlibrary.org/b/id/12411542-L.jpg"
+        },
+        {
+          "id_libro": 4,
+          "titulo": "Viaje a Orion",
+          "autor_libro": "M. Rojas",
+          "precio_libro": 45000.0,
+          "cantidad": 1,
+          "imagen": "https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?w=400&q=80"
+        }
+      ],
+      "total": 70000.0,
+      "estado": "pagado",
+      "metodo_pago": "Pago en Efecty"
     }
   ]
 }

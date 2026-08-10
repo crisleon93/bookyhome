@@ -43,6 +43,13 @@ class PerfilRespuesta(BaseModel):
     rol: str
     fecha_registro: str
 
+class EstadisticasRespuesta(BaseModel):
+    nivel_fidelizacion: str
+    total_gastado: float
+    num_compras: int
+    ticket_promedio: float
+    categorias_favoritas: list
+
 # ============= HELPERS =============
 
 def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
@@ -427,3 +434,71 @@ def actualizar_preferencias(data: PreferenciasUsuario, user_id: int = Depends(ge
     finally:
         cursor.close()
         db.close()
+
+@router.get("/estadisticas/usuario")
+def obtener_estadisticas_reales(user_id: int = Depends(get_current_user)):
+    """Endpoint de estadísticas de usuario"""
+    try:
+        db = get_db()
+        cursor = db.cursor(dictionary=True)
+
+        # Obtener estadísticas de compras
+        query_compras = """
+            SELECT 
+                COUNT(o.id_orden) AS num_compras,
+                IFNULL(SUM(o.total), 0) AS total_gastado,
+                IFNULL(AVG(o.total), 0) AS ticket_promedio
+            FROM ordenes_compra o
+            WHERE o.id_usuario = %s 
+            AND LOWER(o.estado_orden) != 'cancelada'
+        """
+        cursor.execute(query_compras, (user_id,))
+        estadisticas = cursor.fetchone()
+        
+        # Valores por defecto
+        num_compras = estadisticas['num_compras'] if estadisticas else 0
+        total_gastado = float(estadisticas['total_gastado']) if estadisticas and estadisticas['total_gastado'] else 0
+        ticket_promedio = float(estadisticas['ticket_promedio']) if estadisticas and estadisticas['ticket_promedio'] else 0
+        
+        # Calcular nivel de fidelización
+        if total_gastado >= 300000:
+            nivel_fidelizacion = 'Platino'
+        elif total_gastado >= 150000:
+            nivel_fidelizacion = 'Oro'
+        elif total_gastado >= 50000:
+            nivel_fidelizacion = 'Plata'
+        else:
+            nivel_fidelizacion = 'Bronce'
+        
+        # Obtener categorías favoritas
+        query_categorias = """
+            SELECT 
+                c.nombre_categoria AS nombre,
+                COUNT(do.id_detalle) AS conteo
+            FROM detalle_orden do
+            INNER JOIN libros l ON do.id_libro = l.id_libro
+            INNER JOIN categorias c ON l.id_categoria = c.id_categoria
+            INNER JOIN ordenes_compra o ON do.id_orden = o.id_orden
+            WHERE o.id_usuario = %s 
+            AND LOWER(o.estado_orden) != 'cancelada'
+            GROUP BY c.id_categoria, c.nombre_categoria
+            ORDER BY conteo DESC
+            LIMIT 5
+        """
+        cursor.execute(query_categorias, (user_id,))
+        categorias_favoritas = cursor.fetchall() or []
+        
+        resultado = {
+            "nivel_fidelizacion": nivel_fidelizacion,
+            "total_gastado": total_gastado,
+            "num_compras": num_compras,
+            "ticket_promedio": ticket_promedio,
+            "categorias_favoritas": categorias_favoritas
+        }
+        
+        cursor.close()
+        db.close()
+        return resultado
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

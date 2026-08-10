@@ -349,5 +349,113 @@
     "metodo_pago": "Tarjeta de Crédito",
     "fecha_pago": "2026-07-31T05:36:12.721675Z",
     "estado": "aprobado"
+  },
+  {
+    "id_pago": 40,
+    "id_usuario": 25,
+    "id_orden": 13,
+    "monto": 98000.0,
+    "metodo_pago": "PSE",
+    "fecha_pago": "2026-08-10T01:01:01.833632Z",
+    "estado": "aprobado"
+  },
+  {
+    "id_pago": 41,
+    "id_usuario": 25,
+    "id_orden": 14,
+    "monto": 75000.0,
+    "metodo_pago": "Tarjeta de Crédito",
+    "fecha_pago": "2026-08-10T01:03:42.368890Z",
+    "estado": "aprobado"
+  },
+  {
+    "id_pago": 42,
+    "id_usuario": 25,
+    "id_orden": 15,
+    "monto": 105000.0,
+    "metodo_pago": "Tarjeta de Crédito",
+    "fecha_pago": "2026-08-10T01:08:36.245388Z",
+    "estado": "aprobado"
+  },
+  {
+    "id_pago": 43,
+    "id_usuario": 25,
+    "id_orden": 27,
+    "monto": 68000.0,
+    "metodo_pago": "Tarjeta de Crédito",
+    "fecha_pago": "2026-08-10T01:50:18.782741Z",
+    "estado": "aprobado"
+  },
+  {
+    "id_pago": 44,
+    "id_usuario": 25,
+    "id_orden": 28,
+    "monto": 22000.0,
+    "metodo_pago": "PayPal",
+    "fecha_pago": "2026-08-10T01:52:35.723643Z",
+    "estado": "aprobado"
+  },
+  {
+    "id_pago": 45,
+    "id_usuario": 23,
+    "id_orden": 29,
+    "monto": 65000.0,
+    "metodo_pago": "PSE",
+    "fecha_pago": "2026-08-10T01:54:41.777339Z",
+    "estado": "aprobado"
+  },
+  {
+    "id_pago": 46,
+    "id_usuario": 23,
+    "id_orden": 30,
+    "monto": 50000.0,
+    "metodo_pago": "Transferencia Bancaria",
+    "fecha_pago": "2026-08-10T01:56:00.840509Z",
+    "estado": "aprobado"
+  },
+  {
+    "id_pago": 47,
+    "id_usuario": 23,
+    "id_orden": 15,
+    "monto": 20000.0,
+    "metodo_pago": "Tarjeta de Crédito",
+    "fecha_pago": "2026-08-10T02:12:37.963869Z",
+    "estado": "aprobado"
+  },
+  {
+    "id_pago": 48,
+    "id_usuario": 33,
+    "id_orden": 1,
+    "monto": 68000.0,
+    "metodo_pago": "PayPal",
+    "fecha_pago": "2026-08-10T02:15:24.505959Z",
+    "estado": "aprobado"
+  },
+  {
+    "id_pago": 49,
+    "id_usuario": 33,
+    "id_orden": 2,
+    "monto": 31000.0,
+    "metodo_pago": "Tarjeta de Crédito",
+    "fecha_pago": "2026-08-10T02:30:55.451758Z",
+    "estado": "aprobado"
+  },
+  {
+    "id_pago": 50,
+    "id_usuario": 33,
+    "id_orden": 3,
+    "monto": 20000.0,
+    "metodo_pago": "PayPal",
+    "fecha_pago": "2026-08-10T03:14:54.983084Z",
+    "estado": "aprobado"
+  },
+  {
+    "id_pago": 51,
+    "id_usuario": 33,
+    "id_orden": 4,
+    "monto": 70000.0,
+    "metodo_pago": "Pago en Efecty",
+    "fecha_pago": "2026-08-10T18:49:16.584489Z",
+    "estado": "aprobado"
   }
 ]
