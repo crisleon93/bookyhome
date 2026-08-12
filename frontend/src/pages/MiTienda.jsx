@@ -160,9 +160,9 @@ function ModalEditarLibro({ libro, categorias, onClose, onGuardado }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.titulo.trim())            return setError("El tÃ­tulo es obligatorio");
+    if (!form.titulo.trim())            return setError("El título es obligatorio");
     if (!form.autor_libro.trim())       return setError("El autor es obligatorio");
-    if (!form.id_categoria)             return setError("Selecciona una categorÃ­a");
+    if (!form.id_categoria)             return setError("Selecciona una categoría");
     if (Number(form.precio_libro) <= 0) return setError("El precio debe ser mayor a 0");
     if (Number(form.stock) < 0)         return setError("El stock no puede ser negativo");
     setCargando(true);
@@ -181,12 +181,12 @@ function ModalEditarLibro({ libro, categorias, onClose, onGuardado }) {
       <div className="modal-box" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h2>Editar libro</h2>
-          <button className="modal-close" onClick={onClose}>Ã—</button>
+          <button className="modal-close" onClick={onClose}>x</button>
         </div>
         <form onSubmit={handleSubmit} className="modal-form">
           <div className="modal-grid">
             <div className="form-group">
-              <label>TÃ­tulo *</label>
+              <label>Título *</label>
               <input name="titulo" value={form.titulo} onChange={handleChange} maxLength={100} />
             </div>
             <div className="form-group">
@@ -194,7 +194,7 @@ function ModalEditarLibro({ libro, categorias, onClose, onGuardado }) {
               <input name="autor_libro" value={form.autor_libro} onChange={handleChange} maxLength={50} />
             </div>
             <div className="form-group">
-              <label>CategorÃ­a *</label>
+              <label>Categoría *</label>
               <select name="id_categoria" value={form.id_categoria} onChange={handleChange}>
                 {categorias.map((c) => (
                   <option key={c.id_categoria} value={c.id_categoria}>{c.nombre_categoria}</option>
@@ -217,7 +217,7 @@ function ModalEditarLibro({ libro, categorias, onClose, onGuardado }) {
             </div>
           </div>
           <div className="form-group">
-            <label>DescripciÃ³n *
+            <label>Descripción *
               <span style={{ float: "right", color: "#bbb", fontWeight: 500, fontSize: "0.78rem" }}>
                 {form.descripcion_libro.length}/300
               </span>
@@ -229,7 +229,7 @@ function ModalEditarLibro({ libro, categorias, onClose, onGuardado }) {
           <div className="modal-actions">
             <button type="button" className="btn-outline" onClick={onClose} disabled={cargando}>Cancelar</button>
             <button type="submit" className="btn btn-vinotinto" disabled={cargando}>
-              {cargando ? "Guardandoâ€¦" : "Guardar cambios"}
+              {cargando ? "Guardando…" : "Guardar cambios"}
             </button>
           </div>
         </form>
@@ -240,7 +240,7 @@ function ModalEditarLibro({ libro, categorias, onClose, onGuardado }) {
 
 function ModalEliminar({ libro, onClose, onEliminado }) {
   // ========================
-  // Estado del modal de eliminaciÃ³n
+  // Estado del modal de eliminación
   // ========================
   const [cargando, setCargando] = useState(false);
   const [error,    setError]    = useState("");
@@ -261,19 +261,19 @@ function ModalEliminar({ libro, onClose, onEliminado }) {
       <div className="modal-box modal-box--sm" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h2>Eliminar libro</h2>
-          <button className="modal-close" onClick={onClose}>Ã—</button>
+          <button className="modal-close" onClick={onClose}>x</button>
         </div>
         <div style={{ padding: "8px 0 20px" }}>
           <p style={{ color: "#444", marginBottom: "6px" }}>
-            Â¿EstÃ¡s seguro de que quieres eliminar <strong>"{libro.titulo}"</strong>?
+            ¿Estás seguro de que quieres eliminar <strong>"{libro.titulo}"</strong>?
           </p>
-          <p style={{ fontSize: "0.85rem", color: "#888" }}>Esta acciÃ³n no se puede deshacer.</p>
+          <p style={{ fontSize: "0.85rem", color: "#888" }}>Esta acción no se puede deshacer.</p>
         </div>
         {error && <div className="form-error" style={{ marginBottom: "16px", display: 'flex', alignItems: 'center', gap: '4px' }}><IconLock width={16} height={16} strokeWidth={2} style={{ color: '#b91c1c' }} /> {error}</div>}
         <div className="modal-actions">
           <button className="btn-outline" onClick={onClose} disabled={cargando}>Cancelar</button>
           <button className="btn-eliminar" onClick={confirmar} disabled={cargando}>
-            {cargando ? "Eliminandoâ€¦" : "SÃ­, eliminar"}
+            {cargando ? "Eliminando…" : "Sí, eliminar"}
           </button>
         </div>
       </div>
@@ -308,7 +308,7 @@ function ModalStock({ libro, onClose, onActualizado }) {
       <div className="modal-box modal-box--sm" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h2>Gestionar stock</h2>
-          <button className="modal-close" onClick={onClose}>Ã—</button>
+          <button className="modal-close" onClick={onClose}>x</button>
         </div>
         <p style={{ color: "#666", fontSize: "0.9rem", marginBottom: "20px" }}>
           <strong>{libro.titulo}</strong>
@@ -323,7 +323,7 @@ function ModalStock({ libro, onClose, onActualizado }) {
         <div className="modal-actions" style={{ marginTop: "20px" }}>
           <button className="btn-outline" onClick={onClose} disabled={cargando}>Cancelar</button>
           <button className="btn btn-vinotinto" onClick={guardar} disabled={cargando}>
-            {cargando ? "Guardandoâ€¦" : "Guardar stock"}
+            {cargando ? "Guardando…" : "Guardar stock"}
           </button>
         </div>
       </div>
@@ -344,7 +344,7 @@ const Stars = ({ value, size = 16 }) => (
   </div>
 );
 
-// Color del badge segÃºn calificaciÃ³n
+// Color del badge según calificación
 const calColor = (n) => {
   if (n >= 4.5) return { bg: '#d1fae5', color: '#065f46', border: '#6ee7b7' };
   if (n >= 3.5) return { bg: '#fef9c3', color: '#854d0e', border: '#fde047' };
@@ -404,20 +404,20 @@ function SeccionCalificacionesVendedor({ tiendaId }) {
           <span style={{ color: '#aaa', fontSize: '0.9rem' }}>Cargando calificaciones...</span>
         </div>
       ) : total === 0 ? (
-        /* â”€â”€ Estado vacÃ­o â”€â”€ */
+        /* â”€â”€ Estado vacío â”€â”€ */
         <div style={{ padding: '20px' }}>
           <div style={{ background: 'white', borderRadius: '16px', padding: '70px 20px', textAlign: 'center', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
             <div style={{ fontSize: '4rem', marginBottom: '16px' }}>â­</div>
-            <h3 style={{ margin: '0 0 8px 0', color: '#333', fontWeight: '700', fontSize: '1.2rem' }}>AÃºn no tienes calificaciones</h3>
+            <h3 style={{ margin: '0 0 8px 0', color: '#333', fontWeight: '700', fontSize: '1.2rem' }}>Aún no tienes calificaciones</h3>
             <p style={{ margin: '0 auto', color: '#999', fontSize: '0.95rem', maxWidth: '340px' }}>
-              Cuando un cliente reciba su pedido y te evalÃºe, sus opiniones aparecerÃ¡n aquÃ­.
+              Cuando un cliente reciba su pedido y te evalúe, sus opiniones aparecerán aquí.
             </p>
           </div>
         </div>
       ) : (
         <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
 
-          {/* â”€â”€ Fila superior: promedio destacado + 3 mÃ©tricas â”€â”€ */}
+          {/* â”€â”€ Fila superior: promedio destacado + 3 métricas â”€â”€ */}
           <div style={{ display: 'grid', gridTemplateColumns: '260px 1fr', gap: '16px', alignItems: 'stretch' }}>
 
             {/* Promedio grande */}
@@ -441,11 +441,11 @@ function SeccionCalificacionesVendedor({ tiendaId }) {
               </div>
               <Stars value={Math.round(promedio)} size={20} />
               <span style={{ fontSize: '0.85rem', color: promedioColor, opacity: 0.7, marginTop: '4px' }}>
-                sobre {total} {total === 1 ? 'opiniÃ³n' : 'opiniones'}
+                sobre {total} {total === 1 ? 'opinión' : 'opiniones'}
               </span>
             </div>
 
-            {/* 3 mÃ©tricas en columna */}
+            {/* 3 métricas en columna */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
               {[
                 { 
@@ -496,13 +496,13 @@ function SeccionCalificacionesVendedor({ tiendaId }) {
             </div>
           </div>
 
-          {/* â”€â”€ Fila inferior: distribuciÃ³n + lista â”€â”€ */}
+          {/* â”€â”€ Fila inferior: Distribución + lista â”€â”€ */}
           <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: '16px', alignItems: 'start' }}>
 
-            {/* DistribuciÃ³n */}
+            {/* Distribución */}
             <div style={{ background: 'white', borderRadius: '14px', padding: '22px', boxShadow: '0 2px 10px rgba(0,0,0,0.06)' }}>
               <h3 style={{ margin: '0 0 18px 0', fontSize: '0.85rem', fontWeight: '700', color: '#888', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                DistribuciÃ³n
+                Distribución
               </h3>
               {[5,4,3,2,1].map(stars => {
                 const count = dist[stars] ?? 0;
@@ -526,7 +526,7 @@ function SeccionCalificacionesVendedor({ tiendaId }) {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <h3 style={{ margin: '0 0 4px 0', fontSize: '0.85rem', fontWeight: '700', color: '#888', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                  Ãšltimas opiniones
+                  Últimas opiniones
                 </h3>
                 {lista.length > 10 && (
                   <span style={{ fontSize: '0.75rem', color: '#999', fontStyle: 'italic' }}>
@@ -573,7 +573,7 @@ function SeccionCalificacionesVendedor({ tiendaId }) {
                 </div>
               ))}
               
-              {/* Estado vacÃ­o cuando no hay opiniones */}
+              {/* Estado vacío cuando no hay opiniones */}
               {lista.length === 0 && (
                 <div style={{
                   background: 'white',
@@ -584,10 +584,10 @@ function SeccionCalificacionesVendedor({ tiendaId }) {
                 }}>
                   <div style={{ fontSize: '3rem', opacity: 0.3, marginBottom: '12px' }}>ðŸ’­</div>
                   <p style={{ margin: '0 0 8px 0', fontWeight: '600', color: '#666' }}>
-                    AÃºn no hay opiniones
+                    Aún no hay opiniones
                   </p>
                   <p style={{ margin: 0, fontSize: '0.85rem', color: '#888' }}>
-                    Las opiniones de tus clientes aparecerÃ¡n aquÃ­ cuando recibas calificaciones
+                    Las opiniones de tus clientes aparecerán aquí cuando recibas calificaciones
                   </p>
                 </div>
               )}
@@ -607,7 +607,7 @@ function SeccionCalificacionesVendedor({ tiendaId }) {
                 }}>
                   <IconMessage width={16} height={16} strokeWidth={1.5} style={{ flexShrink: 0 }} />
                   <span>
-                    Las opiniones anteriores estÃ¡n disponibles en la secciÃ³n de <strong>Notificaciones</strong>
+                    Las opiniones anteriores están disponibles en la Sección de <strong>Notificaciones</strong>
                   </span>
                 </div>
               )}
@@ -693,7 +693,7 @@ export default function MiTienda() {
   const [cuentaAEliminar, setCuentaAEliminar] = useState(null);
   const [mostrarExitoCuenta, setMostrarExitoCuenta] = useState(false);
   
-  // Estados para nÃ³mina
+  // Estados para Nómina
   const [pagosPendientes, setPagosPendientes] = useState([]);
   const [historialPagos, setHistorialPagos] = useState([]);
   const [loadingNomina, setLoadingNomina] = useState(false);
@@ -760,7 +760,7 @@ export default function MiTienda() {
       setMostrarExitoCuenta(true);
       cargarCuentasBancarias();
       
-      // Cerrar el modal de Ã©xito automÃ¡ticamente despuÃ©s de 3 segundos
+      // Cerrar el modal de éxito automáticamente después de 3 segundos
       setTimeout(() => setMostrarExitoCuenta(false), 3000);
     } catch (error) {
       alert('Error agregando cuenta bancaria: ' + (error.response?.data?.detail || error.message));
@@ -810,7 +810,7 @@ export default function MiTienda() {
   }, []);
 
   useEffect(() => {
-    if (activeSide === 'NÃ³mina') {
+    if (activeSide === 'Nómina') {
       setLoadingNomina(true);
       Promise.all([cargarPagosPendientes(), cargarHistorialPagos()])
         .finally(() => setLoadingNomina(false));
@@ -836,7 +836,7 @@ export default function MiTienda() {
       await notificacionesService.marcarLeida(id_notificacion);
       await cargarNotificaciones(true);
     } catch (err) {
-      console.error("Error marcando notificaciÃ³n como leÃ­da:", err);
+      console.error("Error marcando notificación como leída:", err);
     }
   };
 
@@ -845,17 +845,17 @@ export default function MiTienda() {
       await notificacionesService.marcarTodasLeidas();
       await cargarNotificaciones(true);
     } catch (err) {
-      console.error("Error marcando todas las notificaciones como leÃ­das:", err);
+      console.error("Error marcando todas las notificaciones como leídas:", err);
     }
   };
 
   const handleEliminar = async (id_notificacion) => {
-    if (!window.confirm("Â¿Eliminar notificaciÃ³n?")) return;
+    if (!window.confirm("¿Eliminar notificación?")) return;
     try {
       await notificacionesService.eliminar(id_notificacion);
       await cargarNotificaciones(true);
     } catch (err) {
-      console.error("Error eliminando notificaciÃ³n:", err);
+      console.error("Error eliminando notificación:", err);
     }
   };
 
@@ -918,7 +918,7 @@ export default function MiTienda() {
 
   // Sincronizar activeSide con la URL: usamos history.replaceState en lugar de
   // navigate() para no disparar el ciclo de re-render de React Router (que causa
-  // el parpadeo blanco al cambiar de secciÃ³n).
+  // el parpadeo blanco al cambiar de Sección).
   const cambiarSeccion = (nuevaSeccion) => {
     setActiveSide(nuevaSeccion);
     window.history.replaceState(null, '', `/mi-tienda?seccion=${encodeURIComponent(nuevaSeccion)}`);
@@ -978,14 +978,14 @@ export default function MiTienda() {
         const res = await api.get("/envios/empresas");
         setEmpresasMensajeria(res.data);
       } catch {
-        setEnvioError("No se pudo cargar el listado de empresas de mensajerÃ­a.");
+        setEnvioError("No se pudo cargar el listado de empresas de mensajería.");
       }
     }
   };
 
   const guardarEnvio = async () => {
     if (!envioForm.id_empresa || !envioForm.numero_guia.trim()) {
-      setEnvioError("Selecciona una empresa e ingresa el nÃºmero de guÃ­a.");
+      setEnvioError("Selecciona una empresa e ingresa el número de Guía.");
       return;
     }
     setGuardandoEnvio(true);
@@ -999,7 +999,7 @@ export default function MiTienda() {
       setPedidoEnvio(null);
       cargarPedidos();
     } catch (err) {
-      setEnvioError(err.response?.data?.detail || "No se pudo registrar la guÃ­a.");
+      setEnvioError(err.response?.data?.detail || "No se pudo registrar la Guía.");
     } finally {
       setGuardandoEnvio(false);
     }
@@ -1035,9 +1035,9 @@ export default function MiTienda() {
 
  
   // ========================
-  // Efectos de carga inicial y actualizacion por secciÃ³n
+  // Efectos de carga inicial y actualizacion por Sección
   // ========================
-  // Cargar libros Ãºnicamente al montar el componente
+  // Cargar libros únicamente al montar el componente
   useEffect(() => {
     cargarLibros();
   }, [cargarLibros]);
@@ -1058,12 +1058,12 @@ export default function MiTienda() {
         if (Array.isArray(r.data)) {
           setCategorias(r.data);
         } else {
-          console.error("Respuesta inesperada de categorÃ­as:", r.data);
+          console.error("Respuesta inesperada de categorías:", r.data);
           setCategorias([]);
         }
       })
       .catch((err) => {
-        console.error("Error cargando categorÃ­as:", err);
+        console.error("Error cargando categorías:", err);
         setCategorias([]);
       });
   }, []);
@@ -1138,11 +1138,11 @@ export default function MiTienda() {
         }
       })
       .catch((err) => {
-        console.error("Error cargando informaciÃ³n de tienda:", err);
+        console.error("Error cargando información de tienda:", err);
         setTiendaInfo(null);
       });
 
-    // Cargar configuraciÃ³n avanzada
+    // Cargar Configuración avanzada
     api.get("/configuracion")
       .then((r) => {
         if (r.data) {
@@ -1155,7 +1155,7 @@ export default function MiTienda() {
         }
       })
       .catch((err) => {
-        console.error("Error cargando configuraciÃ³n avanzada:", err);
+        console.error("Error cargando Configuración avanzada:", err);
       });
   }, []);
 
@@ -1181,7 +1181,7 @@ export default function MiTienda() {
     <>
       <div className="welcome-card welcome-card--small">
         <h1>Bienvenido, {userName.split(" ")[0]}</h1>
-        <p>AquÃ­ tienes un panorama claro de tu tienda en BookyHome.</p>
+        <p>Aquí tienes un panorama claro de tu tienda en BookyHome.</p>
       </div>
 
       <div className="dashboard-top-grid">
@@ -1197,11 +1197,11 @@ export default function MiTienda() {
           <div className="summary-pill-grid">
             <div className="summary-pill">
               <span>Total ventas (COP)</span>
-              <strong>{loadingStats ? "â€¦" : stats ? formatPrecio(stats.total_mes) : "$0 COP"}</strong>
+              <strong>{loadingStats ? "…" : stats ? formatPrecio(stats.total_mes) : "$0 COP"}</strong>
             </div>
             <div className="summary-pill">
               <span>Libros publicados</span>
-              <strong>{loadingLibros ? "â€¦" : statsLibros.totalLibros}</strong>
+              <strong>{loadingLibros ? "…" : statsLibros.totalLibros}</strong>
             </div>
           </div>
         </div>
@@ -1218,11 +1218,11 @@ export default function MiTienda() {
           <div className="trend-pill-grid">
             <div className="trend-pill">
               <p>Ventas esta semana</p>
-              <strong>{loadingStats ? 'â€¦' : stats ? formatPrecio(stats.total_semana) : '$0 COP'}</strong>
+              <strong>{loadingStats ? '…' : stats ? formatPrecio(stats.total_semana) : '$0 COP'}</strong>
             </div>
             <div className="trend-pill">
               <p>Ã“rdenes este mes</p>
-              <strong>{loadingStats ? 'â€¦' : stats ? stats.ordenes_mes : '0'}</strong>
+              <strong>{loadingStats ? '…' : stats ? stats.ordenes_mes : '0'}</strong>
             </div>
           </div>
 
@@ -1237,8 +1237,8 @@ export default function MiTienda() {
               ))}
             </div>
             <div className="analytics-chart-meta">
-              <p>Ventas en los Ãºltimos 6 dÃ­as</p>
-              <strong>{loadingStats ? 'â€¦' : stats ? formatPrecio(stats.total_semana) : '$0 COP'}</strong>
+              <p>Ventas en los últimos 6 días</p>
+              <strong>{loadingStats ? '…' : stats ? formatPrecio(stats.total_semana) : '$0 COP'}</strong>
             </div>
           </div>
         </div>
@@ -1247,7 +1247,7 @@ export default function MiTienda() {
           <div className="dashboard-card-header">
             <div>
               <p className="dashboard-card-title">Centro de notificaciones</p>
-              <p className="dashboard-card-subtitle">Lo mÃ¡s reciente</p>
+              <p className="dashboard-card-subtitle">Lo más reciente</p>
             </div>
           </div>
           <div className="notification-item">
@@ -1258,17 +1258,17 @@ export default function MiTienda() {
             </div>
           </div>
           <div className="notification-item">
-            <strong>{loadingLibros ? 'â€¦' : statsLibros.totalLibros}</strong>
+            <strong>{loadingLibros ? '…' : statsLibros.totalLibros}</strong>
             <div>
               <p>Libros publicados</p>
-              <small>Tu catÃ¡logo activo</small>
+              <small>Tu catálogo activo</small>
             </div>
           </div>
           <div className="notification-item">
-            <strong>{loadingTop ? 'â€¦' : topVendidos.length}</strong>
+            <strong>{loadingTop ? '…' : topVendidos.length}</strong>
             <div>
               <p>Libros en top ventas</p>
-              <small>Los mÃ¡s populares</small>
+              <small>Los más populares</small>
             </div>
           </div>
         </div>
@@ -1278,7 +1278,7 @@ export default function MiTienda() {
         <div>
           <div className="inventory-alert-top">
             <p className="inventory-alert-title">Alertas de inventario</p>
-            <p className="inventory-alert-copy">Recibe avisos automÃ¡ticos cuando el stock de tus libros estÃ© por debajo del umbral.</p>
+            <p className="inventory-alert-copy">Recibe avisos automáticos cuando el stock de tus libros esté por debajo del umbral.</p>
           </div>
           <div className="inventory-alert-status">
             <span className={alertasStock.length > 0 ? 'inventory-status-warning' : 'inventory-status-ok'} style={{ display: 'flex', alignItems: 'center' }}>
@@ -1286,7 +1286,7 @@ export default function MiTienda() {
             </span>
             <div>
               <p className="inventory-status-title">
-                {alertasStock.length > 0 ? 'Hay libros por debajo del umbral' : 'Todo tu inventario estÃ¡ dentro del umbral'}
+                {alertasStock.length > 0 ? 'Hay libros por debajo del umbral' : 'Todo tu inventario está dentro del umbral'}
               </p>
               <p className="inventory-status-copy">
                 {alertasStock.length > 0
@@ -1310,7 +1310,7 @@ export default function MiTienda() {
               localStorage.setItem('stockUmbral', val);
             }}
           />
-          <small className="inventory-alert-hint">Ajusta cuÃ¡ntas unidades quedan antes de generar una alerta.</small>
+          <small className="inventory-alert-hint">Ajusta cuántas unidades quedan antes de generar una alerta.</small>
         </div>
       </div>
 
@@ -1319,8 +1319,8 @@ export default function MiTienda() {
       <div className="dashboard-card recent-books-card">
         <div className="dashboard-card-header">
           <div>
-            <p className="dashboard-card-title">Ãšltimos libros publicados</p>
-            <p className="dashboard-card-subtitle">Los tres libros mÃ¡s recientes de tu catÃ¡logo</p>
+            <p className="dashboard-card-title">Últimos libros publicados</p>
+            <p className="dashboard-card-subtitle">Los tres libros más recientes de tu catálogo</p>
           </div>
           <button className="btn-ver-todos" onClick={() => setActiveSide("Mis Libros")}>Ver todos â†’</button>
         </div>
@@ -1332,8 +1332,8 @@ export default function MiTienda() {
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: "10px" }}>
               <IconBookOpen width={48} height={48} strokeWidth={2} style={{ color: '#7A1E3A' }} />
             </div>
-            <p style={{ fontWeight: 700, color: "#444", marginBottom: "6px" }}>No hay libros publicados aÃºn</p>
-            <p style={{ fontSize: "0.85rem", color: "#888" }}>Publica tu primer libro para verlo aquÃ­.</p>
+            <p style={{ fontWeight: 700, color: "#444", marginBottom: "6px" }}>No hay libros publicados aún</p>
+            <p style={{ fontSize: "0.85rem", color: "#888" }}>Publica tu primer libro para verlo aquí.</p>
           </div>
         ) : (
           <div className="recent-books-list">
@@ -1369,15 +1369,15 @@ export default function MiTienda() {
       <div className="seller-stats">
         <div className="seller-stat-card">
           <h3>Libros publicados</h3>
-          <div className="seller-stat-number">{loadingLibros ? "â€¦" : statsLibros.totalLibros}</div>
+          <div className="seller-stat-number">{loadingLibros ? "…" : statsLibros.totalLibros}</div>
         </div>
         <div className="seller-stat-card">
           <h3>Unidades en stock</h3>
-          <div className="seller-stat-number">{loadingLibros ? "â€¦" : statsLibros.stockTotal}</div>
+          <div className="seller-stat-number">{loadingLibros ? "…" : statsLibros.stockTotal}</div>
         </div>
         <div className="seller-stat-card">
-          <h3>CategorÃ­as activas</h3>
-          <div className="seller-stat-number">{loadingLibros ? "â€¦" : statsLibros.categorias}</div>
+          <h3>Categorías activas</h3>
+          <div className="seller-stat-number">{loadingLibros ? "…" : statsLibros.categorias}</div>
         </div>
       </div>
 
@@ -1386,22 +1386,22 @@ export default function MiTienda() {
         <div className="seller-stat-card seller-stat-card--ventas">
           <h3>Vendido hoy</h3>
           <div className="seller-stat-number">
-            {loadingStats ? "â€¦" : stats ? formatPrecio(stats.total_hoy) : "â€”"}
+            {loadingStats ? "…" : stats ? formatPrecio(stats.total_hoy) : "â€”"}
           </div>
-          <span className="stat-sub">{stats ? `${stats.ordenes_hoy} orden(es)` : "Sin datos aÃºn"}</span>
+          <span className="stat-sub">{stats ? `${stats.ordenes_hoy} orden(es)` : "Sin datos aún"}</span>
         </div>
         <div className="seller-stat-card seller-stat-card--ventas">
           <h3>Vendido esta semana</h3>
           <div className="seller-stat-number">
-            {loadingStats ? "â€¦" : stats ? formatPrecio(stats.total_semana) : "â€”"}
+            {loadingStats ? "…" : stats ? formatPrecio(stats.total_semana) : "â€”"}
           </div>
         </div>
         <div className="seller-stat-card seller-stat-card--ventas">
           <h3>Vendido este mes</h3>
           <div className="seller-stat-number">
-            {loadingStats ? "â€¦" : stats ? formatPrecio(stats.total_mes) : "â€”"}
+            {loadingStats ? "…" : stats ? formatPrecio(stats.total_mes) : "â€”"}
           </div>
-          <span className="stat-sub">{stats ? `${stats.ordenes_mes} orden(es)` : "Sin datos aÃºn"}</span>
+          <span className="stat-sub">{stats ? `${stats.ordenes_mes} orden(es)` : "Sin datos aún"}</span>
         </div>
       </div>
 
@@ -1409,7 +1409,7 @@ export default function MiTienda() {
         <div className="seller-books-header">
           <h2 className="seller-books-title" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <IconStar width={24} height={24} strokeWidth={2} style={{ color: '#7A1E3A' }} />
-            Libros mÃ¡s vendidos
+            Libros más vendidos
           </h2>
           <button className="btn-ver-todos" onClick={() => setActiveSide("Mis Libros")}>Ver todos â†’</button>
         </div>
@@ -1419,8 +1419,8 @@ export default function MiTienda() {
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: "10px" }}>
               <IconChartBar width={48} height={48} strokeWidth={2} style={{ color: '#7A1E3A' }} />
             </div>
-            <p style={{ fontWeight: 700, color: "#444", marginBottom: "6px" }}>AÃºn no hay ventas registradas</p>
-            <p style={{ fontSize: "0.85rem", color: "#888" }}>Cuando se registren ventas, aparecerÃ¡n aquÃ­ los mÃ¡s populares</p>
+            <p style={{ fontWeight: 700, color: "#444", marginBottom: "6px" }}>Aún no hay ventas registradas</p>
+            <p style={{ fontSize: "0.85rem", color: "#888" }}>Cuando se registren ventas, aparecerán aquí los más populares</p>
           </div>
         )}
         {!loadingTop && topVendidos.map((libro, i) => {
@@ -1518,12 +1518,12 @@ export default function MiTienda() {
           <IconUser width={24} height={24} strokeWidth={2} style={{ color: '#7A1E3A' }} />
           Perfil del negocio
         </h1>
-        <p style={{ margin: 0 }}>Resumen de tu tienda y tus datos pÃºblicos.</p>
+        <p style={{ margin: 0 }}>Resumen de tu tienda y tus datos públicos.</p>
       </div>
 
       <div className="pl-card" style={{ padding: "2rem", marginTop: "20px" }}>
         {!tiendaInfo ? (
-          <p style={{ color: "#888" }}>Cargando informaciÃ³n de la tienda...</p>
+          <p style={{ color: "#888" }}>Cargando información de la tienda...</p>
         ) : (
           <div style={{ display: "grid", gap: "18px" }}>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
@@ -1534,7 +1534,7 @@ export default function MiTienda() {
                 </div>
               </div>
               <div>
-                <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>TelÃ©fono</label>
+                <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>Teléfono</label>
                 <div style={{ padding: "12px 14px", borderRadius: "8px", background: "#fafafa", border: "1px solid #ddd" }}>
                   {tiendaInfo.telefono || "--"}
                 </div>
@@ -1542,7 +1542,7 @@ export default function MiTienda() {
             </div>
 
             <div>
-              <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>DirecciÃ³n</label>
+              <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>Dirección</label>
               <div style={{ padding: "12px 14px", borderRadius: "8px", background: "#fafafa", border: "1px solid #ddd" }}>
                 {tiendaInfo.direccion || "--"}
               </div>
@@ -1569,15 +1569,15 @@ export default function MiTienda() {
                 padding: "12px 24px", borderRadius: "8px", fontWeight: 700,
                 fontSize: "0.95rem", cursor: "pointer", fontFamily: "Montserrat, sans-serif", width: "fit-content"
               }}
-              onClick={() => setActiveSide("ConfiguraciÃ³n")}
+              onClick={() => setActiveSide("Configuración")}
             >
-              Editar configuraciÃ³n
+              Editar Configuración
             </button>
           </div>
         )}
       </div>
 
-      {/* SecciÃ³n de Cuentas Bancarias en el Perfil */}
+      {/* Sección de Cuentas Bancarias en el Perfil */}
       <div className="pl-card" style={{ padding: "2rem", marginTop: "20px" }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
           <IconCreditCard width={24} height={24} strokeWidth={2} style={{ color: '#7A1E3A' }} />
@@ -1704,7 +1704,7 @@ export default function MiTienda() {
                 onMouseEnter={(e) => e.target.style.background = '#f5f5f5'}
                 onMouseLeave={(e) => e.target.style.background = 'none'}
               >
-                Ã—
+                x
               </button>
             </div>
             <div style={{ display: 'grid', gap: '16px' }}>
@@ -1736,7 +1736,7 @@ export default function MiTienda() {
                   <option value="">Selecciona el banco</option>
                   <option value="Bancolombia">Bancolombia</option>
                   <option value="Davivienda">Davivienda</option>
-                  <option value="Banco de BogotÃ¡">Banco de BogotÃ¡</option>
+                  <option value="Banco de Bogotá">Banco de Bogotá</option>
                   <option value="BBVA Colombia">BBVA Colombia</option>
                   <option value="Scotiabank Colpatria">Scotiabank Colpatria</option>
                   <option value="Banco Popular">Banco Popular</option>
@@ -1768,7 +1768,7 @@ export default function MiTienda() {
               </div>
               <div>
                 <label style={{ display: 'block', fontWeight: 600, marginBottom: '6px', color: '#444', fontSize: '0.9rem' }}>
-                  NÃºmero de cuenta *
+                  Número de cuenta *
                 </label>
                 <input
                   type="text"
@@ -1792,11 +1792,11 @@ export default function MiTienda() {
               </div>
               <div>
                 <label style={{ display: 'block', fontWeight: 600, marginBottom: '6px', color: '#444', fontSize: '0.9rem' }}>
-                  CÃ©dula del titular *
+                  Cédula del titular *
                 </label>
                 <input
                   type="text"
-                  placeholder="NÃºmero de documento"
+                  placeholder="Número de documento"
                   value={cuentaForm.cedula_titular}
                   onChange={(e) => setCuentaForm({...cuentaForm, cedula_titular: e.target.value})}
                   style={{ padding: '12px 16px', border: '1px solid #ddd', borderRadius: '8px', width: '100%', fontSize: '0.95rem', outline: 'none', transition: 'border-color 0.2s' }}
@@ -1846,7 +1846,7 @@ export default function MiTienda() {
         </div>
       )}
 
-      {/* Modal de confirmaciÃ³n para eliminar cuenta */}
+      {/* Modal de confirmación para eliminar cuenta */}
       {cuentaAEliminar && (
         <div style={{
           position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
@@ -1873,13 +1873,13 @@ export default function MiTienda() {
                 </svg>
               </div>
               <h3 style={{ margin: '0 0 10px', fontSize: '1.3rem', fontWeight: 700, color: '#333' }}>
-                Â¿Eliminar cuenta bancaria?
+                ¿Eliminar cuenta bancaria?
               </h3>
               <p style={{ margin: 0, color: '#666', fontSize: '0.95rem', lineHeight: 1.5 }}>
-                EstÃ¡s a punto de eliminar la cuenta <strong>{cuentaAEliminar.banco}</strong> - {cuentaAEliminar.tipo_cuenta} (****{cuentaAEliminar.numero_cuenta?.slice(-4)}).
+                Estás a punto de eliminar la cuenta <strong>{cuentaAEliminar.banco}</strong> - {cuentaAEliminar.tipo_cuenta} (****{cuentaAEliminar.numero_cuenta?.slice(-4)}).
               </p>
               <p style={{ margin: '10px 0 0', color: '#999', fontSize: '0.85rem' }}>
-                Esta acciÃ³n no se puede deshacer.
+                Esta acción no se puede deshacer.
               </p>
             </div>
             <div style={{ display: 'flex', gap: '12px' }}>
@@ -1914,7 +1914,7 @@ export default function MiTienda() {
         </div>
       )}
 
-      {/* Modal de Ã©xito al agregar cuenta */}
+      {/* Modal de éxito al agregar cuenta */}
       {mostrarExitoCuenta && (
         <div style={{
           position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
@@ -1939,7 +1939,7 @@ export default function MiTienda() {
                 </svg>
               </div>
               <h3 style={{ margin: '0 0 10px', fontSize: '1.4rem', fontWeight: 700, color: '#16a34a' }}>
-                Â¡Cuenta agregada exitosamente!
+                ¡Cuenta agregada exitosamente!
               </h3>
               <p style={{ margin: 0, color: '#666', fontSize: '0.95rem', lineHeight: 1.5 }}>
                 Tu cuenta bancaria ha sido registrada correctamente en el sistema.
@@ -1979,9 +1979,9 @@ export default function MiTienda() {
       <div className="welcome-card">
         <h1 style={{ fontSize: "1.55rem", marginBottom: "4px", display: 'flex', alignItems: 'center', gap: '10px' }}>
           <IconCreditCard width={24} height={24} strokeWidth={2} style={{ color: '#7A1E3A' }} />
-          NÃ³mina y Pagos
+          Nómina y Pagos
         </h1>
-        <p style={{ margin: 0 }}>Consulta tus pagos pendientes, historial de pagos procesados y estadÃ­sticas financieras.</p>
+        <p style={{ margin: 0 }}>Consulta tus pagos pendientes, historial de pagos procesados y estadísticas financieras.</p>
         <div style={{ fontSize: '0.85rem', color: '#666', marginTop: '8px' }}>
           ID de Vendedor: <strong>{userId}</strong>
         </div>
@@ -2015,7 +2015,7 @@ export default function MiTienda() {
         </div>
 
         {loadingNomina ? (
-          <p style={{ color: "#888" }}>Cargando informaciÃ³n de pagos...</p>
+          <p style={{ color: "#888" }}>Cargando información de pagos...</p>
         ) : (
           <div style={{ display: 'grid', gap: '32px' }}>
             {/* Resumen General - Similar al Admin */}
@@ -2042,7 +2042,7 @@ export default function MiTienda() {
               </div>
             </div>
 
-            {/* EstadÃ­sticas */}
+            {/* Estadísticas */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' }}>
               <div style={{ 
                 padding: '16px', 
@@ -2135,7 +2135,7 @@ export default function MiTienda() {
                             Lote de Pagos - Ref: {pago.referencia}
                           </div>
                           <div style={{ color: '#666', fontSize: '0.9rem' }}>
-                            {pago.num_pagos} ventas procesadas â€¢ {new Date(pago.fecha).toLocaleDateString('es-CO')}
+                            {pago.num_pagos} ventas procesadas • {new Date(pago.fecha).toLocaleDateString('es-CO')}
                           </div>
                         </div>
                         <div style={{ textAlign: 'right' }}>
@@ -2189,19 +2189,19 @@ export default function MiTienda() {
       <div className="welcome-card">
         <h1 style={{ fontSize: "1.55rem", marginBottom: "4px", display: 'flex', alignItems: 'center', gap: '10px' }}>
           <IconSettings width={24} height={24} strokeWidth={2} style={{ color: '#7A1E3A' }} />
-          ConfiguraciÃ³n del negocio
+          Configuración del negocio
         </h1>
         <p style={{ margin: 0 }}>Actualiza los datos de tu tienda en BookyHome</p>
       </div>
 
       <div className="pl-card" style={{ padding: "2rem", marginTop: "20px" }}>
         {!tiendaInfo ? (
-          <p style={{ color: "#888" }}>Cargando informaciÃ³n de la tienda...</p>
+          <p style={{ color: "#888" }}>Cargando información de la tienda...</p>
         ) : (
           <>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "40px" }}>
             <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "16px", minWidth: "300px", maxWidth: "500px" }}>
-              <h3 style={{ fontSize: "1.1rem", margin: "10px 0 0 0", color: "var(--vinotinto)" }}>InformaciÃ³n BÃ¡sica</h3>
+              <h3 style={{ fontSize: "1.1rem", margin: "10px 0 0 0", color: "var(--vinotinto)" }}>información Básica</h3>
               <div>
               <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>
                 Nombre de la tienda
@@ -2219,7 +2219,7 @@ export default function MiTienda() {
 
             <div>
               <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>
-                DirecciÃ³n
+                Dirección
               </label>
               <input
                 type="text"
@@ -2234,7 +2234,7 @@ export default function MiTienda() {
 
             <div>
               <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>
-                TelÃ©fono
+                Teléfono
               </label>
               <input
                 type="text"
@@ -2269,7 +2269,7 @@ export default function MiTienda() {
             
             <div>
               <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>
-                Horario de atenciÃ³n
+                Horario de atención
               </label>
               <input
                 type="text"
@@ -2285,7 +2285,7 @@ export default function MiTienda() {
 
             <div>
               <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>
-                DÃ­as de despacho
+                Días de despacho
               </label>
               <input
                 type="number"
@@ -2302,7 +2302,7 @@ export default function MiTienda() {
 
             <div>
               <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>
-                PolÃ­tica de envÃ­os
+                Política de envíos
               </label>
               <textarea
                 rows="3"
@@ -2317,7 +2317,7 @@ export default function MiTienda() {
 
             <div>
               <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>
-                PolÃ­tica de devoluciones
+                Política de devoluciones
               </label>
               <textarea
                 rows="3"
@@ -2354,12 +2354,12 @@ export default function MiTienda() {
                 api.put("/configuracion", configForm)
               ])
                 .then(() => {
-                  setTiendaMsg("Â¡ConfiguraciÃ³n actualizada con Ã©xito!");
+                  setTiendaMsg("¡Configuración actualizada con éxito!");
                   setTimeout(() => setTiendaMsg(""), 3000);
                   setTiendaInfo(prev => ({ ...prev, ...tiendaForm }));
                 })
                 .catch((err) => {
-                  console.error("Error actualizando configuraciÃ³n:", err);
+                  console.error("Error actualizando Configuración:", err);
                   setTiendaMsg("Error: " + (err.response?.data?.detail || err.message));
                   setTimeout(() => setTiendaMsg(""), 4000);
                 });
@@ -2383,7 +2383,7 @@ export default function MiTienda() {
           <IconCreditCard width={24} height={24} strokeWidth={2} style={{ color: '#7A1E3A' }} />
           Cuentas Bancarias
         </h1>
-        <p style={{ margin: 0 }}>Gestiona tus cuentas bancarias para recibir pagos de nÃ³mina.</p>
+        <p style={{ margin: 0 }}>Gestiona tus cuentas bancarias para recibir pagos de Nómina.</p>
       </div>
 
       <div className="pl-card" style={{ padding: "2rem", marginTop: "20px" }}>
@@ -2424,7 +2424,7 @@ export default function MiTienda() {
                 <option value="">Selecciona el banco</option>
                 <option value="Bancolombia">Bancolombia</option>
                 <option value="Davivienda">Davivienda</option>
-                <option value="Banco de BogotÃ¡">Banco de BogotÃ¡</option>
+                <option value="Banco de Bogotá">Banco de Bogotá</option>
                 <option value="BBVA Colombia">BBVA Colombia</option>
                 <option value="Scotiabank Colpatria">Scotiabank Colpatria</option>
                 <option value="Banco Popular">Banco Popular</option>
@@ -2455,7 +2455,7 @@ export default function MiTienda() {
               </select>
               <input
                 type="text"
-                placeholder="NÃºmero de cuenta"
+                placeholder="Número de cuenta"
                 value={cuentaForm.numero_cuenta}
                 onChange={(e) => setCuentaForm({...cuentaForm, numero_cuenta: e.target.value})}
                 style={{ padding: '10px', border: '1px solid #ddd', borderRadius: '6px' }}
@@ -2469,7 +2469,7 @@ export default function MiTienda() {
               />
               <input
                 type="text"
-                placeholder="CÃ©dula del titular"
+                placeholder="Cédula del titular"
                 value={cuentaForm.cedula_titular}
                 onChange={(e) => setCuentaForm({...cuentaForm, cedula_titular: e.target.value})}
                 style={{ padding: '10px', border: '1px solid #ddd', borderRadius: '6px' }}
@@ -2480,7 +2480,7 @@ export default function MiTienda() {
                   checked={cuentaForm.es_principal}
                   onChange={(e) => setCuentaForm({...cuentaForm, es_principal: e.target.checked})}
                 />
-                Marcar como cuenta principal para nÃ³mina
+                Marcar como cuenta principal para Nómina
               </label>
               <div style={{ display: 'flex', gap: '10px' }}>
                 <button
@@ -2604,7 +2604,7 @@ export default function MiTienda() {
           <IconLock width={48} height={48} strokeWidth={2} style={{ color: '#7A1E3A' }} />
         </div>
         <p style={{ fontWeight: 700, color: "#444", marginBottom: "8px", fontSize: "1.1rem" }}>{nombre}</p>
-        <p style={{ fontSize: "0.87rem", color: "#888" }}>Esta secciÃ³n estarÃ¡ disponible prÃ³ximamente</p>
+        <p style={{ fontSize: "0.87rem", color: "#888" }}>Esta Sección estará disponible próximamente</p>
       </div>
     </div>
   );
@@ -2626,8 +2626,8 @@ export default function MiTienda() {
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: "12px" }}>
               <IconPackage width={48} height={48} strokeWidth={2} style={{ color: '#7A1E3A' }} />
             </div>
-            <p style={{ fontWeight: 700, color: "#444", marginBottom: "8px" }}>AÃºn no has recibido pedidos</p>
-            <p style={{ fontSize: "0.85rem", color: "#888" }}>Cuando un comprador adquiera tus libros, aparecerÃ¡n aquÃ­</p>
+            <p style={{ fontWeight: 700, color: "#444", marginBottom: "8px" }}>Aún no has recibido pedidos</p>
+            <p style={{ fontSize: "0.85rem", color: "#888" }}>Cuando un comprador adquiera tus libros, aparecerán aquí</p>
           </div>
         )}
         {!loadingPedidos && pedidos.length > 0 && (
@@ -2640,7 +2640,7 @@ export default function MiTienda() {
                   <th style={{ padding: "12px", fontWeight: 700 }}>Cliente</th>
                   <th style={{ padding: "12px", fontWeight: 700 }}>Productos</th>
                   <th style={{ padding: "12px", fontWeight: 700 }}>Estado</th>
-                  <th style={{ padding: "12px", fontWeight: 700 }}>GuÃ­a / envÃ­o</th>
+                  <th style={{ padding: "12px", fontWeight: 700 }}>Guía / envío</th>
                   <th style={{ padding: "12px", fontWeight: 700, textAlign: "right" }}>Total Tienda</th>
                 </tr>
               </thead>
@@ -2734,14 +2734,14 @@ export default function MiTienda() {
                             </div>
                           );
                         }
-                        // GuÃ­a ya registrada â€” se muestra en cualquier estado
+                        // Guía ya registrada â€” se muestra en cualquier estado
                         if (pedido.envio) {
                           return (
                             <div style={{ fontSize: "0.78rem", lineHeight: 1.5 }}>
                               <strong style={{ display: "block", color: "#4b2733" }}>
                                 {pedido.envio.empresa_mensajeria}
                               </strong>
-                              <span style={{ color: "#6d6265" }}>GuÃ­a {pedido.envio.numero_guia}</span>
+                              <span style={{ color: "#6d6265" }}>Guía {pedido.envio.numero_guia}</span>
                               {["pagado", "enviado"].includes(estado) && (
                                 <button
                                   onClick={() => abrirRegistroEnvio(pedido)}
@@ -2759,13 +2759,13 @@ export default function MiTienda() {
                                     whiteSpace: "nowrap"
                                   }}
                                 >
-                                  âœï¸ Editar guÃ­a
+                                  âœï¸ Editar Guía
                                 </button>
                               )}
                             </div>
                           );
                         }
-                        // Sin guÃ­a â€” botÃ³n disponible si estÃ¡ pagado o enviado
+                        // Sin Guía â€” botÃ³n disponible si está pagado o enviado
                         if (["pagado", "enviado"].includes(estado)) {
                           return (
                             <button
@@ -2782,11 +2782,11 @@ export default function MiTienda() {
                                 whiteSpace: "nowrap"
                               }}
                             >
-                              + Registrar guÃ­a
+                              + Registrar Guía
                             </button>
                           );
                         }
-                        // Entregada sin guÃ­a
+                        // Entregada sin Guía
                         if (estado === "entregada") {
                           return (
                             <div style={{
@@ -2832,19 +2832,19 @@ export default function MiTienda() {
       {pedidoEnvio && (
         <div className="modal-overlay open" onClick={() => !guardandoEnvio && setPedidoEnvio(null)}>
           <div className="modal-box" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "460px", padding: "28px" }}>
-            <h2 style={{ marginTop: 0 }}>Registrar guÃ­a de envÃ­o Â· Orden #{pedidoEnvio.id_orden}</h2>
-            <p style={{ color: "#666", fontSize: "0.9rem" }}>Elige la transportadora acordada e ingresa el nÃºmero de guÃ­a que ella te entregÃ³. BookyHome no realiza ni controla el transporte.</p>
-            <label style={{ display: "block", fontWeight: 600, marginTop: "18px" }}>Empresa de mensajerÃ­a</label>
+            <h2 style={{ marginTop: 0 }}>Registrar Guía de envío Â· Orden #{pedidoEnvio.id_orden}</h2>
+            <p style={{ color: "#666", fontSize: "0.9rem" }}>Elige la transportadora acordada e ingresa el número de Guía que ella te entregÃ³. BookyHome no realiza ni controla el transporte.</p>
+            <label style={{ display: "block", fontWeight: 600, marginTop: "18px" }}>Empresa de mensajería</label>
             <select value={envioForm.id_empresa} onChange={(e) => setEnvioForm({ ...envioForm, id_empresa: e.target.value })} style={{ width: "100%", marginTop: "6px", padding: "10px", borderRadius: "6px" }}>
               <option value="">Selecciona una empresa</option>
               {empresasMensajeria.map((empresa) => <option key={empresa.id_empresa} value={empresa.id_empresa}>{empresa.nombre_empresa}</option>)}
             </select>
-            <label style={{ display: "block", fontWeight: 600, marginTop: "14px" }}>NÃºmero de guÃ­a</label>
+            <label style={{ display: "block", fontWeight: 600, marginTop: "14px" }}>Número de Guía</label>
             <input value={envioForm.numero_guia} onChange={(e) => setEnvioForm({ ...envioForm, numero_guia: e.target.value })} maxLength={80} placeholder="Ej. 123456789" style={{ width: "100%", marginTop: "6px", padding: "10px", borderRadius: "6px", boxSizing: "border-box" }} />
             {envioError && <p style={{ color: "#b42318", fontSize: "0.85rem" }}>{envioError}</p>}
             <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "22px" }}>
               <button onClick={() => setPedidoEnvio(null)} disabled={guardandoEnvio}>Cancelar</button>
-              <button className="btn btn-vinotinto" onClick={guardarEnvio} disabled={guardandoEnvio}>{guardandoEnvio ? "Guardando..." : "Guardar guÃ­a"}</button>
+              <button className="btn btn-vinotinto" onClick={guardarEnvio} disabled={guardandoEnvio}>{guardandoEnvio ? "Guardando..." : "Guardar Guía"}</button>
             </div>
           </div>
         </div>
@@ -2866,23 +2866,23 @@ export default function MiTienda() {
         <div className="welcome-card">
           <h1 style={{ fontSize: "1.55rem", marginBottom: "4px", display: "flex", alignItems: "center", gap: "10px" }}>
             <IconTruck width={28} height={28} strokeWidth={2} style={{ color: "#7A1E3A" }} />
-            EnvÃ­os y seguimiento
+            Envíos y seguimiento
           </h1>
-          <p style={{ margin: 0 }}>Consulta las guÃ­as registradas y abre el rastreo oficial de cada transportadora.</p>
+          <p style={{ margin: 0 }}>Consulta las Guías registradas y abre el rastreo oficial de cada transportadora.</p>
         </div>
 
         <div className="seller-books" style={{ marginTop: "20px", padding: "20px" }}>
-          <label style={{ display: "block", fontWeight: 700, color: "#4b2733", marginBottom: "8px" }}>Buscar envÃ­o</label>
+          <label style={{ display: "block", fontWeight: 700, color: "#4b2733", marginBottom: "8px" }}>Buscar envío</label>
           <input
             value={filtroEnvios}
             onChange={(e) => setFiltroEnvios(e.target.value)}
-            placeholder="Compra, guÃ­a, comprador o transportadora"
+            placeholder="Compra, Guía, comprador o transportadora"
             style={{ width: "100%", maxWidth: "520px", padding: "11px 13px", border: "1px solid #d9cfd1", borderRadius: "8px", boxSizing: "border-box" }}
           />
         </div>
 
-        {loadingPedidos ? <p style={{ color: "#777", padding: "20px 0" }}>Cargando envÃ­os...</p> : envios.length === 0 ? (
-          <div className="empty-state"><p>No hay envÃ­os que coincidan con la bÃºsqueda.</p></div>
+        {loadingPedidos ? <p style={{ color: "#777", padding: "20px 0" }}>Cargando envíos...</p> : envios.length === 0 ? (
+          <div className="empty-state"><p>No hay envíos que coincidan con la búsqueda.</p></div>
         ) : (
           <div style={{ display: "grid", gap: "14px", marginTop: "18px" }}>
             {envios.map((pedido) => (
@@ -2892,12 +2892,12 @@ export default function MiTienda() {
                     <strong style={{ display: "block", color: "#4b2733" }}>Compra {pedido.codigo_compra}</strong>
                     <span style={{ color: "#666", fontSize: "0.86rem" }}>Pedido #{pedido.id_orden} Â· {pedido.cliente}</span>
                   </div>
-                  <span className="pl-badge pl-badge--entregado">{pedido.envio.estado_envio || "GuÃ­a registrada"}</span>
+                  <span className="pl-badge pl-badge--entregado">{pedido.envio.estado_envio || "Guía registrada"}</span>
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "end", gap: "16px", flexWrap: "wrap", borderTop: "1px solid #eee", marginTop: "16px", paddingTop: "14px" }}>
                   <div>
                     <strong style={{ display: "block" }}>{pedido.envio.empresa_mensajeria}</strong>
-                    <span style={{ color: "#666", fontSize: "0.86rem" }}>GuÃ­a: {pedido.envio.numero_guia}</span>
+                    <span style={{ color: "#666", fontSize: "0.86rem" }}>Guía: {pedido.envio.numero_guia}</span>
                   </div>
                   <a href={pedido.envio.url_rastreo || pedido.envio.sitio_web} target="_blank" rel="noreferrer" className="btn btn-vinotinto" style={{ width: "auto", padding: "9px 14px", fontSize: "0.82rem" }}>
                     Rastrear con la transportadora
@@ -2928,8 +2928,8 @@ export default function MiTienda() {
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: "12px" }}>
               <IconChartBar width={48} height={48} strokeWidth={2} style={{ color: '#7A1E3A' }} />
             </div>
-            <p style={{ fontWeight: 700, color: "#444", marginBottom: "8px" }}>No hay ventas registradas aÃºn</p>
-            <p style={{ fontSize: "0.85rem", color: "#888" }}>AquÃ­ aparecerÃ¡ el desglose por libro vendido</p>
+            <p style={{ fontWeight: 700, color: "#444", marginBottom: "8px" }}>No hay ventas registradas aún</p>
+            <p style={{ fontSize: "0.85rem", color: "#888" }}>Aquí aparecerá el desglose por libro vendido</p>
           </div>
         )}
         {!loadingVentas && ventas.length > 0 && (
@@ -2979,7 +2979,7 @@ export default function MiTienda() {
           <h1>Notificaciones</h1>
           {notificaciones.some((n) => !n.leida) && (
             <button className="btn-marcar-todas" onClick={handleMarcarTodasLeidas}>
-              Marcar todas como leÃ­das
+              Marcar todas como leídas
             </button>
           )}
         </div>
@@ -2989,7 +2989,7 @@ export default function MiTienda() {
             Todas
           </button>
           <button className={`filtro ${notificacionesFilter === "no_leidas" ? "active" : ""}`} onClick={() => setNotificacionesFilter("no_leidas")}>
-            No leÃ­das
+            No leídas
           </button>
         </div>
 
@@ -3066,12 +3066,12 @@ export default function MiTienda() {
       case "Pedidos":       return renderPedidos();
       case "Calificaciones": return renderCalificaciones();
       case "Quejas y reclamos": return <QuejasVendedor />;
-      case "Soporte tÃ©cnico": return <Soporte />;
+      case "Soporte técnico": return <Soporte />;
       case "Envios":        return renderEnvios();
       case "Clientes":      return renderProximamente("Clientes");
-      case "ConfiguraciÃ³n": return renderConfiguracion();
+      case "Configuración": return renderConfiguracion();
       case "Perfil":        return renderPerfil();
-      case "NÃ³mina":        return renderNomina();
+      case "Nómina":        return renderNomina();
       case "Promociones":   return <SeccionOfertas />;
       case "Cupones":       return <SeccionCuponesVendedor tiendaId={tiendaInfo?.id_tienda} />;
       case "Suscripciones": return <SeccionSuscripciones tiendaId={tiendaInfo?.id_tienda} onNavegar={cambiarSeccion} />;
@@ -3094,10 +3094,10 @@ export default function MiTienda() {
         type="button"
         className="dashboard-tracking-shortcut"
         onClick={() => cambiarSeccion("Envios")}
-        aria-label="Gestionar envÃ­os"
+        aria-label="Gestionar envíos"
       >
         <IconTruck width={22} height={22} strokeWidth={2} />
-        <span>EnvÃ­os</span>
+        <span>Envíos</span>
       </button>
 
       <main className="dashboard-main">{renderContenido()}</main>
