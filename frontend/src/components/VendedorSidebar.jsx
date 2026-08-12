@@ -15,7 +15,8 @@ import {
   IconTag,
   IconChevronLeft,
   IconMenu,
-  IconLogOut
+  IconLogOut,
+  IconStar
 } from './Icons';
 
 const VINOTINTO = '#7A1E3A';
@@ -30,6 +31,7 @@ const MENU_LINKS = [
   { name: 'Ventas' },
   { name: 'Pedidos' },
   { name: 'Nómina' },
+  { name: 'Calificaciones' },
   { name: 'Quejas y reclamos' },
   { name: 'Soporte técnico' },
   { name: 'Notificaciones' },
@@ -63,6 +65,7 @@ const ICONS = {
       <line x1="12" y1="10" x2="12" y2="15"></line>
     </svg>
   ),
+  Calificaciones: <IconStar width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
   'Quejas y reclamos': <IconAlertTriangle width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
   'Soporte técnico': <IconTool width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
   Notificaciones: <IconBell className="" width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,

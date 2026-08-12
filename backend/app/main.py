@@ -61,6 +61,7 @@ from app.routers.impulsos import router as impulsos_router
 from app.routers.envios import router as envios_router
 from app.routers.quejas import router as quejas_router
 from app.routers.bookypago_finanzas import router as bookypago_finanzas_router
+from app.routers.calificaciones_tiendas import router as calificaciones_tiendas_router
 from app.database import ensure_quejas_schema
 
 
@@ -108,7 +109,7 @@ app.include_router(auth_router)
 
 app.include_router(carrito_router, prefix="/carrito", tags=["Carrito"])
 
-app.include_router(stored_router, prefix="/stored", tags=["Stored Procedures"])
+app.include_router(stored_router, tags=["Stored Procedures"])
 
 app.include_router(payments_router)
 
@@ -147,6 +148,7 @@ app.include_router(impulsos_router)
 app.include_router(envios_router)
 app.include_router(quejas_router)
 app.include_router(bookypago_finanzas_router, prefix="/api/v1/bookypago-finanzas", tags=["BookyPago Finanzas"])
+# app.include_router(calificaciones_tiendas_router)
 
 
 @app.get("/")

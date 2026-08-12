@@ -97,4 +97,11 @@ export const getHistorialSuscripciones = () => api.get('/suscripciones/historial
 export const crearSuscripcion = (payload) => api.post('/suscripciones', payload)
 export const cancelarSuscripcion = (id) => api.delete(`/suscripciones/${id}`)
 
+// Calificaciones de tiendas
+export const getCalificacionesTienda = (idTienda) => api.get(`/perfil/calificaciones/tienda/${idTienda}`)
+export const crearCalificacionTienda = (payload) => api.post('/perfil/calificaciones/tienda', payload)
+export const actualizarCalificacionTienda = (idCalificacion, payload) => api.put(`/perfil/calificaciones/tienda/${idCalificacion}`, payload)
+export const eliminarCalificacionTienda = (idCalificacion) => api.delete(`/perfil/calificaciones/tienda/${idCalificacion}`)
+export const usuarioPuedeCalificarTienda = (idTienda) => api.get(`/perfil/calificaciones/tienda/${idTienda}/usuario-puede-calificar`)
+
 export default api

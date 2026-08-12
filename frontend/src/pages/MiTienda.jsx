@@ -1,4 +1,4 @@
-// src/pages/MiTienda.jsx
+﻿// src/pages/MiTienda.jsx
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
@@ -28,7 +28,8 @@ import {
   IconTruck,
   IconCreditCard,
   IconInfo,
-  IconRefresh
+  IconRefresh,
+  IconCalendar
 } from "../components/Icons";
 import "../styles/Notificaciones.css";
 
@@ -88,8 +89,8 @@ const getLibroImageUrl = (libro) => {
 
 const ESTADOS = [
   { value: "nuevo",             label: "Nuevo" },
-  { value: "usado_buen_estado", label: "Usado — buen estado" },
-  { value: "usado_regular",     label: "Usado — estado regular" },
+  { value: "usado_buen_estado", label: "Usado â€” buen estado" },
+  { value: "usado_regular",     label: "Usado â€” estado regular" },
 ];
 
 const BadgeEstado = ({ estado }) => {
@@ -133,7 +134,7 @@ function AlertaStock({ alertas, umbral }) {
               border: `1px solid ${libro.stock === 0 ? "#fca5a5" : "#fde047"}`,
               borderRadius: "20px", padding: "3px 10px", fontSize: "0.78rem", fontWeight: 700,
             }}>
-              {libro.titulo} — {libro.stock === 0 ? "Sin stock" : `${libro.stock} uds`}
+              {libro.titulo} â€” {libro.stock === 0 ? "Sin stock" : `${libro.stock} uds`}
             </span>
           ))}
         </div>
@@ -159,9 +160,9 @@ function ModalEditarLibro({ libro, categorias, onClose, onGuardado }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.titulo.trim())            return setError("El título es obligatorio");
+    if (!form.titulo.trim())            return setError("El tÃ­tulo es obligatorio");
     if (!form.autor_libro.trim())       return setError("El autor es obligatorio");
-    if (!form.id_categoria)             return setError("Selecciona una categoría");
+    if (!form.id_categoria)             return setError("Selecciona una categorÃ­a");
     if (Number(form.precio_libro) <= 0) return setError("El precio debe ser mayor a 0");
     if (Number(form.stock) < 0)         return setError("El stock no puede ser negativo");
     setCargando(true);
@@ -180,12 +181,12 @@ function ModalEditarLibro({ libro, categorias, onClose, onGuardado }) {
       <div className="modal-box" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h2>Editar libro</h2>
-          <button className="modal-close" onClick={onClose}>×</button>
+          <button className="modal-close" onClick={onClose}>Ã—</button>
         </div>
         <form onSubmit={handleSubmit} className="modal-form">
           <div className="modal-grid">
             <div className="form-group">
-              <label>Título *</label>
+              <label>TÃ­tulo *</label>
               <input name="titulo" value={form.titulo} onChange={handleChange} maxLength={100} />
             </div>
             <div className="form-group">
@@ -193,7 +194,7 @@ function ModalEditarLibro({ libro, categorias, onClose, onGuardado }) {
               <input name="autor_libro" value={form.autor_libro} onChange={handleChange} maxLength={50} />
             </div>
             <div className="form-group">
-              <label>Categoría *</label>
+              <label>CategorÃ­a *</label>
               <select name="id_categoria" value={form.id_categoria} onChange={handleChange}>
                 {categorias.map((c) => (
                   <option key={c.id_categoria} value={c.id_categoria}>{c.nombre_categoria}</option>
@@ -216,7 +217,7 @@ function ModalEditarLibro({ libro, categorias, onClose, onGuardado }) {
             </div>
           </div>
           <div className="form-group">
-            <label>Descripción *
+            <label>DescripciÃ³n *
               <span style={{ float: "right", color: "#bbb", fontWeight: 500, fontSize: "0.78rem" }}>
                 {form.descripcion_libro.length}/300
               </span>
@@ -228,7 +229,7 @@ function ModalEditarLibro({ libro, categorias, onClose, onGuardado }) {
           <div className="modal-actions">
             <button type="button" className="btn-outline" onClick={onClose} disabled={cargando}>Cancelar</button>
             <button type="submit" className="btn btn-vinotinto" disabled={cargando}>
-              {cargando ? "Guardando…" : "Guardar cambios"}
+              {cargando ? "Guardandoâ€¦" : "Guardar cambios"}
             </button>
           </div>
         </form>
@@ -239,7 +240,7 @@ function ModalEditarLibro({ libro, categorias, onClose, onGuardado }) {
 
 function ModalEliminar({ libro, onClose, onEliminado }) {
   // ========================
-  // Estado del modal de eliminación
+  // Estado del modal de eliminaciÃ³n
   // ========================
   const [cargando, setCargando] = useState(false);
   const [error,    setError]    = useState("");
@@ -260,19 +261,19 @@ function ModalEliminar({ libro, onClose, onEliminado }) {
       <div className="modal-box modal-box--sm" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h2>Eliminar libro</h2>
-          <button className="modal-close" onClick={onClose}>×</button>
+          <button className="modal-close" onClick={onClose}>Ã—</button>
         </div>
         <div style={{ padding: "8px 0 20px" }}>
           <p style={{ color: "#444", marginBottom: "6px" }}>
-            ¿Estás seguro de que quieres eliminar <strong>"{libro.titulo}"</strong>?
+            Â¿EstÃ¡s seguro de que quieres eliminar <strong>"{libro.titulo}"</strong>?
           </p>
-          <p style={{ fontSize: "0.85rem", color: "#888" }}>Esta acción no se puede deshacer.</p>
+          <p style={{ fontSize: "0.85rem", color: "#888" }}>Esta acciÃ³n no se puede deshacer.</p>
         </div>
         {error && <div className="form-error" style={{ marginBottom: "16px", display: 'flex', alignItems: 'center', gap: '4px' }}><IconLock width={16} height={16} strokeWidth={2} style={{ color: '#b91c1c' }} /> {error}</div>}
         <div className="modal-actions">
           <button className="btn-outline" onClick={onClose} disabled={cargando}>Cancelar</button>
           <button className="btn-eliminar" onClick={confirmar} disabled={cargando}>
-            {cargando ? "Eliminando…" : "Sí, eliminar"}
+            {cargando ? "Eliminandoâ€¦" : "SÃ­, eliminar"}
           </button>
         </div>
       </div>
@@ -307,13 +308,13 @@ function ModalStock({ libro, onClose, onActualizado }) {
       <div className="modal-box modal-box--sm" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h2>Gestionar stock</h2>
-          <button className="modal-close" onClick={onClose}>×</button>
+          <button className="modal-close" onClick={onClose}>Ã—</button>
         </div>
         <p style={{ color: "#666", fontSize: "0.9rem", marginBottom: "20px" }}>
           <strong>{libro.titulo}</strong>
         </p>
         <div className="stock-control">
-          <button className="stock-btn" onClick={() => setStock(Math.max(0, stock - 1))}>−</button>
+          <button className="stock-btn" onClick={() => setStock(Math.max(0, stock - 1))}>âˆ’</button>
           <input type="number" min="0" value={stock}
             onChange={(e) => setStock(Number(e.target.value))} className="stock-input" />
           <button className="stock-btn" onClick={() => setStock(stock + 1)}>+</button>
@@ -322,11 +323,301 @@ function ModalStock({ libro, onClose, onActualizado }) {
         <div className="modal-actions" style={{ marginTop: "20px" }}>
           <button className="btn-outline" onClick={onClose} disabled={cargando}>Cancelar</button>
           <button className="btn btn-vinotinto" onClick={guardar} disabled={cargando}>
-            {cargando ? "Guardando…" : "Guardar stock"}
+            {cargando ? "Guardandoâ€¦" : "Guardar stock"}
           </button>
         </div>
       </div>
     </div>
+  );
+}
+
+/* ================= SECCIÃ“N CALIFICACIONES VENDEDOR ================= */
+const StarIcon = ({ filled, size = 16 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill={filled ? '#ffc107' : '#e0e0e0'} stroke="none">
+    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+  </svg>
+);
+
+const Stars = ({ value, size = 16 }) => (
+  <div style={{ display: 'flex', gap: '2px' }}>
+    {[1,2,3,4,5].map(i => <StarIcon key={i} filled={i <= value} size={size} />)}
+  </div>
+);
+
+// Color del badge segÃºn calificaciÃ³n
+const calColor = (n) => {
+  if (n >= 4.5) return { bg: '#d1fae5', color: '#065f46', border: '#6ee7b7' };
+  if (n >= 3.5) return { bg: '#fef9c3', color: '#854d0e', border: '#fde047' };
+  return { bg: '#fee2e2', color: '#991b1b', border: '#fca5a5' };
+};
+
+// Iniciales del usuario para el avatar
+const initials = (name = '') => name.trim().split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase() || '?';
+
+// Paleta de colores para avatares
+const AVATAR_COLORS = ['#7A1E3A','#1e4d8a','#1e7a45','#7a5c00','#5a1e7a','#1e6a7a'];
+const avatarColor = (name = '') => AVATAR_COLORS[name.charCodeAt(0) % AVATAR_COLORS.length] || '#7A1E3A';
+
+function SeccionCalificacionesVendedor({ tiendaId }) {
+  const [data, setData]       = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!tiendaId) return;
+    setLoading(true);
+    api.get(`/perfil/calificaciones-tienda/${tiendaId}`)
+      .then(r => setData(r.data))
+      .catch(e => console.error('Error calificaciones:', e))
+      .finally(() => setLoading(false));
+  }, [tiendaId]);
+
+  const total    = data?.total     ?? 0;
+  const promedio = data?.promedio  ?? 0;
+  const dist     = data?.distribucion ?? {};
+  const lista    = data?.calificaciones ?? [];
+
+  const barColor = (s) => s >= 4 ? '#22c55e' : s === 3 ? '#f59e0b' : '#ef4444';
+  const topBorder = (s) => s >= 4 ? '#22c55e' : s === 3 ? '#f59e0b' : '#ef4444';
+  const promedioColor = promedio >= 4.5 ? '#065f46' : promedio >= 3.5 ? '#854d0e' : '#991b1b';
+  const promedioBg    = promedio >= 4.5 ? '#d1fae5' : promedio >= 3.5 ? '#fef9c3' : '#fee2e2';
+  const promedioBorder= promedio >= 4.5 ? '#6ee7b7' : promedio >= 3.5 ? '#fde047' : '#fca5a5';
+
+  const estesMes = lista.filter(c => {
+    const d = new Date(c.fecha_calificacion), n = new Date();
+    return d.getMonth() === n.getMonth() && d.getFullYear() === n.getFullYear();
+  }).length;
+
+  return (
+    <>
+      {/* Header igual al de todas las secciones */}
+      <div className="welcome-card">
+        <h1 style={{ fontSize: "1.55rem", marginBottom: "4px", display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <IconStar width={28} height={28} strokeWidth={2} style={{ color: '#7A1E3A' }} />
+          Calificaciones de tu tienda
+        </h1>
+        <p style={{ margin: 0 }}>Lo que tus clientes opinan sobre tu servicio</p>
+      </div>
+
+      {loading ? (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '260px', flexDirection: 'column', gap: '12px' }}>
+          <div style={{ width: '36px', height: '36px', border: '3px solid #f0e8ea', borderTopColor: '#7A1E3A', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+          <span style={{ color: '#aaa', fontSize: '0.9rem' }}>Cargando calificaciones...</span>
+        </div>
+      ) : total === 0 ? (
+        /* â”€â”€ Estado vacÃ­o â”€â”€ */
+        <div style={{ padding: '20px' }}>
+          <div style={{ background: 'white', borderRadius: '16px', padding: '70px 20px', textAlign: 'center', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
+            <div style={{ fontSize: '4rem', marginBottom: '16px' }}>â­</div>
+            <h3 style={{ margin: '0 0 8px 0', color: '#333', fontWeight: '700', fontSize: '1.2rem' }}>AÃºn no tienes calificaciones</h3>
+            <p style={{ margin: '0 auto', color: '#999', fontSize: '0.95rem', maxWidth: '340px' }}>
+              Cuando un cliente reciba su pedido y te evalÃºe, sus opiniones aparecerÃ¡n aquÃ­.
+            </p>
+          </div>
+        </div>
+      ) : (
+        <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+
+          {/* â”€â”€ Fila superior: promedio destacado + 3 mÃ©tricas â”€â”€ */}
+          <div style={{ display: 'grid', gridTemplateColumns: '260px 1fr', gap: '16px', alignItems: 'stretch' }}>
+
+            {/* Promedio grande */}
+            <div style={{
+              background: promedioBg,
+              border: `2px solid ${promedioBorder}`,
+              borderRadius: '16px',
+              padding: '28px 20px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              boxShadow: '0 4px 16px rgba(0,0,0,0.07)'
+            }}>
+              <span style={{ fontSize: '0.78rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.06em', color: promedioColor, opacity: 0.75 }}>
+                Promedio general
+              </span>
+              <div style={{ fontSize: '4rem', fontWeight: '900', color: promedioColor, lineHeight: 1 }}>
+                {promedio.toFixed(1)}
+              </div>
+              <Stars value={Math.round(promedio)} size={20} />
+              <span style={{ fontSize: '0.85rem', color: promedioColor, opacity: 0.7, marginTop: '4px' }}>
+                sobre {total} {total === 1 ? 'opiniÃ³n' : 'opiniones'}
+              </span>
+            </div>
+
+            {/* 3 mÃ©tricas en columna */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
+              {[
+                { 
+                  label: 'Opiniones totales', 
+                  value: total,      
+                  icon: <IconMessage width={32} height={32} strokeWidth={1.5} style={{ color: '#1d4ed8' }} />, 
+                  bg: '#eff6ff', 
+                  color: '#1d4ed8', 
+                  border: '#bfdbfe' 
+                },
+                { 
+                  label: '5 estrellas',        
+                  value: dist[5]??0, 
+                  icon: <IconStar width={32} height={32} strokeWidth={1.5} style={{ color: '#065f46' }} />, 
+                  bg: '#d1fae5', 
+                  color: '#065f46', 
+                  border: '#6ee7b7' 
+                },
+                { 
+                  label: 'Este mes',            
+                  value: estesMes,  
+                  icon: <IconCalendar width={32} height={32} strokeWidth={1.5} style={{ color: '#6b21a8' }} />, 
+                  bg: '#faf5ff', 
+                  color: '#6b21a8', 
+                  border: '#d8b4fe' 
+                },
+              ].map(m => (
+                <div key={m.label} className="metric-card" style={{
+                  background: m.bg,
+                  border: `1px solid ${m.border}`,
+                  borderRadius: '14px',
+                  padding: '20px 16px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  textAlign: 'center',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+                }}>
+                  <div className="metric-icon">
+                    {m.icon}
+                  </div>
+                  <div style={{ fontSize: '2rem', fontWeight: '900', color: m.color, lineHeight: 1 }}>{m.value}</div>
+                  <div style={{ fontSize: '0.78rem', color: m.color, opacity: 0.8, fontWeight: '600' }}>{m.label}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* â”€â”€ Fila inferior: distribuciÃ³n + lista â”€â”€ */}
+          <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: '16px', alignItems: 'start' }}>
+
+            {/* DistribuciÃ³n */}
+            <div style={{ background: 'white', borderRadius: '14px', padding: '22px', boxShadow: '0 2px 10px rgba(0,0,0,0.06)' }}>
+              <h3 style={{ margin: '0 0 18px 0', fontSize: '0.85rem', fontWeight: '700', color: '#888', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                DistribuciÃ³n
+              </h3>
+              {[5,4,3,2,1].map(stars => {
+                const count = dist[stars] ?? 0;
+                const pct   = total > 0 ? Math.round((count / total) * 100) : 0;
+                return (
+                  <div key={stars} style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+                    <span style={{ minWidth: '10px', fontSize: '0.85rem', fontWeight: '700', color: '#555' }}>{stars}</span>
+                    <StarIcon filled size={13} />
+                    <div style={{ flex: 1, background: '#f3f4f6', borderRadius: '99px', height: '10px', overflow: 'hidden' }}>
+                      <div style={{ background: barColor(stars), height: '100%', width: `${pct}%`, borderRadius: '99px', transition: 'width 0.6s ease' }} />
+                    </div>
+                    <span style={{ minWidth: '52px', fontSize: '0.8rem', color: '#888', textAlign: 'right' }}>
+                      {count} <span style={{ color: '#ccc' }}>({pct}%)</span>
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Lista de opiniones */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h3 style={{ margin: '0 0 4px 0', fontSize: '0.85rem', fontWeight: '700', color: '#888', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                  Ãšltimas opiniones
+                </h3>
+                {lista.length > 10 && (
+                  <span style={{ fontSize: '0.75rem', color: '#999', fontStyle: 'italic' }}>
+                    Mostrando 10 de {lista.length}
+                  </span>
+                )}
+              </div>
+              {lista.slice(0, 10).map(cal => (
+                <div key={cal.id_calificacion} style={{
+                  background: 'white',
+                  borderRadius: '14px',
+                  padding: '14px 18px',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+                  borderTop: `3px solid ${topBorder(cal.calificacion)}`
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: cal.comentario ? '10px' : 0 }}>
+                    <div style={{
+                      width: '36px', height: '36px', borderRadius: '50%', flexShrink: 0,
+                      background: avatarColor(cal.nombre_usuario),
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      color: 'white', fontWeight: '700', fontSize: '0.82rem'
+                    }}>
+                      {initials(cal.nombre_usuario)}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <strong style={{ color: '#222', fontSize: '0.9rem' }}>{cal.nombre_usuario}</strong>
+                        <span style={{ fontSize: '0.78rem', color: '#bbb', flexShrink: 0, marginLeft: '8px' }}>
+                          {new Date(cal.fecha_calificacion).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' })}
+                        </span>
+                      </div>
+                      <Stars value={cal.calificacion} size={13} />
+                    </div>
+                  </div>
+                  {cal.comentario && (
+                    <p style={{
+                      margin: 0, color: '#666', fontSize: '0.88rem', lineHeight: '1.55',
+                      paddingLeft: '48px', fontStyle: 'italic',
+                      borderTop: '1px solid #f3f4f6', paddingTop: '10px'
+                    }}>
+                      "{cal.comentario}"
+                    </p>
+                  )}
+                </div>
+              ))}
+              
+              {/* Estado vacÃ­o cuando no hay opiniones */}
+              {lista.length === 0 && (
+                <div style={{
+                  background: 'white',
+                  borderRadius: '14px',
+                  padding: '40px 20px',
+                  textAlign: 'center',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+                }}>
+                  <div style={{ fontSize: '3rem', opacity: 0.3, marginBottom: '12px' }}>ðŸ’­</div>
+                  <p style={{ margin: '0 0 8px 0', fontWeight: '600', color: '#666' }}>
+                    AÃºn no hay opiniones
+                  </p>
+                  <p style={{ margin: 0, fontSize: '0.85rem', color: '#888' }}>
+                    Las opiniones de tus clientes aparecerÃ¡n aquÃ­ cuando recibas calificaciones
+                  </p>
+                </div>
+              )}
+              
+              {/* Nota sobre notificaciones */}
+              {lista.length > 10 && (
+                <div style={{
+                  background: '#f8fafc',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '12px',
+                  padding: '12px 16px',
+                  fontSize: '0.82rem',
+                  color: '#64748b',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}>
+                  <IconMessage width={16} height={16} strokeWidth={1.5} style={{ flexShrink: 0 }} />
+                  <span>
+                    Las opiniones anteriores estÃ¡n disponibles en la secciÃ³n de <strong>Notificaciones</strong>
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    </>
   );
 }
 
@@ -402,7 +693,7 @@ export default function MiTienda() {
   const [cuentaAEliminar, setCuentaAEliminar] = useState(null);
   const [mostrarExitoCuenta, setMostrarExitoCuenta] = useState(false);
   
-  // Estados para nómina
+  // Estados para nÃ³mina
   const [pagosPendientes, setPagosPendientes] = useState([]);
   const [historialPagos, setHistorialPagos] = useState([]);
   const [loadingNomina, setLoadingNomina] = useState(false);
@@ -427,10 +718,7 @@ export default function MiTienda() {
       const token = localStorage.getItem("token");
       const payload = jwtDecode(token);
       const userId = payload.sub;
-
-      console.log('Cargando pagos pendientes para usuario:', userId);
       const res = await api.get(`/api/v1/bookypago-finanzas/pagos-pendientes/${userId}`);
-      console.log('Respuesta pagos pendientes:', res.data);
       setPagosPendientes(res.data.pagos_pendientes || []);
     } catch (error) {
       console.error('Error cargando pagos pendientes:', error);
@@ -444,10 +732,7 @@ export default function MiTienda() {
       const token = localStorage.getItem("token");
       const payload = jwtDecode(token);
       const userId = payload.sub;
-
-      console.log('Cargando historial de pagos para usuario:', userId);
       const res = await api.get(`/api/v1/bookypago-finanzas/historial-pagos/${userId}`);
-      console.log('Respuesta historial pagos:', res.data);
       setHistorialPagos(res.data.historial || []);
     } catch (error) {
       console.error('Error cargando historial de pagos:', error);
@@ -475,7 +760,7 @@ export default function MiTienda() {
       setMostrarExitoCuenta(true);
       cargarCuentasBancarias();
       
-      // Cerrar el modal de éxito automáticamente después de 3 segundos
+      // Cerrar el modal de Ã©xito automÃ¡ticamente despuÃ©s de 3 segundos
       setTimeout(() => setMostrarExitoCuenta(false), 3000);
     } catch (error) {
       alert('Error agregando cuenta bancaria: ' + (error.response?.data?.detail || error.message));
@@ -525,7 +810,7 @@ export default function MiTienda() {
   }, []);
 
   useEffect(() => {
-    if (activeSide === 'Nómina') {
+    if (activeSide === 'NÃ³mina') {
       setLoadingNomina(true);
       Promise.all([cargarPagosPendientes(), cargarHistorialPagos()])
         .finally(() => setLoadingNomina(false));
@@ -551,7 +836,7 @@ export default function MiTienda() {
       await notificacionesService.marcarLeida(id_notificacion);
       await cargarNotificaciones(true);
     } catch (err) {
-      console.error("Error marcando notificación como leída:", err);
+      console.error("Error marcando notificaciÃ³n como leÃ­da:", err);
     }
   };
 
@@ -560,17 +845,17 @@ export default function MiTienda() {
       await notificacionesService.marcarTodasLeidas();
       await cargarNotificaciones(true);
     } catch (err) {
-      console.error("Error marcando todas las notificaciones como leídas:", err);
+      console.error("Error marcando todas las notificaciones como leÃ­das:", err);
     }
   };
 
   const handleEliminar = async (id_notificacion) => {
-    if (!window.confirm("¿Eliminar notificación?")) return;
+    if (!window.confirm("Â¿Eliminar notificaciÃ³n?")) return;
     try {
       await notificacionesService.eliminar(id_notificacion);
       await cargarNotificaciones(true);
     } catch (err) {
-      console.error("Error eliminando notificación:", err);
+      console.error("Error eliminando notificaciÃ³n:", err);
     }
   };
 
@@ -633,7 +918,7 @@ export default function MiTienda() {
 
   // Sincronizar activeSide con la URL: usamos history.replaceState en lugar de
   // navigate() para no disparar el ciclo de re-render de React Router (que causa
-  // el parpadeo blanco al cambiar de sección).
+  // el parpadeo blanco al cambiar de secciÃ³n).
   const cambiarSeccion = (nuevaSeccion) => {
     setActiveSide(nuevaSeccion);
     window.history.replaceState(null, '', `/mi-tienda?seccion=${encodeURIComponent(nuevaSeccion)}`);
@@ -693,14 +978,14 @@ export default function MiTienda() {
         const res = await api.get("/envios/empresas");
         setEmpresasMensajeria(res.data);
       } catch {
-        setEnvioError("No se pudo cargar el listado de empresas de mensajería.");
+        setEnvioError("No se pudo cargar el listado de empresas de mensajerÃ­a.");
       }
     }
   };
 
   const guardarEnvio = async () => {
     if (!envioForm.id_empresa || !envioForm.numero_guia.trim()) {
-      setEnvioError("Selecciona una empresa e ingresa el número de guía.");
+      setEnvioError("Selecciona una empresa e ingresa el nÃºmero de guÃ­a.");
       return;
     }
     setGuardandoEnvio(true);
@@ -714,9 +999,19 @@ export default function MiTienda() {
       setPedidoEnvio(null);
       cargarPedidos();
     } catch (err) {
-      setEnvioError(err.response?.data?.detail || "No se pudo registrar la guía.");
+      setEnvioError(err.response?.data?.detail || "No se pudo registrar la guÃ­a.");
     } finally {
       setGuardandoEnvio(false);
+    }
+  };
+
+  const cambiarEstadoOrden = async (idOrden, nuevoEstado) => {
+    try {
+      await api.put(`/perfil/ordenes/${idOrden}/estado`, { estado: nuevoEstado });
+      cargarPedidos();
+    } catch (err) {
+      console.error("Error cambiando estado:", err);
+      alert("No se pudo cambiar el estado de la orden");
     }
   };
 
@@ -740,9 +1035,9 @@ export default function MiTienda() {
 
  
   // ========================
-  // Efectos de carga inicial y actualizacion por sección
+  // Efectos de carga inicial y actualizacion por secciÃ³n
   // ========================
-  // Cargar libros únicamente al montar el componente
+  // Cargar libros Ãºnicamente al montar el componente
   useEffect(() => {
     cargarLibros();
   }, [cargarLibros]);
@@ -763,12 +1058,12 @@ export default function MiTienda() {
         if (Array.isArray(r.data)) {
           setCategorias(r.data);
         } else {
-          console.error("Respuesta inesperada de categorías:", r.data);
+          console.error("Respuesta inesperada de categorÃ­as:", r.data);
           setCategorias([]);
         }
       })
       .catch((err) => {
-        console.error("Error cargando categorías:", err);
+        console.error("Error cargando categorÃ­as:", err);
         setCategorias([]);
       });
   }, []);
@@ -843,11 +1138,11 @@ export default function MiTienda() {
         }
       })
       .catch((err) => {
-        console.error("Error cargando información de tienda:", err);
+        console.error("Error cargando informaciÃ³n de tienda:", err);
         setTiendaInfo(null);
       });
 
-    // Cargar configuración avanzada
+    // Cargar configuraciÃ³n avanzada
     api.get("/configuracion")
       .then((r) => {
         if (r.data) {
@@ -860,7 +1155,7 @@ export default function MiTienda() {
         }
       })
       .catch((err) => {
-        console.error("Error cargando configuración avanzada:", err);
+        console.error("Error cargando configuraciÃ³n avanzada:", err);
       });
   }, []);
 
@@ -886,7 +1181,7 @@ export default function MiTienda() {
     <>
       <div className="welcome-card welcome-card--small">
         <h1>Bienvenido, {userName.split(" ")[0]}</h1>
-        <p>Aquí tienes un panorama claro de tu tienda en BookyHome.</p>
+        <p>AquÃ­ tienes un panorama claro de tu tienda en BookyHome.</p>
       </div>
 
       <div className="dashboard-top-grid">
@@ -896,17 +1191,17 @@ export default function MiTienda() {
               <p className="dashboard-card-title">Resumen</p>
               <p className="dashboard-card-subtitle">Estado general de tu tienda</p>
             </div>
-            <span className="dashboard-card-tag">HISTÓRICO</span>
+            <span className="dashboard-card-tag">HISTÃ“RICO</span>
           </div>
 
           <div className="summary-pill-grid">
             <div className="summary-pill">
               <span>Total ventas (COP)</span>
-              <strong>{loadingStats ? "…" : stats ? formatPrecio(stats.total_mes) : "$0 COP"}</strong>
+              <strong>{loadingStats ? "â€¦" : stats ? formatPrecio(stats.total_mes) : "$0 COP"}</strong>
             </div>
             <div className="summary-pill">
               <span>Libros publicados</span>
-              <strong>{loadingLibros ? "…" : statsLibros.totalLibros}</strong>
+              <strong>{loadingLibros ? "â€¦" : statsLibros.totalLibros}</strong>
             </div>
           </div>
         </div>
@@ -923,11 +1218,11 @@ export default function MiTienda() {
           <div className="trend-pill-grid">
             <div className="trend-pill">
               <p>Ventas esta semana</p>
-              <strong>{loadingStats ? '…' : stats ? formatPrecio(stats.total_semana) : '$0 COP'}</strong>
+              <strong>{loadingStats ? 'â€¦' : stats ? formatPrecio(stats.total_semana) : '$0 COP'}</strong>
             </div>
             <div className="trend-pill">
-              <p>Órdenes este mes</p>
-              <strong>{loadingStats ? '…' : stats ? stats.ordenes_mes : '0'}</strong>
+              <p>Ã“rdenes este mes</p>
+              <strong>{loadingStats ? 'â€¦' : stats ? stats.ordenes_mes : '0'}</strong>
             </div>
           </div>
 
@@ -942,8 +1237,8 @@ export default function MiTienda() {
               ))}
             </div>
             <div className="analytics-chart-meta">
-              <p>Ventas en los últimos 6 días</p>
-              <strong>{loadingStats ? '…' : stats ? formatPrecio(stats.total_semana) : '$0 COP'}</strong>
+              <p>Ventas en los Ãºltimos 6 dÃ­as</p>
+              <strong>{loadingStats ? 'â€¦' : stats ? formatPrecio(stats.total_semana) : '$0 COP'}</strong>
             </div>
           </div>
         </div>
@@ -952,7 +1247,7 @@ export default function MiTienda() {
           <div className="dashboard-card-header">
             <div>
               <p className="dashboard-card-title">Centro de notificaciones</p>
-              <p className="dashboard-card-subtitle">Lo más reciente</p>
+              <p className="dashboard-card-subtitle">Lo mÃ¡s reciente</p>
             </div>
           </div>
           <div className="notification-item">
@@ -963,17 +1258,17 @@ export default function MiTienda() {
             </div>
           </div>
           <div className="notification-item">
-            <strong>{loadingLibros ? '…' : statsLibros.totalLibros}</strong>
+            <strong>{loadingLibros ? 'â€¦' : statsLibros.totalLibros}</strong>
             <div>
               <p>Libros publicados</p>
-              <small>Tu catálogo activo</small>
+              <small>Tu catÃ¡logo activo</small>
             </div>
           </div>
           <div className="notification-item">
-            <strong>{loadingTop ? '…' : topVendidos.length}</strong>
+            <strong>{loadingTop ? 'â€¦' : topVendidos.length}</strong>
             <div>
               <p>Libros en top ventas</p>
-              <small>Los más populares</small>
+              <small>Los mÃ¡s populares</small>
             </div>
           </div>
         </div>
@@ -983,7 +1278,7 @@ export default function MiTienda() {
         <div>
           <div className="inventory-alert-top">
             <p className="inventory-alert-title">Alertas de inventario</p>
-            <p className="inventory-alert-copy">Recibe avisos automáticos cuando el stock de tus libros esté por debajo del umbral.</p>
+            <p className="inventory-alert-copy">Recibe avisos automÃ¡ticos cuando el stock de tus libros estÃ© por debajo del umbral.</p>
           </div>
           <div className="inventory-alert-status">
             <span className={alertasStock.length > 0 ? 'inventory-status-warning' : 'inventory-status-ok'} style={{ display: 'flex', alignItems: 'center' }}>
@@ -991,7 +1286,7 @@ export default function MiTienda() {
             </span>
             <div>
               <p className="inventory-status-title">
-                {alertasStock.length > 0 ? 'Hay libros por debajo del umbral' : 'Todo tu inventario está dentro del umbral'}
+                {alertasStock.length > 0 ? 'Hay libros por debajo del umbral' : 'Todo tu inventario estÃ¡ dentro del umbral'}
               </p>
               <p className="inventory-status-copy">
                 {alertasStock.length > 0
@@ -1015,7 +1310,7 @@ export default function MiTienda() {
               localStorage.setItem('stockUmbral', val);
             }}
           />
-          <small className="inventory-alert-hint">Ajusta cuántas unidades quedan antes de generar una alerta.</small>
+          <small className="inventory-alert-hint">Ajusta cuÃ¡ntas unidades quedan antes de generar una alerta.</small>
         </div>
       </div>
 
@@ -1024,10 +1319,10 @@ export default function MiTienda() {
       <div className="dashboard-card recent-books-card">
         <div className="dashboard-card-header">
           <div>
-            <p className="dashboard-card-title">Últimos libros publicados</p>
-            <p className="dashboard-card-subtitle">Los tres libros más recientes de tu catálogo</p>
+            <p className="dashboard-card-title">Ãšltimos libros publicados</p>
+            <p className="dashboard-card-subtitle">Los tres libros mÃ¡s recientes de tu catÃ¡logo</p>
           </div>
-          <button className="btn-ver-todos" onClick={() => setActiveSide("Mis Libros")}>Ver todos →</button>
+          <button className="btn-ver-todos" onClick={() => setActiveSide("Mis Libros")}>Ver todos â†’</button>
         </div>
 
         {loadingLibros ? (
@@ -1037,8 +1332,8 @@ export default function MiTienda() {
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: "10px" }}>
               <IconBookOpen width={48} height={48} strokeWidth={2} style={{ color: '#7A1E3A' }} />
             </div>
-            <p style={{ fontWeight: 700, color: "#444", marginBottom: "6px" }}>No hay libros publicados aún</p>
-            <p style={{ fontSize: "0.85rem", color: "#888" }}>Publica tu primer libro para verlo aquí.</p>
+            <p style={{ fontWeight: 700, color: "#444", marginBottom: "6px" }}>No hay libros publicados aÃºn</p>
+            <p style={{ fontSize: "0.85rem", color: "#888" }}>Publica tu primer libro para verlo aquÃ­.</p>
           </div>
         ) : (
           <div className="recent-books-list">
@@ -1074,15 +1369,15 @@ export default function MiTienda() {
       <div className="seller-stats">
         <div className="seller-stat-card">
           <h3>Libros publicados</h3>
-          <div className="seller-stat-number">{loadingLibros ? "…" : statsLibros.totalLibros}</div>
+          <div className="seller-stat-number">{loadingLibros ? "â€¦" : statsLibros.totalLibros}</div>
         </div>
         <div className="seller-stat-card">
           <h3>Unidades en stock</h3>
-          <div className="seller-stat-number">{loadingLibros ? "…" : statsLibros.stockTotal}</div>
+          <div className="seller-stat-number">{loadingLibros ? "â€¦" : statsLibros.stockTotal}</div>
         </div>
         <div className="seller-stat-card">
-          <h3>Categorías activas</h3>
-          <div className="seller-stat-number">{loadingLibros ? "…" : statsLibros.categorias}</div>
+          <h3>CategorÃ­as activas</h3>
+          <div className="seller-stat-number">{loadingLibros ? "â€¦" : statsLibros.categorias}</div>
         </div>
       </div>
 
@@ -1091,22 +1386,22 @@ export default function MiTienda() {
         <div className="seller-stat-card seller-stat-card--ventas">
           <h3>Vendido hoy</h3>
           <div className="seller-stat-number">
-            {loadingStats ? "…" : stats ? formatPrecio(stats.total_hoy) : "—"}
+            {loadingStats ? "â€¦" : stats ? formatPrecio(stats.total_hoy) : "â€”"}
           </div>
-          <span className="stat-sub">{stats ? `${stats.ordenes_hoy} orden(es)` : "Sin datos aún"}</span>
+          <span className="stat-sub">{stats ? `${stats.ordenes_hoy} orden(es)` : "Sin datos aÃºn"}</span>
         </div>
         <div className="seller-stat-card seller-stat-card--ventas">
           <h3>Vendido esta semana</h3>
           <div className="seller-stat-number">
-            {loadingStats ? "…" : stats ? formatPrecio(stats.total_semana) : "—"}
+            {loadingStats ? "â€¦" : stats ? formatPrecio(stats.total_semana) : "â€”"}
           </div>
         </div>
         <div className="seller-stat-card seller-stat-card--ventas">
           <h3>Vendido este mes</h3>
           <div className="seller-stat-number">
-            {loadingStats ? "…" : stats ? formatPrecio(stats.total_mes) : "—"}
+            {loadingStats ? "â€¦" : stats ? formatPrecio(stats.total_mes) : "â€”"}
           </div>
-          <span className="stat-sub">{stats ? `${stats.ordenes_mes} orden(es)` : "Sin datos aún"}</span>
+          <span className="stat-sub">{stats ? `${stats.ordenes_mes} orden(es)` : "Sin datos aÃºn"}</span>
         </div>
       </div>
 
@@ -1114,9 +1409,9 @@ export default function MiTienda() {
         <div className="seller-books-header">
           <h2 className="seller-books-title" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <IconStar width={24} height={24} strokeWidth={2} style={{ color: '#7A1E3A' }} />
-            Libros más vendidos
+            Libros mÃ¡s vendidos
           </h2>
-          <button className="btn-ver-todos" onClick={() => setActiveSide("Mis Libros")}>Ver todos →</button>
+          <button className="btn-ver-todos" onClick={() => setActiveSide("Mis Libros")}>Ver todos â†’</button>
         </div>
         {loadingTop && <p style={{ color: "#999", padding: "20px 0" }}>Cargando...</p>}
         {!loadingTop && topVendidos.length === 0 && (
@@ -1124,8 +1419,8 @@ export default function MiTienda() {
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: "10px" }}>
               <IconChartBar width={48} height={48} strokeWidth={2} style={{ color: '#7A1E3A' }} />
             </div>
-            <p style={{ fontWeight: 700, color: "#444", marginBottom: "6px" }}>Aún no hay ventas registradas</p>
-            <p style={{ fontSize: "0.85rem", color: "#888" }}>Cuando se registren ventas, aparecerán aquí los más populares</p>
+            <p style={{ fontWeight: 700, color: "#444", marginBottom: "6px" }}>AÃºn no hay ventas registradas</p>
+            <p style={{ fontSize: "0.85rem", color: "#888" }}>Cuando se registren ventas, aparecerÃ¡n aquÃ­ los mÃ¡s populares</p>
           </div>
         )}
         {!loadingTop && topVendidos.map((libro, i) => {
@@ -1192,7 +1487,7 @@ export default function MiTienda() {
               </div>
               <div className="book-info" style={{ flex: 1 }}>
                 <h4>{libro.titulo}</h4>
-                <p>{libro.autor_libro} · {libro.nombre_categoria}</p>
+                <p>{libro.autor_libro} Â· {libro.nombre_categoria}</p>
               </div>
               <BadgeEstado estado={libro.estado_libro} />
               <div className="book-price">{formatPrecio(libro.precio_libro)}</div>
@@ -1223,12 +1518,12 @@ export default function MiTienda() {
           <IconUser width={24} height={24} strokeWidth={2} style={{ color: '#7A1E3A' }} />
           Perfil del negocio
         </h1>
-        <p style={{ margin: 0 }}>Resumen de tu tienda y tus datos públicos.</p>
+        <p style={{ margin: 0 }}>Resumen de tu tienda y tus datos pÃºblicos.</p>
       </div>
 
       <div className="pl-card" style={{ padding: "2rem", marginTop: "20px" }}>
         {!tiendaInfo ? (
-          <p style={{ color: "#888" }}>Cargando información de la tienda...</p>
+          <p style={{ color: "#888" }}>Cargando informaciÃ³n de la tienda...</p>
         ) : (
           <div style={{ display: "grid", gap: "18px" }}>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
@@ -1239,7 +1534,7 @@ export default function MiTienda() {
                 </div>
               </div>
               <div>
-                <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>Teléfono</label>
+                <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>TelÃ©fono</label>
                 <div style={{ padding: "12px 14px", borderRadius: "8px", background: "#fafafa", border: "1px solid #ddd" }}>
                   {tiendaInfo.telefono || "--"}
                 </div>
@@ -1247,7 +1542,7 @@ export default function MiTienda() {
             </div>
 
             <div>
-              <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>Dirección</label>
+              <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>DirecciÃ³n</label>
               <div style={{ padding: "12px 14px", borderRadius: "8px", background: "#fafafa", border: "1px solid #ddd" }}>
                 {tiendaInfo.direccion || "--"}
               </div>
@@ -1274,15 +1569,15 @@ export default function MiTienda() {
                 padding: "12px 24px", borderRadius: "8px", fontWeight: 700,
                 fontSize: "0.95rem", cursor: "pointer", fontFamily: "Montserrat, sans-serif", width: "fit-content"
               }}
-              onClick={() => setActiveSide("Configuración")}
+              onClick={() => setActiveSide("ConfiguraciÃ³n")}
             >
-              Editar configuración
+              Editar configuraciÃ³n
             </button>
           </div>
         )}
       </div>
 
-      {/* Sección de Cuentas Bancarias en el Perfil */}
+      {/* SecciÃ³n de Cuentas Bancarias en el Perfil */}
       <div className="pl-card" style={{ padding: "2rem", marginTop: "20px" }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
           <IconCreditCard width={24} height={24} strokeWidth={2} style={{ color: '#7A1E3A' }} />
@@ -1409,7 +1704,7 @@ export default function MiTienda() {
                 onMouseEnter={(e) => e.target.style.background = '#f5f5f5'}
                 onMouseLeave={(e) => e.target.style.background = 'none'}
               >
-                ×
+                Ã—
               </button>
             </div>
             <div style={{ display: 'grid', gap: '16px' }}>
@@ -1441,7 +1736,7 @@ export default function MiTienda() {
                   <option value="">Selecciona el banco</option>
                   <option value="Bancolombia">Bancolombia</option>
                   <option value="Davivienda">Davivienda</option>
-                  <option value="Banco de Bogotá">Banco de Bogotá</option>
+                  <option value="Banco de BogotÃ¡">Banco de BogotÃ¡</option>
                   <option value="BBVA Colombia">BBVA Colombia</option>
                   <option value="Scotiabank Colpatria">Scotiabank Colpatria</option>
                   <option value="Banco Popular">Banco Popular</option>
@@ -1473,7 +1768,7 @@ export default function MiTienda() {
               </div>
               <div>
                 <label style={{ display: 'block', fontWeight: 600, marginBottom: '6px', color: '#444', fontSize: '0.9rem' }}>
-                  Número de cuenta *
+                  NÃºmero de cuenta *
                 </label>
                 <input
                   type="text"
@@ -1497,11 +1792,11 @@ export default function MiTienda() {
               </div>
               <div>
                 <label style={{ display: 'block', fontWeight: 600, marginBottom: '6px', color: '#444', fontSize: '0.9rem' }}>
-                  Cédula del titular *
+                  CÃ©dula del titular *
                 </label>
                 <input
                   type="text"
-                  placeholder="Número de documento"
+                  placeholder="NÃºmero de documento"
                   value={cuentaForm.cedula_titular}
                   onChange={(e) => setCuentaForm({...cuentaForm, cedula_titular: e.target.value})}
                   style={{ padding: '12px 16px', border: '1px solid #ddd', borderRadius: '8px', width: '100%', fontSize: '0.95rem', outline: 'none', transition: 'border-color 0.2s' }}
@@ -1551,7 +1846,7 @@ export default function MiTienda() {
         </div>
       )}
 
-      {/* Modal de confirmación para eliminar cuenta */}
+      {/* Modal de confirmaciÃ³n para eliminar cuenta */}
       {cuentaAEliminar && (
         <div style={{
           position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
@@ -1578,13 +1873,13 @@ export default function MiTienda() {
                 </svg>
               </div>
               <h3 style={{ margin: '0 0 10px', fontSize: '1.3rem', fontWeight: 700, color: '#333' }}>
-                ¿Eliminar cuenta bancaria?
+                Â¿Eliminar cuenta bancaria?
               </h3>
               <p style={{ margin: 0, color: '#666', fontSize: '0.95rem', lineHeight: 1.5 }}>
-                Estás a punto de eliminar la cuenta <strong>{cuentaAEliminar.banco}</strong> - {cuentaAEliminar.tipo_cuenta} (****{cuentaAEliminar.numero_cuenta?.slice(-4)}).
+                EstÃ¡s a punto de eliminar la cuenta <strong>{cuentaAEliminar.banco}</strong> - {cuentaAEliminar.tipo_cuenta} (****{cuentaAEliminar.numero_cuenta?.slice(-4)}).
               </p>
               <p style={{ margin: '10px 0 0', color: '#999', fontSize: '0.85rem' }}>
-                Esta acción no se puede deshacer.
+                Esta acciÃ³n no se puede deshacer.
               </p>
             </div>
             <div style={{ display: 'flex', gap: '12px' }}>
@@ -1619,7 +1914,7 @@ export default function MiTienda() {
         </div>
       )}
 
-      {/* Modal de éxito al agregar cuenta */}
+      {/* Modal de Ã©xito al agregar cuenta */}
       {mostrarExitoCuenta && (
         <div style={{
           position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
@@ -1644,7 +1939,7 @@ export default function MiTienda() {
                 </svg>
               </div>
               <h3 style={{ margin: '0 0 10px', fontSize: '1.4rem', fontWeight: 700, color: '#16a34a' }}>
-                ¡Cuenta agregada exitosamente!
+                Â¡Cuenta agregada exitosamente!
               </h3>
               <p style={{ margin: 0, color: '#666', fontSize: '0.95rem', lineHeight: 1.5 }}>
                 Tu cuenta bancaria ha sido registrada correctamente en el sistema.
@@ -1684,9 +1979,9 @@ export default function MiTienda() {
       <div className="welcome-card">
         <h1 style={{ fontSize: "1.55rem", marginBottom: "4px", display: 'flex', alignItems: 'center', gap: '10px' }}>
           <IconCreditCard width={24} height={24} strokeWidth={2} style={{ color: '#7A1E3A' }} />
-          Nómina y Pagos
+          NÃ³mina y Pagos
         </h1>
-        <p style={{ margin: 0 }}>Consulta tus pagos pendientes, historial de pagos procesados y estadísticas financieras.</p>
+        <p style={{ margin: 0 }}>Consulta tus pagos pendientes, historial de pagos procesados y estadÃ­sticas financieras.</p>
         <div style={{ fontSize: '0.85rem', color: '#666', marginTop: '8px' }}>
           ID de Vendedor: <strong>{userId}</strong>
         </div>
@@ -1720,7 +2015,7 @@ export default function MiTienda() {
         </div>
 
         {loadingNomina ? (
-          <p style={{ color: "#888" }}>Cargando información de pagos...</p>
+          <p style={{ color: "#888" }}>Cargando informaciÃ³n de pagos...</p>
         ) : (
           <div style={{ display: 'grid', gap: '32px' }}>
             {/* Resumen General - Similar al Admin */}
@@ -1747,7 +2042,7 @@ export default function MiTienda() {
               </div>
             </div>
 
-            {/* Estadísticas */}
+            {/* EstadÃ­sticas */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' }}>
               <div style={{ 
                 padding: '16px', 
@@ -1840,7 +2135,7 @@ export default function MiTienda() {
                             Lote de Pagos - Ref: {pago.referencia}
                           </div>
                           <div style={{ color: '#666', fontSize: '0.9rem' }}>
-                            {pago.num_pagos} ventas procesadas • {new Date(pago.fecha).toLocaleDateString('es-CO')}
+                            {pago.num_pagos} ventas procesadas â€¢ {new Date(pago.fecha).toLocaleDateString('es-CO')}
                           </div>
                         </div>
                         <div style={{ textAlign: 'right' }}>
@@ -1894,19 +2189,19 @@ export default function MiTienda() {
       <div className="welcome-card">
         <h1 style={{ fontSize: "1.55rem", marginBottom: "4px", display: 'flex', alignItems: 'center', gap: '10px' }}>
           <IconSettings width={24} height={24} strokeWidth={2} style={{ color: '#7A1E3A' }} />
-          Configuración del negocio
+          ConfiguraciÃ³n del negocio
         </h1>
         <p style={{ margin: 0 }}>Actualiza los datos de tu tienda en BookyHome</p>
       </div>
 
       <div className="pl-card" style={{ padding: "2rem", marginTop: "20px" }}>
         {!tiendaInfo ? (
-          <p style={{ color: "#888" }}>Cargando información de la tienda...</p>
+          <p style={{ color: "#888" }}>Cargando informaciÃ³n de la tienda...</p>
         ) : (
           <>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "40px" }}>
             <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "16px", minWidth: "300px", maxWidth: "500px" }}>
-              <h3 style={{ fontSize: "1.1rem", margin: "10px 0 0 0", color: "var(--vinotinto)" }}>Información Básica</h3>
+              <h3 style={{ fontSize: "1.1rem", margin: "10px 0 0 0", color: "var(--vinotinto)" }}>InformaciÃ³n BÃ¡sica</h3>
               <div>
               <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>
                 Nombre de la tienda
@@ -1924,7 +2219,7 @@ export default function MiTienda() {
 
             <div>
               <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>
-                Dirección
+                DirecciÃ³n
               </label>
               <input
                 type="text"
@@ -1939,7 +2234,7 @@ export default function MiTienda() {
 
             <div>
               <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>
-                Teléfono
+                TelÃ©fono
               </label>
               <input
                 type="text"
@@ -1974,7 +2269,7 @@ export default function MiTienda() {
             
             <div>
               <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>
-                Horario de atención
+                Horario de atenciÃ³n
               </label>
               <input
                 type="text"
@@ -1990,7 +2285,7 @@ export default function MiTienda() {
 
             <div>
               <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>
-                Días de despacho
+                DÃ­as de despacho
               </label>
               <input
                 type="number"
@@ -2007,7 +2302,7 @@ export default function MiTienda() {
 
             <div>
               <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>
-                Política de envíos
+                PolÃ­tica de envÃ­os
               </label>
               <textarea
                 rows="3"
@@ -2022,7 +2317,7 @@ export default function MiTienda() {
 
             <div>
               <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>
-                Política de devoluciones
+                PolÃ­tica de devoluciones
               </label>
               <textarea
                 rows="3"
@@ -2059,12 +2354,12 @@ export default function MiTienda() {
                 api.put("/configuracion", configForm)
               ])
                 .then(() => {
-                  setTiendaMsg("¡Configuración actualizada con éxito!");
+                  setTiendaMsg("Â¡ConfiguraciÃ³n actualizada con Ã©xito!");
                   setTimeout(() => setTiendaMsg(""), 3000);
                   setTiendaInfo(prev => ({ ...prev, ...tiendaForm }));
                 })
                 .catch((err) => {
-                  console.error("Error actualizando configuración:", err);
+                  console.error("Error actualizando configuraciÃ³n:", err);
                   setTiendaMsg("Error: " + (err.response?.data?.detail || err.message));
                   setTimeout(() => setTiendaMsg(""), 4000);
                 });
@@ -2088,7 +2383,7 @@ export default function MiTienda() {
           <IconCreditCard width={24} height={24} strokeWidth={2} style={{ color: '#7A1E3A' }} />
           Cuentas Bancarias
         </h1>
-        <p style={{ margin: 0 }}>Gestiona tus cuentas bancarias para recibir pagos de nómina.</p>
+        <p style={{ margin: 0 }}>Gestiona tus cuentas bancarias para recibir pagos de nÃ³mina.</p>
       </div>
 
       <div className="pl-card" style={{ padding: "2rem", marginTop: "20px" }}>
@@ -2129,7 +2424,7 @@ export default function MiTienda() {
                 <option value="">Selecciona el banco</option>
                 <option value="Bancolombia">Bancolombia</option>
                 <option value="Davivienda">Davivienda</option>
-                <option value="Banco de Bogotá">Banco de Bogotá</option>
+                <option value="Banco de BogotÃ¡">Banco de BogotÃ¡</option>
                 <option value="BBVA Colombia">BBVA Colombia</option>
                 <option value="Scotiabank Colpatria">Scotiabank Colpatria</option>
                 <option value="Banco Popular">Banco Popular</option>
@@ -2160,7 +2455,7 @@ export default function MiTienda() {
               </select>
               <input
                 type="text"
-                placeholder="Número de cuenta"
+                placeholder="NÃºmero de cuenta"
                 value={cuentaForm.numero_cuenta}
                 onChange={(e) => setCuentaForm({...cuentaForm, numero_cuenta: e.target.value})}
                 style={{ padding: '10px', border: '1px solid #ddd', borderRadius: '6px' }}
@@ -2174,7 +2469,7 @@ export default function MiTienda() {
               />
               <input
                 type="text"
-                placeholder="Cédula del titular"
+                placeholder="CÃ©dula del titular"
                 value={cuentaForm.cedula_titular}
                 onChange={(e) => setCuentaForm({...cuentaForm, cedula_titular: e.target.value})}
                 style={{ padding: '10px', border: '1px solid #ddd', borderRadius: '6px' }}
@@ -2185,7 +2480,7 @@ export default function MiTienda() {
                   checked={cuentaForm.es_principal}
                   onChange={(e) => setCuentaForm({...cuentaForm, es_principal: e.target.checked})}
                 />
-                Marcar como cuenta principal para nómina
+                Marcar como cuenta principal para nÃ³mina
               </label>
               <div style={{ display: 'flex', gap: '10px' }}>
                 <button
@@ -2309,7 +2604,7 @@ export default function MiTienda() {
           <IconLock width={48} height={48} strokeWidth={2} style={{ color: '#7A1E3A' }} />
         </div>
         <p style={{ fontWeight: 700, color: "#444", marginBottom: "8px", fontSize: "1.1rem" }}>{nombre}</p>
-        <p style={{ fontSize: "0.87rem", color: "#888" }}>Esta sección estará disponible próximamente</p>
+        <p style={{ fontSize: "0.87rem", color: "#888" }}>Esta secciÃ³n estarÃ¡ disponible prÃ³ximamente</p>
       </div>
     </div>
   );
@@ -2331,8 +2626,8 @@ export default function MiTienda() {
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: "12px" }}>
               <IconPackage width={48} height={48} strokeWidth={2} style={{ color: '#7A1E3A' }} />
             </div>
-            <p style={{ fontWeight: 700, color: "#444", marginBottom: "8px" }}>Aún no has recibido pedidos</p>
-            <p style={{ fontSize: "0.85rem", color: "#888" }}>Cuando un comprador adquiera tus libros, aparecerán aquí</p>
+            <p style={{ fontWeight: 700, color: "#444", marginBottom: "8px" }}>AÃºn no has recibido pedidos</p>
+            <p style={{ fontSize: "0.85rem", color: "#888" }}>Cuando un comprador adquiera tus libros, aparecerÃ¡n aquÃ­</p>
           </div>
         )}
         {!loadingPedidos && pedidos.length > 0 && (
@@ -2345,7 +2640,7 @@ export default function MiTienda() {
                   <th style={{ padding: "12px", fontWeight: 700 }}>Cliente</th>
                   <th style={{ padding: "12px", fontWeight: 700 }}>Productos</th>
                   <th style={{ padding: "12px", fontWeight: 700 }}>Estado</th>
-                  <th style={{ padding: "12px", fontWeight: 700 }}>Guía / envío</th>
+                  <th style={{ padding: "12px", fontWeight: 700 }}>GuÃ­a / envÃ­o</th>
                   <th style={{ padding: "12px", fontWeight: 700, textAlign: "right" }}>Total Tienda</th>
                 </tr>
               </thead>
@@ -2368,24 +2663,161 @@ export default function MiTienda() {
                       ))}
                     </td>
                     <td style={{ padding: "12px" }}>
-                      <span className={`pl-badge pl-badge--${pedido.estado === "pagado" ? "entregado" : "procesando"}`}>
-                        {pedido.estado}
-                      </span>
+                      {(() => {
+                        const estado = pedido.estado?.toLowerCase();
+                        const colores = {
+                          pagado:   { border: "#c49a00", bg: "#fffbea", color: "#7a5c00" },
+                          enviado:  { border: "#2979c7", bg: "#eaf3ff", color: "#1a4f8a" },
+                          entregada:{ border: "#1e8a45", bg: "#eafaf1", color: "#145c2e" },
+                          cancelada:{ border: "#c0392b", bg: "#fdecea", color: "#7b1e1e" },
+                        };
+                        const c = colores[estado];
+                        if (c) {
+                          return (
+                            <select
+                              value={estado}
+                              onChange={(e) => cambiarEstadoOrden(pedido.id_orden, e.target.value)}
+                              style={{
+                                padding: "8px 12px",
+                                borderRadius: "8px",
+                                border: `2px solid ${c.border}`,
+                                backgroundColor: c.bg,
+                                color: c.color,
+                                fontSize: "0.85rem",
+                                fontWeight: "700",
+                                cursor: "pointer",
+                                minWidth: "120px",
+                                transition: "all 0.2s ease"
+                              }}
+                            >
+                              <option value="pagado">Pagado</option>
+                              <option value="enviado">Enviado</option>
+                              <option value="entregada">Entregada</option>
+                              <option value="cancelada">Cancelada</option>
+                            </select>
+                          );
+                        }
+                        return (
+                          <div style={{
+                            padding: "8px 12px",
+                            borderRadius: "8px",
+                            border: "1px solid #ddd",
+                            backgroundColor: "#f5f5f5",
+                            color: "#999",
+                            fontSize: "0.85rem",
+                            fontWeight: "600",
+                            minWidth: "120px",
+                            textAlign: "center"
+                          }}>
+                            {pedido.estado || "Pendiente"}
+                          </div>
+                        );
+                      })()}
                     </td>
                     <td style={{ padding: "12px", minWidth: "145px" }}>
-                      {pedido.envio && pedido.estado === "pagado" && (
-                        <div style={{ marginBottom: "7px", fontSize: "0.78rem", lineHeight: 1.35 }}>
-                          <strong style={{ display: "block", color: "#4b2733" }}>{pedido.envio.empresa_mensajeria}</strong>
-                          <span style={{ color: "#6d6265" }}>Guía {pedido.envio.numero_guia}</span>
-                        </div>
-                      )}
-                      <button
-                        onClick={() => abrirRegistroEnvio(pedido)}
-                        disabled={pedido.estado !== "pagado"}
-                        style={{ border: pedido.envio && pedido.estado === "pagado" ? "1px solid #9b4d65" : "none", borderRadius: "999px", padding: "7px 11px", cursor: pedido.estado === "pagado" ? "pointer" : "not-allowed", background: pedido.envio && pedido.estado === "pagado" ? "#fff" : pedido.estado === "pagado" ? "#7A1E3A" : "#e7e1e2", color: pedido.envio && pedido.estado === "pagado" ? "#7A1E3A" : pedido.estado === "pagado" ? "white" : "#7b7073", fontWeight: 700, fontSize: "0.75rem", whiteSpace: "nowrap" }}
-                      >
-                        {pedido.envio && pedido.estado === "pagado" ? "Editar guía" : pedido.estado === "pagado" ? "+ Registrar guía" : "Pendiente de pago"}
-                      </button>
+                      {(() => {
+                        const estado = pedido.estado?.toLowerCase();
+                        // Orden cancelada
+                        if (estado === "cancelada") {
+                          return (
+                            <div style={{
+                              padding: "7px 11px",
+                              borderRadius: "999px",
+                              background: "#fdecea",
+                              color: "#c0392b",
+                              fontWeight: 700,
+                              fontSize: "0.75rem",
+                              textAlign: "center",
+                              border: "1px solid #e9b4b0"
+                            }}>
+                              Pedido cancelado
+                            </div>
+                          );
+                        }
+                        // GuÃ­a ya registrada â€” se muestra en cualquier estado
+                        if (pedido.envio) {
+                          return (
+                            <div style={{ fontSize: "0.78rem", lineHeight: 1.5 }}>
+                              <strong style={{ display: "block", color: "#4b2733" }}>
+                                {pedido.envio.empresa_mensajeria}
+                              </strong>
+                              <span style={{ color: "#6d6265" }}>GuÃ­a {pedido.envio.numero_guia}</span>
+                              {["pagado", "enviado"].includes(estado) && (
+                                <button
+                                  onClick={() => abrirRegistroEnvio(pedido)}
+                                  style={{
+                                    display: "block",
+                                    marginTop: "5px",
+                                    border: "1px solid #9b4d65",
+                                    borderRadius: "999px",
+                                    padding: "4px 9px",
+                                    cursor: "pointer",
+                                    background: "#fff",
+                                    color: "#7A1E3A",
+                                    fontWeight: 700,
+                                    fontSize: "0.7rem",
+                                    whiteSpace: "nowrap"
+                                  }}
+                                >
+                                  âœï¸ Editar guÃ­a
+                                </button>
+                              )}
+                            </div>
+                          );
+                        }
+                        // Sin guÃ­a â€” botÃ³n disponible si estÃ¡ pagado o enviado
+                        if (["pagado", "enviado"].includes(estado)) {
+                          return (
+                            <button
+                              onClick={() => abrirRegistroEnvio(pedido)}
+                              style={{
+                                border: "1px solid #9b4d65",
+                                borderRadius: "999px",
+                                padding: "7px 11px",
+                                cursor: "pointer",
+                                background: "#fff",
+                                color: "#7A1E3A",
+                                fontWeight: 700,
+                                fontSize: "0.75rem",
+                                whiteSpace: "nowrap"
+                              }}
+                            >
+                              + Registrar guÃ­a
+                            </button>
+                          );
+                        }
+                        // Entregada sin guÃ­a
+                        if (estado === "entregada") {
+                          return (
+                            <div style={{
+                              padding: "7px 11px",
+                              borderRadius: "999px",
+                              background: "#eafaf1",
+                              color: "#1e8a45",
+                              fontWeight: 700,
+                              fontSize: "0.75rem",
+                              textAlign: "center",
+                              border: "1px solid #a8d5b5"
+                            }}>
+                              Entregado
+                            </div>
+                          );
+                        }
+                        // Pendiente u otro
+                        return (
+                          <div style={{
+                            padding: "7px 11px",
+                            borderRadius: "999px",
+                            background: "#e7e1e2",
+                            color: "#7b7073",
+                            fontWeight: 700,
+                            fontSize: "0.75rem",
+                            textAlign: "center"
+                          }}>
+                            Pendiente de pago
+                          </div>
+                        );
+                      })()}
                     </td>
                     <td style={{ padding: "12px", textAlign: "right", fontWeight: 700, color: "var(--gris-carbon)" }}>
                       {formatPrecio(pedido.total_tienda)}
@@ -2400,19 +2832,19 @@ export default function MiTienda() {
       {pedidoEnvio && (
         <div className="modal-overlay open" onClick={() => !guardandoEnvio && setPedidoEnvio(null)}>
           <div className="modal-box" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "460px", padding: "28px" }}>
-            <h2 style={{ marginTop: 0 }}>Registrar guía de envío · Orden #{pedidoEnvio.id_orden}</h2>
-            <p style={{ color: "#666", fontSize: "0.9rem" }}>Elige la transportadora acordada e ingresa el número de guía que ella te entregó. BookyHome no realiza ni controla el transporte.</p>
-            <label style={{ display: "block", fontWeight: 600, marginTop: "18px" }}>Empresa de mensajería</label>
+            <h2 style={{ marginTop: 0 }}>Registrar guÃ­a de envÃ­o Â· Orden #{pedidoEnvio.id_orden}</h2>
+            <p style={{ color: "#666", fontSize: "0.9rem" }}>Elige la transportadora acordada e ingresa el nÃºmero de guÃ­a que ella te entregÃ³. BookyHome no realiza ni controla el transporte.</p>
+            <label style={{ display: "block", fontWeight: 600, marginTop: "18px" }}>Empresa de mensajerÃ­a</label>
             <select value={envioForm.id_empresa} onChange={(e) => setEnvioForm({ ...envioForm, id_empresa: e.target.value })} style={{ width: "100%", marginTop: "6px", padding: "10px", borderRadius: "6px" }}>
               <option value="">Selecciona una empresa</option>
               {empresasMensajeria.map((empresa) => <option key={empresa.id_empresa} value={empresa.id_empresa}>{empresa.nombre_empresa}</option>)}
             </select>
-            <label style={{ display: "block", fontWeight: 600, marginTop: "14px" }}>Número de guía</label>
+            <label style={{ display: "block", fontWeight: 600, marginTop: "14px" }}>NÃºmero de guÃ­a</label>
             <input value={envioForm.numero_guia} onChange={(e) => setEnvioForm({ ...envioForm, numero_guia: e.target.value })} maxLength={80} placeholder="Ej. 123456789" style={{ width: "100%", marginTop: "6px", padding: "10px", borderRadius: "6px", boxSizing: "border-box" }} />
             {envioError && <p style={{ color: "#b42318", fontSize: "0.85rem" }}>{envioError}</p>}
             <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "22px" }}>
               <button onClick={() => setPedidoEnvio(null)} disabled={guardandoEnvio}>Cancelar</button>
-              <button className="btn btn-vinotinto" onClick={guardarEnvio} disabled={guardandoEnvio}>{guardandoEnvio ? "Guardando..." : "Guardar guía"}</button>
+              <button className="btn btn-vinotinto" onClick={guardarEnvio} disabled={guardandoEnvio}>{guardandoEnvio ? "Guardando..." : "Guardar guÃ­a"}</button>
             </div>
           </div>
         </div>
@@ -2434,23 +2866,23 @@ export default function MiTienda() {
         <div className="welcome-card">
           <h1 style={{ fontSize: "1.55rem", marginBottom: "4px", display: "flex", alignItems: "center", gap: "10px" }}>
             <IconTruck width={28} height={28} strokeWidth={2} style={{ color: "#7A1E3A" }} />
-            Envíos y seguimiento
+            EnvÃ­os y seguimiento
           </h1>
-          <p style={{ margin: 0 }}>Consulta las guías registradas y abre el rastreo oficial de cada transportadora.</p>
+          <p style={{ margin: 0 }}>Consulta las guÃ­as registradas y abre el rastreo oficial de cada transportadora.</p>
         </div>
 
         <div className="seller-books" style={{ marginTop: "20px", padding: "20px" }}>
-          <label style={{ display: "block", fontWeight: 700, color: "#4b2733", marginBottom: "8px" }}>Buscar envío</label>
+          <label style={{ display: "block", fontWeight: 700, color: "#4b2733", marginBottom: "8px" }}>Buscar envÃ­o</label>
           <input
             value={filtroEnvios}
             onChange={(e) => setFiltroEnvios(e.target.value)}
-            placeholder="Compra, guía, comprador o transportadora"
+            placeholder="Compra, guÃ­a, comprador o transportadora"
             style={{ width: "100%", maxWidth: "520px", padding: "11px 13px", border: "1px solid #d9cfd1", borderRadius: "8px", boxSizing: "border-box" }}
           />
         </div>
 
-        {loadingPedidos ? <p style={{ color: "#777", padding: "20px 0" }}>Cargando envíos...</p> : envios.length === 0 ? (
-          <div className="empty-state"><p>No hay envíos que coincidan con la búsqueda.</p></div>
+        {loadingPedidos ? <p style={{ color: "#777", padding: "20px 0" }}>Cargando envÃ­os...</p> : envios.length === 0 ? (
+          <div className="empty-state"><p>No hay envÃ­os que coincidan con la bÃºsqueda.</p></div>
         ) : (
           <div style={{ display: "grid", gap: "14px", marginTop: "18px" }}>
             {envios.map((pedido) => (
@@ -2458,14 +2890,14 @@ export default function MiTienda() {
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "14px", flexWrap: "wrap" }}>
                   <div>
                     <strong style={{ display: "block", color: "#4b2733" }}>Compra {pedido.codigo_compra}</strong>
-                    <span style={{ color: "#666", fontSize: "0.86rem" }}>Pedido #{pedido.id_orden} · {pedido.cliente}</span>
+                    <span style={{ color: "#666", fontSize: "0.86rem" }}>Pedido #{pedido.id_orden} Â· {pedido.cliente}</span>
                   </div>
-                  <span className="pl-badge pl-badge--entregado">{pedido.envio.estado_envio || "Guía registrada"}</span>
+                  <span className="pl-badge pl-badge--entregado">{pedido.envio.estado_envio || "GuÃ­a registrada"}</span>
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "end", gap: "16px", flexWrap: "wrap", borderTop: "1px solid #eee", marginTop: "16px", paddingTop: "14px" }}>
                   <div>
                     <strong style={{ display: "block" }}>{pedido.envio.empresa_mensajeria}</strong>
-                    <span style={{ color: "#666", fontSize: "0.86rem" }}>Guía: {pedido.envio.numero_guia}</span>
+                    <span style={{ color: "#666", fontSize: "0.86rem" }}>GuÃ­a: {pedido.envio.numero_guia}</span>
                   </div>
                   <a href={pedido.envio.url_rastreo || pedido.envio.sitio_web} target="_blank" rel="noreferrer" className="btn btn-vinotinto" style={{ width: "auto", padding: "9px 14px", fontSize: "0.82rem" }}>
                     Rastrear con la transportadora
@@ -2496,8 +2928,8 @@ export default function MiTienda() {
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: "12px" }}>
               <IconChartBar width={48} height={48} strokeWidth={2} style={{ color: '#7A1E3A' }} />
             </div>
-            <p style={{ fontWeight: 700, color: "#444", marginBottom: "8px" }}>No hay ventas registradas aún</p>
-            <p style={{ fontSize: "0.85rem", color: "#888" }}>Aquí aparecerá el desglose por libro vendido</p>
+            <p style={{ fontWeight: 700, color: "#444", marginBottom: "8px" }}>No hay ventas registradas aÃºn</p>
+            <p style={{ fontSize: "0.85rem", color: "#888" }}>AquÃ­ aparecerÃ¡ el desglose por libro vendido</p>
           </div>
         )}
         {!loadingVentas && ventas.length > 0 && (
@@ -2547,7 +2979,7 @@ export default function MiTienda() {
           <h1>Notificaciones</h1>
           {notificaciones.some((n) => !n.leida) && (
             <button className="btn-marcar-todas" onClick={handleMarcarTodasLeidas}>
-              Marcar todas como leídas
+              Marcar todas como leÃ­das
             </button>
           )}
         </div>
@@ -2557,7 +2989,7 @@ export default function MiTienda() {
             Todas
           </button>
           <button className={`filtro ${notificacionesFilter === "no_leidas" ? "active" : ""}`} onClick={() => setNotificacionesFilter("no_leidas")}>
-            No leídas
+            No leÃ­das
           </button>
         </div>
 
@@ -2582,11 +3014,11 @@ export default function MiTienda() {
                 <div className="notif-acciones">
                   {!notif.leida && (
                     <button className="btn-marcar" onClick={(e) => { e.stopPropagation(); handleMarcarLeida(notif.id_notificacion); }}>
-                      ✓
+                      âœ“
                     </button>
                   )}
                   <button className="btn-eliminar" onClick={(e) => { e.stopPropagation(); handleEliminar(notif.id_notificacion); }}>
-                    ✕
+                    âœ•
                   </button>
                 </div>
               </div>
@@ -2597,6 +3029,33 @@ export default function MiTienda() {
     </div>
   );
 
+  const renderCalificaciones = () => {
+    return (
+      <>
+        <style>{`
+          .metric-card {
+            transition: all 0.3s ease;
+            cursor: pointer;
+          }
+          .metric-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+          }
+          .metric-icon {
+            transition: transform 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          }
+          .metric-card:hover .metric-icon {
+            transform: scale(1.1) rotate(5deg);
+          }
+        `}</style>
+        <SeccionCalificacionesVendedor tiendaId={tiendaInfo?.id_tienda} />
+      </>
+    );
+  };
+
   const renderContenido = () => {
     switch (activeSide) {
       case "Inicio":        return renderInicio();
@@ -2605,13 +3064,14 @@ export default function MiTienda() {
       case "Mis Libros":    return renderMisLibros();
       case "Ventas":        return renderVentas();
       case "Pedidos":       return renderPedidos();
+      case "Calificaciones": return renderCalificaciones();
       case "Quejas y reclamos": return <QuejasVendedor />;
-      case "Soporte técnico": return <Soporte />;
+      case "Soporte tÃ©cnico": return <Soporte />;
       case "Envios":        return renderEnvios();
       case "Clientes":      return renderProximamente("Clientes");
-      case "Configuración": return renderConfiguracion();
+      case "ConfiguraciÃ³n": return renderConfiguracion();
       case "Perfil":        return renderPerfil();
-      case "Nómina":        return renderNomina();
+      case "NÃ³mina":        return renderNomina();
       case "Promociones":   return <SeccionOfertas />;
       case "Cupones":       return <SeccionCuponesVendedor tiendaId={tiendaInfo?.id_tienda} />;
       case "Suscripciones": return <SeccionSuscripciones tiendaId={tiendaInfo?.id_tienda} onNavegar={cambiarSeccion} />;
@@ -2634,10 +3094,10 @@ export default function MiTienda() {
         type="button"
         className="dashboard-tracking-shortcut"
         onClick={() => cambiarSeccion("Envios")}
-        aria-label="Gestionar envíos"
+        aria-label="Gestionar envÃ­os"
       >
         <IconTruck width={22} height={22} strokeWidth={2} />
-        <span>Envíos</span>
+        <span>EnvÃ­os</span>
       </button>
 
       <main className="dashboard-main">{renderContenido()}</main>
@@ -2667,3 +3127,4 @@ export default function MiTienda() {
     </div>
   );
 }
+

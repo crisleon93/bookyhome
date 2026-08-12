@@ -136,7 +136,7 @@ export default function AdminDashboard() {
         const [usuariosRes, librosRes, ordenesRes, tiendasRes] = await Promise.all([
           api.get('/usuarios'),
           api.get('/api/stored/libros'),
-          api.get('/api/v1/orders'),
+          api.get('/api/v1/admin/orders'),
           api.get('/tiendas'),
         ]);
         setUsuarios(usuariosRes.data);
@@ -151,6 +151,7 @@ export default function AdminDashboard() {
         });
       } catch (error) {
         console.error('Error cargando datos admin:', error);
+        notify('Error cargando datos del panel. Verifica la consola.', 'error');
       } finally {
         setLoading(false);
       }

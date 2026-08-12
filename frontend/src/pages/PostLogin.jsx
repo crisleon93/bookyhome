@@ -518,7 +518,6 @@ export default function PostLogin() {
   // Recargar estadísticas después de un pago exitoso
   useEffect(() => {
     if (paymentSuccess && activeSide === "Mi Perfil") {
-      console.log('Pago exitoso detectado, recargando estadísticas...');
       // Pequeño delay para asegurar que la base de datos se actualizó
       setTimeout(() => {
         cargarDatosPerfil();
@@ -3645,6 +3644,174 @@ export default function PostLogin() {
             </div>
           </>
         )}
+        {/* ── MIS DIRECCIONES ── */}
+        {activeSide === "Mis Direcciones" && (
+          <>
+            <div className="pl-card" style={{ padding: "2.5rem 2rem", marginBottom: 24 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                <IconLocation width={28} height={28} strokeWidth={2} style={{ color: '#7A1E3A' }} />
+                <h2 style={{ margin: 0 }}>Mis Direcciones de Envío</h2>
+              </div>
+            </div>
+
+            <div className="pl-card" style={{ padding: "2rem" }}>
+              {mostrarModalDireccion && (
+                <LeafletAddressPickerModal
+                  isOpen={mostrarModalDireccion}
+                  onClose={() => setMostrarModalDireccion(false)}
+                  onSelect={handleAddressSelected}
+                />
+              )}
+
+              {mostrarFormDireccion ? (
+                <div style={{ marginTop: "8px" }}>
+                  <h4 style={{ margin: "0 0 1rem 0", color: "#444", fontSize: "1rem" }}>
+                    {direccionEditingId ? 'Editar dirección' : 'Agregar nueva dirección'}
+                  </h4>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "16px", maxWidth: "500px" }}>
+                    <div>
+                      <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>Alias</label>
+                      <input
+                        type="text"
+                        value={direccionForm.alias_direccion}
+                        onChange={(e) => setDireccionForm({ ...direccionForm, alias_direccion: e.target.value })}
+                        placeholder="Ej. Casa, Oficina"
+                        style={{ width: "100%", padding: "10px 14px", borderRadius: "8px", border: "1px solid #ddd", fontSize: "0.95rem", fontFamily: "Montserrat, sans-serif" }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>Dirección</label>
+                      <input
+                        type="text"
+                        value={direccionForm.direccion}
+                        onChange={(e) => setDireccionForm({ ...direccionForm, direccion: e.target.value })}
+                        style={{ width: "100%", padding: "10px 14px", borderRadius: "8px", border: "1px solid #ddd", fontSize: "0.95rem", fontFamily: "Montserrat, sans-serif" }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>Ciudad</label>
+                      <input
+                        type="text"
+                        value={direccionForm.ciudad}
+                        onChange={(e) => setDireccionForm({ ...direccionForm, ciudad: e.target.value })}
+                        style={{ width: "100%", padding: "10px 14px", borderRadius: "8px", border: "1px solid #ddd", fontSize: "0.95rem", fontFamily: "Montserrat, sans-serif" }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>Departamento</label>
+                      <input
+                        type="text"
+                        value={direccionForm.departamento}
+                        onChange={(e) => setDireccionForm({ ...direccionForm, departamento: e.target.value })}
+                        style={{ width: "100%", padding: "10px 14px", borderRadius: "8px", border: "1px solid #ddd", fontSize: "0.95rem", fontFamily: "Montserrat, sans-serif" }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>Código postal</label>
+                      <input
+                        type="text"
+                        value={direccionForm.codigo_postal}
+                        onChange={(e) => setDireccionForm({ ...direccionForm, codigo_postal: e.target.value })}
+                        style={{ width: "100%", padding: "10px 14px", borderRadius: "8px", border: "1px solid #ddd", fontSize: "0.95rem", fontFamily: "Montserrat, sans-serif" }}
+                      />
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      <input
+                        type="checkbox"
+                        checked={direccionForm.es_principal}
+                        onChange={(e) => setDireccionForm({ ...direccionForm, es_principal: e.target.checked })}
+                      />
+                      <label style={{ fontWeight: 600, color: "#444", margin: 0 }}>Marcar como dirección principal</label>
+                    </div>
+                    {direccionError && <p style={{ color: '#b42318', margin: 0 }}>{direccionError}</p>}
+                    <div style={{ display: "flex", gap: "12px", marginTop: "8px" }}>
+                      <button
+                        style={{ background: "var(--vinotinto)", color: "white", border: "none", padding: "12px 24px", borderRadius: "8px", fontWeight: 700, fontSize: "0.95rem", cursor: direccionLoading ? 'not-allowed' : 'pointer', opacity: direccionLoading ? 0.7 : 1, fontFamily: "Montserrat, sans-serif" }}
+                        onClick={handleSaveDireccion}
+                        disabled={direccionLoading}
+                      >
+                        {direccionLoading ? 'Guardando...' : direccionEditingId ? 'Actualizar dirección' : 'Guardar dirección'}
+                      </button>
+                      <button
+                        style={{ background: "none", border: "1.5px solid var(--vinotinto)", color: "var(--vinotinto)", borderRadius: "8px", padding: "12px 24px", fontWeight: 700, fontSize: "0.95rem", cursor: "pointer", fontFamily: "Montserrat, sans-serif" }}
+                        onClick={() => { setMostrarModalDireccion(true); setDireccionError(''); }}
+                      >
+                        Elegir en mapa
+                      </button>
+                      <button
+                        style={{ background: "none", border: "1.5px solid #999", color: "#666", borderRadius: "8px", padding: "12px 24px", fontWeight: 700, fontSize: "0.95rem", cursor: "pointer", fontFamily: "Montserrat, sans-serif" }}
+                        onClick={resetDireccionForm}
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <button
+                    style={{ background: "var(--vinotinto)", color: "white", border: "none", padding: "12px 24px", borderRadius: "8px", fontWeight: 700, fontSize: "0.95rem", cursor: "pointer", marginBottom: 20, fontFamily: "Montserrat, sans-serif" }}
+                    onClick={openNewDireccionForm}
+                  >
+                    + Agregar dirección
+                  </button>
+
+                  {direcciones.length === 0 ? (
+                    <div style={{ padding: "24px", textAlign: "center", background: "#faf8f6", borderRadius: "8px", border: "1px solid #e0dbd4" }}>
+                      <p style={{ fontWeight: 700, color: "#444", marginBottom: "6px" }}>No tienes direcciones guardadas</p>
+                      <p style={{ fontSize: "0.85rem", color: "#888", margin: 0 }}>Agrega una dirección para envíos más rápidos</p>
+                    </div>
+                  ) : (
+                    <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                      {direcciones.map((dir) => (
+                        <div key={dir.id_direccion} className="pl-card" style={{ padding: "1.5rem", border: dir.es_principal ? "2px solid var(--vinotinto)" : "1px solid #e0dbd4" }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "12px" }}>
+                            <div>
+                              {dir.es_principal && (
+                                <span style={{ background: "var(--vinotinto)", color: "white", padding: "4px 10px", borderRadius: "12px", fontSize: "0.75rem", fontWeight: 600, display: "inline-block", marginBottom: "8px" }}>
+                                  Principal
+                                </span>
+                              )}
+                              {dir.alias_direccion && <p style={{ margin: "4px 0", fontWeight: 700 }}>{dir.alias_direccion}</p>}
+                              <p style={{ margin: "4px 0", fontWeight: 600 }}>{dir.direccion}</p>
+                              <p style={{ margin: "2px 0", color: "#666" }}>
+                                {[dir.ciudad, dir.departamento].filter(Boolean).join(', ')}
+                              </p>
+                              {dir.codigo_postal && <p style={{ margin: "2px 0", color: "#888", fontSize: "0.85rem" }}>CP: {dir.codigo_postal}</p>}
+                            </div>
+                            <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                              {!dir.es_principal && (
+                                <button
+                                  style={{ background: "var(--vinotinto)", color: "white", border: "none", padding: "8px 16px", borderRadius: "6px", fontWeight: 600, fontSize: "0.85rem", cursor: "pointer", fontFamily: "Montserrat, sans-serif" }}
+                                  onClick={() => handleSetPrincipalDireccion(dir.id_direccion)}
+                                >
+                                  Hacer principal
+                                </button>
+                              )}
+                              <button
+                                style={{ background: "#8b5a2b", color: "white", border: "none", padding: "8px 16px", borderRadius: "6px", fontWeight: 600, fontSize: "0.85rem", cursor: "pointer", fontFamily: "Montserrat, sans-serif" }}
+                                onClick={() => openEditDireccionForm(dir)}
+                              >
+                                Editar
+                              </button>
+                              <button
+                                style={{ background: "#dc2626", color: "white", border: "none", padding: "8px 16px", borderRadius: "6px", fontWeight: 600, fontSize: "0.85rem", cursor: "pointer", fontFamily: "Montserrat, sans-serif" }}
+                                onClick={() => handleDeleteDireccion(dir.id_direccion)}
+                              >
+                                Eliminar
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          </>
+        )}
+
         {/* ── OTRAS SECCIONES ── */}
         {!["Inicio", "Catálogo", "Carrito", "Mis Compras", "Seguimiento", "Lista de Deseos", "Quejas y reclamos", "Soporte técnico", "Favoritos", "Mi Perfil", "Mis Direcciones", "Configuración", "Notificaciones", "Mensajes"].includes(activeSide) && (
           <div className="welcome-card">

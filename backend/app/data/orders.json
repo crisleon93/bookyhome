@@ -116,7 +116,7 @@
         }
       ],
       "total": 60000.0,
-      "estado": "pagado",
+      "estado": "Entregada",
       "metodo_pago": "Daviplata"
     },
     {
@@ -184,7 +184,7 @@
         }
       ],
       "total": 50000.0,
-      "estado": "pagado",
+      "estado": "Entregada",
       "metodo_pago": "Tarjeta de Crédito"
     },
     {
@@ -1678,7 +1678,7 @@
         }
       ],
       "total": 65000.0,
-      "estado": "pagado",
+      "estado": "Entregada",
       "metodo_pago": "PSE"
     },
     {
@@ -1696,7 +1696,7 @@
         }
       ],
       "total": 50000.0,
-      "estado": "pagado",
+      "estado": "Entregada",
       "metodo_pago": "Transferencia Bancaria"
     },
     {
@@ -1716,6 +1716,24 @@
       "total": 20000.0,
       "estado": "pagado",
       "metodo_pago": "Tarjeta de Crédito"
+    },
+    {
+      "id_orden": 16,
+      "codigo_compra": "BH-C2BC22076F",
+      "fecha": "2026-08-10T22:34:08.176952Z",
+      "items": [
+        {
+          "id_libro": 36,
+          "titulo": "It (Eso)",
+          "autor_libro": "Stephen King",
+          "precio_libro": 68000.0,
+          "cantidad": 1,
+          "imagen": "https://covers.openlibrary.org/b/id/12852110-L.jpg"
+        }
+      ],
+      "total": 68000.0,
+      "estado": "Entregada",
+      "metodo_pago": "PayPal"
     }
   ],
   "24": [
@@ -2160,7 +2178,7 @@
         }
       ],
       "total": 98000.0,
-      "estado": "pagado",
+      "estado": "Entregada",
       "metodo_pago": "PSE"
     },
     {
@@ -2247,7 +2265,7 @@
         }
       ],
       "total": 45000.0,
-      "estado": "Pagada"
+      "estado": "Entregada"
     },
     {
       "id_orden": 26,
@@ -2338,7 +2356,16 @@
       ],
       "total": 31000.0,
       "estado": "pagado",
-      "metodo_pago": "Tarjeta de Crédito"
+      "metodo_pago": "Tarjeta de Crédito",
+      "envio": {
+        "id_empresa": 1,
+        "empresa_mensajeria": "Servientrega",
+        "sitio_web": "https://www.servientrega.com",
+        "url_rastreo": "https://www.servientrega.com/wps/portal/rastreo-destinatario",
+        "numero_guia": "87658798",
+        "estado_envio": "Guía registrada",
+        "actualizado_en": "2026-08-11T00:35:10.070323+00:00"
+      }
     },
     {
       "id_orden": 3,
@@ -2383,6 +2410,69 @@
       "total": 70000.0,
       "estado": "pagado",
       "metodo_pago": "Pago en Efecty"
+    },
+    {
+      "id_orden": 5,
+      "codigo_compra": "BH-006FF018CB",
+      "fecha": "2026-08-11T01:39:31.665962Z",
+      "items": [
+        {
+          "id_libro": 31,
+          "titulo": "El infinito en un junco",
+          "autor_libro": "Irene Vallejo",
+          "precio_libro": 69000.0,
+          "cantidad": 1,
+          "imagen": "https://covers.openlibrary.org/b/id/10214152-L.jpg"
+        }
+      ],
+      "total": 69000.0,
+      "estado": "pagado",
+      "metodo_pago": "PayPal"
+    },
+    {
+      "id_orden": 6,
+      "codigo_compra": "BH-61ED332C62",
+      "fecha": "2026-08-11T01:48:52.617071Z",
+      "items": [
+        {
+          "id_libro": 48,
+          "titulo": "Culpa mia",
+          "autor_libro": "Mercedes Ron",
+          "precio_libro": 30000.0,
+          "cantidad": 1,
+          "imagen": null
+        }
+      ],
+      "total": 30000.0,
+      "estado": "pagado",
+      "metodo_pago": "PayPal",
+      "envio": {
+        "id_empresa": 1,
+        "empresa_mensajeria": "Servientrega",
+        "sitio_web": "https://www.servientrega.com",
+        "url_rastreo": "https://www.servientrega.com/wps/portal/rastreo-destinatario",
+        "numero_guia": "87654",
+        "estado_envio": "Guía registrada",
+        "actualizado_en": "2026-08-11T03:41:11.831164+00:00"
+      }
+    },
+    {
+      "id_orden": 7,
+      "codigo_compra": "BH-0D6F9F866B",
+      "fecha": "2026-08-12T04:44:24.891038Z",
+      "items": [
+        {
+          "id_libro": 3,
+          "titulo": "La Sombra Oscura",
+          "autor_libro": "D. Salazar",
+          "precio_libro": 40000.0,
+          "cantidad": 1,
+          "imagen": "https://images.unsplash.com/photo-1509248961158-e54f6934749c?w=400&q=80"
+        }
+      ],
+      "total": 40000.0,
+      "estado": "pagado",
+      "metodo_pago": "PayPal"
     }
   ]
 }

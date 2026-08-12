@@ -72,6 +72,40 @@ def registrar_pago(id_usuario, id_orden, amount, payment_method, coupon_code=Non
     orders[str(id_usuario)] = user_orders
     _save_store(ORDER_FILE, orders)
 
+    # Sincronizar estado en MySQL buscando por usuario + items coincidentes
+    try:
+        from app.database import get_db
+        db = get_db()
+        cursor = db.cursor(dictionary=True)
+        try:
+            # Buscar la orden en MySQL: mismo usuario, estado pendiente,
+            # y que contenga al menos un libro del pedido del JSON
+            id_libros = [item['id_libro'] for item in target_order.get('items', []) if item.get('id_libro')]
+            if id_libros:
+                fmt = ','.join(['%s'] * len(id_libros))
+                cursor.execute(f"""
+                    SELECT DISTINCT oc.id_orden
+                    FROM ordenes_compra oc
+                    JOIN detalle_orden do ON do.id_orden = oc.id_orden
+                    WHERE oc.id_usuario = %s
+                      AND oc.estado_orden = 'pendiente'
+                      AND do.id_libro IN ({fmt})
+                    ORDER BY oc.fecha_orden DESC
+                    LIMIT 1
+                """, (id_usuario, *id_libros))
+                row = cursor.fetchone()
+                if row:
+                    cursor.execute(
+                        "UPDATE ordenes_compra SET estado_orden = 'pagado' WHERE id_orden = %s",
+                        (row['id_orden'],)
+                    )
+                    db.commit()
+        finally:
+            cursor.close()
+            db.close()
+    except Exception as e:
+        print(f"⚠️ No se pudo sincronizar estado de pago en MySQL: {e}")
+
     # Registrar el pago
     payments = _load_store(PAYMENT_FILE)
     payment_id = len(payments) + 1
