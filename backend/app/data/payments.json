@@ -457,5 +457,41 @@
     "metodo_pago": "Pago en Efecty",
     "fecha_pago": "2026-08-10T18:49:16.584489Z",
     "estado": "aprobado"
+  },
+  {
+    "id_pago": 52,
+    "id_usuario": 23,
+    "id_orden": 16,
+    "monto": 68000.0,
+    "metodo_pago": "PayPal",
+    "fecha_pago": "2026-08-10T22:34:17.991725Z",
+    "estado": "aprobado"
+  },
+  {
+    "id_pago": 53,
+    "id_usuario": 33,
+    "id_orden": 5,
+    "monto": 69000.0,
+    "metodo_pago": "PayPal",
+    "fecha_pago": "2026-08-11T01:39:40.092304Z",
+    "estado": "aprobado"
+  },
+  {
+    "id_pago": 54,
+    "id_usuario": 33,
+    "id_orden": 6,
+    "monto": 30000.0,
+    "metodo_pago": "PayPal",
+    "fecha_pago": "2026-08-11T01:49:03.255488Z",
+    "estado": "aprobado"
+  },
+  {
+    "id_pago": 55,
+    "id_usuario": 33,
+    "id_orden": 7,
+    "monto": 40000.0,
+    "metodo_pago": "PayPal",
+    "fecha_pago": "2026-08-12T04:45:01.566217Z",
+    "estado": "aprobado"
   }
 ]

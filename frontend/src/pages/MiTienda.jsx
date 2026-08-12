@@ -1,4 +1,4 @@
-// src/pages/MiTienda.jsx
+﻿// src/pages/MiTienda.jsx
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
@@ -28,7 +28,8 @@ import {
   IconTruck,
   IconCreditCard,
   IconInfo,
-  IconRefresh
+  IconRefresh,
+  IconCalendar
 } from "../components/Icons";
 import "../styles/Notificaciones.css";
 
@@ -180,7 +181,7 @@ function ModalEditarLibro({ libro, categorias, onClose, onGuardado }) {
       <div className="modal-box" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h2>Editar libro</h2>
-          <button className="modal-close" onClick={onClose}>×</button>
+          <button className="modal-close" onClick={onClose}>x</button>
         </div>
         <form onSubmit={handleSubmit} className="modal-form">
           <div className="modal-grid">
@@ -260,7 +261,7 @@ function ModalEliminar({ libro, onClose, onEliminado }) {
       <div className="modal-box modal-box--sm" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h2>Eliminar libro</h2>
-          <button className="modal-close" onClick={onClose}>×</button>
+          <button className="modal-close" onClick={onClose}>x</button>
         </div>
         <div style={{ padding: "8px 0 20px" }}>
           <p style={{ color: "#444", marginBottom: "6px" }}>
@@ -307,7 +308,7 @@ function ModalStock({ libro, onClose, onActualizado }) {
       <div className="modal-box modal-box--sm" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h2>Gestionar stock</h2>
-          <button className="modal-close" onClick={onClose}>×</button>
+          <button className="modal-close" onClick={onClose}>x</button>
         </div>
         <p style={{ color: "#666", fontSize: "0.9rem", marginBottom: "20px" }}>
           <strong>{libro.titulo}</strong>
@@ -327,6 +328,296 @@ function ModalStock({ libro, onClose, onActualizado }) {
         </div>
       </div>
     </div>
+  );
+}
+
+/* ================= SECCIÓN CALIFICACIONES VENDEDOR ================= */
+const StarIcon = ({ filled, size = 16 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill={filled ? '#ffc107' : '#e0e0e0'} stroke="none">
+    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+  </svg>
+);
+
+const Stars = ({ value, size = 16 }) => (
+  <div style={{ display: 'flex', gap: '2px' }}>
+    {[1,2,3,4,5].map(i => <StarIcon key={i} filled={i <= value} size={size} />)}
+  </div>
+);
+
+// Color del badge según calificación
+const calColor = (n) => {
+  if (n >= 4.5) return { bg: '#d1fae5', color: '#065f46', border: '#6ee7b7' };
+  if (n >= 3.5) return { bg: '#fef9c3', color: '#854d0e', border: '#fde047' };
+  return { bg: '#fee2e2', color: '#991b1b', border: '#fca5a5' };
+};
+
+// Iniciales del usuario para el avatar
+const initials = (name = '') => name.trim().split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase() || '?';
+
+// Paleta de colores para avatares
+const AVATAR_COLORS = ['#7A1E3A','#1e4d8a','#1e7a45','#7a5c00','#5a1e7a','#1e6a7a'];
+const avatarColor = (name = '') => AVATAR_COLORS[name.charCodeAt(0) % AVATAR_COLORS.length] || '#7A1E3A';
+
+function SeccionCalificacionesVendedor({ tiendaId }) {
+  const [data, setData]       = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!tiendaId) return;
+    setLoading(true);
+    api.get(`/perfil/calificaciones-tienda/${tiendaId}`)
+      .then(r => setData(r.data))
+      .catch(e => console.error('Error calificaciones:', e))
+      .finally(() => setLoading(false));
+  }, [tiendaId]);
+
+  const total    = data?.total     ?? 0;
+  const promedio = data?.promedio  ?? 0;
+  const dist     = data?.distribucion ?? {};
+  const lista    = data?.calificaciones ?? [];
+
+  const barColor = (s) => s >= 4 ? '#22c55e' : s === 3 ? '#f59e0b' : '#ef4444';
+  const topBorder = (s) => s >= 4 ? '#22c55e' : s === 3 ? '#f59e0b' : '#ef4444';
+  const promedioColor = promedio >= 4.5 ? '#065f46' : promedio >= 3.5 ? '#854d0e' : '#991b1b';
+  const promedioBg    = promedio >= 4.5 ? '#d1fae5' : promedio >= 3.5 ? '#fef9c3' : '#fee2e2';
+  const promedioBorder= promedio >= 4.5 ? '#6ee7b7' : promedio >= 3.5 ? '#fde047' : '#fca5a5';
+
+  const estesMes = lista.filter(c => {
+    const d = new Date(c.fecha_calificacion), n = new Date();
+    return d.getMonth() === n.getMonth() && d.getFullYear() === n.getFullYear();
+  }).length;
+
+  return (
+    <>
+      {/* Header igual al de todas las secciones */}
+      <div className="welcome-card">
+        <h1 style={{ fontSize: "1.55rem", marginBottom: "4px", display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <IconStar width={28} height={28} strokeWidth={2} style={{ color: '#7A1E3A' }} />
+          Calificaciones de tu tienda
+        </h1>
+        <p style={{ margin: 0 }}>Lo que tus clientes opinan sobre tu servicio</p>
+      </div>
+
+      {loading ? (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '260px', flexDirection: 'column', gap: '12px' }}>
+          <div style={{ width: '36px', height: '36px', border: '3px solid #f0e8ea', borderTopColor: '#7A1E3A', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+          <span style={{ color: '#aaa', fontSize: '0.9rem' }}>Cargando calificaciones...</span>
+        </div>
+      ) : total === 0 ? (
+        /* ── Estado vacío ── */
+        <div style={{ padding: '20px' }}>
+          <div style={{ background: 'white', borderRadius: '16px', padding: '70px 20px', textAlign: 'center', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
+            <div style={{ fontSize: '4rem', marginBottom: '16px' }}>⭐</div>
+            <h3 style={{ margin: '0 0 8px 0', color: '#333', fontWeight: '700', fontSize: '1.2rem' }}>Aún no tienes calificaciones</h3>
+            <p style={{ margin: '0 auto', color: '#999', fontSize: '0.95rem', maxWidth: '340px' }}>
+              Cuando un cliente reciba su pedido y te evalúe, sus opiniones aparecerán aquí.
+            </p>
+          </div>
+        </div>
+      ) : (
+        <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+
+          {/* ── Fila superior: promedio destacado + 3 métricas ── */}
+          <div style={{ display: 'grid', gridTemplateColumns: '260px 1fr', gap: '16px', alignItems: 'stretch' }}>
+
+            {/* Promedio grande */}
+            <div style={{
+              background: promedioBg,
+              border: `2px solid ${promedioBorder}`,
+              borderRadius: '16px',
+              padding: '28px 20px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              boxShadow: '0 4px 16px rgba(0,0,0,0.07)'
+            }}>
+              <span style={{ fontSize: '0.78rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.06em', color: promedioColor, opacity: 0.75 }}>
+                Promedio general
+              </span>
+              <div style={{ fontSize: '4rem', fontWeight: '900', color: promedioColor, lineHeight: 1 }}>
+                {promedio.toFixed(1)}
+              </div>
+              <Stars value={Math.round(promedio)} size={20} />
+              <span style={{ fontSize: '0.85rem', color: promedioColor, opacity: 0.7, marginTop: '4px' }}>
+                sobre {total} {total === 1 ? 'opinión' : 'opiniones'}
+              </span>
+            </div>
+
+            {/* 3 métricas en columna */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
+              {[
+                { 
+                  label: 'Opiniones totales', 
+                  value: total,      
+                  icon: <IconMessage width={32} height={32} strokeWidth={1.5} style={{ color: '#1d4ed8' }} />, 
+                  bg: '#eff6ff', 
+                  color: '#1d4ed8', 
+                  border: '#bfdbfe' 
+                },
+                { 
+                  label: '5 estrellas',        
+                  value: dist[5]??0, 
+                  icon: <IconStar width={32} height={32} strokeWidth={1.5} style={{ color: '#065f46' }} />, 
+                  bg: '#d1fae5', 
+                  color: '#065f46', 
+                  border: '#6ee7b7' 
+                },
+                { 
+                  label: 'Este mes',            
+                  value: estesMes,  
+                  icon: <IconCalendar width={32} height={32} strokeWidth={1.5} style={{ color: '#6b21a8' }} />, 
+                  bg: '#faf5ff', 
+                  color: '#6b21a8', 
+                  border: '#d8b4fe' 
+                },
+              ].map(m => (
+                <div key={m.label} className="metric-card" style={{
+                  background: m.bg,
+                  border: `1px solid ${m.border}`,
+                  borderRadius: '14px',
+                  padding: '20px 16px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  textAlign: 'center',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+                }}>
+                  <div className="metric-icon">
+                    {m.icon}
+                  </div>
+                  <div style={{ fontSize: '2rem', fontWeight: '900', color: m.color, lineHeight: 1 }}>{m.value}</div>
+                  <div style={{ fontSize: '0.78rem', color: m.color, opacity: 0.8, fontWeight: '600' }}>{m.label}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* ── Fila inferior: Distribución + lista ── */}
+          <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: '16px', alignItems: 'start' }}>
+
+            {/* Distribución */}
+            <div style={{ background: 'white', borderRadius: '14px', padding: '22px', boxShadow: '0 2px 10px rgba(0,0,0,0.06)' }}>
+              <h3 style={{ margin: '0 0 18px 0', fontSize: '0.85rem', fontWeight: '700', color: '#888', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                Distribución
+              </h3>
+              {[5,4,3,2,1].map(stars => {
+                const count = dist[stars] ?? 0;
+                const pct   = total > 0 ? Math.round((count / total) * 100) : 0;
+                return (
+                  <div key={stars} style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+                    <span style={{ minWidth: '10px', fontSize: '0.85rem', fontWeight: '700', color: '#555' }}>{stars}</span>
+                    <StarIcon filled size={13} />
+                    <div style={{ flex: 1, background: '#f3f4f6', borderRadius: '99px', height: '10px', overflow: 'hidden' }}>
+                      <div style={{ background: barColor(stars), height: '100%', width: `${pct}%`, borderRadius: '99px', transition: 'width 0.6s ease' }} />
+                    </div>
+                    <span style={{ minWidth: '52px', fontSize: '0.8rem', color: '#888', textAlign: 'right' }}>
+                      {count} <span style={{ color: '#ccc' }}>({pct}%)</span>
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Lista de opiniones */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h3 style={{ margin: '0 0 4px 0', fontSize: '0.85rem', fontWeight: '700', color: '#888', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                  Últimas opiniones
+                </h3>
+                {lista.length > 10 && (
+                  <span style={{ fontSize: '0.75rem', color: '#999', fontStyle: 'italic' }}>
+                    Mostrando 10 de {lista.length}
+                  </span>
+                )}
+              </div>
+              {lista.slice(0, 10).map(cal => (
+                <div key={cal.id_calificacion} style={{
+                  background: 'white',
+                  borderRadius: '14px',
+                  padding: '14px 18px',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+                  borderTop: `3px solid ${topBorder(cal.calificacion)}`
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: cal.comentario ? '10px' : 0 }}>
+                    <div style={{
+                      width: '36px', height: '36px', borderRadius: '50%', flexShrink: 0,
+                      background: avatarColor(cal.nombre_usuario),
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      color: 'white', fontWeight: '700', fontSize: '0.82rem'
+                    }}>
+                      {initials(cal.nombre_usuario)}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <strong style={{ color: '#222', fontSize: '0.9rem' }}>{cal.nombre_usuario}</strong>
+                        <span style={{ fontSize: '0.78rem', color: '#bbb', flexShrink: 0, marginLeft: '8px' }}>
+                          {new Date(cal.fecha_calificacion).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' })}
+                        </span>
+                      </div>
+                      <Stars value={cal.calificacion} size={13} />
+                    </div>
+                  </div>
+                  {cal.comentario && (
+                    <p style={{
+                      margin: 0, color: '#666', fontSize: '0.88rem', lineHeight: '1.55',
+                      paddingLeft: '48px', fontStyle: 'italic',
+                      borderTop: '1px solid #f3f4f6', paddingTop: '10px'
+                    }}>
+                      "{cal.comentario}"
+                    </p>
+                  )}
+                </div>
+              ))}
+              
+              {/* Estado vacío cuando no hay opiniones */}
+              {lista.length === 0 && (
+                <div style={{
+                  background: 'white',
+                  borderRadius: '14px',
+                  padding: '40px 20px',
+                  textAlign: 'center',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+                }}>
+                  <div style={{ fontSize: '3rem', opacity: 0.3, marginBottom: '12px' }}>💭</div>
+                  <p style={{ margin: '0 0 8px 0', fontWeight: '600', color: '#666' }}>
+                    Aún no hay opiniones
+                  </p>
+                  <p style={{ margin: 0, fontSize: '0.85rem', color: '#888' }}>
+                    Las opiniones de tus clientes aparecerán aquí cuando recibas calificaciones
+                  </p>
+                </div>
+              )}
+              
+              {/* Nota sobre notificaciones */}
+              {lista.length > 10 && (
+                <div style={{
+                  background: '#f8fafc',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '12px',
+                  padding: '12px 16px',
+                  fontSize: '0.82rem',
+                  color: '#64748b',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}>
+                  <IconMessage width={16} height={16} strokeWidth={1.5} style={{ flexShrink: 0 }} />
+                  <span>
+                    Las opiniones anteriores están disponibles en la Sección de <strong>Notificaciones</strong>
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    </>
   );
 }
 
@@ -402,7 +693,7 @@ export default function MiTienda() {
   const [cuentaAEliminar, setCuentaAEliminar] = useState(null);
   const [mostrarExitoCuenta, setMostrarExitoCuenta] = useState(false);
   
-  // Estados para nómina
+  // Estados para Nómina
   const [pagosPendientes, setPagosPendientes] = useState([]);
   const [historialPagos, setHistorialPagos] = useState([]);
   const [loadingNomina, setLoadingNomina] = useState(false);
@@ -427,10 +718,7 @@ export default function MiTienda() {
       const token = localStorage.getItem("token");
       const payload = jwtDecode(token);
       const userId = payload.sub;
-
-      console.log('Cargando pagos pendientes para usuario:', userId);
       const res = await api.get(`/api/v1/bookypago-finanzas/pagos-pendientes/${userId}`);
-      console.log('Respuesta pagos pendientes:', res.data);
       setPagosPendientes(res.data.pagos_pendientes || []);
     } catch (error) {
       console.error('Error cargando pagos pendientes:', error);
@@ -444,10 +732,7 @@ export default function MiTienda() {
       const token = localStorage.getItem("token");
       const payload = jwtDecode(token);
       const userId = payload.sub;
-
-      console.log('Cargando historial de pagos para usuario:', userId);
       const res = await api.get(`/api/v1/bookypago-finanzas/historial-pagos/${userId}`);
-      console.log('Respuesta historial pagos:', res.data);
       setHistorialPagos(res.data.historial || []);
     } catch (error) {
       console.error('Error cargando historial de pagos:', error);
@@ -633,7 +918,7 @@ export default function MiTienda() {
 
   // Sincronizar activeSide con la URL: usamos history.replaceState en lugar de
   // navigate() para no disparar el ciclo de re-render de React Router (que causa
-  // el parpadeo blanco al cambiar de sección).
+  // el parpadeo blanco al cambiar de Sección).
   const cambiarSeccion = (nuevaSeccion) => {
     setActiveSide(nuevaSeccion);
     window.history.replaceState(null, '', `/mi-tienda?seccion=${encodeURIComponent(nuevaSeccion)}`);
@@ -700,7 +985,7 @@ export default function MiTienda() {
 
   const guardarEnvio = async () => {
     if (!envioForm.id_empresa || !envioForm.numero_guia.trim()) {
-      setEnvioError("Selecciona una empresa e ingresa el número de guía.");
+      setEnvioError("Selecciona una empresa e ingresa el número de Guía.");
       return;
     }
     setGuardandoEnvio(true);
@@ -714,9 +999,19 @@ export default function MiTienda() {
       setPedidoEnvio(null);
       cargarPedidos();
     } catch (err) {
-      setEnvioError(err.response?.data?.detail || "No se pudo registrar la guía.");
+      setEnvioError(err.response?.data?.detail || "No se pudo registrar la Guía.");
     } finally {
       setGuardandoEnvio(false);
+    }
+  };
+
+  const cambiarEstadoOrden = async (idOrden, nuevoEstado) => {
+    try {
+      await api.put(`/perfil/ordenes/${idOrden}/estado`, { estado: nuevoEstado });
+      cargarPedidos();
+    } catch (err) {
+      console.error("Error cambiando estado:", err);
+      alert("No se pudo cambiar el estado de la orden");
     }
   };
 
@@ -740,7 +1035,7 @@ export default function MiTienda() {
 
  
   // ========================
-  // Efectos de carga inicial y actualizacion por sección
+  // Efectos de carga inicial y actualizacion por Sección
   // ========================
   // Cargar libros únicamente al montar el componente
   useEffect(() => {
@@ -847,7 +1142,7 @@ export default function MiTienda() {
         setTiendaInfo(null);
       });
 
-    // Cargar configuración avanzada
+    // Cargar Configuración avanzada
     api.get("/configuracion")
       .then((r) => {
         if (r.data) {
@@ -860,7 +1155,7 @@ export default function MiTienda() {
         }
       })
       .catch((err) => {
-        console.error("Error cargando configuración avanzada:", err);
+        console.error("Error cargando Configuración avanzada:", err);
       });
   }, []);
 
@@ -1276,7 +1571,7 @@ export default function MiTienda() {
               }}
               onClick={() => setActiveSide("Configuración")}
             >
-              Editar configuración
+              Editar Configuración
             </button>
           </div>
         )}
@@ -1409,7 +1704,7 @@ export default function MiTienda() {
                 onMouseEnter={(e) => e.target.style.background = '#f5f5f5'}
                 onMouseLeave={(e) => e.target.style.background = 'none'}
               >
-                ×
+                x
               </button>
             </div>
             <div style={{ display: 'grid', gap: '16px' }}>
@@ -1906,7 +2201,7 @@ export default function MiTienda() {
           <>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "40px" }}>
             <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "16px", minWidth: "300px", maxWidth: "500px" }}>
-              <h3 style={{ fontSize: "1.1rem", margin: "10px 0 0 0", color: "var(--vinotinto)" }}>Información Básica</h3>
+              <h3 style={{ fontSize: "1.1rem", margin: "10px 0 0 0", color: "var(--vinotinto)" }}>información Básica</h3>
               <div>
               <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>
                 Nombre de la tienda
@@ -2064,7 +2359,7 @@ export default function MiTienda() {
                   setTiendaInfo(prev => ({ ...prev, ...tiendaForm }));
                 })
                 .catch((err) => {
-                  console.error("Error actualizando configuración:", err);
+                  console.error("Error actualizando Configuración:", err);
                   setTiendaMsg("Error: " + (err.response?.data?.detail || err.message));
                   setTimeout(() => setTiendaMsg(""), 4000);
                 });
@@ -2088,7 +2383,7 @@ export default function MiTienda() {
           <IconCreditCard width={24} height={24} strokeWidth={2} style={{ color: '#7A1E3A' }} />
           Cuentas Bancarias
         </h1>
-        <p style={{ margin: 0 }}>Gestiona tus cuentas bancarias para recibir pagos de nómina.</p>
+        <p style={{ margin: 0 }}>Gestiona tus cuentas bancarias para recibir pagos de Nómina.</p>
       </div>
 
       <div className="pl-card" style={{ padding: "2rem", marginTop: "20px" }}>
@@ -2185,7 +2480,7 @@ export default function MiTienda() {
                   checked={cuentaForm.es_principal}
                   onChange={(e) => setCuentaForm({...cuentaForm, es_principal: e.target.checked})}
                 />
-                Marcar como cuenta principal para nómina
+                Marcar como cuenta principal para Nómina
               </label>
               <div style={{ display: 'flex', gap: '10px' }}>
                 <button
@@ -2309,7 +2604,7 @@ export default function MiTienda() {
           <IconLock width={48} height={48} strokeWidth={2} style={{ color: '#7A1E3A' }} />
         </div>
         <p style={{ fontWeight: 700, color: "#444", marginBottom: "8px", fontSize: "1.1rem" }}>{nombre}</p>
-        <p style={{ fontSize: "0.87rem", color: "#888" }}>Esta sección estará disponible próximamente</p>
+        <p style={{ fontSize: "0.87rem", color: "#888" }}>Esta Sección estará disponible próximamente</p>
       </div>
     </div>
   );
@@ -2368,24 +2663,161 @@ export default function MiTienda() {
                       ))}
                     </td>
                     <td style={{ padding: "12px" }}>
-                      <span className={`pl-badge pl-badge--${pedido.estado === "pagado" ? "entregado" : "procesando"}`}>
-                        {pedido.estado}
-                      </span>
+                      {(() => {
+                        const estado = pedido.estado?.toLowerCase();
+                        const colores = {
+                          pagado:   { border: "#c49a00", bg: "#fffbea", color: "#7a5c00" },
+                          enviado:  { border: "#2979c7", bg: "#eaf3ff", color: "#1a4f8a" },
+                          entregada:{ border: "#1e8a45", bg: "#eafaf1", color: "#145c2e" },
+                          cancelada:{ border: "#c0392b", bg: "#fdecea", color: "#7b1e1e" },
+                        };
+                        const c = colores[estado];
+                        if (c) {
+                          return (
+                            <select
+                              value={estado}
+                              onChange={(e) => cambiarEstadoOrden(pedido.id_orden, e.target.value)}
+                              style={{
+                                padding: "8px 12px",
+                                borderRadius: "8px",
+                                border: `2px solid ${c.border}`,
+                                backgroundColor: c.bg,
+                                color: c.color,
+                                fontSize: "0.85rem",
+                                fontWeight: "700",
+                                cursor: "pointer",
+                                minWidth: "120px",
+                                transition: "all 0.2s ease"
+                              }}
+                            >
+                              <option value="pagado">Pagado</option>
+                              <option value="enviado">Enviado</option>
+                              <option value="entregada">Entregada</option>
+                              <option value="cancelada">Cancelada</option>
+                            </select>
+                          );
+                        }
+                        return (
+                          <div style={{
+                            padding: "8px 12px",
+                            borderRadius: "8px",
+                            border: "1px solid #ddd",
+                            backgroundColor: "#f5f5f5",
+                            color: "#999",
+                            fontSize: "0.85rem",
+                            fontWeight: "600",
+                            minWidth: "120px",
+                            textAlign: "center"
+                          }}>
+                            {pedido.estado || "Pendiente"}
+                          </div>
+                        );
+                      })()}
                     </td>
                     <td style={{ padding: "12px", minWidth: "145px" }}>
-                      {pedido.envio && pedido.estado === "pagado" && (
-                        <div style={{ marginBottom: "7px", fontSize: "0.78rem", lineHeight: 1.35 }}>
-                          <strong style={{ display: "block", color: "#4b2733" }}>{pedido.envio.empresa_mensajeria}</strong>
-                          <span style={{ color: "#6d6265" }}>Guía {pedido.envio.numero_guia}</span>
-                        </div>
-                      )}
-                      <button
-                        onClick={() => abrirRegistroEnvio(pedido)}
-                        disabled={pedido.estado !== "pagado"}
-                        style={{ border: pedido.envio && pedido.estado === "pagado" ? "1px solid #9b4d65" : "none", borderRadius: "999px", padding: "7px 11px", cursor: pedido.estado === "pagado" ? "pointer" : "not-allowed", background: pedido.envio && pedido.estado === "pagado" ? "#fff" : pedido.estado === "pagado" ? "#7A1E3A" : "#e7e1e2", color: pedido.envio && pedido.estado === "pagado" ? "#7A1E3A" : pedido.estado === "pagado" ? "white" : "#7b7073", fontWeight: 700, fontSize: "0.75rem", whiteSpace: "nowrap" }}
-                      >
-                        {pedido.envio && pedido.estado === "pagado" ? "Editar guía" : pedido.estado === "pagado" ? "+ Registrar guía" : "Pendiente de pago"}
-                      </button>
+                      {(() => {
+                        const estado = pedido.estado?.toLowerCase();
+                        // Orden cancelada
+                        if (estado === "cancelada") {
+                          return (
+                            <div style={{
+                              padding: "7px 11px",
+                              borderRadius: "999px",
+                              background: "#fdecea",
+                              color: "#c0392b",
+                              fontWeight: 700,
+                              fontSize: "0.75rem",
+                              textAlign: "center",
+                              border: "1px solid #e9b4b0"
+                            }}>
+                              Pedido cancelado
+                            </div>
+                          );
+                        }
+                        // Guía ya registrada — se muestra en cualquier estado
+                        if (pedido.envio) {
+                          return (
+                            <div style={{ fontSize: "0.78rem", lineHeight: 1.5 }}>
+                              <strong style={{ display: "block", color: "#4b2733" }}>
+                                {pedido.envio.empresa_mensajeria}
+                              </strong>
+                              <span style={{ color: "#6d6265" }}>Guía {pedido.envio.numero_guia}</span>
+                              {["pagado", "enviado"].includes(estado) && (
+                                <button
+                                  onClick={() => abrirRegistroEnvio(pedido)}
+                                  style={{
+                                    display: "block",
+                                    marginTop: "5px",
+                                    border: "1px solid #9b4d65",
+                                    borderRadius: "999px",
+                                    padding: "4px 9px",
+                                    cursor: "pointer",
+                                    background: "#fff",
+                                    color: "#7A1E3A",
+                                    fontWeight: 700,
+                                    fontSize: "0.7rem",
+                                    whiteSpace: "nowrap"
+                                  }}
+                                >
+                                  ✏️ Editar Guía
+                                </button>
+                              )}
+                            </div>
+                          );
+                        }
+                        // Sin Guía — botón disponible si está pagado o enviado
+                        if (["pagado", "enviado"].includes(estado)) {
+                          return (
+                            <button
+                              onClick={() => abrirRegistroEnvio(pedido)}
+                              style={{
+                                border: "1px solid #9b4d65",
+                                borderRadius: "999px",
+                                padding: "7px 11px",
+                                cursor: "pointer",
+                                background: "#fff",
+                                color: "#7A1E3A",
+                                fontWeight: 700,
+                                fontSize: "0.75rem",
+                                whiteSpace: "nowrap"
+                              }}
+                            >
+                              + Registrar Guía
+                            </button>
+                          );
+                        }
+                        // Entregada sin Guía
+                        if (estado === "entregada") {
+                          return (
+                            <div style={{
+                              padding: "7px 11px",
+                              borderRadius: "999px",
+                              background: "#eafaf1",
+                              color: "#1e8a45",
+                              fontWeight: 700,
+                              fontSize: "0.75rem",
+                              textAlign: "center",
+                              border: "1px solid #a8d5b5"
+                            }}>
+                              Entregado
+                            </div>
+                          );
+                        }
+                        // Pendiente u otro
+                        return (
+                          <div style={{
+                            padding: "7px 11px",
+                            borderRadius: "999px",
+                            background: "#e7e1e2",
+                            color: "#7b7073",
+                            fontWeight: 700,
+                            fontSize: "0.75rem",
+                            textAlign: "center"
+                          }}>
+                            Pendiente de pago
+                          </div>
+                        );
+                      })()}
                     </td>
                     <td style={{ padding: "12px", textAlign: "right", fontWeight: 700, color: "var(--gris-carbon)" }}>
                       {formatPrecio(pedido.total_tienda)}
@@ -2400,19 +2832,19 @@ export default function MiTienda() {
       {pedidoEnvio && (
         <div className="modal-overlay open" onClick={() => !guardandoEnvio && setPedidoEnvio(null)}>
           <div className="modal-box" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "460px", padding: "28px" }}>
-            <h2 style={{ marginTop: 0 }}>Registrar guía de envío · Orden #{pedidoEnvio.id_orden}</h2>
-            <p style={{ color: "#666", fontSize: "0.9rem" }}>Elige la transportadora acordada e ingresa el número de guía que ella te entregó. BookyHome no realiza ni controla el transporte.</p>
+            <h2 style={{ marginTop: 0 }}>Registrar Guía de envío · Orden #{pedidoEnvio.id_orden}</h2>
+            <p style={{ color: "#666", fontSize: "0.9rem" }}>Elige la transportadora acordada e ingresa el número de Guía que ella te entregó. BookyHome no realiza ni controla el transporte.</p>
             <label style={{ display: "block", fontWeight: 600, marginTop: "18px" }}>Empresa de mensajería</label>
             <select value={envioForm.id_empresa} onChange={(e) => setEnvioForm({ ...envioForm, id_empresa: e.target.value })} style={{ width: "100%", marginTop: "6px", padding: "10px", borderRadius: "6px" }}>
               <option value="">Selecciona una empresa</option>
               {empresasMensajeria.map((empresa) => <option key={empresa.id_empresa} value={empresa.id_empresa}>{empresa.nombre_empresa}</option>)}
             </select>
-            <label style={{ display: "block", fontWeight: 600, marginTop: "14px" }}>Número de guía</label>
+            <label style={{ display: "block", fontWeight: 600, marginTop: "14px" }}>Número de Guía</label>
             <input value={envioForm.numero_guia} onChange={(e) => setEnvioForm({ ...envioForm, numero_guia: e.target.value })} maxLength={80} placeholder="Ej. 123456789" style={{ width: "100%", marginTop: "6px", padding: "10px", borderRadius: "6px", boxSizing: "border-box" }} />
             {envioError && <p style={{ color: "#b42318", fontSize: "0.85rem" }}>{envioError}</p>}
             <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "22px" }}>
               <button onClick={() => setPedidoEnvio(null)} disabled={guardandoEnvio}>Cancelar</button>
-              <button className="btn btn-vinotinto" onClick={guardarEnvio} disabled={guardandoEnvio}>{guardandoEnvio ? "Guardando..." : "Guardar guía"}</button>
+              <button className="btn btn-vinotinto" onClick={guardarEnvio} disabled={guardandoEnvio}>{guardandoEnvio ? "Guardando..." : "Guardar Guía"}</button>
             </div>
           </div>
         </div>
@@ -2436,7 +2868,7 @@ export default function MiTienda() {
             <IconTruck width={28} height={28} strokeWidth={2} style={{ color: "#7A1E3A" }} />
             Envíos y seguimiento
           </h1>
-          <p style={{ margin: 0 }}>Consulta las guías registradas y abre el rastreo oficial de cada transportadora.</p>
+          <p style={{ margin: 0 }}>Consulta las Guías registradas y abre el rastreo oficial de cada transportadora.</p>
         </div>
 
         <div className="seller-books" style={{ marginTop: "20px", padding: "20px" }}>
@@ -2444,7 +2876,7 @@ export default function MiTienda() {
           <input
             value={filtroEnvios}
             onChange={(e) => setFiltroEnvios(e.target.value)}
-            placeholder="Compra, guía, comprador o transportadora"
+            placeholder="Compra, Guía, comprador o transportadora"
             style={{ width: "100%", maxWidth: "520px", padding: "11px 13px", border: "1px solid #d9cfd1", borderRadius: "8px", boxSizing: "border-box" }}
           />
         </div>
@@ -2597,6 +3029,33 @@ export default function MiTienda() {
     </div>
   );
 
+  const renderCalificaciones = () => {
+    return (
+      <>
+        <style>{`
+          .metric-card {
+            transition: all 0.3s ease;
+            cursor: pointer;
+          }
+          .metric-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+          }
+          .metric-icon {
+            transition: transform 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          }
+          .metric-card:hover .metric-icon {
+            transform: scale(1.1) rotate(5deg);
+          }
+        `}</style>
+        <SeccionCalificacionesVendedor tiendaId={tiendaInfo?.id_tienda} />
+      </>
+    );
+  };
+
   const renderContenido = () => {
     switch (activeSide) {
       case "Inicio":        return renderInicio();
@@ -2605,6 +3064,7 @@ export default function MiTienda() {
       case "Mis Libros":    return renderMisLibros();
       case "Ventas":        return renderVentas();
       case "Pedidos":       return renderPedidos();
+      case "Calificaciones": return renderCalificaciones();
       case "Quejas y reclamos": return <QuejasVendedor />;
       case "Soporte técnico": return <Soporte />;
       case "Envios":        return renderEnvios();

@@ -1,13 +1,17 @@
-from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Form
+﻿from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Form
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 from app.database import get_db
 from app.auth import verify_token
 import os
+import json
 from datetime import datetime
 
 router = APIRouter(prefix="/perfil", tags=["Perfil Usuario"])
 security = HTTPBearer()
+
+class ActualizarEstadoOrden(BaseModel):
+    estado: str = Field(..., description="Nuevo estado de la orden (pagado, enviado, entregada, cancelada)")
 
 # ============= SCHEMAS =============
 
@@ -56,14 +60,14 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
     token = credentials.credentials
     payload = verify_token(token)
     if not payload:
-        raise HTTPException(status_code=401, detail="Token inválido")
+        raise HTTPException(status_code=401, detail="Token invÃ¡lido")
     return int(payload.get("sub"))
 
 # ============= ENDPOINTS =============
 
 @router.get("/direcciones")
 def listar_direcciones(user_id: int = Depends(get_current_user)):
-    """Obtiene las direcciones de envío del usuario autenticado"""
+    """Obtiene las direcciones de envÃ­o del usuario autenticado"""
     db = get_db()
     cursor = db.cursor(dictionary=True)
     try:
@@ -89,9 +93,9 @@ def listar_direcciones(user_id: int = Depends(get_current_user)):
 
 @router.post("/direcciones")
 def crear_direccion(data: DireccionCrear, user_id: int = Depends(get_current_user)):
-    """Crea una nueva dirección de envío para el usuario"""
+    """Crea una nueva direcciÃ³n de envÃ­o para el usuario"""
     if not data.direccion or not str(data.direccion).strip():
-        raise HTTPException(status_code=400, detail="La dirección es obligatoria")
+        raise HTTPException(status_code=400, detail="La direcciÃ³n es obligatoria")
 
     db = get_db()
     cursor = db.cursor(dictionary=True)
@@ -103,7 +107,7 @@ def crear_direccion(data: DireccionCrear, user_id: int = Depends(get_current_use
             str(data.direccion).strip(),
         ] if part]
         direccion_completa = ", ".join(detalle)
-        alias = str(data.alias_direccion).strip() if data.alias_direccion else "Dirección"
+        alias = str(data.alias_direccion).strip() if data.alias_direccion else "DirecciÃ³n"
 
         cursor.execute(
             """
@@ -131,7 +135,7 @@ def crear_direccion(data: DireccionCrear, user_id: int = Depends(get_current_use
 
 @router.put("/direcciones/{id_direccion}")
 def actualizar_direccion(id_direccion: int, data: DireccionBase, user_id: int = Depends(get_current_user)):
-    """Actualiza una dirección de envío del usuario"""
+    """Actualiza una direcciÃ³n de envÃ­o del usuario"""
     db = get_db()
     cursor = db.cursor(dictionary=True)
     try:
@@ -140,7 +144,7 @@ def actualizar_direccion(id_direccion: int, data: DireccionBase, user_id: int = 
             (id_direccion, user_id),
         )
         if not cursor.fetchone():
-            raise HTTPException(status_code=404, detail="Dirección no encontrada")
+            raise HTTPException(status_code=404, detail="DirecciÃ³n no encontrada")
 
         if data.es_principal is not None and data.es_principal:
             cursor.execute("UPDATE direcciones_envio SET es_principal = FALSE WHERE id_usuario = %s", (user_id,))
@@ -150,7 +154,7 @@ def actualizar_direccion(id_direccion: int, data: DireccionBase, user_id: int = 
 
         if data.alias_direccion is not None:
             campos.append("alias_direccion = %s")
-            valores.append(data.alias_direccion.strip() if data.alias_direccion else "Dirección")
+            valores.append(data.alias_direccion.strip() if data.alias_direccion else "DirecciÃ³n")
 
         if data.direccion is not None:
             campos.append("direccion_completa = %s")
@@ -200,7 +204,7 @@ def actualizar_direccion(id_direccion: int, data: DireccionBase, user_id: int = 
 
 @router.delete("/direcciones/{id_direccion}")
 def eliminar_direccion(id_direccion: int, user_id: int = Depends(get_current_user)):
-    """Elimina una dirección de envío del usuario"""
+    """Elimina una direcciÃ³n de envÃ­o del usuario"""
     db = get_db()
     cursor = db.cursor(dictionary=True)
     try:
@@ -210,7 +214,7 @@ def eliminar_direccion(id_direccion: int, user_id: int = Depends(get_current_use
         )
         direccion = cursor.fetchone()
         if not direccion:
-            raise HTTPException(status_code=404, detail="Dirección no encontrada")
+            raise HTTPException(status_code=404, detail="DirecciÃ³n no encontrada")
 
         cursor.execute("DELETE FROM direcciones_envio WHERE id_direccion = %s AND id_usuario = %s", (id_direccion, user_id))
         if direccion.get("es_principal"):
@@ -230,7 +234,7 @@ def eliminar_direccion(id_direccion: int, user_id: int = Depends(get_current_use
                     (siguiente["id_direccion"], user_id),
                 )
         db.commit()
-        return {"ok": True, "mensaje": "Dirección eliminada correctamente"}
+        return {"ok": True, "mensaje": "DirecciÃ³n eliminada correctamente"}
     except HTTPException:
         raise
     except Exception as exc:
@@ -288,7 +292,7 @@ def actualizar_perfil(data: PerfilActualizar, user_id: int = Depends(get_current
     db = get_db()
     cursor = db.cursor()
     try:
-        # Construir query dinámico
+        # Construir query dinÃ¡mico
         campos = []
         valores = []
         
@@ -321,7 +325,7 @@ def actualizar_perfil(data: PerfilActualizar, user_id: int = Depends(get_current
 
 @router.get("/{user_id}")
 def obtener_perfil_publico(user_id: int):
-    """Obtiene el perfil público de cualquier usuario (sin datos sensibles)"""
+    """Obtiene el perfil pÃºblico de cualquier usuario (sin datos sensibles)"""
     db = get_db()
     cursor = db.cursor(dictionary=True)
     try:
@@ -437,12 +441,12 @@ def actualizar_preferencias(data: PreferenciasUsuario, user_id: int = Depends(ge
 
 @router.get("/estadisticas/usuario")
 def obtener_estadisticas_reales(user_id: int = Depends(get_current_user)):
-    """Endpoint de estadísticas de usuario"""
+    """Endpoint de estadÃ­sticas de usuario"""
     try:
         db = get_db()
         cursor = db.cursor(dictionary=True)
 
-        # Obtener estadísticas de compras
+        # Obtener estadÃ­sticas de compras
         query_compras = """
             SELECT 
                 COUNT(o.id_orden) AS num_compras,
@@ -460,7 +464,7 @@ def obtener_estadisticas_reales(user_id: int = Depends(get_current_user)):
         total_gastado = float(estadisticas['total_gastado']) if estadisticas and estadisticas['total_gastado'] else 0
         ticket_promedio = float(estadisticas['ticket_promedio']) if estadisticas and estadisticas['ticket_promedio'] else 0
         
-        # Calcular nivel de fidelización
+        # Calcular nivel de fidelizaciÃ³n
         if total_gastado >= 300000:
             nivel_fidelizacion = 'Platino'
         elif total_gastado >= 150000:
@@ -470,7 +474,7 @@ def obtener_estadisticas_reales(user_id: int = Depends(get_current_user)):
         else:
             nivel_fidelizacion = 'Bronce'
         
-        # Obtener categorías favoritas
+        # Obtener categorÃ­as favoritas
         query_categorias = """
             SELECT 
                 c.nombre_categoria AS nombre,
@@ -502,3 +506,421 @@ def obtener_estadisticas_reales(user_id: int = Depends(get_current_user)):
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+        db.close()
+
+@router.put("/ordenes/{id_orden}/estado")
+def actualizar_estado_orden(id_orden: int, data: ActualizarEstadoOrden, user_id: int = Depends(get_current_user)):
+    """Actualiza el estado de una orden en MySQL (solo vendedores, solo sus propias Ã³rdenes)"""
+
+    estados_validos = ["pagado", "enviado", "entregada", "cancelada"]
+    if data.estado.lower() not in estados_validos:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Estado no vÃ¡lido. Estados vÃ¡lidos: {', '.join(estados_validos)}"
+        )
+
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    try:
+        # 1. Verificar que el usuario tiene tienda
+        cursor.execute("SELECT id_tienda FROM tiendas WHERE id_usuario = %s", (user_id,))
+        tienda = cursor.fetchone()
+        if not tienda:
+            raise HTTPException(status_code=403, detail="Solo vendedores pueden actualizar estados de Ã³rdenes")
+
+        # 2. Verificar que la orden existe y contiene al menos un libro de esta tienda
+        cursor.execute("""
+            SELECT COUNT(*) AS coincidencias
+            FROM detalle_orden do
+            JOIN libros l ON l.id_libro = do.id_libro
+            WHERE do.id_orden = %s AND l.id_tienda = %s
+        """, (id_orden, tienda['id_tienda']))
+        row = cursor.fetchone()
+        if not row or row['coincidencias'] == 0:
+            raise HTTPException(
+                status_code=403,
+                detail="Esta orden no contiene libros de tu tienda"
+            )
+
+        # 3. Actualizar el estado en MySQL
+        cursor.execute(
+            "UPDATE ordenes_compra SET estado_orden = %s WHERE id_orden = %s",
+            (data.estado.lower(), id_orden)
+        )
+
+        if cursor.rowcount == 0:
+            raise HTTPException(status_code=404, detail="Orden no encontrada")
+
+        # 4. Obtener informaciÃ³n de la orden y comprador para crear notificaciÃ³n
+        cursor.execute("""
+            SELECT oc.id_usuario, oc.total, t.nombre_tienda
+            FROM ordenes_compra oc
+            JOIN detalle_orden do ON do.id_orden = oc.id_orden
+            JOIN libros l ON l.id_libro = do.id_libro
+            JOIN tiendas t ON t.id_tienda = l.id_tienda
+            WHERE oc.id_orden = %s AND t.id_tienda = %s
+            LIMIT 1
+        """, (id_orden, tienda['id_tienda']))
+        
+        orden_info = cursor.fetchone()
+        
+        if orden_info:
+            # 5. Crear notificaciÃ³n para el comprador
+            estado_msg = {
+                'pagado': 'ha sido pagado y estÃ¡ siendo preparado',
+                'enviado': 'ha sido enviado y estÃ¡ en camino',
+                'entregada': 'ha sido entregado exitosamente',
+                'cancelada': 'ha sido cancelado'
+            }
+            
+            cursor.execute("""
+                INSERT INTO notificaciones 
+                (id_usuario, tipo, titulo, cuerpo, id_referencia, fecha_creacion)
+                VALUES (%s, 'pedido', %s, %s, %s, NOW())
+            """, (
+                orden_info['id_usuario'],
+                f'Estado de pedido actualizado',
+                f'Tu pedido #{id_orden} de la tienda "{orden_info["nombre_tienda"]}" {estado_msg.get(data.estado.lower(), "ha sido actualizado")}',
+                id_orden
+            ))
+        
+        db.commit()
+
+    finally:
+        cursor.close()
+        db.close()
+
+    # 4. Sincronizar tambiÃ©n en orders.json para mantener consistencia con el flujo del comprador
+    try:
+        import json, os
+        storage_dir = os.path.join(os.path.dirname(__file__), '..', 'data')
+        order_file = os.path.join(storage_dir, 'orders.json')
+        if os.path.exists(order_file):
+            with open(order_file, 'r', encoding='utf-8') as f:
+                orders = json.load(f)
+            for user_orders in orders.values():
+                for order in user_orders:
+                    if order.get('id_orden') == id_orden:
+                        order['estado'] = data.estado.lower()
+            with open(order_file, 'w', encoding='utf-8') as f:
+                json.dump(orders, f, indent=2, ensure_ascii=False)
+    except Exception:
+        pass  # No es crÃ­tico â€” MySQL es la fuente de verdad
+
+    return {"success": True, "mensaje": f"Estado actualizado a {data.estado.lower()}"}
+
+# ============= ENDPOINTS DE CALIFICACIONES DE TIENDAS =============
+
+class CalificacionTiendaCreate(BaseModel):
+    id_tienda: int
+    calificacion: int  # 1-5
+    comentario: str
+
+@router.get("/calificaciones/tienda/{id_tienda}")
+def obtener_calificaciones_tienda(id_tienda: int):
+    """Obtiene todas las calificaciones de una tienda con mÃ©tricas agregadas"""
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    try:
+        # Obtener calificaciones individuales
+        query = """
+            SELECT 
+                ct.id_calificacion,
+                ct.id_usuario,
+                u.nombre_usuario,
+                ct.id_tienda,
+                t.nombre_tienda,
+                ct.calificacion,
+                ct.comentario,
+                ct.fecha_calificacion
+            FROM calificaciones_tiendas ct
+            JOIN usuarios u ON ct.id_usuario = u.id_usuario
+            JOIN tiendas t ON ct.id_tienda = t.id_tienda
+            WHERE ct.id_tienda = %s
+            ORDER BY ct.fecha_calificacion DESC
+        """
+        cursor.execute(query, (id_tienda,))
+        calificaciones = cursor.fetchall()
+        
+        # Calcular mÃ©tricas directamente
+        cursor.execute("""
+            SELECT 
+                ROUND(AVG(ct.calificacion), 2) AS calificacion_media,
+                COUNT(ct.id_calificacion) AS total_opiniones,
+                SUM(CASE WHEN ct.calificacion = 5 THEN 1 ELSE 0 END) AS total_5_estrellas
+            FROM calificaciones_tiendas ct
+            WHERE ct.id_tienda = %s
+        """, (id_tienda,))
+        metricas = cursor.fetchone()
+        
+        # Calcular distribuciÃ³n de estrellas
+        distribucion = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}
+        for cal in calificaciones:
+            estrellas = cal["calificacion"]
+            if estrellas in distribucion:
+                distribucion[estrellas] += 1
+        
+        return {
+            "promedio": round(metricas["calificacion_media"], 1) if metricas and metricas["calificacion_media"] else 0,
+            "total": metricas["total_opiniones"] if metricas else 0,
+            "total_5_estrellas": metricas["total_5_estrellas"] if metricas else 0,
+            "distribucion": distribucion,
+            "calificaciones": calificaciones
+        }
+    finally:
+        cursor.close()
+        db.close()
+
+@router.post("/calificaciones/tienda")
+def crear_calificacion_tienda(data: CalificacionTiendaCreate, user_id: int = Depends(get_current_user)):
+    """Crea una nueva calificaciÃ³n de tienda (valida compra entregada desde MySQL)"""
+    
+    # Validar calificaciÃ³n
+    if data.calificacion < 1 or data.calificacion > 5:
+        raise HTTPException(status_code=400, detail="CalificaciÃ³n debe estar entre 1 y 5")
+    
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    try:
+        # 1. Verificar que el usuario haya comprado en esa tienda con estado entregada
+        cursor.execute("""
+            SELECT COUNT(DISTINCT oc.id_orden) as compras_entregadas
+            FROM ordenes_compra oc
+            JOIN detalle_orden do ON do.id_orden = oc.id_orden
+            JOIN libros l ON l.id_libro = do.id_libro
+            WHERE oc.id_usuario = %s 
+              AND l.id_tienda = %s
+              AND LOWER(oc.estado_orden) = 'entregada'
+        """, (user_id, data.id_tienda))
+        
+        result = cursor.fetchone()
+        ha_comprado_entregada = result and result['compras_entregadas'] > 0
+        
+        if not ha_comprado_entregada:
+            raise HTTPException(
+                status_code=403, 
+                detail="Solo puedes calificar tiendas donde hayas realizado compras entregadas"
+            )
+        
+        # 2. Verificar si ya hizo calificaciÃ³n a esta tienda
+        cursor.execute("""
+            SELECT id_calificacion FROM calificaciones_tiendas 
+            WHERE id_usuario = %s AND id_tienda = %s
+        """, (user_id, data.id_tienda))
+        
+        if cursor.fetchone():
+            raise HTTPException(status_code=400, detail="Ya hiciste una calificaciÃ³n de esta tienda")
+        
+        # 3. Crear calificaciÃ³n
+        cursor.execute("""
+            INSERT INTO calificaciones_tiendas 
+            (id_usuario, id_tienda, calificacion, comentario, fecha_calificacion)
+            VALUES (%s, %s, %s, %s, NOW())
+        """, (user_id, data.id_tienda, data.calificacion, data.comentario))
+        
+        # 4. Obtener informaciÃ³n del usuario y la tienda para la notificaciÃ³n
+        cursor.execute("""
+            SELECT u.nombre_usuario, t.nombre_tienda, t.id_usuario as id_vendedor
+            FROM usuarios u, tiendas t
+            WHERE u.id_usuario = %s AND t.id_tienda = %s
+        """, (user_id, data.id_tienda))
+        
+        info = cursor.fetchone()
+        
+        if info:
+            # 5. Crear notificaciÃ³n para el vendedor
+            cursor.execute("""
+                INSERT INTO notificaciones 
+                (id_usuario, tipo, titulo, cuerpo, id_referencia, fecha_creacion)
+                VALUES (%s, 'resena', %s, %s, %s, NOW())
+            """, (
+                info['id_vendedor'],
+                'Nueva calificaciÃ³n recibida',
+                f'{info["nombre_usuario"]} calificÃ³ tu tienda "{info["nombre_tienda"]}" con {data.calificacion} estrellas',
+                data.id_tienda
+            ))
+        
+        db.commit()
+        
+        return {
+            "ok": True,
+            "mensaje": "CalificaciÃ³n creada exitosamente"
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        cursor.close()
+        db.close()
+
+@router.get("/calificaciones/tienda/{id_tienda}/usuario-puede-calificar")
+def usuario_puede_calificar_tienda(id_tienda: int, user_id: int = Depends(get_current_user)):
+    """Verifica si el usuario puede calificar una tienda (ha comprado entregada y no ha calificado antes)"""
+    
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    try:
+        # 1. Verificar si ya calificÃ³
+        cursor.execute("""
+            SELECT id_calificacion FROM calificaciones_tiendas 
+            WHERE id_usuario = %s AND id_tienda = %s
+        """, (user_id, id_tienda))
+        ya_califico = cursor.fetchone() is not None
+
+        # 2. Verificar que haya comprado en esta tienda con estado entregada
+        cursor.execute("""
+            SELECT COUNT(DISTINCT oc.id_orden) as compras_entregadas
+            FROM ordenes_compra oc
+            JOIN detalle_orden do ON do.id_orden = oc.id_orden
+            JOIN libros l ON l.id_libro = do.id_libro
+            WHERE oc.id_usuario = %s 
+              AND l.id_tienda = %s
+              AND LOWER(oc.estado_orden) = 'entregada'
+        """, (user_id, id_tienda))
+        
+        result = cursor.fetchone()
+        ha_comprado_entregada = result and result['compras_entregadas'] > 0
+
+        return {
+            "puede_calificar": ha_comprado_entregada and not ya_califico,
+            "ha_comprado": ha_comprado_entregada,
+            "ya_califico": ya_califico
+        }
+    finally:
+        cursor.close()
+        db.close()
+
+@router.put("/calificaciones/tienda/{id_calificacion}")
+def actualizar_calificacion_tienda(id_calificacion: int, data: CalificacionTiendaCreate, user_id: int = Depends(get_current_user)):
+    """Actualiza una calificaciÃ³n de tienda existente"""
+    
+    if data.calificacion < 1 or data.calificacion > 5:
+        raise HTTPException(status_code=400, detail="CalificaciÃ³n debe estar entre 1 y 5")
+    
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    try:
+        # Verificar que sea propietario
+        cursor.execute("SELECT id_usuario FROM calificaciones_tiendas WHERE id_calificacion = %s", (id_calificacion,))
+        calificacion = cursor.fetchone()
+        
+        if not calificacion:
+            raise HTTPException(status_code=404, detail="CalificaciÃ³n no encontrada")
+        
+        if calificacion["id_usuario"] != user_id:
+            raise HTTPException(status_code=403, detail="No tienes permiso para editar esta calificaciÃ³n")
+        
+        # Actualizar
+        cursor.execute("""
+            UPDATE calificaciones_tiendas 
+            SET calificacion = %s, comentario = %s, fecha_calificacion = NOW()
+            WHERE id_calificacion = %s
+        """, (data.calificacion, data.comentario, id_calificacion))
+        
+        # Obtener informaciÃ³n para la notificaciÃ³n
+        cursor.execute("""
+            SELECT u.nombre_usuario, t.nombre_tienda, t.id_usuario as id_vendedor, ct.id_tienda
+            FROM calificaciones_tiendas ct
+            JOIN usuarios u ON u.id_usuario = ct.id_usuario
+            JOIN tiendas t ON t.id_tienda = ct.id_tienda
+            WHERE ct.id_calificacion = %s
+        """, (id_calificacion,))
+        
+        info = cursor.fetchone()
+        
+        if info:
+            # Crear notificaciÃ³n para el vendedor sobre la actualizaciÃ³n
+            cursor.execute("""
+                INSERT INTO notificaciones 
+                (id_usuario, tipo, titulo, cuerpo, id_referencia, fecha_creacion)
+                VALUES (%s, 'resena', %s, %s, %s, NOW())
+            """, (
+                info['id_vendedor'],
+                'CalificaciÃ³n actualizada',
+                f'{info["nombre_usuario"]} actualizÃ³ su calificaciÃ³n de tu tienda "{info["nombre_tienda"]}" a {data.calificacion} estrellas',
+                info['id_tienda']
+            ))
+        
+        db.commit()
+        
+        return {"ok": True, "mensaje": "CalificaciÃ³n actualizada"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        cursor.close()
+        db.close()
+
+
+@router.get("/calificaciones-tienda/{id_tienda}")
+def obtener_calificaciones_tienda_vendedor(id_tienda: int, user_id: int = Depends(get_current_user)):
+    """Obtiene todas las calificaciones de una tienda (solo el propietario puede verlas)"""
+    
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    try:
+        # Verificar que el usuario es propietario de la tienda
+        cursor.execute("SELECT id_usuario FROM tiendas WHERE id_tienda = %s", (id_tienda,))
+        tienda = cursor.fetchone()
+        
+        if not tienda:
+            raise HTTPException(status_code=404, detail="Tienda no encontrada")
+        
+        if tienda["id_usuario"] != user_id:
+            raise HTTPException(status_code=403, detail="No tienes permiso para ver estas calificaciones")
+        
+        # Obtener calificaciones individuales
+        cursor.execute("""
+            SELECT 
+                ct.id_calificacion,
+                ct.id_usuario,
+                u.nombre_usuario,
+                ct.id_tienda,
+                ct.calificacion,
+                ct.comentario,
+                ct.fecha_calificacion
+            FROM calificaciones_tiendas ct
+            JOIN usuarios u ON ct.id_usuario = u.id_usuario
+            WHERE ct.id_tienda = %s
+            ORDER BY ct.fecha_calificacion DESC
+        """, (id_tienda,))
+        calificaciones = cursor.fetchall()
+        
+        # Calcular mÃ©tricas
+        cursor.execute("""
+            SELECT 
+                ROUND(AVG(ct.calificacion), 2) AS promedio,
+                COUNT(ct.id_calificacion) AS total,
+                SUM(CASE WHEN ct.calificacion = 5 THEN 1 ELSE 0 END) AS total_5_estrellas,
+                SUM(CASE WHEN ct.calificacion = 4 THEN 1 ELSE 0 END) AS total_4_estrellas,
+                SUM(CASE WHEN ct.calificacion = 3 THEN 1 ELSE 0 END) AS total_3_estrellas,
+                SUM(CASE WHEN ct.calificacion = 2 THEN 1 ELSE 0 END) AS total_2_estrellas,
+                SUM(CASE WHEN ct.calificacion = 1 THEN 1 ELSE 0 END) AS total_1_estrellas
+            FROM calificaciones_tiendas ct
+            WHERE ct.id_tienda = %s
+        """, (id_tienda,))
+        metricas = cursor.fetchone()
+        
+        # Formato de respuesta
+        distribucion = {
+            5: metricas["total_5_estrellas"] if metricas else 0,
+            4: metricas["total_4_estrellas"] if metricas else 0,
+            3: metricas["total_3_estrellas"] if metricas else 0,
+            2: metricas["total_2_estrellas"] if metricas else 0,
+            1: metricas["total_1_estrellas"] if metricas else 0,
+        }
+        
+        return {
+            "promedio": round(metricas["promedio"], 1) if metricas and metricas["promedio"] else 0,
+            "total": metricas["total"] if metricas else 0,
+            "distribucion": distribucion,
+            "calificaciones": calificaciones,
+            "recientes": calificaciones[:5] if calificaciones else []
+        }
+    finally:
+        cursor.close()
+        db.close()

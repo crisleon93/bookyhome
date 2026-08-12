@@ -104,7 +104,13 @@ def busqueda_avanzada(
                 t.id_tienda,
                 (SELECT url_imagen FROM imagenes_libro WHERE id_libro = l.id_libro LIMIT 1) as imagen_url,
                 COALESCE(AVG(r.calificacion), 0) as promedio_calificacion,
-                COUNT(r.id_resena) as total_resenas
+                COUNT(r.id_resena) as total_resenas,
+                (SELECT ROUND(AVG(ct.calificacion), 1) 
+                 FROM calificaciones_tiendas ct 
+                 WHERE ct.id_tienda = t.id_tienda) as calificacion_tienda,
+                (SELECT COUNT(ct.id_calificacion) 
+                 FROM calificaciones_tiendas ct 
+                 WHERE ct.id_tienda = t.id_tienda) as total_opiniones_tienda
             FROM libros l
             LEFT JOIN categorias c ON l.id_categoria = c.id_categoria
             LEFT JOIN tiendas t ON l.id_tienda = t.id_tienda

@@ -1603,6 +1603,50 @@
       "monto": 7000.0,
       "fecha": "2026-08-10T18:49:16.812027Z",
       "estado": "procesado"
+    },
+    {
+      "id": 136,
+      "tipo": "venta",
+      "id_venta": 16,
+      "id_vendedor": 29,
+      "monto_venta": 68000.0,
+      "comision": 6800.0,
+      "monto": 6800.0,
+      "fecha": "2026-08-10T22:34:18.166454Z",
+      "estado": "procesado"
+    },
+    {
+      "id": 137,
+      "tipo": "venta",
+      "id_venta": 5,
+      "id_vendedor": 28,
+      "monto_venta": 69000.0,
+      "comision": 6900.0,
+      "monto": 6900.0,
+      "fecha": "2026-08-11T01:39:40.212163Z",
+      "estado": "procesado"
+    },
+    {
+      "id": 138,
+      "tipo": "venta",
+      "id_venta": 6,
+      "id_vendedor": 28,
+      "monto_venta": 30000.0,
+      "comision": 3000.0,
+      "monto": 3000.0,
+      "fecha": "2026-08-11T01:49:03.432188Z",
+      "estado": "procesado"
+    },
+    {
+      "id": 139,
+      "tipo": "venta",
+      "id_venta": 7,
+      "id_vendedor": 4,
+      "monto_venta": 40000.0,
+      "comision": 4000.0,
+      "monto": 4000.0,
+      "fecha": "2026-08-12T04:45:02.028883Z",
+      "estado": "procesado"
     }
   ],
   "pagos": [

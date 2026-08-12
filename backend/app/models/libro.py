@@ -495,98 +495,113 @@ def ocultar_libro(id_libro: int, ocultar_estado: bool, id_tienda: int = None):
         db.close()
 
 # ──────────────────────────────────────────────
-#  VENDEDOR - PEDIDOS Y VENTAS DESDE ORDERS.JSON
+#  VENDEDOR - PEDIDOS Y VENTAS DESDE MYSQL
 # ──────────────────────────────────────────────
-def _load_orders():
-    # El archivo orders.json se almacena en backend/app/data/
-    import os, json
-    storage_dir = os.path.join(os.path.dirname(__file__), '..', 'data')
-    order_file = os.path.join(storage_dir, 'orders.json')
-    if not os.path.exists(order_file):
-        return {}
-    try:
-        with open(order_file, 'r', encoding='utf-8') as file:
-            return json.load(file)
-    except Exception:
-        return {}
-
 def obtener_pedidos_tienda(id_tienda: int):
-    # Nunca se expone una guía mientras la compra no esté pagada, incluso si
-    # existe un dato heredado de una versión anterior del flujo.
+    """
+    Devuelve los pedidos que contienen al menos un libro de la tienda indicada.
+    La fuente de verdad es MySQL: ordenes_compra → detalle_orden → libros,
+    filtrando por libros.id_tienda. Esto garantiza que cada vendedor solo
+    vea los pedidos que realmente le pertenecen.
+    """
     from app.models.envios import limpiar_envios_no_pagados
     limpiar_envios_no_pagados()
-    # 1. Obtener todos los libros de la tienda
+
     db = get_db()
     cursor = db.cursor(dictionary=True)
     try:
-        cursor.execute("SELECT id_libro, titulo FROM libros WHERE id_tienda = %s", (id_tienda,))
-        libros_tienda = {row["id_libro"]: row["titulo"] for row in cursor.fetchall()}
-        
-        if not libros_tienda:
-            return []
-            
-        # 2. Mapear usuarios para info de cliente
-        cursor.execute("SELECT id_usuario, nombre_usuario, correo_usuario FROM usuarios")
-        usuarios_map = {
-            row["id_usuario"]: {
-                "nombre": row["nombre_usuario"],
-                "correo": row["correo_usuario"]
-            }
-            for row in cursor.fetchall()
-        }
+        # Traer todos los ítems de órdenes que corresponden a libros de esta tienda,
+        # junto con los datos del comprador y la orden.
+        cursor.execute("""
+            SELECT
+                oc.id_orden,
+                oc.fecha_orden            AS fecha,
+                oc.estado_orden           AS estado,
+                oc.total                  AS total_orden,
+                oc.id_usuario             AS id_comprador,
+                u.nombre_usuario          AS cliente,
+                u.correo_usuario          AS correo_cliente,
+                do.id_libro,
+                do.cantidad,
+                do.precio_unitario        AS precio_libro,
+                do.porcentaje_descuento,
+                do.precio_final,
+                l.titulo,
+                l.autor_libro,
+                (SELECT url_imagen
+                 FROM imagenes_libro
+                 WHERE id_libro = l.id_libro AND es_principal = 1
+                 LIMIT 1)                 AS imagen
+            FROM ordenes_compra oc
+            JOIN detalle_orden   do ON do.id_orden  = oc.id_orden
+            JOIN libros          l  ON l.id_libro   = do.id_libro
+            JOIN usuarios        u  ON u.id_usuario = oc.id_usuario
+            WHERE l.id_tienda = %s
+            ORDER BY oc.fecha_orden DESC
+        """, (id_tienda,))
+        filas = cursor.fetchall()
+
+        # Consultar envíos registrados para las órdenes de esta tienda.
+        # La tabla envios ya tiene id_tienda, no se necesita JOIN adicional.
+        cursor.execute("""
+            SELECT id_orden, estado_envio, numero_guia,
+                   empresa_mensajeria, id_empresa,
+                   fecha_estimada_entrega, costo_envio
+            FROM envios
+            WHERE id_tienda = %s
+        """, (id_tienda,))
+        envios_map = {row["id_orden"]: row for row in cursor.fetchall()}
+
     finally:
         cursor.close()
         db.close()
-        
-    # 3. Cargar las órdenes de orders.json
-    orders_data = _load_orders()
-    
-    pedidos = []
-    for user_id_str, user_orders in orders_data.items():
-        try:
-            user_id = int(user_id_str)
-        except ValueError:
-            continue
-        cliente_info = usuarios_map.get(user_id, {"nombre": f"Usuario #{user_id}", "correo": ""})
-        
-        for order in user_orders:
-            items_tienda = []
-            total_tienda = 0.0
-            
-            for item in order.get("items", []):
-                try:
-                    id_libro = int(item.get("id_libro"))
-                except (ValueError, TypeError):
-                    continue
-                if id_libro in libros_tienda:
-                    cant = int(item.get("cantidad", 1))
-                    precio = float(item.get("precio_libro", 0))
-                    items_tienda.append({
-                        "id_libro": id_libro,
-                        "titulo": item.get("titulo", libros_tienda[id_libro]),
-                        "autor_libro": item.get("autor_libro", ""),
-                        "precio_libro": precio,
-                        "cantidad": cant,
-                        "imagen": item.get("imagen")
-                    })
-                    total_tienda += precio * cant
-            
-            if items_tienda:
-                pedidos.append({
-                    "id_orden": order.get("id_orden"),
-                    "codigo_compra": order.get("codigo_compra", f"BH-{user_id}-{order.get('id_orden')}"),
-                    "id_comprador": user_id,
-                    "fecha": order.get("fecha"),
-                    "estado": order.get("estado"),
-                    "cliente": cliente_info["nombre"],
-                    "correo_cliente": cliente_info["correo"],
-                    "items": items_tienda,
-                    "total_tienda": total_tienda,
-                    "total_orden": order.get("total"),
-                    "envio": order.get("envio") if str(order.get("estado", "")).lower() == "pagado" else None
-                })
-                
-    return sorted(pedidos, key=lambda p: p.get("fecha", ""), reverse=True)
+
+    # Agrupar filas por id_orden
+    ordenes: dict = {}
+    for fila in filas:
+        id_orden = fila["id_orden"]
+        if id_orden not in ordenes:
+            ordenes[id_orden] = {
+                "id_orden":       id_orden,
+                "id_orden_unico": f"{fila['id_comprador']}-{id_orden}",
+                "codigo_compra":  f"BH-{fila['id_comprador']}-{id_orden}",
+                "id_comprador":   fila["id_comprador"],
+                "fecha":          fila["fecha"].isoformat() if hasattr(fila["fecha"], "isoformat") else fila["fecha"],
+                "estado":         fila["estado"],
+                "cliente":        fila["cliente"],
+                "correo_cliente": fila["correo_cliente"],
+                "items":          [],
+                "total_tienda":   0.0,
+                "total_orden":    float(fila["total_orden"] or 0),
+                "envio":          None,
+            }
+
+        precio = float(fila["precio_libro"] or 0)
+        cant   = int(fila["cantidad"] or 1)
+        ordenes[id_orden]["items"].append({
+            "id_libro":   fila["id_libro"],
+            "titulo":     fila["titulo"],
+            "autor_libro": fila["autor_libro"],
+            "precio_libro": precio,
+            "cantidad":   cant,
+            "imagen":     fila["imagen"],
+        })
+        ordenes[id_orden]["total_tienda"] += precio * cant
+
+    # Adjuntar envío solo si la orden está pagada
+    for id_orden, pedido in ordenes.items():
+        if str(pedido["estado"]).lower() == "pagado" and id_orden in envios_map:
+            e = envios_map[id_orden]
+            pedido["envio"] = {
+                "id_empresa":             e["id_empresa"],
+                "empresa_mensajeria":     e["empresa_mensajeria"],
+                "numero_guia":            e["numero_guia"],
+                "estado_envio":           e["estado_envio"],
+                "fecha_estimada_entrega": str(e["fecha_estimada_entrega"]) if e["fecha_estimada_entrega"] else None,
+                "costo_envio":            float(e["costo_envio"] or 0),
+            }
+
+    return sorted(ordenes.values(), key=lambda p: p.get("fecha", ""), reverse=True)
 
 def obtener_ventas_tienda(id_tienda: int):
     pedidos = obtener_pedidos_tienda(id_tienda)

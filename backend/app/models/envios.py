@@ -56,42 +56,67 @@ def limpiar_envios_no_pagados():
 
 
 def registrar_envio(id_comprador, id_orden, id_tienda, id_empresa, numero_guia):
-    """Registra o reemplaza la guía, solo si la orden contiene libros de la tienda."""
+    """Registra o reemplaza la guía en MySQL. Solo si la orden contiene libros de la tienda y está pagada."""
     empresa = next((e for e in EMPRESAS_MENSAJERIA if e["id_empresa"] == id_empresa), None)
     if not empresa:
         return None, "La empresa de mensajería no es válida"
 
-    # Se importa aquí para no crear un ciclo al cargar los modelos.
     from app.database import get_db
     db = get_db()
-    cursor = db.cursor()
+    cursor = db.cursor(dictionary=True)
     try:
-        cursor.execute("SELECT id_libro FROM libros WHERE id_tienda = %s", (id_tienda,))
-        libros_tienda = {row[0] for row in cursor.fetchall()}
+        # Verificar que la orden existe, está pagada y contiene libros de esta tienda
+        cursor.execute("""
+            SELECT oc.id_orden, oc.estado_orden
+            FROM ordenes_compra oc
+            JOIN detalle_orden do ON do.id_orden = oc.id_orden
+            JOIN libros l ON l.id_libro = do.id_libro
+            WHERE oc.id_orden = %s AND oc.id_usuario = %s AND l.id_tienda = %s
+            LIMIT 1
+        """, (id_orden, id_comprador, id_tienda))
+        orden = cursor.fetchone()
+
+        if not orden:
+            return None, "Orden no encontrada"
+        if str(orden["estado_orden"]).lower() != "pagado":
+            return None, "La guía solo puede registrarse cuando el pedido esté pagado"
+
+        # Insertar o actualizar el envío en la tabla envios
+        cursor.execute("""
+            INSERT INTO envios (id_orden, id_tienda, id_empresa, empresa_mensajeria, numero_guia, estado_envio)
+            VALUES (%s, %s, %s, %s, %s, 'Guía registrada')
+            ON DUPLICATE KEY UPDATE
+                id_empresa        = VALUES(id_empresa),
+                empresa_mensajeria = VALUES(empresa_mensajeria),
+                numero_guia       = VALUES(numero_guia),
+                estado_envio      = 'Guía registrada'
+        """, (id_orden, id_tienda, id_empresa, empresa["nombre_empresa"], numero_guia))
+        db.commit()
+
     finally:
         cursor.close()
         db.close()
 
-    orders = _load_orders()
-    user_orders = orders.get(str(id_comprador), [])
-    order = next((item for item in user_orders if item.get("id_orden") == id_orden), None)
-    if not order:
-        return None, "Orden no encontrada"
-    if not any(item.get("id_libro") in libros_tienda for item in order.get("items", [])):
-        return None, "No tienes permiso para actualizar el envío de esta orden"
-    if str(order.get("estado", "")).lower() != "pagado":
-        return None, "La guía solo puede registrarse cuando el pedido esté pagado"
-
     envio = {
-        "id_empresa": empresa["id_empresa"],
+        "id_empresa":         empresa["id_empresa"],
         "empresa_mensajeria": empresa["nombre_empresa"],
-        "sitio_web": empresa["sitio_web"],
-        "url_rastreo": empresa.get("url_rastreo", empresa["sitio_web"]),
-        "numero_guia": numero_guia,
-        "estado_envio": "Guía registrada",
-        "actualizado_en": datetime.now(timezone.utc).isoformat(),
+        "sitio_web":          empresa["sitio_web"],
+        "url_rastreo":        empresa.get("url_rastreo", empresa["sitio_web"]),
+        "numero_guia":        numero_guia,
+        "estado_envio":       "Guía registrada",
+        "actualizado_en":     datetime.now(timezone.utc).isoformat(),
     }
-    order["envio"] = envio
-    orders[str(id_comprador)] = user_orders
-    _save_orders(orders)
+
+    # Sincronizar también en orders.json si la orden existe ahí
+    try:
+        orders = _load_orders()
+        user_orders = orders.get(str(id_comprador), [])
+        order_json = next((o for o in user_orders if o.get("id_orden") == id_orden), None)
+        if order_json:
+            order_json["envio"] = envio
+            orders[str(id_comprador)] = user_orders
+            _save_orders(orders)
+    except Exception:
+        pass  # No crítico, MySQL es la fuente de verdad
+
     return envio, None

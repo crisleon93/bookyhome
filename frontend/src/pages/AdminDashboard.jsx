@@ -29,6 +29,7 @@ const NAV_ITEMS = [
   { id: 'tiendas',   label: 'Tiendas',   Icon: IconStore },
   { id: 'ordenes',   label: 'Órdenes',   Icon: IconPackage },
   { id: 'finanzas',  label: 'Finanzas',  Icon: IconWallet },
+  { id: 'nomina',    label: 'Nómina',    Icon: IconDollar },
   { id: 'reclamos',  label: 'Quejas y reclamos', Icon: IconAlertTriangle },
   { id: 'soporte',   label: 'Soporte técnico', Icon: IconTool },
 ];
@@ -136,7 +137,7 @@ export default function AdminDashboard() {
         const [usuariosRes, librosRes, ordenesRes, tiendasRes] = await Promise.all([
           api.get('/usuarios'),
           api.get('/api/stored/libros'),
-          api.get('/api/v1/orders'),
+          api.get('/api/v1/admin/orders'),
           api.get('/tiendas'),
         ]);
         setUsuarios(usuariosRes.data);
@@ -151,6 +152,7 @@ export default function AdminDashboard() {
         });
       } catch (error) {
         console.error('Error cargando datos admin:', error);
+        notify('Error cargando datos del panel. Verifica la consola.', 'error');
       } finally {
         setLoading(false);
       }
@@ -282,6 +284,7 @@ export default function AdminDashboard() {
     tiendas: 'Gestión de Tiendas',
     ordenes: 'Gestión de Órdenes',
     finanzas: 'BookyPago Finanzas',
+    nomina: 'Nómina de Pagos a Vendedores',
     reclamos: 'Quejas y Reclamos',
     soporte: 'Soporte Técnico',
   };
@@ -1221,6 +1224,11 @@ export default function AdminDashboard() {
         {/* FINANZAS - BOOKYPAGO */}
         {activeSection === 'finanzas' && (
           <BookyPagoFinanzas />
+        )}
+
+        {/* NÓMINA - abre BookyPago directo en la pestaña de nómina */}
+        {activeSection === 'nomina' && (
+          <BookyPagoFinanzas defaultTab="nomina" />
         )}
 
       </main>

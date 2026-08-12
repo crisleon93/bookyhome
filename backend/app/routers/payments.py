@@ -97,6 +97,20 @@ def get_user_orders(user=Depends(get_current_user)):
     id_usuario = int(user["sub"])
     return obtener_ordenes_usuario(id_usuario)
 
+# ── Endpoint admin: todas las órdenes de todos los usuarios ──
+@router.get("/api/v1/admin/orders")
+def get_all_orders_admin(user=Depends(get_current_user)):
+    from app.models.payments import _load_store, ORDER_FILE
+    rol = user.get("rol", "")
+    if rol not in ("admin", "administrador"):
+        raise HTTPException(status_code=403, detail="Acceso restringido a administradores")
+    orders_data = _load_store(ORDER_FILE)
+    todas = []
+    for uid, user_orders in orders_data.items():
+        for orden in user_orders:
+            todas.append({**orden, "id_usuario_propietario": int(uid)})
+    return sorted(todas, key=lambda o: o.get("fecha", ""), reverse=True)
+
 # ── Nuevo endpoint de confirmación por correo ──
 @router.post("/api/v1/orders/{id_orden}/send-confirmation")
 async def send_order_confirmation(id_orden: int, user=Depends(get_current_user)):

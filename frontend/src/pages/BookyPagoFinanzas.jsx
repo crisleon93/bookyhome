@@ -17,8 +17,8 @@ const GREEN = '#2e7d32';
 const ORANGE = '#e67e22';
 const RED = '#c62828';
 
-export default function BookyPagoFinanzas() {
-  const [activeTab, setActiveTab] = useState('balance');
+export default function BookyPagoFinanzas({ defaultTab = 'balance' }) {
+  const [activeTab, setActiveTab] = useState(defaultTab);
   const [balance, setBalance] = useState({});
   const [estadisticas, setEstadisticas] = useState({});
   const [historial, setHistorial] = useState({});

@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import api, { addToCart, removeFromCart } from '../services/api';
+import api, { addToCart, removeFromCart, usuarioPuedeCalificarTienda, crearCalificacionTienda, getCalificacionesTienda, actualizarCalificacionTienda } from '../services/api';
 import { notify } from '../components/ToastProvider';
 import FiltrosCatalogo from '../components/FiltrosCatalogo';
 import LibroCard from '../components/LibroCard';
@@ -20,6 +20,12 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
   const [libroSeleccionado, setLibroSeleccionado] = useState(null);
   const [mostrarDetalles, setMostrarDetalles] = useState(false);
   const [contactando, setContactando] = useState(false);
+  const [mostrarCalificacionTienda, setMostrarCalificacionTienda] = useState(false);
+  const [puedeCalificar, setPuedeCalificar] = useState(false);
+  const [calificacionEnviada, setCalificacionEnviada] = useState(false);
+  const [calificacionExistente, setCalificacionExistente] = useState(null);
+  const [calificacionForm, setCalificacionForm] = useState({ calificacion: 5, comentario: '' });
+  const [enviandoCalificacion, setEnviandoCalificacion] = useState(false);
 
   const [filtros, setFiltros] = useState({
     q: searchParams.get('q') || '',
@@ -168,6 +174,104 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
       setContactando(false);
     }
   };
+
+  const handleEnviarCalificacion = async () => {
+    if (!libroSeleccionado?.id_tienda) return;
+
+    setEnviandoCalificacion(true);
+    try {
+      if (calificacionExistente) {
+        // Actualizar calificación existente
+        await actualizarCalificacionTienda(calificacionExistente.id_calificacion, {
+          id_tienda: libroSeleccionado.id_tienda,
+          calificacion: calificacionForm.calificacion,
+          comentario: calificacionForm.comentario
+        });
+        notify('¡Calificación actualizada!', 'success');
+        
+        // Actualizar la calificación existente con los nuevos datos
+        setCalificacionExistente({
+          ...calificacionExistente,
+          calificacion: calificacionForm.calificacion,
+          comentario: calificacionForm.comentario
+        });
+      } else {
+        // Crear nueva calificación
+        const response = await crearCalificacionTienda({
+          id_tienda: libroSeleccionado.id_tienda,
+          calificacion: calificacionForm.calificacion,
+          comentario: calificacionForm.comentario
+        });
+        notify('¡Gracias por calificar la tienda!', 'success');
+        
+        // Crear el objeto de calificación existente con los datos del servidor o simulados
+        setCalificacionExistente({
+          id_calificacion: response.data?.id_calificacion || Date.now(), // ID del servidor o temporal
+          calificacion: calificacionForm.calificacion,
+          comentario: calificacionForm.comentario,
+          fecha_calificacion: new Date().toISOString()
+        });
+      }
+      
+      setCalificacionEnviada(true);
+      setMostrarCalificacionTienda(false);
+      // NO cambiar puedeCalificar para que siga mostrando la sección
+    } catch (error) {
+      const errorMsg = error.response?.data?.detail || 'No se pudo enviar la calificación';
+      notify(errorMsg, 'error');
+    } finally {
+      setEnviandoCalificacion(false);
+    }
+  };
+
+  // Verificar si el usuario puede calificar cuando se selecciona un libro
+  useEffect(() => {
+    if (!libroSeleccionado?.id_tienda) return;
+    
+    const verificarPermiso = async () => {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setPuedeCalificar(false);
+        setCalificacionEnviada(false);
+        setCalificacionExistente(null);
+        return;
+      }
+
+      try {
+        const response = await usuarioPuedeCalificarTienda(libroSeleccionado.id_tienda);
+        setPuedeCalificar(response.data?.puede_calificar || false);
+        
+        // Si ya calificó, cargar su calificación existente
+        if (response.data?.ya_califico) {
+          // Cargar las calificaciones de la tienda para encontrar la del usuario
+          const calificacionesResponse = await getCalificacionesTienda(libroSeleccionado.id_tienda);
+          const tokenDecoded = JSON.parse(atob(token.split('.')[1]));
+          const userId = parseInt(tokenDecoded.sub); // Convertir a número
+          const miCalificacion = calificacionesResponse.data.calificaciones?.find(c => {
+            return c.id_usuario === userId;
+          });
+          if (miCalificacion) {
+            setCalificacionExistente(miCalificacion);
+            setCalificacionForm({
+              calificacion: miCalificacion.calificacion,
+              comentario: miCalificacion.comentario
+            });
+            setCalificacionEnviada(true);
+          }
+        } else {
+          setCalificacionEnviada(false);
+          setCalificacionExistente(null);
+          setCalificacionForm({ calificacion: 5, comentario: '' });
+        }
+      } catch (error) {
+        console.error('Error verificando permiso:', error);
+        setPuedeCalificar(false);
+        setCalificacionEnviada(false);
+      }
+    };
+
+    verificarPermiso();
+  }, [libroSeleccionado?.id_tienda]);
 
   return (
     <main className="layout-container catalogo-main">
@@ -345,13 +449,214 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
               <p style={{ fontSize: '1rem', color: '#555', lineHeight: '1.8', margin: 0 }}>{libroSeleccionado.descripcion_libro}</p>
             ) : (
               <div style={{ fontSize: '1rem', color: '#555', lineHeight: '1.8' }}>
-                <p style={{ margin: '0 0 12px 0' }}>Este libro es una excelente adición a tu colección. Escrito por {libroSeleccionado.autor_libro || libroSeleccionado.autor || 'un autor reconocido'}， ofrece una narrativa cautivadora que te mantendrá enganchado desde la primera página hasta la última.</p>
+                <p style={{ margin: '0 0 12px 0' }}>Este libro es una excelente adición a tu colección. Escrito por {libroSeleccionado.autor_libro || libroSeleccionado.autor || 'un autor reconocido'}, ofrece una narrativa cautivadora que te mantendrá enganchado desde la primera página hasta la última.</p>
                 <p style={{ margin: '0 0 12px 0' }}>Formato: Tapa blanda | Páginas: {Math.floor(Math.random() * 200) + 200} | Idioma: Español | Editorial: {libroSeleccionado.nombre_tienda || 'Editorial destacada'}</p>
                 <p style={{ margin: '0 0 12px 0' }}>Dimensiones: 15cm x 23cm x 2cm | Peso: {Math.floor(Math.random() * 300) + 200}g | ISBN: {Math.random().toString(36).substring(2, 12).toUpperCase()}</p>
                 <p style={{ margin: 0 }}>Ideal para lectores que disfrutan del género de {libroSeleccionado.nombre_categoria || 'ficción'} y buscan una experiencia de lectura enriquecedora y entretenida.</p>
               </div>
             )}
           </div>
+
+          {/* Calificación de Tienda - Visible si puede calificar o ya calificó */}
+          {libroSeleccionado.id_tienda && (puedeCalificar || calificacionEnviada || calificacionExistente) && (
+            <div style={{ marginBottom: '32px', padding: '24px', background: '#faf8f6', borderRadius: '12px' }}>
+              <h3 style={{ fontSize: '1.5rem', fontWeight: '700', margin: '0 0 16px 0', color: '#2c2c2c' }}>Calificar la tienda</h3>
+
+              {libroSeleccionado.calificacion_tienda > 0 && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+                  <div style={{ display: 'flex', gap: '2px' }}>
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <svg key={star} width="20" height="20" viewBox="0 0 24 24" fill={star <= Math.round(libroSeleccionado.calificacion_tienda) ? '#ffc107' : '#e0e0e0'} stroke="none">
+                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                      </svg>
+                    ))}
+                  </div>
+                  <span style={{ fontSize: '1rem', color: '#666', fontWeight: '600' }}>
+                    {libroSeleccionado.calificacion_tienda.toFixed(1)}
+                  </span>
+                  {libroSeleccionado.total_opiniones_tienda > 0 && (
+                    <span style={{ fontSize: '0.9rem', color: '#999' }}>
+                      ({libroSeleccionado.total_opiniones_tienda} {libroSeleccionado.total_opiniones_tienda === 1 ? 'opinión' : 'opiniones'})
+                    </span>
+                  )}
+                </div>
+              )}
+
+              {(calificacionEnviada || calificacionExistente) && !mostrarCalificacionTienda ? (
+                <div style={{ padding: '16px', background: '#d1fae5', borderRadius: '8px', border: '1px solid #10b981' }}>
+                  <p style={{ margin: 0, color: '#065f46', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#065f46" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                      <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                    </svg>
+                    ¡Gracias por calificar esta tienda!
+                  </p>
+                  
+                  {/* Mostrar la calificación actual */}
+                  {(calificacionExistente || calificacionEnviada) && (
+                    <div style={{ marginBottom: '16px', padding: '12px', background: 'white', borderRadius: '6px', border: '1px solid #a7f3d0' }}>
+                      <div style={{ marginBottom: '8px' }}>
+                        <strong style={{ color: '#065f46', fontSize: '0.9rem' }}>Tu calificación:</strong>
+                        <div style={{ display: 'flex', gap: '2px', marginTop: '4px' }}>
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <svg key={star} width="16" height="16" viewBox="0 0 24 24" fill={star <= (calificacionExistente?.calificacion || calificacionForm.calificacion) ? '#ffc107' : '#e0e0e0'} stroke="none">
+                              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                            </svg>
+                          ))}
+                          <span style={{ marginLeft: '8px', fontSize: '0.85rem', color: '#065f46', fontWeight: '600' }}>
+                            {calificacionExistente?.calificacion || calificacionForm.calificacion}/5
+                          </span>
+                        </div>
+                      </div>
+                      {(calificacionExistente?.comentario || calificacionForm.comentario) && (
+                        <p style={{ margin: 0, fontSize: '0.85rem', color: '#047857', fontStyle: 'italic' }}>
+                          "{calificacionExistente?.comentario || calificacionForm.comentario}"
+                        </p>
+                      )}
+                    </div>
+                  )}
+                  
+                  <button
+                    onClick={() => {
+                      setCalificacionEnviada(false);
+                      setMostrarCalificacionTienda(true);
+                      // Cargar la calificación existente en el formulario
+                      if (calificacionExistente) {
+                        setCalificacionForm({
+                          calificacion: calificacionExistente.calificacion,
+                          comentario: calificacionExistente.comentario
+                        });
+                      }
+                    }}
+                    style={{
+                      background: 'white',
+                      color: '#065f46',
+                      border: '1px solid #10b981',
+                      padding: '8px 16px',
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                      fontSize: '0.9rem',
+                      fontWeight: '600'
+                    }}
+                  >
+                    Editar calificación
+                  </button>
+                </div>
+              ) : (!mostrarCalificacionTienda && !calificacionExistente && !calificacionEnviada) ? (
+                <button
+                  onClick={() => setMostrarCalificacionTienda(true)}
+                  style={{
+                    background: 'var(--vinotinto)',
+                    color: 'white',
+                    border: 'none',
+                    padding: '12px 24px',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    fontSize: '1rem',
+                    fontWeight: '600',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  Calificar esta tienda
+                </button>
+              ) : mostrarCalificacionTienda ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                      <div>
+                        <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: '600', color: '#333', marginBottom: '8px' }}>
+                          Tu calificación:
+                        </label>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <button
+                              key={star}
+                              onClick={() => setCalificacionForm({ ...calificacionForm, calificacion: star })}
+                              style={{
+                                background: 'none',
+                                border: 'none',
+                                cursor: 'pointer',
+                                padding: '4px'
+                              }}
+                            >
+                              <svg
+                                width="32"
+                                height="32"
+                                viewBox="0 0 24 24"
+                                fill={star <= calificacionForm.calificacion ? '#ffc107' : '#e0e0e0'}
+                                stroke="none"
+                                style={{ transition: 'all 0.2s ease' }}
+                              >
+                                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                              </svg>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div>
+                        <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: '600', color: '#333', marginBottom: '8px' }}>
+                          Comentario (opcional):
+                        </label>
+                        <textarea
+                          value={calificacionForm.comentario}
+                          onChange={(e) => setCalificacionForm({ ...calificacionForm, comentario: e.target.value })}
+                          placeholder="Comparte tu experiencia con esta tienda..."
+                          style={{
+                            width: '100%',
+                            padding: '12px',
+                            border: '1px solid #ddd',
+                            borderRadius: '8px',
+                            fontSize: '1rem',
+                            fontFamily: 'inherit',
+                            resize: 'vertical',
+                            minHeight: '80px'
+                          }}
+                          maxLength={500}
+                        />
+                      </div>
+
+                      <div style={{ display: 'flex', gap: '12px' }}>
+                        <button
+                          onClick={handleEnviarCalificacion}
+                          disabled={enviandoCalificacion}
+                          style={{
+                            flex: 1,
+                            background: 'var(--vinotinto)',
+                            color: 'white',
+                            border: 'none',
+                            padding: '12px 24px',
+                            borderRadius: '8px',
+                            cursor: enviandoCalificacion ? 'not-allowed' : 'pointer',
+                            fontSize: '1rem',
+                            fontWeight: '600',
+                            opacity: enviandoCalificacion ? 0.65 : 1
+                          }}
+                        >
+                          {enviandoCalificacion ? 'Enviando...' : 'Enviar calificación'}
+                        </button>
+                        <button
+                          onClick={() => {
+                            setMostrarCalificacionTienda(false);
+                            setCalificacionForm({ calificacion: 5, comentario: '' });
+                          }}
+                          style={{
+                            flex: 1,
+                            background: 'white',
+                            color: '#666',
+                            border: '2px solid #ddd',
+                            padding: '12px 24px',
+                            borderRadius: '8px',
+                            cursor: 'pointer',
+                            fontSize: '1rem',
+                            fontWeight: '600'
+                          }}
+                        >
+                          Cancelar
+                        </button>
+                      </div>
+                    </div>
+              ) : null}
+            </div>
+          )}
 
           {/* Reseñas */}
           <div style={{ marginBottom: '32px' }}>
@@ -374,7 +679,7 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
                   </div>
                   <span style={{ fontSize: '0.85rem', color: '#999', marginLeft: 'auto' }}>Hace 3 días</span>
                 </div>
-                <p style={{ fontSize: '0.95rem', color: '#555', margin: 0, lineHeight: '1.6' }}>Excelente libro， llegó en perfecto estado y el envío fue muy rápido. La historia es cautivadora y la calidad del papel es excelente. ¡Totalmente recomendado!</p>
+                <p style={{ fontSize: '0.95rem', color: '#555', margin: 0, lineHeight: '1.6' }}>Excelente libro, llegó en perfecto estado y el envío fue muy rápido. La historia es cautivadora y la calidad del papel es excelente. ¡Totalmente recomendado!</p>
               </div>
               <div style={{ padding: '20px', background: 'white', borderRadius: '12px', border: '1px solid #e0e0e0' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
@@ -396,7 +701,7 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
                   </div>
                   <span style={{ fontSize: '0.85rem', color: '#999', marginLeft: 'auto' }}>Hace 1 semana</span>
                 </div>
-                <p style={{ fontSize: '0.95rem', color: '#555', margin: 0, lineHeight: '1.6' }}>Buen libro en general， aunque esperaba más profundidad en los personajes. La calidad del material es buena y el precio está acorde al producto.</p>
+                <p style={{ fontSize: '0.95rem', color: '#555', margin: 0, lineHeight: '1.6' }}>Buen libro en general, aunque esperaba más profundidad en los personajes. La calidad del material es buena y el precio está acorde al producto.</p>
               </div>
               <div style={{ padding: '20px', background: 'white', borderRadius: '12px', border: '1px solid #e0e0e0' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
@@ -415,7 +720,7 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
                   </div>
                   <span style={{ fontSize: '0.85rem', color: '#999', marginLeft: 'auto' }}>Hace 2 semanas</span>
                 </div>
-                <p style={{ fontSize: '0.95rem', color: '#555', margin: 0, lineHeight: '1.6' }}>Increíble！ No pude dejar de leerlo. La trama es original y los personajes están muy bien desarrollados. Definitivamente compraré más libros de este autor.</p>
+                <p style={{ fontSize: '0.95rem', color: '#555', margin: 0, lineHeight: '1.6' }}>Increíble! No pude dejar de leerlo. La trama es original y los personajes están muy bien desarrollados. Definitivamente compraré más libros de este autor.</p>
               </div>
             </div>
           </div>
@@ -449,7 +754,7 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <div style={{ padding: '16px', background: 'white', borderRadius: '8px', border: '1px solid #e0e0e0' }}>
                 <p style={{ fontSize: '1rem', fontWeight: '600', color: '#2c2c2c', margin: '0 0 8px 0' }}>¿Cuál es el estado del libro?</p>
-                <p style={{ fontSize: '0.95rem', color: '#666', margin: 0 }}>Todos los libros en nuestro catálogo son nuevos o en excelente estado， garantizando su calidad.</p>
+                <p style={{ fontSize: '0.95rem', color: '#666', margin: 0 }}>Todos los libros en nuestro catálogo son nuevos o en excelente estado, garantizando su calidad.</p>
               </div>
               <div style={{ padding: '16px', background: 'white', borderRadius: '8px', border: '1px solid #e0e0e0' }}>
                 <p style={{ fontSize: '1rem', fontWeight: '600', color: '#2c2c2c', margin: '0 0 8px 0' }}>¿Cuánto tiempo tarda el envío?</p>
@@ -457,7 +762,7 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
               </div>
               <div style={{ padding: '16px', background: 'white', borderRadius: '8px', border: '1px solid #e0e0e0' }}>
                 <p style={{ fontSize: '1rem', fontWeight: '600', color: '#2c2c2c', margin: '0 0 8px 0' }}>¿Tienen garantía de devolución?</p>
-                <p style={{ fontSize: '0.95rem', color: '#666', margin: 0 }}>Sí， ofrecemos garantía de devolución de 15 días si el producto no cumple con sus expectativas.</p>
+                <p style={{ fontSize: '0.95rem', color: '#666', margin: 0 }}>Sí, ofrecemos garantía de devolución de 15 días si el producto no cumple con sus expectativas.</p>
               </div>
             </div>
           </div>

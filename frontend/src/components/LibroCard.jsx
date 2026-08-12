@@ -54,6 +54,9 @@ const LibroCard = ({ libro, onAdd, onVerDetalles }) => {
   const [listasDisponibles, setListasDisponibles] = useState([]);
   const [wishlistLoading, setWishlistLoading] = useState(false);
 
+  const calificacionTienda = libro?.calificacion_tienda || 0;
+  const totalOpinionesTienda = libro?.total_opiniones_tienda || 0;
+
   useEffect(() => {
     if (!libro?.id_libro) return;
     const token = localStorage.getItem('token');
@@ -196,6 +199,20 @@ const LibroCard = ({ libro, onAdd, onVerDetalles }) => {
               <circle cx="12" cy="10" r="3"></circle>
             </svg>
             {libro.nombre_tienda}
+          </p>
+        )}
+
+        {calificacionTienda > 0 && (
+          <p className="calificacion-tienda">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="#ffc107" stroke="#ffc107" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 6.91 1.01L12 2"></polygon>
+            </svg>
+            {calificacionTienda.toFixed(1)}
+            {totalOpinionesTienda > 0 && (
+              <span style={{ fontSize: '0.75rem', color: '#666', marginLeft: '4px' }}>
+                ({totalOpinionesTienda})
+              </span>
+            )}
           </p>
         )}
 

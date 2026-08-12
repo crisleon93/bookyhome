@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends
+﻿from fastapi import APIRouter, HTTPException, Depends
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel
 from app.database import get_db
@@ -44,14 +44,14 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
     token = credentials.credentials
     payload = verify_token(token)
     if not payload:
-        raise HTTPException(status_code=401, detail="Token inválido")
+        raise HTTPException(status_code=401, detail="Token invÃ¡lido")
     return int(payload.get("sub"))
 
 def get_current_user_rol(credentials: HTTPAuthorizationCredentials = Depends(security)):
     token = credentials.credentials
     payload = verify_token(token)
     if not payload:
-        raise HTTPException(status_code=401, detail="Token inválido")
+        raise HTTPException(status_code=401, detail="Token invÃ¡lido")
     return payload.get("rol")
 
 
@@ -94,9 +94,7 @@ def obtener_salas_usuario(user_id: int = Depends(get_current_user), rol: str = D
         cursor.execute(query, (user_id,))
         salas = cursor.fetchall()
         
-        # Log para depuración
-        print(f"Usuario: {user_id}, Rol: {rol}")
-        print(f"Salas encontradas: {len(salas)}")
+        # Log para depuraciÃ³n
         for sala in salas:
             print(f"Sala {sala['id_sala']}: nombre_tienda={sala.get('nombre_tienda')}, nombre_comprador={sala.get('nombre_comprador')}")
         
@@ -162,7 +160,7 @@ def obtener_mensajes_sala(
     db = get_db()
     cursor = db.cursor(dictionary=True)
     try:
-        # Verificar que la sala existe y obtener sus dueños (comprador y tienda)
+        # Verificar que la sala existe y obtener sus dueÃ±os (comprador y tienda)
         cursor.execute("""
             SELECT sc.id_usuario as id_comprador, t.id_usuario as id_vendedor
             FROM salasChats sc
@@ -220,9 +218,9 @@ def _guardar_mensaje_sync(id_sala: int, user_id: int, texto: str) -> dict:
     """Valida acceso, inserta el mensaje y devuelve todo lo necesario para
     responder por REST y/o transmitir por WS. Corre en threadpool (bloqueante)."""
     if not texto.strip():
-        raise HTTPException(status_code=400, detail="El mensaje no puede estar vacío")
+        raise HTTPException(status_code=400, detail="El mensaje no puede estar vacÃ­o")
     if len(texto) > 500:
-        raise HTTPException(status_code=400, detail="El mensaje es muy largo (máximo 500 caracteres)")
+        raise HTTPException(status_code=400, detail="El mensaje es muy largo (mÃ¡ximo 500 caracteres)")
 
     db = get_db()
     cursor = db.cursor(dictionary=True)
@@ -269,10 +267,10 @@ def _guardar_mensaje_sync(id_sala: int, user_id: int, texto: str) -> dict:
                 else participantes["id_comprador"]
             )
 
-        # Insertar notificación persistente en BD para el destinatario
+        # Insertar notificaciÃ³n persistente en BD para el destinatario
         if destinatario_id is not None:
             remitente = mensaje_completo.get("nombre_remitente", "Alguien")
-            preview = texto[:80] + ("…" if len(texto) > 80 else "")
+            preview = texto[:80] + ("â€¦" if len(texto) > 80 else "")
             try:
                 cursor.execute("""
                     SELECT id_notificacion
@@ -294,7 +292,7 @@ def _guardar_mensaje_sync(id_sala: int, user_id: int, texto: str) -> dict:
                     """, (destinatario_id, f"Nuevo mensaje de {remitente}", preview, id_sala))
                     db.commit()
             except Exception:
-                pass  # No interrumpir el flujo si la notificación falla
+                pass  # No interrumpir el flujo si la notificaciÃ³n falla
 
         return {"mensaje": mensaje_completo, "destinatario_id": destinatario_id}
     except HTTPException:
@@ -322,7 +320,7 @@ async def enviar_y_notificar(id_sala: int, user_id: int, texto: str) -> dict:
 
 @router.post("/mensajes")
 async def enviar_mensaje(data: MensajeCreate, user_id: int = Depends(get_current_user)):
-    """Envía un mensaje en una sala de chat (y lo transmite en vivo si el otro está conectado)"""
+    """EnvÃ­a un mensaje en una sala de chat (y lo transmite en vivo si el otro estÃ¡ conectado)"""
     mensaje = await enviar_y_notificar(data.id_sala, user_id, data.mensaje)
     return {
         "ok": True,
@@ -336,7 +334,7 @@ def marcar_mensaje_leido(
     user_id: int = Depends(get_current_user),
     rol: str = Depends(get_current_user_rol),
 ):
-    """Marca un mensaje como leído, solo si el usuario pertenece a la sala"""
+    """Marca un mensaje como leÃ­do, solo si el usuario pertenece a la sala"""
     db = get_db()
     cursor = db.cursor(dictionary=True)
     try:
@@ -365,7 +363,7 @@ def marcar_mensaje_leido(
         """, (id_mensaje,))
 
         db.commit()
-        return {"ok": True, "mensaje": "Mensaje marcado como leído"}
+        return {"ok": True, "mensaje": "Mensaje marcado como leÃ­do"}
     except HTTPException:
         raise
     except Exception as e:
@@ -381,7 +379,7 @@ def marcar_sala_leida(
     user_id: int = Depends(get_current_user),
     rol: str = Depends(get_current_user_rol),
 ):
-    """Marca como leídos los mensajes de una sala que el usuario no envió"""
+    """Marca como leÃ­dos los mensajes de una sala que el usuario no enviÃ³"""
     db = get_db()
     cursor = db.cursor(dictionary=True)
     try:
@@ -409,7 +407,7 @@ def marcar_sala_leida(
         """, (id_sala, user_id))
 
         db.commit()
-        return {"ok": True, "mensaje": "Sala marcada como leída"}
+        return {"ok": True, "mensaje": "Sala marcada como leÃ­da"}
     except HTTPException:
         raise
     except Exception as e:
@@ -442,7 +440,7 @@ async def chat_websocket(websocket: WebSocket):
                 texto = data.get("mensaje", "")
                 try:
                     mensaje = await enviar_y_notificar(id_sala, user_id, texto)
-                    # Confirmación al remitente (para que su UI actualice el estado "enviado")
+                    # ConfirmaciÃ³n al remitente (para que su UI actualice el estado "enviado")
                     await websocket.send_json({"tipo": "mensaje_enviado", "mensaje": mensaje})
                 except HTTPException as e:
                     await websocket.send_json({"tipo": "error", "detalle": e.detail})
