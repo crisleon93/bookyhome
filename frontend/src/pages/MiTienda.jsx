@@ -89,8 +89,8 @@ const getLibroImageUrl = (libro) => {
 
 const ESTADOS = [
   { value: "nuevo",             label: "Nuevo" },
-  { value: "usado_buen_estado", label: "Usado â€” buen estado" },
-  { value: "usado_regular",     label: "Usado â€” estado regular" },
+  { value: "usado_buen_estado", label: "Usado — buen estado" },
+  { value: "usado_regular",     label: "Usado — estado regular" },
 ];
 
 const BadgeEstado = ({ estado }) => {
@@ -134,7 +134,7 @@ function AlertaStock({ alertas, umbral }) {
               border: `1px solid ${libro.stock === 0 ? "#fca5a5" : "#fde047"}`,
               borderRadius: "20px", padding: "3px 10px", fontSize: "0.78rem", fontWeight: 700,
             }}>
-              {libro.titulo} â€” {libro.stock === 0 ? "Sin stock" : `${libro.stock} uds`}
+              {libro.titulo} — {libro.stock === 0 ? "Sin stock" : `${libro.stock} uds`}
             </span>
           ))}
         </div>
@@ -314,7 +314,7 @@ function ModalStock({ libro, onClose, onActualizado }) {
           <strong>{libro.titulo}</strong>
         </p>
         <div className="stock-control">
-          <button className="stock-btn" onClick={() => setStock(Math.max(0, stock - 1))}>âˆ’</button>
+          <button className="stock-btn" onClick={() => setStock(Math.max(0, stock - 1))}>−</button>
           <input type="number" min="0" value={stock}
             onChange={(e) => setStock(Number(e.target.value))} className="stock-input" />
           <button className="stock-btn" onClick={() => setStock(stock + 1)}>+</button>
@@ -331,7 +331,7 @@ function ModalStock({ libro, onClose, onActualizado }) {
   );
 }
 
-/* ================= SECCIÃ“N CALIFICACIONES VENDEDOR ================= */
+/* ================= SECCIÓN CALIFICACIONES VENDEDOR ================= */
 const StarIcon = ({ filled, size = 16 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill={filled ? '#ffc107' : '#e0e0e0'} stroke="none">
     <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
@@ -404,10 +404,10 @@ function SeccionCalificacionesVendedor({ tiendaId }) {
           <span style={{ color: '#aaa', fontSize: '0.9rem' }}>Cargando calificaciones...</span>
         </div>
       ) : total === 0 ? (
-        /* â”€â”€ Estado vacío â”€â”€ */
+        /* ── Estado vacío ── */
         <div style={{ padding: '20px' }}>
           <div style={{ background: 'white', borderRadius: '16px', padding: '70px 20px', textAlign: 'center', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
-            <div style={{ fontSize: '4rem', marginBottom: '16px' }}>â­</div>
+            <div style={{ fontSize: '4rem', marginBottom: '16px' }}>⭐</div>
             <h3 style={{ margin: '0 0 8px 0', color: '#333', fontWeight: '700', fontSize: '1.2rem' }}>Aún no tienes calificaciones</h3>
             <p style={{ margin: '0 auto', color: '#999', fontSize: '0.95rem', maxWidth: '340px' }}>
               Cuando un cliente reciba su pedido y te evalúe, sus opiniones aparecerán aquí.
@@ -417,7 +417,7 @@ function SeccionCalificacionesVendedor({ tiendaId }) {
       ) : (
         <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
 
-          {/* â”€â”€ Fila superior: promedio destacado + 3 métricas â”€â”€ */}
+          {/* ── Fila superior: promedio destacado + 3 métricas ── */}
           <div style={{ display: 'grid', gridTemplateColumns: '260px 1fr', gap: '16px', alignItems: 'stretch' }}>
 
             {/* Promedio grande */}
@@ -496,7 +496,7 @@ function SeccionCalificacionesVendedor({ tiendaId }) {
             </div>
           </div>
 
-          {/* â”€â”€ Fila inferior: Distribución + lista â”€â”€ */}
+          {/* ── Fila inferior: Distribución + lista ── */}
           <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: '16px', alignItems: 'start' }}>
 
             {/* Distribución */}
@@ -582,7 +582,7 @@ function SeccionCalificacionesVendedor({ tiendaId }) {
                   textAlign: 'center',
                   boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
                 }}>
-                  <div style={{ fontSize: '3rem', opacity: 0.3, marginBottom: '12px' }}>ðŸ’­</div>
+                  <div style={{ fontSize: '3rem', opacity: 0.3, marginBottom: '12px' }}>💭</div>
                   <p style={{ margin: '0 0 8px 0', fontWeight: '600', color: '#666' }}>
                     Aún no hay opiniones
                   </p>
@@ -1191,7 +1191,7 @@ export default function MiTienda() {
               <p className="dashboard-card-title">Resumen</p>
               <p className="dashboard-card-subtitle">Estado general de tu tienda</p>
             </div>
-            <span className="dashboard-card-tag">HISTÃ“RICO</span>
+            <span className="dashboard-card-tag">HISTÓRICO</span>
           </div>
 
           <div className="summary-pill-grid">
@@ -1221,7 +1221,7 @@ export default function MiTienda() {
               <strong>{loadingStats ? '…' : stats ? formatPrecio(stats.total_semana) : '$0 COP'}</strong>
             </div>
             <div className="trend-pill">
-              <p>Ã“rdenes este mes</p>
+              <p>Órdenes este mes</p>
               <strong>{loadingStats ? '…' : stats ? stats.ordenes_mes : '0'}</strong>
             </div>
           </div>
@@ -1322,7 +1322,7 @@ export default function MiTienda() {
             <p className="dashboard-card-title">Últimos libros publicados</p>
             <p className="dashboard-card-subtitle">Los tres libros más recientes de tu catálogo</p>
           </div>
-          <button className="btn-ver-todos" onClick={() => setActiveSide("Mis Libros")}>Ver todos â†’</button>
+          <button className="btn-ver-todos" onClick={() => setActiveSide("Mis Libros")}>Ver todos →</button>
         </div>
 
         {loadingLibros ? (
@@ -1386,20 +1386,20 @@ export default function MiTienda() {
         <div className="seller-stat-card seller-stat-card--ventas">
           <h3>Vendido hoy</h3>
           <div className="seller-stat-number">
-            {loadingStats ? "…" : stats ? formatPrecio(stats.total_hoy) : "â€”"}
+            {loadingStats ? "…" : stats ? formatPrecio(stats.total_hoy) : "—"}
           </div>
           <span className="stat-sub">{stats ? `${stats.ordenes_hoy} orden(es)` : "Sin datos aún"}</span>
         </div>
         <div className="seller-stat-card seller-stat-card--ventas">
           <h3>Vendido esta semana</h3>
           <div className="seller-stat-number">
-            {loadingStats ? "…" : stats ? formatPrecio(stats.total_semana) : "â€”"}
+            {loadingStats ? "…" : stats ? formatPrecio(stats.total_semana) : "—"}
           </div>
         </div>
         <div className="seller-stat-card seller-stat-card--ventas">
           <h3>Vendido este mes</h3>
           <div className="seller-stat-number">
-            {loadingStats ? "…" : stats ? formatPrecio(stats.total_mes) : "â€”"}
+            {loadingStats ? "…" : stats ? formatPrecio(stats.total_mes) : "—"}
           </div>
           <span className="stat-sub">{stats ? `${stats.ordenes_mes} orden(es)` : "Sin datos aún"}</span>
         </div>
@@ -1411,7 +1411,7 @@ export default function MiTienda() {
             <IconStar width={24} height={24} strokeWidth={2} style={{ color: '#7A1E3A' }} />
             Libros más vendidos
           </h2>
-          <button className="btn-ver-todos" onClick={() => setActiveSide("Mis Libros")}>Ver todos â†’</button>
+          <button className="btn-ver-todos" onClick={() => setActiveSide("Mis Libros")}>Ver todos →</button>
         </div>
         {loadingTop && <p style={{ color: "#999", padding: "20px 0" }}>Cargando...</p>}
         {!loadingTop && topVendidos.length === 0 && (
@@ -1487,7 +1487,7 @@ export default function MiTienda() {
               </div>
               <div className="book-info" style={{ flex: 1 }}>
                 <h4>{libro.titulo}</h4>
-                <p>{libro.autor_libro} Â· {libro.nombre_categoria}</p>
+                <p>{libro.autor_libro} · {libro.nombre_categoria}</p>
               </div>
               <BadgeEstado estado={libro.estado_libro} />
               <div className="book-price">{formatPrecio(libro.precio_libro)}</div>
@@ -2734,7 +2734,7 @@ export default function MiTienda() {
                             </div>
                           );
                         }
-                        // Guía ya registrada â€” se muestra en cualquier estado
+                        // Guía ya registrada — se muestra en cualquier estado
                         if (pedido.envio) {
                           return (
                             <div style={{ fontSize: "0.78rem", lineHeight: 1.5 }}>
@@ -2759,13 +2759,13 @@ export default function MiTienda() {
                                     whiteSpace: "nowrap"
                                   }}
                                 >
-                                  âœï¸ Editar Guía
+                                  ✏️ Editar Guía
                                 </button>
                               )}
                             </div>
                           );
                         }
-                        // Sin Guía â€” botÃ³n disponible si está pagado o enviado
+                        // Sin Guía — botón disponible si está pagado o enviado
                         if (["pagado", "enviado"].includes(estado)) {
                           return (
                             <button
@@ -2832,8 +2832,8 @@ export default function MiTienda() {
       {pedidoEnvio && (
         <div className="modal-overlay open" onClick={() => !guardandoEnvio && setPedidoEnvio(null)}>
           <div className="modal-box" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "460px", padding: "28px" }}>
-            <h2 style={{ marginTop: 0 }}>Registrar Guía de envío Â· Orden #{pedidoEnvio.id_orden}</h2>
-            <p style={{ color: "#666", fontSize: "0.9rem" }}>Elige la transportadora acordada e ingresa el número de Guía que ella te entregÃ³. BookyHome no realiza ni controla el transporte.</p>
+            <h2 style={{ marginTop: 0 }}>Registrar Guía de envío · Orden #{pedidoEnvio.id_orden}</h2>
+            <p style={{ color: "#666", fontSize: "0.9rem" }}>Elige la transportadora acordada e ingresa el número de Guía que ella te entregó. BookyHome no realiza ni controla el transporte.</p>
             <label style={{ display: "block", fontWeight: 600, marginTop: "18px" }}>Empresa de mensajería</label>
             <select value={envioForm.id_empresa} onChange={(e) => setEnvioForm({ ...envioForm, id_empresa: e.target.value })} style={{ width: "100%", marginTop: "6px", padding: "10px", borderRadius: "6px" }}>
               <option value="">Selecciona una empresa</option>
@@ -2890,7 +2890,7 @@ export default function MiTienda() {
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "14px", flexWrap: "wrap" }}>
                   <div>
                     <strong style={{ display: "block", color: "#4b2733" }}>Compra {pedido.codigo_compra}</strong>
-                    <span style={{ color: "#666", fontSize: "0.86rem" }}>Pedido #{pedido.id_orden} Â· {pedido.cliente}</span>
+                    <span style={{ color: "#666", fontSize: "0.86rem" }}>Pedido #{pedido.id_orden} · {pedido.cliente}</span>
                   </div>
                   <span className="pl-badge pl-badge--entregado">{pedido.envio.estado_envio || "Guía registrada"}</span>
                 </div>
@@ -3014,11 +3014,11 @@ export default function MiTienda() {
                 <div className="notif-acciones">
                   {!notif.leida && (
                     <button className="btn-marcar" onClick={(e) => { e.stopPropagation(); handleMarcarLeida(notif.id_notificacion); }}>
-                      âœ“
+                      ✓
                     </button>
                   )}
                   <button className="btn-eliminar" onClick={(e) => { e.stopPropagation(); handleEliminar(notif.id_notificacion); }}>
-                    âœ•
+                    ✕
                   </button>
                 </div>
               </div>
@@ -3127,4 +3127,3 @@ export default function MiTienda() {
     </div>
   );
 }
-

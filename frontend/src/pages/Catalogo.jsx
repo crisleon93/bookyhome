@@ -65,7 +65,7 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
       setTotalPaginas(response.data.total_paginas || 1);
       setPagina(response.data.pagina || 1);
     } catch (error) {
-      console.error('Error al cargar catÃ¡logo:', error);
+      console.error('Error al cargar catálogo:', error);
     } finally {
       setLoading(false);
     }
@@ -83,7 +83,7 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
   const handleAddToCart = async (libro) => {
     const token = localStorage.getItem('token');
     if (!token) {
-      notify('Debes iniciar sesiÃ³n para agregar al carrito', 'error');
+      notify('Debes iniciar sesión para agregar al carrito', 'error');
       return;
     }
     setAddingId(libro.id_libro);
@@ -110,7 +110,7 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
   const handleRemoveFromCart = async (libro) => {
     const token = localStorage.getItem('token');
     if (!token) {
-      notify('Debes iniciar sesiÃ³n', 'error');
+      notify('Debes iniciar sesión', 'error');
       return;
     }
     setAddingId(libro.id_libro);
@@ -144,7 +144,7 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
   const handleContactar = async () => {
     const token = localStorage.getItem('token');
     if (!token) {
-      notify('Debes iniciar sesiÃ³n para contactar al vendedor', 'error');
+      notify('Debes iniciar sesión para contactar al vendedor', 'error');
       navigate('/login');
       return;
     }
@@ -161,10 +161,10 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
       const idSala = response.id_sala;
       
       if (!idSala) {
-        throw new Error('No se recibiÃ³ id_sala del servidor');
+        throw new Error('No se recibió id_sala del servidor');
       }
 
-      // Navegar a PostLogin con la secciÃ³n Mensajes y el id_sala seleccionado
+      // Navegar a PostLogin con la sección Mensajes y el id_sala seleccionado
       navigate(`/post-login?seccion=Mensajes&sala=${idSala}`);
     } catch (error) {
       console.error('Error al crear sala de chat:', error);
@@ -181,30 +181,30 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
     setEnviandoCalificacion(true);
     try {
       if (calificacionExistente) {
-        // Actualizar calificaciÃ³n existente
+        // Actualizar calificación existente
         await actualizarCalificacionTienda(calificacionExistente.id_calificacion, {
           id_tienda: libroSeleccionado.id_tienda,
           calificacion: calificacionForm.calificacion,
           comentario: calificacionForm.comentario
         });
-        notify('Â¡CalificaciÃ³n actualizada!', 'success');
+        notify('¡Calificación actualizada!', 'success');
         
-        // Actualizar la calificaciÃ³n existente con los nuevos datos
+        // Actualizar la calificación existente con los nuevos datos
         setCalificacionExistente({
           ...calificacionExistente,
           calificacion: calificacionForm.calificacion,
           comentario: calificacionForm.comentario
         });
       } else {
-        // Crear nueva calificaciÃ³n
+        // Crear nueva calificación
         const response = await crearCalificacionTienda({
           id_tienda: libroSeleccionado.id_tienda,
           calificacion: calificacionForm.calificacion,
           comentario: calificacionForm.comentario
         });
-        notify('Â¡Gracias por calificar la tienda!', 'success');
+        notify('¡Gracias por calificar la tienda!', 'success');
         
-        // Crear el objeto de calificaciÃ³n existente con los datos del servidor o simulados
+        // Crear el objeto de calificación existente con los datos del servidor o simulados
         setCalificacionExistente({
           id_calificacion: response.data?.id_calificacion || Date.now(), // ID del servidor o temporal
           calificacion: calificacionForm.calificacion,
@@ -215,9 +215,9 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
       
       setCalificacionEnviada(true);
       setMostrarCalificacionTienda(false);
-      // NO cambiar puedeCalificar para que siga mostrando la secciÃ³n
+      // NO cambiar puedeCalificar para que siga mostrando la sección
     } catch (error) {
-      const errorMsg = error.response?.data?.detail || 'No se pudo enviar la calificaciÃ³n';
+      const errorMsg = error.response?.data?.detail || 'No se pudo enviar la calificación';
       notify(errorMsg, 'error');
     } finally {
       setEnviandoCalificacion(false);
@@ -241,12 +241,12 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
         const response = await usuarioPuedeCalificarTienda(libroSeleccionado.id_tienda);
         setPuedeCalificar(response.data?.puede_calificar || false);
         
-        // Si ya calificÃ³, cargar su calificaciÃ³n existente
+        // Si ya calificó, cargar su calificación existente
         if (response.data?.ya_califico) {
           // Cargar las calificaciones de la tienda para encontrar la del usuario
           const calificacionesResponse = await getCalificacionesTienda(libroSeleccionado.id_tienda);
           const tokenDecoded = JSON.parse(atob(token.split('.')[1]));
-          const userId = parseInt(tokenDecoded.sub); // Convertir a nÃºmero
+          const userId = parseInt(tokenDecoded.sub); // Convertir a número
           const miCalificacion = calificacionesResponse.data.calificaciones?.find(c => {
             return c.id_usuario === userId;
           });
@@ -280,7 +280,7 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
           <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
           <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
         </svg>
-        CatÃ¡logo de libros
+        Catálogo de libros
       </h1>
 
       {/* FILTROS AVANZADOS */}
@@ -317,7 +317,7 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
               <line x1="19" y1="12" x2="5" y2="12"></line>
               <polyline points="12 19 5 12 12 5"></polyline>
             </svg>
-            Volver al catÃ¡logo
+            Volver al catálogo
           </button>
 
           <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: '32px', marginBottom: '32px' }}>
@@ -337,7 +337,7 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
               <h2 style={{ fontSize: '2.2rem', fontWeight: '700', margin: '0 0 8px 0', lineHeight: '1.2', color: '#2c2c2c' }}>{libroSeleccionado.titulo}</h2>
               <p style={{ fontSize: '1.2rem', color: '#666', fontWeight: '600', margin: '0 0 16px 0' }}>{libroSeleccionado.autor_libro || libroSeleccionado.autor || 'Autor no disponible'}</p>
               
-              {/* CalificaciÃ³n */}
+              {/* Calificación */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
                 <div style={{ display: 'flex', gap: '2px' }}>
                   {[1, 2, 3, 4, 5].map((star) => (
@@ -347,7 +347,7 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
                   ))}
                 </div>
                 <span style={{ fontSize: '0.9rem', color: '#666' }}>({libroSeleccionado.calificacion || 4}.0)</span>
-                <span style={{ fontSize: '0.85rem', color: '#999' }}>â€¢ {Math.floor(Math.random() * 100) + 10} reseÃ±as</span>
+                <span style={{ fontSize: '0.85rem', color: '#999' }}>• {Math.floor(Math.random() * 100) + 10} reseñas</span>
               </div>
 
               {libroSeleccionado.nombre_tienda && (
@@ -381,7 +381,7 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
                     transition: 'all 0.2s ease'
                   }}
                 >
-                  {libroSeleccionado.stock === 0 ? 'Sin stock' : addingId === libroSeleccionado.id_libro ? 'Procesandoâ€¦' : addedToCartIds.has(libroSeleccionado.id_libro) ? (
+                  {libroSeleccionado.stock === 0 ? 'Sin stock' : addingId === libroSeleccionado.id_libro ? 'Procesando…' : addedToCartIds.has(libroSeleccionado.id_libro) ? (
                     <>
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '8px' }}>
                         <polyline points="3 6 5 6 21 6"></polyline>
@@ -434,7 +434,7 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
                       </svg>
-                      Contactar librerÃ­a
+                      Contactar librería
                     </>
                   )}
                 </button>
@@ -442,22 +442,22 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
             </div>
           </div>
 
-          {/* DescripciÃ³n del producto */}
+          {/* Descripción del producto */}
           <div style={{ marginBottom: '32px', padding: '24px', background: '#faf8f6', borderRadius: '12px' }}>
-            <h3 style={{ fontSize: '1.5rem', fontWeight: '700', margin: '0 0 16px 0', color: '#2c2c2c' }}>DescripciÃ³n del producto</h3>
+            <h3 style={{ fontSize: '1.5rem', fontWeight: '700', margin: '0 0 16px 0', color: '#2c2c2c' }}>Descripción del producto</h3>
             {libroSeleccionado.descripcion_libro ? (
               <p style={{ fontSize: '1rem', color: '#555', lineHeight: '1.8', margin: 0 }}>{libroSeleccionado.descripcion_libro}</p>
             ) : (
               <div style={{ fontSize: '1rem', color: '#555', lineHeight: '1.8' }}>
-                <p style={{ margin: '0 0 12px 0' }}>Este libro es una excelente adiciÃ³n a tu colecciÃ³n. Escrito por {libroSeleccionado.autor_libro || libroSeleccionado.autor || 'un autor reconocido'}ï¼Œ ofrece una narrativa cautivadora que te mantendrÃ¡ enganchado desde la primera pÃ¡gina hasta la Ãºltima.</p>
-                <p style={{ margin: '0 0 12px 0' }}>Formato: Tapa blanda | PÃ¡ginas: {Math.floor(Math.random() * 200) + 200} | Idioma: EspaÃ±ol | Editorial: {libroSeleccionado.nombre_tienda || 'Editorial destacada'}</p>
+                <p style={{ margin: '0 0 12px 0' }}>Este libro es una excelente adición a tu colección. Escrito por {libroSeleccionado.autor_libro || libroSeleccionado.autor || 'un autor reconocido'}, ofrece una narrativa cautivadora que te mantendrá enganchado desde la primera página hasta la última.</p>
+                <p style={{ margin: '0 0 12px 0' }}>Formato: Tapa blanda | Páginas: {Math.floor(Math.random() * 200) + 200} | Idioma: Español | Editorial: {libroSeleccionado.nombre_tienda || 'Editorial destacada'}</p>
                 <p style={{ margin: '0 0 12px 0' }}>Dimensiones: 15cm x 23cm x 2cm | Peso: {Math.floor(Math.random() * 300) + 200}g | ISBN: {Math.random().toString(36).substring(2, 12).toUpperCase()}</p>
-                <p style={{ margin: 0 }}>Ideal para lectores que disfrutan del gÃ©nero de {libroSeleccionado.nombre_categoria || 'ficciÃ³n'} y buscan una experiencia de lectura enriquecedora y entretenida.</p>
+                <p style={{ margin: 0 }}>Ideal para lectores que disfrutan del género de {libroSeleccionado.nombre_categoria || 'ficción'} y buscan una experiencia de lectura enriquecedora y entretenida.</p>
               </div>
             )}
           </div>
 
-          {/* CalificaciÃ³n de Tienda - Visible si puede calificar o ya calificÃ³ */}
+          {/* Calificación de Tienda - Visible si puede calificar o ya calificó */}
           {libroSeleccionado.id_tienda && (puedeCalificar || calificacionEnviada || calificacionExistente) && (
             <div style={{ marginBottom: '32px', padding: '24px', background: '#faf8f6', borderRadius: '12px' }}>
               <h3 style={{ fontSize: '1.5rem', fontWeight: '700', margin: '0 0 16px 0', color: '#2c2c2c' }}>Calificar la tienda</h3>
@@ -476,7 +476,7 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
                   </span>
                   {libroSeleccionado.total_opiniones_tienda > 0 && (
                     <span style={{ fontSize: '0.9rem', color: '#999' }}>
-                      ({libroSeleccionado.total_opiniones_tienda} {libroSeleccionado.total_opiniones_tienda === 1 ? 'opiniÃ³n' : 'opiniones'})
+                      ({libroSeleccionado.total_opiniones_tienda} {libroSeleccionado.total_opiniones_tienda === 1 ? 'opinión' : 'opiniones'})
                     </span>
                   )}
                 </div>
@@ -489,14 +489,14 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
                       <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
                       <polyline points="22 4 12 14.01 9 11.01"></polyline>
                     </svg>
-                    Â¡Gracias por calificar esta tienda!
+                    ¡Gracias por calificar esta tienda!
                   </p>
                   
-                  {/* Mostrar la calificaciÃ³n actual */}
+                  {/* Mostrar la calificación actual */}
                   {(calificacionExistente || calificacionEnviada) && (
                     <div style={{ marginBottom: '16px', padding: '12px', background: 'white', borderRadius: '6px', border: '1px solid #a7f3d0' }}>
                       <div style={{ marginBottom: '8px' }}>
-                        <strong style={{ color: '#065f46', fontSize: '0.9rem' }}>Tu calificaciÃ³n:</strong>
+                        <strong style={{ color: '#065f46', fontSize: '0.9rem' }}>Tu calificación:</strong>
                         <div style={{ display: 'flex', gap: '2px', marginTop: '4px' }}>
                           {[1, 2, 3, 4, 5].map((star) => (
                             <svg key={star} width="16" height="16" viewBox="0 0 24 24" fill={star <= (calificacionExistente?.calificacion || calificacionForm.calificacion) ? '#ffc107' : '#e0e0e0'} stroke="none">
@@ -520,7 +520,7 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
                     onClick={() => {
                       setCalificacionEnviada(false);
                       setMostrarCalificacionTienda(true);
-                      // Cargar la calificaciÃ³n existente en el formulario
+                      // Cargar la calificación existente en el formulario
                       if (calificacionExistente) {
                         setCalificacionForm({
                           calificacion: calificacionExistente.calificacion,
@@ -539,7 +539,7 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
                       fontWeight: '600'
                     }}
                   >
-                    Editar calificaciÃ³n
+                    Editar calificación
                   </button>
                 </div>
               ) : (!mostrarCalificacionTienda && !calificacionExistente && !calificacionEnviada) ? (
@@ -563,7 +563,7 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                       <div>
                         <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: '600', color: '#333', marginBottom: '8px' }}>
-                          Tu calificaciÃ³n:
+                          Tu calificación:
                         </label>
                         <div style={{ display: 'flex', gap: '8px' }}>
                           {[1, 2, 3, 4, 5].map((star) => (
@@ -631,7 +631,7 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
                             opacity: enviandoCalificacion ? 0.65 : 1
                           }}
                         >
-                          {enviandoCalificacion ? 'Enviando...' : 'Enviar calificaciÃ³n'}
+                          {enviandoCalificacion ? 'Enviando...' : 'Enviar calificación'}
                         </button>
                         <button
                           onClick={() => {
@@ -658,9 +658,9 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
             </div>
           )}
 
-          {/* ReseÃ±as */}
+          {/* Reseñas */}
           <div style={{ marginBottom: '32px' }}>
-            <h3 style={{ fontSize: '1.5rem', fontWeight: '700', margin: '0 0 16px 0', color: '#2c2c2c' }}>ReseÃ±as de clientes</h3>
+            <h3 style={{ fontSize: '1.5rem', fontWeight: '700', margin: '0 0 16px 0', color: '#2c2c2c' }}>Reseñas de clientes</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div style={{ padding: '20px', background: 'white', borderRadius: '12px', border: '1px solid #e0e0e0' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
@@ -668,7 +668,7 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
                     M
                   </div>
                   <div>
-                    <p style={{ fontSize: '1rem', fontWeight: '600', color: '#2c2c2c', margin: 0 }}>MarÃ­a GarcÃ­a</p>
+                    <p style={{ fontSize: '1rem', fontWeight: '600', color: '#2c2c2c', margin: 0 }}>María García</p>
                     <div style={{ display: 'flex', gap: '2px' }}>
                       {[1, 2, 3, 4, 5].map((star) => (
                         <svg key={star} width="14" height="14" viewBox="0 0 24 24" fill="#ffc107" stroke="none">
@@ -677,9 +677,9 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
                       ))}
                     </div>
                   </div>
-                  <span style={{ fontSize: '0.85rem', color: '#999', marginLeft: 'auto' }}>Hace 3 dÃ­as</span>
+                  <span style={{ fontSize: '0.85rem', color: '#999', marginLeft: 'auto' }}>Hace 3 días</span>
                 </div>
-                <p style={{ fontSize: '0.95rem', color: '#555', margin: 0, lineHeight: '1.6' }}>Excelente libroï¼Œ llegÃ³ en perfecto estado y el envÃ­o fue muy rÃ¡pido. La historia es cautivadora y la calidad del papel es excelente. Â¡Totalmente recomendado!</p>
+                <p style={{ fontSize: '0.95rem', color: '#555', margin: 0, lineHeight: '1.6' }}>Excelente libro, llegó en perfecto estado y el envío fue muy rápido. La historia es cautivadora y la calidad del papel es excelente. ¡Totalmente recomendado!</p>
               </div>
               <div style={{ padding: '20px', background: 'white', borderRadius: '12px', border: '1px solid #e0e0e0' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
@@ -687,7 +687,7 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
                     C
                   </div>
                   <div>
-                    <p style={{ fontSize: '1rem', fontWeight: '600', color: '#2c2c2c', margin: 0 }}>Carlos RodrÃ­guez</p>
+                    <p style={{ fontSize: '1rem', fontWeight: '600', color: '#2c2c2c', margin: 0 }}>Carlos Rodríguez</p>
                     <div style={{ display: 'flex', gap: '2px' }}>
                       {[1, 2, 3, 4].map((star) => (
                         <svg key={star} width="14" height="14" viewBox="0 0 24 24" fill="#ffc107" stroke="none">
@@ -701,7 +701,7 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
                   </div>
                   <span style={{ fontSize: '0.85rem', color: '#999', marginLeft: 'auto' }}>Hace 1 semana</span>
                 </div>
-                <p style={{ fontSize: '0.95rem', color: '#555', margin: 0, lineHeight: '1.6' }}>Buen libro en generalï¼Œ aunque esperaba mÃ¡s profundidad en los personajes. La calidad del material es buena y el precio estÃ¡ acorde al producto.</p>
+                <p style={{ fontSize: '0.95rem', color: '#555', margin: 0, lineHeight: '1.6' }}>Buen libro en general, aunque esperaba más profundidad en los personajes. La calidad del material es buena y el precio está acorde al producto.</p>
               </div>
               <div style={{ padding: '20px', background: 'white', borderRadius: '12px', border: '1px solid #e0e0e0' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
@@ -709,7 +709,7 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
                     A
                   </div>
                   <div>
-                    <p style={{ fontSize: '1rem', fontWeight: '600', color: '#2c2c2c', margin: 0 }}>Ana MartÃ­nez</p>
+                    <p style={{ fontSize: '1rem', fontWeight: '600', color: '#2c2c2c', margin: 0 }}>Ana Martínez</p>
                     <div style={{ display: 'flex', gap: '2px' }}>
                       {[1, 2, 3, 4, 5].map((star) => (
                         <svg key={star} width="14" height="14" viewBox="0 0 24 24" fill="#ffc107" stroke="none">
@@ -720,21 +720,21 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
                   </div>
                   <span style={{ fontSize: '0.85rem', color: '#999', marginLeft: 'auto' }}>Hace 2 semanas</span>
                 </div>
-                <p style={{ fontSize: '0.95rem', color: '#555', margin: 0, lineHeight: '1.6' }}>IncreÃ­bleï¼ No pude dejar de leerlo. La trama es original y los personajes estÃ¡n muy bien desarrollados. Definitivamente comprarÃ© mÃ¡s libros de este autor.</p>
+                <p style={{ fontSize: '0.95rem', color: '#555', margin: 0, lineHeight: '1.6' }}>Increíble! No pude dejar de leerlo. La trama es original y los personajes están muy bien desarrollados. Definitivamente compraré más libros de este autor.</p>
               </div>
             </div>
           </div>
 
-          {/* CaracterÃ­sticas */}
+          {/* Características */}
           <div style={{ marginBottom: '32px' }}>
-            <h3 style={{ fontSize: '1.5rem', fontWeight: '700', margin: '0 0 16px 0', color: '#2c2c2c' }}>CaracterÃ­sticas</h3>
+            <h3 style={{ fontSize: '1.5rem', fontWeight: '700', margin: '0 0 16px 0', color: '#2c2c2c' }}>Características</h3>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
               <div style={{ padding: '16px', background: 'white', borderRadius: '8px', border: '1px solid #e0e0e0' }}>
                 <p style={{ fontSize: '0.85rem', color: '#999', margin: '0 0 4px 0' }}>Autor</p>
                 <p style={{ fontSize: '1rem', fontWeight: '600', color: '#2c2c2c', margin: 0 }}>{libroSeleccionado.autor_libro || libroSeleccionado.autor || 'N/A'}</p>
               </div>
               <div style={{ padding: '16px', background: 'white', borderRadius: '8px', border: '1px solid #e0e0e0' }}>
-                <p style={{ fontSize: '0.85rem', color: '#999', margin: '0 0 4px 0' }}>CategorÃ­a</p>
+                <p style={{ fontSize: '0.85rem', color: '#999', margin: '0 0 4px 0' }}>Categoría</p>
                 <p style={{ fontSize: '1rem', fontWeight: '600', color: '#2c2c2c', margin: 0 }}>{libroSeleccionado.nombre_categoria || 'N/A'}</p>
               </div>
               <div style={{ padding: '16px', background: 'white', borderRadius: '8px', border: '1px solid #e0e0e0' }}>
@@ -753,21 +753,21 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
             <h3 style={{ fontSize: '1.5rem', fontWeight: '700', margin: '0 0 16px 0', color: '#2c2c2c' }}>Preguntas frecuentes</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <div style={{ padding: '16px', background: 'white', borderRadius: '8px', border: '1px solid #e0e0e0' }}>
-                <p style={{ fontSize: '1rem', fontWeight: '600', color: '#2c2c2c', margin: '0 0 8px 0' }}>Â¿CuÃ¡l es el estado del libro?</p>
-                <p style={{ fontSize: '0.95rem', color: '#666', margin: 0 }}>Todos los libros en nuestro catÃ¡logo son nuevos o en excelente estadoï¼Œ garantizando su calidad.</p>
+                <p style={{ fontSize: '1rem', fontWeight: '600', color: '#2c2c2c', margin: '0 0 8px 0' }}>¿Cuál es el estado del libro?</p>
+                <p style={{ fontSize: '0.95rem', color: '#666', margin: 0 }}>Todos los libros en nuestro catálogo son nuevos o en excelente estado, garantizando su calidad.</p>
               </div>
               <div style={{ padding: '16px', background: 'white', borderRadius: '8px', border: '1px solid #e0e0e0' }}>
-                <p style={{ fontSize: '1rem', fontWeight: '600', color: '#2c2c2c', margin: '0 0 8px 0' }}>Â¿CuÃ¡nto tiempo tarda el envÃ­o?</p>
-                <p style={{ fontSize: '0.95rem', color: '#666', margin: 0 }}>El tiempo de envÃ­o varÃ­a segÃºn la ubicaciÃ³n. Generalmente entre 2-5 dÃ­as hÃ¡biles.</p>
+                <p style={{ fontSize: '1rem', fontWeight: '600', color: '#2c2c2c', margin: '0 0 8px 0' }}>¿Cuánto tiempo tarda el envío?</p>
+                <p style={{ fontSize: '0.95rem', color: '#666', margin: 0 }}>El tiempo de envío varía según la ubicación. Generalmente entre 2-5 días hábiles.</p>
               </div>
               <div style={{ padding: '16px', background: 'white', borderRadius: '8px', border: '1px solid #e0e0e0' }}>
-                <p style={{ fontSize: '1rem', fontWeight: '600', color: '#2c2c2c', margin: '0 0 8px 0' }}>Â¿Tienen garantÃ­a de devoluciÃ³n?</p>
-                <p style={{ fontSize: '0.95rem', color: '#666', margin: 0 }}>SÃ­ï¼Œ ofrecemos garantÃ­a de devoluciÃ³n de 15 dÃ­as si el producto no cumple con sus expectativas.</p>
+                <p style={{ fontSize: '1rem', fontWeight: '600', color: '#2c2c2c', margin: '0 0 8px 0' }}>¿Tienen garantía de devolución?</p>
+                <p style={{ fontSize: '0.95rem', color: '#666', margin: 0 }}>Sí, ofrecemos garantía de devolución de 15 días si el producto no cumple con sus expectativas.</p>
               </div>
             </div>
           </div>
 
-          {/* InformaciÃ³n del autor */}
+          {/* Información del autor */}
           <div style={{ marginBottom: '32px', padding: '24px', background: 'white', borderRadius: '12px', border: '1px solid #e0e0e0' }}>
             <h3 style={{ fontSize: '1.5rem', fontWeight: '700', margin: '0 0 16px 0', color: '#2c2c2c' }}>Sobre el autor</h3>
             <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start' }}>
@@ -776,14 +776,14 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
               </div>
               <div style={{ flex: 1 }}>
                 <p style={{ fontSize: '1.2rem', fontWeight: '700', color: '#2c2c2c', margin: '0 0 8px 0' }}>{libroSeleccionado.autor_libro || libroSeleccionado.autor || 'Autor destacado'}</p>
-                <p style={{ fontSize: '0.95rem', color: '#666', lineHeight: '1.6', margin: 0 }}>Autor reconocido en el gÃ©nero de {libroSeleccionado.nombre_categoria || 'ficciÃ³n'} con mÃºltiples best-sellers. Sus obras han sido traducidas a varios idiomas y han recibido premios literarios internacionales. Conocido por su estilo narrativo Ãºnico y personajes memorables que cautivan a lectores de todas las edades.</p>
+                <p style={{ fontSize: '0.95rem', color: '#666', lineHeight: '1.6', margin: 0 }}>Autor reconocido en el género de {libroSeleccionado.nombre_categoria || 'ficción'} con múltiples best-sellers. Sus obras han sido traducidas a varios idiomas y han recibido premios literarios internacionales. Conocido por su estilo narrativo único y personajes memorables que cautivan a lectores de todas las edades.</p>
               </div>
             </div>
           </div>
 
-          {/* InformaciÃ³n de envÃ­o */}
+          {/* Información de envío */}
           <div style={{ marginBottom: '32px', padding: '24px', background: 'linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%)', borderRadius: '12px' }}>
-            <h3 style={{ fontSize: '1.5rem', fontWeight: '700', margin: '0 0 16px 0', color: '#2c2c2c' }}>InformaciÃ³n de envÃ­o</h3>
+            <h3 style={{ fontSize: '1.5rem', fontWeight: '700', margin: '0 0 16px 0', color: '#2c2c2c' }}>Información de envío</h3>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4caf50" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -793,7 +793,7 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
                   <circle cx="18.5" cy="18.5" r="2.5"></circle>
                 </svg>
                 <div>
-                  <p style={{ fontSize: '0.9rem', fontWeight: '600', color: '#2c2c2c', margin: 0 }}>EnvÃ­o gratis</p>
+                  <p style={{ fontSize: '0.9rem', fontWeight: '600', color: '#2c2c2c', margin: 0 }}>Envío gratis</p>
                   <p style={{ fontSize: '0.8rem', color: '#666', margin: 0 }}>En compras mayores a $50.000</p>
                 </div>
               </div>
@@ -803,8 +803,8 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
                   <polyline points="12 6 12 12 16 14"></polyline>
                 </svg>
                 <div>
-                  <p style={{ fontSize: '0.9rem', fontWeight: '600', color: '#2c2c2c', margin: 0 }}>Entrega rÃ¡pida</p>
-                  <p style={{ fontSize: '0.8rem', color: '#666', margin: 0 }}>2-5 dÃ­as hÃ¡biles</p>
+                  <p style={{ fontSize: '0.9rem', fontWeight: '600', color: '#2c2c2c', margin: 0 }}>Entrega rápida</p>
+                  <p style={{ fontSize: '0.8rem', color: '#666', margin: 0 }}>2-5 días hábiles</p>
                 </div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -895,7 +895,7 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
             ))}
           </div>
 
-          {/* PAGINACIÃ“N */}
+          {/* PAGINACIÓN */}
           {totalPaginas > 1 && (
             <div className="paginacion">
               <button
@@ -903,17 +903,17 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
                 onClick={() => setPagina(pagina - 1)}
                 className="btn-paginacion"
               >
-                â† Anterior
+                ← Anterior
               </button>
               <span className="pagina-info">
-                PÃ¡gina {pagina} de {totalPaginas}
+                Página {pagina} de {totalPaginas}
               </span>
               <button
                 disabled={pagina === totalPaginas}
                 onClick={() => setPagina(pagina + 1)}
                 className="btn-paginacion"
               >
-                Siguiente â†’
+                Siguiente →
               </button>
             </div>
           )}
