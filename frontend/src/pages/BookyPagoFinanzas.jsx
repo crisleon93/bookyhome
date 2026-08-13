@@ -523,9 +523,9 @@ export default function BookyPagoFinanzas({ defaultTab = 'balance' }) {
                     </p>
                   </div>
                   <div style={{ textAlign: 'right' }}>
-                    <p style={{ margin: 0, fontSize: '14px', color: GRAY }}>Total Pagos Pendientes</p>
+                    <p style={{ margin: 0, fontSize: '14px', color: GRAY }}>Vendedores con Pagos Pendientes</p>
                     <p style={{ margin: '8px 0 0 0', fontSize: '24px', fontWeight: 'bold', color: CARBON }}>
-                      {nomina.total_pagos || 0}
+                      {nomina.total_vendedores || 0}
                     </p>
                   </div>
                 </div>

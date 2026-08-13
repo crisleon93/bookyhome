@@ -62,7 +62,7 @@ function ModalOption({ to, onClick, iconPath, title, desc, onClose }) {
   );
 }
 
-function Header({ variant }) {
+function Header({ variant, hasSidebar }) {
   const location = useLocation();
   const navigate = useNavigate();
   const [modalOpen, setModalOpen] = useState(false);
@@ -80,8 +80,9 @@ function Header({ variant }) {
   const [showPass, setShowPass] = useState(false);
 
   const isHome = location.pathname === '/';
-  const isDashboardPage = location.pathname.startsWith('/mi-tienda') ||
-    location.pathname.startsWith('/post-login') ||
+  const isDashboardPage = hasSidebar ||
+    location.pathname === '/post-login' ||
+    location.pathname.startsWith('/mi-tienda') ||
     location.pathname.startsWith('/vendedor') ||
     location.pathname.startsWith('/perfil') ||
     location.pathname.startsWith('/publicar');
@@ -94,18 +95,40 @@ function Header({ variant }) {
   const isSimple = variant === "simple";
   const isWhite = variant === "white" || !variant;
 
-  const token = localStorage.getItem("token");
-  let isLoggedIn = false;
-  let userRole = null;
-  if (token) {
+  const [authState, setAuthState] = useState(() => {
+    const t = localStorage.getItem("token");
+    if (!t) return { isLoggedIn: false, userRole: null };
     try {
-      const decoded = jwtDecode(token);
-      isLoggedIn = true;
-      userRole = decoded.rol;
+      const decoded = jwtDecode(t);
+      return { isLoggedIn: true, userRole: decoded.rol };
     } catch {
-      isLoggedIn = false;
+      return { isLoggedIn: false, userRole: null };
     }
-  }
+  });
+
+  const { isLoggedIn, userRole } = authState;
+
+  useEffect(() => {
+    const syncAuth = () => {
+      const t = localStorage.getItem("token");
+      if (!t) {
+        setAuthState({ isLoggedIn: false, userRole: null });
+        return;
+      }
+      try {
+        const decoded = jwtDecode(t);
+        setAuthState({ isLoggedIn: true, userRole: decoded.rol });
+      } catch {
+        setAuthState({ isLoggedIn: false, userRole: null });
+      }
+    };
+    window.addEventListener('auth-change', syncAuth);
+    window.addEventListener('storage', syncAuth);
+    return () => {
+      window.removeEventListener('auth-change', syncAuth);
+      window.removeEventListener('storage', syncAuth);
+    };
+  }, []);
 
   useEffect(() => {
     if (!dropdownOpen) return;
@@ -139,12 +162,14 @@ function Header({ variant }) {
       const decoded = jwtDecode(token);
       notify('Inicio de sesión correcto', 'success');
       setLoginOpen(false);
+      // Disparar evento para que App.jsx detecte el cambio
+      window.dispatchEvent(new CustomEvent('auth-change', { detail: { authenticated: true } }));
       if (decoded.rol === 'vendedor') {
         navigate('/mi-tienda');
       } else if (decoded.rol === 'admin' || decoded.rol === 'administrador') {
         navigate('/admin');
       } else {
-        navigate('/post-login');
+        navigate('/'); // Comprador va al Home con sidebar
       }
     } catch (err) {
       const message = err.response?.data?.detail || 'Email o contraseña incorrectos';
@@ -207,7 +232,7 @@ function Header({ variant }) {
             </form>
 
             <div className="header-actions">
-              {isLoggedIn ? (
+              {isLoggedIn && hasSidebar ? null : isLoggedIn && !hasSidebar ? (
                 <div className="user-dropdown-wrapper">
                   <button
                     type="button"
@@ -222,17 +247,17 @@ function Header({ variant }) {
                     <span>Mi Cuenta</span>
                   </button>
                   <div className={`user-dropdown-menu ${dropdownOpen ? 'open' : ''}`}>
-                    <Link 
-                      to={userRole === 'vendedor' ? '/mi-tienda' : userRole === 'admin' ? '/admin' : '/post-login'} 
-                      className="user-dropdown-item" 
+                    <Link
+                      to={userRole === 'vendedor' ? '/mi-tienda' : userRole === 'admin' ? '/admin' : '/'}
+                      className="user-dropdown-item"
                       onClick={() => setDropdownOpen(false)}
                     >
                       Dashboard
                     </Link>
-                    <Link to="/post-login?seccion=Lista%20de%20Deseos" className="user-dropdown-item" onClick={() => setDropdownOpen(false)}>
+                    <Link to="/?seccion=Lista%20de%20Deseos" className="user-dropdown-item" onClick={() => setDropdownOpen(false)}>
                       Lista de deseos
                     </Link>
-                    <Link to="/carrito" className="user-dropdown-item" onClick={() => setDropdownOpen(false)}>
+                    <Link to="/?seccion=Carrito" className="user-dropdown-item" onClick={() => setDropdownOpen(false)}>
                       Carrito
                     </Link>
                     <div className="user-dropdown-divider" />
@@ -243,6 +268,8 @@ function Header({ variant }) {
                       onClick={() => {
                         setDropdownOpen(false);
                         localStorage.removeItem("token");
+                        setAuthState({ isLoggedIn: false, userRole: null });
+                        window.dispatchEvent(new CustomEvent('auth-change', { detail: { authenticated: false } }));
                         notify("Sesión cerrada", "info");
                         navigate("/");
                       }}

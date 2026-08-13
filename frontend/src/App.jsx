@@ -1,4 +1,5 @@
 // src/App.jsx
+import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 
 import Header from './components/Header';
@@ -12,7 +13,6 @@ import Register from './pages/Register';
 import Libreria from './pages/Libreria';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/Resetpassword';
-import PostLogin from './pages/PostLogin';
 import MiTienda from './pages/MiTienda';
 import PrivateRoute from './components/PrivateRoute';
 import PublicarLibro from './pages/PublicarLibro';
@@ -50,10 +50,39 @@ function MainLayout() {
   // Mostrar header en páginas de comprador y vendedor; ocultarlo solo en admin
   const isDashboard = location.pathname.startsWith('/admin');
 
+  // Detectar si el usuario está autenticado para ajustar el header en Home
+  const [hasToken, setHasToken] = useState(!!localStorage.getItem('token'));
+
+  useEffect(() => {
+    const checkToken = () => {
+      setHasToken(!!localStorage.getItem('token'));
+    };
+    checkToken();
+    window.addEventListener('storage', checkToken);
+    window.addEventListener('auth-change', checkToken);
+    
+    // También escuchar cambios en el localStorage directamente
+    const handleStorageChange = () => {
+      checkToken();
+    };
+    
+    // Verificar periódicamente por si el token se estableció
+    const interval = setInterval(checkToken, 1000);
+    
+    return () => {
+      window.removeEventListener('storage', checkToken);
+      window.removeEventListener('auth-change', checkToken);
+      clearInterval(interval);
+    };
+  }, []);
+
+  // Pasar prop para indicar al Header si debe ajustarse por el sidebar
+  const hasSidebar = location.pathname === '/' && hasToken;
+
   return (
     <>
-      {/* Header solo en páginas públicas */}
-      {!isDashboard && <Header variant={variant} />}
+      {/* Header siempre en Home, excepto en admin */}
+      {!isDashboard && <Header variant={variant} hasSidebar={hasSidebar} />}
 
       <Routes>
         {/* ── RUTAS PÚBLICAS ── */}
@@ -68,8 +97,7 @@ function MainLayout() {
 
         {/* ── RUTAS PROTEGIDAS GENERALES (Cualquier usuario logueado) ── */}
         <Route element={<PrivateRoute />}>
-          <Route path="/post-login" element={<PostLogin />} />
-          <Route path="/carrito" element={<Navigate to="/post-login?seccion=Carrito" replace />} />
+          <Route path="/carrito" element={<Navigate to="/?seccion=Carrito" replace />} />
           <Route path="/historial" element={<Historial />} />
           <Route path="/lista-deseos" element={<ListaDeseos />} />
           <Route path="/devoluciones" element={<Devoluciones />} />
@@ -98,21 +126,18 @@ function MainLayout() {
             ) : (userRole === 'admin' || userRole === 'administrador') ? (
               <Navigate to="/admin" replace />
             ) : (userRole === 'usuario' || userRole === 'comprador') ? (
-              <Navigate to="/post-login" replace />
+              <Navigate to="/" replace />
             ) : (
               <Navigate to="/login" replace />
             )
           }
         />
 
-        {/* El carrito vive dentro del dashboard (PostLogin), no como página propia */}
-        <Route path="/carrito" element={<Navigate to="/post-login?seccion=Carrito" replace />} />
-
         {/* Catch-all para rutas inexistentes */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
 
-      {/* Footer solo en páginas públicas */}
+      {/* Footer siempre en Home, incluso autenticado */}
       {!isDashboard && <Footer />}
     </>
   );

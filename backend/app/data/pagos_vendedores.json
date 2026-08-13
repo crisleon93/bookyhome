@@ -1189,8 +1189,10 @@
     "monto": 88200.0,
     "id_venta": 13,
     "fecha_venta": "2026-08-10T01:01:02.030467Z",
-    "estado": "pendiente",
-    "fecha_programada": 1786946462.030476
+    "estado": "procesado",
+    "fecha_programada": 1786946462.030476,
+    "fecha_pago": "2026-08-13T02:22:47.955804Z",
+    "referencia": "TRF-Bancolombia-2321-20260813022247"
   },
   {
     "id": 118,
@@ -1234,8 +1236,10 @@
     "monto": 58500.0,
     "id_venta": 29,
     "fecha_venta": "2026-08-10T01:54:41.981694Z",
-    "estado": "pendiente",
-    "fecha_programada": 1786949681.981708
+    "estado": "procesado",
+    "fecha_programada": 1786949681.981708,
+    "fecha_pago": "2026-08-13T02:22:47.955886Z",
+    "referencia": "TRF-Bancolombia-2321-20260813022247"
   },
   {
     "id": 123,
@@ -1324,7 +1328,9 @@
     "monto": 36000.0,
     "id_venta": 7,
     "fecha_venta": "2026-08-12T04:45:02.165279Z",
-    "estado": "pendiente",
-    "fecha_programada": 1787132702.165296
+    "estado": "procesado",
+    "fecha_programada": 1787132702.165296,
+    "fecha_pago": "2026-08-13T02:23:03.642347Z",
+    "referencia": "TRF-Davivienda-0-12-20260813022303"
   }
 ]

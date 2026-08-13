@@ -493,5 +493,23 @@
     "metodo_pago": "PayPal",
     "fecha_pago": "2026-08-12T04:45:01.566217Z",
     "estado": "aprobado"
+  },
+  {
+    "id_pago": 56,
+    "id_usuario": 16,
+    "id_orden": 13,
+    "monto": 180000.0,
+    "metodo_pago": "Tarjeta de Crédito",
+    "fecha_pago": "2026-08-13T09:10:41.607662Z",
+    "estado": "aprobado"
+  },
+  {
+    "id_pago": 57,
+    "id_usuario": 16,
+    "id_orden": 14,
+    "monto": 95000.0,
+    "metodo_pago": "Pago en Efecty",
+    "fecha_pago": "2026-08-13T09:30:17.686002Z",
+    "estado": "aprobado"
   }
 ]

@@ -48,7 +48,8 @@ def limpiar_envios_no_pagados():
     actualizado = False
     for user_orders in orders.values():
         for order in user_orders:
-            if str(order.get("estado", "")).lower() != "pagado" and order.pop("envio", None) is not None:
+            estado = str(order.get("estado", "")).lower()
+            if estado not in ["pagado", "enviado", "entregado"] and order.pop("envio", None) is not None:
                 actualizado = True
     if actualizado:
         _save_orders(orders)

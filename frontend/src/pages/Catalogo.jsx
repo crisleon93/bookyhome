@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import api, { addToCart, removeFromCart, usuarioPuedeCalificarTienda, crearCalificacionTienda, getCalificacionesTienda, actualizarCalificacionTienda } from '../services/api';
 import { notify } from '../components/ToastProvider';
@@ -34,7 +34,8 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
     precio_max: 1000000,
     calificacion_min: 0,
     disponible: true,
-    ordenar_por: 'relevancia'
+    ordenar_por: 'relevancia',
+    categoria_nombre: searchParams.get('categoria') || null
   });
 
   useEffect(() => {
@@ -52,6 +53,7 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
       
       if (filtros.q) params.append('q', filtros.q);
       if (filtros.categoria_id) params.append('categoria_id', filtros.categoria_id);
+      if (filtros.categoria_nombre && !filtros.categoria_id) params.append('categoria', filtros.categoria_nombre);
       if (filtros.precio_min) params.append('precio_min', filtros.precio_min);
       if (filtros.precio_max) params.append('precio_max', filtros.precio_max);
       if (filtros.calificacion_min) params.append('calificacion_min', filtros.calificacion_min);

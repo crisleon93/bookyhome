@@ -17,7 +17,8 @@ def busqueda_avanzada(
     disponible: Optional[bool] = Query(None, description="Solo libros con stock"),
     ordenar_por: Optional[str] = Query("relevancia", pattern="^(relevancia|precio_asc|precio_desc|calificacion|recientes)$"),
     pagina: int = Query(1, ge=1),
-    limite: int = Query(20, ge=1, le=100)
+    limite: int = Query(20, ge=1, le=100),
+    categoria: Optional[str] = Query(None, description="Nombre de la categoría")
 ):
     """
     Búsqueda avanzada con filtros
@@ -51,6 +52,9 @@ def busqueda_avanzada(
         if categoria_id:
             where_conditions.append("l.id_categoria = %s")
             params.append(categoria_id)
+        elif categoria:
+            where_conditions.append("c.nombre_categoria = %s")
+            params.append(categoria)
         
         if precio_min is not None:
             where_conditions.append("l.precio_libro >= %s")
@@ -80,6 +84,7 @@ def busqueda_avanzada(
         count_query = f"""
             SELECT COUNT(*) as total 
             FROM libros l
+            LEFT JOIN categorias c ON l.id_categoria = c.id_categoria
             WHERE {where_clause}
         """
         cursor.execute(count_query, params)

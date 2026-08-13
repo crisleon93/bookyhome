@@ -16,7 +16,8 @@ import {
   IconMail,
   IconBell,
   IconMapPin as IconLocation,
-  IconCreditCard
+  IconCreditCard,
+  IconTruck
 } from "./Icons";
 import { notificacionesService } from '../services/notificaciones';
 import { chatService } from '../services/chat';
@@ -31,6 +32,7 @@ const ICONS = {
   "Lista de Deseos": <IconFavorites width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
   "Carrito": <IconCart width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
   "Mis Compras": <IconShoppingBag width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
+  "Seguimiento": <IconTruck width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
   "Quejas y reclamos": <IconAlertTriangle width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
   "Soporte técnico": <IconTool width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
   "Notificaciones": <IconBell className="" width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
@@ -46,6 +48,7 @@ const MENU_LINKS = [
   { name: "Lista de Deseos", label: "Lista de deseos" },
   { name: "Carrito", label: "Carrito" },
   { name: "Mis Compras", label: "Mis compras" },
+  { name: "Seguimiento", label: "Seguimiento de envío" },
   { name: "Quejas y reclamos", label: "Quejas y reclamos" },
   { name: "Soporte técnico", label: "Soporte técnico" },
   { name: "Notificaciones", label: "Notificaciones" },
@@ -67,6 +70,8 @@ export default function CompradorSidebar({ userName, userEmail, profilePhotoUrl,
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [noLeidosNotif, setNoLeidosNotif] = useState(0);
   const [noLeidosMensajes, setNoLeidosMensajes] = useState(0);
+  const avatarSrc = profilePhotoUrl || null;
+  const avatarAlt = `${userName || 'Usuario'} avatar`;
 
   useEffect(() => {
     let mounted = true;
@@ -106,55 +111,62 @@ export default function CompradorSidebar({ userName, userEmail, profilePhotoUrl,
     }}>
       {/* Header */}
       <div style={{
-        display: 'flex', alignItems: 'center',
-        justifyContent: sidebarOpen ? 'space-between' : 'center',
-        marginBottom: sidebarOpen ? '26px' : '20px',
-        paddingLeft: sidebarOpen ? '10px' : '0',
         position: 'relative',
+        marginBottom: sidebarOpen ? '22px' : '20px',
+        padding: sidebarOpen ? '0 10px' : '0',
+        display: 'flex',
+        justifyContent: sidebarOpen ? 'flex-start' : 'center',
+        alignItems: 'center',
         minHeight: sidebarOpen ? undefined : '110px',
         paddingTop: sidebarOpen ? '0' : '50px',
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: sidebarOpen ? 'flex-start' : 'center', width: '100%' }}>
-          <div style={{
-            width: sidebarOpen ? '64px' : '42px',
-            height: sidebarOpen ? '64px' : '42px',
-            borderRadius: '50%',
-            overflow: 'hidden',
-            background: sidebarOpen ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.28)',
-            border: sidebarOpen ? '2px solid rgba(255,255,255,0.35)' : '2px solid rgba(255,255,255,0.45)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontWeight: 700,
-            color: WHITE,
-            textTransform: 'uppercase',
-            fontSize: sidebarOpen ? '1.4rem' : '1rem',
-            boxShadow: sidebarOpen ? 'none' : '0 0 0 1px rgba(255,255,255,0.08)',
-            marginTop: sidebarOpen ? '0' : '0'
-          }}>
-            {profilePhotoUrl ? (
-              <img
-                src={profilePhotoUrl}
-                alt={userName || 'Usuario'}
-                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-              />
-            ) : (
-              (userName || 'U').charAt(0)
-            )}
-          </div>
+        <div style={{ display: 'flex', justifyContent: sidebarOpen ? 'flex-start' : 'center', width: '100%' }}>
+          {avatarSrc ? (
+            <img
+              src={avatarSrc}
+              alt={avatarAlt}
+              style={{
+                width: sidebarOpen ? '64px' : '36px',
+                height: sidebarOpen ? '64px' : '36px',
+                borderRadius: '50%',
+                objectFit: 'cover',
+                border: '2px solid rgba(255,255,255,0.35)',
+                marginTop: sidebarOpen ? '0' : '0',
+              }}
+            />
+          ) : (
+            <div style={{
+              width: sidebarOpen ? '64px' : '36px',
+              height: sidebarOpen ? '64px' : '36px',
+              borderRadius: '50%',
+              background: 'rgba(255,255,255,0.15)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              border: '2px solid rgba(255,255,255,0.35)',
+              marginTop: sidebarOpen ? '0' : '0',
+              fontWeight: 700,
+              color: WHITE,
+              textTransform: 'uppercase',
+              fontSize: sidebarOpen ? '1.4rem' : '1rem',
+            }}>
+              {(userName || 'U').charAt(0)}
+            </div>
+          )}
         </div>
+
         <button
           onClick={() => setSidebarOpen(!sidebarOpen)}
           style={{
-            position: sidebarOpen ? 'static' : 'absolute',
-            right: sidebarOpen ? undefined : '8px',
-            top: sidebarOpen ? undefined : '12px',
-            background: sidebarOpen ? 'rgba(255,255,255,0.16)' : 'rgba(255,255,255,0.16)',
-            border: sidebarOpen ? '1px solid rgba(255,255,255,0.2)' : '1px solid rgba(255,255,255,0.2)',
+            position: 'absolute',
+            right: sidebarOpen ? '0' : '8px',
+            top: sidebarOpen ? 'auto' : '12px',
+            background: 'rgba(255,255,255,0.16)',
+            border: '1px solid rgba(255,255,255,0.2)',
             color: WHITE,
-            width: '34px', height: '34px', borderRadius: '10px', cursor: 'pointer',
+            width: '34px', height: '34px', borderRadius: '8px', cursor: 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-            boxShadow: sidebarOpen ? 'none' : '0 4px 14px rgba(0,0,0,0.15)'
+            boxShadow: sidebarOpen ? 'none' : '0 4px 14px rgba(0,0,0,0.15)',
           }}
           title={sidebarOpen ? 'Contraer menú' : 'Expandir menú'}
         >
@@ -176,63 +188,67 @@ export default function CompradorSidebar({ userName, userEmail, profilePhotoUrl,
       )}
 
       {/* Navigation */}
-      {MENU_LINKS.map((item) => {
-        const active = activeSide === item.name;
-        return (
-          <button
-            key={item.name}
-            onClick={() => {
-              // Preferir onSelect cuando el dashboard controla la selección (evita salto de página)
-              if (onSelect) {
-                onSelect(item.name);
-                return;
-              }
-              // Fallback: navegar a rutas externas
-              if (item.path) {
-                navigate(item.path);
-                return;
-              }
-              if (item.name === "Catálogo") {
-                navigate("/catalogo");
-              }
-            }}
-            title={!sidebarOpen ? item.label : undefined}
-            style={{
-              background: active ? 'rgba(255,255,255,0.18)' : 'none',
-              border: 'none', color: WHITE,
-              padding: sidebarOpen ? '12px 14px' : '12px',
-              borderRadius: '8px', cursor: 'pointer', textAlign: 'left',
-              fontWeight: 600, fontSize: '0.9rem',
-              display: 'flex', alignItems: 'center',
-              justifyContent: sidebarOpen ? 'flex-start' : 'center',
-              gap: '12px', fontFamily: "'Montserrat', sans-serif",
-              transition: 'background 0.15s ease',
-            }}
-          >
-            <span style={{ display: 'flex', flexShrink: 0, alignItems: 'center', width: '24px', height: '24px', justifyContent: 'center' }}>
-              {ICONS[item.name]}
-            </span>
-            {sidebarOpen && (
-              <span style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1 }}>
-                <span style={{ flex: 1 }}>{item.label}</span>
-                <span style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                  {item.name === 'Notificaciones' && noLeidosNotif > 0 && (
-                    <span style={{ background: '#FFC107', color: '#000', borderRadius: 12, padding: '2px 8px', fontSize: 12, fontWeight: 700 }}>{noLeidosNotif}</span>
-                  )}
-                  {item.name === 'Mensajes' && noLeidosMensajes > 0 && (
-                    <span style={{ background: '#F87171', color: '#fff', borderRadius: 12, padding: '2px 8px', fontSize: 12, fontWeight: 700 }}>{noLeidosMensajes}</span>
-                  )}
-                </span>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
+        {MENU_LINKS.map((item) => {
+          const active = activeSide === item.name;
+          return (
+            <button
+              key={item.name}
+              onClick={() => {
+                if (onSelect) {
+                  onSelect(item.name);
+                  return;
+                }
+                if (item.path) {
+                  navigate(item.path);
+                  return;
+                }
+                if (item.name === "Catálogo") {
+                  navigate("/catalogo");
+                }
+              }}
+              title={!sidebarOpen ? item.label : undefined}
+              style={{
+                background: active ? 'rgba(255,255,255,0.18)' : 'transparent',
+                border: 'none', color: WHITE,
+                padding: sidebarOpen ? '12px 14px' : '12px',
+                borderRadius: '8px', cursor: 'pointer', textAlign: 'left',
+                fontWeight: active ? 700 : 600, fontSize: '0.9rem',
+                display: 'flex', alignItems: 'center',
+                justifyContent: sidebarOpen ? 'flex-start' : 'center',
+                gap: sidebarOpen ? '12px' : '0',
+                fontFamily: "'Montserrat', sans-serif",
+                transition: 'background 0.15s ease',
+              }}
+              onMouseEnter={(e) => !active && (e.target.style.background = 'rgba(255,255,255,0.08)')}
+              onMouseLeave={(e) => !active && (e.target.style.background = 'transparent')}
+            >
+              <span style={{ display: 'flex', flexShrink: 0, alignItems: 'center', width: '24px', height: '24px', justifyContent: 'center' }}>
+                {ICONS[item.name]}
               </span>
-            )}
-          </button>
-        );
-      })}
-      
+              {sidebarOpen && (
+                <span style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1 }}>
+                  <span>{item.label}</span>
+                  <span style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                    {item.name === 'Notificaciones' && noLeidosNotif > 0 && (
+                      <span style={{ background: '#FFC107', color: '#000', borderRadius: 12, padding: '2px 8px', fontSize: 12, fontWeight: 700 }}>{noLeidosNotif}</span>
+                    )}
+                    {item.name === 'Mensajes' && noLeidosMensajes > 0 && (
+                      <span style={{ background: '#F87171', color: '#fff', borderRadius: 12, padding: '2px 8px', fontSize: 12, fontWeight: 700 }}>{noLeidosMensajes}</span>
+                    )}
+                  </span>
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+
       {/* Logout */}
       <button
         onClick={() => {
           localStorage.removeItem('token');
+          window.dispatchEvent(new CustomEvent('auth-change', { detail: { authenticated: false } }));
           navigate('/');
         }}
         title={!sidebarOpen ? 'Cerrar sesión' : undefined}
@@ -243,10 +259,15 @@ export default function CompradorSidebar({ userName, userEmail, profilePhotoUrl,
           borderRadius: '8px', cursor: 'pointer', fontWeight: 700,
           display: 'flex', alignItems: 'center',
           justifyContent: sidebarOpen ? 'flex-start' : 'center',
-          gap: '10px', fontFamily: "'Montserrat', sans-serif", fontSize: '0.85rem',
+          gap: sidebarOpen ? '10px' : '0', fontFamily: "'Montserrat', sans-serif", fontSize: '0.85rem',
+          transition: 'all 0.2s ease',
         }}
+        onMouseEnter={(e) => e.target.style.background = 'rgba(255,255,255,0.12)'}
+        onMouseLeave={(e) => e.target.style.background = 'none'}
       >
-        <SidebarIcon Icon={IconLogOut} size={18} />
+        <span style={{ display: 'flex', flexShrink: 0, alignItems: 'center', width: '24px', height: '24px', justifyContent: 'center' }}>
+          <SidebarIcon Icon={IconLogOut} size={18} />
+        </span>
         {sidebarOpen && <span>Cerrar sesión</span>}
       </button>
     </aside>

@@ -11,6 +11,7 @@ from app.models.suscripciones_tienda import (
     cancelar_suscripcion,
     expirar_suscripciones_vencidas,
 )
+from app.utils.finance_hooks import registrar_ingreso_plan
 
 router = APIRouter(prefix="/suscripciones", tags=["Suscripciones de Tienda"])
 
@@ -71,38 +72,15 @@ def nueva_suscripcion(data: SuscripcionCrear, user: dict = Depends(get_current_u
     resultado = crear_suscripcion(id_tienda, data.model_dump())
     if not resultado["ok"]:
         raise HTTPException(status_code=500, detail=resultado["error"])
-    
-    # Hook automático: Registrar ingreso en BookyPago Finanzas
-    try:
-        from app.models.bookypago_finanzas import BookyPagoFinanzas
-        import os
-        from dotenv import load_dotenv
-        
-        load_dotenv()
-        bookypago_config = {
-            'comision_venta': float(os.getenv('BOOKYPAGO_COMISION_VENTA', '0.10')),
-            'comision_impulso': float(os.getenv('BOOKYPAGO_COMISION_IMPULSO', '0.05')),
-            'comision_plan': float(os.getenv('BOOKYPAGO_COMISION_PLAN', '0.02')),
-            'minimo_pago': float(os.getenv('BOOKYPAGO_MINIMO_PAGO', '50000')),
-            'dias_pago': int(os.getenv('BOOKYPAGO_DIAS_PAGO', '7'))
-        }
-        bookypago_finanzas_direct = BookyPagoFinanzas(bookypago_config)
-        
-        resultado_finanzas = bookypago_finanzas_direct.registrar_ingreso_plan(
-            id_tienda=id_tienda,
-            id_plan=resultado["suscripcion"]["id_suscripcion"],
-            monto_plan=data.precio_pagado or 0,
-            periodicidad="mensual"
-        )
-        
-        if resultado_finanzas.get('ok'):
-            print(f"Ingreso de suscripción registrado exitosamente en BookyPago Finanzas: Suscripción #{resultado['suscripcion']['id_suscripcion']}")
-        else:
-            print(f"Error registrando ingreso de suscripción en BookyPago Finanzas: {resultado_finanzas.get('error')}")
-    except Exception as e:
-        # No fallar la suscripción si falla el registro en finanzas, solo loggear
-        print(f"Error registrando ingreso de suscripción en BookyPago Finanzas: {e}")
-    
+
+    # Registro automático de ingreso en BookyPago Finanzas
+    registrar_ingreso_plan(
+        id_tienda=id_tienda,
+        id_plan=resultado["suscripcion"]["id_suscripcion"],
+        monto_plan=data.precio_pagado or 0,
+        periodicidad="mensual",
+    )
+
     return resultado["suscripcion"]
 
 

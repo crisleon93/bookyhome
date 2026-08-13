@@ -37,9 +37,9 @@ security = HTTPBearer()
 
 # Configuración desde .env
 BOOKYPAGO_CONFIG = {
-    'comision_venta': float(os.getenv('BOOKYPAGO_COMISION_VENTA', '0.10')),
-    'comision_impulso': float(os.getenv('BOOKYPAGO_COMISION_IMPULSO', '0.05')),
-    'comision_plan': float(os.getenv('BOOKYPAGO_COMISION_PLAN', '0.02')),
+    'comision_venta': float(os.getenv('BOOKYPAGO_COMISION_VENTA', '0.15')),
+    'comision_impulso': float(os.getenv('BOOKYPAGO_COMISION_IMPULSO', '0.10')),
+    'comision_plan': float(os.getenv('BOOKYPAGO_COMISION_PLAN', '0.08')),
     'minimo_pago': float(os.getenv('BOOKYPAGO_MINIMO_PAGO', '50000')),
     'dias_pago': int(os.getenv('BOOKYPAGO_DIAS_PAGO', '7'))
 }

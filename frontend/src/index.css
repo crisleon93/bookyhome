@@ -219,11 +219,13 @@ header.scrolled { box-shadow: 0 2px 20px rgba(122, 30, 58, 0.15); }
   max-width: 100%;
   min-width: 0;
   position: relative;
+  display: flex;
+  align-items: center;
 }
 
 .search-bar {
-  width: 70%;
-  padding: 0.8rem 1rem 0.8rem 1rem;
+  width: 100%;
+  padding: 0.8rem 2.8rem 0.8rem 1rem;
   border: 1px solid #ddd;
   border-radius: 4px;
   font-size: 0.95rem;
@@ -252,7 +254,7 @@ header.scrolled { box-shadow: 0 2px 20px rgba(122, 30, 58, 0.15); }
 
 .search-btn {
   position: absolute;
-  right: 270px;
+  right: 10px;
   top: 50%;
   transform: translateY(-50%);
   background: none;
@@ -260,6 +262,10 @@ header.scrolled { box-shadow: 0 2px 20px rgba(122, 30, 58, 0.15); }
   font-size: 1.1rem;
   cursor: pointer;
   color: #666;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
 }
 
 /* -- Acceso de usuario (icono + texto) -- */
@@ -2384,12 +2390,17 @@ body.auth-page {
   flex: 1;
   padding: 92px 24px 20px 24px;
   overflow-y: auto;
-  margin-left: 250px;
+  margin-left: 0;
   transition: margin-left 0.25s ease;
 }
 
+/* When sidebar is present (user authenticated) */
+.dashboard-container .dashboard-main {
+  margin-left: 250px;
+}
+
 /* When the sidebar is collapsed adjust main margin */
-.dashboard-sidebar.collapsed + .dashboard-main {
+.dashboard-container .dashboard-sidebar.collapsed ~ .dashboard-main {
   margin-left: 76px;
 }
 
