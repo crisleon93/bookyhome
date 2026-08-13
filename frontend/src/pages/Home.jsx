@@ -1,7 +1,23 @@
-import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useState, useEffect, startTransition } from 'react'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
+import { jwtDecode } from 'jwt-decode'
 import Header from '../components/Header'
 import { IconUsers } from '../components/Icons'
+import CompradorSidebar from '../components/CompradorSidebar'
+import { getUsuarios } from '../services/api'
+import SeccionCarrito from '../components/dashboard/SeccionCarrito'
+import SeccionMisCompras from '../components/dashboard/SeccionMisCompras'
+import SeccionSeguimiento from '../components/dashboard/SeccionSeguimiento'
+import SeccionFavoritos from '../components/dashboard/SeccionFavoritos'
+import SeccionConfiguracion from '../components/dashboard/SeccionConfiguracion'
+import SeccionMiPerfil from '../components/dashboard/SeccionMiPerfil'
+import SeccionMisDirecciones from '../components/dashboard/SeccionMisDirecciones'
+import SeccionNotificaciones from '../components/dashboard/SeccionNotificaciones'
+import Catalogo from './Catalogo'
+import Chat from './Chat'
+import ListaDeseos from './ListaDeseos'
+import QuejasReclamos from './QuejasReclamos'
+import Soporte from './Soporte'
 
 import ficcion from '../assets/ficcion.png'
 import romance from '../assets/romance.png'
@@ -124,8 +140,290 @@ function Home() {
   const [joinOpen,     setJoinOpen]     = useState(false)
   const [registerOpen, setRegisterOpen] = useState(false)
   const navigate = useNavigate()
+  const location = useLocation()
+  
+  // Dashboard state
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [userName, setUserName] = useState('')
+  const [userEmail, setUserEmail] = useState('')
+  const [userId, setUserId] = useState(null)
+  const [profilePhotoUrl, setProfilePhotoUrl] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [activeSide, setActiveSide] = useState('Inicio')
+  const [catalogoLibroInicial, setCatalogoLibroInicial] = useState(null)
+  const [selectedSalaInChat, setSelectedSalaInChat] = useState(null)
+  // Check authentication
+  useEffect(() => {
+    const checkAuth = () => {
+      const token = localStorage.getItem('token')
+      if (token) {
+        try {
+          const payload = jwtDecode(token)
+          setUserName(payload.nombre || 'Usuario')
+          const id = parseInt(payload.sub)
+          setUserId(id)
+          setIsAuthenticated(true)
+          getUsuarios()
+            .then((res) => {
+              const usuario = res.data.find((u) => u.id_usuario === id)
+              if (usuario) {
+                setUserEmail(usuario.correo_usuario)
+                // Cargar foto de perfil si existe
+                if (usuario.foto_perfil) {
+                  const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000'
+                  setProfilePhotoUrl(`${baseUrl}/${usuario.foto_perfil.replace(/^\//, '')}`)
+                }
+              }
+            })
+            .catch((err) => console.error(err))
+        } catch (error) {
+          console.error('Error al decodificar token:', error)
+          setIsAuthenticated(false)
+        }
+      } else {
+        setIsAuthenticated(false)
+        setUserName('')
+        setUserEmail('')
+        setUserId(null)
+        setProfilePhotoUrl(null)
+      }
+      setLoading(false)
+    }
+    
+    checkAuth()
+    
+    // Escuchar evento personalizado de cambio de autenticación
+    const handleAuthChange = (e) => {
+      if (e.detail.authenticated) {
+        // Login — recargar datos del usuario
+        checkAuth()
+      } else {
+        // Logout — limpiar estado
+        setIsAuthenticated(false)
+        setUserName('')
+        setUserEmail('')
+        setUserId(null)
+        setProfilePhotoUrl(null)
+        setActiveSide('Inicio')
+      }
+    }
+    
+    window.addEventListener('auth-change', handleAuthChange)
+    
+    return () => {
+      window.removeEventListener('auth-change', handleAuthChange)
+    }
+  }, [])
+  
 
-return (
+  // Handle section selection
+  const handleSelectSection = (seccion) => {
+    setActiveSide(seccion)
+    navigate(`/?seccion=${encodeURIComponent(seccion)}`, { replace: true })
+  }
+  
+  // Handle URL params for section
+  useEffect(() => {
+    const params = new URLSearchParams(location.search)
+    const seccion = params.get('seccion')
+    if (seccion && isAuthenticated) {
+      startTransition(() => {
+        setActiveSide(seccion === 'Direcciones' ? 'Mi Perfil' : seccion)
+      })
+    }
+  }, [location.search, isAuthenticated])
+  
+  // Helper functions now live in their respective section components
+  
+  // If loading, show loading state
+  if (loading) {
+    return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>Cargando...</div>
+  }
+  
+  // If authenticated, show public home with sidebar
+  if (isAuthenticated) {
+    return (
+      <div className={`dashboard-container ${activeSide === 'Inicio' ? 'home-view' : ''}`}>
+        <CompradorSidebar
+          userName={userName}
+          userEmail={userEmail}
+          profilePhotoUrl={profilePhotoUrl}
+          activeSide={activeSide}
+          onSelect={handleSelectSection}
+        />
+        <main className="dashboard-main">
+          {activeSide === 'Inicio' && (
+            <>
+              {/* HERO */}
+              <section className="hero">
+                <div className="layout-container hero-container">
+                  <div className="hero-text">
+                    <h1>El marketplace que conecta lectores con librerías</h1>
+                    <p>Miles de títulos de las mejores librerías independientes del país. Todo en un solo lugar.</p>
+                    <div className="hero-buttons">
+                      <button className="btn btn-primary" onClick={() => handleSelectSection('Catálogo')}>
+                        Comenzar a comprar
+                      </button>
+                      <Link to="/libreria" className="btn" id="btn-vender-libros">Vender libros</Link>
+                    </div>
+                  </div>
+                  <div className="hero-image">
+                    <img src="https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=800&q=80"
+                      alt="Personas explorando libros en una librería" />
+                  </div>
+                </div>
+              </section>
+
+              {/* STATS */}
+              <section className="stats">
+                <div className="layout-container stats-container">
+                  {STATS.map((s, i) => (
+                    <div key={i} className="stat-item">
+                      <div className={`stat-icon ${s.color}`}>
+                        {typeof s.icon === 'string' ? (
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d={s.icon}/>
+                          </svg>
+                        ) : (
+                          s.icon
+                        )}
+                      </div>
+                      <h2>{s.num}</h2>
+                      <p>{s.label}</p>
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              {/* BENEFITS */}
+              <section className="benefits">
+                <div className="layout-container">
+                  <h2>¿Por qué elegir BookyHome?</h2>
+                  <div className="benefits-grid">
+                    {BENEFITS.map((b, i) => (
+                      <div key={i} className="benefit-card">
+                        <div className="benefit-icon">
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d={b.icon}/>
+                          </svg>
+                        </div>
+                        <h3>{b.title}</h3>
+                        <p>{b.desc}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </section>
+
+              {/* CATEGORIES */}
+              <section className="categories">
+                <div className="layout-container">
+                  <h2>Explora nuestras categorías</h2>
+                  <p>Libros para todos los gustos y momentos</p>
+                  <div className="category-grid">
+                    {CATEGORIES.map((c, i) => (
+                      <div
+                        key={i}
+                        className="category-card"
+                        style={{ backgroundImage: `url(${c.img})`, cursor: 'pointer' }}
+                        onClick={() => {
+                          setActiveSide('Catálogo')
+                          navigate(`/?seccion=Catálogo&categoria=${encodeURIComponent(c.name)}`, { replace: true })
+                        }}
+                      >
+                        <h3>{c.name}</h3>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ textAlign: 'center', marginTop: '2rem' }}>
+                    <button className="btn btn-primary" onClick={() => handleSelectSection('Catálogo')}>
+                      Ver catálogo completo
+                    </button>
+                  </div>
+                </div>
+              </section>
+
+              {/* HOW IT WORKS */}
+              <section className="how-it-works">
+                <div className="layout-container">
+                  <h2>¿Cómo funciona?</h2>
+                  <div className="steps">
+                    {STEPS.map((s, i) => (
+                      <div key={i} className="step">
+                        <span className={`step-number ${s.cls}`}>{s.num}</span>
+                        <h3>{s.title}</h3>
+                        <p>{s.desc}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </section>
+
+              {/* CTA LIBRERÍAS */}
+              <section className="cta-libraries">
+                <div className="layout-container">
+                  <h2>¿Tienes una librería?</h2>
+                  <p>Únete a nuestra red de librerías y alcanza a miles de lectores en todo el país.</p>
+                  <Link to="/libreria" className="btn btn-primary">Registrar mi librería</Link>
+                </div>
+              </section>
+            </>
+          )}
+          {activeSide === 'Catálogo' && (
+            <Catalogo
+              libroInicial={catalogoLibroInicial}
+              onLibroInicialConsumido={() => setCatalogoLibroInicial(null)}
+            />
+          )}
+          {activeSide === 'Mensajes' && (
+            <div style={{ height: 'calc(100vh - 120px)', minHeight: 'calc(100vh - 120px)' }}>
+              <Chat embedded={true} selectedSalaProp={selectedSalaInChat} onSelectSala={(id) => setSelectedSalaInChat(id)} />
+            </div>
+          )}
+          {activeSide === 'Carrito' && (
+            <SeccionCarrito userId={userId} />
+          )}
+          {activeSide === 'Mis Compras' && (
+            <SeccionMisCompras userId={userId} />
+          )}
+          {activeSide === 'Seguimiento' && (
+            <SeccionSeguimiento userId={userId} />
+          )}
+          {activeSide === 'Lista de Deseos' && (
+            <ListaDeseos embedded onVerLibro={(libro) => {
+              setCatalogoLibroInicial(libro)
+              handleSelectSection('Catálogo')
+            }} />
+          )}
+          {activeSide === 'Favoritos' && (
+            <SeccionFavoritos
+              onGoToCatalog={() => handleSelectSection('Catálogo')}
+              onSetActiveSide={handleSelectSection}
+            />
+          )}
+          {activeSide === 'Mi Perfil' && (
+            <SeccionMiPerfil userId={userId} />
+          )}
+          {activeSide === 'Mis Direcciones' && (
+            <SeccionMisDirecciones />
+          )}
+          {activeSide === 'Configuración' && (
+            <SeccionConfiguracion userId={userId} />
+          )}
+          {activeSide === 'Notificaciones' && (
+            <SeccionNotificaciones />
+          )}
+          {activeSide === 'Quejas y reclamos' && <QuejasReclamos />}
+          {activeSide === 'Soporte técnico' && <Soporte />}
+        </main>
+      </div>
+    )
+  }
+  
+  // If not authenticated, show public home
+  return (
   <>
 
     {/* HERO */}

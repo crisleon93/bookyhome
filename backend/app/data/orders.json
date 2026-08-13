@@ -32,7 +32,15 @@
       ],
       "total": 55000.0,
       "estado": "Enviado",
-      "metodo_pago": "PSE"
+      "metodo_pago": "PSE",
+      "envio": {
+        "id_empresa": 1,
+        "empresa_mensajeria": "Servientrega",
+        "sitio_web": "https://www.servientrega.com",
+        "url_rastreo": "https://www.servientrega.com/wps/portal/rastreo-destinatario",
+        "numero_guia": "GUIA-2X16",
+        "estado_envio": "En transito"
+      }
     },
     {
       "id_orden": 3,
@@ -49,7 +57,15 @@
       ],
       "total": 45000.0,
       "estado": "Entregado",
-      "metodo_pago": "Daviplata"
+      "metodo_pago": "Daviplata",
+      "envio": {
+        "id_empresa": 1,
+        "empresa_mensajeria": "Servientrega",
+        "sitio_web": "https://www.servientrega.com",
+        "url_rastreo": "https://www.servientrega.com/wps/portal/rastreo-destinatario",
+        "numero_guia": "GUIA-3X16",
+        "estado_envio": "En transito"
+      }
     },
     {
       "id_orden": 4,
@@ -100,7 +116,15 @@
       ],
       "total": 45000.0,
       "estado": "Entregado",
-      "metodo_pago": "Nequi"
+      "metodo_pago": "Nequi",
+      "envio": {
+        "id_empresa": 1,
+        "empresa_mensajeria": "Servientrega",
+        "sitio_web": "https://www.servientrega.com",
+        "url_rastreo": "https://www.servientrega.com/wps/portal/rastreo-destinatario",
+        "numero_guia": "GUIA-6X16",
+        "estado_envio": "En transito"
+      }
     },
     {
       "id_orden": 7,
@@ -134,7 +158,15 @@
       ],
       "total": 55000.0,
       "estado": "Enviado",
-      "metodo_pago": "Tarjeta de Crédito"
+      "metodo_pago": "Tarjeta de Crédito",
+      "envio": {
+        "id_empresa": 1,
+        "empresa_mensajeria": "Servientrega",
+        "sitio_web": "https://www.servientrega.com",
+        "url_rastreo": "https://www.servientrega.com/wps/portal/rastreo-destinatario",
+        "numero_guia": "GUIA-8X16",
+        "estado_envio": "En transito"
+      }
     },
     {
       "id_orden": 9,
@@ -168,7 +200,15 @@
       ],
       "total": 40000.0,
       "estado": "Entregado",
-      "metodo_pago": "PSE"
+      "metodo_pago": "PSE",
+      "envio": {
+        "id_empresa": 1,
+        "empresa_mensajeria": "Servientrega",
+        "sitio_web": "https://www.servientrega.com",
+        "url_rastreo": "https://www.servientrega.com/wps/portal/rastreo-destinatario",
+        "numero_guia": "GUIA-10X16",
+        "estado_envio": "En transito"
+      }
     },
     {
       "id_orden": 11,
@@ -203,6 +243,67 @@
       "total": 80000.0,
       "estado": "pagado",
       "metodo_pago": "PSE"
+    },
+    {
+      "id_orden": 13,
+      "codigo_compra": "BH-1117515615",
+      "fecha": "2026-08-13T09:09:56.895020Z",
+      "items": [
+        {
+          "id_libro": 46,
+          "titulo": "El Futuro es Ahora",
+          "autor_libro": "Isaac Asimov",
+          "precio_libro": 85000.0,
+          "cantidad": 1,
+          "imagen": null
+        },
+        {
+          "id_libro": 47,
+          "titulo": "Dune Remastered",
+          "autor_libro": "Frank Herbert",
+          "precio_libro": 95000.0,
+          "cantidad": 1,
+          "imagen": null
+        }
+      ],
+      "total": 180000.0,
+      "estado": "pagado",
+      "metodo_pago": "Tarjeta de Crédito"
+    },
+    {
+      "id_orden": 14,
+      "codigo_compra": "BH-6AFD51B1E9",
+      "fecha": "2026-08-13T09:30:08.373665Z",
+      "items": [
+        {
+          "id_libro": 47,
+          "titulo": "Dune Remastered",
+          "autor_libro": "Frank Herbert",
+          "precio_libro": 95000.0,
+          "cantidad": 1,
+          "imagen": null
+        }
+      ],
+      "total": 95000.0,
+      "estado": "pagado",
+      "metodo_pago": "Pago en Efecty"
+    },
+    {
+      "id_orden": 15,
+      "codigo_compra": "BH-B17B7897B2",
+      "fecha": "2026-08-13T09:30:28.452005Z",
+      "items": [
+        {
+          "id_libro": 48,
+          "titulo": "1984 - Edici??n Especial",
+          "autor_libro": "George Orwell",
+          "precio_libro": 75000.0,
+          "cantidad": 1,
+          "imagen": null
+        }
+      ],
+      "total": 75000.0,
+      "estado": "pendiente"
     }
   ],
   "17": [
@@ -238,7 +339,15 @@
       ],
       "total": 25000.0,
       "estado": "Enviado",
-      "metodo_pago": "Efecty"
+      "metodo_pago": "Efecty",
+      "envio": {
+        "id_empresa": 1,
+        "empresa_mensajeria": "Servientrega",
+        "sitio_web": "https://www.servientrega.com",
+        "url_rastreo": "https://www.servientrega.com/wps/portal/rastreo-destinatario",
+        "numero_guia": "GUIA-2X17",
+        "estado_envio": "En transito"
+      }
     },
     {
       "id_orden": 3,
@@ -255,7 +364,15 @@
       ],
       "total": 55000.0,
       "estado": "Entregado",
-      "metodo_pago": "Nequi"
+      "metodo_pago": "Nequi",
+      "envio": {
+        "id_empresa": 1,
+        "empresa_mensajeria": "Servientrega",
+        "sitio_web": "https://www.servientrega.com",
+        "url_rastreo": "https://www.servientrega.com/wps/portal/rastreo-destinatario",
+        "numero_guia": "GUIA-3X17",
+        "estado_envio": "En transito"
+      }
     },
     {
       "id_orden": 4,
@@ -306,7 +423,15 @@
       ],
       "total": 50000.0,
       "estado": "Entregado",
-      "metodo_pago": "Tarjeta de Crédito"
+      "metodo_pago": "Tarjeta de Crédito",
+      "envio": {
+        "id_empresa": 1,
+        "empresa_mensajeria": "Servientrega",
+        "sitio_web": "https://www.servientrega.com",
+        "url_rastreo": "https://www.servientrega.com/wps/portal/rastreo-destinatario",
+        "numero_guia": "GUIA-6X17",
+        "estado_envio": "En transito"
+      }
     },
     {
       "id_orden": 7,
@@ -340,7 +465,15 @@
       ],
       "total": 45000.0,
       "estado": "Enviado",
-      "metodo_pago": "Nequi"
+      "metodo_pago": "Nequi",
+      "envio": {
+        "id_empresa": 1,
+        "empresa_mensajeria": "Servientrega",
+        "sitio_web": "https://www.servientrega.com",
+        "url_rastreo": "https://www.servientrega.com/wps/portal/rastreo-destinatario",
+        "numero_guia": "GUIA-8X17",
+        "estado_envio": "En transito"
+      }
     },
     {
       "id_orden": 9,
@@ -374,7 +507,15 @@
       ],
       "total": 60000.0,
       "estado": "Entregado",
-      "metodo_pago": "Tarjeta de Crédito"
+      "metodo_pago": "Tarjeta de Crédito",
+      "envio": {
+        "id_empresa": 1,
+        "empresa_mensajeria": "Servientrega",
+        "sitio_web": "https://www.servientrega.com",
+        "url_rastreo": "https://www.servientrega.com/wps/portal/rastreo-destinatario",
+        "numero_guia": "GUIA-10X17",
+        "estado_envio": "En transito"
+      }
     },
     {
       "id_orden": 11,
@@ -427,7 +568,15 @@
       ],
       "total": 28000.0,
       "estado": "Entregado",
-      "metodo_pago": "Nequi"
+      "metodo_pago": "Nequi",
+      "envio": {
+        "id_empresa": 1,
+        "empresa_mensajeria": "Servientrega",
+        "sitio_web": "https://www.servientrega.com",
+        "url_rastreo": "https://www.servientrega.com/wps/portal/rastreo-destinatario",
+        "numero_guia": "GUIA-1X18",
+        "estado_envio": "En transito"
+      }
     },
     {
       "id_orden": 2,
@@ -478,7 +627,15 @@
       ],
       "total": 25000.0,
       "estado": "Enviado",
-      "metodo_pago": "Daviplata"
+      "metodo_pago": "Daviplata",
+      "envio": {
+        "id_empresa": 1,
+        "empresa_mensajeria": "Servientrega",
+        "sitio_web": "https://www.servientrega.com",
+        "url_rastreo": "https://www.servientrega.com/wps/portal/rastreo-destinatario",
+        "numero_guia": "GUIA-4X18",
+        "estado_envio": "En transito"
+      }
     },
     {
       "id_orden": 5,
@@ -495,7 +652,15 @@
       ],
       "total": 80000.0,
       "estado": "Entregado",
-      "metodo_pago": "Tarjeta de Crédito"
+      "metodo_pago": "Tarjeta de Crédito",
+      "envio": {
+        "id_empresa": 1,
+        "empresa_mensajeria": "Servientrega",
+        "sitio_web": "https://www.servientrega.com",
+        "url_rastreo": "https://www.servientrega.com/wps/portal/rastreo-destinatario",
+        "numero_guia": "GUIA-5X18",
+        "estado_envio": "En transito"
+      }
     },
     {
       "id_orden": 6,
@@ -546,7 +711,15 @@
       ],
       "total": 70000.0,
       "estado": "Entregado",
-      "metodo_pago": "Daviplata"
+      "metodo_pago": "Daviplata",
+      "envio": {
+        "id_empresa": 1,
+        "empresa_mensajeria": "Servientrega",
+        "sitio_web": "https://www.servientrega.com",
+        "url_rastreo": "https://www.servientrega.com/wps/portal/rastreo-destinatario",
+        "numero_guia": "GUIA-8X18",
+        "estado_envio": "En transito"
+      }
     },
     {
       "id_orden": 9,
@@ -580,7 +753,15 @@
       ],
       "total": 45000.0,
       "estado": "Enviado",
-      "metodo_pago": "PSE"
+      "metodo_pago": "PSE",
+      "envio": {
+        "id_empresa": 1,
+        "empresa_mensajeria": "Servientrega",
+        "sitio_web": "https://www.servientrega.com",
+        "url_rastreo": "https://www.servientrega.com/wps/portal/rastreo-destinatario",
+        "numero_guia": "GUIA-10X18",
+        "estado_envio": "En transito"
+      }
     },
     {
       "id_orden": 11,
@@ -614,7 +795,15 @@
       ],
       "total": 6000.0,
       "estado": "Enviado",
-      "metodo_pago": "PSE"
+      "metodo_pago": "PSE",
+      "envio": {
+        "id_empresa": 1,
+        "empresa_mensajeria": "Servientrega",
+        "sitio_web": "https://www.servientrega.com",
+        "url_rastreo": "https://www.servientrega.com/wps/portal/rastreo-destinatario",
+        "numero_guia": "GUIA-12X18",
+        "estado_envio": "En transito"
+      }
     }
   ],
   "19": [
@@ -650,7 +839,15 @@
       ],
       "total": 55000.0,
       "estado": "Enviado",
-      "metodo_pago": "Nequi"
+      "metodo_pago": "Nequi",
+      "envio": {
+        "id_empresa": 1,
+        "empresa_mensajeria": "Servientrega",
+        "sitio_web": "https://www.servientrega.com",
+        "url_rastreo": "https://www.servientrega.com/wps/portal/rastreo-destinatario",
+        "numero_guia": "GUIA-2X19",
+        "estado_envio": "En transito"
+      }
     },
     {
       "id_orden": 3,
@@ -667,7 +864,15 @@
       ],
       "total": 28000.0,
       "estado": "Entregado",
-      "metodo_pago": "Daviplata"
+      "metodo_pago": "Daviplata",
+      "envio": {
+        "id_empresa": 1,
+        "empresa_mensajeria": "Servientrega",
+        "sitio_web": "https://www.servientrega.com",
+        "url_rastreo": "https://www.servientrega.com/wps/portal/rastreo-destinatario",
+        "numero_guia": "GUIA-3X19",
+        "estado_envio": "En transito"
+      }
     },
     {
       "id_orden": 4,
@@ -701,7 +906,15 @@
       ],
       "total": 25000.0,
       "estado": "Enviado",
-      "metodo_pago": "Efecty"
+      "metodo_pago": "Efecty",
+      "envio": {
+        "id_empresa": 1,
+        "empresa_mensajeria": "Servientrega",
+        "sitio_web": "https://www.servientrega.com",
+        "url_rastreo": "https://www.servientrega.com/wps/portal/rastreo-destinatario",
+        "numero_guia": "GUIA-5X19",
+        "estado_envio": "En transito"
+      }
     },
     {
       "id_orden": 6,
@@ -735,7 +948,15 @@
       ],
       "total": 45000.0,
       "estado": "Enviado",
-      "metodo_pago": "PSE"
+      "metodo_pago": "PSE",
+      "envio": {
+        "id_empresa": 1,
+        "empresa_mensajeria": "Servientrega",
+        "sitio_web": "https://www.servientrega.com",
+        "url_rastreo": "https://www.servientrega.com/wps/portal/rastreo-destinatario",
+        "numero_guia": "GUIA-7X19",
+        "estado_envio": "En transito"
+      }
     },
     {
       "id_orden": 8,
@@ -769,7 +990,15 @@
       ],
       "total": 55000.0,
       "estado": "Entregado",
-      "metodo_pago": "Tarjeta de Crédito"
+      "metodo_pago": "Tarjeta de Crédito",
+      "envio": {
+        "id_empresa": 1,
+        "empresa_mensajeria": "Servientrega",
+        "sitio_web": "https://www.servientrega.com",
+        "url_rastreo": "https://www.servientrega.com/wps/portal/rastreo-destinatario",
+        "numero_guia": "GUIA-9X19",
+        "estado_envio": "En transito"
+      }
     },
     {
       "id_orden": 10,
@@ -820,7 +1049,15 @@
       ],
       "total": 82000.0,
       "estado": "Entregado",
-      "metodo_pago": "Tarjeta de Crédito"
+      "metodo_pago": "Tarjeta de Crédito",
+      "envio": {
+        "id_empresa": 1,
+        "empresa_mensajeria": "Servientrega",
+        "sitio_web": "https://www.servientrega.com",
+        "url_rastreo": "https://www.servientrega.com/wps/portal/rastreo-destinatario",
+        "numero_guia": "GUIA-12X19",
+        "estado_envio": "En transito"
+      }
     }
   ],
   "20": [
@@ -839,7 +1076,15 @@
       ],
       "total": 35000.0,
       "estado": "Entregado",
-      "metodo_pago": "Tarjeta de Crédito"
+      "metodo_pago": "Tarjeta de Crédito",
+      "envio": {
+        "id_empresa": 1,
+        "empresa_mensajeria": "Servientrega",
+        "sitio_web": "https://www.servientrega.com",
+        "url_rastreo": "https://www.servientrega.com/wps/portal/rastreo-destinatario",
+        "numero_guia": "GUIA-1X20",
+        "estado_envio": "En transito"
+      }
     },
     {
       "id_orden": 2,
@@ -873,7 +1118,15 @@
       ],
       "total": 55000.0,
       "estado": "Enviado",
-      "metodo_pago": "Nequi"
+      "metodo_pago": "Nequi",
+      "envio": {
+        "id_empresa": 1,
+        "empresa_mensajeria": "Servientrega",
+        "sitio_web": "https://www.servientrega.com",
+        "url_rastreo": "https://www.servientrega.com/wps/portal/rastreo-destinatario",
+        "numero_guia": "GUIA-3X20",
+        "estado_envio": "En transito"
+      }
     },
     {
       "id_orden": 4,
@@ -907,7 +1160,15 @@
       ],
       "total": 28000.0,
       "estado": "Entregado",
-      "metodo_pago": "Tarjeta de Crédito"
+      "metodo_pago": "Tarjeta de Crédito",
+      "envio": {
+        "id_empresa": 1,
+        "empresa_mensajeria": "Servientrega",
+        "sitio_web": "https://www.servientrega.com",
+        "url_rastreo": "https://www.servientrega.com/wps/portal/rastreo-destinatario",
+        "numero_guia": "GUIA-5X20",
+        "estado_envio": "En transito"
+      }
     },
     {
       "id_orden": 6,
@@ -958,7 +1219,15 @@
       ],
       "total": 55000.0,
       "estado": "Entregado",
-      "metodo_pago": "PSE"
+      "metodo_pago": "PSE",
+      "envio": {
+        "id_empresa": 1,
+        "empresa_mensajeria": "Servientrega",
+        "sitio_web": "https://www.servientrega.com",
+        "url_rastreo": "https://www.servientrega.com/wps/portal/rastreo-destinatario",
+        "numero_guia": "GUIA-8X20",
+        "estado_envio": "En transito"
+      }
     },
     {
       "id_orden": 9,
@@ -992,7 +1261,15 @@
       ],
       "total": 25000.0,
       "estado": "Enviado",
-      "metodo_pago": "Nequi"
+      "metodo_pago": "Nequi",
+      "envio": {
+        "id_empresa": 1,
+        "empresa_mensajeria": "Servientrega",
+        "sitio_web": "https://www.servientrega.com",
+        "url_rastreo": "https://www.servientrega.com/wps/portal/rastreo-destinatario",
+        "numero_guia": "GUIA-10X20",
+        "estado_envio": "En transito"
+      }
     },
     {
       "id_orden": 11,
@@ -1062,7 +1339,15 @@
       ],
       "total": 40000.0,
       "estado": "Enviado",
-      "metodo_pago": "Nequi"
+      "metodo_pago": "Nequi",
+      "envio": {
+        "id_empresa": 1,
+        "empresa_mensajeria": "Servientrega",
+        "sitio_web": "https://www.servientrega.com",
+        "url_rastreo": "https://www.servientrega.com/wps/portal/rastreo-destinatario",
+        "numero_guia": "GUIA-2X21",
+        "estado_envio": "En transito"
+      }
     },
     {
       "id_orden": 3,
@@ -1096,7 +1381,15 @@
       ],
       "total": 45000.0,
       "estado": "Entregado",
-      "metodo_pago": "Daviplata"
+      "metodo_pago": "Daviplata",
+      "envio": {
+        "id_empresa": 1,
+        "empresa_mensajeria": "Servientrega",
+        "sitio_web": "https://www.servientrega.com",
+        "url_rastreo": "https://www.servientrega.com/wps/portal/rastreo-destinatario",
+        "numero_guia": "GUIA-4X21",
+        "estado_envio": "En transito"
+      }
     },
     {
       "id_orden": 5,
@@ -1130,7 +1423,15 @@
       ],
       "total": 70000.0,
       "estado": "Enviado",
-      "metodo_pago": "Nequi"
+      "metodo_pago": "Nequi",
+      "envio": {
+        "id_empresa": 1,
+        "empresa_mensajeria": "Servientrega",
+        "sitio_web": "https://www.servientrega.com",
+        "url_rastreo": "https://www.servientrega.com/wps/portal/rastreo-destinatario",
+        "numero_guia": "GUIA-6X21",
+        "estado_envio": "En transito"
+      }
     },
     {
       "id_orden": 7,
@@ -1164,7 +1465,15 @@
       ],
       "total": 80000.0,
       "estado": "Entregado",
-      "metodo_pago": "Tarjeta de Crédito"
+      "metodo_pago": "Tarjeta de Crédito",
+      "envio": {
+        "id_empresa": 1,
+        "empresa_mensajeria": "Servientrega",
+        "sitio_web": "https://www.servientrega.com",
+        "url_rastreo": "https://www.servientrega.com/wps/portal/rastreo-destinatario",
+        "numero_guia": "GUIA-8X21",
+        "estado_envio": "En transito"
+      }
     },
     {
       "id_orden": 9,
@@ -1181,7 +1490,15 @@
       ],
       "total": 25000.0,
       "estado": "Enviado",
-      "metodo_pago": "Nequi"
+      "metodo_pago": "Nequi",
+      "envio": {
+        "id_empresa": 1,
+        "empresa_mensajeria": "Servientrega",
+        "sitio_web": "https://www.servientrega.com",
+        "url_rastreo": "https://www.servientrega.com/wps/portal/rastreo-destinatario",
+        "numero_guia": "GUIA-9X21",
+        "estado_envio": "En transito"
+      }
     },
     {
       "id_orden": 10,
@@ -1232,7 +1549,15 @@
       ],
       "total": 114000.0,
       "estado": "Entregado",
-      "metodo_pago": "Tarjeta de Crédito"
+      "metodo_pago": "Tarjeta de Crédito",
+      "envio": {
+        "id_empresa": 1,
+        "empresa_mensajeria": "Servientrega",
+        "sitio_web": "https://www.servientrega.com",
+        "url_rastreo": "https://www.servientrega.com/wps/portal/rastreo-destinatario",
+        "numero_guia": "GUIA-12X21",
+        "estado_envio": "En transito"
+      }
     }
   ],
   "22": [
@@ -1268,7 +1593,15 @@
       ],
       "total": 30000.0,
       "estado": "Entregado",
-      "metodo_pago": "Tarjeta de Crédito"
+      "metodo_pago": "Tarjeta de Crédito",
+      "envio": {
+        "id_empresa": 1,
+        "empresa_mensajeria": "Servientrega",
+        "sitio_web": "https://www.servientrega.com",
+        "url_rastreo": "https://www.servientrega.com/wps/portal/rastreo-destinatario",
+        "numero_guia": "GUIA-2X22",
+        "estado_envio": "En transito"
+      }
     },
     {
       "id_orden": 3,
@@ -1302,7 +1635,15 @@
       ],
       "total": 35000.0,
       "estado": "Enviado",
-      "metodo_pago": "PSE"
+      "metodo_pago": "PSE",
+      "envio": {
+        "id_empresa": 1,
+        "empresa_mensajeria": "Servientrega",
+        "sitio_web": "https://www.servientrega.com",
+        "url_rastreo": "https://www.servientrega.com/wps/portal/rastreo-destinatario",
+        "numero_guia": "GUIA-4X22",
+        "estado_envio": "En transito"
+      }
     },
     {
       "id_orden": 5,
@@ -1336,7 +1677,15 @@
       ],
       "total": 55000.0,
       "estado": "Entregado",
-      "metodo_pago": "Tarjeta de Crédito"
+      "metodo_pago": "Tarjeta de Crédito",
+      "envio": {
+        "id_empresa": 1,
+        "empresa_mensajeria": "Servientrega",
+        "sitio_web": "https://www.servientrega.com",
+        "url_rastreo": "https://www.servientrega.com/wps/portal/rastreo-destinatario",
+        "numero_guia": "GUIA-6X22",
+        "estado_envio": "En transito"
+      }
     },
     {
       "id_orden": 7,
@@ -1370,7 +1719,15 @@
       ],
       "total": 28000.0,
       "estado": "Enviado",
-      "metodo_pago": "Nequi"
+      "metodo_pago": "Nequi",
+      "envio": {
+        "id_empresa": 1,
+        "empresa_mensajeria": "Servientrega",
+        "sitio_web": "https://www.servientrega.com",
+        "url_rastreo": "https://www.servientrega.com/wps/portal/rastreo-destinatario",
+        "numero_guia": "GUIA-8X22",
+        "estado_envio": "En transito"
+      }
     },
     {
       "id_orden": 9,
@@ -1404,7 +1761,15 @@
       ],
       "total": 25000.0,
       "estado": "Entregado",
-      "metodo_pago": "Nequi"
+      "metodo_pago": "Nequi",
+      "envio": {
+        "id_empresa": 1,
+        "empresa_mensajeria": "Servientrega",
+        "sitio_web": "https://www.servientrega.com",
+        "url_rastreo": "https://www.servientrega.com/wps/portal/rastreo-destinatario",
+        "numero_guia": "GUIA-10X22",
+        "estado_envio": "En transito"
+      }
     },
     {
       "id_orden": 11,
@@ -1474,7 +1839,15 @@
       ],
       "total": 50000.0,
       "estado": "Entregado",
-      "metodo_pago": "Tarjeta de Crédito"
+      "metodo_pago": "Tarjeta de Crédito",
+      "envio": {
+        "id_empresa": 1,
+        "empresa_mensajeria": "Servientrega",
+        "sitio_web": "https://www.servientrega.com",
+        "url_rastreo": "https://www.servientrega.com/wps/portal/rastreo-destinatario",
+        "numero_guia": "GUIA-2X23",
+        "estado_envio": "En transito"
+      }
     },
     {
       "id_orden": 3,
@@ -1508,7 +1881,15 @@
       ],
       "total": 40000.0,
       "estado": "Enviado",
-      "metodo_pago": "Nequi"
+      "metodo_pago": "Nequi",
+      "envio": {
+        "id_empresa": 1,
+        "empresa_mensajeria": "Servientrega",
+        "sitio_web": "https://www.servientrega.com",
+        "url_rastreo": "https://www.servientrega.com/wps/portal/rastreo-destinatario",
+        "numero_guia": "GUIA-4X23",
+        "estado_envio": "En transito"
+      }
     },
     {
       "id_orden": 5,
@@ -1542,7 +1923,15 @@
       ],
       "total": 45000.0,
       "estado": "Entregado",
-      "metodo_pago": "Tarjeta de Crédito"
+      "metodo_pago": "Tarjeta de Crédito",
+      "envio": {
+        "id_empresa": 1,
+        "empresa_mensajeria": "Servientrega",
+        "sitio_web": "https://www.servientrega.com",
+        "url_rastreo": "https://www.servientrega.com/wps/portal/rastreo-destinatario",
+        "numero_guia": "GUIA-6X23",
+        "estado_envio": "En transito"
+      }
     },
     {
       "id_orden": 7,
@@ -1576,7 +1965,15 @@
       ],
       "total": 25000.0,
       "estado": "Enviado",
-      "metodo_pago": "Tarjeta de Crédito"
+      "metodo_pago": "Tarjeta de Crédito",
+      "envio": {
+        "id_empresa": 1,
+        "empresa_mensajeria": "Servientrega",
+        "sitio_web": "https://www.servientrega.com",
+        "url_rastreo": "https://www.servientrega.com/wps/portal/rastreo-destinatario",
+        "numero_guia": "GUIA-8X23",
+        "estado_envio": "En transito"
+      }
     },
     {
       "id_orden": 9,
@@ -1610,7 +2007,15 @@
       ],
       "total": 28000.0,
       "estado": "Entregado",
-      "metodo_pago": "Daviplata"
+      "metodo_pago": "Daviplata",
+      "envio": {
+        "id_empresa": 1,
+        "empresa_mensajeria": "Servientrega",
+        "sitio_web": "https://www.servientrega.com",
+        "url_rastreo": "https://www.servientrega.com/wps/portal/rastreo-destinatario",
+        "numero_guia": "GUIA-10X23",
+        "estado_envio": "En transito"
+      }
     },
     {
       "id_orden": 11,
@@ -1752,7 +2157,15 @@
       ],
       "total": 40000.0,
       "estado": "Enviado",
-      "metodo_pago": "PSE"
+      "metodo_pago": "PSE",
+      "envio": {
+        "id_empresa": 1,
+        "empresa_mensajeria": "Servientrega",
+        "sitio_web": "https://www.servientrega.com",
+        "url_rastreo": "https://www.servientrega.com/wps/portal/rastreo-destinatario",
+        "numero_guia": "GUIA-1X24",
+        "estado_envio": "En transito"
+      }
     },
     {
       "id_orden": 2,
@@ -1786,7 +2199,15 @@
       ],
       "total": 55000.0,
       "estado": "Entregado",
-      "metodo_pago": "Tarjeta de Crédito"
+      "metodo_pago": "Tarjeta de Crédito",
+      "envio": {
+        "id_empresa": 1,
+        "empresa_mensajeria": "Servientrega",
+        "sitio_web": "https://www.servientrega.com",
+        "url_rastreo": "https://www.servientrega.com/wps/portal/rastreo-destinatario",
+        "numero_guia": "GUIA-3X24",
+        "estado_envio": "En transito"
+      }
     },
     {
       "id_orden": 4,
@@ -1820,7 +2241,15 @@
       ],
       "total": 45000.0,
       "estado": "Enviado",
-      "metodo_pago": "PSE"
+      "metodo_pago": "PSE",
+      "envio": {
+        "id_empresa": 1,
+        "empresa_mensajeria": "Servientrega",
+        "sitio_web": "https://www.servientrega.com",
+        "url_rastreo": "https://www.servientrega.com/wps/portal/rastreo-destinatario",
+        "numero_guia": "GUIA-5X24",
+        "estado_envio": "En transito"
+      }
     },
     {
       "id_orden": 6,
@@ -1854,7 +2283,15 @@
       ],
       "total": 60000.0,
       "estado": "Entregado",
-      "metodo_pago": "Tarjeta de Crédito"
+      "metodo_pago": "Tarjeta de Crédito",
+      "envio": {
+        "id_empresa": 1,
+        "empresa_mensajeria": "Servientrega",
+        "sitio_web": "https://www.servientrega.com",
+        "url_rastreo": "https://www.servientrega.com/wps/portal/rastreo-destinatario",
+        "numero_guia": "GUIA-7X24",
+        "estado_envio": "En transito"
+      }
     },
     {
       "id_orden": 8,
@@ -1905,7 +2342,15 @@
       ],
       "total": 45000.0,
       "estado": "Enviado",
-      "metodo_pago": "Daviplata"
+      "metodo_pago": "Daviplata",
+      "envio": {
+        "id_empresa": 1,
+        "empresa_mensajeria": "Servientrega",
+        "sitio_web": "https://www.servientrega.com",
+        "url_rastreo": "https://www.servientrega.com/wps/portal/rastreo-destinatario",
+        "numero_guia": "GUIA-10X24",
+        "estado_envio": "En transito"
+      }
     },
     {
       "id_orden": 11,
@@ -1939,7 +2384,15 @@
       ],
       "total": 50000.0,
       "estado": "Entregado",
-      "metodo_pago": "Tarjeta de Crédito"
+      "metodo_pago": "Tarjeta de Crédito",
+      "envio": {
+        "id_empresa": 1,
+        "empresa_mensajeria": "Servientrega",
+        "sitio_web": "https://www.servientrega.com",
+        "url_rastreo": "https://www.servientrega.com/wps/portal/rastreo-destinatario",
+        "numero_guia": "GUIA-12X24",
+        "estado_envio": "En transito"
+      }
     }
   ],
   "25": [
@@ -1958,7 +2411,15 @@
       ],
       "total": 35000.0,
       "estado": "Enviado",
-      "metodo_pago": "PSE"
+      "metodo_pago": "PSE",
+      "envio": {
+        "id_empresa": 1,
+        "empresa_mensajeria": "Servientrega",
+        "sitio_web": "https://www.servientrega.com",
+        "url_rastreo": "https://www.servientrega.com/wps/portal/rastreo-destinatario",
+        "numero_guia": "GUIA-1X25",
+        "estado_envio": "En transito"
+      }
     },
     {
       "id_orden": 2,
@@ -1992,7 +2453,15 @@
       ],
       "total": 30000.0,
       "estado": "Entregado",
-      "metodo_pago": "Tarjeta de Crédito"
+      "metodo_pago": "Tarjeta de Crédito",
+      "envio": {
+        "id_empresa": 1,
+        "empresa_mensajeria": "Servientrega",
+        "sitio_web": "https://www.servientrega.com",
+        "url_rastreo": "https://www.servientrega.com/wps/portal/rastreo-destinatario",
+        "numero_guia": "GUIA-3X25",
+        "estado_envio": "En transito"
+      }
     },
     {
       "id_orden": 4,
@@ -2026,7 +2495,15 @@
       ],
       "total": 20000.0,
       "estado": "Enviado",
-      "metodo_pago": "PSE"
+      "metodo_pago": "PSE",
+      "envio": {
+        "id_empresa": 1,
+        "empresa_mensajeria": "Servientrega",
+        "sitio_web": "https://www.servientrega.com",
+        "url_rastreo": "https://www.servientrega.com/wps/portal/rastreo-destinatario",
+        "numero_guia": "GUIA-5X25",
+        "estado_envio": "En transito"
+      }
     },
     {
       "id_orden": 6,
@@ -2060,7 +2537,15 @@
       ],
       "total": 65000.0,
       "estado": "Entregado",
-      "metodo_pago": "Tarjeta de Crédito"
+      "metodo_pago": "Tarjeta de Crédito",
+      "envio": {
+        "id_empresa": 1,
+        "empresa_mensajeria": "Servientrega",
+        "sitio_web": "https://www.servientrega.com",
+        "url_rastreo": "https://www.servientrega.com/wps/portal/rastreo-destinatario",
+        "numero_guia": "GUIA-7X25",
+        "estado_envio": "En transito"
+      }
     },
     {
       "id_orden": 8,
@@ -2111,7 +2596,15 @@
       ],
       "total": 45000.0,
       "estado": "Enviado",
-      "metodo_pago": "Daviplata"
+      "metodo_pago": "Daviplata",
+      "envio": {
+        "id_empresa": 1,
+        "empresa_mensajeria": "Servientrega",
+        "sitio_web": "https://www.servientrega.com",
+        "url_rastreo": "https://www.servientrega.com/wps/portal/rastreo-destinatario",
+        "numero_guia": "GUIA-10X25",
+        "estado_envio": "En transito"
+      }
     },
     {
       "id_orden": 11,
@@ -2145,7 +2638,15 @@
       ],
       "total": 55000.0,
       "estado": "Entregado",
-      "metodo_pago": "Tarjeta de Crédito"
+      "metodo_pago": "Tarjeta de Crédito",
+      "envio": {
+        "id_empresa": 1,
+        "empresa_mensajeria": "Servientrega",
+        "sitio_web": "https://www.servientrega.com",
+        "url_rastreo": "https://www.servientrega.com/wps/portal/rastreo-destinatario",
+        "numero_guia": "GUIA-12X25",
+        "estado_envio": "En transito"
+      }
     },
     {
       "id_orden": 13,

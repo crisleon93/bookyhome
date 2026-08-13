@@ -29,7 +29,6 @@ const NAV_ITEMS = [
   { id: 'tiendas',   label: 'Tiendas',   Icon: IconStore },
   { id: 'ordenes',   label: 'Órdenes',   Icon: IconPackage },
   { id: 'finanzas',  label: 'Finanzas',  Icon: IconWallet },
-  { id: 'nomina',    label: 'Nómina',    Icon: IconDollar },
   { id: 'reclamos',  label: 'Quejas y reclamos', Icon: IconAlertTriangle },
   { id: 'soporte',   label: 'Soporte técnico', Icon: IconTool },
 ];
@@ -284,7 +283,6 @@ export default function AdminDashboard() {
     tiendas: 'Gestión de Tiendas',
     ordenes: 'Gestión de Órdenes',
     finanzas: 'BookyPago Finanzas',
-    nomina: 'Nómina de Pagos a Vendedores',
     reclamos: 'Quejas y Reclamos',
     soporte: 'Soporte Técnico',
   };
@@ -549,9 +547,9 @@ export default function AdminDashboard() {
           <>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px', marginBottom: '30px' }}>
               {[
-                { label: 'Total en ventas', value: `$${totalVentas.toLocaleString('es-CO')}`, Icon: IconDollar, color: GREEN },
                 { label: 'Órdenes hoy',     value: ordenesHoy,                               Icon: IconCart,   color: '#2980b9' },
                 { label: 'Libros activos',  value: stats.libros,                              Icon: IconBook,   color: '#8e44ad' },
+                { label: 'Tiendas activas', value: tiendas.filter(t => t.estado_tienda === 'activa').length, Icon: IconStore, color: GREEN },
               ].map((s) => (
                 <div key={s.label} style={{
                   background: WHITE, borderRadius: '14px', padding: '24px',
@@ -577,14 +575,14 @@ export default function AdminDashboard() {
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
-              {/* Usuarios por rol unificados */}
+              {/* Usuarios por rol */}
               <div style={{ background: WHITE, borderRadius: '14px', padding: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.06)', border: `1px solid ${BORDER}` }}>
                 <h3 style={{ margin: '0 0 20px', color: VINOTINTO, display: 'flex', alignItems: 'center', gap: '10px' }}>
                   <IconUser className="" width={20} height={20} style={{ color: VINOTINTO }} /> Usuarios por rol
                 </h3>
-                {Object.entries(roleCount).map(([rol, count]) => (
+                {Object.entries(roleCount).map(([rol, count], idx) => (
                   <BarraProgreso
-                    key={rol} label={rol} value={count}
+                    key={`rol-${rol}-${idx}`} label={rol} value={count}
                     max={stats.usuarios}
                     color={rol === 'admin' ? VINOTINTO : rol === 'vendedor' ? ORANGE : GREEN}
                   />
@@ -596,12 +594,56 @@ export default function AdminDashboard() {
                 <h3 style={{ margin: '0 0 20px', color: VINOTINTO, display: 'flex', alignItems: 'center', gap: '10px' }}>
                   <IconBook className="" width={20} height={20} style={{ color: VINOTINTO }} /> Libros por categoría
                 </h3>
-                {Object.entries(categoriaCount).slice(0, 6).map(([cat, count]) => (
+                {Object.entries(categoriaCount).slice(0, 6).map(([cat, count], idx) => (
                   <BarraProgreso
-                    key={cat} label={cat} value={count}
+                    key={`categoria-${cat}-${idx}`} label={cat} value={count}
                     max={stats.libros} color={VINOTINTO}
                   />
                 ))}
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginTop: '24px' }}>
+              {/* Tiendas por estado */}
+              <div style={{ background: WHITE, borderRadius: '14px', padding: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.06)', border: `1px solid ${BORDER}` }}>
+                <h3 style={{ margin: '0 0 20px', color: VINOTINTO, display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <IconStore className="" width={20} height={20} style={{ color: VINOTINTO }} /> Tiendas por estado
+                </h3>
+                {(() => {
+                  const tiendaEstadoCount = tiendas.reduce((acc, t) => {
+                    const estado = t.estado_tienda || 'desconocido';
+                    acc[estado] = (acc[estado] || 0) + 1;
+                    return acc;
+                  }, {});
+                  return Object.entries(tiendaEstadoCount).map(([estado, count], idx) => (
+                    <BarraProgreso
+                      key={`tienda-estado-${estado}-${idx}`} label={estado} value={count}
+                      max={stats.tiendas}
+                      color={estado === 'activa' ? GREEN : estado === 'pendiente' ? ORANGE : RED}
+                    />
+                  ));
+                })()}
+              </div>
+
+              {/* Órdenes por estado */}
+              <div style={{ background: WHITE, borderRadius: '14px', padding: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.06)', border: `1px solid ${BORDER}` }}>
+                <h3 style={{ margin: '0 0 20px', color: VINOTINTO, display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <IconPackage className="" width={20} height={20} style={{ color: VINOTINTO }} /> Órdenes por estado
+                </h3>
+                {(() => {
+                  const ordenEstadoCount = ordenes.reduce((acc, o) => {
+                    const estado = o.estado || 'desconocido';
+                    acc[estado] = (acc[estado] || 0) + 1;
+                    return acc;
+                  }, {});
+                  return Object.entries(ordenEstadoCount).map(([estado, count], idx) => (
+                    <BarraProgreso
+                      key={`orden-estado-${estado}-${idx}`} label={estado} value={count}
+                      max={stats.ordenes}
+                      color={estado === 'completada' ? GREEN : estado === 'pendiente' ? ORANGE : RED}
+                    />
+                  ));
+                })()}
               </div>
             </div>
           </>
@@ -1224,11 +1266,6 @@ export default function AdminDashboard() {
         {/* FINANZAS - BOOKYPAGO */}
         {activeSection === 'finanzas' && (
           <BookyPagoFinanzas />
-        )}
-
-        {/* NÓMINA - abre BookyPago directo en la pestaña de nómina */}
-        {activeSection === 'nomina' && (
-          <BookyPagoFinanzas defaultTab="nomina" />
         )}
 
       </main>

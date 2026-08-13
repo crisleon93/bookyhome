@@ -201,6 +201,7 @@ export default function Chat({
       };
 
       ws.onerror = (e) => {
+        if (ws.readyState === WebSocket.CLOSING || ws.readyState === WebSocket.CLOSED) return;
         console.error("Error en WebSocket de chat:", e);
       };
 

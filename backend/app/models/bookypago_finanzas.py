@@ -47,47 +47,63 @@ class BookyPagoFinanzas:
             config: Diccionario con configuración de comisiones
         """
         self.config = config or {
-            'comision_venta': 0.10,  # 10% comisión por venta
-            'comision_impulso': 0.05,  # 5% comisión por impulso
-            'comision_plan': 0.02,  # 2% comisión por plan
+            'comision_venta': 0.15,  # 15% comisión por venta
+            'comision_impulso': 0.10,  # 10% comisión por impulso
+            'comision_plan': 0.08,  # 8% comisión por plan
             'minimo_pago': 50000,  # Mínimo para retirar
             'dias_pago': 7  # Días para procesar pagos
         }
     
     def obtener_balance(self) -> Dict:
         """
-        Obtiene el balance financiero de BookyHome
-        
-        Returns:
-            Diccionario con ingresos, pagos y balance
+        Obtiene el balance financiero de BookyHome.
+
+        Ingresos = suma de comisiones reales cobradas por BookyHome.
+        Egresos  = solo pagos que BookyHome hace con su propio dinero
+                   (operativos). Los pagos de nómina a vendedores son
+                   traslados del dinero del vendedor, NO un gasto de
+                   BookyHome, así que no restan del balance.
         """
         finanzas = _load_store(FINANZAS_FILE)
-        
+
         ingresos = finanzas.get('ingresos', [])
-        pagos = finanzas.get('pagos', [])
-        
-        total_ingresos = sum(ing['monto'] for ing in ingresos)
-        # Solo restar pagos que ya fueron procesados (no pendientes)
-        pagos_procesados = [p for p in pagos if p.get('estado') == 'procesado']
-        total_pagos = sum(pag['monto'] for pag in pagos_procesados)
+        pagos    = finanzas.get('pagos', [])
+
+        # Ingreso real de BookyHome = la comisión cobrada en cada transacción.
+        # Usamos 'comision' si existe; si no, caemos a 'monto' por compatibilidad
+        # con registros viejos donde ambos campos coincidían para ventas.
+        total_ingresos = sum(
+            float(ing.get('comision') or ing.get('monto', 0))
+            for ing in ingresos
+        )
+
+        # Solo restar pagos operativos de BookyHome (tipo != 'nomina').
+        # Los pagos de nómina son traslados al vendedor con dinero que
+        # nunca perteneció a BookyHome (85% de la venta).
+        pagos_operativos = [
+            p for p in pagos
+            if p.get('estado') == 'procesado' and p.get('tipo') != 'nomina'
+        ]
+        total_pagos = sum(float(p.get('monto', 0)) for p in pagos_operativos)
+
         balance = total_ingresos - total_pagos
-        
+
         return {
             'ingresos_totales': total_ingresos,
             'pagos_totales': total_pagos,
             'balance': balance,
             'ingresos_por_tipo': self._ingresos_por_tipo(ingresos),
-            'pagos_pendientes': len([p for p in pagos if p['estado'] == 'pendiente'])
+            'pagos_pendientes': len([p for p in pagos if p.get('estado') == 'pendiente']),
         }
     
     def _ingresos_por_tipo(self, ingresos: List) -> Dict:
-        """Desglosa ingresos por tipo"""
+        """Desglosa ingresos (comisiones reales) por tipo"""
         tipos = {}
         for ing in ingresos:
-            tipo = ing['tipo']
+            tipo = ing.get('tipo', 'otro')
             if tipo not in tipos:
                 tipos[tipo] = 0
-            tipos[tipo] += ing['monto']
+            tipos[tipo] += float(ing.get('comision') or ing.get('monto', 0))
         return tipos
     
     def registrar_ingreso_venta(self, id_venta: int, monto_venta: float, id_vendedor: int) -> Dict:
@@ -290,7 +306,7 @@ class BookyPagoFinanzas:
         return {
             'vendedores': list(nomina.values()),
             'total_general': sum(v['total_pendiente'] for v in nomina.values()),
-            'total_pagos': len(pagos_pendientes)
+            'total_vendedores': len(nomina)
         }
     
     def procesar_nomina_vendedor(self, id_vendedor: int, referencia: str) -> Dict:
@@ -461,12 +477,18 @@ class BookyPagoFinanzas:
         
         return {
             'balance_actual': balance,
-            'ingresos_30_dias': sum(ing['monto'] for ing in historial['ingresos']),
-            'pagos_30_dias': sum(pag['monto'] for pag in historial['pagos']),
-            'promedio_diario': sum(ing['monto'] for ing in historial['ingresos']) / 30,
-            'ventas_totales': len([ing for ing in historial['ingresos'] if ing['tipo'] == 'venta']),
-            'planes_activos': len([ing for ing in historial['ingresos'] if ing['tipo'] == 'plan']),
-            'impulsos_comprados': len([ing for ing in historial['ingresos'] if ing['tipo'] == 'impulso'])
+            'ingresos_30_dias': sum(
+                float(ing.get('comision') or ing.get('monto', 0))
+                for ing in historial['ingresos']
+            ),
+            'pagos_30_dias': sum(float(pag.get('monto', 0)) for pag in historial['pagos']),
+            'promedio_diario': sum(
+                float(ing.get('comision') or ing.get('monto', 0))
+                for ing in historial['ingresos']
+            ) / 30,
+            'ventas_totales':      len([i for i in historial['ingresos'] if i.get('tipo') == 'venta']),
+            'planes_activos':      len([i for i in historial['ingresos'] if i.get('tipo') == 'plan']),
+            'impulsos_comprados':  len([i for i in historial['ingresos'] if i.get('tipo') == 'impulso']),
         }
 
 

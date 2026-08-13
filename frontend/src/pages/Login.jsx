@@ -100,12 +100,15 @@ function Login() {
       const decoded = jwtDecode(token)
       const userRole = decoded.rol || decoded.role
 
+      // Disparar evento para que Header y App.jsx detecten el cambio
+      window.dispatchEvent(new CustomEvent('auth-change', { detail: { authenticated: true } }))
+
       if (userRole === 'admin' || userRole === 'administrador') {
         navigate('/admin')
       } else if (userRole === 'vendedor') {
         navigate('/mi-tienda')
       } else {
-        navigate('/post-login')
+        navigate('/') // Comprador va al Home con sidebar
       }
     } catch (err) {
       setError(err.response?.data?.detail || 'Email o contraseña incorrectos')
