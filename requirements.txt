@@ -1,3 +1,0 @@
-﻿\n# Añadido: dependencias para conectar MySQL y cargar .env
-mysql-connector-python
-python-dotenv

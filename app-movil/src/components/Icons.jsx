@@ -21,6 +21,13 @@ export const IconSearch = ({ size = 20, color = '#7A1E3A' }) => (
   </Svg>
 );
 
+export const IconFilter = ({ size = 20, color = '#7A1E3A' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+    stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <Polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+  </Svg>
+);
+
 // ── Usuario ───────────────────────────────────────────────────────────────────
 export const IconUser = ({ size = 22, color = '#7A1E3A' }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none"
@@ -286,3 +293,12 @@ export const IconChat = ({ size = 20, color = '#7A1E3A' }) => (
     />
   </Svg>
 );
+
+// ── Moneda / Precio ─────────────────────────────────────────────────────────
+export const IconDollar = ({ size = 20, color = '#7A1E3A' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <Line x1="12" y1="1" x2="12" y2="23" />
+    <Path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+  </Svg>
+);
+

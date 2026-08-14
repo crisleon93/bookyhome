@@ -364,6 +364,46 @@
       "total": 68888.0,
       "estado": "pagado",
       "metodo_pago": "Tarjeta de Crédito"
+    },
+    {
+      "id_orden": 19,
+      "codigo_compra": "BH-99B6728010",
+      "fecha": "2026-08-14T06:55:34.319026Z",
+      "items": [
+        {
+          "id_libro": 16,
+          "titulo": "Cien años de soledad",
+          "autor_libro": "Gabriel García Márquez",
+          "precio_libro": 45000.0,
+          "cantidad": 1,
+          "imagen": "https://covers.openlibrary.org/b/id/12711612-L.jpg",
+          "id_variante": 18,
+          "variante_label": "Tapa Blanda · Español · Edición Conmemorativa"
+        }
+      ],
+      "total": 45000.0,
+      "estado": "pagado",
+      "metodo_pago": "Tarjeta de Crédito"
+    },
+    {
+      "id_orden": 20,
+      "codigo_compra": "BH-D68EB5ABBF",
+      "fecha": "2026-08-14T07:03:54.193034Z",
+      "items": [
+        {
+          "id_libro": 16,
+          "titulo": "Cien años de soledad",
+          "autor_libro": "Gabriel García Márquez",
+          "precio_libro": 45000.0,
+          "cantidad": 1,
+          "imagen": "https://covers.openlibrary.org/b/id/12711612-L.jpg",
+          "id_variante": 18,
+          "variante_label": "Tapa Blanda · Español · Edición Conmemorativa"
+        }
+      ],
+      "total": 45000.0,
+      "estado": "pagado",
+      "metodo_pago": "Tarjeta de Crédito"
     }
   ],
   "17": [

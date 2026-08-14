@@ -1350,5 +1350,23 @@
     "fecha_venta": "2026-08-14T01:18:10.304031Z",
     "estado": "pendiente",
     "fecha_programada": 1787293090.304038
+  },
+  {
+    "id": 135,
+    "id_vendedor": 26,
+    "monto": 38250.0,
+    "id_venta": 19,
+    "fecha_venta": "2026-08-14T06:55:49.891054Z",
+    "estado": "pendiente",
+    "fecha_programada": 1787313349.891063
+  },
+  {
+    "id": 136,
+    "id_vendedor": 26,
+    "monto": 38250.0,
+    "id_venta": 20,
+    "fecha_venta": "2026-08-14T07:04:12.349355Z",
+    "estado": "pendiente",
+    "fecha_programada": 1787313852.349363
   }
 ]

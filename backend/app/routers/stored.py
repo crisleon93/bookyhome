@@ -10,12 +10,30 @@ def listar_libros_sp():
         conn = get_db()
         cursor = conn.cursor(dictionary=True)
 
-        cursor.callproc("sp_listar_libros_disponibles")
+        cursor.execute("""
+            SELECT
+                l.id_libro,
+                l.id_tienda,
+                l.titulo,
+                l.autor_libro,
+                l.descripcion_libro AS descripcion,
+                l.isbn,
+                l.estado_libro AS estado,
+                c.nombre_categoria,
+                t.nombre_tienda,
+                u.correo_usuario AS email_vendedor,
+                l.precio_libro,
+                l.stock,
+                l.oculto,
+                (SELECT url_imagen FROM imagenes_libro
+                 WHERE id_libro = l.id_libro AND es_principal = 1 LIMIT 1) AS imagen
+            FROM libros l
+            INNER JOIN categorias c ON l.id_categoria = c.id_categoria
+            INNER JOIN tiendas t ON l.id_tienda = t.id_tienda
+            INNER JOIN usuarios u ON t.id_usuario = u.id_usuario
+        """)
 
-        results = []
-
-        for result in cursor.stored_results():
-            results = result.fetchall()
+        results = cursor.fetchall()
 
         cursor.close()
         conn.close()

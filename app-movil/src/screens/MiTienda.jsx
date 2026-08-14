@@ -40,6 +40,7 @@ export default function MiTienda({ navigation }) {
     { label: 'Mi Librería', icon: '🏪', screen: 'Libreria' },
     { label: 'Historial', icon: '📦', screen: 'History' },
     { label: 'Notificaciones', icon: '🔔', screen: 'Notifications' },
+    { label: 'Configuración', icon: '⚙️', screen: 'ConfiguracionTienda' },
   ];
 
   return (
