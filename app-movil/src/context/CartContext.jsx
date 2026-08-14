@@ -40,7 +40,9 @@ export function CartProvider({ children }) {
         titulo: book.titulo,
         autor_libro: book.autor_libro || book.autor,
         precio_libro: parseFloat(book.precio_libro || book.precio || 0),
-        imagen: book.imagen
+        imagen: book.imagen,
+        id_variante: book.id_variante,
+        variante_label: book.variante_label
       };
       const res = await api.post('/carrito', payload);
       setCart(res.data || []);

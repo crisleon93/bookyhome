@@ -1332,5 +1332,23 @@
     "fecha_programada": 1787132702.165296,
     "fecha_pago": "2026-08-13T02:23:03.642347Z",
     "referencia": "TRF-Davivienda-0-12-20260813022303"
+  },
+  {
+    "id": 133,
+    "id_vendedor": 26,
+    "monto": 117109.6,
+    "id_venta": 17,
+    "fecha_venta": "2026-08-14T01:05:04.663184Z",
+    "estado": "pendiente",
+    "fecha_programada": 1787292304.663233
+  },
+  {
+    "id": 134,
+    "id_vendedor": 26,
+    "monto": 58554.8,
+    "id_venta": 18,
+    "fecha_venta": "2026-08-14T01:18:10.304031Z",
+    "estado": "pendiente",
+    "fecha_programada": 1787293090.304038
   }
 ]

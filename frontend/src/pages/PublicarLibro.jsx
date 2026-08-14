@@ -11,6 +11,9 @@ const ESTADOS = [
   { value: "usado_regular", label: "Usado — estado regular", desc: "Visible desgaste, funcional" },
 ];
 
+const TIPOS_TAPA = ['Tapa Blanda', 'Tapa Dura', 'Digital'];
+const IDIOMAS = ['Español', 'Inglés', 'Portugués', 'Francés', 'Otro'];
+
 export default function PublicarLibro() {
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
@@ -22,6 +25,18 @@ export default function PublicarLibro() {
   const [error, setError] = useState("");
   const [exito, setExito] = useState(false);
   const [activeSide, setActiveSide] = useState("Publicar Libro");
+
+  // Variantes
+  const [variantes, setVariantes] = useState([]);
+  const [varianteForm, setVarianteForm] = useState({
+    tipo_tapa: 'Tapa Blanda',
+    idioma: 'Español',
+    edicion: '1ra Edición',
+    precio_variante: '',
+    stock_variante: '',
+    archivo_digital: null,
+  });
+  const [idLibroCreaddo, setIdLibroCreado] = useState(null);
 
   const handleSidebarSelect = (name) => {
     // Si el usuario está en la página de publicar, mantener el highlight.
@@ -92,6 +107,23 @@ export default function PublicarLibro() {
     setPreviews((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const agregarVariante = () => {
+    if (!varianteForm.precio_variante || Number(varianteForm.precio_variante) <= 0)
+      return setError("El precio de la variante debe ser mayor a $0");
+    if (!varianteForm.stock_variante || Number(varianteForm.stock_variante) < 0)
+      return setError("El stock de la variante no puede ser negativo");
+    if (varianteForm.tipo_tapa === 'Digital' && !varianteForm.archivo_digital)
+      return setError("Para la variante Digital debes subir un archivo PDF o EPUB");
+
+    setVariantes(prev => [...prev, { ...varianteForm, id_temp: Date.now() }]);
+    setVarianteForm({ tipo_tapa: 'Tapa Blanda', idioma: 'Español', edicion: '1ra Edición', precio_variante: '', stock_variante: '', archivo_digital: null });
+    setError("");
+  };
+
+  const eliminarVariante = (id_temp) => {
+    setVariantes(prev => prev.filter(v => v.id_temp !== id_temp));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -113,9 +145,37 @@ export default function PublicarLibro() {
       Object.entries(form).forEach(([k, v]) => data.append(k, v));
       archivos.forEach((file) => data.append("imagenes", file));
 
-      await axios.post("/libros/publicar", data, {
+      const res = await axios.post("/libros/publicar", data, {
         headers: { "Content-Type": "multipart/form-data" },
       });
+
+      const id_libro = res.data?.id_libro;
+
+      // Subir variantes si las hay
+      if (id_libro && variantes.length > 0) {
+        for (const v of variantes) {
+          try {
+            // 1. Crear la variante
+            const resVariante = await axios.post(`/libros/${id_libro}/variantes`, {
+              tipo_tapa: v.tipo_tapa,
+              idioma: v.idioma,
+              edicion: v.edicion,
+              precio_variante: Number(v.precio_variante),
+              stock_variante: Number(v.stock_variante),
+            });
+            // 2. Si es digital y hay archivo, subirlo
+            if (v.tipo_tapa === 'Digital' && v.archivo_digital && resVariante.data?.id_variante) {
+              const fd = new FormData();
+              fd.append('file', v.archivo_digital);
+              await axios.post(`/libros/${id_libro}/variantes/${resVariante.data.id_variante}/archivo`, fd, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+              });
+            }
+          } catch (err) {
+            console.warn('Error subiendo variante:', err);
+          }
+        }
+      }
 
       setExito(true);
       setTimeout(() => navigate("/mi-tienda"), 2000);
@@ -395,6 +455,72 @@ export default function PublicarLibro() {
                 </strong>
               </div>
             )}
+          </div>
+
+          {/* ── VARIANTES ── */}
+          <div className="form-card">
+            <h3 className="card-title">
+              <span className="card-step">5</span>Formatos y variantes <span style={{fontSize:'12px',fontWeight:'400',color:'#888'}}>(opcional)</span>
+            </h3>
+            <p className="card-hint">Agrega Tapa Blanda, Tapa Dura o Digital con precios distintos. Para Digital, sube el archivo PDF o EPUB que recibirá el comprador.</p>
+
+            {/* Lista variantes ya agregadas */}
+            {variantes.length > 0 && (
+              <div style={{marginBottom:'16px'}}>
+                {variantes.map(v => (
+                  <div key={v.id_temp} style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'8px 12px',borderRadius:'8px',background:'#f3f4f6',marginBottom:'8px'}}>
+                    <div>
+                      <strong>{v.tipo_tapa}</strong> · {v.idioma} · {v.edicion}
+                      <br/><span style={{color:'#7A1E3A',fontWeight:'600'}}>${Number(v.precio_variante).toLocaleString('es-CO')}</span> · Stock: {v.stock_variante}
+                      {v.tipo_tapa === 'Digital' && v.archivo_digital && <span style={{marginLeft:'8px',color:'#2e7d32',fontSize:'12px'}}>📄 {v.archivo_digital.name}</span>}
+                    </div>
+                    <button type="button" onClick={() => eliminarVariante(v.id_temp)} style={{background:'none',border:'none',cursor:'pointer',color:'#c62828',fontSize:'18px'}}>×</button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Form nueva variante */}
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'12px',marginBottom:'12px'}}>
+              <div className="form-group">
+                <label>Tipo</label>
+                <select value={varianteForm.tipo_tapa} onChange={e => setVarianteForm(p => ({...p, tipo_tapa: e.target.value}))}>
+                  {TIPOS_TAPA.map(t => <option key={t} value={t}>{t}</option>)}
+                </select>
+              </div>
+              <div className="form-group">
+                <label>Idioma</label>
+                <select value={varianteForm.idioma} onChange={e => setVarianteForm(p => ({...p, idioma: e.target.value}))}>
+                  {IDIOMAS.map(i => <option key={i} value={i}>{i}</option>)}
+                </select>
+              </div>
+              <div className="form-group">
+                <label>Edición</label>
+                <input type="text" placeholder="1ra Edición" value={varianteForm.edicion} onChange={e => setVarianteForm(p => ({...p, edicion: e.target.value}))} />
+              </div>
+              <div className="form-group">
+                <label>Precio (COP)</label>
+                <input type="number" min="0" placeholder="25000" value={varianteForm.precio_variante} onChange={e => setVarianteForm(p => ({...p, precio_variante: e.target.value}))} />
+              </div>
+              <div className="form-group">
+                <label>Stock</label>
+                <input type="number" min="0" placeholder={varianteForm.tipo_tapa === 'Digital' ? '999' : '5'} value={varianteForm.stock_variante} onChange={e => setVarianteForm(p => ({...p, stock_variante: e.target.value}))} />
+              </div>
+              {varianteForm.tipo_tapa === 'Digital' && (
+                <div className="form-group">
+                  <label>Archivo PDF / EPUB</label>
+                  <input
+                    type="file"
+                    accept=".pdf,.epub"
+                    onChange={e => setVarianteForm(p => ({...p, archivo_digital: e.target.files[0] || null}))}
+                    style={{padding:'6px 0'}}
+                  />
+                </div>
+              )}
+            </div>
+            <button type="button" onClick={agregarVariante} style={{width:'100%',padding:'10px',borderRadius:'8px',background:'#7A1E3A',color:'#fff',border:'none',cursor:'pointer',fontWeight:'600',fontSize:'14px'}}>
+              + Agregar variante
+            </button>
           </div>
 
           {/* Error */}

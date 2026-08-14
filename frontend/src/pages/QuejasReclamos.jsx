@@ -113,6 +113,26 @@ export default function QuejasReclamos() {
                 {ordenes.map((orden) => <option key={orden.id_orden} value={orden.id_orden}>Orden #{orden.id_orden} · ${Number(orden.total || 0).toLocaleString('es-CO')}</option>)}
               </select>
             </label>
+
+            {ordenSeleccionada && (() => {
+              const orden = ordenes.find(o => String(o.id_orden) === String(ordenSeleccionada));
+              if (!orden) return null;
+              const item = orden.items?.[0] || {};
+              const imageUrl = item.imagen_url || item.imagen;
+              return (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '16px 20px', background: 'linear-gradient(135deg, #faf8f6 0%, #f5f0e8 100%)', borderRadius: 12, border: '1px solid #f0ebe4', marginTop: -12 }}>
+                  {imageUrl ? (
+                    <img src={imageUrl.startsWith('http') ? imageUrl : `${getApiBaseUrl()}${imageUrl}`} alt="Libro" style={{ width: 56, height: 56, borderRadius: 8, objectFit: 'cover', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }} />
+                  ) : (
+                    <div style={{ width: 56, height: 56, borderRadius: 8, background: '#f7e9ee', display: 'grid', placeItems: 'center', fontSize: '1.5rem', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>📚</div>
+                  )}
+                  <div>
+                    <h4 style={{ margin: '0 0 6px', fontSize: '1.05rem', color: '#333', fontWeight: 700 }}>{item.titulo || item.nombre_libro || 'Varios libros'} {orden.items?.length > 1 ? ` (+${orden.items.length - 1})` : ''}</h4>
+                    <p style={{ margin: 0, fontSize: '0.9rem', color: '#666' }}>Vendido por: <strong style={{ color: '#7A1E3A' }}>{item.nombre_tienda || 'Tienda BookyHome'}</strong></p>
+                  </div>
+                </div>
+              );
+            })()}
             <label style={{ display: 'grid', gap: 10, fontWeight: 700, fontSize: '1rem' }}>
               Motivo del reclamo
               <select value={motivo} onChange={(e) => setMotivo(e.target.value)} required style={{ padding: '16px 20px', borderRadius: 12, border: '1px solid #ddd', fontSize: '1rem', outline: 'none', transition: 'all 0.2s' }}>

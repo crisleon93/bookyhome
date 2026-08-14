@@ -13,8 +13,9 @@ export const resetPassword = (data) => api.post('/reset-password', data);
 export const verifyEmail = ({ token }) => api.get('/verify-email', { params: { token } });
 
 // ===== Catálogo =====
-export const getBooks = (params) => api.get('/stored/api/stored/libros', { params });
-export const getBookById = (id) => api.get(`/stored/api/stored/libros/${id}`);
+export const getBooks = (params) => api.get('/api/stored/libros', { params });
+export const getBookById = (id) => api.get(`/api/stored/libros/${id}`);
+export const getVariantes = (id_libro) => api.get(`/libros/${id_libro}/variantes`);
 export const getBookAvailability = (id, cantidad) => api.get(`/libros/${id}/disponibilidad`, { params: { cantidad } });
 export const getBookOffer = (id) => api.get(`/ofertas/libro/${id}/activa`);
 export const getCategorias = () => api.get('/catalogo/categorias');
@@ -91,5 +92,11 @@ export const getChatHistory = (id_sala, params = { limit: 50, offset: 0 }) =>
 export const marcarSalaLeida = (id_sala) => api.put(`/chat/salas/${id_sala}/marcar-leidos`);
 export const enviarMensajeChat = (payload) => api.post('/chat/mensajes', payload);
 export const getSalasUsuario = () => api.get('/chat/salas');
+
+// ===== Quejas y Reclamos =====
+export const getApiBaseUrl = () => api.defaults.baseURL;
+export const getOrdenes = () => api.get('/api/v1/orders');
+export const getQuejas = () => api.get('/quejas');
+export const crearQueja = (formData) => api.post('/quejas', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
 
 export default api;

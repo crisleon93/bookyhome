@@ -46,7 +46,9 @@ def agregar_al_carrito(id_usuario, item):
             'autor_libro': item.get('autor_libro', ''),
             'precio_libro': float(item.get('precio_libro', 0)),
             'cantidad': max(1, int(item.get('cantidad', 1))),
-            'imagen': item.get('imagen')
+            'imagen': item.get('imagen'),
+            'id_variante': item.get('id_variante'),
+            'variante_label': item.get('variante_label')
         })
 
     store[user_key] = user_cart
@@ -144,11 +146,12 @@ def checkout_carrito(id_usuario):
         for item in cart:
             try:
                 query_detalle = """
-                    INSERT INTO detalle_orden (id_orden, id_libro, cantidad, precio_unitario, porcentaje_descuento, precio_final)
-                    VALUES (%s, %s, %s, %s, 0, %s)
+                    INSERT INTO detalle_orden (id_orden, id_libro, cantidad, precio_unitario, porcentaje_descuento, precio_final, id_variante)
+                    VALUES (%s, %s, %s, %s, 0, %s, %s)
                 """
                 precio_final = item['precio_libro'] * item['cantidad']
-                cursor.execute(query_detalle, (id_orden, item['id_libro'], item['cantidad'], item['precio_libro'], precio_final))
+                id_variante = item.get('id_variante')
+                cursor.execute(query_detalle, (id_orden, item['id_libro'], item['cantidad'], item['precio_libro'], precio_final, id_variante))
             except Exception:
                 continue
         

@@ -34,9 +34,32 @@ def obtener_orden(id_usuario, id_orden):
 
 def obtener_ordenes_usuario(id_usuario):
     from app.models.envios import limpiar_envios_no_pagados
+    from app.database import get_db
     limpiar_envios_no_pagados()
     orders = _load_store(ORDER_FILE)
     user_orders = orders.get(str(id_usuario), [])
+    
+    try:
+        db = get_db()
+        cursor = db.cursor(dictionary=True)
+        for order in user_orders:
+            for item in order.get('items', []):
+                if 'id_libro' in item and not item.get('nombre_tienda'):
+                    cursor.execute("""
+                        SELECT t.nombre_tienda 
+                        FROM libros l
+                        JOIN tiendas t ON l.id_tienda = t.id_tienda
+                        WHERE l.id_libro = %s
+                    """, (item['id_libro'],))
+                    res = cursor.fetchone()
+                    if res:
+                        item['nombre_tienda'] = res['nombre_tienda']
+    except Exception as e:
+        print("Error obteniendo nombres de tiendas en ordenes:", e)
+    finally:
+        if 'cursor' in locals(): cursor.close()
+        if 'db' in locals(): db.close()
+
     return sorted(user_orders, key=lambda o: o.get('fecha', ''), reverse=True)
 
 

@@ -80,6 +80,9 @@ origins = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
     "http://localhost:3000",
+    "http://localhost:8081",       # Expo web (dev)
+    "http://127.0.0.1:8081",
+    "http://192.168.0.5:8081",    # Expo web desde la IP local
 ]
 
 app.add_middleware(
@@ -161,3 +164,6 @@ def root():
 
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
+import os as _os
+_os.makedirs("uploads/libros_digitales", exist_ok=True)
+app.mount("/static_digital", StaticFiles(directory="uploads/libros_digitales"), name="static_digital")

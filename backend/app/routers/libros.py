@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Form, Body # ⬅️ ASEGÚRATE DE QUE 'Body' ESTÉ AQUÍ
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from typing import List, Optional
+from fastapi.responses import FileResponse
 import os, shutil, uuid
 
 from app.auth import verify_token
@@ -28,6 +29,8 @@ router = APIRouter()
 security = HTTPBearer()
 
 UPLOAD_DIR = "uploads/libros"
+UPLOAD_DIGITAL_DIR = "uploads/libros_digitales"
+os.makedirs(UPLOAD_DIGITAL_DIR, exist_ok=True)
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 
@@ -367,3 +370,200 @@ def ocultar(id_libro: int, payload: dict = Body(...), user=Depends(get_current_u
         )
         
     return {"mensaje": "Estado del libro actualizado correctamente"}
+
+
+# ── Variantes de un libro ──────────────────────────────────────────────────────
+@router.get("/{id_libro}/variantes")
+def get_variantes_libro(id_libro: int):
+    """Devuelve todas las variantes activas de un libro (tipo_tapa, idioma, edición, precio, stock)."""
+    from app.database import get_db
+    try:
+        db = get_db()
+        cursor = db.cursor(dictionary=True)
+        cursor.execute("""
+            SELECT id_variante, tipo_tapa, idioma, edicion, isbn,
+                   precio_variante, stock_variante, peso_gramos, numero_paginas
+            FROM libro_variantes
+            WHERE id_libro = %s AND activa = 1
+            ORDER BY precio_variante ASC
+        """, (id_libro,))
+        variantes = cursor.fetchall()
+        # Convertir Decimal a float para que JSON lo serialice
+        for v in variantes:
+            v['precio_variante'] = float(v['precio_variante'])
+        return variantes
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        if 'db' in locals(): db.close()
+
+
+# ── Crear variante de un libro ─────────────────────────────────────────────────
+@router.post("/{id_libro}/variantes")
+def crear_variante_libro(id_libro: int, data: dict, user=Depends(get_current_user)):
+    """Crea una nueva variante para un libro (solo el vendedor propietario)."""
+    id_usuario = int(user["sub"])
+    tienda = obtener_tienda_por_usuario(id_usuario)
+    if not tienda:
+        raise HTTPException(status_code=403, detail="No eres vendedor.")
+
+    from app.database import get_db
+    try:
+        db = get_db()
+        cursor = db.cursor(dictionary=True)
+        cursor.execute("SELECT id_tienda FROM libros WHERE id_libro = %s", (id_libro,))
+        libro = cursor.fetchone()
+        if not libro or libro["id_tienda"] != tienda["id_tienda"]:
+            raise HTTPException(status_code=403, detail="El libro no te pertenece.")
+
+        cursor.execute("""
+            INSERT INTO libro_variantes (id_libro, tipo_tapa, idioma, edicion, precio_variante, stock_variante, activa)
+            VALUES (%s, %s, %s, %s, %s, %s, 1)
+        """, (
+            id_libro,
+            data.get("tipo_tapa", "Tapa Blanda"),
+            data.get("idioma", "Espanol"),
+            data.get("edicion", "1ra Edicion"),
+            float(data.get("precio_variante", 0)),
+            int(data.get("stock_variante", 1)),
+        ))
+        db.commit()
+        id_variante = cursor.lastrowid
+        return {"ok": True, "id_variante": id_variante}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        if 'cursor' in locals(): cursor.close()
+        if 'db' in locals(): db.close()
+
+
+# ── Descarga de libro digital ──────────────────────────────────────────────────
+@router.post("/{id_libro}/variantes/{id_variante}/archivo")
+async def subir_archivo_digital(
+    id_libro: int,
+    id_variante: int,
+    file: UploadFile = File(...),
+    token: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Sube un archivo PDF o EPUB para una variante digital (solo el vendedor del libro)."""
+    user = verify_token(token.credentials)
+    id_usuario = int(user["sub"])
+
+    from app.database import get_db
+    try:
+        db = get_db()
+        cursor = db.cursor(dictionary=True)
+        # Verificar que la tienda sea del usuario y el libro sea de la tienda
+        tienda = obtener_tienda_por_usuario(id_usuario)
+        if not tienda:
+            raise HTTPException(status_code=403, detail="No eres vendedor.")
+            
+        cursor.execute("SELECT id_tienda FROM libros WHERE id_libro = %s", (id_libro,))
+        libro = cursor.fetchone()
+        if not libro or libro["id_tienda"] != tienda["id_tienda"]:
+            raise HTTPException(status_code=403, detail="El libro no te pertenece.")
+
+        # Guardar archivo
+        ext = file.filename.split('.')[-1].lower()
+        if ext not in ['pdf', 'epub']:
+            raise HTTPException(status_code=400, detail="Solo se permiten archivos PDF o EPUB.")
+            
+        filename = f"{uuid.uuid4()}.{ext}"
+        filepath = os.path.join(UPLOAD_DIGITAL_DIR, filename)
+        
+        with open(filepath, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+            
+        # Actualizar base de datos
+        archivo_url = f"/static_digital/{filename}"
+        cursor.execute("UPDATE libro_variantes SET archivo_digital_url = %s WHERE id_variante = %s AND id_libro = %s", (archivo_url, id_variante, id_libro))
+        db.commit()
+        return {"mensaje": "Archivo subido correctamente", "url": archivo_url}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        if 'cursor' in locals(): cursor.close()
+        if 'db' in locals(): db.close()
+
+
+@router.get("/descargar/{id_variante}")
+def descargar_libro_digital(id_variante: int, token: str):
+    """Descarga el archivo digital si el usuario lo ha comprado. (Se pasa el token por query param para descargas directas)"""
+    user = verify_token(token)
+    id_usuario = int(user["sub"])
+    
+    # ------------------------------------------------------------------
+    # 1. Verificar compra en el sistema JSON (payments.py)
+    # ------------------------------------------------------------------
+    compra_json = False
+    try:
+        from app.models.payments import _load_store, ORDER_FILE
+        orders = _load_store(ORDER_FILE)
+        user_orders = orders.get(str(id_usuario), [])
+        estados_validos = {'pagado', 'completado', 'en preparacion', 'enviado', 'entregado'}
+        for order in user_orders:
+            if order.get('estado', '').lower() in estados_validos:
+                for item in order.get('items', []):
+                    if item.get('id_variante') == id_variante:
+                        compra_json = True
+                        break
+            if compra_json:
+                break
+    except Exception as e:
+        print(f"⚠️ Error verificando compra en JSON: {e}")
+
+    # ------------------------------------------------------------------
+    # 2. Verificar en MySQL (insensible a mayúsculas para mayor robustez)
+    # ------------------------------------------------------------------
+    compra_mysql = False
+    db = None
+    cursor = None
+    try:
+        from app.database import get_db
+        db = get_db()
+        cursor = db.cursor(dictionary=True)
+        cursor.execute("""
+            SELECT o.id_orden 
+            FROM ordenes_compra o
+            JOIN detalle_orden do ON o.id_orden = do.id_orden
+            WHERE o.id_usuario = %s AND do.id_variante = %s
+              AND LOWER(o.estado_orden) IN ('pagado', 'completado', 'en preparacion', 'enviado', 'entregado')
+        """, (id_usuario, id_variante))
+        if cursor.fetchone():
+            compra_mysql = True
+    except Exception as e:
+        print(f"⚠️ Error verificando compra en MySQL: {e}")
+    finally:
+        if cursor: cursor.close()
+        if db: db.close()
+
+    if not compra_json and not compra_mysql:
+        raise HTTPException(status_code=403, detail="No has comprado esta versión digital o el pago no está completado.")
+
+    # ------------------------------------------------------------------
+    # 3. Obtener y devolver el archivo
+    # ------------------------------------------------------------------
+    db2 = None
+    cursor2 = None
+    try:
+        from app.database import get_db
+        db2 = get_db()
+        cursor2 = db2.cursor(dictionary=True)
+        cursor2.execute("SELECT archivo_digital_url, tipo_tapa FROM libro_variantes WHERE id_variante = %s", (id_variante,))
+        variante = cursor2.fetchone()
+        
+        if not variante or variante["tipo_tapa"] != "Digital" or not variante["archivo_digital_url"]:
+            raise HTTPException(status_code=404, detail="El archivo digital no está disponible.")
+            
+        filepath = variante["archivo_digital_url"].replace("/static_digital/", f"{UPLOAD_DIGITAL_DIR}/")
+        if not os.path.exists(filepath):
+            raise HTTPException(status_code=404, detail="El archivo no se encuentra en el servidor.")
+            
+        return FileResponse(filepath, media_type="application/pdf", filename=os.path.basename(filepath))
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        if cursor2: cursor2.close()
+        if db2: db2.close()

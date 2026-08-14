@@ -161,6 +161,7 @@ const LibroCard = ({ libro, onAdd, onVerDetalles }) => {
     resolveLibroCandidate(libro.imagen_url) ||
     resolveLibroCandidate(libro.imagen_principal) ||
     resolveLibroCandidate(libro.imagenes) ||
+    resolveLibroCandidate(libro.imagen) ||
     IMAGENES_CATEGORIA[libro.nombre_categoria] ||
     IMG_DEFAULT;
 

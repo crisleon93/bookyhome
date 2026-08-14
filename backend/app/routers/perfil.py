@@ -1,4 +1,4 @@
-﻿from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Form
+from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Form
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel, EmailStr, Field
 from app.database import get_db
@@ -374,11 +374,23 @@ def obtener_historial_compras(user_id: int = Depends(get_current_user)):
         """
         cursor.execute(query, (user_id,))
         compras = cursor.fetchall()
+
+        # Para cada compra, buscar items digitales comprados
+        for compra in compras:
+            cursor.execute("""
+                SELECT do.id_variante, l.titulo, lv.archivo_digital_url
+                FROM detalle_orden do
+                JOIN libros l ON do.id_libro = l.id_libro
+                LEFT JOIN libro_variantes lv ON do.id_variante = lv.id_variante
+                WHERE do.id_orden = %s AND lv.tipo_tapa = 'Digital' AND lv.archivo_digital_url IS NOT NULL
+            """, (compra['id_orden'],))
+            compra['items_digitales'] = cursor.fetchall()
         
         return {"total": len(compras), "compras": compras}
     finally:
         cursor.close()
         db.close()
+
 
 @router.post("/foto-perfil")
 async def subir_foto_perfil(file: UploadFile = File(...), user_id: int = Depends(get_current_user)):
