@@ -3,20 +3,22 @@ import React, { useContext, useEffect, useState } from 'react';
 import {
   View, Text, FlatList, Image, TouchableOpacity,
   StyleSheet, ActivityIndicator, TextInput,
-  ScrollView,
+  ScrollView, Modal, Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { getBooks, getApiBaseUrl } from '../services/api';
+import { getBooks, getApiBaseUrl, searchByISBN } from '../services/api';
 import { AuthContext } from '../context/AuthContext';
 import { CartContext } from '../context/CartContext';
 import Header from '../components/Header';
-import { IconBooks, IconStore, IconStar, IconCart } from '../components/Icons';
+import { IconBooks, IconStore, IconStar, IconCart, IconMail, IconPackage, IconDollar, IconBook } from '../components/Icons';
 
 const PRIMARY = '#7A1E3A';
 const BG      = '#F9F6F1';
 const WHITE   = '#FFFFFF';
 const GRAY    = '#888';
 const BORDER  = '#EEE';
+const CARBON  = '#2A2A2A';
+const BEIGE   = '#F4EDE2';
 
 const CATEGORIES = [
   { id: 1, label: 'Ficción',    emoji: '🚀' },
@@ -39,7 +41,21 @@ export default function PostLogin({ navigation }) {
   const { signOut, user } = useContext(AuthContext);
   const { cart } = useContext(CartContext);
 
+  // ── Filtros avanzados ──
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState({
+    precioMin: '',
+    precioMax: '',
+    tienda: '',
+    correoVendedor: '',
+    estado: '',    // 'nuevo', 'usado_buen_estado', 'usado_regular'
+    formato: '',   // 'fisico', 'digital'
+  });
+
   const cartItemsCount = cart.reduce((sum, item) => sum + (item.cantidad || 1), 0);
+
+  // Extraer tiendas únicas de los libros
+  const tiendasUnicas = [...new Set(books.map(b => b.nombre_tienda).filter(Boolean))].sort();
 
   useEffect(() => {
     const loadBooks = async () => {
@@ -57,16 +73,94 @@ export default function PostLogin({ navigation }) {
     loadBooks();
   }, []);
 
+  // ── Aplicar todos los filtros ──
+  const applyFilters = (searchText, categoryId, currentFilters) => {
+    let result = [...books];
+
+    // Filtro de texto (título, autor, tienda)
+    if (searchText) {
+      const term = searchText.toLowerCase();
+      result = result.filter(b =>
+        (b.titulo || b.nombre || '').toLowerCase().includes(term) ||
+        (b.autor_libro || b.autor || '').toLowerCase().includes(term) ||
+        (b.nombre_tienda || '').toLowerCase().includes(term) ||
+        (b.email_vendedor || '').toLowerCase().includes(term) ||
+        (b.isbn || '').toLowerCase().includes(term) ||
+        (b.descripcion || '').toLowerCase().includes(term)
+      );
+    }
+
+    // Filtro por categoría
+    if (categoryId) {
+      const catLabel = CATEGORIES.find(c => c.id === categoryId)?.label || '';
+      result = result.filter(b =>
+        (b.nombre_categoria || b.categoria || '').toLowerCase().includes(catLabel.toLowerCase())
+      );
+    }
+
+    // Filtro por precio mínimo
+    if (currentFilters.precioMin) {
+      const min = parseFloat(currentFilters.precioMin);
+      if (!isNaN(min)) result = result.filter(b => (b.precio_libro ?? b.precio ?? 0) >= min);
+    }
+
+    // Filtro por precio máximo
+    if (currentFilters.precioMax) {
+      const max = parseFloat(currentFilters.precioMax);
+      if (!isNaN(max)) result = result.filter(b => (b.precio_libro ?? b.precio ?? 0) <= max);
+    }
+
+    // Filtro por tienda
+    if (currentFilters.tienda) {
+      result = result.filter(b =>
+        (b.nombre_tienda || '').toLowerCase() === currentFilters.tienda.toLowerCase()
+      );
+    }
+
+    // Filtro por correo del vendedor
+    if (currentFilters.correoVendedor) {
+      result = result.filter(b =>
+        (b.email_vendedor || '').toLowerCase().includes(currentFilters.correoVendedor.toLowerCase())
+      );
+    }
+
+    // Filtro por estado
+    if (currentFilters.estado) {
+      result = result.filter(b =>
+        (b.estado || '').toLowerCase() === currentFilters.estado.toLowerCase()
+      );
+    }
+
+    // Filtro por formato
+    if (currentFilters.formato) {
+      result = result.filter(b =>
+        (b.formato || '').toLowerCase() === currentFilters.formato.toLowerCase()
+      );
+    }
+
+    setFiltered(result);
+  };
+
   // Este handler lo recibe el Header via onSearch
   const handleSearch = (text) => {
     setSearch(text);
     setActiveCategory(null);
-    if (!text) return setFiltered(books);
-    setFiltered(books.filter(b =>
-      (b.titulo || b.nombre || '').toLowerCase().includes(text.toLowerCase()) ||
-      (b.autor_libro || b.autor || '').toLowerCase().includes(text.toLowerCase())
-    ));
+    applyFilters(text, null, filters);
   };
+
+  const handleApplyFilters = () => {
+    setShowFilters(false);
+    applyFilters(search, activeCategory, filters);
+  };
+
+  const handleClearFilters = () => {
+    const emptyFilters = { precioMin: '', precioMax: '', tienda: '', correoVendedor: '', estado: '', formato: '' };
+    setFilters(emptyFilters);
+    setShowFilters(false);
+    applyFilters(search, activeCategory, emptyFilters);
+  };
+
+  const activeFilterCount = [filters.precioMin, filters.precioMax, filters.tienda, filters.correoVendedor, filters.estado, filters.formato].filter(Boolean).length;
 
   // Handler para ISBN escaneado
   const handleBarcodeScanned = async (isbn) => {
@@ -118,13 +212,11 @@ export default function PostLogin({ navigation }) {
   const handleCategory = (cat) => {
     if (activeCategory === cat.id) {
       setActiveCategory(null);
-      setFiltered(books);
+      applyFilters(search, null, filters);
     } else {
       setActiveCategory(cat.id);
       setSearch('');
-      setFiltered(books.filter(b =>
-        (b.nombre_categoria || b.categoria || '').toLowerCase().includes(cat.label.toLowerCase())
-      ));
+      applyFilters('', cat.id, filters);
     }
   };
 
@@ -194,6 +286,17 @@ export default function PostLogin({ navigation }) {
       {/* Categorías */}
       <Text style={styles.sectionTitle}>Explorar categorías</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.catScroll}>
+        {/* Botón de Filtros */}
+        <TouchableOpacity
+          style={[styles.catChip, { backgroundColor: activeFilterCount > 0 ? PRIMARY : WHITE, borderColor: activeFilterCount > 0 ? PRIMARY : BORDER }]}
+          onPress={() => setShowFilters(true)}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.catEmoji}>🔍</Text>
+          <Text style={[styles.catLabel, activeFilterCount > 0 && { color: WHITE }]}>
+            Filtros{activeFilterCount > 0 ? ` (${activeFilterCount})` : ''}
+          </Text>
+        </TouchableOpacity>
         {CATEGORIES.map(cat => (
           <TouchableOpacity
             key={cat.id}
@@ -209,6 +312,30 @@ export default function PostLogin({ navigation }) {
         ))}
       </ScrollView>
 
+      {/* Filtros activos */}
+      {activeFilterCount > 0 && (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ paddingLeft: 16, marginBottom: 8 }}>
+          {filters.tienda ? (
+            <View style={styles.filterTag}><Text style={styles.filterTagText}>🏪 {filters.tienda}</Text></View>
+          ) : null}
+          {filters.precioMin ? (
+            <View style={styles.filterTag}><Text style={styles.filterTagText}>Min: ${filters.precioMin}</Text></View>
+          ) : null}
+          {filters.precioMax ? (
+            <View style={styles.filterTag}><Text style={styles.filterTagText}>Max: ${filters.precioMax}</Text></View>
+          ) : null}
+          {filters.estado ? (
+            <View style={styles.filterTag}><Text style={styles.filterTagText}>📦 {filters.estado === 'nuevo' ? 'Nuevo' : filters.estado === 'usado_buen_estado' ? 'Buen estado' : 'Regular'}</Text></View>
+          ) : null}
+          {filters.formato ? (
+            <View style={styles.filterTag}><Text style={styles.filterTagText}>{filters.formato === 'digital' ? '💾 Digital' : '📖 Físico'}</Text></View>
+          ) : null}
+          <TouchableOpacity style={[styles.filterTag, { backgroundColor: 'rgba(255,255,255,0.3)' }]} onPress={handleClearFilters}>
+            <Text style={[styles.filterTagText, { fontWeight: '800' }]}>✕ Limpiar</Text>
+          </TouchableOpacity>
+        </ScrollView>
+      )}
+
       {/* Título del catálogo */}
       <Text style={styles.sectionTitle}>
         {activeCategory
@@ -216,6 +343,7 @@ export default function PostLogin({ navigation }) {
           : search
           ? `Resultados para "${search}"`
           : 'Catálogo completo'}
+        {` (${filtered.length})`}
       </Text>
 
       {filtered.length === 0 && !loading && (
@@ -236,6 +364,7 @@ export default function PostLogin({ navigation }) {
         onSignOut={signOut}
         onSearch={handleSearch}
         onBarcodeScanned={handleBarcodeScanned}
+        onFilterPress={() => setShowFilters(true)}
       />
 
       {loading ? (
@@ -271,6 +400,147 @@ export default function PostLogin({ navigation }) {
           </View>
         </TouchableOpacity>
       )}
+
+      {/* ── Modal de Filtros Avanzados ── */}
+      <Modal visible={showFilters} transparent animationType="slide">
+        <View style={styles.filterOverlay}>
+          <View style={styles.filterModal}>
+            <View style={styles.filterHeader}>
+              <Text style={styles.filterTitle}>🔍 Filtros Avanzados</Text>
+              <TouchableOpacity onPress={() => setShowFilters(false)}>
+                <Text style={{ fontSize: 22, color: '#999' }}>✕</Text>
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 450 }}>
+              <View style={{ gap: 20 }}>
+                {/* Rango de precio */}
+                <View>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+                    <IconDollar size={18} color={GRAY} />
+                    <Text style={[styles.filterLabel, { marginTop: 0, marginBottom: 0, marginLeft: 6 }]}>Rango de precio (COP)</Text>
+                  </View>
+                  <View style={styles.filterRow}>
+                    <TextInput
+                      style={[styles.filterInput, { flex: 1, marginRight: 8 }]}
+                      placeholder="Mínimo"
+                      keyboardType="numeric"
+                      value={filters.precioMin}
+                      onChangeText={(v) => setFilters({ ...filters, precioMin: v })}
+                    />
+                    <TextInput
+                      style={[styles.filterInput, { flex: 1 }]}
+                      placeholder="Máximo"
+                      keyboardType="numeric"
+                      value={filters.precioMax}
+                      onChangeText={(v) => setFilters({ ...filters, precioMax: v })}
+                    />
+                  </View>
+                </View>
+
+                {/* Tienda */}
+                <View>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+                    <IconStore size={18} color={GRAY} />
+                    <Text style={[styles.filterLabel, { marginTop: 0, marginBottom: 0, marginLeft: 6 }]}>Nombre de Tienda</Text>
+                  </View>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 4 }}>
+                    <TouchableOpacity
+                      style={[styles.filterChip, !filters.tienda && styles.filterChipActive]}
+                      onPress={() => setFilters({ ...filters, tienda: '' })}
+                    >
+                      <Text style={[styles.filterChipText, !filters.tienda && styles.filterChipTextActive]}>Todas</Text>
+                    </TouchableOpacity>
+                    {tiendasUnicas.map(t => (
+                      <TouchableOpacity
+                        key={t}
+                        style={[styles.filterChip, filters.tienda === t && styles.filterChipActive]}
+                        onPress={() => setFilters({ ...filters, tienda: filters.tienda === t ? '' : t })}
+                      >
+                        <Text style={[styles.filterChipText, filters.tienda === t && styles.filterChipTextActive]}>{t}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                </View>
+
+                {/* Correo del Vendedor */}
+                <View>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+                    <IconMail size={18} color={GRAY} />
+                    <Text style={[styles.filterLabel, { marginTop: 0, marginBottom: 0, marginLeft: 6 }]}>Correo del Vendedor</Text>
+                  </View>
+                  <TextInput
+                    style={styles.filterInput}
+                    placeholder="Ej. libreria@bookyhome.com"
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    value={filters.correoVendedor}
+                    onChangeText={(v) => setFilters({ ...filters, correoVendedor: v })}
+                  />
+                </View>
+
+                {/* Estado */}
+                <View>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+                    <IconPackage size={18} color={GRAY} />
+                    <Text style={[styles.filterLabel, { marginTop: 0, marginBottom: 0, marginLeft: 6 }]}>Estado del libro</Text>
+                  </View>
+                  <View style={[styles.filterRow, { marginBottom: 0 }]}>
+                    {[
+                      { value: '', label: 'Todos' },
+                      { value: 'nuevo', label: 'Nuevo' },
+                      { value: 'usado_buen_estado', label: 'Buen estado' },
+                      { value: 'usado_regular', label: 'Regular' },
+                    ].map(opt => (
+                      <TouchableOpacity
+                        key={opt.value}
+                        style={[styles.filterChip, filters.estado === opt.value && styles.filterChipActive]}
+                        onPress={() => setFilters({ ...filters, estado: opt.value })}
+                      >
+                        <Text style={[styles.filterChipText, filters.estado === opt.value && styles.filterChipTextActive]}>{opt.label}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+
+                {/* Formato */}
+                <View>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+                    <IconBook size={18} color={GRAY} />
+                    <Text style={[styles.filterLabel, { marginTop: 0, marginBottom: 0, marginLeft: 6 }]}>Formato</Text>
+                  </View>
+                  <View style={[styles.filterRow, { marginBottom: 0 }]}>
+                    {[
+                      { value: '', label: 'Todos' },
+                      { value: 'fisico', label: 'Físico' },
+                      { value: 'digital', label: 'Digital' },
+                    ].map(opt => (
+                      <TouchableOpacity
+                        key={opt.value}
+                        style={[styles.filterChip, filters.formato === opt.value && styles.filterChipActive]}
+                        onPress={() => setFilters({ ...filters, formato: opt.value })}
+                      >
+                        <Text style={[styles.filterChipText, filters.formato === opt.value && styles.filterChipTextActive]}>{opt.label}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+              </View>
+            </ScrollView>
+
+            {/* Botones */}
+            <View style={styles.filterActions}>
+              <TouchableOpacity style={styles.filterClearBtn} onPress={handleClearFilters}>
+                <Text style={styles.filterClearBtnText}>Limpiar filtros</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.filterApplyBtn} onPress={handleApplyFilters}>
+                <Text style={styles.filterApplyBtnText}>Aplicar filtros</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
     </SafeAreaView>
   );
 }
@@ -375,4 +645,58 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '800',
   },
+
+  /* Filtros Activos */
+  filterTag: {
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6,
+    marginRight: 8, borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)',
+  },
+  filterTagText: { color: WHITE, fontSize: 12, fontWeight: '600' },
+
+  /* Modal de Filtros */
+  filterOverlay: {
+    flex: 1, backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+    alignItems: 'center', // Centrar horizontalmente
+  },
+  filterModal: {
+    backgroundColor: WHITE, borderTopLeftRadius: 24, borderTopRightRadius: 24,
+    padding: 24, paddingBottom: 40,
+    width: '100%', maxWidth: 600, // Evitar que se estire en pantallas grandes
+    shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 10, elevation: 10,
+  },
+  filterHeader: {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    marginBottom: 20,
+  },
+  filterTitle: { fontSize: 18, fontWeight: '800', color: CARBON },
+  filterLabel: { fontSize: 14, fontWeight: '700', color: GRAY, marginBottom: 8, marginTop: 10 },
+  filterRow: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 16 },
+  filterInput: {
+    borderWidth: 1, borderColor: BORDER, borderRadius: 8,
+    padding: 10, fontSize: 14, color: CARBON, backgroundColor: '#FAFAFA',
+  },
+  filterChip: {
+    backgroundColor: BEIGE, borderRadius: 20, paddingHorizontal: 16, paddingVertical: 8,
+    marginRight: 8, marginBottom: 8, borderWidth: 1, borderColor: 'transparent',
+  },
+  filterChipActive: { backgroundColor: PRIMARY, borderColor: PRIMARY },
+  filterChipText: { fontSize: 13, color: CARBON, fontWeight: '600' },
+  filterChipTextActive: { color: WHITE },
+  
+  filterActions: {
+    flexDirection: 'row', justifyContent: 'space-between', marginTop: 24, gap: 12,
+  },
+  filterClearBtn: {
+    flex: 1, paddingVertical: 14, borderRadius: 12, backgroundColor: '#F0F0F0',
+    alignItems: 'center',
+  },
+  filterClearBtnText: { color: GRAY, fontSize: 15, fontWeight: '700' },
+  filterApplyBtn: {
+    flex: 1, paddingVertical: 14, borderRadius: 12, backgroundColor: PRIMARY,
+    alignItems: 'center',
+  },
+  filterApplyBtnText: { color: WHITE, fontSize: 15, fontWeight: '700' },
 });

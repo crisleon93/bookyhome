@@ -204,6 +204,14 @@ export default function BookDetail({ route, navigation }) {
         <Text style={styles.title}>{book.titulo || 'Sin título'}</Text>
         <Text style={styles.author}>{book.autor_libro || book.autor || ''}</Text>
         
+        {book.id_tienda && (
+          <TouchableOpacity 
+            style={{ marginBottom: 12, backgroundColor: '#f0ebe7', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 }}
+            onPress={() => navigation.push('PerfilTienda', { id_tienda: book.id_tienda })}
+          >
+            <Text style={{ fontSize: 13, color: '#7A1E3A', fontWeight: '700' }}>🏪 Tienda: {book.nombre_tienda || 'Ver perfil'}</Text>
+          </TouchableOpacity>
+        )}
         <Text style={styles.price}>
           ${Number(precioMostrar).toLocaleString('es-CO')} COP
         </Text>

@@ -172,7 +172,7 @@ export default function Checkout({ route, navigation }) {
             </View>
           )}
 
-          <TouchableOpacity style={[styles.homeBtn, { marginTop: order.items?.some(i => i.variante_label?.includes('Digital')) ? 10 : 0 }]} onPress={() => navigation.navigate('Home')}>
+          <TouchableOpacity style={[styles.homeBtn, { marginTop: order.items?.some(i => i.variante_label?.includes('Digital')) ? 10 : 0 }]} onPress={() => navigation.navigate('PostLogin')}>
             <Text style={styles.homeBtnText}>Volver al Catálogo</Text>
           </TouchableOpacity>
         </View>

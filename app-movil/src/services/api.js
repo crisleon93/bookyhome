@@ -71,8 +71,11 @@ export const registerLibrary = (data) => api.post('/libreria', data);
 export const updateLibreria = (data) => api.put('/libreria/actualizar', data);
 export const uploadLibreriaLogo = (formData) =>
   api.post('/libreria/logo', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
-export const getConfigLibreria = () => api.get('/libreria/configuracion');
-export const updateConfigLibreria = (data) => api.put('/libreria/configuracion', data);
+export const getConfigLibreria = () => api.get('/configuracion');
+export const updateConfigLibreria = (data) => api.put('/configuracion', data);
+export const uploadTiendaImage = (formData) =>
+  api.post('/configuracion/upload-image', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+export const getPerfilTiendaPublico = (id_tienda) => api.get(`/configuracion/${id_tienda}`);
 export const getMetricasTienda = () => api.get('/libreria/metricas');
 
 // ===== Libros del vendedor =====

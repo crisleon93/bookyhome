@@ -11,13 +11,13 @@
   },
   "dependencies": {
     "axios": "1.13.6",
-    "flowbite": "^4.0.2",
-    "flowbite-react": "^0.12.17",
+    "flowbite": "4.0.2",
+    "flowbite-react": "0.12.17",
     "jwt-decode": "4.0.0",
-    "leaflet": "^1.9.4",
+    "leaflet": "1.9.4",
     "react": "19.2.4",
     "react-dom": "19.2.4",
-    "react-leaflet": "^5.0.0",
+    "react-leaflet": "5.0.0",
     "react-router-dom": "7.13.1"
   },
   "devDependencies": {

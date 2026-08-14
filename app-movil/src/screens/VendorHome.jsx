@@ -22,14 +22,14 @@ const BORDER = '#E5DED3';
 const TEXT_MUTED = '#8A8A8A';
 
 const SECTIONS = [
-  { key: 'libros', label: 'Mis Libros', icon: '📚', route: 'MyBooks', comingSoon: true },
-  { key: 'publicar', label: 'Publicar Libro', icon: '➕', route: 'PublicarLibro', comingSoon: true },
+  { key: 'libros', label: 'Mis Libros', icon: '📚', route: 'Libreria', comingSoon: false },
+  { key: 'publicar', label: 'Publicar Libro', icon: '➕', route: 'PublicarLibro', comingSoon: false },
   { key: 'promociones', label: 'Promociones', icon: '🏷️', route: 'Promociones', comingSoon: true },
   { key: 'ventas', label: 'Ventas', icon: '🛒', route: 'Ventas', comingSoon: true },
-  { key: 'pedidos', label: 'Pedidos', icon: '📦', route: 'Pedidos', comingSoon: true },
-  { key: 'notificaciones', label: 'Notificaciones', icon: '🔔', route: 'Notificaciones', comingSoon: true },
-  { key: 'perfil', label: 'Perfil', icon: '👤', route: 'Perfil', comingSoon: true },
-  { key: 'configuracion', label: 'Configuración', icon: '⚙️', route: 'Configuracion', comingSoon: true },
+  { key: 'pedidos', label: 'Pedidos', icon: '📦', route: 'MiTienda', comingSoon: false },
+  { key: 'notificaciones', label: 'Notificaciones', icon: '🔔', route: 'Notifications', comingSoon: false },
+  { key: 'perfil', label: 'Perfil', icon: '👤', route: 'PerfilTienda', comingSoon: false },
+  { key: 'configuracion', label: 'Configuración', icon: '⚙️', route: 'ConfiguracionTienda', comingSoon: false },
 ];
 
 export default function VendorHome() {
@@ -78,7 +78,15 @@ const totalNoLeidos = salas.reduce((acc, s) => acc + (s.no_leidos || 0), 0);
               key={section.key}
               style={[styles.card, section.comingSoon && styles.cardDisabled]}
               activeOpacity={section.comingSoon ? 1 : 0.7}
-              onPress={() => !section.comingSoon && navigation.navigate(section.route)}
+              onPress={() => {
+                if (!section.comingSoon) {
+                  if (section.route === 'PerfilTienda') {
+                    navigation.navigate(section.route, { id_tienda: user?.id_tienda });
+                  } else {
+                    navigation.navigate(section.route);
+                  }
+                }
+              }}
             >
               <Text style={styles.cardIcon}>{section.icon}</Text>
               <Text style={styles.cardLabel}>{section.label}</Text>

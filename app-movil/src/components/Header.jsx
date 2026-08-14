@@ -5,7 +5,7 @@ import {
   StyleSheet, Modal, StatusBar, Alert,
 } from 'react-native';
 import { AuthContext } from '../context/AuthContext';
-import { IconSearch, IconUser, IconUserPlus, IconLocation, IconClose, IconChevronRight, IconBook, IconMenu, IconCart, IconCamera } from './Icons';
+import { IconSearch, IconUser, IconUserPlus, IconLocation, IconClose, IconChevronRight, IconBook, IconMenu, IconCart, IconCamera, IconFilter } from './Icons';
 import SidebarMenu from './SidebarMenu';
 import BarcodeScanner from './BarcodeScanner';
 
@@ -35,6 +35,7 @@ export default function Header({
   onSearch,
   onSignOut,
   onBarcodeScanned,
+  onFilterPress,
 }) {
   const [search, setSearch]           = useState('');
   const [modalVisible, setModalVisible] = useState(false);
@@ -157,6 +158,16 @@ export default function Header({
               <IconClose size={16} color={GRAY} />
             </TouchableOpacity>
           )}
+          {/* Botón de Filtros */}
+          {onFilterPress && (
+            <TouchableOpacity
+              style={[styles.barcodeButton, { marginRight: 8 }]}
+              onPress={onFilterPress}
+              activeOpacity={0.8}
+            >
+              <IconFilter size={18} color={VINOTINTO} />
+            </TouchableOpacity>
+          )}
           {/* Botón de escáner de códigos de barras */}
           {isDashboard && (
             <TouchableOpacity
@@ -164,7 +175,7 @@ export default function Header({
               onPress={() => setBarcodeScannerVisible(true)}
               activeOpacity={0.8}
             >
-              <IconCamera size={18} color={WHITE} />
+              <IconCamera size={18} color={VINOTINTO} />
             </TouchableOpacity>
           )}
         </View>
