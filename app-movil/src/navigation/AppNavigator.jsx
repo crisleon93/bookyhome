@@ -23,6 +23,7 @@ import PublicarLibro from '../screens/PublicarLibro';
 import MiTienda from '../screens/MiTienda';
 import Messages from '../screens/Messages';
 import Chat from '../screens/Chat';
+import QuejasReclamos from '../screens/QuejasReclamos';
 
 import VendorHome from '../screens/VendorHome';
 import AdminHome from '../screens/AdminHome';
@@ -76,6 +77,7 @@ export default function AppNavigator() {
           <Stack.Screen name="MiTienda" component={MiTienda} options={{ headerShown: false }} />
           <Stack.Screen name="Messages" component={Messages} options={{ headerShown: false }} />
           <Stack.Screen name="Chat" component={Chat} options={{ title: 'Chat' }} />
+          <Stack.Screen name="QuejasReclamos" component={QuejasReclamos} options={{ title: 'Quejas y reclamos' }} />
         </>
       )}
     </Stack.Navigator>

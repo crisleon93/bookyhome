@@ -304,6 +304,66 @@
       ],
       "total": 75000.0,
       "estado": "pendiente"
+    },
+    {
+      "id_orden": 16,
+      "codigo_compra": "BH-AEEC551253",
+      "fecha": "2026-08-14T00:50:01.043104Z",
+      "items": [
+        {
+          "id_libro": 49,
+          "titulo": "erwerwe",
+          "autor_libro": "werwerwer",
+          "precio_libro": 34444.0,
+          "cantidad": 1,
+          "imagen": null,
+          "id_variante": 48,
+          "variante_label": "Digital · Español · 1ra Edición"
+        }
+      ],
+      "total": 34444.0,
+      "estado": "pagado",
+      "metodo_pago": "Tarjeta de Crédito"
+    },
+    {
+      "id_orden": 17,
+      "codigo_compra": "BH-58E75A0AB5",
+      "fecha": "2026-08-14T01:03:29.104295Z",
+      "items": [
+        {
+          "id_libro": 49,
+          "titulo": "erwerwe",
+          "autor_libro": "werwerwer",
+          "precio_libro": 34444.0,
+          "cantidad": 4,
+          "imagen": null,
+          "id_variante": 48,
+          "variante_label": "Digital · Español · 1ra Edición"
+        }
+      ],
+      "total": 137776.0,
+      "estado": "pagado",
+      "metodo_pago": "Tarjeta de Crédito"
+    },
+    {
+      "id_orden": 18,
+      "codigo_compra": "BH-E5E1EC988C",
+      "fecha": "2026-08-14T01:17:51.500613Z",
+      "items": [
+        {
+          "id_libro": 49,
+          "titulo": "erwerwe",
+          "autor_libro": "werwerwer",
+          "precio_libro": 34444.0,
+          "cantidad": 2,
+          "imagen": null,
+          "id_variante": 48,
+          "variante_label": "Digital · Español · 1ra Edición"
+        }
+      ],
+      "total": 68888.0,
+      "estado": "pagado",
+      "metodo_pago": "Tarjeta de Crédito"
     }
   ],
   "17": [

@@ -6,8 +6,9 @@ import {
   ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { getBooks } from '../services/api';
+import { getBooks, getApiBaseUrl } from '../services/api';
 import { AuthContext } from '../context/AuthContext';
+import { CartContext } from '../context/CartContext';
 import Header from '../components/Header';
 import { IconBooks, IconStore, IconStar, IconCart } from '../components/Icons';
 
@@ -36,6 +37,9 @@ export default function PostLogin({ navigation }) {
   const [activeCategory, setActiveCategory] = useState(null);
   const [scanningISBN, setScanningISBN] = useState(false);
   const { signOut, user } = useContext(AuthContext);
+  const { cart } = useContext(CartContext);
+
+  const cartItemsCount = cart.reduce((sum, item) => sum + (item.cantidad || 1), 0);
 
   useEffect(() => {
     const loadBooks = async () => {
@@ -126,6 +130,9 @@ export default function PostLogin({ navigation }) {
 
   const renderBook = ({ item }) => {
     const imageUrl = item.imagen || item.imagen_url;
+    const finalImageUrl = imageUrl 
+      ? (imageUrl.startsWith('http') ? imageUrl : `${getApiBaseUrl()}${imageUrl}`)
+      : null;
 
     return (
       <TouchableOpacity
@@ -133,8 +140,8 @@ export default function PostLogin({ navigation }) {
         activeOpacity={0.85}
         onPress={() => navigation.navigate('BookDetail', { book: item })}
       >
-        {imageUrl
-          ? <Image source={{ uri: imageUrl }} style={styles.cardImg} resizeMode="cover" />
+        {finalImageUrl
+          ? <Image source={{ uri: finalImageUrl }} style={styles.cardImg} resizeMode="cover" />
           : <View style={[styles.cardImg, styles.cardImgPlaceholder]}>
               <Text style={{ fontSize: 28 }}>📚</Text>
             </View>
@@ -147,7 +154,7 @@ export default function PostLogin({ navigation }) {
             {item.autor_libro || item.autor || ''}
           </Text>
           <Text style={styles.cardPrice}>
-            ${Number(item.precio ?? 0).toLocaleString('es-CO')}
+            ${Number(item.precio_libro ?? item.precio ?? 0).toLocaleString('es-CO')}
           </Text>
           <TouchableOpacity style={styles.addBtn} activeOpacity={0.8}>
             <IconCart size={14} color={WHITE} />
@@ -250,6 +257,20 @@ export default function PostLogin({ navigation }) {
           columnWrapperStyle={styles.columnWrapper}
         />
       )}
+
+      {/* Floating Cart Button */}
+      {cartItemsCount > 0 && (
+        <TouchableOpacity 
+          style={styles.fab} 
+          onPress={() => navigation.navigate('Cart')}
+          activeOpacity={0.9}
+        >
+          <IconCart size={24} color={WHITE} />
+          <View style={styles.fabBadge}>
+            <Text style={styles.fabBadgeText}>{cartItemsCount > 9 ? '9+' : cartItemsCount}</Text>
+          </View>
+        </TouchableOpacity>
+      )}
     </SafeAreaView>
   );
 }
@@ -318,4 +339,40 @@ const styles = StyleSheet.create({
   /* Misc */
   loadingWrap: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   emptyText:   { textAlign: 'center', color: 'rgba(255,255,255,0.75)', marginTop: 30, fontSize: 15 },
+
+  /* FAB Carrito */
+  fab: {
+    position: 'absolute',
+    bottom: 24,
+    right: 24,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#C5425A', // color resaltado
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 6,
+  },
+  fabBadge: {
+    position: 'absolute',
+    top: -2,
+    right: -2,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    minWidth: 24,
+    height: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#C5425A',
+  },
+  fabBadgeText: {
+    color: '#C5425A',
+    fontSize: 11,
+    fontWeight: '800',
+  },
 });

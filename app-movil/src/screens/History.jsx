@@ -7,9 +7,10 @@ import {
   StyleSheet,
   ActivityIndicator,
   Alert,
+  Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { getPurchaseHistory } from '../services/api';
+import { getPurchaseHistory, getApiBaseUrl } from '../services/api';
 import { AuthContext } from '../context/AuthContext';
 import Header from '../components/Header';
 
@@ -21,7 +22,7 @@ const TEXT = '#2A2A2A';
 const MUTED = '#777';
 
 export default function History({ navigation }) {
-  const { user, signOut } = useContext(AuthContext);
+  const { user, signOut, token } = useContext(AuthContext);
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -41,6 +42,15 @@ export default function History({ navigation }) {
     loadHistory();
   }, []);
 
+  const handleDescargar = (id_variante, titulo) => {
+    if (!token) {
+      Alert.alert('Sesión expirada', 'Inicia sesión nuevamente.');
+      return;
+    }
+    const url = `${getApiBaseUrl()}/libros/descargar/${id_variante}?token=${token}`;
+    Linking.openURL(url);
+  };
+
   const renderItem = ({ item }) => (
     <View style={styles.card}>
       <View style={styles.cardHeader}>
@@ -51,12 +61,24 @@ export default function History({ navigation }) {
       <Text style={styles.cardText}>Total: ${Number(item.total ?? 0).toLocaleString('es-CO')}</Text>
       <Text style={styles.cardText}>Items: {item.cantidad_items}</Text>
       {item.libros ? <Text style={styles.cardText}>Libros: {item.libros}</Text> : null}
-      <TouchableOpacity
-        style={styles.detailBtn}
-        onPress={() => navigation.navigate('Checkout', { orderId: item.id_orden })}
-      >
-        <Text style={styles.detailBtnText}>Ver orden</Text>
-      </TouchableOpacity>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10 }}>
+        <TouchableOpacity
+          style={styles.detailBtn}
+          onPress={() => navigation.navigate('Checkout', { orderId: item.id_orden })}
+        >
+          <Text style={styles.detailBtnText}>Ver orden</Text>
+        </TouchableOpacity>
+        {/* Botón de descarga si hay variantes digitales */}
+        {item.items_digitales && item.items_digitales.length > 0 && item.items_digitales.map((d, idx) => (
+          <TouchableOpacity
+            key={idx}
+            style={[styles.detailBtn, { backgroundColor: '#2e7d32' }]}
+            onPress={() => handleDescargar(d.id_variante, d.titulo)}
+          >
+            <Text style={styles.detailBtnText}>📥 {d.titulo}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
     </View>
   );
 

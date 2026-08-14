@@ -1845,6 +1845,28 @@
       "estado": "procesado",
       "fecha": "2026-08-03T20:46:25Z",
       "descripcion": "Impulso - Librería El Sótano"
+    },
+    {
+      "id": 156,
+      "tipo": "venta",
+      "id_venta": 17,
+      "id_vendedor": 26,
+      "monto_venta": 137776.0,
+      "comision": 20666.399999999998,
+      "monto": 20666.399999999998,
+      "fecha": "2026-08-14T01:05:04.640623Z",
+      "estado": "procesado"
+    },
+    {
+      "id": 157,
+      "tipo": "venta",
+      "id_venta": 18,
+      "id_vendedor": 26,
+      "monto_venta": 68888.0,
+      "comision": 10333.199999999999,
+      "monto": 10333.199999999999,
+      "fecha": "2026-08-14T01:18:10.291909Z",
+      "estado": "procesado"
     }
   ],
   "pagos": [

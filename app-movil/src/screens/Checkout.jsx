@@ -1,11 +1,13 @@
 import React, { useEffect, useState, useContext } from 'react';
-import { View, Text, TextInput, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Modal } from 'react-native';
-import { getOrderDetails, processPayment } from '../services/api';
+import { View, Text, TextInput, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Modal, Linking } from 'react-native';
+import { getOrderDetails, processPayment, getApiBaseUrl } from '../services/api';
 import { CartContext } from '../context/CartContext';
+import { AuthContext } from '../context/AuthContext';
 
 export default function Checkout({ route, navigation }) {
   const { orderId } = route.params;
   const { loadCart } = useContext(CartContext);
+  const { token } = useContext(AuthContext);
 
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -151,8 +153,26 @@ export default function Checkout({ route, navigation }) {
               <Text style={{ fontWeight: 'bold' }}>Monto:</Text> ${Number(order.total).toLocaleString('es-CO')} COP
             </Text>
           </View>
+          
+          {order.items && order.items.filter(i => i.variante_label?.includes('Digital') || i.tipo_tapa === 'Digital').length > 0 && (
+            <View style={{ marginTop: 20, width: '100%' }}>
+              <Text style={{ fontWeight: 'bold', marginBottom: 10, textAlign: 'center' }}>Tus libros digitales:</Text>
+              {order.items.filter(i => i.variante_label?.includes('Digital') || i.tipo_tapa === 'Digital').map((item, idx) => (
+                <TouchableOpacity 
+                  key={`dl-${idx}`}
+                  style={[styles.homeBtn, { backgroundColor: '#2e7d32', marginBottom: 10 }]}
+                  onPress={() => {
+                     const url = `${getApiBaseUrl()}/libros/descargar/${item.id_variante}?token=${token}`;
+                     Linking.openURL(url);
+                  }}
+                >
+                  <Text style={styles.homeBtnText}>📥 Descargar {item.titulo}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
 
-          <TouchableOpacity style={styles.homeBtn} onPress={() => navigation.navigate('Home')}>
+          <TouchableOpacity style={[styles.homeBtn, { marginTop: order.items?.some(i => i.variante_label?.includes('Digital')) ? 10 : 0 }]} onPress={() => navigation.navigate('Home')}>
             <Text style={styles.homeBtnText}>Volver al Catálogo</Text>
           </TouchableOpacity>
         </View>

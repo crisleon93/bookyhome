@@ -44,6 +44,8 @@ def add_to_cart(data: dict, user=Depends(get_current_user)):
         "autor_libro": data.get("autor_libro", ""),
         "precio_libro": float(data.get("precio_libro", 0)),
         "imagen": data.get("imagen"),
+        "id_variante": data.get("id_variante"),
+        "variante_label": data.get("variante_label"),
     }
 
     return agregar_al_carrito(id_usuario, item)

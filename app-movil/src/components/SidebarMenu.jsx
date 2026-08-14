@@ -4,7 +4,7 @@ import {
   Modal, Animated, Dimensions, Platform
 } from 'react-native';
 import { 
-  IconClose, IconUser, IconFavorites, IconHistory, 
+  IconClose, IconUser, IconFavorites, IconHistory, IconAlertTriangle,
   IconStore, IconPackage, IconLogout, IconChevronRight, IconBell, IconChat
 } from './Icons';
 import { useNotifications } from '../context/NotificationContext';
@@ -121,6 +121,11 @@ export default function SidebarMenu({ visible, onClose, user, navigation, onSign
               onPress={() => navigateTo('Messages')}
             />
             <MenuItem
+              icon={<IconPackage size={22} color="#555" />}
+              label="Mi Carrito"
+              onPress={() => navigateTo('Cart')}
+            />
+            <MenuItem
               icon={<IconFavorites size={22} color="#555" />}
               label="Lista de Deseos"
               onPress={() => navigateTo('ListaDeseos')}
@@ -129,6 +134,11 @@ export default function SidebarMenu({ visible, onClose, user, navigation, onSign
               icon={<IconHistory size={22} color="#555" />}
               label="Historial de Pedidos"
               onPress={() => navigateTo('History')}
+            />
+            <MenuItem
+              icon={<IconAlertTriangle size={22} color="#555" />}
+              label="Quejas y reclamos"
+              onPress={() => navigateTo('QuejasReclamos')}
             />
             <MenuItem
               icon={<IconBell size={22} color="#555" />}

@@ -50,6 +50,16 @@ export const IconLocation = ({ size = 16, color = '#FFFFFF' }) => (
   </Svg>
 );
 
+// ── Alerta / Info ───────────────────────────────────────────────────────────────
+export const IconAlertTriangle = ({ size = 24, color = '#7A1E3A' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+    stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <Path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+    <Line x1="12" y1="9" x2="12" y2="13" />
+    <Line x1="12" y1="17" x2="12.01" y2="17" />
+  </Svg>
+);
+
 // ── Carrito ───────────────────────────────────────────────────────────────────
 export const IconCart = ({ size = 22, color = '#7A1E3A' }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none"
