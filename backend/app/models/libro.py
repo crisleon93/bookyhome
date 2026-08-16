@@ -588,9 +588,9 @@ def obtener_pedidos_tienda(id_tienda: int):
         })
         ordenes[id_orden]["total_tienda"] += precio * cant
 
-    # Adjuntar envío solo si la orden está pagada
+    # Mantener visible la guía durante todo el ciclo posterior al pago.
     for id_orden, pedido in ordenes.items():
-        if str(pedido["estado"]).lower() == "pagado" and id_orden in envios_map:
+        if str(pedido["estado"]).lower() in ("pagado", "enviado", "entregada") and id_orden in envios_map:
             e = envios_map[id_orden]
             pedido["envio"] = {
                 "id_empresa":             e["id_empresa"],

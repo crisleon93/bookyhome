@@ -524,7 +524,8 @@ def obtener_estadisticas_reales(user_id: int = Depends(get_current_user)):
 def actualizar_estado_orden(id_orden: int, data: ActualizarEstadoOrden, user_id: int = Depends(get_current_user)):
     """Actualiza el estado de una orden en MySQL (solo vendedores, solo sus propias Ã³rdenes)"""
 
-    estados_validos = ["pagado", "enviado", "entregada", "cancelada"]
+    # La recepción solo puede ser confirmada por el comprador desde su panel.
+    estados_validos = ["pagado", "enviado", "cancelada"]
     if data.estado.lower() not in estados_validos:
         raise HTTPException(
             status_code=400,
@@ -581,7 +582,6 @@ def actualizar_estado_orden(id_orden: int, data: ActualizarEstadoOrden, user_id:
             estado_msg = {
                 'pagado': 'ha sido pagado y estÃ¡ siendo preparado',
                 'enviado': 'ha sido enviado y estÃ¡ en camino',
-                'entregada': 'ha sido entregado exitosamente',
                 'cancelada': 'ha sido cancelado'
             }
             
@@ -620,6 +620,57 @@ def actualizar_estado_orden(id_orden: int, data: ActualizarEstadoOrden, user_id:
         pass  # No es crÃ­tico â€” MySQL es la fuente de verdad
 
     return {"success": True, "mensaje": f"Estado actualizado a {data.estado.lower()}"}
+
+
+@router.post("/ordenes/{id_orden}/confirmar-entrega")
+def confirmar_entrega(id_orden: int, user_id: int = Depends(get_current_user)):
+    """El comprador confirma la recepción de una orden que ya está en camino."""
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    try:
+        cursor.execute(
+            "SELECT id_orden, fecha_orden, estado_orden FROM ordenes_compra WHERE id_orden = %s AND id_usuario = %s",
+            (id_orden, user_id),
+        )
+        orden = cursor.fetchone()
+        if orden and str(orden["estado_orden"]).lower() != "enviado":
+            raise HTTPException(status_code=409, detail="Solo puedes confirmar pedidos que estén en camino")
+        if orden:
+            cursor.execute("UPDATE ordenes_compra SET estado_orden = 'entregada' WHERE id_orden = %s", (id_orden,))
+            cursor.execute("UPDATE envios SET estado_envio = 'Entregado' WHERE id_orden = %s", (id_orden,))
+            db.commit()
+    finally:
+        cursor.close()
+        db.close()
+
+    fecha_confirmacion = datetime.utcnow().isoformat() + "Z"
+    # Mantener el historial mostrado al comprador sincronizado con MySQL.
+    try:
+        storage_dir = os.path.join(os.path.dirname(__file__), '..', 'data')
+        order_file = os.path.join(storage_dir, 'orders.json')
+        if os.path.exists(order_file):
+            with open(order_file, 'r', encoding='utf-8') as file:
+                orders = json.load(file)
+            orden_local_encontrada = False
+            for order in orders.get(str(user_id), []):
+                if order.get('id_orden_db') == id_orden or (order.get('id_orden_db') is None and order.get('id_orden') == id_orden):
+                    if str(order.get('estado', '')).lower() != 'enviado':
+                        raise HTTPException(status_code=409, detail="Solo puedes confirmar pedidos que estén en camino")
+                    order['estado'] = 'entregada'
+                    order['fecha_entrega_confirmada'] = fecha_confirmacion
+                    if order.get('envio'):
+                        order['envio']['estado_envio'] = 'Entregado'
+                    orden_local_encontrada = True
+            if not orden and not orden_local_encontrada:
+                raise HTTPException(status_code=404, detail="Orden no encontrada")
+            with open(order_file, 'w', encoding='utf-8') as file:
+                json.dump(orders, file, indent=2, ensure_ascii=False)
+    except HTTPException:
+        raise
+    except Exception:
+        pass
+
+    return {"success": True, "fecha_confirmacion": fecha_confirmacion}
 
 # ============= ENDPOINTS DE CALIFICACIONES DE TIENDAS =============
 

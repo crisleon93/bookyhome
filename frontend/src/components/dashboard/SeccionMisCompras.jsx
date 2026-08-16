@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback } from "react";
 import { IconPackage, IconCheck, IconLock } from "../Icons";
-import { getOrdenes, getOrden, sendConfirmationEmail } from "../../services/api";
+import { getDevoluciones, getOrdenes, getOrden, sendConfirmationEmail } from "../../services/api";
 import { notify } from "../ToastProvider";
 
 export default function SeccionMisCompras({ userId }) {
   const [ordenes, setOrdenes] = useState([]);
+  const [devoluciones, setDevoluciones] = useState([]);
   const [ordenesLoading, setOrdenesLoading] = useState(false);
 
   // Baucher states
@@ -17,8 +18,9 @@ export default function SeccionMisCompras({ userId }) {
     if (!userId) return;
     setOrdenesLoading(true);
     try {
-      const res = await getOrdenes();
-      setOrdenes(res.data || []);
+      const [ordenesRes, devolucionesRes] = await Promise.all([getOrdenes(), getDevoluciones()]);
+      setOrdenes(ordenesRes.data || []);
+      setDevoluciones(devolucionesRes.data || []);
     } catch (error) {
       console.error('Error cargando órdenes:', error);
     } finally {
@@ -56,7 +58,7 @@ export default function SeccionMisCompras({ userId }) {
     try {
       await sendConfirmationEmail(ordenSeleccionada.id_orden);
       notify('Correo de confirmación enviado', 'success');
-    } catch (err) {
+    } catch {
       notify('No se pudo enviar el correo', 'error');
     } finally {
       setEnviandoEmail(false);
@@ -67,6 +69,25 @@ export default function SeccionMisCompras({ userId }) {
     Number(value || 0).toLocaleString("es-CO", {
       style: "currency", currency: "COP", maximumFractionDigits: 0
     });
+
+  const obtenerEstadoVisible = (orden) => {
+    const devolucion = devoluciones.find((item) => Number(item.id_orden) === Number(orden.id_orden));
+    const estadoDevolucion = String(devolucion?.estado_devolucion || '').toLowerCase();
+    const devolucionCompletada = ['completada', 'resuelta', 'reembolsada', 'devuelta'].includes(estadoDevolucion);
+    if (devolucionCompletada) {
+      return { pago: 'Reembolsado', entrega: 'Devolución', pagoClase: 'devolucion', entregaClase: 'devolucion', completada: false };
+    }
+
+    const estado = String(orden.estado || '').toLowerCase();
+    const estadoEnvio = String(orden.envio?.estado_envio || '').toLowerCase();
+    const entregada = estado.includes('entregad') || estadoEnvio.includes('entregad');
+    const enCamino = estado.includes('enviad') || estadoEnvio.includes('transito') || estadoEnvio.includes('camino');
+
+    if (entregada) return { pago: 'Pagado', entrega: 'Entregado', pagoClase: 'entregado', entregaClase: 'entregado', completada: true };
+    if (enCamino) return { pago: 'Pagado', entrega: 'En camino', pagoClase: 'entregado', entregaClase: 'camino', completada: false };
+    if (estado === 'pagado') return { pago: 'Pagado', entrega: 'Preparando envío', pagoClase: 'entregado', entregaClase: 'procesando', completada: false };
+    return { pago: 'Pendiente de pago', entrega: null, pagoClase: 'procesando', entregaClase: 'procesando', completada: false };
+  };
 
   return (
     <>
@@ -85,11 +106,13 @@ export default function SeccionMisCompras({ userId }) {
         <div className="pl-card">
           {ordenes.map((orden) => (
             <div key={orden.id_orden} className="pl-order-row">
+              {(() => {
+                const estadoVisible = obtenerEstadoVisible(orden);
+                return (
+                  <>
               <div className="pl-order-left">
                 <span className="pl-order-emoji" style={{ display: 'flex', alignItems: 'center' }}>
-                  {orden.estado === "pagado"
-                    ? <IconCheck width={20} height={20} strokeWidth={2} style={{ color: 'green' }} />
-                    : <IconLock width={20} height={20} strokeWidth={2} style={{ color: '#7A1E3A' }} />}
+                  {estadoVisible.completada && <IconCheck width={20} height={20} strokeWidth={2} style={{ color: 'green' }} />}
                 </span>
                 <div>
                   <p className="pl-order-title">Orden #{orden.id_orden}</p>
@@ -97,9 +120,10 @@ export default function SeccionMisCompras({ userId }) {
                     {orden.fecha ? new Date(orden.fecha).toLocaleDateString("es-CO") : ""}
                     {" · "}{orden.items?.length || 0} producto{orden.items?.length === 1 ? "" : "s"}
                     {" · "}
-                    <span className={`pl-badge pl-badge--${orden.estado === "pagado" ? "entregado" : "procesando"}`}>
-                      {orden.estado}
+                    <span className={`pl-badge pl-badge--${estadoVisible.pagoClase}`}>
+                      {estadoVisible.pago}
                     </span>
+                    {estadoVisible.entrega && <span className={`pl-badge pl-badge--${estadoVisible.entregaClase}`} style={{ marginLeft: 6 }}>{estadoVisible.entrega}</span>}
                   </p>
                 </div>
               </div>
@@ -107,7 +131,7 @@ export default function SeccionMisCompras({ userId }) {
                 <span className="pl-order-price">
                   {formatCurrency(orden.total)}
                 </span>
-                {orden.estado === "pagado" && (
+                {estadoVisible.pago === "Pagado" && (
                   <button
                     onClick={() => handleVerBaucher(orden)}
                     className="btn btn-vinotinto"
@@ -136,6 +160,9 @@ export default function SeccionMisCompras({ userId }) {
                   </button>
                 )}
               </div>
+                  </>
+                );
+              })()}
             </div>
           ))}
         </div>
@@ -144,6 +171,7 @@ export default function SeccionMisCompras({ userId }) {
       {/* ── MODAL BAUCHER ── */}
       {mostrarBaucher && (
         <div
+          className="baucher-print-overlay"
           style={{
             position: "fixed", inset: 0,
             background: "rgba(0,0,0,0.6)", zIndex: 2000,
@@ -293,7 +321,7 @@ export default function SeccionMisCompras({ userId }) {
                 </div>
 
                 {/* Botones */}
-                <div style={{ display: "flex", gap: "12px", marginTop: "30px", flexWrap: "wrap" }}>
+                <div className="baucher-actions" style={{ display: "flex", gap: "12px", marginTop: "30px", flexWrap: "wrap" }}>
                   <button
                     onClick={handleCerrarBaucher}
                     style={{
@@ -347,6 +375,30 @@ export default function SeccionMisCompras({ userId }) {
       <style>{`
         .baucher-modal::-webkit-scrollbar { display: none; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @media print {
+          @page { margin: 14mm; }
+          body { background: #fff !important; }
+          body * { visibility: hidden !important; }
+          .baucher-print-overlay, .baucher-print-overlay * { visibility: visible !important; }
+          .baucher-print-overlay {
+            position: absolute !important;
+            inset: 0 !important;
+            display: block !important;
+            padding: 0 !important;
+            background: #fff !important;
+          }
+          .baucher-modal {
+            width: 100% !important;
+            max-width: none !important;
+            max-height: none !important;
+            overflow: visible !important;
+            padding: 0 !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            background: #fff !important;
+          }
+          .baucher-actions { display: none !important; }
+        }
       `}</style>
     </>
   );

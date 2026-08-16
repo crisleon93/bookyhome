@@ -68,10 +68,11 @@ def registrar_envio(id_comprador, id_orden, id_tienda, id_empresa, numero_guia):
     try:
         # Verificar que la orden existe, está pagada y contiene libros de esta tienda
         cursor.execute("""
-            SELECT oc.id_orden, oc.estado_orden
+            SELECT oc.id_orden, oc.estado_orden, t.nombre_tienda, t.direccion
             FROM ordenes_compra oc
             JOIN detalle_orden do ON do.id_orden = oc.id_orden
             JOIN libros l ON l.id_libro = do.id_libro
+            JOIN tiendas t ON t.id_tienda = l.id_tienda
             WHERE oc.id_orden = %s AND oc.id_usuario = %s AND l.id_tienda = %s
             LIMIT 1
         """, (id_orden, id_comprador, id_tienda))
@@ -79,25 +80,35 @@ def registrar_envio(id_comprador, id_orden, id_tienda, id_empresa, numero_guia):
 
         if not orden:
             return None, "Orden no encontrada"
-        if str(orden["estado_orden"]).lower() != "pagado":
+        if str(orden["estado_orden"]).lower() not in ("pagado", "enviado"):
             return None, "La guía solo puede registrarse cuando el pedido esté pagado"
 
         # Insertar o actualizar el envío en la tabla envios
         cursor.execute("""
-            INSERT INTO envios (id_orden, id_tienda, id_empresa, empresa_mensajeria, numero_guia, estado_envio)
-            VALUES (%s, %s, %s, %s, %s, 'Guía registrada')
+            INSERT INTO envios (id_orden, id_tienda, id_empresa, empresa_mensajeria, numero_guia, fecha_despacho, estado_envio)
+            VALUES (%s, %s, %s, %s, %s, CURDATE(), 'Guía registrada')
             ON DUPLICATE KEY UPDATE
                 id_empresa        = VALUES(id_empresa),
                 empresa_mensajeria = VALUES(empresa_mensajeria),
                 numero_guia       = VALUES(numero_guia),
-                estado_envio      = 'Guía registrada'
+                estado_envio      = 'Guía registrada',
+                fecha_despacho    = COALESCE(fecha_despacho, CURDATE())
         """, (id_orden, id_tienda, id_empresa, empresa["nombre_empresa"], numero_guia))
+        # Una guía registrada significa que el pedido ya fue despachado.
+        cursor.execute(
+            "UPDATE ordenes_compra SET estado_orden = 'enviado' WHERE id_orden = %s AND estado_orden = 'pagado'",
+            (id_orden,),
+        )
         db.commit()
 
     finally:
         cursor.close()
         db.close()
 
+    momento_despacho = datetime.now(timezone.utc).isoformat()
+    origen = orden["nombre_tienda"]
+    if orden.get("direccion"):
+        origen = f"{origen} · {orden['direccion']}"
     envio = {
         "id_empresa":         empresa["id_empresa"],
         "empresa_mensajeria": empresa["nombre_empresa"],
@@ -105,16 +116,34 @@ def registrar_envio(id_comprador, id_orden, id_tienda, id_empresa, numero_guia):
         "url_rastreo":        empresa.get("url_rastreo", empresa["sitio_web"]),
         "numero_guia":        numero_guia,
         "estado_envio":       "Guía registrada",
-        "actualizado_en":     datetime.now(timezone.utc).isoformat(),
+        # La fecha de la base de datos es de tipo DATE; se conserva además la
+        # hora exacta para mostrarla al comprador en el comprobante de envío.
+        "fecha_despacho_con_hora": momento_despacho,
+        "actualizado_en":     momento_despacho,
+        "origen":             origen,
     }
 
     # Sincronizar también en orders.json si la orden existe ahí
     try:
         orders = _load_orders()
         user_orders = orders.get(str(id_comprador), [])
-        order_json = next((o for o in user_orders if o.get("id_orden") == id_orden), None)
+        # ``id_orden`` llega desde el panel del vendedor y corresponde a la
+        # llave de MySQL. El comprador conserva además un id local para sus
+        # pantallas, por lo que compararlo directamente hacía que las guías de
+        # compras recientes no se reflejaran en su seguimiento.
+        order_json = next(
+            (
+                o for o in user_orders
+                if o.get("id_orden_db") == id_orden
+                # Compatibilidad con órdenes antiguas creadas antes de guardar
+                # el identificador de MySQL.
+                or (o.get("id_orden_db") is None and o.get("id_orden") == id_orden)
+            ),
+            None,
+        )
         if order_json:
             order_json["envio"] = envio
+            order_json["estado"] = "enviado"
             orders[str(id_comprador)] = user_orders
             _save_orders(orders)
     except Exception:

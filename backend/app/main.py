@@ -59,6 +59,7 @@ from app.routers.herramientas import router as herramientas_router
 from app.routers.impulsos import router as impulsos_router
 
 from app.routers.envios import router as envios_router
+from app.routers.favoritos import router as favoritos_router
 from app.routers.quejas import router as quejas_router
 from app.routers.bookypago_finanzas import router as bookypago_finanzas_router
 from app.routers.calificaciones_tiendas import router as calificaciones_tiendas_router
@@ -149,6 +150,7 @@ app.include_router(herramientas_router)
 app.include_router(impulsos_router)
 
 app.include_router(envios_router)
+app.include_router(favoritos_router)
 app.include_router(quejas_router)
 app.include_router(bookypago_finanzas_router, prefix="/api/v1/bookypago-finanzas", tags=["BookyPago Finanzas"])
 # app.include_router(calificaciones_tiendas_router)

@@ -16,8 +16,8 @@
 /* -- Grid de tarjetas -- */
 .catalogo-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 24px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 20px;
   margin-top: 24px;
 }
 
@@ -57,17 +57,18 @@
 
 /* -- Tarjeta individual de libro -- */
 .libro-card {
-  border: 1px solid #e0dbd4;
-  border-radius: 16px;
+  border: 1px solid #e7e1dc;
+  border-radius: 14px;
   overflow: hidden;
-  text-align: center;
+  text-align: left;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   background: white;
   display: flex;
   flex-direction: column;
   box-shadow: 0 2px 8px rgba(0,0,0,0.06);
   position: relative;
-  min-height: 420px;
+  min-height: 0;
+  align-self: start;
 }
 
 .libro-card:hover {
@@ -91,11 +92,11 @@
 
 /* -- Cuerpo de texto de la tarjeta -- */
 .libro-card-body {
-  padding: 16px;
+  padding: 14px;
   display: flex;
   flex-direction: column;
-  flex: 1;
-  gap: 6px;
+  flex: initial;
+  gap: 7px;
   overflow: hidden;
 }
 
@@ -116,18 +117,33 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  background: linear-gradient(135deg, #fce4ec 0%, #f8bbd9 100%);
+  background: #f4eef0;
   color: var(--vinotinto);
-  border-radius: 20px;
-  padding: 3px 10px;
+  border-radius: 999px;
+  padding: 4px 9px;
   font-size: 0.7rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+  box-shadow: none;
   height: 24px;
   flex-shrink: 0;
+  align-self: flex-start;
 }
+
+.categoria--general    { background: #f4eef0; color: #7a1e3a; }
+.categoria--terror     { background: #eee8f7; color: #603a92; }
+.categoria--ciencia    { background: #e4f5e9; color: #1f7a45; }
+.categoria--romance    { background: #fde8ef; color: #b4235d; }
+.categoria--fantasia   { background: #e9edff; color: #4156a6; }
+.categoria--historia   { background: #f8eddb; color: #8c5a1d; }
+.categoria--tecnologia { background: #e2f4f6; color: #137783; }
+.categoria--juvenil    { background: #fff2d7; color: #a25d00; }
+.categoria--infantil   { background: #e4f4ff; color: #2775a7; }
+.categoria--aventura   { background: #fff0df; color: #b85f11; }
+.categoria--arte       { background: #f4e6f6; color: #86418f; }
+.categoria--biografia  { background: #e8eef8; color: #365d96; }
+.categoria--educacion  { background: #e8f3e9; color: #397542; }
 
 .punto-verde { color: #4caf50; }
 .punto-rojo  { color: #e53935; }
@@ -138,10 +154,9 @@
   color: #666;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 4px;
   font-weight: 500;
-  height: 20px;
   flex-shrink: 0;
 }
 
@@ -151,25 +166,38 @@
   margin: 0;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 4px;
   font-weight: 500;
-  height: 20px;
   flex-shrink: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .calificacion-tienda {
-  color: #666;
+  color: #8a5a00;
   font-size: 0.8rem;
   margin: 0;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 4px;
   font-weight: 600;
-  height: 20px;
   flex-shrink: 0;
 }
+
+.calificacion-tienda span { color: #777; font-weight: 500; }
+
+.libro-card-status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 20px;
+}
+
+.disponibilidad { color: #27864a; }
+.disponibilidad.sin-stock { color: #c73737; }
 
 .libro-card h3 {
   font-size: 0.95rem;
@@ -202,11 +230,8 @@
   font-size: 1.15rem;
   font-weight: 800;
   color: var(--vinotinto);
-  margin: 4px 0 0;
-  background: linear-gradient(135deg, var(--vinotinto) 0%, #8b0000 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  margin: 3px 0 0;
+  color: var(--vinotinto);
   height: 28px;
   flex-shrink: 0;
 }
@@ -216,7 +241,7 @@
   flex-shrink: 0;
   font-size: 0.85rem;
   padding: 0 20px;
-  margin-top: auto;
+  margin-top: 0;
 }
 
 /* -- Paginación -- */
@@ -444,4 +469,17 @@
 }
 .btn-quitar-favorito:hover {
   background: #fef2f2;
+}
+
+@media (max-width: 1280px) {
+  .catalogo-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (max-width: 900px) {
+  .catalogo-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 560px) {
+  .catalogo-grid { grid-template-columns: 1fr; gap: 16px; }
+  .libro-card-img { height: 190px; }
 }

@@ -1368,5 +1368,59 @@
     "fecha_venta": "2026-08-14T07:04:12.349355Z",
     "estado": "pendiente",
     "fecha_programada": 1787313852.349363
+  },
+  {
+    "id": 137,
+    "id_vendedor": 34,
+    "monto": 239046.35,
+    "id_venta": 21,
+    "fecha_venta": "2026-08-15T23:22:45.377036Z",
+    "estado": "pendiente",
+    "fecha_programada": 1787458965.377044
+  },
+  {
+    "id": 138,
+    "id_vendedor": 34,
+    "monto": 72250.0,
+    "id_venta": 22,
+    "fecha_venta": "2026-08-15T23:34:39.513045Z",
+    "estado": "pendiente",
+    "fecha_programada": 1787459679.513056
+  },
+  {
+    "id": 139,
+    "id_vendedor": 34,
+    "monto": 72250.0,
+    "id_venta": 23,
+    "fecha_venta": "2026-08-15T23:37:43.965679Z",
+    "estado": "pendiente",
+    "fecha_programada": 1787459863.965688
+  },
+  {
+    "id": 140,
+    "id_vendedor": 26,
+    "monto": 103046.35,
+    "id_venta": 24,
+    "fecha_venta": "2026-08-15T23:39:35.515555Z",
+    "estado": "pendiente",
+    "fecha_programada": 1787459975.515565
+  },
+  {
+    "id": 141,
+    "id_vendedor": 26,
+    "monto": 103046.35,
+    "id_venta": 25,
+    "fecha_venta": "2026-08-15T23:41:33.564387Z",
+    "estado": "pendiente",
+    "fecha_programada": 1787460093.564395
+  },
+  {
+    "id": 142,
+    "id_vendedor": 26,
+    "monto": 103046.35,
+    "id_venta": 26,
+    "fecha_venta": "2026-08-15T23:48:36.510280Z",
+    "estado": "pendiente",
+    "fecha_programada": 1787460516.510288
   }
 ]

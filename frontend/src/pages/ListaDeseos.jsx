@@ -5,7 +5,10 @@ import {
   crearListaDeseos,
   eliminarListaDeseos,
   getLibrosListaDeseos,
+  agregarLibroListaDeseos,
   eliminarLibroListaDeseos,
+  eliminarFavorito,
+  getFavoritos,
   getApiBaseUrl,
 } from '../services/api';
 import { notify } from '../components/ToastProvider';
@@ -29,11 +32,12 @@ const formatCurrency = (value) =>
     maximumFractionDigits: 0,
   });
 
-export default function ListaDeseos({ embedded = false, onVerLibro }) {
+export default function ListaDeseos({ embedded = false, onVerLibro, onIrCatalogo }) {
   const navigate = useNavigate();
   const [listas, setListas] = useState([]);
   const [listaSeleccionadaId, setListaSeleccionadaId] = useState(null);
   const [libros, setLibros] = useState([]);
+  const [favoritos, setFavoritos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [librosLoading, setLibrosLoading] = useState(false);
   const [error, setError] = useState('');
@@ -41,20 +45,19 @@ export default function ListaDeseos({ embedded = false, onVerLibro }) {
   const [mostrarFormNuevaLista, setMostrarFormNuevaLista] = useState(false);
   const [hoveredListId, setHoveredListId] = useState(null);
   const [hoveredBookId, setHoveredBookId] = useState(null);
+  const [libroParaAgregarId, setLibroParaAgregarId] = useState(null);
 
   const cargarListas = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
+      const favoritosRes = await getFavoritos();
+      setFavoritos(favoritosRes.data || []);
       const res = await getListasDeseos();
       const data = res.data || [];
       setListas(data);
-      if (data.length > 0) {
-        setListaSeleccionadaId((prev) => prev ?? data[0].id_lista);
-      } else {
-        setListaSeleccionadaId(null);
-        setLibros([]);
-      }
+      setListaSeleccionadaId((prev) => data.some((lista) => lista.id_lista === prev) ? prev : null);
+      if (data.length === 0) setLibros([]);
     } catch (err) {
       setError(err.response?.data?.detail || 'No se pudieron cargar las listas');
       setListas([]);
@@ -152,10 +155,44 @@ export default function ListaDeseos({ embedded = false, onVerLibro }) {
       onVerLibro(libro);
       return;
     }
-    navigate('/post-login?seccion=Cat%C3%A1logo');
+    navigate('/?seccion=Cat%C3%A1logo');
   };
 
-  const listaActiva = listas.find((l) => l.id_lista === listaSeleccionadaId);
+  const handleQuitarLibro = async (idLibro) => {
+    if (!mostrandoFavoritos) return handleEliminarLibro(idLibro);
+    try {
+      await eliminarFavorito(idLibro);
+      setFavoritos((actuales) => actuales.filter((libro) => libro.id_libro !== idLibro));
+      notify('Libro eliminado de favoritos', 'success');
+      window.dispatchEvent(new Event('wishlist-updated'));
+    } catch (err) {
+      notify(err.response?.data?.detail || 'No se pudo eliminar de favoritos', 'error');
+    }
+  };
+
+  const handleAgregarLibroALista = async (idLista, idLibro) => {
+    try {
+      await agregarLibroListaDeseos(idLista, { id_libro: idLibro });
+      setLibroParaAgregarId(null);
+      notify('Libro agregado a la lista', 'success');
+      await cargarListas();
+    } catch (err) {
+      notify(err.response?.data?.detail || 'No se pudo agregar a la lista', 'error');
+    }
+  };
+
+  const handleIrCatalogo = () => {
+    if (onIrCatalogo) {
+      onIrCatalogo();
+      return;
+    }
+    navigate('/?seccion=Cat%C3%A1logo');
+  };
+
+  const listaSeleccionada = listas.find((l) => l.id_lista === listaSeleccionadaId);
+  const mostrandoFavoritos = !listaSeleccionada;
+  const listaActiva = listaSeleccionada || { nombre_lista: 'Mis favoritos' };
+  const librosMostrados = mostrandoFavoritos ? favoritos : libros;
 
   const content = (
     <>
@@ -195,7 +232,7 @@ export default function ListaDeseos({ embedded = false, onVerLibro }) {
             <button
               className="btn btn-vinotinto"
               style={{ width: 'auto', padding: '10px 20px', borderRadius: '10px', fontSize: '0.9rem' }}
-              onClick={() => navigate('/post-login')}
+              onClick={() => navigate('/')}
             >
               Volver al panel
             </button>
@@ -286,6 +323,35 @@ export default function ListaDeseos({ embedded = false, onVerLibro }) {
                 </div>
               </div>
             )}
+
+            <button
+              type="button"
+              onClick={() => {
+                setListaSeleccionadaId(null);
+                setLibros([]);
+              }}
+              style={{
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '13px 16px',
+                marginBottom: 12,
+                background: mostrandoFavoritos ? '#fbf7f8' : '#fff',
+                border: mostrandoFavoritos ? '2px solid var(--vinotinto)' : '1.5px solid #e8e4df',
+                borderRadius: '12px',
+                color: 'var(--vinotinto)',
+                cursor: 'pointer',
+                fontFamily: 'Montserrat, sans-serif',
+              }}
+            >
+              <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 700, fontSize: '0.95rem' }}>
+                <IconFavorites width={18} height={18} strokeWidth={2} /> Mis favoritos
+              </span>
+              <span style={{ fontSize: '0.75rem', background: 'rgba(122, 30, 58, 0.1)', padding: '3px 8px', borderRadius: 10, fontWeight: 700 }}>
+                {favoritos.length} libro{favoritos.length === 1 ? '' : 's'}
+              </span>
+            </button>
 
             {loading && listas.length === 0 ? (
               <div style={{ display: 'flex', justifyContent: 'center', padding: '20px 0' }}>
@@ -392,7 +458,7 @@ export default function ListaDeseos({ embedded = false, onVerLibro }) {
               <p style={{ fontSize: '1rem', color: '#666', marginBottom: 20 }}>Selecciona o crea una lista para ver sus libros</p>
               <button
                 className="btn btn-vinotinto btn-catalog"
-                onClick={() => navigate('/post-login?seccion=Cat%C3%A1logo')}
+                onClick={handleIrCatalogo}
                 style={{ display: 'inline-flex', alignItems: 'center', gap: 8, justifyContent: 'center', width: 'auto', padding: '10px 20px', borderRadius: '8px' }}
               >
                 <IconBookOpen width={18} height={18} strokeWidth={2} style={{ color: 'white' }} />
@@ -405,8 +471,8 @@ export default function ListaDeseos({ embedded = false, onVerLibro }) {
                 <h3 style={{ margin: 0, color: 'var(--vinotinto)', fontWeight: 800, fontSize: '1.3rem' }}>
                   {listaActiva.nombre_lista}
                 </h3>
-                <span style={{ fontSize: '0.85rem', color: '#666', fontWeight: 600, background: '#f5eaed', color: 'var(--vinotinto)', padding: '4px 12px', borderRadius: '12px' }}>
-                  {libros.length} producto{libros.length === 1 ? '' : 's'}
+                <span style={{ fontSize: '0.85rem', fontWeight: 600, background: '#f5eaed', color: 'var(--vinotinto)', padding: '4px 12px', borderRadius: '12px' }}>
+                  {librosMostrados.length} producto{librosMostrados.length === 1 ? '' : 's'}
                 </span>
               </div>
 
@@ -414,7 +480,7 @@ export default function ListaDeseos({ embedded = false, onVerLibro }) {
                 <div style={{ display: 'flex', justifyContent: 'center', padding: '40px 0' }}>
                   <div style={{ width: 32, height: 32, border: '3px solid #e8e4df', borderTop: '3px solid var(--vinotinto)', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
                 </div>
-              ) : libros.length === 0 ? (
+              ) : librosMostrados.length === 0 ? (
                 <div className="empty-state" style={{ padding: '40px 0', textAlign: 'center' }}>
                   <div style={{ marginBottom: 16 }}>
                     <IconBookOpen width={44} height={44} strokeWidth={1.5} style={{ color: '#ccc' }} />
@@ -422,7 +488,7 @@ export default function ListaDeseos({ embedded = false, onVerLibro }) {
                   <p style={{ fontSize: '0.95rem', color: '#666', marginBottom: 20 }}>Esta lista está vacía. Agrega libros desde el catálogo.</p>
                   <button
                     className="btn btn-vinotinto btn-catalog"
-                    onClick={() => navigate('/post-login?seccion=Cat%C3%A1logo')}
+                    onClick={handleIrCatalogo}
                     style={{ display: 'inline-flex', alignItems: 'center', gap: 8, justifyContent: 'center', width: 'auto', padding: '10px 20px', borderRadius: '8px' }}
                   >
                     <IconBookOpen width={18} height={18} strokeWidth={2} style={{ color: 'white' }} />
@@ -431,7 +497,7 @@ export default function ListaDeseos({ embedded = false, onVerLibro }) {
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-                  {libros.map((libro) => {
+                  {librosMostrados.map((libro) => {
                     const isHovered = hoveredBookId === libro.id_libro;
                     return (
                       <div
@@ -502,6 +568,23 @@ export default function ListaDeseos({ embedded = false, onVerLibro }) {
                           >
                             Ver detalle
                           </button>
+                          {mostrandoFavoritos && listas.length > 0 && (
+                            libroParaAgregarId === libro.id_libro ? (
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: 8, border: '1px solid #e8e4df', borderRadius: 8 }}>
+                                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#666' }}>Agregar a:</span>
+                                {listas.map((lista) => (
+                                  <button key={lista.id_lista} type="button" onClick={() => handleAgregarLibroALista(lista.id_lista, libro.id_libro)} style={{ padding: '7px 9px', background: '#fff', border: '1px solid #7A1E3A', color: '#7A1E3A', borderRadius: 6, cursor: 'pointer', fontSize: '0.75rem', fontWeight: 700 }}>
+                                    {lista.nombre_lista}
+                                  </button>
+                                ))}
+                                <button type="button" onClick={() => setLibroParaAgregarId(null)} style={{ background: 'none', border: 'none', color: '#666', cursor: 'pointer', fontSize: '0.75rem' }}>Cancelar</button>
+                              </div>
+                            ) : (
+                              <button type="button" onClick={() => setLibroParaAgregarId(libro.id_libro)} style={{ background: 'none', border: '1.5px solid #7A1E3A', color: '#7A1E3A', borderRadius: 8, padding: '10px 16px', cursor: 'pointer', fontWeight: 700, fontSize: '0.85rem' }}>
+                                Agregar a lista
+                              </button>
+                            )
+                          )}
                           <button
                             style={{ 
                               background: 'none', 
@@ -518,7 +601,7 @@ export default function ListaDeseos({ embedded = false, onVerLibro }) {
                               gap: 6,
                               transition: 'all 0.2s'
                             }}
-                            onClick={() => handleEliminarLibro(libro.id_libro)}
+                            onClick={() => handleQuitarLibro(libro.id_libro)}
                             onMouseEnter={(e) => { e.target.style.background = '#fef2f2'; }}
                             onMouseLeave={(e) => { e.target.style.background = 'none'; }}
                           >

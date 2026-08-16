@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getApiBaseUrl, getListasDeseos, agregarLibroListaDeseos, eliminarLibroListaDeseos } from '../services/api';
+import { agregarFavorito, eliminarFavorito, getApiBaseUrl, getFavoritos } from '../services/api';
 import { notify } from './ToastProvider';
 
 const IMAGENES_CATEGORIA = {
@@ -17,6 +17,23 @@ const IMAGENES_CATEGORIA = {
   'Comedia':     'https://images.unsplash.com/photo-1516321497487-e288fb19713f?w=400&q=80',
 };
 const IMG_DEFAULT = 'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=400&q=80';
+
+const categoriaClase = (categoria = '') => {
+  const texto = categoria.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  if (texto.includes('terror')) return 'categoria--terror';
+  if (texto.includes('ciencia') || texto.includes('cientifica')) return 'categoria--ciencia';
+  if (texto.includes('romance')) return 'categoria--romance';
+  if (texto.includes('fantasia')) return 'categoria--fantasia';
+  if (texto.includes('historia')) return 'categoria--historia';
+  if (texto.includes('tecnologia')) return 'categoria--tecnologia';
+  if (texto.includes('juvenil')) return 'categoria--juvenil';
+  if (texto.includes('infantil')) return 'categoria--infantil';
+  if (texto.includes('aventura')) return 'categoria--aventura';
+  if (texto.includes('arte')) return 'categoria--arte';
+  if (texto.includes('biografia')) return 'categoria--biografia';
+  if (texto.includes('educacion')) return 'categoria--educacion';
+  return 'categoria--general';
+};
 
 const resolveImageUrl = (value) => {
   if (!value || typeof value !== "string") return null;
@@ -46,12 +63,8 @@ const resolveLibroCandidate = (candidate) => {
   return resolveImageUrl(candidate);
 };
 
-const LibroCard = ({ libro, onAdd, onVerDetalles }) => {
-  const [addMsg, setAddMsg] = useState('');
-  const [enListaDeseos, setEnListaDeseos] = useState(false);
-  const [listaDeseosId, setListaDeseosId] = useState(null);
-  const [mostrarSelectorLista, setMostrarSelectorLista] = useState(false);
-  const [listasDisponibles, setListasDisponibles] = useState([]);
+const LibroCard = ({ libro, onVerDetalles }) => {
+  const [enFavoritos, setEnFavoritos] = useState(false);
   const [wishlistLoading, setWishlistLoading] = useState(false);
 
   const calificacionTienda = libro?.calificacion_tienda || 0;
@@ -64,18 +77,8 @@ const LibroCard = ({ libro, onAdd, onVerDetalles }) => {
 
     const cargarEstado = async () => {
       try {
-        const res = await getListasDeseos();
-        const listas = res.data || [];
-        for (const lista of listas) {
-          const librosRes = await import('../services/api').then((m) => m.getLibrosListaDeseos(lista.id_lista));
-          const libros = librosRes.data || [];
-          const encontrado = libros.find((item) => item.id_libro === libro.id_libro);
-          if (encontrado) {
-            setEnListaDeseos(true);
-            setListaDeseosId(lista.id_lista);
-            break;
-          }
-        }
+        const res = await getFavoritos();
+        setEnFavoritos((res.data || []).some((item) => item.id_libro === libro.id_libro));
       } catch {
         // Sin listas o sin sesión válida
       }
@@ -84,19 +87,12 @@ const LibroCard = ({ libro, onAdd, onVerDetalles }) => {
     cargarEstado();
   }, [libro]);
 
-  const cargarListas = async () => {
-    const res = await getListasDeseos();
-    return res.data || [];
-  };
-
-  const agregarALista = async (idLista) => {
+  const agregarAFavoritos = async () => {
     setWishlistLoading(true);
     try {
-      await agregarLibroListaDeseos(idLista, { id_libro: libro.id_libro });
-      setEnListaDeseos(true);
-      setListaDeseosId(idLista);
-      setMostrarSelectorLista(false);
-      notify('Libro agregado a la lista de deseos', 'success');
+      await agregarFavorito(libro.id_libro);
+      setEnFavoritos(true);
+      notify('Libro agregado a favoritos', 'success');
       window.dispatchEvent(new Event('wishlist-updated'));
     } catch (err) {
       const msg = err.response?.data?.detail || 'No se pudo agregar a la lista';
@@ -106,14 +102,12 @@ const LibroCard = ({ libro, onAdd, onVerDetalles }) => {
     }
   };
 
-  const quitarDeLista = async () => {
-    if (!listaDeseosId) return;
+  const quitarDeFavoritos = async () => {
     setWishlistLoading(true);
     try {
-      await eliminarLibroListaDeseos(listaDeseosId, libro.id_libro);
-      setEnListaDeseos(false);
-      setListaDeseosId(null);
-      notify('Libro eliminado de la lista', 'success');
+      await eliminarFavorito(libro.id_libro);
+      setEnFavoritos(false);
+      notify('Libro eliminado de favoritos', 'success');
       window.dispatchEvent(new Event('wishlist-updated'));
     } catch (err) {
       const msg = err.response?.data?.detail || 'No se pudo quitar de la lista';
@@ -130,29 +124,12 @@ const LibroCard = ({ libro, onAdd, onVerDetalles }) => {
       return;
     }
 
-    if (enListaDeseos) {
-      await quitarDeLista();
+    if (enFavoritos) {
+      await quitarDeFavoritos();
       return;
     }
 
-    setWishlistLoading(true);
-    try {
-      const listas = await cargarListas();
-      if (listas.length === 0) {
-        notify('Crea una lista de deseos desde tu dashboard primero', 'error');
-        return;
-      }
-      if (listas.length === 1) {
-        await agregarALista(listas[0].id_lista);
-        return;
-      }
-      setListasDisponibles(listas);
-      setMostrarSelectorLista(true);
-    } catch (err) {
-      notify(err.response?.data?.detail || 'No se pudieron cargar las listas', 'error');
-    } finally {
-      setWishlistLoading(false);
-    }
+    await agregarAFavoritos();
   };
 
   if (!libro) return null;
@@ -181,7 +158,7 @@ const LibroCard = ({ libro, onAdd, onVerDetalles }) => {
 
       <div className="libro-card-body">
         {categoria && (
-          <span className="categoria-badge">
+          <span className={`categoria-badge ${categoriaClase(categoria)}`}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
               <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
@@ -203,42 +180,32 @@ const LibroCard = ({ libro, onAdd, onVerDetalles }) => {
           </p>
         )}
 
-        {calificacionTienda > 0 && (
-          <p className="calificacion-tienda">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="#ffc107" stroke="#ffc107" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-            </svg>
-            {calificacionTienda.toFixed(1)}
-            {totalOpinionesTienda > 0 && (
-              <span style={{ fontSize: '0.75rem', color: '#666', marginLeft: '4px' }}>
-                ({totalOpinionesTienda})
-              </span>
-            )}
-          </p>
-        )}
-
-        <p className="disponibilidad">
-          {outOfStock ? (
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#e53935" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10"></circle>
-              <line x1="15" y1="9" x2="9" y2="15"></line>
-              <line x1="9" y1="9" x2="15" y2="15"></line>
-            </svg>
-          ) : (
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4caf50" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-              <polyline points="22 4 12 14.01 9 11.01"></polyline>
-            </svg>
+        <div className="libro-card-status">
+          {calificacionTienda > 0 && (
+            <p className="calificacion-tienda">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="#f59e0b" stroke="#f59e0b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+              </svg>
+              {calificacionTienda.toFixed(1)}
+              {totalOpinionesTienda > 0 && <span>({totalOpinionesTienda})</span>}
+            </p>
           )}
-          {outOfStock ? ' Sin stock' : ' Disponible'}
-        </p>
+
+          <p className={`disponibilidad ${outOfStock ? 'sin-stock' : ''}`}>
+            {outOfStock ? (
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+            ) : (
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+            )}
+            {outOfStock ? 'Sin stock' : 'Disponible'}
+          </p>
+        </div>
 
         <p className="precio">${price.toLocaleString('es-CO')}</p>
 
         <button
           className="btn btn-vinotinto"
           onClick={() => onVerDetalles && onVerDetalles(libro)}
-          style={{ marginTop: 'auto' }}
         >
           Ver detalles
         </button>
@@ -264,45 +231,9 @@ const LibroCard = ({ libro, onAdd, onVerDetalles }) => {
             opacity: wishlistLoading ? 0.7 : 1,
           }}
         >
-          {wishlistLoading ? 'Procesando…' : enListaDeseos ? '♥ En lista' : '♡ Lista de deseos'}
+          {wishlistLoading ? 'Procesando…' : enFavoritos ? '♥ En favoritos' : '♡ Favoritos'}
         </button>
 
-        {mostrarSelectorLista && (
-          <div style={{ marginTop: '8px', padding: '10px', border: '1px solid #e0dbd4', borderRadius: '8px', background: '#faf8f6' }}>
-            <p style={{ margin: '0 0 8px', fontSize: '0.78rem', fontWeight: 700, color: '#444' }}>Elegir lista</p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              {listasDisponibles.map((lista) => (
-                <button
-                  key={lista.id_lista}
-                  type="button"
-                  onClick={() => agregarALista(lista.id_lista)}
-                  disabled={wishlistLoading}
-                  style={{
-                    background: 'white',
-                    border: '1px solid #ddd',
-                    borderRadius: '6px',
-                    padding: '8px 10px',
-                    textAlign: 'left',
-                    cursor: 'pointer',
-                    fontSize: '0.8rem',
-                    fontWeight: 600,
-                  }}
-                >
-                  {lista.nombre_lista}
-                </button>
-              ))}
-            </div>
-            <button
-              type="button"
-              onClick={() => setMostrarSelectorLista(false)}
-              style={{ marginTop: '8px', background: 'none', border: 'none', color: '#666', fontSize: '0.75rem', cursor: 'pointer' }}
-            >
-              Cancelar
-            </button>
-          </div>
-        )}
-
-        {addMsg && <p className="card-feedback">{addMsg}</p>}
       </div>
     </div>
   );

@@ -160,7 +160,7 @@ export default function VendedorSidebar({ userName = 'Vendedor', profileImage = 
     <aside className={`dashboard-sidebar ${sidebarOpen ? '' : 'collapsed'}`} style={{
       width: sidebarOpen ? '250px' : '76px',
       position: 'fixed', top: '0px', left: 0, zIndex: 60,
-      height: 'calc(100vh - 1px)',
+      height: '100vh',
       background: VINOTINTO, color: WHITE,
       padding: '24px 14px', display: 'flex', flexDirection: 'column', gap: '6px',
       transition: 'width 0.25s ease', flexShrink: 0, overflow: 'hidden',

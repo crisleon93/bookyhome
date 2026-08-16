@@ -28,6 +28,7 @@ lerna-debug.log*
 
 # pnpm cache
 frontend/.pnpm-store/
+.pnpm-store/
 
 # ======================
 # 🧠 GENERAL

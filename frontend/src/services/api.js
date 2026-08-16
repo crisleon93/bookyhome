@@ -28,11 +28,12 @@ export const registerLibrary = (payload) => api.post('/libreria', payload)
 export const getCarrito = () => api.get('/carrito')
 export const addToCart = (payload) => api.post('/carrito', payload)
 export const removeFromCart = (id_libro) => api.delete(`/carrito/${id_libro}`)
-export const checkoutCarrito = () => api.post('/carrito/checkout')
+export const checkoutCarrito = (payload = {}) => api.post('/carrito/checkout', payload)
 export const sincronizarOrdenes = () => api.post('/carrito/sincronizar-ordenes')
 export const postPayment = (payload) => api.post('/api/v1/payments', payload)
 export const getOrden = (orderId) => api.get(`/api/v1/orders/${orderId}`)
 export const getOrdenes = () => api.get('/api/v1/orders')
+export const confirmarEntrega = (idOrden) => api.post(`/perfil/ordenes/${idOrden}/confirmar-entrega`)
 export const cancelOrder = (orderId) => api.delete(`/api/v1/orders/${orderId}`)
 export const getStoredLibros = () => api.get('/api/stored/libros')
 export const getLibroById = (id) => api.get(`/api/stored/libros/${id}`)
@@ -45,6 +46,10 @@ export const uploadProfilePhoto = (formData) => api.post('/perfil/foto-perfil', 
 export const sendConfirmationEmail = (orderId) => api.post(`/api/v1/orders/${orderId}/send-confirmation`)
 export const actualizarEstadoTienda = (idTienda, estado) => api.patch(`/tiendas/${idTienda}/estado`, { estado })
 export const checkEmailVerification = (email) => api.get('/check-email-verification', { params: { email } })
+
+export const getFavoritos = () => api.get('/favoritos')
+export const agregarFavorito = (idLibro) => api.post(`/favoritos/${idLibro}`)
+export const eliminarFavorito = (idLibro) => api.delete(`/favoritos/${idLibro}`)
 
 export const getListasDeseos = () => api.get('/lista-deseos')
 export const crearListaDeseos = (payload) => api.post('/lista-deseos', payload)
@@ -76,7 +81,7 @@ export const editarCupon = (idCupon, payload) => api.patch(`/cupones/${idCupon}`
 export const eliminarCupon = (idCupon) => api.delete(`/cupones/${idCupon}`)
 
 // Direcciones de envío
-export const getDirecciones = () => api.get('/direcciones')
+export const getDirecciones = () => api.get('/perfil/direcciones')
 export const crearDireccion = (payload) => api.post('/direcciones', payload)
 export const actualizarDireccion = (id, payload) => api.put(`/direcciones/${id}`, payload)
 export const eliminarDireccion = (id) => api.delete(`/direcciones/${id}`)
