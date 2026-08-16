@@ -1,29 +1,30 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useCallback } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import {
   View, Text, FlatList, TouchableOpacity,
   StyleSheet, ActivityIndicator, Image, Alert
 } from 'react-native';
-import { AuthContext } from '../context/AuthContext';
-import { getListaDeseos, removeFromListaDeseos } from '../services/api';
+import { getApiBaseUrl, getFavoritos, removeFavorito } from '../services/api';
 
 export default function ListaDeseos({ navigation }) {
-  const { token } = useContext(AuthContext);
   const [listaDeseos, setListaDeseos] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => { cargar(); }, []);
-
-  const cargar = async () => {
+  const cargar = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await getListaDeseos();
-      setListaDeseos(res.data || []);
+      const favoritos = await getFavoritos();
+      setListaDeseos(favoritos.data || []);
     } catch (e) {
       Alert.alert('Error', 'No se pudo cargar tu lista de deseos.');
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useFocusEffect(useCallback(() => {
+    cargar();
+  }, [cargar]));
 
   const handleEliminar = async (id_libro) => {
     Alert.alert('Quitar de la lista', '¿Quitar este libro de tu lista de deseos?', [
@@ -31,7 +32,7 @@ export default function ListaDeseos({ navigation }) {
       {
         text: 'Quitar', style: 'destructive', onPress: async () => {
           try {
-            await removeFromListaDeseos(id_libro);
+            await removeFavorito(id_libro);
             setListaDeseos(prev => prev.filter(f => f.id_libro !== id_libro));
           } catch {
             Alert.alert('Error', 'No se pudo quitar el libro de la lista.');
@@ -62,13 +63,9 @@ export default function ListaDeseos({ navigation }) {
         keyExtractor={item => String(item.id_libro)}
         contentContainerStyle={{ paddingBottom: 24 }}
         renderItem={({ item }) => (
-          <TouchableOpacity
-            style={s.card}
-            onPress={() => navigation.navigate('BookDetail', { id: item.id_libro })}
-            activeOpacity={0.85}
-          >
-            {item.imagen_portada ? (
-              <Image source={{ uri: item.imagen_portada }} style={s.cover} />
+          <View style={s.card}>
+            {item.imagen_url ? (
+              <Image source={{ uri: item.imagen_url.startsWith('http') ? item.imagen_url : `${getApiBaseUrl()}${item.imagen_url}` }} style={s.cover} />
             ) : (
               <View style={[s.cover, s.coverPlaceholder]}>
                 <Text style={{ fontSize: 28 }}>📚</Text>
@@ -76,13 +73,18 @@ export default function ListaDeseos({ navigation }) {
             )}
             <View style={s.info}>
               <Text style={s.titulo} numberOfLines={2}>{item.titulo}</Text>
-              <Text style={s.autor} numberOfLines={1}>{item.autor}</Text>
-              <Text style={s.precio}>${parseFloat(item.precio || 0).toLocaleString('es-CO')}</Text>
+              <Text style={s.autor} numberOfLines={1}>{item.autor_libro}</Text>
+              <Text style={s.precio}>${parseFloat(item.precio_libro || 0).toLocaleString('es-CO')}</Text>
+              <View style={s.actions}>
+                <TouchableOpacity style={s.detailBtn} onPress={() => navigation.navigate('BookDetail', { book: item })}>
+                  <Text style={s.detailBtnText}>Ver detalle</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => handleEliminar(item.id_libro)} style={s.deleteBtn}>
+                  <Text style={s.deleteBtnText}>Borrar</Text>
+                </TouchableOpacity>
+              </View>
             </View>
-            <TouchableOpacity onPress={() => handleEliminar(item.id_libro)} style={s.deleteBtn}>
-              <Text style={{ fontSize: 20 }}>🗑</Text>
-            </TouchableOpacity>
-          </TouchableOpacity>
+          </View>
         )}
       />
     </View>
@@ -105,5 +107,9 @@ const s = StyleSheet.create({
   titulo: { fontSize: 15, fontWeight: '700', color: '#222', marginBottom: 4 },
   autor: { fontSize: 13, color: '#666', marginBottom: 6 },
   precio: { fontSize: 16, fontWeight: '800', color: '#7A1E3A' },
-  deleteBtn: { padding: 12, justifyContent: 'center', alignItems: 'center' },
+  actions: { flexDirection: 'row', gap: 8, marginTop: 9 },
+  detailBtn: { backgroundColor: '#7A1E3A', borderRadius: 7, paddingVertical: 7, paddingHorizontal: 10 },
+  detailBtnText: { color: '#fff', fontSize: 11, fontWeight: '800' },
+  deleteBtn: { borderWidth: 1, borderColor: '#C5425A', borderRadius: 7, paddingVertical: 6, paddingHorizontal: 10 },
+  deleteBtnText: { color: '#C5425A', fontSize: 11, fontWeight: '800' },
 });

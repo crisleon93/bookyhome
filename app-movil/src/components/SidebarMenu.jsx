@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { 
   IconClose, IconUser, IconFavorites, IconHistory, IconAlertTriangle,
-  IconStore, IconPackage, IconLogout, IconChevronRight, IconBell, IconChat
+  IconStore, IconPackage, IconLogout, IconChevronRight, IconBell, IconChat, IconLocation
 } from './Icons';
 import { useNotifications } from '../context/NotificationContext';
 
@@ -126,13 +126,18 @@ export default function SidebarMenu({ visible, onClose, user, navigation, onSign
               onPress={() => navigateTo('Cart')}
             />
             <MenuItem
+              icon={<IconLocation size={22} color="#555" />}
+              label="Direcciones"
+              onPress={() => navigateTo('Direcciones')}
+            />
+            <MenuItem
               icon={<IconFavorites size={22} color="#555" />}
               label="Lista de Deseos"
               onPress={() => navigateTo('ListaDeseos')}
             />
             <MenuItem
               icon={<IconHistory size={22} color="#555" />}
-              label="Historial de Pedidos"
+              label="Mis compras"
               onPress={() => navigateTo('History')}
             />
             <MenuItem

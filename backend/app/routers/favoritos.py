@@ -32,11 +32,16 @@ def listar_favoritos(user_id: int = Depends(get_current_user)):
     db = get_db()
     cursor = db.cursor(dictionary=True)
     try:
-        # Migra la lista automática creada por versiones anteriores de la interfaz.
+        # Migra las listas predeterminadas creadas por versiones anteriores de web y móvil.
         # Desde ahora, los favoritos y las listas personalizadas son conceptos separados.
         cursor.execute(
-            "SELECT id_lista FROM lista_deseos WHERE id_usuario = %s AND nombre_lista = %s AND publica = FALSE",
-            (user_id, "Mis favoritos"),
+            """
+            SELECT id_lista FROM lista_deseos
+            WHERE id_usuario = %s
+              AND LOWER(nombre_lista) IN ('mis favoritos', 'mi lista de deseos')
+              AND publica = FALSE
+            """,
+            (user_id,),
         )
         listas_anteriores = cursor.fetchall() or []
         for lista in listas_anteriores:

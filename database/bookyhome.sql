@@ -82,6 +82,7 @@ CREATE TABLE direcciones_envio (
     alias_direccion VARCHAR(50) NOT NULL,
     direccion_completa VARCHAR(200) NOT NULL,
     ciudad VARCHAR(50),
+    departamento VARCHAR(50),
     codigo_postal VARCHAR(10),
     es_principal BOOLEAN DEFAULT FALSE,
     FOREIGN KEY (id_usuario) REFERENCES usuarios(id_usuario)

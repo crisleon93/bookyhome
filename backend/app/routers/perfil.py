@@ -78,6 +78,7 @@ def listar_direcciones(user_id: int = Depends(get_current_user)):
                 alias_direccion,
                 direccion_completa AS direccion,
                 ciudad,
+                departamento,
                 codigo_postal,
                 es_principal
             FROM direcciones_envio
@@ -112,15 +113,15 @@ def crear_direccion(data: DireccionCrear, user_id: int = Depends(get_current_use
         cursor.execute(
             """
             INSERT INTO direcciones_envio (
-                id_usuario, alias_direccion, direccion_completa, ciudad, codigo_postal, es_principal
-            ) VALUES (%s, %s, %s, %s, %s, %s)
+                id_usuario, alias_direccion, direccion_completa, ciudad, departamento, codigo_postal, es_principal
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s)
             """,
-            (user_id, alias, direccion_completa, data.ciudad.strip() if data.ciudad else None, data.codigo_postal.strip() if data.codigo_postal else None, 1 if data.es_principal else 0),
+            (user_id, alias, direccion_completa, data.ciudad.strip() if data.ciudad else None, data.departamento.strip() if data.departamento else None, data.codigo_postal.strip() if data.codigo_postal else None, 1 if data.es_principal else 0),
         )
         db.commit()
         cursor.execute(
             """
-            SELECT id_direccion, id_usuario, alias_direccion, direccion_completa AS direccion, ciudad, codigo_postal, es_principal
+            SELECT id_direccion, id_usuario, alias_direccion, direccion_completa AS direccion, ciudad, departamento, codigo_postal, es_principal
             FROM direcciones_envio
             WHERE id_direccion = LAST_INSERT_ID()
             """
@@ -167,6 +168,10 @@ def actualizar_direccion(id_direccion: int, data: DireccionBase, user_id: int = 
             campos.append("ciudad = %s")
             valores.append(data.ciudad.strip() if data.ciudad else None)
 
+        if data.departamento is not None:
+            campos.append("departamento = %s")
+            valores.append(data.departamento.strip() if data.departamento else None)
+
         if data.codigo_postal is not None:
             campos.append("codigo_postal = %s")
             valores.append(data.codigo_postal.strip() if data.codigo_postal else None)
@@ -186,7 +191,7 @@ def actualizar_direccion(id_direccion: int, data: DireccionBase, user_id: int = 
 
         cursor.execute(
             """
-            SELECT id_direccion, id_usuario, alias_direccion, direccion_completa AS direccion, ciudad, codigo_postal, es_principal
+            SELECT id_direccion, id_usuario, alias_direccion, direccion_completa AS direccion, ciudad, departamento, codigo_postal, es_principal
             FROM direcciones_envio
             WHERE id_direccion = %s AND id_usuario = %s
             """,
