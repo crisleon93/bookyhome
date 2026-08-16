@@ -372,10 +372,10 @@ function Home() {
             </>
           )}
           {activeSide === 'Catálogo' && (
-            <Catalogo
+            <div className="dashboard-section"><Catalogo
               libroInicial={catalogoLibroInicial}
               onLibroInicialConsumido={() => setCatalogoLibroInicial(null)}
-            />
+            /></div>
           )}
           {activeSide === 'Mensajes' && (
             <div style={{ height: 'calc(100vh - 120px)', minHeight: 'calc(100vh - 120px)' }}>
@@ -383,40 +383,44 @@ function Home() {
             </div>
           )}
           {activeSide === 'Carrito' && (
-            <SeccionCarrito userId={userId} />
+            <div className="dashboard-section"><SeccionCarrito userId={userId} /></div>
           )}
           {activeSide === 'Mis Compras' && (
-            <SeccionMisCompras userId={userId} />
+            <div className="dashboard-section"><SeccionMisCompras userId={userId} /></div>
           )}
           {activeSide === 'Seguimiento' && (
-            <SeccionSeguimiento userId={userId} />
+            <div className="dashboard-section"><SeccionSeguimiento userId={userId} /></div>
           )}
           {activeSide === 'Lista de Deseos' && (
-            <ListaDeseos embedded onVerLibro={(libro) => {
-              setCatalogoLibroInicial(libro)
-              handleSelectSection('Catálogo')
-            }} />
+            <div className="dashboard-section"><ListaDeseos
+              embedded
+              onIrCatalogo={() => handleSelectSection('Catálogo')}
+              onVerLibro={(libro) => {
+                setCatalogoLibroInicial(libro)
+                handleSelectSection('Catálogo')
+              }}
+            /></div>
           )}
           {activeSide === 'Favoritos' && (
-            <SeccionFavoritos
+            <div className="dashboard-section"><SeccionFavoritos
               onGoToCatalog={() => handleSelectSection('Catálogo')}
               onSetActiveSide={handleSelectSection}
-            />
+            /></div>
           )}
           {activeSide === 'Mi Perfil' && (
-            <SeccionMiPerfil userId={userId} />
+            <div className="dashboard-section"><SeccionMiPerfil userId={userId} /></div>
           )}
           {activeSide === 'Mis Direcciones' && (
-            <SeccionMisDirecciones />
+            <div className="dashboard-section"><SeccionMisDirecciones /></div>
           )}
           {activeSide === 'Configuración' && (
-            <SeccionConfiguracion userId={userId} />
+            <div className="dashboard-section"><SeccionConfiguracion userId={userId} /></div>
           )}
           {activeSide === 'Notificaciones' && (
-            <SeccionNotificaciones />
+            <div className="dashboard-section"><SeccionNotificaciones /></div>
           )}
-          {activeSide === 'Quejas y reclamos' && <QuejasReclamos />}
-          {activeSide === 'Soporte técnico' && <Soporte />}
+          {activeSide === 'Quejas y reclamos' && <div className="dashboard-section"><QuejasReclamos /></div>}
+          {activeSide === 'Soporte técnico' && <div className="dashboard-section"><Soporte /></div>}
         </main>
       </div>
     )

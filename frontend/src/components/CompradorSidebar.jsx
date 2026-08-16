@@ -104,7 +104,7 @@ export default function CompradorSidebar({ userName, userEmail, profilePhotoUrl,
     <aside className={`dashboard-sidebar ${sidebarOpen ? '' : 'collapsed'}`} style={{
       width: sidebarOpen ? '250px' : '76px',
       position: 'fixed', top: '0px', left: 0, zIndex: 60,
-      height: 'calc(100vh - 1px)',
+      height: '100vh',
       background: VINOTINTO, color: WHITE,
       padding: '24px 14px', display: 'flex', flexDirection: 'column', gap: '6px',
       transition: 'width 0.25s ease', flexShrink: 0, overflow: 'hidden',
@@ -220,8 +220,8 @@ export default function CompradorSidebar({ userName, userEmail, profilePhotoUrl,
                 fontFamily: "'Montserrat', sans-serif",
                 transition: 'background 0.15s ease',
               }}
-              onMouseEnter={(e) => !active && (e.target.style.background = 'rgba(255,255,255,0.08)')}
-              onMouseLeave={(e) => !active && (e.target.style.background = 'transparent')}
+              onMouseEnter={(e) => !active && (e.currentTarget.style.background = 'rgba(255,255,255,0.08)')}
+              onMouseLeave={(e) => !active && (e.currentTarget.style.background = 'transparent')}
             >
               <span style={{ display: 'flex', flexShrink: 0, alignItems: 'center', width: '24px', height: '24px', justifyContent: 'center' }}>
                 {ICONS[item.name]}
@@ -262,8 +262,8 @@ export default function CompradorSidebar({ userName, userEmail, profilePhotoUrl,
           gap: sidebarOpen ? '10px' : '0', fontFamily: "'Montserrat', sans-serif", fontSize: '0.85rem',
           transition: 'all 0.2s ease',
         }}
-        onMouseEnter={(e) => e.target.style.background = 'rgba(255,255,255,0.12)'}
-        onMouseLeave={(e) => e.target.style.background = 'none'}
+        onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.12)'}
+        onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
       >
         <span style={{ display: 'flex', flexShrink: 0, alignItems: 'center', width: '24px', height: '24px', justifyContent: 'center' }}>
           <SidebarIcon Icon={IconLogOut} size={18} />

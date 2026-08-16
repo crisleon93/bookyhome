@@ -556,5 +556,68 @@
     "metodo_pago": "Tarjeta de Crédito",
     "fecha_pago": "2026-08-14T07:04:12.267448Z",
     "estado": "aprobado"
+  },
+  {
+    "id_pago": 63,
+    "id_usuario": 16,
+    "id_orden": 15,
+    "monto": 75000.0,
+    "metodo_pago": "Pago en Efecty",
+    "fecha_pago": "2026-08-15T22:41:22.170028Z",
+    "estado": "aprobado"
+  },
+  {
+    "id_pago": 64,
+    "id_usuario": 16,
+    "id_orden": 21,
+    "monto": 281231.0,
+    "metodo_pago": "PayPal",
+    "fecha_pago": "2026-08-15T23:22:45.290855Z",
+    "estado": "aprobado"
+  },
+  {
+    "id_pago": 65,
+    "id_usuario": 16,
+    "id_orden": 22,
+    "monto": 85000.0,
+    "metodo_pago": "Pago en Efecty",
+    "fecha_pago": "2026-08-15T23:34:39.414230Z",
+    "estado": "aprobado"
+  },
+  {
+    "id_pago": 66,
+    "id_usuario": 16,
+    "id_orden": 23,
+    "monto": 85000.0,
+    "metodo_pago": "PSE",
+    "fecha_pago": "2026-08-15T23:37:43.874422Z",
+    "estado": "aprobado"
+  },
+  {
+    "id_pago": 67,
+    "id_usuario": 16,
+    "id_orden": 24,
+    "monto": 121231.0,
+    "metodo_pago": "Pago en Efecty",
+    "fecha_pago": "2026-08-15T23:39:35.434839Z",
+    "estado": "aprobado"
+  },
+  {
+    "id_pago": 68,
+    "id_usuario": 16,
+    "id_orden": 25,
+    "monto": 121231.0,
+    "metodo_pago": "Pago en Efecty",
+    "fecha_pago": "2026-08-15T23:41:33.446537Z",
+    "estado": "aprobado"
+  },
+  {
+    "id_pago": 69,
+    "id_usuario": 16,
+    "id_orden": 26,
+    "monto": 121231.0,
+    "metodo_pago": "Pago en Efecty",
+    "fecha_pago": "2026-08-15T23:48:36.417108Z",
+    "estado": "aprobado"
   }
 ]

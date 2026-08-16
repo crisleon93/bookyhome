@@ -31,16 +31,9 @@
         }
       ],
       "total": 55000.0,
-      "estado": "Enviado",
+      "estado": "entregada",
       "metodo_pago": "PSE",
-      "envio": {
-        "id_empresa": 1,
-        "empresa_mensajeria": "Servientrega",
-        "sitio_web": "https://www.servientrega.com",
-        "url_rastreo": "https://www.servientrega.com/wps/portal/rastreo-destinatario",
-        "numero_guia": "GUIA-2X16",
-        "estado_envio": "En transito"
-      }
+      "fecha_entrega_confirmada": "2026-08-16T01:38:05.379495Z"
     },
     {
       "id_orden": 3,
@@ -157,16 +150,9 @@
         }
       ],
       "total": 55000.0,
-      "estado": "Enviado",
+      "estado": "entregada",
       "metodo_pago": "Tarjeta de Crédito",
-      "envio": {
-        "id_empresa": 1,
-        "empresa_mensajeria": "Servientrega",
-        "sitio_web": "https://www.servientrega.com",
-        "url_rastreo": "https://www.servientrega.com/wps/portal/rastreo-destinatario",
-        "numero_guia": "GUIA-8X16",
-        "estado_envio": "En transito"
-      }
+      "fecha_entrega_confirmada": "2026-08-16T01:38:08.418574Z"
     },
     {
       "id_orden": 9,
@@ -268,7 +254,8 @@
       ],
       "total": 180000.0,
       "estado": "pagado",
-      "metodo_pago": "Tarjeta de Crédito"
+      "metodo_pago": "Tarjeta de Crédito",
+      "id_orden_db": 32
     },
     {
       "id_orden": 14,
@@ -286,7 +273,8 @@
       ],
       "total": 95000.0,
       "estado": "pagado",
-      "metodo_pago": "Pago en Efecty"
+      "metodo_pago": "Pago en Efecty",
+      "id_orden_db": 34
     },
     {
       "id_orden": 15,
@@ -303,7 +291,9 @@
         }
       ],
       "total": 75000.0,
-      "estado": "pendiente"
+      "estado": "pagado",
+      "metodo_pago": "Pago en Efecty",
+      "id_orden_db": 35
     },
     {
       "id_orden": 16,
@@ -323,7 +313,8 @@
       ],
       "total": 34444.0,
       "estado": "pagado",
-      "metodo_pago": "Tarjeta de Crédito"
+      "metodo_pago": "Tarjeta de Crédito",
+      "id_orden_db": 36
     },
     {
       "id_orden": 17,
@@ -343,7 +334,8 @@
       ],
       "total": 137776.0,
       "estado": "pagado",
-      "metodo_pago": "Tarjeta de Crédito"
+      "metodo_pago": "Tarjeta de Crédito",
+      "id_orden_db": 37
     },
     {
       "id_orden": 18,
@@ -363,7 +355,8 @@
       ],
       "total": 68888.0,
       "estado": "pagado",
-      "metodo_pago": "Tarjeta de Crédito"
+      "metodo_pago": "Tarjeta de Crédito",
+      "id_orden_db": 38
     },
     {
       "id_orden": 19,
@@ -383,7 +376,8 @@
       ],
       "total": 45000.0,
       "estado": "pagado",
-      "metodo_pago": "Tarjeta de Crédito"
+      "metodo_pago": "Tarjeta de Crédito",
+      "id_orden_db": 39
     },
     {
       "id_orden": 20,
@@ -403,7 +397,155 @@
       ],
       "total": 45000.0,
       "estado": "pagado",
-      "metodo_pago": "Tarjeta de Crédito"
+      "metodo_pago": "Tarjeta de Crédito",
+      "id_orden_db": 40
+    },
+    {
+      "id_orden": 21,
+      "codigo_compra": "BH-60CA76E7B6",
+      "fecha": "2026-08-15T23:22:35.650780Z",
+      "items": [
+        {
+          "id_libro": 46,
+          "titulo": "El Futuro es Ahora",
+          "autor_libro": "Isaac Asimov",
+          "precio_libro": 85000.0,
+          "cantidad": 1,
+          "imagen": "https://covers.openlibrary.org/b/id/8259431-L.jpg",
+          "id_variante": null,
+          "variante_label": null
+        },
+        {
+          "id_libro": 49,
+          "titulo": "erwerwe",
+          "autor_libro": "werwerwer",
+          "precio_libro": 121231.0,
+          "cantidad": 1,
+          "imagen": null,
+          "id_variante": null,
+          "variante_label": null
+        },
+        {
+          "id_libro": 48,
+          "titulo": "1984 - Edición Especial",
+          "autor_libro": "George Orwell",
+          "precio_libro": 75000.0,
+          "cantidad": 1,
+          "imagen": "https://covers.openlibrary.org/b/id/11186714-L.jpg",
+          "id_variante": null,
+          "variante_label": null
+        }
+      ],
+      "total": 281231.0,
+      "estado": "pagado",
+      "metodo_pago": "PayPal",
+      "id_orden_db": 41
+    },
+    {
+      "id_orden": 22,
+      "codigo_compra": "BH-0D114B68A3",
+      "fecha": "2026-08-15T23:23:29.872134Z",
+      "items": [
+        {
+          "id_libro": 46,
+          "titulo": "El Futuro es Ahora",
+          "autor_libro": "Isaac Asimov",
+          "precio_libro": 85000.0,
+          "cantidad": 1,
+          "imagen": "https://covers.openlibrary.org/b/id/8259431-L.jpg",
+          "id_variante": null,
+          "variante_label": null
+        }
+      ],
+      "total": 85000.0,
+      "estado": "pagado",
+      "metodo_pago": "Pago en Efecty",
+      "id_orden_db": 42
+    },
+    {
+      "id_orden": 23,
+      "codigo_compra": "BH-04E1D73453",
+      "fecha": "2026-08-15T23:36:58.226441Z",
+      "items": [
+        {
+          "id_libro": 46,
+          "titulo": "El Futuro es Ahora",
+          "autor_libro": "Isaac Asimov",
+          "precio_libro": 85000.0,
+          "cantidad": 1,
+          "imagen": "https://covers.openlibrary.org/b/id/8259431-L.jpg",
+          "id_variante": null,
+          "variante_label": null
+        }
+      ],
+      "total": 85000.0,
+      "estado": "pagado",
+      "metodo_pago": "PSE",
+      "id_orden_db": 43
+    },
+    {
+      "id_orden": 24,
+      "codigo_compra": "BH-2F80543F83",
+      "fecha": "2026-08-15T23:39:07.194509Z",
+      "items": [
+        {
+          "id_libro": 49,
+          "titulo": "erwerwe",
+          "autor_libro": "werwerwer",
+          "precio_libro": 121231.0,
+          "cantidad": 1,
+          "imagen": null,
+          "id_variante": null,
+          "variante_label": null
+        }
+      ],
+      "total": 121231.0,
+      "estado": "pagado",
+      "metodo_pago": "Pago en Efecty",
+      "id_orden_db": 44
+    },
+    {
+      "id_orden": 25,
+      "codigo_compra": "BH-AEDA8A9B54",
+      "fecha": "2026-08-15T23:41:11.277680Z",
+      "items": [
+        {
+          "id_libro": 49,
+          "titulo": "erwerwe",
+          "autor_libro": "werwerwer",
+          "precio_libro": 121231.0,
+          "cantidad": 1,
+          "imagen": null,
+          "id_variante": null,
+          "variante_label": null
+        }
+      ],
+      "total": 121231.0,
+      "estado": "pagado",
+      "metodo_pago": "Pago en Efecty",
+      "id_orden_db": 45
+    },
+    {
+      "id_orden": 26,
+      "codigo_compra": "BH-FF23CA65E6",
+      "fecha": "2026-08-15T23:48:29.241783Z",
+      "items": [
+        {
+          "id_libro": 49,
+          "titulo": "erwerwe",
+          "autor_libro": "werwerwer",
+          "precio_libro": 121231.0,
+          "cantidad": 1,
+          "imagen": null,
+          "id_variante": null,
+          "variante_label": null
+        }
+      ],
+      "total": 121231.0,
+      "estado": "entregada",
+      "id_orden_db": 46,
+      "metodo_pago": "Pago en Efecty",
+      "fecha_entrega_confirmada": "2026-08-16T01:20:28.924273Z"
     }
   ],
   "17": [

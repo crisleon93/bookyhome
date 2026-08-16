@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { IconCart, IconBookOpen, IconPackage, IconLock, IconCheck } from "../Icons";
 import { notify } from "../ToastProvider";
-import api, { getCarrito, checkoutCarrito, getOrdenes, getOrden, postPayment, sendConfirmationEmail, cancelOrder, aplicarCupon } from "../../services/api";
+import api, { getCarrito, checkoutCarrito, getOrdenes, getOrden, postPayment, sendConfirmationEmail, cancelOrder, aplicarCupon, getDirecciones } from "../../services/api";
 import { useNavigate } from "react-router-dom";
 
 const CartEmptyState = ({ onGoToCatalog }) => (
@@ -29,6 +29,8 @@ export default function SeccionCarrito({ userId }) {
   const navigate = useNavigate();
   const [carrito, setCarrito] = useState([]);
   const [ordenes, setOrdenes] = useState([]);
+  const [direcciones, setDirecciones] = useState([]);
+  const [direccionSeleccionadaId, setDireccionSeleccionadaId] = useState('');
   const [cartLoading, setCartLoading] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [checkoutError, setCheckoutError] = useState(null);
@@ -50,7 +52,6 @@ export default function SeccionCarrito({ userId }) {
   
   // States for new payment methods
   const [sucursalCodigo, setSucursalCodigo] = useState("");
-  const [sucursalPuntos, setSucursalPuntos] = useState([]);
   const [sucursalPagoConfirmado, setSucursalPagoConfirmado] = useState(false);
   const [sucursalEsperandoConfirmacion, setSucursalEsperandoConfirmacion] = useState(false);
   const nequiSelected = false;
@@ -75,10 +76,13 @@ export default function SeccionCarrito({ userId }) {
   const loadData = useCallback(() => {
     if (userId) {
       setCartLoading(true);
-      Promise.all([getCarrito(), getOrdenes()])
-        .then(([carritoRes, ordenesRes]) => {
+      Promise.all([getCarrito(), getOrdenes(), getDirecciones()])
+        .then(([carritoRes, ordenesRes, direccionesRes]) => {
           setCarrito(carritoRes.data);
           setOrdenes(ordenesRes.data);
+          const disponibles = direccionesRes.data || [];
+          setDirecciones(disponibles);
+          setDireccionSeleccionadaId((actual) => actual || String(disponibles.find((direccion) => direccion.es_principal)?.id_direccion || disponibles[0]?.id_direccion || ''));
         })
         .catch(err => console.error(err))
         .finally(() => setCartLoading(false));
@@ -94,9 +98,13 @@ export default function SeccionCarrito({ userId }) {
   };
 
   const onCheckout = () => {
+    if (!direccionSeleccionadaId) {
+      setCheckoutError('Selecciona una dirección de entrega antes de continuar.');
+      return;
+    }
     setCheckoutLoading(true);
     setCheckoutError(null);
-    checkoutCarrito()
+    checkoutCarrito({ id_direccion: Number(direccionSeleccionadaId) })
       .then((res) => {
         if (res.data?.ok) {
           setOrderId(res.data.order.id_orden);
@@ -128,7 +136,6 @@ export default function SeccionCarrito({ userId }) {
     
     // Limpiar estados de métodos de pago
     setSucursalCodigo("");
-    setSucursalPuntos([]);
     setSucursalPagoConfirmado(false);
     setSucursalEsperandoConfirmacion(false);
     setPseBanco("");
@@ -143,20 +150,13 @@ export default function SeccionCarrito({ userId }) {
         await cancelOrder(orden.id_orden);
         notify('Orden cancelada', 'success');
         loadData();
-      } catch (err) {
+      } catch {
         notify('No se pudo cancelar la orden', 'error');
       }
     }
   };
 
   const generarCodigoPago = () => setSucursalCodigo(Math.random().toString(36).substring(2, 12).toUpperCase());
-  const obtenerPuntosEfecty = () => setSucursalPuntos([
-    { id: 1, nombre: "Efecty Centro", direccion: "Calle 10 #5-20", ciudad: "Bogotá" },
-    { id: 2, nombre: "Efecty Norte", direccion: "Carrera 15 #20-30", ciudad: "Bogotá" },
-    { id: 3, nombre: "Efecty Sur", direccion: "Avenida 1 #30-40", ciudad: "Bogotá" },
-    { id: 4, nombre: "Efecty Plaza", direccion: "Calle 50 #15-25", ciudad: "Medellín" },
-    { id: 5, nombre: "Efecty Centro", direccion: "Carrera 10 #20-30", ciudad: "Medellín" },
-  ]);
   const handleNequiRedirect = () => {
     window.location.href = `nequi://pagar?valor=${order?.total}&referencia=${order?.id_orden}`;
     setTimeout(() => { if (!nequiSelected) window.open('https://www.nequi.com.co', '_blank'); }, 2000);
@@ -170,13 +170,11 @@ export default function SeccionCarrito({ userId }) {
       setSucursalPagoConfirmado(true);
       setSucursalEsperandoConfirmacion(false);
       processPaymentApi("Pago en Efecty");
-    }, 500);
+    }, 1200);
   };
   const handleSucursalPago = () => {
     generarCodigoPago();
-    obtenerPuntosEfecty();
     setSucursalEsperandoConfirmacion(true);
-    verificarPagoEfecty();
   };
   const bancosPSE = [
     { codigo: "001", nombre: "Bancolombia" },
@@ -189,11 +187,10 @@ export default function SeccionCarrito({ userId }) {
   const handlePseRedirect = () => {
     if (!pseBanco) { notify("Por favor selecciona un banco", "error"); return; }
     setPseRedirecting(true);
-    window.open(`https://www.pse.com.co/portal/pagos?banco=${pseBanco}&valor=${order?.total}&referencia=${order?.id_orden}`, '_blank');
     setTimeout(() => {
       setPseRedirecting(false);
       processPaymentApi("PSE");
-    }, 5000);
+    }, 1200);
   };
   const handlePaypalSubmit = (e) => {
     e.preventDefault();
@@ -231,7 +228,7 @@ export default function SeccionCarrito({ userId }) {
       }
       setDiscountAmount(Math.max(0, Number(payload.descuento || payload.valor_descuento || 0)));
       setCouponSuccess(payload.mensaje || "Cupón aplicado correctamente.");
-    } catch (err) {
+    } catch {
       setDiscountAmount(0);
       setCouponError("El cupón ingresado no es válido.");
     } finally {
@@ -395,7 +392,7 @@ export default function SeccionCarrito({ userId }) {
           <div className="pl-card" style={{ padding: "24px" }}>
             <h3 style={{ margin: "0 0 20px 0" }}>Selecciona tu método de pago</h3>
             <div style={{ display: "flex", gap: "10px", marginBottom: "20px", flexWrap: "wrap" }}>
-              {[{id: "tarjeta", label: "Tarjeta"}, {id: "paypal", label: "PayPal"}, {id: "sucursal", label: "En Sucursal"}, {id: "pse", label: "PSE"}, {id: "nequi", label: "Nequi/Daviplata"}, {id: "transferencia", label: "Transferencia"}].map(method => (
+              {[{id: "tarjeta", label: "Tarjeta"}, {id: "paypal", label: "PayPal"}, {id: "sucursal", label: "Pago en punto autorizado"}, {id: "pse", label: "PSE"}, {id: "nequi", label: "Nequi/Daviplata"}, {id: "transferencia", label: "Transferencia"}].map(method => (
                 <button
                   key={method.id}
                   onClick={() => setPaymentMethod(method.id)}
@@ -470,8 +467,8 @@ export default function SeccionCarrito({ userId }) {
                 {!sucursalCodigo ? (
                   <>
                     <div style={{ background: "#fcfaf7", padding: "20px", borderRadius: "8px", marginBottom: "20px", border: "1px solid #e0dbd4" }}>
-                      <h3 style={{ margin: "0 0 15px", color: "var(--vinotinto)", fontSize: "1.1rem" }}>Pago en Efecty</h3>
-                      <p style={{ color: "#666", fontSize: "0.9rem", marginBottom: "15px" }}>Generaremos un código de pago único para que puedas pagar en cualquier punto Efecty cercano.</p>
+                      <h3 style={{ margin: "0 0 15px", color: "var(--vinotinto)", fontSize: "1.1rem" }}>Pago en punto autorizado</h3>
+                      <p style={{ color: "#666", fontSize: "0.9rem", marginBottom: "15px" }}>Generaremos un código único para pagar en un punto Efecty autorizado. La transportadora se asignará después, cuando el vendedor despache tu pedido.</p>
                       <div style={{ display: "flex", justifyContent: "space-between" }}>
                         <span style={{ color: "#666" }}>Total a pagar:</span>
                         <span style={{ fontWeight: 700, color: "var(--vinotinto)" }}>{formatCurrency(totalToPay)}</span>
@@ -503,7 +500,10 @@ export default function SeccionCarrito({ userId }) {
                       )}
                     </div>
                     {!sucursalPagoConfirmado && (
-                      <button onClick={() => { setSucursalCodigo(""); setSucursalPuntos([]); setSucursalEsperandoConfirmacion(false); }} style={{ width: "100%", padding: "14px", borderRadius: "8px", border: "2px solid var(--vinotinto)", background: "var(--blanco)", color: "var(--vinotinto)", fontWeight: 700, cursor: "pointer" }}>Cancelar</button>
+                      <div style={{ display: 'grid', gap: 10 }}>
+                        <button onClick={verificarPagoEfecty} className="btn btn-vinotinto" style={{ width: "100%" }}>Ya realicé el pago</button>
+                        <button onClick={() => { setSucursalCodigo(""); setSucursalEsperandoConfirmacion(false); }} style={{ width: "100%", padding: "14px", borderRadius: "8px", border: "2px solid var(--vinotinto)", background: "var(--blanco)", color: "var(--vinotinto)", fontWeight: 700, cursor: "pointer" }}>Cancelar</button>
+                      </div>
                     )}
                   </>
                 )}
@@ -529,7 +529,7 @@ export default function SeccionCarrito({ userId }) {
                   </select>
                 </div>
                 <button onClick={handlePseRedirect} disabled={pseRedirecting || !pseBanco} className="btn btn-vinotinto" style={{ width: "100%", opacity: pseRedirecting || !pseBanco ? 0.7 : 1 }}>
-                  {pseRedirecting ? "Redirigiendo a PSE..." : "Continuar a PSE"}
+                  {pseRedirecting ? "Confirmando pago..." : "Confirmar pago con PSE"}
                 </button>
               </div>
             )}
@@ -706,6 +706,14 @@ export default function SeccionCarrito({ userId }) {
           ))}
           {carrito.length > 0 && (
             <div style={{ marginTop: "30px", borderTop: "2px solid #e0dbd4", paddingTop: "20px", display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "16px" }}>
+              <div style={{ width: '100%', maxWidth: 520, alignSelf: 'stretch' }}>
+                <label style={{ display: 'block', fontWeight: 700, marginBottom: 8 }}>Dirección de entrega</label>
+                <select value={direccionSeleccionadaId} onChange={(event) => setDireccionSeleccionadaId(event.target.value)} style={{ width: '100%', padding: 12, borderRadius: 8, border: '1.5px solid #e0dbd4', background: '#fff' }}>
+                  <option value="">Selecciona una dirección</option>
+                  {direcciones.map((direccion) => <option key={direccion.id_direccion} value={direccion.id_direccion}>{direccion.alias_direccion || 'Dirección'} — {direccion.direccion}, {direccion.ciudad}</option>)}
+                </select>
+                {direcciones.length === 0 && <p style={{ color: '#9b1c31', fontSize: 13, margin: '8px 0 0' }}>Aún no tienes direcciones registradas. Agrégala desde “Direcciones”.</p>}
+              </div>
               <h2 style={{ fontWeight: 800, margin: 0 }}>Total a pagar: <span style={{ color: "var(--rojo-suave)" }}>{formatCurrency(totalCarrito)}</span></h2>
               {checkoutError && <p style={{ color: "var(--rojo-suave)", fontSize: 14, margin: 0 }}>{checkoutError}</p>}
               <button className="btn btn-vinotinto" onClick={onCheckout} disabled={checkoutLoading} style={{ width: "auto", minWidth: 250 }}>

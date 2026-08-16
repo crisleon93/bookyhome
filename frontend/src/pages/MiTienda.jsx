@@ -2692,7 +2692,6 @@ export default function MiTienda() {
                             >
                               <option value="pagado">Pagado</option>
                               <option value="enviado">Enviado</option>
-                              <option value="entregada">Entregada</option>
                               <option value="cancelada">Cancelada</option>
                             </select>
                           );
@@ -3100,7 +3099,7 @@ export default function MiTienda() {
         <span>Envíos</span>
       </button>
 
-      <main className="dashboard-main">{renderContenido()}</main>
+      <main className="dashboard-main"><div className="dashboard-section">{renderContenido()}</div></main>
 
       {modalEditar && (
         <ModalEditarLibro

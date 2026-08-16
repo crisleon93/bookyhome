@@ -58,9 +58,9 @@ def remove_from_cart(id_libro: int, user=Depends(get_current_user)):
 
 
 @router.post("/checkout")
-def checkout(user=Depends(get_current_user)):
+def checkout(data: dict | None = None, user=Depends(get_current_user)):
     id_usuario = int(user["sub"])
-    resultado = checkout_carrito(id_usuario)
+    resultado = checkout_carrito(id_usuario, (data or {}).get("id_direccion"))
     if not resultado["ok"]:
         raise HTTPException(status_code=400, detail=resultado["error"])
     return resultado

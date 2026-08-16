@@ -76,7 +76,7 @@ export default function QuejasReclamos() {
   };
 
   return (
-    <div style={{ maxWidth: 1400, margin: '0 auto', padding: '0 2rem 2.5rem' }}>
+    <div style={{ width: '100%', margin: 0, padding: '0 0 2.5rem' }}>
       <section className="pl-card" style={{ padding: '2.5rem 2rem', marginBottom: 24, borderRadius: 20, background: 'linear-gradient(135deg, #fff 0%, #faf8f6 100%)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
           <span style={{ width: 72, height: 72, borderRadius: 20, background: 'linear-gradient(135deg, #f7e9ee 0%, #f0e0e6 100%)', display: 'grid', placeItems: 'center', boxShadow: '0 4px 20px rgba(122, 30, 58, 0.15)' }}>

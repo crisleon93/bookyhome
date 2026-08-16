@@ -2041,7 +2041,7 @@ body.auth-page {
   align-items: center;
   gap: 14px;
 }
-.pl-order-emoji { font-size: 1.6rem; }
+.pl-order-emoji { width: 20px; flex: 0 0 20px; font-size: 1.6rem; }
 .pl-order-title {
   font-weight: 700;
   font-size: 0.88rem;
@@ -2084,13 +2084,18 @@ body.auth-page {
   color: #92400e;
   border: 1px solid #fcd34d;
 }
+.pl-badge--devolucion {
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fca5a5;
+}
 
 /* ===========================
    DASHBOARD SIDEBAR — MODERN DESIGN
    =========================== */
 .dashboard-container {
   display: flex;
-  min-height: calc(100vh - 1px);
+  min-height: 100vh;
   background: var(--beige);
 }
 
@@ -2392,6 +2397,16 @@ body.auth-page {
   overflow-y: auto;
   margin-left: 0;
   transition: margin-left 0.25s ease;
+}
+
+/* Marco común para las secciones del panel del comprador. */
+.dashboard-section {
+  width: 100%;
+}
+
+/* Catálogo dentro del panel: conserva el mismo ancho completo de las demás secciones. */
+.dashboard-main .layout-container.catalogo-main {
+  max-width: none;
 }
 
 /* When sidebar is present (user authenticated) */

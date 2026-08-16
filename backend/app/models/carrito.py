@@ -73,7 +73,7 @@ def vaciar_carrito(id_usuario):
     return []
 
 
-def checkout_carrito(id_usuario):
+def checkout_carrito(id_usuario, id_direccion=None):
     cart = obtener_carrito(id_usuario)
     if not cart:
         return {'ok': False, 'error': 'El carrito está vacío'}
@@ -84,11 +84,11 @@ def checkout_carrito(id_usuario):
     
     try:
         query_direccion = """
-            SELECT id_direccion FROM direcciones_envio 
-            WHERE id_usuario = %s 
+            SELECT id_direccion FROM direcciones_envio
+            WHERE id_usuario = %s AND (%s IS NULL OR id_direccion = %s)
             LIMIT 1
         """
-        cursor.execute(query_direccion, (id_usuario,))
+        cursor.execute(query_direccion, (id_usuario, id_direccion, id_direccion))
         direccion = cursor.fetchone()
         
         if not direccion:
@@ -126,11 +126,11 @@ def checkout_carrito(id_usuario):
         
         # Obtener dirección del usuario
         query_direccion = """
-            SELECT id_direccion FROM direcciones_envio 
-            WHERE id_usuario = %s 
+            SELECT id_direccion FROM direcciones_envio
+            WHERE id_usuario = %s AND (%s IS NULL OR id_direccion = %s)
             LIMIT 1
         """
-        cursor.execute(query_direccion, (id_usuario,))
+        cursor.execute(query_direccion, (id_usuario, id_direccion, id_direccion))
         direccion = cursor.fetchone()
         id_direccion = direccion['id_direccion'] if direccion else 1
         
@@ -141,6 +141,9 @@ def checkout_carrito(id_usuario):
         """
         cursor.execute(query_orden, (id_usuario, id_direccion, total))
         id_orden = cursor.lastrowid
+        # Vincular la orden local del comprador con la orden persistida en MySQL.
+        # El panel del vendedor consulta MySQL y necesita este identificador exacto.
+        order['id_orden_db'] = id_orden
         
         # Insertar detalles
         for item in cart:
@@ -156,6 +159,8 @@ def checkout_carrito(id_usuario):
                 continue
         
         db.commit()
+        orders[str(id_usuario)] = user_orders
+        _save_store(ORDER_FILE, orders)
         
     except Exception:
         pass
