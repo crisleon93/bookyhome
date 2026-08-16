@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'http://192.168.0.5:8000',
+  baseURL: 'http://192.168.1.10:8000',
   timeout: 10000,
 });
 
@@ -23,11 +23,13 @@ export const searchByISBN = (isbn) => api.get(`/catalogo/buscar-por-isbn/${isbn}
 
 // ===== Carrito =====
 export const getCart = () => api.get('/carrito');
-export const checkoutCarrito = () => api.post('/carrito/checkout');
+export const checkoutCarrito = (payload = {}) => api.post('/carrito/checkout', payload);
 
 // ===== Pagos / Pedidos =====
 export const getOrderDetails = (orderId) => api.get(`/api/v1/orders/${orderId}`);
+export const cancelOrder = (orderId) => api.delete(`/api/v1/orders/${orderId}`);
 export const processPayment = (payload) => api.post('/api/v1/payments', payload);
+export const sendConfirmationEmail = (orderId) => api.post(`/api/v1/orders/${orderId}/send-confirmation`);
 
 // ===== Perfil =====
 export const getProfile = () => api.get('/perfil/mi-perfil');
@@ -49,20 +51,28 @@ export const updateReview = (id, payload) => api.put(`/resenas/resenas/${id}`, p
 export const deleteReview = (id) => api.delete(`/resenas/resenas/${id}`);
 
 // ===== Lista de Deseos =====
+// Favoritos es la lista predeterminada y compartida con la versión web.
+export const getFavoritos = () => api.get('/favoritos');
+export const addFavorito = (id_libro) => api.post(`/favoritos/${id_libro}`);
+export const removeFavorito = (id_libro) => api.delete(`/favoritos/${id_libro}`);
+
+// Las listas personalizadas se mantienen como una función independiente.
 export const getListaDeseos = () => api.get('/lista-deseos');
+export const createListaDeseos = (data) => api.post('/lista-deseos', data);
+export const getLibrosListaDeseos = (id_lista) => api.get(`/lista-deseos/${id_lista}/libros`);
 export const addToListaDeseos = (id_libro, id_lista) => api.post(`/lista-deseos/${id_lista}/libros`, { id_libro });
 export const removeFromListaDeseos = (id_libro, id_lista) => api.delete(`/lista-deseos/${id_lista}/libros/${id_libro}`);
 export const isEnListaDeseos = (id_lista, id_libro) => api.get(`/lista-deseos/${id_lista}/libros`);
 
 // ===== Direcciones =====
-export const getDirecciones = () => api.get('/direcciones');
-export const createDireccion = (data) => api.post('/direcciones', data);
-export const updateDireccion = (id, data) => api.put(`/direcciones/${id}`, data);
-export const deleteDireccion = (id) => api.delete(`/direcciones/${id}`);
-export const setPrincipalDireccion = (id) => api.patch(`/direcciones/${id}/default`);
+export const getDirecciones = () => api.get('/perfil/direcciones');
+export const createDireccion = (data) => api.post('/perfil/direcciones', data);
+export const updateDireccion = (id, data) => api.put(`/perfil/direcciones/${id}`, data);
+export const deleteDireccion = (id) => api.delete(`/perfil/direcciones/${id}`);
+export const setPrincipalDireccion = (id) => api.put(`/perfil/direcciones/${id}`, { es_principal: true });
 
 // ===== Cupones =====
-export const validarCupon = (codigo) => api.get(`/cupones/validar`, { params: { codigo } });
+export const validarCupon = (data) => api.post('/cupones/validar', data);
 export const aplicarCupon = (data) => api.post('/cupones/aplicar', data);
 
 // ===== Librería (Vendedor) =====

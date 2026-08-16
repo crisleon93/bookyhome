@@ -2635,6 +2635,79 @@
         "numero_guia": "GUIA-12X24",
         "estado_envio": "En transito"
       }
+    },
+    {
+      "id_orden": 13,
+      "codigo_compra": "BH-2FA637BD09",
+      "fecha": "2026-08-16T15:39:42.708319Z",
+      "items": [
+        {
+          "id_libro": 46,
+          "titulo": "El Futuro es Ahora",
+          "autor_libro": "Isaac Asimov",
+          "precio_libro": 85000.0,
+          "cantidad": 1,
+          "imagen": null,
+          "id_variante": null,
+          "variante_label": null
+        }
+      ],
+      "total": 85000.0,
+      "estado": "pagado",
+      "id_orden_db": 32,
+      "metodo_pago": "Transferencia Bancaria"
+    },
+    {
+      "id_orden": 14,
+      "codigo_compra": "BH-C29E1FE794",
+      "fecha": "2026-08-16T19:20:01.911301Z",
+      "items": [
+        {
+          "id_libro": 22,
+          "titulo": "Crimen y castigo",
+          "autor_libro": "Fiódor Dostoyevski",
+          "precio_libro": 32000.0,
+          "cantidad": 1,
+          "imagen": "https://covers.openlibrary.org/b/id/12655122-L.jpg",
+          "id_variante": 24,
+          "variante_label": "Tapa Dura · Español · Clásicos Universales"
+        },
+        {
+          "id_libro": 8,
+          "titulo": "Cuentos para Dormir",
+          "autor_libro": "S. Nino",
+          "precio_libro": 25000.0,
+          "cantidad": 1,
+          "imagen": "https://images.unsplash.com/photo-1512820790803-83ca734da794?w=400&q=80",
+          "id_variante": null,
+          "variante_label": null
+        }
+      ],
+      "total": 57000.0,
+      "estado": "pagado",
+      "id_orden_db": 33,
+      "metodo_pago": "Pago en Efecty"
+    },
+    {
+      "id_orden": 15,
+      "codigo_compra": "BH-FDE0C5E483",
+      "fecha": "2026-08-16T19:33:21.173717Z",
+      "items": [
+        {
+          "id_libro": 2,
+          "titulo": "Amor en Invierno",
+          "autor_libro": "L. Moreno",
+          "precio_libro": 12000.0,
+          "cantidad": 1,
+          "imagen": "https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?w=400&q=80",
+          "id_variante": 5,
+          "variante_label": "Digital · Espanol · 1ra Edicion"
+        }
+      ],
+      "total": 12000.0,
+      "estado": "pagado",
+      "id_orden_db": 34,
+      "metodo_pago": "Nequi"
     }
   ],
   "25": [
@@ -3216,6 +3289,61 @@
       "total": 40000.0,
       "estado": "pagado",
       "metodo_pago": "PayPal"
+    }
+  ],
+  "35": [
+    {
+      "id_orden": 1,
+      "codigo_compra": "BH-992E465DA1",
+      "fecha": "2026-08-16T19:50:21.883238Z",
+      "items": [
+        {
+          "id_libro": 4,
+          "titulo": "Viaje a Orion",
+          "autor_libro": "M. Rojas",
+          "precio_libro": 45000.0,
+          "cantidad": 1,
+          "imagen": "https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?w=400&q=80",
+          "id_variante": 8,
+          "variante_label": "Tapa Blanda · Espanol · 1ra Edicion"
+        }
+      ],
+      "total": 45000.0,
+      "estado": "pagado",
+      "id_orden_db": 35,
+      "metodo_pago": "Transferencia Bancaria"
+    },
+    {
+      "id_orden": 2,
+      "codigo_compra": "BH-43030C2148",
+      "fecha": "2026-08-16T20:39:35.877669Z",
+      "items": [
+        {
+          "id_libro": 45,
+          "titulo": "Libro de Prueba Oculto",
+          "autor_libro": "Autor Anónimo",
+          "precio_libro": 15000.0,
+          "cantidad": 1,
+          "imagen": null,
+          "id_variante": null,
+          "variante_label": null
+        }
+      ],
+      "total": 15000.0,
+      "estado": "enviado",
+      "id_orden_db": 36,
+      "metodo_pago": "PayPal",
+      "envio": {
+        "id_empresa": 1,
+        "empresa_mensajeria": "Servientrega",
+        "sitio_web": "https://www.servientrega.com",
+        "url_rastreo": "https://www.servientrega.com/wps/portal/rastreo-destinatario",
+        "numero_guia": "765678",
+        "estado_envio": "Guía registrada",
+        "fecha_despacho_con_hora": "2026-08-16T20:40:42.582505+00:00",
+        "actualizado_en": "2026-08-16T20:40:42.582505+00:00",
+        "origen": "Librería El Sótano · Calle 45 # 13-22"
+      }
     }
   ]
 }

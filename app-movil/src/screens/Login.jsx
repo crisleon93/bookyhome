@@ -33,6 +33,7 @@ export default function Login({ navigation }) {
   const [biometricLoading, setBiometricLoading] = useState(false);
   const [biometricModalVisible, setBiometricModalVisible] = useState(false);
   const [biometricModalOptions, setBiometricModalOptions] = useState([]);
+  const [biometricSuccessToken, setBiometricSuccessToken] = useState(null);
   const {
     signIn,
     biometricEnabled,
@@ -113,10 +114,11 @@ export default function Login({ navigation }) {
       const token = res.data?.access_token;
       if (!token) throw new Error('No se recibió token');
 
-      await signIn(token, { enableBiometrics: enableBiometrics && biometricAvailable });
       if (enableBiometrics && biometricAvailable) {
         await setBiometricPreference(true);
-        Alert.alert('Listo', 'Tu sesión quedó protegida con Face ID o huella.');
+        setBiometricSuccessToken(token);
+      } else {
+        await signIn(token, { enableBiometrics: false });
       }
     } catch (err) {
       const msg = err.response?.data?.detail || err.message || 'Error';
@@ -423,6 +425,31 @@ export default function Login({ navigation }) {
         </TouchableOpacity>
       </Modal>
 
+      <Modal
+        visible={Boolean(biometricSuccessToken)}
+        transparent
+        animationType="fade"
+        onRequestClose={() => {}}
+      >
+        <View style={styles.bioSuccessOverlay}>
+          <View style={styles.bioSuccessCard}>
+            <View style={styles.bioSuccessIcon}><Text style={styles.bioSuccessIconText}>✓</Text></View>
+            <Text style={styles.bioSuccessTitle}>Huella registrada</Text>
+            <Text style={styles.bioSuccessText}>Tu sesión quedó protegida. La próxima vez podrás ingresar con Face ID o huella.</Text>
+            <TouchableOpacity
+              style={styles.bioSuccessButton}
+              onPress={async () => {
+                const token = biometricSuccessToken;
+                setBiometricSuccessToken(null);
+                await signIn(token, { enableBiometrics: true });
+              }}
+            >
+              <Text style={styles.bioSuccessButtonText}>Continuar</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
     </SafeAreaView>
   );
 }
@@ -543,4 +570,12 @@ const styles = StyleSheet.create({
   bioModalCancelText: {
     color: GRAY, fontSize: 14, fontWeight: '600',
   },
+  bioSuccessOverlay: { flex: 1, backgroundColor: 'rgba(42, 18, 28, 0.5)', justifyContent: 'center', paddingHorizontal: 28 },
+  bioSuccessCard: { backgroundColor: WHITE, borderWidth: 2, borderColor: VINOTINTO, borderRadius: 18, padding: 26, alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.24, shadowRadius: 14, elevation: 8 },
+  bioSuccessIcon: { width: 58, height: 58, borderRadius: 29, backgroundColor: VINOTINTO, alignItems: 'center', justifyContent: 'center', marginBottom: 14 },
+  bioSuccessIconText: { color: WHITE, fontSize: 30, fontWeight: '900' },
+  bioSuccessTitle: { color: VINOTINTO, fontSize: 21, fontWeight: '800', marginBottom: 8 },
+  bioSuccessText: { color: '#62555A', fontSize: 14, lineHeight: 20, textAlign: 'center', marginBottom: 20 },
+  bioSuccessButton: { backgroundColor: VINOTINTO, width: '100%', borderRadius: 10, paddingVertical: 13, alignItems: 'center' },
+  bioSuccessButtonText: { color: WHITE, fontSize: 15, fontWeight: '800' },
 });

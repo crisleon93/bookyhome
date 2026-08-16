@@ -26,6 +26,7 @@ import PerfilTienda from '../screens/PerfilTienda';
 import Messages from '../screens/Messages';
 import Chat from '../screens/Chat';
 import QuejasReclamos from '../screens/QuejasReclamos';
+import Direcciones from '../screens/Direcciones';
 
 import VendorHome from '../screens/VendorHome';
 import AdminHome from '../screens/AdminHome';
@@ -58,6 +59,7 @@ export default function AppNavigator() {
           <Stack.Screen name="Libreria" component={Libreria} options={{ title: 'Mi Librería' }} />
           <Stack.Screen name="PublicarLibro" component={PublicarLibro} options={{ title: 'Publicar Libro' }} />
           <Stack.Screen name="MiTienda" component={MiTienda} options={{ headerShown: false }} />
+          <Stack.Screen name="Direcciones" component={Direcciones} options={{ title: 'Mis direcciones' }} />
           <Stack.Screen name="ConfiguracionTienda" component={ConfiguracionTienda} options={{ title: 'Configuración de Tienda' }} />
           <Stack.Screen name="PerfilTienda" component={PerfilTienda} options={{ title: 'Perfil de Tienda', headerBackTitle: 'Atrás' }} />
           <Stack.Screen name="Notifications" component={Notifications} options={{ headerShown: false }} />
@@ -74,7 +76,8 @@ export default function AppNavigator() {
         <>
           <Stack.Screen name="PostLogin" component={PostLogin} options={{ headerShown: false }} />
           <Stack.Screen name="Profile" component={Profile} options={{ title: 'Mi Perfil' }} />
-          <Stack.Screen name="History" component={History} options={{ title: 'Historial de compras' }} />
+          <Stack.Screen name="Direcciones" component={Direcciones} options={{ title: 'Mis direcciones' }} />
+          <Stack.Screen name="History" component={History} options={{ title: 'Mis compras' }} />
           <Stack.Screen name="Notifications" component={Notifications} options={{ headerShown: false }} />
           <Stack.Screen name="BookDetail" component={BookDetail} options={{ title: 'Detalle del libro' }} />
           <Stack.Screen name="Cart" component={Cart} options={{ title: 'Mi Carrito' }} />

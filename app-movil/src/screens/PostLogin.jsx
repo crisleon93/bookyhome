@@ -1,16 +1,17 @@
 // src/screens/PostLogin.jsx
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useState } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import {
   View, Text, FlatList, Image, TouchableOpacity,
   StyleSheet, ActivityIndicator, TextInput,
   ScrollView, Modal, Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { getBooks, getApiBaseUrl, searchByISBN } from '../services/api';
+import { addFavorito, getBooks, getApiBaseUrl, getFavoritos, searchByISBN } from '../services/api';
 import { AuthContext } from '../context/AuthContext';
 import { CartContext } from '../context/CartContext';
 import Header from '../components/Header';
-import { IconBooks, IconStore, IconStar, IconCart, IconMail, IconPackage, IconDollar, IconBook } from '../components/Icons';
+import { IconBooks, IconStore, IconStar, IconCart, IconFavorites, IconMail, IconPackage, IconDollar, IconBook } from '../components/Icons';
 
 const PRIMARY = '#7A1E3A';
 const BG      = '#F9F6F1';
@@ -38,6 +39,8 @@ export default function PostLogin({ navigation }) {
   const [search, setSearch]             = useState('');
   const [activeCategory, setActiveCategory] = useState(null);
   const [scanningISBN, setScanningISBN] = useState(false);
+  const [favoriteIds, setFavoriteIds] = useState(new Set());
+  const [favoriteNotice, setFavoriteNotice] = useState(false);
   const { signOut, user } = useContext(AuthContext);
   const { cart } = useContext(CartContext);
 
@@ -72,6 +75,12 @@ export default function PostLogin({ navigation }) {
     };
     loadBooks();
   }, []);
+
+  useFocusEffect(useCallback(() => {
+    getFavoritos()
+      .then((res) => setFavoriteIds(new Set((res.data || []).map((libro) => Number(libro.id_libro)))))
+      .catch(() => {});
+  }, []));
 
   // ── Aplicar todos los filtros ──
   const applyFilters = (searchText, categoryId, currentFilters) => {
@@ -221,16 +230,16 @@ export default function PostLogin({ navigation }) {
   };
 
   const renderBook = ({ item }) => {
+    const bookId = Number(item.id_libro || item.id);
+    const isFavorite = favoriteIds.has(bookId);
     const imageUrl = item.imagen || item.imagen_url;
     const finalImageUrl = imageUrl 
       ? (imageUrl.startsWith('http') ? imageUrl : `${getApiBaseUrl()}${imageUrl}`)
       : null;
 
     return (
-      <TouchableOpacity
+      <View
         style={styles.card}
-        activeOpacity={0.85}
-        onPress={() => navigation.navigate('BookDetail', { book: item })}
       >
         {finalImageUrl
           ? <Image source={{ uri: finalImageUrl }} style={styles.cardImg} resizeMode="cover" />
@@ -248,12 +257,33 @@ export default function PostLogin({ navigation }) {
           <Text style={styles.cardPrice}>
             ${Number(item.precio_libro ?? item.precio ?? 0).toLocaleString('es-CO')}
           </Text>
-          <TouchableOpacity style={styles.addBtn} activeOpacity={0.8}>
-            <IconCart size={14} color={WHITE} />
-            <Text style={styles.addBtnText}>Agregar al carrito</Text>
+          <TouchableOpacity style={styles.addBtn} activeOpacity={0.8} onPress={() => navigation.navigate('BookDetail', { book: item })}>
+            <Text style={styles.addBtnText}>Ver detalles</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.favoriteBtn, isFavorite && styles.favoriteBtnActive]}
+            activeOpacity={0.8}
+            disabled={isFavorite}
+            onPress={async () => {
+              try {
+                await addFavorito(bookId);
+                setFavoriteIds((current) => new Set([...current, bookId]));
+                setFavoriteNotice(true);
+              } catch (error) {
+                const mensaje = error.response?.data?.detail;
+                if (mensaje === 'El libro ya está en favoritos') {
+                  setFavoriteIds((current) => new Set([...current, bookId]));
+                  return;
+                }
+                Alert.alert('Favoritos', mensaje || 'No se pudo agregar a favoritos.');
+              }
+            }}
+          >
+            <IconFavorites size={14} color={isFavorite ? WHITE : PRIMARY} />
+            <Text style={[styles.favoriteBtnText, isFavorite && styles.favoriteBtnTextActive]}>{isFavorite ? 'En favoritos' : 'Agregar a favoritos'}</Text>
           </TouchableOpacity>
         </View>
-      </TouchableOpacity>
+      </View>
     );
   };
 
@@ -541,6 +571,19 @@ export default function PostLogin({ navigation }) {
         </View>
       </Modal>
 
+      <Modal visible={favoriteNotice} transparent animationType="fade" onRequestClose={() => setFavoriteNotice(false)}>
+        <View style={styles.favoriteOverlay}>
+          <View style={styles.favoriteNoticeCard}>
+            <View style={styles.favoriteNoticeIcon}><IconFavorites size={28} color={WHITE} /></View>
+            <Text style={styles.favoriteNoticeTitle}>¡Guardado en favoritos!</Text>
+            <Text style={styles.favoriteNoticeText}>Este libro ya está disponible en tu lista de deseos.</Text>
+            <TouchableOpacity style={styles.favoriteNoticeButton} onPress={() => setFavoriteNotice(false)}>
+              <Text style={styles.favoriteNoticeButtonText}>Entendido</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
     </SafeAreaView>
   );
 }
@@ -605,6 +648,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 
   },
   addBtnText: { color: WHITE, fontSize: 11, fontWeight: '700' },
+  favoriteBtn: { marginTop: 7, borderWidth: 1, borderColor: PRIMARY, borderRadius: 8, paddingVertical: 7, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
+  favoriteBtnText: { color: PRIMARY, fontSize: 11, fontWeight: '700' },
+  favoriteBtnActive: { backgroundColor: PRIMARY },
+  favoriteBtnTextActive: { color: WHITE },
+  favoriteOverlay: { flex: 1, backgroundColor: 'rgba(42, 18, 28, 0.48)', justifyContent: 'center', padding: 28 },
+  favoriteNoticeCard: { backgroundColor: WHITE, borderRadius: 18, padding: 26, alignItems: 'center', borderWidth: 2, borderColor: '#7A1E3A', shadowColor: '#000', shadowOpacity: 0.25, shadowRadius: 14, elevation: 8 },
+  favoriteNoticeIcon: { width: 58, height: 58, borderRadius: 29, backgroundColor: PRIMARY, justifyContent: 'center', alignItems: 'center', marginBottom: 14 },
+  favoriteNoticeTitle: { color: PRIMARY, fontSize: 20, fontWeight: '800', marginBottom: 8 },
+  favoriteNoticeText: { color: '#62555A', fontSize: 14, lineHeight: 20, textAlign: 'center', marginBottom: 20 },
+  favoriteNoticeButton: { width: '100%', backgroundColor: PRIMARY, borderRadius: 10, paddingVertical: 13, alignItems: 'center' },
+  favoriteNoticeButtonText: { color: WHITE, fontSize: 15, fontWeight: '800' },
 
   /* Misc */
   loadingWrap: { flex: 1, justifyContent: 'center', alignItems: 'center' },

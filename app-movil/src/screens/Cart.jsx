@@ -1,16 +1,51 @@
-import React, { useContext, useState } from 'react';
+import React, { useCallback, useContext, useState } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import {
   View, Text, FlatList, Image, StyleSheet, TouchableOpacity,
-  ActivityIndicator, Alert, SafeAreaView
+  ActivityIndicator, Alert, Modal, SafeAreaView
 } from 'react-native';
 import { CartContext } from '../context/CartContext';
 import { AuthContext } from '../context/AuthContext';
-import { checkoutCarrito, getApiBaseUrl } from '../services/api';
+import { cancelOrder, checkoutCarrito, getApiBaseUrl, getDirecciones, getOrdenes } from '../services/api';
 
 export default function Cart({ navigation }) {
-  const { cart, removeFromCart, clearCart, loading } = useContext(CartContext);
+  const { cart, removeFromCart, clearCart, loadCart, loading } = useContext(CartContext);
   const { token } = useContext(AuthContext);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [direcciones, setDirecciones] = useState([]);
+  const [direccionSeleccionadaId, setDireccionSeleccionadaId] = useState(null);
+  const [direccionesLoading, setDireccionesLoading] = useState(true);
+  const [ordenesPendientes, setOrdenesPendientes] = useState([]);
+  const [addressNoticeVisible, setAddressNoticeVisible] = useState(false);
+
+  const cargarDirecciones = useCallback(async () => {
+    setDireccionesLoading(true);
+    try {
+      const response = await getDirecciones();
+      const disponibles = response.data || [];
+      setDirecciones(disponibles);
+      setDireccionSeleccionadaId((actual) => actual || disponibles.find((item) => item.es_principal)?.id_direccion || disponibles[0]?.id_direccion || null);
+    } catch (error) {
+      Alert.alert('Direcciones', error.response?.data?.detail || 'No se pudieron cargar tus direcciones de entrega.');
+    } finally {
+      setDireccionesLoading(false);
+    }
+  }, []);
+
+  const cargarOrdenesPendientes = useCallback(async () => {
+    try {
+      const response = await getOrdenes();
+      setOrdenesPendientes((response.data || []).filter((orden) => orden.estado === 'pendiente'));
+    } catch (error) {
+      console.log('No se pudieron cargar las órdenes pendientes', error.message);
+    }
+  }, []);
+
+  useFocusEffect(useCallback(() => {
+    cargarDirecciones();
+    loadCart();
+    cargarOrdenesPendientes();
+  }, [cargarDirecciones, cargarOrdenesPendientes, loadCart]));
 
   const total = cart.reduce(
     (acc, item) => acc + Number(item.precio_libro || item.precio || 0) * Number(item.cantidad || 1),
@@ -18,9 +53,13 @@ export default function Cart({ navigation }) {
   );
 
   const handleCheckout = async () => {
+    if (!direccionSeleccionadaId) {
+      setAddressNoticeVisible(true);
+      return;
+    }
     setCheckoutLoading(true);
     try {
-      const res = await checkoutCarrito();
+      const res = await checkoutCarrito({ id_direccion: Number(direccionSeleccionadaId) });
       if (res.data && res.data.ok) {
         navigation.navigate('Checkout', { orderId: res.data.order.id_orden });
       } else {
@@ -32,6 +71,37 @@ export default function Cart({ navigation }) {
       setCheckoutLoading(false);
     }
   };
+
+  const handleCancelarOrden = (orderId) => {
+    Alert.alert('Cancelar compra', '¿Seguro que deseas cancelar esta orden pendiente?', [
+      { text: 'No', style: 'cancel' },
+      {
+        text: 'Sí, cancelar', style: 'destructive', onPress: async () => {
+          try {
+            await cancelOrder(orderId);
+            await cargarOrdenesPendientes();
+          } catch (error) {
+            Alert.alert('Error', error.response?.data?.detail || 'No se pudo cancelar la compra.');
+          }
+        }
+      }
+    ]);
+  };
+
+  const renderOrdenPendiente = (orden) => (
+    <View key={orden.id_orden} style={styles.pendingCard}>
+      <Text style={styles.pendingTitle}>Orden pendiente de pago</Text>
+      <Text style={styles.pendingText}>Orden #{orden.id_orden} · ${Number(orden.total || 0).toLocaleString('es-CO')} COP</Text>
+      <View style={styles.pendingActions}>
+        <TouchableOpacity style={styles.continueBtn} onPress={() => navigation.navigate('Checkout', { orderId: orden.id_orden })}>
+          <Text style={styles.continueBtnText}>Continuar pago</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.cancelOrderBtn} onPress={() => handleCancelarOrden(orden.id_orden)}>
+          <Text style={styles.cancelOrderBtnText}>Cancelar compra</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
 
   const getImageUri = (item) => {
     const raw = item.imagen_url || item.imagen;
@@ -101,13 +171,13 @@ export default function Cart({ navigation }) {
     );
   }
 
-  if (cart.length === 0) {
+  if (cart.length === 0 && ordenesPendientes.length === 0) {
     return (
       <View style={styles.emptyContainer}>
         <Text style={styles.emptyIllustration}>🛒</Text>
         <Text style={styles.emptyTitle}>Tu carrito está vacío</Text>
         <Text style={styles.emptySubtitle}>Agrega libros que te interesen y regresa aquí para comprarlos.</Text>
-        <TouchableOpacity style={styles.shopBtn} onPress={() => navigation.navigate('Home')}>
+        <TouchableOpacity style={styles.shopBtn} onPress={() => navigation.navigate('PostLogin')}>
           <Text style={styles.shopBtnText}>Explorar Libros</Text>
         </TouchableOpacity>
       </View>
@@ -122,10 +192,36 @@ export default function Cart({ navigation }) {
         renderItem={renderItem}
         contentContainerStyle={styles.list}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
+        ListHeaderComponent={ordenesPendientes.length ? (
+          <View style={styles.pendingList}>{ordenesPendientes.map(renderOrdenPendiente)}</View>
+        ) : null}
+        ListEmptyComponent={ordenesPendientes.length ? (
+          <Text style={styles.cartEmptyWithPending}>No tienes productos en el carrito.</Text>
+        ) : null}
       />
 
       {/* Footer pegado al fondo */}
-      <View style={styles.footer}>
+      {cart.length > 0 && <View style={styles.footer}>
+        <Text style={styles.deliveryLabel}>Dirección de entrega</Text>
+        {direccionesLoading ? <ActivityIndicator color="#7A1E3A" /> : direcciones.length === 0 ? (
+          <Text style={styles.deliveryEmpty}>Aún no tienes direcciones registradas.</Text>
+        ) : (
+          <View style={styles.addressList}>
+            {direcciones.map((direccion) => (
+              <TouchableOpacity
+                key={direccion.id_direccion}
+                style={[styles.addressOption, Number(direccionSeleccionadaId) === Number(direccion.id_direccion) && styles.addressOptionSelected]}
+                onPress={() => setDireccionSeleccionadaId(direccion.id_direccion)}
+              >
+                <Text style={styles.addressOptionTitle}>{direccion.alias_direccion || 'Dirección'}{direccion.es_principal ? ' · Principal' : ''}</Text>
+                <Text style={styles.addressOptionText}>{direccion.direccion}, {direccion.ciudad}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+        <TouchableOpacity style={styles.addAddressBtn} onPress={() => navigation.navigate('Direcciones')}>
+          <Text style={styles.addAddressBtnText}>Administrar direcciones</Text>
+        </TouchableOpacity>
         <View style={styles.totalRow}>
           <Text style={styles.totalLabel}>Total a pagar</Text>
           <Text style={styles.totalValue}>${total.toLocaleString('es-CO')} COP</Text>
@@ -147,6 +243,24 @@ export default function Cart({ navigation }) {
           <Text style={styles.clearBtnText}>Vaciar carrito</Text>
         </TouchableOpacity>
       </View>
+      }
+
+      <Modal visible={addressNoticeVisible} transparent animationType="fade" onRequestClose={() => setAddressNoticeVisible(false)}>
+        <View style={styles.noticeOverlay}>
+          <View style={styles.noticeCard}>
+            <View style={styles.noticeIcon}><Text style={styles.noticeIconText}>⌂</Text></View>
+            <Text style={styles.noticeTitle}>Dirección requerida</Text>
+            <Text style={styles.noticeText}>Agrega o selecciona una dirección de entrega antes de continuar al pago.</Text>
+            <TouchableOpacity style={styles.noticePrimaryBtn} onPress={() => { setAddressNoticeVisible(false); navigation.navigate('Direcciones'); }}>
+              <Text style={styles.noticePrimaryText}>Agregar dirección</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.noticeSecondaryBtn} onPress={() => setAddressNoticeVisible(false)}>
+              <Text style={styles.noticeSecondaryText}>Ahora no</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
     </SafeAreaView>
   );
 }
@@ -158,6 +272,26 @@ const styles = StyleSheet.create({
 
   list: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 20 },
   separator: { height: 12 },
+  pendingList: { marginBottom: 18 },
+  pendingCard: { backgroundColor: '#FFF8EA', borderWidth: 1, borderColor: '#F0B642', borderRadius: 12, padding: 14, marginBottom: 10 },
+  pendingTitle: { color: '#9B5B00', fontWeight: '800', fontSize: 15, marginBottom: 4 },
+  pendingText: { color: '#6E5A37', fontSize: 13, marginBottom: 12 },
+  pendingActions: { flexDirection: 'row', gap: 8 },
+  continueBtn: { flex: 1, backgroundColor: '#7A1E3A', borderRadius: 8, paddingVertical: 10, alignItems: 'center' },
+  continueBtnText: { color: '#fff', fontSize: 12, fontWeight: '800' },
+  cancelOrderBtn: { flex: 1, borderWidth: 1, borderColor: '#C5425A', borderRadius: 8, paddingVertical: 9, alignItems: 'center' },
+  cancelOrderBtnText: { color: '#C5425A', fontSize: 12, fontWeight: '800' },
+  cartEmptyWithPending: { color: '#777', textAlign: 'center', paddingTop: 20, fontSize: 14 },
+  noticeOverlay: { flex: 1, backgroundColor: 'rgba(42, 18, 28, 0.48)', justifyContent: 'center', padding: 28 },
+  noticeCard: { backgroundColor: '#fff', borderRadius: 18, padding: 26, alignItems: 'center', borderWidth: 2, borderColor: '#7A1E3A', shadowColor: '#000', shadowOpacity: 0.25, shadowRadius: 14, elevation: 8 },
+  noticeIcon: { width: 58, height: 58, borderRadius: 29, backgroundColor: '#7A1E3A', alignItems: 'center', justifyContent: 'center', marginBottom: 14 },
+  noticeIconText: { color: '#fff', fontSize: 27, fontWeight: '800' },
+  noticeTitle: { color: '#7A1E3A', fontSize: 20, fontWeight: '800', marginBottom: 8 },
+  noticeText: { color: '#62555A', fontSize: 14, lineHeight: 20, textAlign: 'center', marginBottom: 20 },
+  noticePrimaryBtn: { width: '100%', backgroundColor: '#7A1E3A', borderRadius: 10, paddingVertical: 13, alignItems: 'center' },
+  noticePrimaryText: { color: '#fff', fontSize: 15, fontWeight: '800' },
+  noticeSecondaryBtn: { paddingVertical: 13, marginTop: 4 },
+  noticeSecondaryText: { color: '#75676C', fontSize: 14, fontWeight: '700' },
 
   /* Tarjeta de producto */
   card: {
@@ -246,6 +380,15 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 12,
   },
+  deliveryLabel: { fontSize: 14, fontWeight: '700', color: '#2A2A2A', marginBottom: 8 },
+  deliveryEmpty: { color: '#8B1E3F', fontSize: 13, marginBottom: 8 },
+  addressList: { gap: 8, marginBottom: 8 },
+  addressOption: { borderWidth: 1, borderColor: '#E0DBD4', borderRadius: 9, padding: 10, backgroundColor: '#fff' },
+  addressOptionSelected: { borderColor: '#7A1E3A', backgroundColor: '#FDF0F2' },
+  addressOptionTitle: { fontSize: 13, fontWeight: '700', color: '#2A2A2A' },
+  addressOptionText: { fontSize: 12, color: '#666', marginTop: 2 },
+  addAddressBtn: { alignSelf: 'flex-start', paddingVertical: 8, marginBottom: 8 },
+  addAddressBtnText: { color: '#7A1E3A', fontSize: 13, fontWeight: '700' },
   totalRow: {
     flexDirection: 'row', justifyContent: 'space-between',
     alignItems: 'center', marginBottom: 18,

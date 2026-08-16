@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useContext } from 'react';
 import { View, Text, TextInput, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Modal, Linking } from 'react-native';
-import { getOrderDetails, processPayment, getApiBaseUrl } from '../services/api';
+import { aplicarCupon, getOrderDetails, processPayment, getApiBaseUrl, sendConfirmationEmail, validarCupon } from '../services/api';
 import { CartContext } from '../context/CartContext';
 import { AuthContext } from '../context/AuthContext';
 
@@ -11,9 +11,10 @@ export default function Checkout({ route, navigation }) {
 
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [paymentMethod, setPaymentMethod] = useState('tarjeta'); // 'tarjeta' | 'paypal'
+  const [paymentMethod, setPaymentMethod] = useState('tarjeta');
   const [paymentProcessing, setPaymentProcessing] = useState(false);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
+  const [emailConfirmation, setEmailConfirmation] = useState(null);
 
   // Card Inputs
   const [cardName, setCardName] = useState('');
@@ -26,6 +27,18 @@ export default function Checkout({ route, navigation }) {
   const [paypalEmail, setPaypalEmail] = useState('');
   const [paypalPassword, setPaypalPassword] = useState('');
   const [paypalProcessing, setPaypalProcessing] = useState(false);
+
+  // Cupón y métodos alternativos (los mismos nombres registrados por la web).
+  const [couponCode, setCouponCode] = useState('');
+  const [discountAmount, setDiscountAmount] = useState(0);
+  const [couponMessage, setCouponMessage] = useState('');
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [pseBanco, setPseBanco] = useState('');
+  const [sucursalCodigo, setSucursalCodigo] = useState('');
+
+  const subtotal = Number(order?.total || 0);
+  const totalPagar = Math.max(0, subtotal - discountAmount);
+  const bancosPSE = ['Bancolombia', 'Banco de Bogotá', 'Banco Popular', 'BBVA Colombia', 'Davivienda', 'Banco de Occidente'];
 
   useEffect(() => {
     const fetchOrder = async () => {
@@ -69,6 +82,89 @@ export default function Checkout({ route, navigation }) {
     setCardCvv(formatted);
   };
 
+  const finalizarPago = async (payload) => {
+    const res = await processPayment(payload);
+    if (!res.data?.ok) {
+      throw new Error('El pago no fue aprobado.');
+    }
+
+    try {
+      await sendConfirmationEmail(orderId);
+      setEmailConfirmation('Enviamos un correo con los detalles de tu pedido.');
+    } catch (error) {
+      console.warn('El pago fue aprobado, pero no se pudo enviar el correo:', error.message);
+      setEmailConfirmation('Tu pago fue aprobado. No pudimos enviar el correo de confirmación; consulta tu historial de compras.');
+    }
+
+    setPaymentSuccess(true);
+    await loadCart();
+  };
+
+  const aplicarCodigoCupon = async () => {
+    const codigo = couponCode.trim();
+    if (!codigo) {
+      setCouponMessage('Ingresa un código de cupón.');
+      return;
+    }
+    setCouponLoading(true);
+    setCouponMessage('');
+    try {
+      const res = await validarCupon({ codigo, order_id: Number(orderId), total: subtotal });
+      const data = res.data || {};
+      if (!data.valido) {
+        setDiscountAmount(0);
+        setCouponMessage(data.mensaje || 'El cupón no es válido.');
+        return;
+      }
+      setDiscountAmount(Math.max(0, Number(data.descuento || 0)));
+      setCouponMessage(data.mensaje || 'Cupón aplicado correctamente.');
+    } catch (error) {
+      setDiscountAmount(0);
+      setCouponMessage(error.response?.data?.detail || 'El cupón no es válido.');
+    } finally {
+      setCouponLoading(false);
+    }
+  };
+
+  const confirmarPagoAlternativo = (metodo) => {
+    setPaymentProcessing(true);
+    setTimeout(async () => {
+      try {
+        await finalizarPago({
+          order_id: Number(orderId),
+          amount: totalPagar,
+          payment_method: metodo,
+          ...(discountAmount > 0 ? { coupon_code: couponCode.trim() } : {}),
+        });
+        await registrarCuponSiAplica();
+      } catch (error) {
+        Alert.alert('Error', error.response?.data?.detail || error.message || 'No se pudo procesar el pago.');
+      } finally {
+        setPaymentProcessing(false);
+      }
+    }, 1200);
+  };
+
+  const registrarCuponSiAplica = async () => {
+    if (discountAmount <= 0) return;
+    try {
+      await aplicarCupon({ codigo: couponCode.trim(), id_orden: Number(orderId), total: subtotal });
+    } catch (error) {
+      console.warn('El pago fue aprobado, pero no se pudo registrar el cupón:', error.message);
+    }
+  };
+
+  const pagarConBilletera = async (billetera) => {
+    const scheme = billetera === 'Nequi' ? 'nequi' : 'daviplata';
+    const fallbackUrl = billetera === 'Nequi' ? 'https://www.nequi.com.co' : 'https://www.daviplata.com';
+    try {
+      const url = `${scheme}://pagar?valor=${totalPagar}&referencia=${orderId}`;
+      await Linking.openURL(url).catch(() => Linking.openURL(fallbackUrl));
+    } finally {
+      confirmarPagoAlternativo(billetera);
+    }
+  };
+
   const handleCardSubmit = async () => {
     const rawCard = cardNumber.replace(/\s/g, '');
     if (!cardName.trim()) return Alert.alert('Error', 'Ingresa el nombre del titular');
@@ -84,17 +180,13 @@ export default function Checkout({ route, navigation }) {
         const payload = {
           order_id: parseInt(orderId),
           amount: parseFloat(order.total),
-          payment_method: 'Tarjeta de Crédito'
+          payment_method: 'Tarjeta de Crédito',
+          ...(discountAmount > 0 ? { coupon_code: couponCode.trim() } : {})
         };
-        const res = await processPayment(payload);
-        if (res.data && res.data.ok) {
-          setPaymentSuccess(true);
-          await loadCart(); // Refresh cart
-        } else {
-          Alert.alert('Error', 'El pago fue rechazado por la pasarela.');
-        }
+        await finalizarPago(payload);
+        await registrarCuponSiAplica();
       } catch (e) {
-        Alert.alert('Error', e.response?.data?.detail || 'Ocurrió un error al procesar el pago.');
+        Alert.alert('Error', e.response?.data?.detail || e.message || 'Ocurrió un error al procesar el pago.');
       } finally {
         setPaymentProcessing(false);
       }
@@ -111,16 +203,12 @@ export default function Checkout({ route, navigation }) {
         const payload = {
           order_id: parseInt(orderId),
           amount: parseFloat(order.total),
-          payment_method: 'PayPal'
+          payment_method: 'PayPal',
+          ...(discountAmount > 0 ? { coupon_code: couponCode.trim() } : {})
         };
-        const res = await processPayment(payload);
-        if (res.data && res.data.ok) {
-          setPaypalModal(false);
-          setPaymentSuccess(true);
-          await loadCart(); // Refresh cart
-        } else {
-          Alert.alert('Error', 'El pago no fue aprobado.');
-        }
+        await finalizarPago(payload);
+        await registrarCuponSiAplica();
+        setPaypalModal(false);
       } catch (e) {
         Alert.alert('Error', e.response?.data?.detail || 'Error al conectar con PayPal.');
       } finally {
@@ -144,7 +232,7 @@ export default function Checkout({ route, navigation }) {
         <View style={styles.successCard}>
           <Text style={styles.successIcon}>✓</Text>
           <Text style={styles.successTitle}>¡Pago Exitoso!</Text>
-          <Text style={styles.successDesc}>Tu compra ha sido procesada de manera segura.</Text>
+          <Text style={styles.successDesc}>{emailConfirmation || 'Tu compra ha sido procesada de manera segura.'}</Text>
           
           <View style={styles.orderSummaryBox}>
             <Text style={styles.summaryText}><Text style={{ fontWeight: 'bold' }}>Orden:</Text> #{orderId}</Text>
@@ -198,27 +286,44 @@ export default function Checkout({ route, navigation }) {
           </View>
         ))}
         <View style={styles.divider} />
+        <View style={styles.couponBox}>
+          <Text style={styles.couponTitle}>Código de cupón</Text>
+          <View style={styles.couponRow}>
+            <TextInput
+              style={styles.couponInput}
+              placeholder="Ingresa tu cupón"
+              autoCapitalize="characters"
+              value={couponCode}
+              onChangeText={(value) => { setCouponCode(value); setDiscountAmount(0); setCouponMessage(''); }}
+            />
+            <TouchableOpacity style={styles.couponApplyButton} onPress={aplicarCodigoCupon} disabled={couponLoading}>
+              <Text style={styles.couponApplyText}>{couponLoading ? '...' : 'Aplicar'}</Text>
+            </TouchableOpacity>
+          </View>
+          {!!couponMessage && <Text style={[styles.couponMessage, discountAmount > 0 ? styles.couponSuccess : styles.couponError]}>{couponMessage}</Text>}
+        </View>
+        {discountAmount > 0 && (
+          <View style={styles.summaryItem}>
+            <Text style={styles.discountLabel}>Descuento</Text>
+            <Text style={styles.discountValue}>-${discountAmount.toLocaleString('es-CO')}</Text>
+          </View>
+        )}
         <View style={styles.summaryTotalRow}>
           <Text style={styles.summaryTotalLabel}>Total a Pagar</Text>
-          <Text style={styles.summaryTotalValue}>${Number(order.total).toLocaleString('es-CO')} COP</Text>
+          <Text style={styles.summaryTotalValue}>${totalPagar.toLocaleString('es-CO')} COP</Text>
         </View>
       </View>
 
       <Text style={styles.sectionHeader}>Método de Pago</Text>
       <View style={styles.tabContainer}>
-        <TouchableOpacity
-          style={[styles.tabButton, paymentMethod === 'tarjeta' && styles.tabButtonActive]}
-          onPress={() => setPaymentMethod('tarjeta')}
-        >
-          <Text style={[styles.tabButtonText, paymentMethod === 'tarjeta' && styles.tabButtonTextActive]}>Tarjeta de Crédito</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.tabButton, paymentMethod === 'paypal' && styles.tabButtonActive]}
-          onPress={() => setPaymentMethod('paypal')}
-        >
-          <Text style={[styles.tabButtonText, paymentMethod === 'paypal' && styles.tabButtonTextActive]}>PayPal</Text>
-        </TouchableOpacity>
+        {[
+          ['tarjeta', 'Tarjeta'], ['paypal', 'PayPal'], ['sucursal', 'Punto autorizado'],
+          ['pse', 'PSE'], ['billetera', 'Nequi/Daviplata'], ['transferencia', 'Transferencia'],
+        ].map(([id, label]) => (
+          <TouchableOpacity key={id} style={[styles.tabButton, paymentMethod === id && styles.tabButtonActive]} onPress={() => setPaymentMethod(id)}>
+            <Text style={[styles.tabButtonText, paymentMethod === id && styles.tabButtonTextActive]}>{label}</Text>
+          </TouchableOpacity>
+        ))}
       </View>
 
       {paymentMethod === 'tarjeta' ? (
@@ -273,7 +378,7 @@ export default function Checkout({ route, navigation }) {
             <Text style={styles.payBtnText}>Confirmar Pago</Text>
           </TouchableOpacity>
         </View>
-      ) : (
+      ) : paymentMethod === 'paypal' ? (
         <View style={styles.paypalCard}>
           <Text style={styles.paypalText}>Paga cómodamente con tu saldo PayPal o tarjetas vinculadas.</Text>
           <TouchableOpacity 
@@ -282,6 +387,49 @@ export default function Checkout({ route, navigation }) {
           >
             <Text style={styles.paypalBtnText}>Pagar con PayPal</Text>
           </TouchableOpacity>
+        </View>
+      ) : null}
+
+      {paymentMethod === 'sucursal' && (
+        <View style={styles.methodCard}>
+          <Text style={styles.methodTitle}>Pago en punto autorizado</Text>
+          <Text style={styles.methodText}>Generaremos un código para pagar en un punto Efecty autorizado.</Text>
+          {sucursalCodigo ? <View style={styles.paymentCode}><Text style={styles.paymentCodeText}>{sucursalCodigo}</Text></View> : null}
+          <TouchableOpacity style={styles.payBtn} onPress={() => setSucursalCodigo(Math.random().toString(36).slice(2, 12).toUpperCase())}>
+            <Text style={styles.payBtnText}>{sucursalCodigo ? 'Código generado' : 'Generar código de pago'}</Text>
+          </TouchableOpacity>
+          {sucursalCodigo ? <TouchableOpacity style={styles.outlineBtn} onPress={() => confirmarPagoAlternativo('Pago en Efecty')}><Text style={styles.outlineBtnText}>Ya realicé el pago</Text></TouchableOpacity> : null}
+        </View>
+      )}
+
+      {paymentMethod === 'pse' && (
+        <View style={styles.methodCard}>
+          <Text style={styles.methodTitle}>Pago con PSE</Text>
+          <Text style={styles.methodText}>Selecciona el banco desde el que realizarás el pago.</Text>
+          <View style={styles.bankList}>{bancosPSE.map((banco) => <TouchableOpacity key={banco} style={[styles.bankOption, pseBanco === banco && styles.bankOptionActive]} onPress={() => setPseBanco(banco)}><Text style={[styles.bankOptionText, pseBanco === banco && styles.bankOptionTextActive]}>{banco}</Text></TouchableOpacity>)}</View>
+          <TouchableOpacity style={[styles.payBtn, !pseBanco && styles.disabledButton]} disabled={!pseBanco} onPress={() => confirmarPagoAlternativo('PSE')}><Text style={styles.payBtnText}>Confirmar pago con PSE</Text></TouchableOpacity>
+        </View>
+      )}
+
+      {paymentMethod === 'billetera' && (
+        <View style={styles.methodCard}>
+          <Text style={styles.methodTitle}>Pago con Nequi/Daviplata</Text>
+          <Text style={styles.methodText}>Abriremos la billetera seleccionada con el valor y la referencia de tu orden.</Text>
+          <TouchableOpacity style={styles.nequiBtn} onPress={() => pagarConBilletera('Nequi')}><Text style={styles.nequiBtnText}>Pagar con Nequi</Text></TouchableOpacity>
+          <TouchableOpacity style={styles.daviplataBtn} onPress={() => pagarConBilletera('Daviplata')}><Text style={styles.daviplataBtnText}>Pagar con Daviplata</Text></TouchableOpacity>
+        </View>
+      )}
+
+      {paymentMethod === 'transferencia' && (
+        <View style={styles.methodCard}>
+          <Text style={styles.methodTitle}>Transferencia bancaria</Text>
+          <View style={styles.transferDetails}>
+            <Text style={styles.methodText}>Banco: <Text style={styles.detailStrong}>Bancolombia</Text></Text>
+            <Text style={styles.methodText}>Tipo: <Text style={styles.detailStrong}>Ahorros</Text></Text>
+            <Text style={styles.methodText}>Cuenta: <Text style={styles.detailStrong}>123-456789-0</Text></Text>
+            <Text style={styles.methodText}>Titular: <Text style={styles.detailStrong}>BookyHome S.A.S</Text></Text>
+          </View>
+          <TouchableOpacity style={styles.payBtn} onPress={() => confirmarPagoAlternativo('Transferencia Bancaria')}><Text style={styles.payBtnText}>Confirmar transferencia</Text></TouchableOpacity>
         </View>
       )}
 
@@ -346,11 +494,22 @@ const styles = StyleSheet.create({
   summaryTotalRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   summaryTotalLabel: { fontSize: 15, fontWeight: '700', color: '#2A2A2A' },
   summaryTotalValue: { fontSize: 18, fontWeight: '800', color: '#C5425A' },
-  tabContainer: { flexDirection: 'row', marginBottom: 20 },
-  tabButton: { flex: 1, paddingVertical: 12, alignItems: 'center', borderBottomWidth: 2, borderColor: '#e0dbd4' },
-  tabButtonActive: { borderColor: '#7A1E3A' },
-  tabButtonText: { fontSize: 14, color: '#666', fontWeight: '600' },
-  tabButtonTextActive: { color: '#7A1E3A', fontWeight: '700' },
+  couponBox: { backgroundColor: '#FCF5F6', borderWidth: 1, borderColor: '#E8C9D2', borderRadius: 10, padding: 12, marginBottom: 12 },
+  couponTitle: { color: '#7A1E3A', fontWeight: '800', fontSize: 13, marginBottom: 8 },
+  couponRow: { flexDirection: 'row', gap: 8 },
+  couponInput: { flex: 1, backgroundColor: '#fff', borderWidth: 1, borderColor: '#D9B4BF', borderRadius: 7, paddingHorizontal: 10, paddingVertical: 8, fontSize: 13, color: '#2A2A2A' },
+  couponApplyButton: { backgroundColor: '#7A1E3A', borderRadius: 7, justifyContent: 'center', paddingHorizontal: 14 },
+  couponApplyText: { color: '#fff', fontSize: 13, fontWeight: '800' },
+  couponMessage: { fontSize: 12, marginTop: 8, fontWeight: '600' },
+  couponSuccess: { color: '#287A45' },
+  couponError: { color: '#B32842' },
+  discountLabel: { color: '#287A45', fontSize: 14, fontWeight: '700', flex: 1 },
+  discountValue: { color: '#287A45', fontSize: 14, fontWeight: '800' },
+  tabContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 20 },
+  tabButton: { width: '31%', minHeight: 48, paddingHorizontal: 7, paddingVertical: 8, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderRadius: 9, borderColor: '#E0DBD4', backgroundColor: '#fff' },
+  tabButtonActive: { borderColor: '#7A1E3A', backgroundColor: '#FBEDEF', borderWidth: 2 },
+  tabButtonText: { fontSize: 11, color: '#666', fontWeight: '700', textAlign: 'center' },
+  tabButtonTextActive: { color: '#7A1E3A', fontWeight: '800' },
   cardForm: { backgroundColor: '#fff', borderRadius: 8, padding: 16, borderWidth: 1, borderColor: '#e0dbd4' },
   inputGroup: { marginBottom: 16 },
   label: { fontSize: 13, fontWeight: '600', color: '#2A2A2A', marginBottom: 6 },
@@ -362,6 +521,25 @@ const styles = StyleSheet.create({
   paypalText: { fontSize: 14, color: '#666', textAlign: 'center', marginBottom: 20 },
   paypalBtn: { backgroundColor: '#FFC439', paddingVertical: 12, paddingHorizontal: 30, borderRadius: 6, width: '100%', alignItems: 'center' },
   paypalBtnText: { color: '#111', fontSize: 16, fontWeight: '700' },
+  methodCard: { backgroundColor: '#fff', borderRadius: 10, padding: 18, borderWidth: 1, borderColor: '#E0DBD4' },
+  methodTitle: { color: '#7A1E3A', fontSize: 17, fontWeight: '800', marginBottom: 8 },
+  methodText: { color: '#625B5E', fontSize: 13, lineHeight: 19, marginBottom: 10 },
+  paymentCode: { backgroundColor: '#F3E5EA', borderWidth: 1, borderColor: '#7A1E3A', borderRadius: 9, padding: 14, alignItems: 'center', marginVertical: 8 },
+  paymentCodeText: { color: '#7A1E3A', fontSize: 22, fontWeight: '900', letterSpacing: 3 },
+  outlineBtn: { borderWidth: 1.5, borderColor: '#7A1E3A', borderRadius: 8, paddingVertical: 13, alignItems: 'center', marginTop: 10 },
+  outlineBtnText: { color: '#7A1E3A', fontSize: 15, fontWeight: '800' },
+  bankList: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 14 },
+  bankOption: { borderWidth: 1, borderColor: '#E0DBD4', borderRadius: 7, paddingHorizontal: 10, paddingVertical: 8, backgroundColor: '#fff' },
+  bankOptionActive: { borderColor: '#7A1E3A', backgroundColor: '#FBEDEF' },
+  bankOptionText: { color: '#625B5E', fontWeight: '600', fontSize: 12 },
+  bankOptionTextActive: { color: '#7A1E3A', fontWeight: '800' },
+  nequiBtn: { borderWidth: 2, borderColor: '#2D7D3A', borderRadius: 8, paddingVertical: 13, alignItems: 'center', marginTop: 4, marginBottom: 9 },
+  nequiBtnText: { color: '#2D7D3A', fontWeight: '800', fontSize: 15 },
+  daviplataBtn: { borderWidth: 2, borderColor: '#E65100', borderRadius: 8, paddingVertical: 13, alignItems: 'center' },
+  daviplataBtnText: { color: '#E65100', fontWeight: '800', fontSize: 15 },
+  transferDetails: { backgroundColor: '#FCFAF7', borderRadius: 8, padding: 12, marginBottom: 6 },
+  detailStrong: { color: '#2A2A2A', fontWeight: '800' },
+  disabledButton: { opacity: 0.5 },
   overlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(255,255,255,0.9)', zIndex: 10, justifyContent: 'center', alignItems: 'center' },
   overlayText: { marginTop: 15, fontSize: 16, fontWeight: '700', color: '#2A2A2A' },
   successContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fdfbfa', padding: 20 },
