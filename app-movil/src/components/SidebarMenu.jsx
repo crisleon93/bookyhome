@@ -158,7 +158,7 @@ export default function SidebarMenu({ visible, onClose, user, navigation, onSign
                 <MenuItem 
                   icon={<IconStore size={22} color="#555" />} 
                   label="Panel de Tienda" 
-                  onPress={() => navigateTo('MiTienda')} 
+                  onPress={() => navigateTo('VendorHome')} 
                 />
                 <MenuItem 
                   icon={<IconPackage size={22} color="#555" />} 

@@ -1,137 +1,267 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
-  View, Text, ScrollView, TextInput, TouchableOpacity,
-  StyleSheet, ActivityIndicator, Image, Alert
+  View, Text, FlatList, StyleSheet, ActivityIndicator,
+  TouchableOpacity, Alert, Image, RefreshControl, Modal,
+  TextInput,
 } from 'react-native';
-import * as ImagePicker from 'expo-image-picker';
-import { getLibreria, updateLibreria, uploadLibreriaLogo } from '../services/api';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
+import { getMisLibros, deleteLibro, getAlertasStock, getApiBaseUrl } from '../services/api';
 
-export default function Libreria() {
-  const [libreria, setLibreria] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [guardando, setGuardando] = useState(false);
-  const [editando, setEditando] = useState(false);
-  const [form, setForm] = useState({ nombre: '', descripcion: '', ubicacion: '' });
+const PRIMARY = '#7A1E3A';
+const WHITE   = '#FFFFFF';
+const BG      = '#FAF8F5';
+const BORDER  = '#E0DBD4';
+const TEXT    = '#2A2A2A';
+const MUTED   = '#888';
 
-  useEffect(() => { cargar(); }, []);
+const ESTADO_COLORS = {
+  Nuevo:    { bg: '#D1FAE5', color: '#065F46' },
+  Visible:  { bg: '#DBEAFE', color: '#1E40AF' },
+  Oculto:   { bg: '#F3F4F6', color: '#6B7280' },
+  Agotado:  { bg: '#FEE2E2', color: '#991B1B' },
+};
 
-  const cargar = async () => {
-    setLoading(true);
+const fmt = (val) =>
+  val == null ? '$0 COP'
+  : '$' + String(Math.floor(val)).replace(/\B(?=(\d{3})+(?!\d))/g, '.') + ' COP';
+
+const getImgUrl = (libro) => {
+  const base = getApiBaseUrl();
+  const raw = libro?.imagen_url || libro?.imagen_principal || libro?.imagen_principal_url
+    || (Array.isArray(libro?.imagenes) ? libro.imagenes[0] : libro?.imagenes)
+    || libro?.foto;
+  if (!raw) return null;
+  const candidate = typeof raw === 'string' && raw.includes(',') ? raw.split(',')[0].trim() : String(raw).trim();
+  if (!candidate) return null;
+  if (candidate.startsWith('http://') || candidate.startsWith('https://')) return candidate;
+  return `${base}/${candidate.replace(/^\/+/, '')}`;
+};
+
+export default function Libreria({ navigation }) {
+  const [libros,     setLibros]     = useState([]);
+  const [alertas,    setAlertas]    = useState([]);
+  const [loading,    setLoading]    = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [deleting,   setDeleting]   = useState(null);
+
+  const cargar = useCallback(async (silencioso = false) => {
+    if (!silencioso) setLoading(true);
     try {
-      const res = await getLibreria();
-      const data = res.data;
-      setLibreria(data);
-      setForm({ nombre: data.nombre || '', descripcion: data.descripcion || '', ubicacion: data.ubicacion || '' });
+      const [rLib, rAlt] = await Promise.all([
+        getMisLibros(),
+        getAlertasStock(3).catch(() => ({ data: [] })),
+      ]);
+      setLibros(rLib.data || []);
+      setAlertas(Array.isArray(rAlt.data) ? rAlt.data : []);
     } catch {
-      Alert.alert('Error', 'No se pudo cargar la información de la librería.');
+      Alert.alert('Error', 'No se pudieron cargar los libros.');
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
+  }, []);
+
+  useFocusEffect(useCallback(() => { cargar(); }, [cargar]));
+
+  const onRefresh = () => { setRefreshing(true); cargar(true); };
+
+  const handleEliminar = (libro) => {
+    Alert.alert(
+      'Eliminar libro',
+      `¿Eliminar "${libro.titulo}"? Esta acción no se puede deshacer.`,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Eliminar', style: 'destructive',
+          onPress: async () => {
+            setDeleting(libro.id_libro);
+            try {
+              await deleteLibro(libro.id_libro);
+              setLibros(prev => prev.filter(l => l.id_libro !== libro.id_libro));
+            } catch {
+              Alert.alert('Error', 'No se pudo eliminar el libro.');
+            } finally {
+              setDeleting(null);
+            }
+          },
+        },
+      ]
+    );
   };
 
-  const handleGuardar = async () => {
-    setGuardando(true);
-    try {
-      await updateLibreria(form);
-      setLibreria(prev => ({ ...prev, ...form }));
-      setEditando(false);
-      Alert.alert('Guardado', 'Información de la librería actualizada.');
-    } catch {
-      Alert.alert('Error', 'No se pudo guardar los cambios.');
-    } finally {
-      setGuardando(false);
-    }
+  const estadoBadge = (libro) => {
+    const e = libro.estado_libro || (libro.activo ? 'Visible' : 'Oculto');
+    const c = ESTADO_COLORS[e] || { bg: '#F3F4F6', color: '#6B7280' };
+    return (
+      <View style={[s.badge, { backgroundColor: c.bg }]}>
+        <Text style={[s.badgeText, { color: c.color }]}>{e}</Text>
+      </View>
+    );
   };
 
-  const handleCambiarLogo = async () => {
-    const permiso = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permiso.granted) { Alert.alert('Permiso denegado', 'Se necesita acceso a la galería.'); return; }
-    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8 });
-    if (result.canceled) return;
-    const uri = result.assets[0].uri;
-    const formData = new FormData();
-    formData.append('file', { uri, name: 'logo.jpg', type: 'image/jpeg' });
-    try {
-      const res = await uploadLibreriaLogo(formData);
-      setLibreria(prev => ({ ...prev, logo: res.data.logo }));
-      Alert.alert('Logo actualizado', 'El logo de tu librería fue actualizado.');
-    } catch {
-      Alert.alert('Error', 'No se pudo subir el logo.');
-    }
-  };
+  const renderItem = ({ item }) => {
+    const imgUrl = getImgUrl(item);
+    const estaEnAlerta = alertas.some(a => a.id_libro === item.id_libro);
 
-  if (loading) return <View style={s.center}><ActivityIndicator size="large" color="#7A1E3A" /></View>;
-  if (!libreria) return <View style={s.center}><Text style={s.emptyText}>No se encontró información de la librería.</Text></View>;
+    return (
+      <View style={[s.card, estaEnAlerta && s.cardAlerta]}>
+        {/* portada */}
+        <View style={s.coverBox}>
+          {imgUrl
+            ? <Image source={{ uri: imgUrl }} style={s.cover} resizeMode="cover" />
+            : <View style={s.coverPlaceholder}><Text style={{ fontSize: 22 }}>📖</Text></View>
+          }
+        </View>
+
+        {/* info */}
+        <View style={s.info}>
+          <View style={s.infoTop}>
+            <Text style={s.titulo} numberOfLines={1}>{item.titulo}</Text>
+            {estadoBadge(item)}
+          </View>
+          <Text style={s.autor} numberOfLines={1}>{item.autor_libro} · {item.nombre_categoria}</Text>
+          <View style={s.infoBottom}>
+            <Text style={s.precio}>{fmt(item.precio_libro ?? item.precio)}</Text>
+            <Text style={[s.stock, (item.stock ?? 0) <= 3 && { color: '#DC2626', fontWeight: '700' }]}>
+              Stock: {item.stock ?? 0}
+            </Text>
+          </View>
+
+          {/* acciones */}
+          <View style={s.actions}>
+            <TouchableOpacity
+              style={[s.btn, s.btnStock]}
+              onPress={() => navigation.navigate('PublicarLibro', { libro: item, modo: 'stock' })}
+            >
+              <Text style={s.btnText}>Stock</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[s.btn, s.btnEditar]}
+              onPress={() => navigation.navigate('PublicarLibro', { libro: item, modo: 'editar' })}
+            >
+              <Text style={s.btnText}>Editar</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[s.btn, s.btnEliminar]}
+              onPress={() => handleEliminar(item)}
+              disabled={deleting === item.id_libro}
+            >
+              {deleting === item.id_libro
+                ? <ActivityIndicator size="small" color={WHITE} />
+                : <Text style={s.btnText}>Eliminar</Text>
+              }
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    );
+  };
 
   return (
-    <ScrollView style={s.container} contentContainerStyle={{ paddingBottom: 40 }}>
-      {/* Logo */}
-      <View style={s.logoWrapper}>
-        {libreria.logo ? (
-          <Image source={{ uri: libreria.logo }} style={s.logo} />
-        ) : (
-          <View style={[s.logo, s.logoPlaceholder]}>
-            <Text style={{ fontSize: 40 }}>🏪</Text>
-          </View>
-        )}
-        <TouchableOpacity style={s.logoBtn} onPress={handleCambiarLogo}>
-          <Text style={s.logoBtnText}>📷 Cambiar Logo</Text>
+    <SafeAreaView style={s.safe}>
+      {/* ── Header ── */}
+      <View style={s.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={s.backBtn}>
+          <Text style={s.backText}>←</Text>
+        </TouchableOpacity>
+        <View style={{ flex: 1 }}>
+          <Text style={s.headerTitle}>Mis libros</Text>
+          {!loading && <Text style={s.headerSub}>{libros.length} libro{libros.length !== 1 ? 's' : ''} publicado{libros.length !== 1 ? 's' : ''}</Text>}
+        </View>
+        <TouchableOpacity
+          style={s.publishBtn}
+          onPress={() => navigation.navigate('PublicarLibro')}
+        >
+          <Text style={s.publishBtnText}>+ Publicar</Text>
         </TouchableOpacity>
       </View>
 
-      {/* Info */}
-      <View style={s.card}>
-        <View style={s.cardHeader}>
-          <Text style={s.sectionTitle}>Información de la Librería</Text>
-          <TouchableOpacity onPress={() => setEditando(!editando)}>
-            <Text style={s.editLink}>{editando ? 'Cancelar' : '✏️ Editar'}</Text>
+      {/* ── Alertas stock ── */}
+      {alertas.length > 0 && (
+        <View style={s.alertaBanner}>
+          <Text style={s.alertaBannerTitle}>⚠️ {alertas.length} libro{alertas.length > 1 ? 's' : ''} con stock bajo</Text>
+          <View style={s.alertaChips}>
+            {alertas.map((a, i) => (
+              <View key={i} style={s.alertaChip}>
+                <Text style={s.alertaChipText} numberOfLines={1}>{a.titulo} — {a.stock ?? 0} uds</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+      )}
+
+      {loading ? (
+        <View style={s.centered}><ActivityIndicator size="large" color={PRIMARY} /></View>
+      ) : libros.length === 0 ? (
+        <View style={s.centered}>
+          <Text style={{ fontSize: 40, marginBottom: 12 }}>📚</Text>
+          <Text style={s.emptyTitle}>Aún no tienes libros publicados</Text>
+          <TouchableOpacity style={s.publishBtn2} onPress={() => navigation.navigate('PublicarLibro')}>
+            <Text style={s.publishBtnText}>Publicar primer libro</Text>
           </TouchableOpacity>
         </View>
-
-        {(['nombre', 'descripcion', 'ubicacion']).map(campo => (
-          <View key={campo} style={s.field}>
-            <Text style={s.label}>{campo.charAt(0).toUpperCase() + campo.slice(1)}</Text>
-            {editando ? (
-              <TextInput
-                style={[s.input, campo === 'descripcion' && { height: 90, textAlignVertical: 'top' }]}
-                value={form[campo]}
-                onChangeText={v => setForm(p => ({ ...p, [campo]: v }))}
-                multiline={campo === 'descripcion'}
-                placeholder={`Ingresa ${campo}`}
-              />
-            ) : (
-              <Text style={s.value}>{libreria[campo] || <Text style={{ color: '#bbb' }}>Sin información</Text>}</Text>
-            )}
-          </View>
-        ))}
-
-        {editando && (
-          <TouchableOpacity style={s.saveBtn} onPress={handleGuardar} disabled={guardando}>
-            <Text style={s.saveBtnText}>{guardando ? 'Guardando...' : 'Guardar cambios'}</Text>
-          </TouchableOpacity>
-        )}
-      </View>
-    </ScrollView>
+      ) : (
+        <FlatList
+          data={libros}
+          keyExtractor={(item, idx) => String(item.id_libro ?? idx)}
+          renderItem={renderItem}
+          contentContainerStyle={{ padding: 14, paddingBottom: 32 }}
+          showsVerticalScrollIndicator={false}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={PRIMARY} />}
+        />
+      )}
+    </SafeAreaView>
   );
 }
 
 const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FAF8F5' },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FAF8F5' },
-  emptyText: { color: '#888', fontSize: 15 },
-  logoWrapper: { alignItems: 'center', paddingVertical: 28, backgroundColor: 'white', borderBottomWidth: 1, borderBottomColor: '#eee' },
-  logo: { width: 110, height: 110, borderRadius: 55, marginBottom: 12 },
-  logoPlaceholder: { backgroundColor: '#f0e8ec', justifyContent: 'center', alignItems: 'center' },
-  logoBtn: { backgroundColor: '#f5eef2', paddingVertical: 8, paddingHorizontal: 18, borderRadius: 20, borderWidth: 1, borderColor: '#e0c8d0' },
-  logoBtnText: { color: '#7A1E3A', fontWeight: '600', fontSize: 14 },
-  card: { margin: 16, backgroundColor: 'white', borderRadius: 14, padding: 18, elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 6, shadowOffset: { width: 0, height: 2 } },
-  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
-  sectionTitle: { fontSize: 16, fontWeight: '700', color: '#222' },
-  editLink: { fontSize: 14, color: '#7A1E3A', fontWeight: '600' },
-  field: { marginBottom: 14 },
-  label: { fontSize: 12, color: '#888', fontWeight: '600', textTransform: 'uppercase', marginBottom: 4, letterSpacing: 0.5 },
-  value: { fontSize: 15, color: '#333' },
-  input: { borderWidth: 1, borderColor: '#ddd', borderRadius: 8, padding: 10, fontSize: 15, color: '#222', backgroundColor: '#fafafa' },
-  saveBtn: { backgroundColor: '#7A1E3A', borderRadius: 10, paddingVertical: 13, alignItems: 'center', marginTop: 8 },
-  saveBtnText: { color: 'white', fontWeight: '700', fontSize: 15 },
+  safe:        { flex: 1, backgroundColor: BG },
+  centered:    { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 10 },
+
+  // header
+  header:      { flexDirection: 'row', alignItems: 'center', backgroundColor: PRIMARY, paddingHorizontal: 16, paddingVertical: 14, gap: 10 },
+  backBtn:     { padding: 4 },
+  backText:    { color: WHITE, fontSize: 22, fontWeight: '700' },
+  headerTitle: { color: WHITE, fontSize: 18, fontWeight: '800' },
+  headerSub:   { color: 'rgba(255,255,255,0.75)', fontSize: 12, marginTop: 1 },
+  publishBtn:  { backgroundColor: WHITE, paddingHorizontal: 14, paddingVertical: 7, borderRadius: 18 },
+  publishBtnText: { color: PRIMARY, fontWeight: '800', fontSize: 13 },
+  publishBtn2: { backgroundColor: PRIMARY, paddingHorizontal: 20, paddingVertical: 12, borderRadius: 12, marginTop: 8 },
+
+  // alertas
+  alertaBanner:      { backgroundColor: '#FFFBEB', borderBottomWidth: 1, borderColor: '#FCD34D', padding: 12 },
+  alertaBannerTitle: { fontSize: 13, fontWeight: '700', color: '#92400E', marginBottom: 6 },
+  alertaChips:       { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  alertaChip:        { backgroundColor: '#FEF3C7', paddingHorizontal: 10, paddingVertical: 3, borderRadius: 20 },
+  alertaChipText:    { fontSize: 11, color: '#92400E', fontWeight: '600' },
+
+  // tarjeta libro
+  card:        { flexDirection: 'row', backgroundColor: WHITE, borderRadius: 14, marginBottom: 10, borderWidth: 1, borderColor: BORDER, elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 2 }, overflow: 'hidden' },
+  cardAlerta:  { borderColor: '#FCD34D', borderWidth: 1.5 },
+  coverBox:    { width: 80, backgroundColor: '#F4F0EC', justifyContent: 'center', alignItems: 'center' },
+  cover:       { width: 80, height: '100%' },
+  coverPlaceholder: { width: 80, height: 100, justifyContent: 'center', alignItems: 'center' },
+
+  info:        { flex: 1, padding: 12, gap: 4 },
+  infoTop:     { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 6 },
+  titulo:      { fontSize: 14, fontWeight: '700', color: TEXT, flex: 1 },
+  autor:       { fontSize: 12, color: MUTED },
+  infoBottom:  { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 2 },
+  precio:      { fontSize: 14, fontWeight: '800', color: PRIMARY },
+  stock:       { fontSize: 12, color: MUTED },
+
+  // badge estado
+  badge:       { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 12 },
+  badgeText:   { fontSize: 10, fontWeight: '700' },
+
+  // botones acciones
+  actions:     { flexDirection: 'row', gap: 6, marginTop: 8 },
+  btn:         { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8, minWidth: 52, alignItems: 'center' },
+  btnText:     { color: WHITE, fontSize: 11, fontWeight: '700' },
+  btnStock:    { backgroundColor: '#2563EB' },
+  btnEditar:   { backgroundColor: '#059669' },
+  btnEliminar: { backgroundColor: '#DC2626' },
+
+  emptyTitle:  { fontSize: 15, fontWeight: '700', color: TEXT },
 });

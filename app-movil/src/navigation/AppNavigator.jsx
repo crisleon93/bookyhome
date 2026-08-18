@@ -20,7 +20,6 @@ import Checkout from '../screens/Checkout';
 import ListaDeseos from '../screens/ListaDeseos';
 import Libreria from '../screens/Libreria';
 import PublicarLibro from '../screens/PublicarLibro';
-import MiTienda from '../screens/MiTienda';
 import ConfiguracionTienda from '../screens/ConfiguracionTienda';
 import PerfilTienda from '../screens/PerfilTienda';
 import Messages from '../screens/Messages';
@@ -28,8 +27,9 @@ import Chat from '../screens/Chat';
 import QuejasReclamos from '../screens/QuejasReclamos';
 import Direcciones from '../screens/Direcciones';
 
-import VendorHome from '../screens/VendorHome';
+import VendedorHome from '../screens/VendedorHome';
 import AdminHome from '../screens/AdminHome';
+import PedidosVendedor from '../screens/PedidosVendedor';
 
 const Stack = createNativeStackNavigator();
 
@@ -55,16 +55,17 @@ export default function AppNavigator() {
       ) : user.rol === 'vendedor' ? (
         // ─── Rutas vendedor ──────────────────────────────────────────────────
         <>
-          <Stack.Screen name="VendorHome" component={VendorHome} options={{ headerShown: false }} />
+          <Stack.Screen name="VendorHome" component={VendedorHome} options={{ headerShown: false }} />
           <Stack.Screen name="Libreria" component={Libreria} options={{ title: 'Mi Librería' }} />
           <Stack.Screen name="PublicarLibro" component={PublicarLibro} options={{ title: 'Publicar Libro' }} />
-          <Stack.Screen name="MiTienda" component={MiTienda} options={{ headerShown: false }} />
+          <Stack.Screen name="PedidosVendedor" component={PedidosVendedor} options={{ headerShown: false }} />
           <Stack.Screen name="Direcciones" component={Direcciones} options={{ title: 'Mis direcciones' }} />
           <Stack.Screen name="ConfiguracionTienda" component={ConfiguracionTienda} options={{ title: 'Configuración de Tienda' }} />
           <Stack.Screen name="PerfilTienda" component={PerfilTienda} options={{ title: 'Perfil de Tienda', headerBackTitle: 'Atrás' }} />
           <Stack.Screen name="Notifications" component={Notifications} options={{ headerShown: false }} />
           <Stack.Screen name="Messages" component={Messages} options={{ headerShown: false }} />
           <Stack.Screen name="Chat" component={Chat} options={{ title: 'Chat' }} />
+          <Stack.Screen name="QuejasReclamos" component={QuejasReclamos} options={{ title: 'Quejas y reclamos' }} />
         </>
       ) : user.rol === 'admin' ? (
         // ─── Rutas admin ─────────────────────────────────────────────────────
@@ -85,7 +86,6 @@ export default function AppNavigator() {
           <Stack.Screen name="ListaDeseos" component={ListaDeseos} options={{ title: 'Lista de Deseos' }} />
           <Stack.Screen name="Libreria" component={Libreria} options={{ title: 'Mi Librería' }} />
           <Stack.Screen name="PublicarLibro" component={PublicarLibro} options={{ title: 'Publicar Libro' }} />
-          <Stack.Screen name="MiTienda" component={MiTienda} options={{ headerShown: false }} />
           <Stack.Screen name="ConfiguracionTienda" component={ConfiguracionTienda} options={{ title: 'Configuración de Tienda' }} />
           <Stack.Screen name="PerfilTienda" component={PerfilTienda} options={{ title: 'Perfil de Tienda', headerBackTitle: 'Atrás' }} />
           <Stack.Screen name="Messages" component={Messages} options={{ headerShown: false }} />
