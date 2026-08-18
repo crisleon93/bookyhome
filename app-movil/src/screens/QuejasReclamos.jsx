@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useContext } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
   TextInput, ActivityIndicator, Alert, Modal, Image, Dimensions
@@ -7,6 +7,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import { getOrdenes, getQuejas, crearQueja, getApiBaseUrl } from '../services/api';
 import { IconAlertTriangle, IconCheck, IconEye, IconChevronRight } from '../components/Icons';
+import { AuthContext } from '../context/AuthContext';
+import SidebarVendedor from '../components/SidebarVendedor';
 
 const PRIMARY = '#7A1E3A';
 const WHITE = '#FFFFFF';
@@ -23,6 +25,8 @@ const MOTIVOS = [
 ];
 
 export default function QuejasReclamos({ navigation }) {
+  const { user, signOut } = useContext(AuthContext);
+  const [sidebarVisible, setSidebarVisible] = useState(false);
   const [ordenes, setOrdenes] = useState([]);
   const [quejas, setQuejas] = useState([]);
   const [ordenSeleccionada, setOrdenSeleccionada] = useState(null);
@@ -143,6 +147,14 @@ export default function QuejasReclamos({ navigation }) {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+      {/* Header */}
+      <View style={styles.topHeader}>
+        <TouchableOpacity onPress={() => setSidebarVisible(true)} style={styles.menuBtn}>
+          <Text style={styles.menuIcon}>☰</Text>
+        </TouchableOpacity>
+        <Text style={styles.topHeaderTitle}>Quejas y reclamos</Text>
+      </View>
+
       <ScrollView contentContainerStyle={styles.scroll}>
         
         {/* Header */}
@@ -381,13 +393,25 @@ export default function QuejasReclamos({ navigation }) {
           </TouchableOpacity>
         </View>
       </Modal>
+
+      <SidebarVendedor
+        visible={sidebarVisible}
+        onClose={() => setSidebarVisible(false)}
+        user={user}
+        navigation={navigation}
+        onSignOut={signOut}
+      />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: BG },
-  scroll: { padding: 16, paddingBottom: 40 },
+  safe:            { flex: 1, backgroundColor: '#7A1E3A' },
+  topHeader:       { flexDirection: 'row', alignItems: 'center', backgroundColor: '#7A1E3A', paddingHorizontal: 16, paddingVertical: 14, gap: 12 },
+  menuBtn:         { width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.15)', justifyContent: 'center', alignItems: 'center' },
+  menuIcon:        { color: WHITE, fontSize: 20, fontWeight: '700' },
+  topHeaderTitle:  { fontSize: 18, fontWeight: '800', color: WHITE },
+  scroll: { padding: 16, paddingBottom: 40, backgroundColor: BG },
   
   headerBox: {
     flexDirection: 'row', alignItems: 'center', gap: 16,

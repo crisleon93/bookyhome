@@ -85,9 +85,6 @@ export default function VendedorHome({ navigation: navProp }) {
         <Text style={s.menuIcon}>☰</Text>
       </TouchableOpacity>
       <View style={{ flex: 1 }} />
-      <TouchableOpacity style={s.signOutBtn} onPress={signOut}>
-        <Text style={s.signOutText}>Salir</Text>
-      </TouchableOpacity>
     </View>
   );
 

@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useContext } from 'react';
 import {
   View, Text, FlatList, StyleSheet, ActivityIndicator,
   TouchableOpacity, Image, RefreshControl, Modal,
@@ -6,6 +6,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { getMisLibros, deleteLibro, getAlertasStock, getApiBaseUrl } from '../services/api';
+import { AuthContext } from '../context/AuthContext';
+import SidebarVendedor from '../components/SidebarVendedor';
 
 const PRIMARY = '#7A1E3A';
 const WHITE   = '#FFFFFF';
@@ -38,13 +40,13 @@ const getImgUrl = (libro) => {
 };
 
 export default function Libreria({ navigation }) {
+  const { user, signOut } = useContext(AuthContext);
   const [libros,     setLibros]     = useState([]);
   const [alertas,    setAlertas]    = useState([]);
   const [loading,    setLoading]    = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [deleting,   setDeleting]   = useState(null);
-
-  // Modal eliminar
+  const [sidebarVisible, setSidebarVisible] = useState(false);
   const [modalEliminar, setModalEliminar] = useState({ visible: false, libro: null });
 
   const cargar = useCallback(async (silencioso = false) => {
@@ -155,8 +157,8 @@ export default function Libreria({ navigation }) {
     <SafeAreaView style={s.safe}>
       {/* ── Header ── */}
       <View style={s.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={s.backBtn}>
-          <Text style={s.backIcon}>‹</Text>
+        <TouchableOpacity onPress={() => setSidebarVisible(true)} style={s.menuBtn}>
+          <Text style={s.menuIcon}>☰</Text>
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
           <Text style={s.headerTitle}>Mis libros</Text>
@@ -249,6 +251,14 @@ export default function Libreria({ navigation }) {
           </View>
         </View>
       </Modal>
+
+      <SidebarVendedor
+        visible={sidebarVisible}
+        onClose={() => setSidebarVisible(false)}
+        user={user}
+        navigation={navigation}
+        onSignOut={signOut}
+      />
     </SafeAreaView>
   );
 }
@@ -259,8 +269,8 @@ const s = StyleSheet.create({
 
   // header
   header:      { flexDirection: 'row', alignItems: 'center', backgroundColor: PRIMARY, paddingHorizontal: 16, paddingVertical: 14, gap: 10 },
-  backBtn:     { width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.15)', justifyContent: 'center', alignItems: 'center' },
-  backIcon:    { color: WHITE, fontSize: 28, lineHeight: 32, fontWeight: '300', marginTop: -2 },
+  menuBtn:     { width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.15)', justifyContent: 'center', alignItems: 'center' },
+  menuIcon:    { color: WHITE, fontSize: 20, fontWeight: '700' },
   headerTitle: { color: WHITE, fontSize: 18, fontWeight: '800' },
   headerSub:   { color: 'rgba(255,255,255,0.75)', fontSize: 12, marginTop: 1 },
   publishBtn:  { backgroundColor: WHITE, paddingHorizontal: 14, paddingVertical: 7, borderRadius: 18 },

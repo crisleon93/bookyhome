@@ -1,7 +1,7 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, Modal,
-  Animated, Dimensions, Platform, ScrollView,
+  Animated, Dimensions, Platform, ScrollView, Image,
 } from 'react-native';
 import {
   IconClose, IconChevronRight, IconLogout,
@@ -10,6 +10,7 @@ import {
   IconBell, IconUser, IconTruck, IconCreditCard,
 } from './Icons';
 import { useNotifications } from '../context/NotificationContext';
+import { getConfigLibreria, getApiBaseUrl } from '../services/api';
 
 const { width } = Dimensions.get('window');
 const DRAWER_WIDTH = width * 0.78 > 300 ? 300 : width * 0.78;
@@ -50,6 +51,18 @@ export default function SidebarVendedor({ visible, onClose, user, navigation, on
   const slideAnim = useRef(new Animated.Value(-DRAWER_WIDTH)).current;
   const fadeAnim  = useRef(new Animated.Value(0)).current;
   const { unreadNotifCount, unreadMsgCount } = useNotifications();
+  const [logoUrl, setLogoUrl] = useState(null);
+
+  useEffect(() => {
+    getConfigLibreria()
+      .then(r => {
+        const raw = r?.data?.logo_url;
+        if (!raw) return;
+        const base = getApiBaseUrl();
+        setLogoUrl(raw.startsWith('http') ? raw : `${base}/${raw.replace(/^\/+/, '')}`);
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (visible) {
@@ -83,9 +96,12 @@ export default function SidebarVendedor({ visible, onClose, user, navigation, on
           {/* ── Cabecera ── */}
           <View style={styles.header}>
             <View style={styles.avatarBox}>
-              <Text style={styles.avatarText}>
-                {(user?.nombre_tienda || user?.nombre || 'V').charAt(0).toUpperCase()}
-              </Text>
+              {logoUrl
+                ? <Image source={{ uri: logoUrl }} style={styles.avatarImg} />
+                : <Text style={styles.avatarText}>
+                    {(user?.nombre_tienda || user?.nombre || 'V').charAt(0).toUpperCase()}
+                  </Text>
+              }
             </View>
             <View style={{ flex: 1, marginLeft: 12 }}>
               <Text style={styles.headerName} numberOfLines={1}>
@@ -104,6 +120,8 @@ export default function SidebarVendedor({ visible, onClose, user, navigation, on
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{ paddingVertical: 10, paddingBottom: 30 }}
           >
+            <MenuItem icon={<IconHome    size={19} color={WHITE} />} label="Inicio"             onPress={() => go('VendorHome')} />
+            <Sep />
             <MenuItem icon={<IconBooks   size={19} color={WHITE} />} label="Mis Libros"         onPress={() => go('Libreria')} />
             <MenuItem icon={<IconBook    size={19} color={WHITE} />} label="Publicar Libro"     onPress={() => go('PublicarLibro')} />
             <Sep />
@@ -157,7 +175,8 @@ const styles = StyleSheet.create({
 
   // cabecera
   header:      { backgroundColor: DARK, paddingTop: Platform.OS === 'ios' ? 54 : 34, paddingBottom: 20, paddingHorizontal: 18, flexDirection: 'row', alignItems: 'center' },
-  avatarBox:   { width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.35)' },
+  avatarBox:   { width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.35)', overflow: 'hidden' },
+  avatarImg:   { width: 44, height: 44, borderRadius: 22 },
   avatarText:  { fontSize: 18, fontWeight: '800', color: WHITE },
   headerName:  { color: WHITE, fontSize: 14, fontWeight: '800' },
   headerRole:  { color: 'rgba(255,255,255,0.6)', fontSize: 11, marginTop: 2 },

@@ -1,11 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, Image, ActivityIndicator,
   TouchableOpacity, FlatList
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { getPerfilTiendaPublico, getApiBaseUrl, getLibreria } from '../services/api';
+import { AuthContext } from '../context/AuthContext';
+import SidebarVendedor from '../components/SidebarVendedor';
 
 export default function PerfilTienda({ route, navigation }) {
+  const { user, signOut } = useContext(AuthContext);
+  const [sidebarVisible, setSidebarVisible] = useState(false);
   const paramId = route.params?.id_tienda;
   const [id_tienda, setIdTienda] = useState(paramId || null);
   const [data, setData] = useState(null);
@@ -91,6 +96,15 @@ export default function PerfilTienda({ route, navigation }) {
   };
 
   return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#7A1E3A' }}>
+      {/* Header */}
+      <View style={styles.topHeader}>
+        <TouchableOpacity onPress={() => setSidebarVisible(true)} style={styles.menuBtn}>
+          <Text style={styles.menuIcon}>☰</Text>
+        </TouchableOpacity>
+        <Text style={styles.topHeaderTitle}>Perfil de tienda</Text>
+      </View>
+
     <View style={styles.container}>
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
         {/* Header con Banner y Logo */}
@@ -188,12 +202,25 @@ export default function PerfilTienda({ route, navigation }) {
         )}
       </ScrollView>
     </View>
+
+      <SidebarVendedor
+        visible={sidebarVisible}
+        onClose={() => setSidebarVisible(false)}
+        user={user}
+        navigation={navigation}
+        onSignOut={signOut}
+      />
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fdfbfa' },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  center:    { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  topHeader:      { flexDirection: 'row', alignItems: 'center', backgroundColor: '#7A1E3A', paddingHorizontal: 16, paddingVertical: 14, gap: 12 },
+  menuBtn:        { width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.15)', justifyContent: 'center', alignItems: 'center' },
+  menuIcon:       { color: '#FFFFFF', fontSize: 20, fontWeight: '700' },
+  topHeaderTitle: { fontSize: 18, fontWeight: '800', color: '#FFFFFF' },
   errorText: { fontSize: 16, color: '#666' },
 
   header: { height: 180, position: 'relative', marginBottom: 50 },
