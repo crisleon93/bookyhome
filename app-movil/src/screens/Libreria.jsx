@@ -1,8 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import {
   View, Text, FlatList, StyleSheet, ActivityIndicator,
-  TouchableOpacity, Alert, Image, RefreshControl, Modal,
-  TextInput,
+  TouchableOpacity, Image, RefreshControl, Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -45,6 +44,9 @@ export default function Libreria({ navigation }) {
   const [refreshing, setRefreshing] = useState(false);
   const [deleting,   setDeleting]   = useState(null);
 
+  // Modal eliminar
+  const [modalEliminar, setModalEliminar] = useState({ visible: false, libro: null });
+
   const cargar = useCallback(async (silencioso = false) => {
     if (!silencioso) setLoading(true);
     try {
@@ -55,7 +57,7 @@ export default function Libreria({ navigation }) {
       setLibros(rLib.data || []);
       setAlertas(Array.isArray(rAlt.data) ? rAlt.data : []);
     } catch {
-      Alert.alert('Error', 'No se pudieron cargar los libros.');
+      // silencioso
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -66,28 +68,19 @@ export default function Libreria({ navigation }) {
 
   const onRefresh = () => { setRefreshing(true); cargar(true); };
 
-  const handleEliminar = (libro) => {
-    Alert.alert(
-      'Eliminar libro',
-      `¿Eliminar "${libro.titulo}"? Esta acción no se puede deshacer.`,
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Eliminar', style: 'destructive',
-          onPress: async () => {
-            setDeleting(libro.id_libro);
-            try {
-              await deleteLibro(libro.id_libro);
-              setLibros(prev => prev.filter(l => l.id_libro !== libro.id_libro));
-            } catch {
-              Alert.alert('Error', 'No se pudo eliminar el libro.');
-            } finally {
-              setDeleting(null);
-            }
-          },
-        },
-      ]
-    );
+  const confirmarEliminar = async () => {
+    const libro = modalEliminar.libro;
+    if (!libro) return;
+    setModalEliminar({ visible: false, libro: null });
+    setDeleting(libro.id_libro);
+    try {
+      await deleteLibro(libro.id_libro);
+      setLibros(prev => prev.filter(l => l.id_libro !== libro.id_libro));
+    } catch {
+      // silencioso
+    } finally {
+      setDeleting(null);
+    }
   };
 
   const estadoBadge = (libro) => {
@@ -144,7 +137,7 @@ export default function Libreria({ navigation }) {
             </TouchableOpacity>
             <TouchableOpacity
               style={[s.btn, s.btnEliminar]}
-              onPress={() => handleEliminar(item)}
+              onPress={() => setModalEliminar({ visible: true, libro: item })}
               disabled={deleting === item.id_libro}
             >
               {deleting === item.id_libro
@@ -163,11 +156,15 @@ export default function Libreria({ navigation }) {
       {/* ── Header ── */}
       <View style={s.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={s.backBtn}>
-          <Text style={s.backText}>←</Text>
+          <Text style={s.backIcon}>‹</Text>
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
           <Text style={s.headerTitle}>Mis libros</Text>
-          {!loading && <Text style={s.headerSub}>{libros.length} libro{libros.length !== 1 ? 's' : ''} publicado{libros.length !== 1 ? 's' : ''}</Text>}
+          {!loading && (
+            <Text style={s.headerSub}>
+              {libros.length} libro{libros.length !== 1 ? 's' : ''} publicado{libros.length !== 1 ? 's' : ''}
+            </Text>
+          )}
         </View>
         <TouchableOpacity
           style={s.publishBtn}
@@ -211,6 +208,47 @@ export default function Libreria({ navigation }) {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={PRIMARY} />}
         />
       )}
+
+      {/* ── Modal eliminar ── */}
+      <Modal
+        visible={modalEliminar.visible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setModalEliminar({ visible: false, libro: null })}
+      >
+        <View style={s.modalOverlay}>
+          <View style={s.modalBox}>
+            {/* Icono */}
+            <View style={s.modalIconBox}>
+              <Text style={s.modalIconText}>🗑️</Text>
+            </View>
+
+            <Text style={s.modalTitle}>Eliminar libro</Text>
+            <Text style={s.modalMsg}>
+              ¿Estás seguro que quieres eliminar{'\n'}
+              <Text style={s.modalLibroName}>"{modalEliminar.libro?.titulo}"</Text>?
+            </Text>
+            <Text style={s.modalWarning}>Esta acción no se puede deshacer.</Text>
+
+            <View style={s.modalBtns}>
+              <TouchableOpacity
+                style={[s.modalBtn, s.modalBtnCancel]}
+                onPress={() => setModalEliminar({ visible: false, libro: null })}
+                activeOpacity={0.8}
+              >
+                <Text style={s.modalBtnCancelText}>Cancelar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[s.modalBtn, s.modalBtnDelete]}
+                onPress={confirmarEliminar}
+                activeOpacity={0.8}
+              >
+                <Text style={s.modalBtnDeleteText}>Sí, eliminar</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -221,8 +259,8 @@ const s = StyleSheet.create({
 
   // header
   header:      { flexDirection: 'row', alignItems: 'center', backgroundColor: PRIMARY, paddingHorizontal: 16, paddingVertical: 14, gap: 10 },
-  backBtn:     { padding: 4 },
-  backText:    { color: WHITE, fontSize: 22, fontWeight: '700' },
+  backBtn:     { width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.15)', justifyContent: 'center', alignItems: 'center' },
+  backIcon:    { color: WHITE, fontSize: 28, lineHeight: 32, fontWeight: '300', marginTop: -2 },
   headerTitle: { color: WHITE, fontSize: 18, fontWeight: '800' },
   headerSub:   { color: 'rgba(255,255,255,0.75)', fontSize: 12, marginTop: 1 },
   publishBtn:  { backgroundColor: WHITE, paddingHorizontal: 14, paddingVertical: 7, borderRadius: 18 },
@@ -239,9 +277,9 @@ const s = StyleSheet.create({
   // tarjeta libro
   card:        { flexDirection: 'row', backgroundColor: WHITE, borderRadius: 14, marginBottom: 10, borderWidth: 1, borderColor: BORDER, elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 2 }, overflow: 'hidden' },
   cardAlerta:  { borderColor: '#FCD34D', borderWidth: 1.5 },
-  coverBox:    { width: 80, backgroundColor: '#F4F0EC', justifyContent: 'center', alignItems: 'center' },
-  cover:       { width: 80, height: '100%' },
-  coverPlaceholder: { width: 80, height: 100, justifyContent: 'center', alignItems: 'center' },
+  coverBox:    { width: 80, backgroundColor: '#F4F0EC', justifyContent: 'center', alignItems: 'center', alignSelf: 'stretch' },
+  cover:       { width: 80, height: 110 },
+  coverPlaceholder: { width: 80, height: 110, justifyContent: 'center', alignItems: 'center' },
 
   info:        { flex: 1, padding: 12, gap: 4 },
   infoTop:     { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 6 },
@@ -251,11 +289,9 @@ const s = StyleSheet.create({
   precio:      { fontSize: 14, fontWeight: '800', color: PRIMARY },
   stock:       { fontSize: 12, color: MUTED },
 
-  // badge estado
   badge:       { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 12 },
   badgeText:   { fontSize: 10, fontWeight: '700' },
 
-  // botones acciones
   actions:     { flexDirection: 'row', gap: 6, marginTop: 8 },
   btn:         { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8, minWidth: 52, alignItems: 'center' },
   btnText:     { color: WHITE, fontSize: 11, fontWeight: '700' },
@@ -264,4 +300,20 @@ const s = StyleSheet.create({
   btnEliminar: { backgroundColor: '#DC2626' },
 
   emptyTitle:  { fontSize: 15, fontWeight: '700', color: TEXT },
+
+  // modal eliminar
+  modalOverlay:      { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32 },
+  modalBox:          { backgroundColor: WHITE, borderRadius: 24, padding: 28, alignItems: 'center', width: '100%', elevation: 10, shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 16, shadowOffset: { width: 0, height: 8 } },
+  modalIconBox:      { width: 64, height: 64, borderRadius: 32, backgroundColor: '#FEE2E2', justifyContent: 'center', alignItems: 'center', marginBottom: 16 },
+  modalIconText:     { fontSize: 28 },
+  modalTitle:        { fontSize: 18, fontWeight: '800', color: TEXT, marginBottom: 10 },
+  modalMsg:          { fontSize: 14, color: '#444', textAlign: 'center', lineHeight: 22 },
+  modalLibroName:    { fontWeight: '700', color: TEXT },
+  modalWarning:      { fontSize: 12, color: '#DC2626', fontWeight: '600', marginTop: 8, marginBottom: 24 },
+  modalBtns:         { flexDirection: 'row', gap: 12, width: '100%' },
+  modalBtn:          { flex: 1, paddingVertical: 13, borderRadius: 14, alignItems: 'center' },
+  modalBtnCancel:    { backgroundColor: '#F3F4F6', borderWidth: 1, borderColor: BORDER },
+  modalBtnCancelText:{ fontSize: 14, fontWeight: '700', color: '#444' },
+  modalBtnDelete:    { backgroundColor: '#DC2626' },
+  modalBtnDeleteText:{ fontSize: 14, fontWeight: '800', color: WHITE },
 });

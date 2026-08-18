@@ -149,15 +149,18 @@ def login(data: UsuarioLogin):
 
 
 
-    token = create_token({
-
+    token_data = {
         "sub": str(user["id_usuario"]),
-
         "nombre": user["nombre_usuario"],
+        "rol": user["rol"],
+    }
 
-        "rol": user["rol"]
+    if user.get("rol") == "vendedor":
+        if tienda:
+            token_data["nombre_tienda"] = tienda.get("nombre_tienda", "")
+            token_data["id_tienda"] = tienda.get("id_tienda")
 
-    })
+    token = create_token(token_data)
 
     return {"access_token": token, "token_type": "bearer"}
 
