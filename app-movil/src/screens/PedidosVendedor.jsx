@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useContext } from 'react';
 import {
   View, Text, FlatList, StyleSheet, ActivityIndicator,
   Alert, Modal, TextInput, TouchableOpacity, ScrollView,
@@ -6,6 +6,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { getMisPedidos, actualizarEstadoOrden, registrarGuia, getEmpresasMensajeria } from '../services/api';
+import { AuthContext } from '../context/AuthContext';
+import SidebarVendedor from '../components/SidebarVendedor';
 
 const PRIMARY = '#7A1E3A';
 const WHITE = '#FFFFFF';
@@ -31,6 +33,8 @@ const estadoLabel = (e) =>
 const ESTADOS_OPCIONES = ['pagado', 'enviado', 'cancelada'];
 
 export default function PedidosVendedor({ navigation }) {
+  const { user, signOut } = useContext(AuthContext);
+  const [sidebarVisible, setSidebarVisible] = useState(false);
   const [pedidos, setPedidos]           = useState([]);
   const [loading, setLoading]           = useState(true);
   const [refreshing, setRefreshing]     = useState(false);
@@ -228,11 +232,11 @@ export default function PedidosVendedor({ navigation }) {
   return (
     <SafeAreaView style={s.safe}>
       <View style={s.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={s.backBtn}>
-          <Text style={s.backText}>←</Text>
+        <TouchableOpacity onPress={() => setSidebarVisible(true)} style={s.menuBtn}>
+          <Text style={s.menuIcon}>☰</Text>
         </TouchableOpacity>
         <View>
-          <Text style={s.title}>📦 Pedidos Recibidos</Text>
+          <Text style={s.title}>Pedidos recibidos</Text>
           <Text style={s.subtitle}>Gestiona las compras de tus clientes</Text>
         </View>
       </View>
@@ -343,6 +347,14 @@ export default function PedidosVendedor({ navigation }) {
           </View>
         </View>
       </Modal>
+
+      <SidebarVendedor
+        visible={sidebarVisible}
+        onClose={() => setSidebarVisible(false)}
+        user={user}
+        navigation={navigation}
+        onSignOut={signOut}
+      />
     </SafeAreaView>
   );
 }
@@ -350,8 +362,8 @@ export default function PedidosVendedor({ navigation }) {
 const s = StyleSheet.create({
   safe:           { flex: 1, backgroundColor: BG },
   header:         { flexDirection: 'row', alignItems: 'center', backgroundColor: PRIMARY, padding: 16, paddingTop: 12, gap: 12 },
-  backBtn:        { padding: 4 },
-  backText:       { color: WHITE, fontSize: 22, fontWeight: '700' },
+  menuBtn:        { width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.15)', justifyContent: 'center', alignItems: 'center' },
+  menuIcon:       { color: WHITE, fontSize: 20, fontWeight: '700' },
   title:          { fontSize: 18, fontWeight: '800', color: WHITE },
   subtitle:       { fontSize: 12, color: 'rgba(255,255,255,0.75)', marginTop: 1 },
   centered:       { flex: 1, justifyContent: 'center', alignItems: 'center' },

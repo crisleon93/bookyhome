@@ -14,6 +14,7 @@ import { useNavigation } from '@react-navigation/native';
 import { IconChevronRight } from '../components/Icons';
 import { useChatSocket } from '../context/ChatSocketContext';
 import { AuthContext } from '../context/AuthContext';
+import SidebarVendedor from '../components/SidebarVendedor';
 const PRIMARY = '#7A1E3A';
 const BG = '#F9F6F1';
 const WHITE = '#FFFFFF';
@@ -22,8 +23,8 @@ const TEXT_MUTED = '#8A8A8A';
 
 export default function Messages() {
   const navigation = useNavigation();
-  const { user } = useContext(AuthContext);
-
+  const { user, signOut } = useContext(AuthContext);
+  const [sidebarVisible, setSidebarVisible] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const { salas, loadingSalas, recargarSalas } = useChatSocket();
   const onRefresh = () => {
@@ -81,11 +82,11 @@ export default function Messages() {
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-          <Text style={styles.backText}>‹</Text>
+        <TouchableOpacity onPress={() => setSidebarVisible(true)} style={styles.menuBtn}>
+          <Text style={styles.menuIcon}>☰</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Mensajes</Text>
-        <View style={{ width: 32 }} />
+        <View style={{ width: 36 }} />
       </View>
 
       {loadingSalas ? (
@@ -110,6 +111,14 @@ export default function Messages() {
           }
         />
       )}
+
+      <SidebarVendedor
+        visible={sidebarVisible}
+        onClose={() => setSidebarVisible(false)}
+        user={user}
+        navigation={navigation}
+        onSignOut={signOut}
+      />
     </SafeAreaView>
   );
 }
@@ -126,6 +135,8 @@ const styles = StyleSheet.create({
   },
   backBtn: { width: 32, justifyContent: 'center', alignItems: 'flex-start' },
   backText: { color: WHITE, fontSize: 28, fontWeight: '400', lineHeight: 28 },
+  menuBtn:  { width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.15)', justifyContent: 'center', alignItems: 'center' },
+  menuIcon: { color: WHITE, fontSize: 20, fontWeight: '700' },
   headerTitle: { color: WHITE, fontSize: 17, fontWeight: '800' },
 
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32 },

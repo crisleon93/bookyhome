@@ -60,12 +60,12 @@ export default function AppNavigator() {
           <Stack.Screen name="PublicarLibro" component={PublicarLibro} options={{ headerShown: false }} />
           <Stack.Screen name="PedidosVendedor" component={PedidosVendedor} options={{ headerShown: false }} />
           <Stack.Screen name="Direcciones" component={Direcciones} options={{ title: 'Mis direcciones' }} />
-          <Stack.Screen name="ConfiguracionTienda" component={ConfiguracionTienda} options={{ title: 'Configuración de Tienda' }} />
-          <Stack.Screen name="PerfilTienda" component={PerfilTienda} options={{ title: 'Perfil de Tienda', headerBackTitle: 'Atrás' }} />
+          <Stack.Screen name="ConfiguracionTienda" component={ConfiguracionTienda} options={{ headerShown: false }} />
+          <Stack.Screen name="PerfilTienda" component={PerfilTienda} options={{ headerShown: false }} />
           <Stack.Screen name="Notifications" component={Notifications} options={{ headerShown: false }} />
           <Stack.Screen name="Messages" component={Messages} options={{ headerShown: false }} />
           <Stack.Screen name="Chat" component={Chat} options={{ title: 'Chat' }} />
-          <Stack.Screen name="QuejasReclamos" component={QuejasReclamos} options={{ title: 'Quejas y reclamos' }} />
+          <Stack.Screen name="QuejasReclamos" component={QuejasReclamos} options={{ headerShown: false }} />
         </>
       ) : user.rol === 'admin' ? (
         // ─── Rutas admin ─────────────────────────────────────────────────────

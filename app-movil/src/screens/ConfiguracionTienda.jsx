@@ -1,12 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import {
   View, Text, TextInput, StyleSheet, ScrollView, TouchableOpacity,
   ActivityIndicator, Alert, Image
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import { getConfigLibreria, updateConfigLibreria, uploadTiendaImage, getApiBaseUrl } from '../services/api';
+import { AuthContext } from '../context/AuthContext';
+import SidebarVendedor from '../components/SidebarVendedor';
 
 export default function ConfiguracionTienda({ navigation }) {
+  const { user, signOut } = useContext(AuthContext);
+  const [sidebarVisible, setSidebarVisible] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [config, setConfig] = useState({
@@ -122,7 +127,14 @@ export default function ConfiguracionTienda({ navigation }) {
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#7A1E3A' }}>
+      <View style={styles.topHeader}>
+        <TouchableOpacity onPress={() => setSidebarVisible(true)} style={styles.menuBtn}>
+          <Text style={styles.menuIcon}>☰</Text>
+        </TouchableOpacity>
+        <Text style={styles.topHeaderTitle}>Configuración de tienda</Text>
+      </View>
+      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <Text style={styles.title}>Configuración de Tienda</Text>
       
       {/* Imágenes */}
@@ -224,12 +236,25 @@ export default function ConfiguracionTienda({ navigation }) {
         <ActivityIndicator size="small" color="#7A1E3A" style={{ marginTop: 10 }} />
       )}
     </ScrollView>
+
+      <SidebarVendedor
+        visible={sidebarVisible}
+        onClose={() => setSidebarVisible(false)}
+        user={user}
+        navigation={navigation}
+        onSignOut={signOut}
+      />
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fdfbfa' },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  container:      { flex: 1, backgroundColor: '#fdfbfa' },
+  center:         { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  topHeader:      { flexDirection: 'row', alignItems: 'center', backgroundColor: '#7A1E3A', paddingHorizontal: 16, paddingVertical: 14, gap: 12 },
+  menuBtn:        { width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.15)', justifyContent: 'center', alignItems: 'center' },
+  menuIcon:       { color: '#FFFFFF', fontSize: 20, fontWeight: '700' },
+  topHeaderTitle: { fontSize: 18, fontWeight: '800', color: '#FFFFFF' },
   content: { padding: 16, paddingBottom: 40 },
   title: { fontSize: 22, fontWeight: '800', color: '#7A1E3A', marginBottom: 20 },
   

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import {
   View, Text, ScrollView, TextInput, TouchableOpacity,
   StyleSheet, ActivityIndicator, Image, Modal,
@@ -8,6 +8,8 @@ import * as ImagePicker from 'expo-image-picker';
 import { getCategorias, publicarLibro, updateLibro, updateStockLibro, crearVariante } from '../services/api';
 import BarcodeScanner from '../components/BarcodeScanner';
 import { IconCamera } from '../components/Icons';
+import { AuthContext } from '../context/AuthContext';
+import SidebarVendedor from '../components/SidebarVendedor';
 
 const PRIMARY = '#7A1E3A';
 const WHITE   = '#FFFFFF';
@@ -44,6 +46,8 @@ const parseError = (err) => {
 const getCatIcon = (nombre) => CAT_ICONS[nombre?.toLowerCase().trim()] ?? '📖';
 
 export default function PublicarLibro({ navigation, route }) {
+  const { user, signOut } = useContext(AuthContext);
+  const [sidebarVisible, setSidebarVisible] = useState(false);
   const libro = route?.params?.libro ?? null;
   const modo  = route?.params?.modo  ?? 'nuevo';
 
@@ -184,8 +188,8 @@ export default function PublicarLibro({ navigation, route }) {
 
   const HeaderBar = () => (
     <View style={s.headerBar}>
-      <TouchableOpacity onPress={() => navigation.goBack()} style={s.backBtn}>
-        <Text style={s.backText}>‹</Text>
+      <TouchableOpacity onPress={() => setSidebarVisible(true)} style={s.backBtn}>
+        <Text style={s.menuIconText}>☰</Text>
       </TouchableOpacity>
       <Text style={s.pageTitle}>{titulo_pagina}</Text>
     </View>
@@ -547,6 +551,14 @@ export default function PublicarLibro({ navigation, route }) {
         onBarcodeDetected={(isbn) => { setBarcodeVisible(false); set('isbn', isbn); }}
       />
 
+      <SidebarVendedor
+        visible={sidebarVisible}
+        onClose={() => setSidebarVisible(false)}
+        user={user}
+        navigation={navigation}
+        onSignOut={signOut}
+      />
+
     </SafeAreaView>
   );
 }
@@ -567,9 +579,10 @@ const s = StyleSheet.create({
 
   /* header */
   headerBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: PRIMARY, paddingHorizontal: 16, paddingVertical: 14, gap: 12 },
-  backBtn:   { width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.15)', justifyContent: 'center', alignItems: 'center' },
-  backText:  { color: WHITE, fontSize: 28, lineHeight: 32, fontWeight: '300', marginTop: -2 },
-  pageTitle: { fontSize: 18, fontWeight: '800', color: WHITE },
+  backBtn:      { width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.15)', justifyContent: 'center', alignItems: 'center' },
+  backText:     { color: WHITE, fontSize: 28, lineHeight: 32, fontWeight: '300', marginTop: -2 },
+  menuIconText: { color: WHITE, fontSize: 20, fontWeight: '700' },
+  pageTitle: { fontSize: 18, fontWeight: '800', color: WHITE, flex: 1 },
 
   /* cards */
   card:         { backgroundColor: WHITE, borderRadius: 16, padding: 14, marginBottom: 10, borderWidth: 1, borderColor: BORDER, elevation: 2, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 4, shadowOffset: { width: 0, height: 2 } },
