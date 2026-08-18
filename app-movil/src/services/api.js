@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'http://192.168.1.10:8000',
+  baseURL: 'http://192.168.0.5:8000',
   timeout: 10000,
 });
 
@@ -10,7 +10,7 @@ export const login = (credentials) => api.post('/login', credentials);
 export const register = (data) => api.post('/register', data);
 export const forgotPassword = (data) => api.post('/forgot-password', data);
 export const resetPassword = (data) => api.post('/reset-password', data);
-export const verifyEmail = ({ token }) => api.get('/verify-email', { params: { token } });
+export const verifyEma/* il  */= ({ token }) => api.get('/verify-email', { params: { token } });
 
 // ===== Catálogo =====
 export const getBooks = (params) => api.get('/api/stored/libros', { params });
@@ -76,7 +76,7 @@ export const validarCupon = (data) => api.post('/cupones/validar', data);
 export const aplicarCupon = (data) => api.post('/cupones/aplicar', data);
 
 // ===== Librería (Vendedor) =====
-export const getLibreria = () => api.get('/libreria/mi-libreria');
+export const getLibreria = () => api.get('/tiendas/mi-tienda');
 export const registerLibrary = (data) => api.post('/libreria', data);
 export const updateLibreria = (data) => api.put('/libreria/actualizar', data);
 export const uploadLibreriaLogo = (formData) =>
@@ -94,9 +94,18 @@ export const publicarLibro = (formData) =>
   api.post('/libros/publicar', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
 export const updateLibro = (id, data) => api.put(`/libros/${id}`, data);
 export const deleteLibro = (id) => api.delete(`/libros/${id}`);
+export const getStatsVendedor = () => api.get('/libros/stats');
+export const getTopVendidos = () => api.get('/libros/top-vendidos');
+export const getAlertasStock = (umbral = 3) => api.get(`/libros/alertas-stock?umbral=${umbral}`);
 
 // ===== Pedidos del vendedor =====
 export const getPedidosRecientes = () => api.get('/libros/mis-ventas?limit=5');
+export const getMisPedidos = () => api.get('/libros/mis-pedidos');
+export const actualizarEstadoOrden = (id_orden, estado) =>
+  api.put(`/perfil/ordenes/${id_orden}/estado`, { estado });
+export const registrarGuia = (id_orden, data) =>
+  api.put(`/envios/orden/${id_orden}`, data);
+export const getEmpresasMensajeria = () => api.get('/envios/empresas');
 
 // ===== Chat =====
 export const crearSalaChat = (id_tienda) => api.post('/chat/salas', { id_tienda });

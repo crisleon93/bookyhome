@@ -3,25 +3,40 @@ import {
   View, Text, StyleSheet, ScrollView, Image, ActivityIndicator,
   TouchableOpacity, FlatList
 } from 'react-native';
-import { getPerfilTiendaPublico, getApiBaseUrl } from '../services/api';
+import { getPerfilTiendaPublico, getApiBaseUrl, getLibreria } from '../services/api';
 
 export default function PerfilTienda({ route, navigation }) {
-  const { id_tienda } = route.params;
+  const paramId = route.params?.id_tienda;
+  const [id_tienda, setIdTienda] = useState(paramId || null);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState('catalogo'); // 'catalogo' | 'politicas'
 
   useEffect(() => {
-    cargarPerfil();
-  }, [id_tienda]);
+    if (id_tienda) {
+      cargarPerfil(id_tienda);
+    } else {
+      // Si no viene id_tienda en params, lo obtenemos de la librería del usuario
+      getLibreria()
+        .then(res => {
+          const id = res.data?.id_tienda;
+          if (id) {
+            setIdTienda(id);
+            cargarPerfil(id);
+          } else {
+            setLoading(false);
+          }
+        })
+        .catch(() => setLoading(false));
+    }
+  }, []);
 
-  const cargarPerfil = async () => {
+  const cargarPerfil = async (id) => {
     try {
-      const res = await getPerfilTiendaPublico(id_tienda);
+      const res = await getPerfilTiendaPublico(id);
       setData(res.data);
     } catch (e) {
       console.log(e);
-      // Ocurre si la tienda no existe
     } finally {
       setLoading(false);
     }
@@ -52,7 +67,11 @@ export default function PerfilTienda({ route, navigation }) {
   const { tienda, configuracion, libros } = data;
 
   const renderLibro = ({ item }) => {
-    const imageUrl = item.imagen_url || item.imagen_principal || item.imagen;
+    const rawImg = item.imagen_url || item.imagen_principal || item.imagen
+      || (Array.isArray(item.imagenes) ? item.imagenes[0] : item.imagenes);
+    const imageUrl = rawImg
+      ? (rawImg.startsWith('http') ? rawImg : `${getApiBaseUrl()}/${rawImg.replace(/^\/+/, '')}`)
+      : null;
     return (
       <TouchableOpacity 
         style={styles.bookCard}
