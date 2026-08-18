@@ -16,6 +16,7 @@ export const verifyEma/* il  */= ({ token }) => api.get('/verify-email', { param
 export const getBooks = (params) => api.get('/api/stored/libros', { params });
 export const getBookById = (id) => api.get(`/api/stored/libros/${id}`);
 export const getVariantes = (id_libro) => api.get(`/libros/${id_libro}/variantes`);
+export const crearVariante = (id_libro, data) => api.post(`/libros/${id_libro}/variantes`, data);
 export const getBookAvailability = (id, cantidad) => api.get(`/libros/${id}/disponibilidad`, { params: { cantidad } });
 export const getBookOffer = (id) => api.get(`/ofertas/libro/${id}/activa`);
 export const getCategorias = () => api.get('/catalogo/categorias');
@@ -93,6 +94,7 @@ export const getMisLibros = () => api.get('/libros/mis-libros');
 export const publicarLibro = (formData) =>
   api.post('/libros/publicar', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
 export const updateLibro = (id, data) => api.put(`/libros/${id}`, data);
+export const updateStockLibro = (id, stock) => { const f = new FormData(); f.append('stock', stock); return api.patch(`/libros/${id}/stock`, f, { headers: { 'Content-Type': 'multipart/form-data' } }); };
 export const deleteLibro = (id) => api.delete(`/libros/${id}`);
 export const getStatsVendedor = () => api.get('/libros/stats');
 export const getTopVendidos = () => api.get('/libros/top-vendidos');

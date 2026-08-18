@@ -56,8 +56,8 @@ export default function AppNavigator() {
         // ─── Rutas vendedor ──────────────────────────────────────────────────
         <>
           <Stack.Screen name="VendorHome" component={VendedorHome} options={{ headerShown: false }} />
-          <Stack.Screen name="Libreria" component={Libreria} options={{ title: 'Mi Librería' }} />
-          <Stack.Screen name="PublicarLibro" component={PublicarLibro} options={{ title: 'Publicar Libro' }} />
+          <Stack.Screen name="Libreria" component={Libreria} options={{ headerShown: false }} />
+          <Stack.Screen name="PublicarLibro" component={PublicarLibro} options={{ headerShown: false }} />
           <Stack.Screen name="PedidosVendedor" component={PedidosVendedor} options={{ headerShown: false }} />
           <Stack.Screen name="Direcciones" component={Direcciones} options={{ title: 'Mis direcciones' }} />
           <Stack.Screen name="ConfiguracionTienda" component={ConfiguracionTienda} options={{ title: 'Configuración de Tienda' }} />
