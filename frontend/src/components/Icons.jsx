@@ -2,7 +2,7 @@ import React from 'react';
 
 
 
-export const IconSearch = ({ className = "icon-search", width = 24, height = 24, strokeWidth = 2, ...props }) => (
+export const IconSearch = ({ className = "", width = 24, height = 24, strokeWidth = 2, ...props }) => (
 
   <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
 
@@ -18,7 +18,7 @@ export const IconSearch = ({ className = "icon-search", width = 24, height = 24,
 
 
 
-export const IconUser = ({ className = "icon-user", width = 24, height = 24, strokeWidth = 2, ...props }) => (
+export const IconUser = ({ className = "", width = 24, height = 24, strokeWidth = 2, ...props }) => (
 
   <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
 
@@ -34,7 +34,7 @@ export const IconUser = ({ className = "icon-user", width = 24, height = 24, str
 
 
 
-export const IconUserPlus = ({ className = "icon-user", width = 24, height = 24, strokeWidth = 2, ...props }) => (
+export const IconUserPlus = ({ className = "", width = 24, height = 24, strokeWidth = 2, ...props }) => (
 
   <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
 
@@ -74,7 +74,7 @@ export const IconUsers = ({ className = "", width = 24, height = 24, strokeWidth
 
 
 
-export const IconMail = ({ className = "auth-input-icon", width = 24, height = 24, strokeWidth = 1.8, ...props }) => (
+export const IconMail = ({ className = "", width = 24, height = 24, strokeWidth = 1.8, ...props }) => (
 
   <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none"
 
@@ -88,7 +88,7 @@ export const IconMail = ({ className = "auth-input-icon", width = 24, height = 2
 
 
 
-export const IconLock = ({ className = "auth-input-icon", width = 24, height = 24, strokeWidth = 1.8, ...props }) => (
+export const IconLock = ({ className = "", width = 24, height = 24, strokeWidth = 1.8, ...props }) => (
 
   <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none"
 
@@ -160,7 +160,7 @@ export const IconClose = ({ className = "", width = 20, height = 20, strokeWidth
 
 
 
-export const IconLocation = ({ className = "auth-input-icon", width = 24, height = 24, strokeWidth = 1.8, ...props }) => (
+export const IconLocation = ({ className = "", width = 24, height = 24, strokeWidth = 1.8, ...props }) => (
 
   <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none"
 
@@ -192,7 +192,7 @@ export const IconLocationTopBar = ({ className = "icon-top-bar", width = 24, hei
 
 
 
-export const IconStore = ({ className = "auth-input-icon", width = 24, height = 24, strokeWidth = 1.8, ...props }) => (
+export const IconStore = ({ className = "", width = 24, height = 24, strokeWidth = 1.8, ...props }) => (
 
   <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none"
 
@@ -220,7 +220,7 @@ export const IconStoreAlt = ({ className = "", width = 22, height = 22, strokeWi
 
 
 
-export const IconPhone = ({ className = "auth-input-icon", width = 24, height = 24, strokeWidth = 1.8, ...props }) => (
+export const IconPhone = ({ className = "", width = 24, height = 24, strokeWidth = 1.8, ...props }) => (
 
   <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none"
 

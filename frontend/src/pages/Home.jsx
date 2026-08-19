@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { jwtDecode } from 'jwt-decode'
 import Header from '../components/Header'
 import { IconUsers } from '../components/Icons'
+import SeccionInicio from '../components/dashboard/SeccionInicio'
 import CompradorSidebar from '../components/CompradorSidebar'
 import { getUsuarios } from '../services/api'
 import api from '../services/api'
@@ -281,123 +282,17 @@ function Home() {
         />
         <main className="dashboard-main">
           {activeSide === 'Inicio' && (
-            <>
-              {/* HERO */}
-              <section className="hero">
-                <div className="layout-container hero-container">
-                  <div className="hero-text">
-                    <h1>El marketplace que conecta lectores con librerías</h1>
-                    <p>Miles de títulos de las mejores librerías independientes del país. Todo en un solo lugar.</p>
-                    <div className="hero-buttons">
-                      <button className="btn btn-primary" onClick={() => handleSelectSection('Catálogo')}>
-                        Comenzar a comprar
-                      </button>
-                      <Link to="/libreria" className="btn" id="btn-vender-libros">Vender libros</Link>
-                    </div>
-                  </div>
-                  <div className="hero-image">
-                    <img src="https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=800&q=80"
-                      alt="Personas explorando libros en una librería" />
-                  </div>
-                </div>
-              </section>
-
-              {/* STATS */}
-              <section className="stats">
-                <div className="layout-container stats-container">
-                  {STATS.map((s, i) => (
-                    <div key={i} className="stat-item">
-                      <div className={`stat-icon ${s.color}`}>
-                        {typeof s.icon === 'string' ? (
-                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d={s.icon}/>
-                          </svg>
-                        ) : (
-                          s.icon
-                        )}
-                      </div>
-                      <h2>{s.num}</h2>
-                      <p>{s.label}</p>
-                    </div>
-                  ))}
-                </div>
-              </section>
-
-              {/* BENEFITS */}
-              <section className="benefits">
-                <div className="layout-container">
-                  <h2>¿Por qué elegir BookyHome?</h2>
-                  <div className="benefits-grid">
-                    {BENEFITS.map((b, i) => (
-                      <div key={i} className="benefit-card">
-                        <div className="benefit-icon">
-                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d={b.icon}/>
-                          </svg>
-                        </div>
-                        <h3>{b.title}</h3>
-                        <p>{b.desc}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </section>
-
-              {/* CATEGORIES */}
-              <section className="categories">
-                <div className="layout-container">
-                  <h2>Explora nuestras categorías</h2>
-                  <p>Libros para todos los gustos y momentos</p>
-                  <div className="category-grid">
-                    {CATEGORIES.map((c, i) => (
-                      <div
-                        key={i}
-                        className="category-card"
-                        style={{ backgroundImage: `url(${c.img})`, cursor: 'pointer' }}
-                        onClick={() => {
-                          setActiveSide('Catálogo')
-                          navigate(`/?seccion=Catálogo&categoria=${encodeURIComponent(c.name)}`, { replace: true })
-                        }}
-                      >
-                        <h3>{c.name}</h3>
-                      </div>
-                    ))}
-                  </div>
-                  <div style={{ textAlign: 'center', marginTop: '2rem' }}>
-                    <button className="btn btn-primary" onClick={() => handleSelectSection('Catálogo')}>
-                      Ver catálogo completo
-                    </button>
-                  </div>
-                </div>
-              </section>
-
-              {/* HOW IT WORKS */}
-              <section className="how-it-works">
-                <div className="layout-container">
-                  <h2>¿Cómo funciona?</h2>
-                  <div className="steps">
-                    {STEPS.map((s, i) => (
-                      <div key={i} className="step">
-                        <span className={`step-number ${s.cls}`}>{s.num}</span>
-                        <h3>{s.title}</h3>
-                        <p>{s.desc}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </section>
-
-              {/* CTA LIBRERÍAS */}
-              <section className="cta-libraries">
-                <div className="layout-container">
-                  <h2>¿Tienes una librería?</h2>
-                  <p>Únete a nuestra red de librerías y alcanza a miles de lectores en todo el país.</p>
-                  <Link to="/libreria" className="btn btn-primary">Registrar mi librería</Link>
-                </div>
-              </section>
-            </>
+            <div className="dashboard-section">
+              <SeccionInicio
+                userName={userName}
+                onGoToCatalog={() => handleSelectSection('Catálogo')}
+                onSelectSeccion={handleSelectSection}
+                onVerDetalleLibro={(libro) => {
+                  setCatalogoLibroInicial(libro)
+                  handleSelectSection('Catálogo')
+                }}
+              />
+            </div>
           )}
           {activeSide === 'Catálogo' && (
             <div className="dashboard-section"><Catalogo

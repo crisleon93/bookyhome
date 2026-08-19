@@ -63,6 +63,27 @@ const resolveLibroCandidate = (candidate) => {
   return resolveImageUrl(candidate);
 };
 
+const VINOTINTO = '#7A1E3A';
+const VINOTINTO2 = '#9B2648';
+
+const categoriaColor = (categoria = '') => {
+  const texto = categoria.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  if (texto.includes('terror')) return { bg: '#eee8f7', color: '#603a92' };
+  if (texto.includes('ciencia') || texto.includes('cientifica')) return { bg: '#e4f5e9', color: '#1f7a45' };
+  if (texto.includes('romance')) return { bg: '#fde8ef', color: '#b4235d' };
+  if (texto.includes('fantasia')) return { bg: '#e9edff', color: '#4156a6' };
+  if (texto.includes('historia')) return { bg: '#f8eddb', color: '#8c5a1d' };
+  if (texto.includes('tecnologia')) return { bg: '#e2f4f6', color: '#137783' };
+  if (texto.includes('juvenil')) return { bg: '#fff2d7', color: '#a25d00' };
+  if (texto.includes('infantil')) return { bg: '#e4f4ff', color: '#2775a7' };
+  if (texto.includes('aventura')) return { bg: '#fff0df', color: '#b85f11' };
+  if (texto.includes('arte')) return { bg: '#f4e6f6', color: '#86418f' };
+  if (texto.includes('biografia')) return { bg: '#e8eef8', color: '#365d96' };
+  if (texto.includes('educacion')) return { bg: '#e8f3e9', color: '#397542' };
+  if (texto.includes('ficcion')) return { bg: '#fce4ec', color: '#8b0000' };
+  return { bg: '#f4eef0', color: '#7a1e3a' };
+};
+
 const LibroCard = ({ libro, onVerDetalles }) => {
   const [enFavoritos, setEnFavoritos] = useState(false);
   const [wishlistLoading, setWishlistLoading] = useState(false);
@@ -148,92 +169,157 @@ const LibroCard = ({ libro, onVerDetalles }) => {
   const categoria  = libro.nombre_categoria || '';
 
   return (
-    <div className="libro-card">
-      <img
-        className="libro-card-img"
-        src={imageUrl}
-        alt={libro.titulo}
-        loading="lazy"
-      />
+    <div
+      style={{
+        width: 160,
+        flexShrink: 0,
+        background: 'white',
+        borderRadius: '10px',
+        overflow: 'hidden',
+        border: '1px solid #e8e2d9',
+        cursor: 'pointer',
+        transition: 'all 0.15s ease',
+        boxShadow: '0 2px 6px rgba(0,0,0,0.05)',
+      }}
+      onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 8px 20px rgba(0,0,0,0.12)'; }}
+      onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 2px 6px rgba(0,0,0,0.05)'; }}
+    >
+      {/* Portada */}
+      <div style={{ height: 170, background: `linear-gradient(135deg, ${VINOTINTO} 0%, ${VINOTINTO2} 100%)`, position: 'relative', overflow: 'hidden' }}>
+        <img
+          src={imageUrl}
+          alt={libro.titulo}
+          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          loading="lazy"
+          onError={e => { e.target.style.display = 'none'; }}
+        />
+        
+        {/* Badge estado */}
+        {outOfStock && (
+          <span style={{
+            position: 'absolute', top: 8, left: 8,
+            background: 'rgba(0,0,0,0.6)', color: 'white',
+            fontSize: '0.65rem', padding: '2px 7px', borderRadius: '20px', fontWeight: 600,
+          }}>Sin stock</span>
+        )}
+        
+        {/* Botón favoritos superpuesto */}
+        <button
+          onClick={(e) => { e.stopPropagation(); toggleListaDeseos(); }}
+          disabled={wishlistLoading}
+          style={{
+            position: 'absolute', top: 8, right: 8,
+            background: 'rgba(255,255,255,0.9)',
+            border: 'none',
+            borderRadius: '50%',
+            width: 32, height: 32,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            cursor: wishlistLoading ? 'not-allowed' : 'pointer',
+            opacity: wishlistLoading ? 0.7 : 1,
+            boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
+          }}
+        >
+          {wishlistLoading ? (
+            <span style={{ fontSize: '0.8rem' }}>...</span>
+          ) : enFavoritos ? (
+            <span style={{ fontSize: '1.2rem', color: VINOTINTO }}>♥</span>
+          ) : (
+            <span style={{ fontSize: '1.2rem', color: '#666' }}>♡</span>
+          )}
+        </button>
+      </div>
 
-      <div className="libro-card-body">
+      {/* Info */}
+      <div style={{ padding: '10px 10px 12px' }}>
+        {/* Categoría */}
         {categoria && (
-          <span className={`categoria-badge ${categoriaClase(categoria)}`}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
-              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
-            </svg>
+          <span style={{
+            display: 'inline-block',
+            padding: '2px 8px',
+            borderRadius: '12px',
+            background: categoriaColor(categoria).bg,
+            color: categoriaColor(categoria).color,
+            fontSize: '0.65rem',
+            fontWeight: '700',
+            marginBottom: '4px',
+          }}>
             {categoria}
           </span>
         )}
 
-        <h3>{libro.titulo}</h3>
-        <p className="autor">{author}</p>
+        <p style={{
+          margin: '0 0 3px 0', fontSize: '0.8rem', fontWeight: 700, color: '#1a1a1a',
+          display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', lineHeight: 1.3,
+        }}>{libro.titulo}</p>
+        
+        <p style={{ margin: '0 0 6px 0', fontSize: '0.7rem', color: '#888', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {author}
+        </p>
 
+        {/* Calificación y disponibilidad */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+          {calificacionTienda > 0 && (
+            <span style={{ display: 'flex', alignItems: 'center', gap: '2px', fontSize: '0.7rem', color: '#666' }}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="#f59e0b" stroke="#f59e0b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+              </svg>
+              {calificacionTienda.toFixed(1)}
+              {totalOpinionesTienda > 0 && <span style={{ fontSize: '0.65rem', color: '#999' }}>({totalOpinionesTienda})</span>}
+            </span>
+          )}
+          
+          <span style={{ 
+            display: 'flex', alignItems: 'center', gap: '2px', 
+            fontSize: '0.65rem', fontWeight: 600,
+            color: outOfStock ? '#dc2626' : '#16a34a',
+          }}>
+            {outOfStock ? (
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="15" y1="9" x2="9" y2="15"></line>
+                <line x1="9" y1="9" x2="15" y2="15"></line>
+              </svg>
+            ) : (
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+              </svg>
+            )}
+            {outOfStock ? 'Sin stock' : 'Disponible'}
+          </span>
+        </div>
+
+        <p style={{ margin: 0, fontSize: '0.9rem', fontWeight: 800, color: VINOTINTO }}>
+          ${price.toLocaleString('es-CO')}
+        </p>
+        
         {libro.nombre_tienda && (
-          <p className="tienda">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-              <circle cx="12" cy="10" r="3"></circle>
-            </svg>
+          <p style={{ margin: '3px 0 0', fontSize: '0.65rem', color: '#aaa', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {libro.nombre_tienda}
           </p>
         )}
 
-        <div className="libro-card-status">
-          {calificacionTienda > 0 && (
-            <p className="calificacion-tienda">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="#f59e0b" stroke="#f59e0b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-              </svg>
-              {calificacionTienda.toFixed(1)}
-              {totalOpinionesTienda > 0 && <span>({totalOpinionesTienda})</span>}
-            </p>
-          )}
-
-          <p className={`disponibilidad ${outOfStock ? 'sin-stock' : ''}`}>
-            {outOfStock ? (
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
-            ) : (
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
-            )}
-            {outOfStock ? 'Sin stock' : 'Disponible'}
-          </p>
-        </div>
-
-        <p className="precio">${price.toLocaleString('es-CO')}</p>
-
+        {/* Botón Ver detalles */}
         <button
-          className="btn btn-vinotinto"
           onClick={() => onVerDetalles && onVerDetalles(libro)}
+          style={{
+            width: '100%',
+            marginTop: '8px',
+            padding: '8px 12px',
+            background: VINOTINTO,
+            color: 'white',
+            border: 'none',
+            borderRadius: '6px',
+            fontSize: '0.75rem',
+            fontWeight: '600',
+            cursor: 'pointer',
+            transition: 'all 0.15s',
+          }}
+          onMouseEnter={e => { e.currentTarget.style.background = VINOTINTO2; }}
+          onMouseLeave={e => { e.currentTarget.style.background = VINOTINTO; }}
         >
           Ver detalles
         </button>
-
-        <button
-          onClick={toggleListaDeseos}
-          disabled={wishlistLoading}
-          style={{
-            width: '100%',
-            padding: '8px',
-            border: '1.5px solid #7A1E3A',
-            background: 'white',
-            color: '#7A1E3A',
-            borderRadius: '6px',
-            fontSize: '0.8rem',
-            fontWeight: '600',
-            cursor: wishlistLoading ? 'not-allowed' : 'pointer',
-            marginTop: '6px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '5px',
-            opacity: wishlistLoading ? 0.7 : 1,
-          }}
-        >
-          {wishlistLoading ? 'Procesando…' : enFavoritos ? '♥ En favoritos' : '♡ Favoritos'}
-        </button>
-
       </div>
     </div>
   );
