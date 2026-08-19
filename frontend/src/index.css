@@ -3744,3 +3744,12 @@ body.auth-page {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* Ocultar scrollbar en sidebar nav */
+.sidebar-nav-scroll::-webkit-scrollbar {
+  display: none;
+}
+.sidebar-nav-scroll {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

@@ -84,6 +84,34 @@ def ensure_quejas_schema():
             db.close()
 
 
+def ensure_banner_perfil_schema():
+    """Agrega columnas banner_perfil y banner_color a la tabla usuarios si no existen."""
+    db = None
+    cursor = None
+    try:
+        db = get_db()
+        cursor = db.cursor()
+
+        def column_exists(table, name):
+            cursor.execute("SHOW COLUMNS FROM `%s` LIKE %%s" % table, (name,))
+            return cursor.fetchone() is not None
+
+        if not column_exists("usuarios", "banner_perfil"):
+            cursor.execute("ALTER TABLE usuarios ADD COLUMN banner_perfil VARCHAR(500) NULL")
+        if not column_exists("usuarios", "banner_color"):
+            cursor.execute("ALTER TABLE usuarios ADD COLUMN banner_color VARCHAR(200) NULL DEFAULT '#7A1E3A'")
+        db.commit()
+    except Exception as exc:
+        if db is not None:
+            db.rollback()
+        print(f"[DATABASE] No se pudo asegurar esquema de banner: {exc}", file=sys.stderr, flush=True)
+    finally:
+        if cursor is not None:
+            cursor.close()
+        if db is not None:
+            db.close()
+
+
 def get_db():
     # ========================
     # Configuración de conexión

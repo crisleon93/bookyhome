@@ -93,7 +93,7 @@ function SidebarIcon(props) {
 
 export default function VendedorSidebar({ userName = 'Vendedor', profileImage = null, userPhotoUrl = null, activeSide = 'Inicio', setActiveSide, handleLogout }) {
   const navigate = useNavigate();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [noLeidosNotif, setNoLeidosNotif] = useState(0);
   const [noLeidosMensajes, setNoLeidosMensajes] = useState(0);
   const avatarSrc = profileImage || userPhotoUrl || null;
@@ -162,21 +162,21 @@ export default function VendedorSidebar({ userName = 'Vendedor', profileImage = 
       position: 'fixed', top: '0px', left: 0, zIndex: 60,
       height: '100vh',
       background: VINOTINTO, color: WHITE,
-      padding: '24px 14px', display: 'flex', flexDirection: 'column', gap: '6px',
+      padding: '16px 14px', display: 'flex', flexDirection: 'column', gap: '4px',
       transition: 'width 0.25s ease', flexShrink: 0, overflow: 'hidden',
     }}>
       {/* Header */}
       <div style={{
         position: 'relative',
-        marginBottom: sidebarOpen ? '22px' : '20px',
+        marginBottom: sidebarOpen ? '10px' : '20px',
         padding: sidebarOpen ? '0 10px' : '0',
         display: 'flex',
         justifyContent: sidebarOpen ? 'flex-start' : 'center',
         alignItems: 'center',
-        minHeight: sidebarOpen ? undefined : '110px',
-        paddingTop: sidebarOpen ? '0' : '50px',
+        minHeight: sidebarOpen ? undefined : '80px',
+        paddingTop: sidebarOpen ? '0' : '0',
       }}>
-        <div style={{ display: 'flex', justifyContent: sidebarOpen ? 'flex-start' : 'center', width: '100%' }}>
+        <div style={{ display: 'flex', justifyContent: sidebarOpen ? 'flex-start' : 'center', width: '100%', marginTop: sidebarOpen ? '0' : '70px' }}>
           {avatarSrc ? (
             <img
               src={avatarSrc}
@@ -231,8 +231,8 @@ export default function VendedorSidebar({ userName = 'Vendedor', profileImage = 
       {/* User Info */}
       {sidebarOpen && (
         <div style={{
-          padding: '16px 12px', marginBottom: '16px', borderBottom: '1px solid rgba(255,255,255,0.15)',
-          display: 'flex', flexDirection: 'column', gap: '6px',
+          padding: '10px 12px', marginBottom: '10px', borderBottom: '1px solid rgba(255,255,255,0.15)',
+          display: 'flex', flexDirection: 'column', gap: '4px',
         }}>
           <div style={{ fontSize: '0.95rem', fontWeight: 700 }}>{userName}</div>
           <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.7)' }}>Panel de ventas</div>
@@ -240,6 +240,7 @@ export default function VendedorSidebar({ userName = 'Vendedor', profileImage = 
       )}
 
       {/* Navigation */}
+      <div className="sidebar-nav-scroll" style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
       {MENU_LINKS.map((item) => {
         const active = activeSide === item.name;
         return (
@@ -276,6 +277,7 @@ export default function VendedorSidebar({ userName = 'Vendedor', profileImage = 
           </button>
         );
       })}
+      </div>
 
       {/* Logout */}
       <button

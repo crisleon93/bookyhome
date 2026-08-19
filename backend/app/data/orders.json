@@ -542,10 +542,41 @@
         }
       ],
       "total": 121231.0,
-      "estado": "entregada",
+      "estado": "enviado",
       "id_orden_db": 46,
       "metodo_pago": "Pago en Efecty",
-      "fecha_entrega_confirmada": "2026-08-16T01:20:28.924273Z"
+      "fecha_entrega_confirmada": "2026-08-16T01:20:28.924273Z",
+      "envio": {
+        "id_empresa": 7,
+        "empresa_mensajeria": "4-72 (Postal)",
+        "sitio_web": "https://www.4-72.com.co",
+        "url_rastreo": "https://www.4-72.com.co",
+        "numero_guia": "322443424342341",
+        "estado_envio": "Guía registrada",
+        "fecha_despacho_con_hora": "2026-08-19T00:32:37.065737+00:00",
+        "actualizado_en": "2026-08-19T00:32:37.065737+00:00",
+        "origen": "Librería El Sótano · Calle 45 # 13-22"
+      }
+    },
+    {
+      "id_orden": 27,
+      "codigo_compra": "BH-0796FBED39",
+      "fecha": "2026-08-19T00:28:58.893099Z",
+      "items": [
+        {
+          "id_libro": 49,
+          "titulo": "erwerwe",
+          "autor_libro": "werwerwer",
+          "precio_libro": 121231.0,
+          "cantidad": 1,
+          "imagen": null,
+          "id_variante": null,
+          "variante_label": null
+        }
+      ],
+      "total": 121231.0,
+      "estado": "pendiente",
+      "id_orden_db": 47
     }
   ],
   "17": [
