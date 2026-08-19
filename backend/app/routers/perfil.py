@@ -264,6 +264,8 @@ def obtener_perfil(user_id: int = Depends(get_current_user)):
                 rol,
                 fecha_registro as fecha_registro,
                 foto_perfil,
+                banner_perfil,
+                banner_color,
                 preferencias
             FROM usuarios
             WHERE id_usuario = %s
@@ -395,6 +397,49 @@ def obtener_historial_compras(user_id: int = Depends(get_current_user)):
     finally:
         cursor.close()
         db.close()
+
+
+@router.post("/banner")
+async def subir_banner_perfil(file: UploadFile = File(...), user_id: int = Depends(get_current_user)):
+    """Sube imagen de banner de perfil del usuario"""
+    try:
+        os.makedirs("uploads/banners", exist_ok=True)
+        filename = f"banner_{user_id}_{datetime.now().timestamp()}.jpg"
+        filepath = f"uploads/banners/{filename}"
+        with open(filepath, "wb") as f:
+            contents = await file.read()
+            f.write(contents)
+        db = get_db()
+        cursor = db.cursor()
+        try:
+            cursor.execute("UPDATE usuarios SET banner_perfil = %s, banner_color = NULL WHERE id_usuario = %s", (filepath, user_id))
+            db.commit()
+        finally:
+            cursor.close()
+            db.close()
+        return {"ok": True, "mensaje": "Banner subido", "url": filepath, "tipo": "imagen"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+class BannerColorData(BaseModel):
+    banner_color: str  # color CSS: hex, gradiente, etc.
+
+@router.patch("/banner-color")
+def guardar_banner_color(data: BannerColorData, user_id: int = Depends(get_current_user)):
+    """Guarda un color o gradiente CSS como banner, elimina imagen si había"""
+    try:
+        db = get_db()
+        cursor = db.cursor()
+        try:
+            cursor.execute("UPDATE usuarios SET banner_color = %s, banner_perfil = NULL WHERE id_usuario = %s", (data.banner_color, user_id))
+            db.commit()
+        finally:
+            cursor.close()
+            db.close()
+        return {"ok": True, "mensaje": "Color de banner guardado", "banner_color": data.banner_color}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/foto-perfil")

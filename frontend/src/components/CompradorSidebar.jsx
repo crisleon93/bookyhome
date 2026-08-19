@@ -65,9 +65,9 @@ function SidebarIcon(props) {
   );
 }
 
-export default function CompradorSidebar({ userName, userEmail, profilePhotoUrl, activeSide, onSelect }) {
+export default function CompradorSidebar({ userName, userEmail, profilePhotoUrl, bannerUrl, bannerColor, activeSide, onSelect }) {
   const navigate = useNavigate();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [noLeidosNotif, setNoLeidosNotif] = useState(0);
   const [noLeidosMensajes, setNoLeidosMensajes] = useState(0);
   const avatarSrc = profilePhotoUrl || null;
@@ -106,89 +106,103 @@ export default function CompradorSidebar({ userName, userEmail, profilePhotoUrl,
       position: 'fixed', top: '0px', left: 0, zIndex: 60,
       height: '100vh',
       background: VINOTINTO, color: WHITE,
-      padding: '24px 14px', display: 'flex', flexDirection: 'column', gap: '6px',
+      padding: '16px 14px', display: 'flex', flexDirection: 'column', gap: '4px',
       transition: 'width 0.25s ease', flexShrink: 0, overflow: 'hidden',
     }}>
       {/* Header */}
-      <div style={{
-        position: 'relative',
-        marginBottom: sidebarOpen ? '22px' : '20px',
-        padding: sidebarOpen ? '0 10px' : '0',
-        display: 'flex',
-        justifyContent: sidebarOpen ? 'flex-start' : 'center',
-        alignItems: 'center',
-        minHeight: sidebarOpen ? undefined : '110px',
-        paddingTop: sidebarOpen ? '0' : '50px',
-      }}>
-        <div style={{ display: 'flex', justifyContent: sidebarOpen ? 'flex-start' : 'center', width: '100%' }}>
+      {sidebarOpen ? (
+        /* ── Sidebar ABIERTO: banner como fondo, avatar + info encima ── */
+        <div style={{
+          marginBottom: '10px', flexShrink: 0,
+          margin: '-16px -14px 10px -14px',
+          borderRadius: '0',
+          background: bannerUrl
+            ? `url(${bannerUrl}) center/cover no-repeat`
+            : (bannerColor || '#5a1528'),
+          padding: '10px 14px 10px 28px',
+          position: 'relative',
+        }}>
+          {/* Contenido encima del overlay */}
+          <div style={{ position: 'relative', zIndex: 1 }}>
+            {/* Fila: avatar a la izq, botón < a la der */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+              {avatarSrc ? (
+                <img src={avatarSrc} alt={avatarAlt} style={{
+                  width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover',
+                  border: '2px solid rgba(255,255,255,0.5)', flexShrink: 0,
+                }} />
+              ) : (
+                <div style={{
+                  width: '40px', height: '40px', borderRadius: '50%', flexShrink: 0,
+                  background: 'rgba(255,255,255,0.2)', border: '2px solid rgba(255,255,255,0.4)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontWeight: 700, color: WHITE, textTransform: 'uppercase', fontSize: '1rem',
+                }}>
+                  {(userName || 'U').charAt(0)}
+                </div>
+              )}
+              <button
+                onClick={() => setSidebarOpen(false)}
+                style={{
+                  background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.3)',
+                  color: WHITE, width: '26px', height: '26px', borderRadius: '6px',
+                  cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}
+                title="Contraer menú"
+              >
+                <SidebarIcon Icon={IconChevronLeft} size={15} />
+              </button>
+            </div>
+            {/* Nombre y email debajo */}
+            <div style={{ fontSize: '0.88rem', fontWeight: 700, color: WHITE, textShadow: '0 1px 3px rgba(0,0,0,0.6)' }}>{userName || 'Usuario'}</div>
+            <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.9)', textShadow: '0 1px 3px rgba(0,0,0,0.6)' }}>{userEmail || ''}</div>
+          </div>
+        </div>
+      ) : (
+        /* ── Sidebar CERRADO: banner de fondo + hamburguesa + avatar ── */
+        <div style={{
+          position: 'relative',
+          margin: '-16px -14px 20px -14px',
+          background: bannerUrl
+            ? `url(${bannerUrl}) center/cover no-repeat`
+            : (bannerColor || '#5a1528'),
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          width: 'calc(100% + 28px)',
+          padding: '12px 0',
+          gap: '8px',
+        }}>
+          <button
+            onClick={() => setSidebarOpen(true)}
+            style={{
+              background: 'rgba(255,255,255,0.16)', border: '1px solid rgba(255,255,255,0.2)',
+              color: WHITE, width: '34px', height: '34px', borderRadius: '8px',
+              cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              boxShadow: '0 4px 14px rgba(0,0,0,0.15)',
+            }}
+            title="Expandir menú"
+          >
+            <SidebarIcon Icon={IconMenu} size={20} />
+          </button>
           {avatarSrc ? (
-            <img
-              src={avatarSrc}
-              alt={avatarAlt}
-              style={{
-                width: sidebarOpen ? '64px' : '36px',
-                height: sidebarOpen ? '64px' : '36px',
-                borderRadius: '50%',
-                objectFit: 'cover',
-                border: '2px solid rgba(255,255,255,0.35)',
-                marginTop: sidebarOpen ? '0' : '0',
-              }}
-            />
+            <img src={avatarSrc} alt={avatarAlt} style={{
+              width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover',
+              border: '2px solid rgba(255,255,255,0.35)',
+            }} />
           ) : (
             <div style={{
-              width: sidebarOpen ? '64px' : '36px',
-              height: sidebarOpen ? '64px' : '36px',
-              borderRadius: '50%',
-              background: 'rgba(255,255,255,0.15)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              border: '2px solid rgba(255,255,255,0.35)',
-              marginTop: sidebarOpen ? '0' : '0',
-              fontWeight: 700,
-              color: WHITE,
-              textTransform: 'uppercase',
-              fontSize: sidebarOpen ? '1.4rem' : '1rem',
+              width: '36px', height: '36px', borderRadius: '50%',
+              background: 'rgba(255,255,255,0.15)', border: '2px solid rgba(255,255,255,0.35)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontWeight: 700, color: WHITE, textTransform: 'uppercase', fontSize: '1rem',
             }}>
               {(userName || 'U').charAt(0)}
             </div>
           )}
         </div>
-
-        <button
-          onClick={() => setSidebarOpen(!sidebarOpen)}
-          style={{
-            position: 'absolute',
-            right: sidebarOpen ? '0' : '8px',
-            top: sidebarOpen ? 'auto' : '12px',
-            background: 'rgba(255,255,255,0.16)',
-            border: '1px solid rgba(255,255,255,0.2)',
-            color: WHITE,
-            width: '34px', height: '34px', borderRadius: '8px', cursor: 'pointer',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-            boxShadow: sidebarOpen ? 'none' : '0 4px 14px rgba(0,0,0,0.15)',
-          }}
-          title={sidebarOpen ? 'Contraer menú' : 'Expandir menú'}
-        >
-          {sidebarOpen
-            ? <SidebarIcon Icon={IconChevronLeft} size={20} />
-            : <SidebarIcon Icon={IconMenu} size={20} />}
-        </button>
-      </div>
-
-      {/* User Info */}
-      {sidebarOpen && (
-        <div style={{
-          padding: '16px 12px', marginBottom: '16px', borderBottom: '1px solid rgba(255,255,255,0.15)',
-          display: 'flex', flexDirection: 'column', gap: '6px',
-        }}>
-          <div style={{ fontSize: '0.95rem', fontWeight: 700 }}>{userName || "Usuario"}</div>
-          <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.7)' }}>{userEmail || "correo@ejemplo.com"}</div>
-        </div>
       )}
 
       {/* Navigation */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
+      <div className="sidebar-nav-scroll" style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
         {MENU_LINKS.map((item) => {
           const active = activeSide === item.name;
           return (

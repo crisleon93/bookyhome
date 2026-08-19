@@ -63,7 +63,7 @@ from app.routers.favoritos import router as favoritos_router
 from app.routers.quejas import router as quejas_router
 from app.routers.bookypago_finanzas import router as bookypago_finanzas_router
 from app.routers.calificaciones_tiendas import router as calificaciones_tiendas_router
-from app.database import ensure_quejas_schema
+from app.database import ensure_quejas_schema, ensure_banner_perfil_schema
 
 
 load_dotenv()
@@ -72,6 +72,7 @@ load_dotenv()
 
 app = FastAPI()
 ensure_quejas_schema()
+ensure_banner_perfil_schema()
 
 
 # ========================

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { IconUser, IconStar, IconChartBar, IconBookOpen, IconBook } from "../Icons";
 import { notify } from "../ToastProvider";
-import api, { getEstadisticasUsuario, uploadProfilePhoto } from "../../services/api";
+import api, { getEstadisticasUsuario, uploadProfilePhoto, uploadBannerPhoto, saveBannerColor } from "../../services/api";
 
 export default function SeccionMiPerfil({ userId }) {
   const [userName, setUserName] = useState("");
@@ -10,6 +10,10 @@ export default function SeccionMiPerfil({ userId }) {
   const [userPhone, setUserPhone] = useState("");
   const [profilePhotoUrl, setProfilePhotoUrl] = useState(null);
   const [photoUploading, setPhotoUploading] = useState(false);
+  const [bannerUrl, setBannerUrl] = useState(null);
+  const [bannerColor, setBannerColor] = useState('#7A1E3A');
+  const [bannerUploading, setBannerUploading] = useState(false);
+  const [showBannerEditor, setShowBannerEditor] = useState(false);
   const [estadisticas, setEstadisticas] = useState(null);
   const [categoriasFavoritas, setCategoriasFavoritas] = useState([]);
   const [nivelFidelizacion, setNivelFidelizacion] = useState(null);
@@ -64,6 +68,13 @@ export default function SeccionMiPerfil({ userId }) {
     try {
       const res = await api.get('/perfil/mi-perfil');
       if (res.data?.foto_perfil) setProfilePhotoUrl(resolveImageUrl(res.data.foto_perfil));
+      if (res.data?.banner_perfil) {
+        setBannerUrl(resolveImageUrl(res.data.banner_perfil));
+        setBannerColor(null);
+      } else if (res.data?.banner_color) {
+        setBannerColor(res.data.banner_color);
+        setBannerUrl(null);
+      }
       if (res.data?.nombre_usuario) {
         const parts = res.data.nombre_usuario.split(" ");
         setUserName(parts[0] || "");
@@ -96,7 +107,10 @@ export default function SeccionMiPerfil({ userId }) {
     try {
       const res = await uploadProfilePhoto(formData);
       if (res.data?.url) {
-        setProfilePhotoUrl(resolveImageUrl(res.data.url));
+        const newUrl = resolveImageUrl(res.data.url);
+        setProfilePhotoUrl(newUrl);
+        // Notificar al sidebar para que actualice la foto
+        window.dispatchEvent(new CustomEvent('profile-photo-updated', { detail: { url: newUrl } }));
         notify('Foto de perfil actualizada', 'success');
       }
     } catch (error) {
@@ -104,6 +118,42 @@ export default function SeccionMiPerfil({ userId }) {
       notify('No se pudo subir la foto', 'error');
     } finally {
       setPhotoUploading(false);
+    }
+  };
+
+  const onBannerImageChange = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const formData = new FormData();
+    formData.append('file', file);
+    setBannerUploading(true);
+    try {
+      const res = await uploadBannerPhoto(formData);
+      if (res.data?.url) {
+        const newUrl = resolveImageUrl(res.data.url);
+        setBannerUrl(newUrl);
+        setBannerColor(null);
+        window.dispatchEvent(new CustomEvent('profile-banner-updated', { detail: { bannerUrl: newUrl, bannerColor: null } }));
+        notify('Banner actualizado', 'success');
+        setShowBannerEditor(false);
+      }
+    } catch (error) {
+      notify('No se pudo subir el banner', 'error');
+    } finally {
+      setBannerUploading(false);
+    }
+  };
+
+  const onBannerColorSelect = async (color) => {
+    try {
+      await saveBannerColor(color);
+      setBannerColor(color);
+      setBannerUrl(null);
+      window.dispatchEvent(new CustomEvent('profile-banner-updated', { detail: { bannerUrl: null, bannerColor: color } }));
+      notify('Color de banner guardado', 'success');
+      setShowBannerEditor(false);
+    } catch (error) {
+      notify('No se pudo guardar el color', 'error');
     }
   };
 
@@ -195,6 +245,97 @@ export default function SeccionMiPerfil({ userId }) {
               </label>
             </div>
           </div>
+
+          {/* Banner de Perfil */}
+          <div style={{ marginBottom: '2rem', paddingBottom: '2rem', borderBottom: '1px solid #e0dbd4' }}>
+            <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '1rem', fontWeight: 700 }}>Banner de Perfil</h3>
+            {/* Preview del banner actual */}
+            <div style={{
+              width: '100%', height: '80px', borderRadius: '10px', marginBottom: '12px',
+              background: bannerUrl ? `url(${bannerUrl}) center/cover no-repeat` : (bannerColor || '#7A1E3A'),
+              border: '2px solid #e0dbd4', position: 'relative', overflow: 'hidden',
+            }}>
+              <button
+                onClick={() => setShowBannerEditor(v => !v)}
+                style={{
+                  position: 'absolute', bottom: 8, right: 8,
+                  background: 'rgba(0,0,0,0.55)', color: 'white', border: 'none',
+                  borderRadius: '6px', padding: '4px 12px', fontSize: '0.8rem',
+                  cursor: 'pointer', fontWeight: 600,
+                }}
+              >
+                ✏️ Editar
+              </button>
+            </div>
+
+            {/* Editor de banner */}
+            {showBannerEditor && (
+              <div style={{ background: '#f9f7f4', borderRadius: '10px', padding: '1rem', border: '1px solid #e0dbd4' }}>
+                {/* Subir imagen */}
+                <div style={{ marginBottom: '1rem' }}>
+                  <p style={{ margin: '0 0 8px 0', fontWeight: 600, fontSize: '0.9rem', color: '#444' }}>Subir imagen</p>
+                  <input type="file" id="banner-img-input" accept="image/*" style={{ display: 'none' }} onChange={onBannerImageChange} />
+                  <label htmlFor="banner-img-input" style={{
+                    background: 'var(--vinotinto)', color: 'white', padding: '8px 16px',
+                    borderRadius: '6px', fontSize: '0.85rem', cursor: 'pointer', display: 'inline-block',
+                  }}>
+                    {bannerUploading ? 'Subiendo...' : '📁 Elegir imagen'}
+                  </label>
+                </div>
+
+                {/* Colores predefinidos */}
+                <div style={{ marginBottom: '0.75rem' }}>
+                  <p style={{ margin: '0 0 8px 0', fontWeight: 600, fontSize: '0.9rem', color: '#444' }}>Colores sólidos</p>
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    {['#7A1E3A','#1E3A7A','#1E7A3A','#7A6A1E','#3A1E7A','#1E6A7A','#2A2A2A','#8B4513'].map(c => (
+                      <button key={c} onClick={() => onBannerColorSelect(c)}
+                        style={{ width: 32, height: 32, borderRadius: '50%', background: c, border: bannerColor === c ? '3px solid #fff' : '2px solid #ccc', cursor: 'pointer', boxShadow: bannerColor === c ? `0 0 0 2px ${c}` : 'none' }}
+                        title={c}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                {/* Gradientes predefinidos */}
+                <div style={{ marginBottom: '0.75rem' }}>
+                  <p style={{ margin: '0 0 8px 0', fontWeight: 600, fontSize: '0.9rem', color: '#444' }}>Gradientes</p>
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    {[
+                      'linear-gradient(135deg, #7A1E3A, #3A1E7A)',
+                      'linear-gradient(135deg, #1E3A7A, #1E7A6A)',
+                      'linear-gradient(135deg, #7A6A1E, #7A1E3A)',
+                      'linear-gradient(135deg, #2A2A2A, #7A1E3A)',
+                      'linear-gradient(135deg, #0f2027, #203a43, #2c5364)',
+                      'linear-gradient(135deg, #373B44, #4286f4)',
+                      'linear-gradient(135deg, #834d9b, #d04ed6)',
+                      'linear-gradient(135deg, #f093fb, #f5576c)',
+                    ].map((g, i) => (
+                      <button key={i} onClick={() => onBannerColorSelect(g)}
+                        style={{ width: 32, height: 32, borderRadius: '8px', background: g, border: bannerColor === g ? '3px solid #fff' : '2px solid #ccc', cursor: 'pointer', boxShadow: bannerColor === g ? '0 0 0 2px #7A1E3A' : 'none' }}
+                        title={`Gradiente ${i + 1}`}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                {/* Color personalizado */}
+                <div>
+                  <p style={{ margin: '0 0 8px 0', fontWeight: 600, fontSize: '0.9rem', color: '#444' }}>Color personalizado</p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <input type="color" defaultValue="#7A1E3A"
+                      onChange={e => setBannerColor(e.target.value)}
+                      style={{ width: 40, height: 40, border: 'none', cursor: 'pointer', borderRadius: '6px' }}
+                    />
+                    <button onClick={() => onBannerColorSelect(bannerColor || '#7A1E3A')}
+                      style={{ background: 'var(--vinotinto)', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '6px', fontSize: '0.85rem', cursor: 'pointer', fontWeight: 600 }}>
+                      Aplicar
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Información del usuario */}
           <div style={{ display: "flex", flexDirection: "column", gap: "16px", maxWidth: "500px" }}>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>

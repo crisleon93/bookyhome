@@ -1955,6 +1955,18 @@
       "monto": 18184.649999999998,
       "fecha": "2026-08-15T23:48:36.497268Z",
       "estado": "procesado"
+    },
+    {
+      "id": 166,
+      "tipo": "plan",
+      "id_tienda": 8,
+      "id_plan": 2,
+      "monto_plan": 29000.0,
+      "comision": 2320.0,
+      "monto": 26680.0,
+      "periodicidad": "mensual",
+      "fecha": "2026-08-19T00:34:09.781659Z",
+      "estado": "procesado"
     }
   ],
   "pagos": [

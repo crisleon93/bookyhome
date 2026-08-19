@@ -5,6 +5,7 @@ import Header from '../components/Header'
 import { IconUsers } from '../components/Icons'
 import CompradorSidebar from '../components/CompradorSidebar'
 import { getUsuarios } from '../services/api'
+import api from '../services/api'
 import SeccionCarrito from '../components/dashboard/SeccionCarrito'
 import SeccionMisCompras from '../components/dashboard/SeccionMisCompras'
 import SeccionSeguimiento from '../components/dashboard/SeccionSeguimiento'
@@ -148,6 +149,8 @@ function Home() {
   const [userEmail, setUserEmail] = useState('')
   const [userId, setUserId] = useState(null)
   const [profilePhotoUrl, setProfilePhotoUrl] = useState(null)
+  const [bannerUrl, setBannerUrl] = useState(null)
+  const [bannerColor, setBannerColor] = useState('#7A1E3A')
   const [loading, setLoading] = useState(true)
   const [activeSide, setActiveSide] = useState('Inicio')
   const [catalogoLibroInicial, setCatalogoLibroInicial] = useState(null)
@@ -163,15 +166,23 @@ function Home() {
           const id = parseInt(payload.sub)
           setUserId(id)
           setIsAuthenticated(true)
-          getUsuarios()
+          // Cargar email, foto y banner desde el endpoint de perfil propio
+          api.get('/perfil/mi-perfil')
             .then((res) => {
-              const usuario = res.data.find((u) => u.id_usuario === id)
-              if (usuario) {
-                setUserEmail(usuario.correo_usuario)
-                // Cargar foto de perfil si existe
-                if (usuario.foto_perfil) {
-                  const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000'
-                  setProfilePhotoUrl(`${baseUrl}/${usuario.foto_perfil.replace(/^\//, '')}`)
+              if (res.data) {
+                setUserEmail(res.data.correo_usuario || '')
+                const base = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000'
+                if (res.data.foto_perfil) {
+                  setProfilePhotoUrl(`${base}/${res.data.foto_perfil.replace(/^\//, '')}`)
+                } else {
+                  setProfilePhotoUrl(null)
+                }
+                if (res.data.banner_perfil) {
+                  setBannerUrl(`${base}/${res.data.banner_perfil.replace(/^\//, '')}`)
+                  setBannerColor(null)
+                } else if (res.data.banner_color) {
+                  setBannerColor(res.data.banner_color)
+                  setBannerUrl(null)
                 }
               }
             })
@@ -209,9 +220,24 @@ function Home() {
     }
     
     window.addEventListener('auth-change', handleAuthChange)
+
+    // Escuchar cuando el usuario cambia su foto de perfil
+    const handlePhotoUpdate = (e) => {
+      if (e.detail?.url) setProfilePhotoUrl(e.detail.url)
+    }
+    window.addEventListener('profile-photo-updated', handlePhotoUpdate)
+
+    // Escuchar cuando el usuario cambia su banner
+    const handleBannerUpdate = (e) => {
+      if (e.detail?.bannerUrl) { setBannerUrl(e.detail.bannerUrl); setBannerColor(null) }
+      else if (e.detail?.bannerColor) { setBannerColor(e.detail.bannerColor); setBannerUrl(null) }
+    }
+    window.addEventListener('profile-banner-updated', handleBannerUpdate)
     
     return () => {
       window.removeEventListener('auth-change', handleAuthChange)
+      window.removeEventListener('profile-photo-updated', handlePhotoUpdate)
+      window.removeEventListener('profile-banner-updated', handleBannerUpdate)
     }
   }, [])
   
@@ -248,6 +274,8 @@ function Home() {
           userName={userName}
           userEmail={userEmail}
           profilePhotoUrl={profilePhotoUrl}
+          bannerUrl={bannerUrl}
+          bannerColor={bannerColor}
           activeSide={activeSide}
           onSelect={handleSelectSection}
         />
