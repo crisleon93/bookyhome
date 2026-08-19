@@ -17,13 +17,19 @@ import {
   IconMail,
   IconLock,
   IconEyeOpen,
-  IconEyeClosed
+  IconEyeClosed,
+  IconBell,
+  IconTruck,
+  IconMessage,
+  IconLogOut
 } from './Icons';
 import { login } from '../services/api';
 import { jwtDecode } from 'jwt-decode';
 import { notify } from './ToastProvider';
 import Register from '../pages/Register';
 import Libreria from '../pages/Libreria';
+import { notificacionesService } from '../services/notificaciones';
+import { chatService } from '../services/chat';
 
 function ModalOption({ to, onClick, iconPath, title, desc, onClose }) {
   const content = (
@@ -78,6 +84,8 @@ function Header({ variant, hasSidebar }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [showPass, setShowPass] = useState(false);
+  const [noLeidosNotif, setNoLeidosNotif] = useState(0);
+  const [noLeidosMensajes, setNoLeidosMensajes] = useState(0);
 
   const isHome = location.pathname === '/';
   const isDashboardPage = hasSidebar ||
@@ -136,6 +144,29 @@ function Header({ variant, hasSidebar }) {
     window.addEventListener('click', handleClose);
     return () => window.removeEventListener('click', handleClose);
   }, [dropdownOpen]);
+
+  // Cargar contadores de notificaciones y mensajes
+  useEffect(() => {
+    if (!isLoggedIn) return;
+    
+    let mounted = true;
+    const cargarContadores = async () => {
+      try {
+        const notifData = await notificacionesService.obtener(false, 1, 0);
+        if (mounted) setNoLeidosNotif(notifData.no_leidas || 0);
+
+        const salasData = await chatService.getSalas();
+        const totalNo = (salasData.salas || []).reduce((acc, s) => acc + (s.no_leidos || 0), 0);
+        if (mounted) setNoLeidosMensajes(totalNo);
+      } catch (err) {
+        console.error('Error contadores header:', err);
+      }
+    };
+    
+    cargarContadores();
+    const iv = setInterval(cargarContadores, 10000);
+    return () => { mounted = false; clearInterval(iv); };
+  }, [isLoggedIn]);
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
@@ -232,52 +263,104 @@ function Header({ variant, hasSidebar }) {
             </form>
 
             <div className="header-actions">
-              {isLoggedIn && hasSidebar ? null : isLoggedIn && !hasSidebar ? (
-                <div className="user-dropdown-wrapper">
-                  <button
-                    type="button"
-                    className="user-access"
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: '6px' }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setDropdownOpen(!dropdownOpen);
-                    }}
-                  >
-                    <IconUser />
-                    <span>Mi Cuenta</span>
-                  </button>
-                  <div className={`user-dropdown-menu ${dropdownOpen ? 'open' : ''}`}>
-                    <Link
-                      to={userRole === 'vendedor' ? '/mi-tienda' : userRole === 'admin' ? '/admin' : '/'}
-                      className="user-dropdown-item"
-                      onClick={() => setDropdownOpen(false)}
+              {isLoggedIn ? (
+                <>
+                  {/* Accesos rápidos para usuarios logueados */}
+                  <div className="quick-access">
+                    <Link 
+                      to="/?seccion=Carrito" 
+                      className="quick-access-item"
+                      title="Carrito de compras"
                     >
-                      Dashboard
+                      <IconCart />
+                      <span className="quick-access-label">Carrito</span>
                     </Link>
-                    <Link to="/?seccion=Lista%20de%20Deseos" className="user-dropdown-item" onClick={() => setDropdownOpen(false)}>
-                      Lista de deseos
-                    </Link>
-                    <Link to="/?seccion=Carrito" className="user-dropdown-item" onClick={() => setDropdownOpen(false)}>
-                      Carrito
-                    </Link>
-                    <div className="user-dropdown-divider" />
-                    <button
-                      type="button"
-                      className="user-dropdown-item"
-                      style={{ color: '#dc2626' }}
-                      onClick={() => {
-                        setDropdownOpen(false);
-                        localStorage.removeItem("token");
-                        setAuthState({ isLoggedIn: false, userRole: null });
-                        window.dispatchEvent(new CustomEvent('auth-change', { detail: { authenticated: false } }));
-                        notify("Sesión cerrada", "info");
-                        navigate("/");
-                      }}
+                    
+                    <Link 
+                      to="/?seccion=Notificaciones" 
+                      className="quick-access-item"
+                      title="Notificaciones"
                     >
-                      Cerrar Sesión
-                    </button>
+                      <IconBell />
+                      {noLeidosNotif > 0 && (
+                        <span className="notification-badge">{noLeidosNotif}</span>
+                      )}
+                      <span className="quick-access-label">Notificaciones</span>
+                    </Link>
+                    
+                    <Link 
+                      to="/?seccion=Mensajes" 
+                      className="quick-access-item"
+                      title="Mensajes y Chat"
+                    >
+                      <IconMessage />
+                      {noLeidosMensajes > 0 && (
+                        <span className="notification-badge">{noLeidosMensajes}</span>
+                      )}
+                      <span className="quick-access-label">Chat</span>
+                    </Link>
+                    
+                    <Link 
+                      to="/?seccion=Seguimiento" 
+                      className="quick-access-item"
+                      title="Seguimiento de pedidos"
+                    >
+                      <IconTruck />
+                      <span className="quick-access-label">Pedidos</span>
+                    </Link>
+                    
+                    <Link 
+                      to="/?seccion=Lista%20de%20Deseos" 
+                      className="quick-access-item"
+                      title="Lista de deseos"
+                    >
+                      <IconFavorites />
+                      <span className="quick-access-label">Favoritos</span>
+                    </Link>
+                    
+                    <div className="user-dropdown-wrapper">
+                      <button
+                        type="button"
+                        className="quick-access-item user-dropdown-btn"
+                        title="Mi cuenta"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setDropdownOpen(!dropdownOpen);
+                        }}
+                      >
+                        <IconUser />
+                        <span className="quick-access-label">Perfil</span>
+                      </button>
+                      <div className={`user-dropdown-menu ${dropdownOpen ? 'open' : ''}`}>
+                        <Link
+                          to="/?seccion=Mi%20Perfil"
+                          className="user-dropdown-item"
+                          onClick={() => setDropdownOpen(false)}
+                        >
+                          <IconUser width={16} height={16} />
+                          <span>Mi Perfil</span>
+                        </Link>
+                        <div className="user-dropdown-divider" />
+                        <button
+                          type="button"
+                          className="user-dropdown-item"
+                          style={{ color: '#dc2626' }}
+                          onClick={() => {
+                            setDropdownOpen(false);
+                            localStorage.removeItem("token");
+                            setAuthState({ isLoggedIn: false, userRole: null });
+                            window.dispatchEvent(new CustomEvent('auth-change', { detail: { authenticated: false } }));
+                            notify("Sesión cerrada", "info");
+                            navigate("/");
+                          }}
+                        >
+                          <IconLogOut width={16} height={16} />
+                          <span>Cerrar Sesión</span>
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                </div>
+                </>
               ) : (
                 <>
                   <button
@@ -345,7 +428,7 @@ function Header({ variant, hasSidebar }) {
               <div className="auth-field">
                 <label htmlFor="modal-login-email">Email</label>
                 <div className="auth-input-wrapper">
-                  <IconMail />
+                  <IconMail className="auth-input-icon" />
                   <input
                     id="modal-login-email"
                     type="email"
@@ -358,7 +441,7 @@ function Header({ variant, hasSidebar }) {
               <div className="auth-field">
                 <label htmlFor="modal-login-password">Contraseña</label>
                 <div className="auth-input-wrapper">
-                  <IconLock />
+                  <IconLock className="auth-input-icon" />
                   <input
                     id="modal-login-password"
                     type={showPass ? 'text' : 'password'}

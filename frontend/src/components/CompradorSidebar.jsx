@@ -1,26 +1,17 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   IconStoreAlt as IconHome,
   IconBookOpen,
-  IconFavoritesAlt as IconFavorites,
-  IconCartAlt as IconCart,
   IconShoppingBag,
   IconAlertTriangle,
   IconTool,
-  IconUser,
   IconSettings,
   IconChevronLeft,
   IconMenu,
   IconLogOut,
-  IconMail,
-  IconBell,
-  IconMapPin as IconLocation,
-  IconCreditCard,
-  IconTruck
+  IconMapPin as IconLocation
 } from "./Icons";
-import { notificacionesService } from '../services/notificaciones';
-import { chatService } from '../services/chat';
 
 const VINOTINTO = '#7A1E3A';
 const WHITE = '#FFFFFF';
@@ -29,15 +20,9 @@ const WHITE = '#FFFFFF';
 const ICONS = {
   "Inicio": <IconHome width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
   "Catálogo": <IconBookOpen width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
-  "Lista de Deseos": <IconFavorites width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
-  "Carrito": <IconCart width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
   "Mis Compras": <IconShoppingBag width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
-  "Seguimiento": <IconTruck width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
   "Quejas y reclamos": <IconAlertTriangle width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
   "Soporte técnico": <IconTool width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
-  "Notificaciones": <IconBell className="" width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
-  "Mensajes": <IconMail className="" width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
-  "Mi Perfil": <IconUser width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
   "Mis Direcciones": <IconLocation width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
   "Configuración": <IconSettings width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
 };
@@ -45,15 +30,9 @@ const ICONS = {
 const MENU_LINKS = [
   { name: "Inicio", label: "Inicio" },
   { name: "Catálogo", label: "Catálogo" },
-  { name: "Lista de Deseos", label: "Lista de deseos" },
-  { name: "Carrito", label: "Carrito" },
   { name: "Mis Compras", label: "Mis compras" },
-  { name: "Seguimiento", label: "Seguimiento de envío" },
   { name: "Quejas y reclamos", label: "Quejas y reclamos" },
   { name: "Soporte técnico", label: "Soporte técnico" },
-  { name: "Notificaciones", label: "Notificaciones" },
-  { name: "Mensajes", label: "Mensajes" },
-  { name: "Mi Perfil", label: "Perfil" },
   { name: "Mis Direcciones", label: "Direcciones" },
   { name: "Configuración", label: "Configuración" },
 ];
@@ -68,30 +47,8 @@ function SidebarIcon(props) {
 export default function CompradorSidebar({ userName, userEmail, profilePhotoUrl, bannerUrl, bannerColor, activeSide, onSelect }) {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [noLeidosNotif, setNoLeidosNotif] = useState(0);
-  const [noLeidosMensajes, setNoLeidosMensajes] = useState(0);
   const avatarSrc = profilePhotoUrl || null;
   const avatarAlt = `${userName || 'Usuario'} avatar`;
-
-  useEffect(() => {
-    let mounted = true;
-    const cargar = async () => {
-      try {
-        const notifData = await notificacionesService.obtener(false, 1, 0);
-        if (!mounted) return;
-        setNoLeidosNotif(notifData.no_leidas || 0);
-
-        const salasData = await chatService.getSalas();
-        const totalNo = (salasData.salas || []).reduce((acc, s) => acc + (s.no_leidos || 0), 0);
-        setNoLeidosMensajes(totalNo);
-      } catch (err) {
-        console.error('Error contadores sidebar comprador', err);
-      }
-    };
-    cargar();
-    const iv = setInterval(cargar, 10000);
-    return () => { mounted = false; clearInterval(iv); };
-  }, []);
 
   useEffect(() => {
     document.documentElement.style.setProperty('--dashboard-sidebar-width', sidebarOpen ? '250px' : '76px');
@@ -240,19 +197,7 @@ export default function CompradorSidebar({ userName, userEmail, profilePhotoUrl,
               <span style={{ display: 'flex', flexShrink: 0, alignItems: 'center', width: '24px', height: '24px', justifyContent: 'center' }}>
                 {ICONS[item.name]}
               </span>
-              {sidebarOpen && (
-                <span style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1 }}>
-                  <span>{item.label}</span>
-                  <span style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                    {item.name === 'Notificaciones' && noLeidosNotif > 0 && (
-                      <span style={{ background: '#FFC107', color: '#000', borderRadius: 12, padding: '2px 8px', fontSize: 12, fontWeight: 700 }}>{noLeidosNotif}</span>
-                    )}
-                    {item.name === 'Mensajes' && noLeidosMensajes > 0 && (
-                      <span style={{ background: '#F87171', color: '#fff', borderRadius: 12, padding: '2px 8px', fontSize: 12, fontWeight: 700 }}>{noLeidosMensajes}</span>
-                    )}
-                  </span>
-                </span>
-              )}
+              {sidebarOpen && <span>{item.label}</span>}
             </button>
           );
         })}

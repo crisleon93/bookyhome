@@ -15,9 +15,9 @@
 
 /* -- Grid de tarjetas -- */
 .catalogo-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 20px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
   margin-top: 24px;
 }
 
