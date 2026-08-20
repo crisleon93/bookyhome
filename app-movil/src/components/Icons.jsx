@@ -199,10 +199,10 @@ export const IconStore = ({ size = 18, color = '#C5425A' }) => (
 );
 
 // ── Estrella ──────────────────────────────────────────────────────────────────
-export const IconStar = ({ size = 22, color = '#7A1E3A' }) => (
+export const IconStar = ({ size = 22, color = '#7A1E3A', filled = false }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none"
     stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-    <Path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" stroke={color}/>
+    <Path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill={filled ? color : 'none'} stroke={color}/>
   </Svg>
 );
 
@@ -220,6 +220,17 @@ export const IconMessage = ({ size = 22, color = '#7A1E3A' }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none"
     stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
     <Path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" stroke={color}/>
+  </Svg>
+);
+
+// ── Calendario ───────────────────────────────────────────────────────────────
+export const IconCalendar = ({ size = 22, color = '#7A1E3A' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+    stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+    <Rect x="3" y="4" width="18" height="18" rx="2" ry="2" stroke={color}/>
+    <Line x1="16" y1="2" x2="16" y2="6" stroke={color}/>
+    <Line x1="8" y1="2" x2="8" y2="6" stroke={color}/>
+    <Line x1="3" y1="10" x2="21" y2="10" stroke={color}/>
   </Svg>
 );
 
@@ -301,4 +312,4 @@ export const IconDollar = ({ size = 20, color = '#7A1E3A' }) => (
     <Path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
   </Svg>
 );
-
+

@@ -30,6 +30,10 @@ import Direcciones from '../screens/Direcciones';
 import VendedorHome from '../screens/VendedorHome';
 import AdminHome from '../screens/AdminHome';
 import PedidosVendedor from '../screens/PedidosVendedor';
+import VentasVendedor from '../screens/VentasVendedor';
+import CalificacionesVendedor from '../screens/CalificacionesVendedor';
+import SuscripcionesVendedor from '../screens/SuscripcionesVendedor';
+import ImpulsosVendedor from '../screens/ImpulsosVendedor';
 
 const Stack = createNativeStackNavigator();
 
@@ -58,7 +62,11 @@ export default function AppNavigator() {
           <Stack.Screen name="VendorHome" component={VendedorHome} options={{ headerShown: false }} />
           <Stack.Screen name="Libreria" component={Libreria} options={{ headerShown: false }} />
           <Stack.Screen name="PublicarLibro" component={PublicarLibro} options={{ headerShown: false }} />
+          <Stack.Screen name="VentasVendedor" component={VentasVendedor} options={{ headerShown: false }} />
           <Stack.Screen name="PedidosVendedor" component={PedidosVendedor} options={{ headerShown: false }} />
+          <Stack.Screen name="CalificacionesVendedor" component={CalificacionesVendedor} options={{ headerShown: false }} />
+          <Stack.Screen name="SuscripcionesVendedor" component={SuscripcionesVendedor} options={{ headerShown: false }} />
+          <Stack.Screen name="ImpulsosVendedor" component={ImpulsosVendedor} options={{ headerShown: false }} />
           <Stack.Screen name="Direcciones" component={Direcciones} options={{ title: 'Mis direcciones' }} />
           <Stack.Screen name="ConfiguracionTienda" component={ConfiguracionTienda} options={{ headerShown: false }} />
           <Stack.Screen name="PerfilTienda" component={PerfilTienda} options={{ headerShown: false }} />

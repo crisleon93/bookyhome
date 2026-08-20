@@ -1,6 +1,17 @@
 import { useState, useEffect } from "react";
 import api from "../services/api";
 
+const fechaLocalISO = (fecha) => [
+  fecha.getFullYear(),
+  String(fecha.getMonth() + 1).padStart(2, "0"),
+  String(fecha.getDate()).padStart(2, "0"),
+].join("-");
+
+const formatoFecha = (fecha) => {
+  if (!fecha) return "No disponible";
+  return new Date(`${String(fecha).slice(0, 10)}T12:00:00`).toLocaleDateString("es-CO");
+};
+
 export default function SeccionSuscripciones({ tiendaId, onNavegar }) {
   const [planes, setPlanes] = useState([]);
   const [miSuscripcion, setMiSuscripcion] = useState(null);
@@ -37,10 +48,10 @@ export default function SeccionSuscripciones({ tiendaId, onNavegar }) {
     setMensaje("");
     try {
       const hoy = new Date();
-      const fechaInicio = hoy.toISOString().split("T")[0];
+      const fechaInicio = fechaLocalISO(hoy);
       const fin = new Date();
       fin.setMonth(hoy.getMonth() + 1); // 1 mes de duración
-      const fechaFin = fin.toISOString().split("T")[0];
+      const fechaFin = fechaLocalISO(fin);
 
       const payload = {
         id_plan: idPlan,
@@ -274,8 +285,8 @@ export default function SeccionSuscripciones({ tiendaId, onNavegar }) {
         <div style={{ marginTop: "32px", padding: "20px", backgroundColor: "#f9f8f6", borderRadius: "12px", border: "1px solid #e0dbd4" }}>
           <h3 style={{ margin: "0 0 12px 0", color: "#333" }}>Detalles de tu Suscripción Activa</h3>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "24px", fontSize: "0.9rem", color: "#555" }}>
-            <div>Fecha de inicio: <strong>{new Date(suscripcionActiva.fecha_inicio).toLocaleDateString("es-CO")}</strong></div>
-            <div>Fecha de vencimiento: <strong>{new Date(suscripcionActiva.fecha_fin).toLocaleDateString("es-CO")}</strong></div>
+            <div>Fecha de inicio: <strong>{formatoFecha(suscripcionActiva.fecha_inicio)}</strong></div>
+            <div>Fecha de vencimiento: <strong>{formatoFecha(suscripcionActiva.fecha_fin)}</strong></div>
             <div>Método de pago: <strong>{suscripcionActiva.metodo_pago}</strong></div>
             <div>Monto cobrado: <strong>${parseFloat(suscripcionActiva.monto_pagado).toLocaleString("es-CO")}</strong></div>
           </div>

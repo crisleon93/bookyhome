@@ -607,6 +607,11 @@ def obtener_ventas_tienda(id_tienda: int):
     pedidos = obtener_pedidos_tienda(id_tienda)
     ventas = []
     for p in pedidos:
+        # El registro de ventas solo incluye órdenes pagadas, enviadas o
+        # entregadas. Las pendientes y canceladas se gestionan desde Pedidos,
+        # no desde Ventas.
+        if str(p.get("estado", "")).lower() not in ("pagado", "enviado", "entregada"):
+            continue
         for item in p["items"]:
             ventas.append({
                 "id_orden": p["id_orden"],

@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'http://192.168.0.5:8000',
+  baseURL: 'http://192.168.1.10:8000',
   timeout: 10000,
 });
 
@@ -50,6 +50,7 @@ export const getReviewsForBook = (id) => api.get(`/resenas/resenas/libro/${id}`)
 export const createReview = (payload) => api.post('/resenas/resenas/crear', payload);
 export const updateReview = (id, payload) => api.put(`/resenas/resenas/${id}`, payload);
 export const deleteReview = (id) => api.delete(`/resenas/resenas/${id}`);
+export const getCalificacionesVendedor = (id_tienda) => api.get(`/perfil/calificaciones-tienda/${id_tienda}`);
 
 // ===== Lista de Deseos =====
 // Favoritos es la lista predeterminada y compartida con la versión web.
@@ -100,8 +101,20 @@ export const getStatsVendedor = () => api.get('/libros/stats');
 export const getTopVendidos = () => api.get('/libros/top-vendidos');
 export const getAlertasStock = (umbral = 3) => api.get(`/libros/alertas-stock?umbral=${umbral}`);
 
+// ===== Herramientas y suscripciones del vendedor =====
+export const getPlanesHerramientas = () => api.get('/herramientas/planes');
+export const getMiSuscripcionHerramientas = () => api.get('/herramientas/mi-suscripcion');
+export const suscribirPlanHerramientas = (data) => api.post('/herramientas/suscribir', data);
+export const cancelarSuscripcionHerramientas = () => api.delete('/herramientas/cancelar');
+
+// ===== Impulsos publicitarios del vendedor =====
+export const getTiposImpulso = () => api.get('/impulsos/tipos');
+export const getMisImpulsos = () => api.get('/impulsos/mis-impulsos');
+export const contratarImpulso = (data) => api.post('/impulsos/contratar', data);
+export const cancelarImpulso = (id_impulso) => api.delete(`/impulsos/${id_impulso}`);
+
 // ===== Pedidos del vendedor =====
-export const getPedidosRecientes = () => api.get('/libros/mis-ventas?limit=5');
+export const getMisVentas = () => api.get('/libros/mis-ventas');
 export const getMisPedidos = () => api.get('/libros/mis-pedidos');
 export const actualizarEstadoOrden = (id_orden, estado) =>
   api.put(`/perfil/ordenes/${id_orden}/estado`, { estado });
