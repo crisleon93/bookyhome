@@ -74,6 +74,8 @@ function Header({ variant, hasSidebar }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [locationOpen, setLocationOpen] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState(localStorage.getItem('bookyhome_location') || 'Todo el país (Colombia)');
+  const [detectingLocation, setDetectingLocation] = useState(false);
+  const [locationError, setLocationError] = useState('');
   const [loginOpen, setLoginOpen] = useState(false);
   const [registerOpen, setRegisterOpen] = useState(false);
   const [libreriaOpen, setLibreriaOpen] = useState(false);
@@ -100,8 +102,71 @@ function Header({ variant, hasSidebar }) {
       setShowPass(false);
     }
   }, [loginOpen]);
+
+  useEffect(() => {
+    const openLoginModal = () => setLoginOpen(true);
+    window.addEventListener('bookyhome:open-login', openLoginModal);
+    return () => window.removeEventListener('bookyhome:open-login', openLoginModal);
+  }, []);
+
+  useEffect(() => {
+    const openRegisterModal = () => setRegisterOpen(true);
+    window.addEventListener('bookyhome:open-register', openRegisterModal);
+    return () => window.removeEventListener('bookyhome:open-register', openRegisterModal);
+  }, []);
+
+  useEffect(() => {
+    const openLibraryRegisterModal = () => setLibreriaOpen(true);
+    window.addEventListener('bookyhome:open-library-register', openLibraryRegisterModal);
+    return () => window.removeEventListener('bookyhome:open-library-register', openLibraryRegisterModal);
+  }, []);
+
   const isSimple = variant === "simple";
   const isWhite = variant === "white" || !variant;
+
+  const detectUserLocation = () => {
+    if (!navigator.geolocation) {
+      setLocationError('Tu navegador no permite detectar la ubicación.');
+      return;
+    }
+
+    setDetectingLocation(true);
+    setLocationError('');
+    navigator.geolocation.getCurrentPosition(async ({ coords }) => {
+      try {
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?format=jsonv2&addressdetails=1&accept-language=es&lat=${coords.latitude}&lon=${coords.longitude}`
+        );
+        if (!response.ok) throw new Error('No se pudo consultar la ubicación');
+
+        const data = await response.json();
+        const address = data.address || {};
+        const city = address.city || address.town || address.municipality || address.county;
+        const locality = address.suburb || address.neighbourhood || address.city_district || address.quarter;
+        const detectedLocation = [city, locality].filter(Boolean).join(', ');
+
+        if (!detectedLocation) throw new Error('No encontramos una ciudad válida');
+
+        setSelectedLocation(detectedLocation);
+        localStorage.setItem('bookyhome_location', detectedLocation);
+        setLocationOpen(false);
+        notify(`Ubicación detectada: ${detectedLocation}`, 'success');
+      } catch {
+        setLocationError('No pudimos convertir tu ubicación en una ciudad.');
+      } finally {
+        setDetectingLocation(false);
+      }
+    }, () => {
+      setDetectingLocation(false);
+      setLocationError('Permite el acceso a tu ubicación para detectarla automáticamente.');
+    }, { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 });
+  };
+
+  useEffect(() => {
+    if (locationOpen && !localStorage.getItem('bookyhome_location')) {
+      detectUserLocation();
+    }
+  }, [locationOpen]);
 
   const [authState, setAuthState] = useState(() => {
     const t = localStorage.getItem("token");
@@ -531,6 +596,31 @@ function Header({ variant, hasSidebar }) {
               >✕</button>
               <h2 style={{ margin: '0 0 0.3rem', fontSize: '1.3rem', fontWeight: 800, color: '#2A2A2A', textAlign: 'center' }}>Elige tu ubicación</h2>
               <p style={{ textAlign: 'center', color: '#888', fontSize: '0.85rem', marginBottom: '1.2rem' }}>Selecciona dónde quieres recibir tus compras.</p>
+              <button
+                type="button"
+                onClick={detectUserLocation}
+                disabled={detectingLocation}
+                style={{
+                  width: '100%',
+                  padding: '11px 16px',
+                  marginBottom: '10px',
+                  border: '1.5px solid #7A1E3A',
+                  borderRadius: '8px',
+                  background: '#fff',
+                  color: '#7A1E3A',
+                  cursor: detectingLocation ? 'wait' : 'pointer',
+                  fontFamily: 'inherit',
+                  fontSize: '14px',
+                  fontWeight: 700,
+                }}
+              >
+                {detectingLocation ? 'Detectando ubicación...' : 'Usar mi ubicación actual'}
+              </button>
+              {locationError && (
+                <p style={{ color: '#9b1c31', fontSize: '0.78rem', textAlign: 'center', margin: '0 0 10px' }}>
+                  {locationError}
+                </p>
+              )}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {['Todo el país (Colombia)', 'Bogotá', 'Medellín', 'Cali', 'Barranquilla', 'Cartagena', 'Bucaramanga'].map((city) => (
                   <button

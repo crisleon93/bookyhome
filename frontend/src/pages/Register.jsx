@@ -550,13 +550,19 @@ function Register({ isModal = false, onSuccess }) {
 
               checked={terminosCompletos}
 
-              readOnly
+              onChange={e => {
+
+                setAceptoTerminos(e.target.checked)
+
+                setAceptoPrivacidad(e.target.checked)
+
+              }}
 
             />
 
             <span>
 
-              He leído y acepto los{' '}
+              Acepto los{' '}
 
               <button 
 
