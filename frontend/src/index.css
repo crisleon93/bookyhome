@@ -115,7 +115,7 @@ header {
 #main-header .layout-container {
   max-width: 100%;
   padding-left: 2rem;
-  padding-right: 2rem;
+  padding-right: 3.5rem;
 }
 
 .header-container {
@@ -218,8 +218,8 @@ header.scrolled { box-shadow: 0 2px 20px rgba(122, 30, 58, 0.15); }
 }
 
 .search-wrapper {
-  flex: 1 1 420px;
-  max-width: 580px;
+  flex: 1 1 520px;
+  max-width: 720px;
   min-width: 180px;
   position: relative;
   display: flex;
@@ -307,6 +307,7 @@ header.scrolled { box-shadow: 0 2px 20px rgba(122, 30, 58, 0.15); }
 .header-actions {
   display: flex;
   align-items: center;
+  gap: 1.25rem;
   flex-shrink: 0;
 }
 
@@ -533,11 +534,76 @@ button.quick-access-item {
   justify-content: flex-end;
 }
 
-.hero-image img {
+.hero-carousel-frame {
+  position: relative;
   width: 100%;
   max-width: 400px;
+}
+
+.hero-carousel-frame img {
+  width: 100%;
+  aspect-ratio: 1 / 0.93;
+  object-fit: cover;
   border-radius: 12px;
   box-shadow: 0 20px 50px rgba(0,0,0,0.35);
+  animation: hero-carousel-fade 0.45s ease;
+}
+
+.hero-carousel-arrow {
+  position: absolute;
+  top: 50%;
+  width: 34px;
+  height: 34px;
+  transform: translateY(-50%);
+  border: 1px solid rgba(255, 255, 255, 0.75);
+  border-radius: 50%;
+  background: rgba(42, 42, 42, 0.55);
+  color: #fff;
+  font-size: 1.8rem;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s ease, background-color 0.2s ease;
+}
+
+.hero-carousel-frame:hover .hero-carousel-arrow,
+.hero-carousel-arrow:focus-visible {
+  opacity: 1;
+}
+
+.hero-carousel-arrow:hover {
+  background: rgba(122, 30, 58, 0.9);
+}
+
+.hero-carousel-arrow--prev { left: -20px; }
+.hero-carousel-arrow--next { right: -20px; }
+
+.hero-carousel-dots {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  display: flex;
+  gap: 6px;
+  transform: translateX(-50%);
+}
+
+.hero-carousel-dots button {
+  width: 8px;
+  height: 8px;
+  padding: 0;
+  border: 1px solid #fff;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+}
+
+.hero-carousel-dots button.active {
+  background: #fff;
+}
+
+@keyframes hero-carousel-fade {
+  from { opacity: 0.45; }
+  to { opacity: 1; }
 }
 
 /* ===========================
@@ -3796,10 +3862,6 @@ body.auth-page {
   position: relative;
   display: flex;
   align-items: center;
-}
-
-.user-dropdown-btn {
-  /* Inherits quick-access-item */
 }
 
 .user-dropdown-menu {

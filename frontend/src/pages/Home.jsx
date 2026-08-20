@@ -31,6 +31,15 @@ import arte from '../assets/arte.png'
 import biografia from '../assets/biografia.png'
 import infantil from '../assets/infantil.png'
 import tecnologia from '../assets/tecnologia.png'
+
+const HERO_IMAGES = [
+  { src: 'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=1000&q=85', alt: 'Personas explorando libros en una librería' },
+  { src: 'https://images.unsplash.com/photo-1521587760476-6c12a4b040da?w=1000&q=85', alt: 'Pasillo de una librería con estanterías llenas de libros' },
+  { src: 'https://images.unsplash.com/photo-1495446815901-a7297e633e8d?w=1000&q=85', alt: 'Libros abiertos sobre una mesa de lectura' },
+  { src: 'https://images.unsplash.com/photo-1507842217343-583bb7270b66?w=1000&q=85', alt: 'Biblioteca con grandes estanterías de libros' },
+  { src: 'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=1000&q=85', alt: 'Pila de libros de diferentes colores' },
+  { src: 'https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=1000&q=85', alt: 'Libro abierto junto a una taza de café' },
+]
 // ── Íconos ────────────────────────────────────────────────────────────────────
 
 const IconLocation = () => (
@@ -118,9 +127,19 @@ function Modal({ open, onClose, title, subtitle, children }) {
   )
 }
 
-function ModalOption({ to, iconPath, title, desc, onClose }) {
+function ModalOption({ to, onClick, iconPath, title, desc, onClose }) {
   return (
-    <Link to={to} className="modal-option" onClick={onClose}>
+    <Link
+      to={to || '#'}
+      className="modal-option"
+      onClick={(event) => {
+        if (onClick) {
+          event.preventDefault()
+          onClick()
+        }
+        if (onClose) onClose()
+      }}
+    >
       <div className="modal-option-icon">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
           stroke="currentColor" strokeWidth="1.8">
@@ -141,8 +160,17 @@ function ModalOption({ to, iconPath, title, desc, onClose }) {
 function Home() {
   const [joinOpen,     setJoinOpen]     = useState(false)
   const [registerOpen, setRegisterOpen] = useState(false)
+  const [heroImageIndex, setHeroImageIndex] = useState(0)
   const navigate = useNavigate()
   const location = useLocation()
+
+  useEffect(() => {
+    const carouselTimer = setInterval(() => {
+      setHeroImageIndex(current => (current + 1) % HERO_IMAGES.length)
+    }, 5000)
+
+    return () => clearInterval(carouselTimer)
+  }, [])
   
   // Dashboard state
   const [isAuthenticated, setIsAuthenticated] = useState(false)
@@ -363,12 +391,52 @@ function Home() {
             <button className="btn btn-primary" onClick={() => setJoinOpen(true)}>
               Comenzar a comprar
             </button>
-            <Link to="/libreria" className="btn" id="btn-vender-libros">Vender libros</Link>
+            <button
+              type="button"
+              className="btn"
+              id="btn-vender-libros"
+              onClick={() => window.dispatchEvent(new CustomEvent('bookyhome:open-library-register'))}
+            >
+              Vender libros
+            </button>
           </div>
         </div>
-        <div className="hero-image">
-          <img src="https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=800&q=80"
-            alt="Personas explorando libros en una librería" />
+        <div className="hero-image" aria-label="Galería de libros">
+          <div className="hero-carousel-frame">
+            <img
+              key={HERO_IMAGES[heroImageIndex].src}
+              src={HERO_IMAGES[heroImageIndex].src}
+              alt={HERO_IMAGES[heroImageIndex].alt}
+            />
+            <button
+              type="button"
+              className="hero-carousel-arrow hero-carousel-arrow--prev"
+              aria-label="Imagen anterior"
+              onClick={() => setHeroImageIndex(current => (current - 1 + HERO_IMAGES.length) % HERO_IMAGES.length)}
+            >
+              ‹
+            </button>
+            <button
+              type="button"
+              className="hero-carousel-arrow hero-carousel-arrow--next"
+              aria-label="Siguiente imagen"
+              onClick={() => setHeroImageIndex(current => (current + 1) % HERO_IMAGES.length)}
+            >
+              ›
+            </button>
+            <div className="hero-carousel-dots" aria-label="Seleccionar imagen">
+              {HERO_IMAGES.map((image, index) => (
+                <button
+                  type="button"
+                  key={image.src}
+                  className={index === heroImageIndex ? 'active' : ''}
+                  aria-label={`Mostrar imagen ${index + 1}`}
+                  aria-current={index === heroImageIndex ? 'true' : undefined}
+                  onClick={() => setHeroImageIndex(index)}
+                />
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -469,10 +537,14 @@ function Home() {
       {/* MODAL: Comenzar a comprar */}
       <Modal open={joinOpen} onClose={() => setJoinOpen(false)}
         title="¡Bienvenido a BookyHome!" subtitle="¿Ya tienes cuenta o eres nuevo por aquí?">
-        <ModalOption to="/login" onClose={() => setJoinOpen(false)}
+        <ModalOption
+          onClick={() => window.dispatchEvent(new CustomEvent('bookyhome:open-login'))}
+          onClose={() => setJoinOpen(false)}
           iconPath="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.5 20.25a8.25 8.25 0 0115 0"
           title="Ya tengo cuenta" desc="Iniciar sesión en BookyHome" />
-        <ModalOption to="/register" onClose={() => setJoinOpen(false)}
+        <ModalOption
+          onClick={() => window.dispatchEvent(new CustomEvent('bookyhome:open-register'))}
+          onClose={() => setJoinOpen(false)}
           iconPath="M19 7.5v3m0 0v3m0-3h3m-3 0h-3m-4.5-1.5a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM3 19.235v-.11a6.375 6.375 0 0112.75 0v.109A12.318 12.318 0 019.374 21c-2.331 0-4.512-.645-6.374-1.766z"
           title="Soy nuevo" desc="Crear una cuenta gratis" />
       </Modal>

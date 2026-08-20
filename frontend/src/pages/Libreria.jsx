@@ -364,10 +364,13 @@ function Libreria({ isModal = false, onSuccess }) {
             <input
               type="checkbox"
               checked={terminosCompletos}
-              readOnly
+              onChange={e => {
+                setAceptoTerminos(e.target.checked)
+                setAceptoPrivacidad(e.target.checked)
+              }}
             />
             <span>
-              He leído y acepto los{' '}
+              Acepto los{' '}
               <button 
                 type="button" 
                 onClick={() => setShowTerminos(true)}
