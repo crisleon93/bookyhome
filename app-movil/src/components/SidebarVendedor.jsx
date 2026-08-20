@@ -125,11 +125,11 @@ export default function SidebarVendedor({ visible, onClose, user, navigation, on
             <MenuItem icon={<IconBooks   size={19} color={WHITE} />} label="Mis Libros"         onPress={() => go('Libreria')} />
             <MenuItem icon={<IconBook    size={19} color={WHITE} />} label="Publicar Libro"     onPress={() => go('PublicarLibro')} />
             <Sep />
-            <MenuItem icon={<IconStore   size={19} color={WHITE} />} label="Ventas"             onPress={null} soon />
+            <MenuItem icon={<IconStore   size={19} color={WHITE} />} label="Ventas"             onPress={() => go('VentasVendedor')} />
             <MenuItem icon={<IconPackage size={19} color={WHITE} />} label="Pedidos"            onPress={() => go('PedidosVendedor')} />
             <Sep />
             <MenuItem icon={<IconDollar  size={19} color={WHITE} />} label="Nómina"             onPress={null} soon />
-            <MenuItem icon={<IconStar    size={19} color={WHITE} />} label="Calificaciones"     onPress={null} soon />
+            <MenuItem icon={<IconStar    size={19} color={WHITE} />} label="Calificaciones"     onPress={() => go('CalificacionesVendedor')} />
             <MenuItem icon={<IconAlertTriangle size={19} color={WHITE} />} label="Quejas y reclamos" onPress={() => go('QuejasReclamos')} />
             <Sep />
             <MenuItem icon={<IconBell    size={19} color={WHITE} />} label="Notificaciones"     onPress={() => go('Notifications')} badge={unreadNotifCount} />
@@ -138,8 +138,8 @@ export default function SidebarVendedor({ visible, onClose, user, navigation, on
             <MenuItem icon={<IconUser    size={19} color={WHITE} />} label="Perfil"             onPress={() => go('PerfilTienda', { id_tienda: user?.id_tienda })} />
             <MenuItem icon={<IconTruck   size={19} color={WHITE} />} label="Configuración"      onPress={() => go('ConfiguracionTienda')} />
             <Sep />
-            <MenuItem icon={<IconCreditCard size={19} color={WHITE} />} label="Suscripciones"   onPress={null} soon />
-            <MenuItem icon={<IconStore   size={19} color={WHITE} />} label="Impulsos"           onPress={null} soon />
+            <MenuItem icon={<IconCreditCard size={19} color={WHITE} />} label="Suscripciones"   onPress={() => go('SuscripcionesVendedor')} />
+            <MenuItem icon={<IconStore   size={19} color={WHITE} />} label="Impulsos"           onPress={() => go('ImpulsosVendedor')} />
           </ScrollView>
 
           {/* ── Cerrar sesión ── */}

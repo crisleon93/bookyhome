@@ -9,7 +9,7 @@ import { AuthContext } from '../context/AuthContext';
 import { useChatSocket } from '../context/ChatSocketContext';
 import {
   getMisLibros, getStatsVendedor, getTopVendidos,
-  getAlertasStock, getPedidosRecientes,
+  getAlertasStock, getMisPedidos,
 } from '../services/api';
 import SidebarVendedor from '../components/SidebarVendedor';
 
@@ -52,7 +52,7 @@ export default function VendedorHome({ navigation: navProp }) {
         getStatsVendedor().catch(() => ({ data: null })),
         getTopVendidos().catch(() => ({ data: [] })),
         getAlertasStock(3).catch(() => ({ data: [] })),
-        getPedidosRecientes().catch(() => ({ data: [] })),
+        getMisPedidos().catch(() => ({ data: [] })),
       ]);
       setLibros(rLib.data || []);
       setStats(rStats.data || null);
@@ -285,7 +285,7 @@ export default function VendedorHome({ navigation: navProp }) {
                         </Text>
                       </View>
                       <View style={{ alignItems: 'flex-end' }}>
-                        <Text style={s.itemPrice}>{fmt(p.total ?? p.total_tienda)}</Text>
+                        <Text style={s.itemPrice}>{fmt(p.total_tienda)}</Text>
                         <Text style={[s.itemSub, { color: SUCCESS, fontWeight: '600' }]}>Ver →</Text>
                       </View>
                     </TouchableOpacity>

@@ -1967,6 +1967,101 @@
       "periodicidad": "mensual",
       "fecha": "2026-08-19T00:34:09.781659Z",
       "estado": "procesado"
+    },
+    {
+      "id": 167,
+      "tipo": "plan",
+      "id_tienda": 8,
+      "id_plan": 2,
+      "monto_plan": 29000.0,
+      "comision": 580.0,
+      "monto": 28420.0,
+      "periodicidad": "mensual",
+      "fecha": "2026-08-20T12:06:58.705143Z",
+      "estado": "procesado"
+    },
+    {
+      "id": 168,
+      "tipo": "plan",
+      "id_tienda": 8,
+      "id_plan": 1,
+      "monto_plan": 0.0,
+      "comision": 0.0,
+      "monto": 0.0,
+      "periodicidad": "mensual",
+      "fecha": "2026-08-20T12:07:32.241697Z",
+      "estado": "procesado"
+    },
+    {
+      "id": 169,
+      "tipo": "plan",
+      "id_tienda": 8,
+      "id_plan": 2,
+      "monto_plan": 15000.0,
+      "comision": 300.0,
+      "monto": 14700.0,
+      "periodicidad": "mensual",
+      "fecha": "2026-08-20T12:15:26.584601Z",
+      "estado": "procesado"
+    },
+    {
+      "id": 170,
+      "tipo": "plan",
+      "id_tienda": 8,
+      "id_plan": 1,
+      "monto_plan": 0.0,
+      "comision": 0.0,
+      "monto": 0.0,
+      "periodicidad": "mensual",
+      "fecha": "2026-08-20T12:15:59.877516Z",
+      "estado": "procesado"
+    },
+    {
+      "id": 171,
+      "tipo": "plan",
+      "id_tienda": 8,
+      "id_plan": 2,
+      "monto_plan": 15000.0,
+      "comision": 300.0,
+      "monto": 14700.0,
+      "periodicidad": "mensual",
+      "fecha": "2026-08-20T12:25:29.897908Z",
+      "estado": "procesado"
+    },
+    {
+      "id": 172,
+      "tipo": "impulso",
+      "id_impulso": 14,
+      "id_tienda": 8,
+      "monto_impulso": 19800.0,
+      "comision": 990.0,
+      "monto": 18810.0,
+      "fecha": "2026-08-20T12:39:06.787622Z",
+      "estado": "procesado"
+    },
+    {
+      "id": 173,
+      "tipo": "plan",
+      "id_tienda": 8,
+      "id_plan": 1,
+      "monto_plan": 0.0,
+      "comision": 0.0,
+      "monto": 0.0,
+      "periodicidad": "mensual",
+      "fecha": "2026-08-20T12:42:45.761656Z",
+      "estado": "procesado"
+    },
+    {
+      "id": 174,
+      "tipo": "plan",
+      "id_tienda": 8,
+      "id_plan": 2,
+      "monto_plan": 29000.0,
+      "comision": 580.0,
+      "monto": 28420.0,
+      "periodicidad": "mensual",
+      "fecha": "2026-08-20T12:45:17.765341Z",
+      "estado": "procesado"
     }
   ],
   "pagos": [

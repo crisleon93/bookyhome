@@ -3361,20 +3361,10 @@
         }
       ],
       "total": 15000.0,
-      "estado": "enviado",
+      "estado": "entregada",
       "id_orden_db": 36,
       "metodo_pago": "PayPal",
-      "envio": {
-        "id_empresa": 1,
-        "empresa_mensajeria": "Servientrega",
-        "sitio_web": "https://www.servientrega.com",
-        "url_rastreo": "https://www.servientrega.com/wps/portal/rastreo-destinatario",
-        "numero_guia": "765678",
-        "estado_envio": "Guía registrada",
-        "fecha_despacho_con_hora": "2026-08-16T20:40:42.582505+00:00",
-        "actualizado_en": "2026-08-16T20:40:42.582505+00:00",
-        "origen": "Librería El Sótano · Calle 45 # 13-22"
-      }
+      "fecha_entrega_confirmada": "2026-08-20T01:11:41.352870Z"
     }
   ]
 }
