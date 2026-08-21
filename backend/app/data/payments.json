@@ -664,5 +664,41 @@
     "metodo_pago": "PayPal",
     "fecha_pago": "2026-08-16T20:39:45.891612Z",
     "estado": "aprobado"
+  },
+  {
+    "id_pago": 75,
+    "id_usuario": 16,
+    "id_orden": 27,
+    "monto": 121231.0,
+    "metodo_pago": "Transferencia Bancaria",
+    "fecha_pago": "2026-08-21T01:19:17.146245Z",
+    "estado": "aprobado"
+  },
+  {
+    "id_pago": 76,
+    "id_usuario": 16,
+    "id_orden": 28,
+    "monto": 233000.0,
+    "metodo_pago": "Transferencia Bancaria",
+    "fecha_pago": "2026-08-21T01:38:53.174527Z",
+    "estado": "aprobado"
+  },
+  {
+    "id_pago": 77,
+    "id_usuario": 16,
+    "id_orden": 29,
+    "monto": 187231.0,
+    "metodo_pago": "Transferencia Bancaria",
+    "fecha_pago": "2026-08-21T01:44:11.018377Z",
+    "estado": "aprobado"
+  },
+  {
+    "id_pago": 78,
+    "id_usuario": 16,
+    "id_orden": 30,
+    "monto": 32000.0,
+    "metodo_pago": "Transferencia Bancaria",
+    "fecha_pago": "2026-08-21T01:51:56.927628Z",
+    "estado": "aprobado"
   }
 ]

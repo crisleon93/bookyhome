@@ -86,6 +86,9 @@ class PagoRequest(BaseModel):
     payment_method: str
     coupon_code: Optional[str] = None
 
+class CancelacionOrdenRequest(BaseModel):
+    motivo: str = Field(default="Cancelación solicitada por el comprador", min_length=5, max_length=500)
+
 
 # ===========================
 # Estado tiendas

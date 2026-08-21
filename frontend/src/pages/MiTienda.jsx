@@ -344,13 +344,6 @@ const Stars = ({ value, size = 16 }) => (
   </div>
 );
 
-// Color del badge según calificación
-const calColor = (n) => {
-  if (n >= 4.5) return { bg: '#d1fae5', color: '#065f46', border: '#6ee7b7' };
-  if (n >= 3.5) return { bg: '#fef9c3', color: '#854d0e', border: '#fde047' };
-  return { bg: '#fee2e2', color: '#991b1b', border: '#fca5a5' };
-};
-
 // Iniciales del usuario para el avatar
 const initials = (name = '') => name.trim().split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase() || '?';
 
@@ -364,11 +357,20 @@ function SeccionCalificacionesVendedor({ tiendaId }) {
 
   useEffect(() => {
     if (!tiendaId) return;
-    setLoading(true);
-    api.get(`/perfil/calificaciones-tienda/${tiendaId}`)
-      .then(r => setData(r.data))
-      .catch(e => console.error('Error calificaciones:', e))
-      .finally(() => setLoading(false));
+    let activo = true;
+    const cargarCalificaciones = async () => {
+      if (activo) setLoading(true);
+      try {
+        const respuesta = await api.get(`/perfil/calificaciones-tienda/${tiendaId}`);
+        if (activo) setData(respuesta.data);
+      } catch (e) {
+        console.error('Error calificaciones:', e);
+      } finally {
+        if (activo) setLoading(false);
+      }
+    };
+    cargarCalificaciones();
+    return () => { activo = false; };
   }, [tiendaId]);
 
   const total    = data?.total     ?? 0;
@@ -665,6 +667,7 @@ export default function MiTienda() {
 
   const [ventas,        setVentas]        = useState([]);
   const [loadingVentas, setLoadingVentas] = useState(false);
+  const [detalleVenta,  setDetalleVenta]  = useState(null);
   const [pedidos,       setPedidos]       = useState([]);
   const [loadingPedidos, setLoadingPedidos] = useState(false);
   const [filtroEnvios, setFiltroEnvios] = useState("");
@@ -1002,16 +1005,6 @@ export default function MiTienda() {
       setEnvioError(err.response?.data?.detail || "No se pudo registrar la Guía.");
     } finally {
       setGuardandoEnvio(false);
-    }
-  };
-
-  const cambiarEstadoOrden = async (idOrden, nuevoEstado) => {
-    try {
-      await api.put(`/perfil/ordenes/${idOrden}/estado`, { estado: nuevoEstado });
-      cargarPedidos();
-    } catch (err) {
-      console.error("Error cambiando estado:", err);
-      alert("No se pudo cambiar el estado de la orden");
     }
   };
 
@@ -2376,7 +2369,7 @@ export default function MiTienda() {
     </>
   );
 
-  const renderCuentasBancarias = () => (
+  const RenderCuentasBancarias = () => (
     <>
       <div className="welcome-card">
         <h1 style={{ fontSize: "1.55rem", marginBottom: "4px", display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -2666,35 +2659,15 @@ export default function MiTienda() {
                       {(() => {
                         const estado = pedido.estado?.toLowerCase();
                         const colores = {
-                          pagado:   { border: "#c49a00", bg: "#fffbea", color: "#7a5c00" },
+                          pagado:   { border: "#1e8a45", bg: "#eafaf1", color: "#145c2e" },
                           enviado:  { border: "#2979c7", bg: "#eaf3ff", color: "#1a4f8a" },
-                          entregada:{ border: "#1e8a45", bg: "#eafaf1", color: "#145c2e" },
+                          entregada:{ border: "#7A1E3A", bg: "#f8e9ee", color: "#7A1E3A" },
                           cancelada:{ border: "#c0392b", bg: "#fdecea", color: "#7b1e1e" },
                         };
                         const c = colores[estado];
                         if (c) {
-                          return (
-                            <select
-                              value={estado}
-                              onChange={(e) => cambiarEstadoOrden(pedido.id_orden, e.target.value)}
-                              style={{
-                                padding: "8px 12px",
-                                borderRadius: "8px",
-                                border: `2px solid ${c.border}`,
-                                backgroundColor: c.bg,
-                                color: c.color,
-                                fontSize: "0.85rem",
-                                fontWeight: "700",
-                                cursor: "pointer",
-                                minWidth: "120px",
-                                transition: "all 0.2s ease"
-                              }}
-                            >
-                              <option value="pagado">Pagado</option>
-                              <option value="enviado">Enviado</option>
-                              <option value="cancelada">Cancelada</option>
-                            </select>
-                          );
+                          const etiquetas = { pagado: "Pagado", enviado: "Enviado", entregada: "Entregada", cancelada: "Cancelada" };
+                          return <div style={{ padding: "8px 12px", borderRadius: "8px", border: `2px solid ${c.border}`, backgroundColor: c.bg, color: c.color, fontSize: "0.85rem", fontWeight: "700", minWidth: "120px", textAlign: "center" }}>{etiquetas[estado] || "Estado desconocido"}</div>;
                         }
                         return (
                           <div style={{
@@ -2854,7 +2827,7 @@ export default function MiTienda() {
   const renderEnvios = () => {
     const texto = filtroEnvios.trim().toLowerCase();
     const envios = pedidos.filter((pedido) => {
-      if (!pedido.envio || pedido.estado !== "pagado") return false;
+      if (!pedido.envio || pedido.estado === "cancelada") return false;
       if (!texto) return true;
       return [pedido.codigo_compra, pedido.id_orden, pedido.cliente, pedido.correo_cliente, pedido.envio.empresa_mensajeria, pedido.envio.numero_guia]
         .some((valor) => String(valor || "").toLowerCase().includes(texto));
@@ -2898,9 +2871,13 @@ export default function MiTienda() {
                     <strong style={{ display: "block" }}>{pedido.envio.empresa_mensajeria}</strong>
                     <span style={{ color: "#666", fontSize: "0.86rem" }}>Guía: {pedido.envio.numero_guia}</span>
                   </div>
-                  <a href={pedido.envio.url_rastreo || pedido.envio.sitio_web} target="_blank" rel="noreferrer" className="btn btn-vinotinto" style={{ width: "auto", padding: "9px 14px", fontSize: "0.82rem" }}>
-                    Rastrear con la transportadora
-                  </a>
+                  {(pedido.envio.url_rastreo || pedido.envio.sitio_web) ? (
+                    <a href={pedido.envio.url_rastreo || pedido.envio.sitio_web} target="_blank" rel="noreferrer" className="btn btn-vinotinto" style={{ width: "auto", padding: "9px 14px", fontSize: "0.82rem" }}>
+                      Rastrear con la transportadora
+                    </a>
+                  ) : (
+                    <span style={{ color: "#777", fontSize: "0.82rem" }}>Rastreo no disponible</span>
+                  )}
                 </div>
               </article>
             ))}
@@ -2910,7 +2887,21 @@ export default function MiTienda() {
     );
   };
 
-  const renderVentas = () => (
+  const renderVentas = () => {
+    const ventasAgrupadas = Object.values(ventas.reduce((ordenes, venta) => {
+      const idOrden = venta.id_orden;
+      if (!ordenes[idOrden]) {
+        ordenes[idOrden] = { ...venta, items: [], totalOrden: 0 };
+      }
+      ordenes[idOrden].items.push(venta);
+      ordenes[idOrden].totalOrden += Number(venta.total || 0);
+      return ordenes;
+    }, {}));
+    ventasAgrupadas.forEach((venta) => {
+      venta.cantidadOrden = venta.items.reduce((total, item) => total + Number(item.cantidad || 0), 0);
+    });
+
+    return (
     <>
       <div className="welcome-card">
         <h1 style={{ fontSize: "1.55rem", marginBottom: "4px", display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -2946,17 +2937,31 @@ export default function MiTienda() {
                 </tr>
               </thead>
               <tbody>
-                {ventas.map((v, index) => (
-                  <tr key={index} style={{ borderBottom: "1px solid #f0ebe4" }}>
+                {ventasAgrupadas.map((v) => (
+                  <tr key={v.id_orden} style={{ borderBottom: "1px solid #f0ebe4" }}>
                     <td style={{ padding: "12px", fontWeight: 600 }}>#{v.id_orden}</td>
                     <td style={{ padding: "12px", fontSize: "0.9rem" }}>
                       {v.fecha ? new Date(v.fecha).toLocaleDateString("es-CO") : "Reciente"}
                     </td>
-                    <td style={{ padding: "12px", fontWeight: 600, color: "var(--vinotinto)" }}>{v.titulo}</td>
-                    <td style={{ padding: "12px", textAlign: "center" }}>{v.cantidad}</td>
-                    <td style={{ padding: "12px", textAlign: "right" }}>{formatPrecio(v.precio_libro)}</td>
+                    <td style={{ padding: "12px", fontWeight: 600, color: "var(--vinotinto)" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                        <div style={{ width: "38px", height: "48px", borderRadius: "6px", overflow: "hidden", background: "#fdf0f3", flexShrink: 0, display: "grid", placeItems: "center" }}>
+                          {resolveImageUrl(v.imagen) ? (
+                            <img src={resolveImageUrl(v.imagen)} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                          ) : <IconBook width={17} height={17} strokeWidth={2} />}
+                        </div>
+                        <span>{v.items.length > 1 ? "Varios libros" : v.titulo}</span>
+                      </div>
+                      {v.items.length > 1 && (
+                        <button type="button" onClick={() => setDetalleVenta(v)} style={{ marginTop: "7px", border: "1px solid #9b4d65", borderRadius: "999px", padding: "5px 9px", background: "#fff", color: "#7A1E3A", fontWeight: 700, fontSize: "0.72rem", cursor: "pointer" }}>
+                          Ver detalle
+                        </button>
+                      )}
+                    </td>
+                    <td style={{ padding: "12px", textAlign: "center" }}>{v.cantidadOrden}</td>
+                    <td style={{ padding: "12px", textAlign: "right" }}>{v.items.length > 1 ? "Varios" : formatPrecio(v.precio_libro)}</td>
                     <td style={{ padding: "12px", textAlign: "right", fontWeight: 700, color: "var(--rojo-suave)" }}>
-                      {formatPrecio(v.total)}
+                      {formatPrecio(v.totalOrden)}
                     </td>
                     <td style={{ padding: "12px" }}>
                       <div style={{ fontWeight: 600 }}>{v.cliente}</div>
@@ -2968,8 +2973,34 @@ export default function MiTienda() {
           </div>
         )}
       </div>
+      {detalleVenta && (
+        <div className="modal-overlay open" onClick={() => setDetalleVenta(null)}>
+          <div className="modal-box" onClick={(event) => event.stopPropagation()} style={{ maxWidth: "650px", padding: "26px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "16px" }}>
+              <div>
+                <h2 style={{ margin: 0 }}>Detalle de la orden #{detalleVenta.id_orden}</h2>
+                <p style={{ margin: "5px 0 0", color: "#777" }}>{detalleVenta.cliente} · {detalleVenta.fecha ? new Date(detalleVenta.fecha).toLocaleDateString("es-CO") : "Reciente"}</p>
+              </div>
+              <button type="button" onClick={() => setDetalleVenta(null)} aria-label="Cerrar detalle" style={{ border: "none", background: "#f5f1ed", borderRadius: "50%", width: "32px", height: "32px", fontSize: "20px", cursor: "pointer" }}>×</button>
+            </div>
+            <div style={{ display: "grid", gap: "10px", marginTop: "20px" }}>
+              {detalleVenta.items.map((item, index) => (
+                <div key={`${item.id_libro}-${index}`} style={{ display: "flex", alignItems: "center", gap: "12px", padding: "10px 0", borderBottom: "1px solid #eee" }}>
+                  <div style={{ width: "42px", height: "52px", borderRadius: "6px", overflow: "hidden", background: "#fdf0f3", display: "grid", placeItems: "center", flexShrink: 0 }}>
+                    {resolveImageUrl(item.imagen) ? <img src={resolveImageUrl(item.imagen)} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <IconBook width={18} height={18} />}
+                  </div>
+                  <div style={{ flex: 1 }}><strong style={{ display: "block" }}>{item.titulo}</strong><span style={{ color: "#777", fontSize: "0.82rem" }}>Cantidad: {item.cantidad} · Unitario: {formatPrecio(item.precio_libro)}</span></div>
+                  <strong style={{ color: "var(--vinotinto)" }}>{formatPrecio(item.total)}</strong>
+                </div>
+              ))}
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", borderTop: "2px solid #e0dbd4", marginTop: "16px", paddingTop: "14px", fontWeight: 800 }}><span>Total de la orden</span><span style={{ color: "var(--vinotinto)" }}>{formatPrecio(detalleVenta.totalOrden)}</span></div>
+          </div>
+        </div>
+      )}
     </>
-  );
+    );
+  };
 
   const renderNotificaciones = () => (
     <div className="notificaciones-container notificaciones-container--embedded">

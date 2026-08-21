@@ -504,7 +504,7 @@ def obtener_pedidos_tienda(id_tienda: int):
     filtrando por libros.id_tienda. Esto garantiza que cada vendedor solo
     vea los pedidos que realmente le pertenecen.
     """
-    from app.models.envios import limpiar_envios_no_pagados
+    from app.models.envios import EMPRESAS_MENSAJERIA, limpiar_envios_no_pagados
     limpiar_envios_no_pagados()
 
     db = get_db()
@@ -521,6 +521,7 @@ def obtener_pedidos_tienda(id_tienda: int):
                 oc.id_usuario             AS id_comprador,
                 u.nombre_usuario          AS cliente,
                 u.correo_usuario          AS correo_cliente,
+                u.foto_perfil             AS foto_perfil_cliente,
                 do.id_libro,
                 do.cantidad,
                 do.precio_unitario        AS precio_libro,
@@ -570,6 +571,7 @@ def obtener_pedidos_tienda(id_tienda: int):
                 "estado":         fila["estado"],
                 "cliente":        fila["cliente"],
                 "correo_cliente": fila["correo_cliente"],
+                "foto_perfil_cliente": fila["foto_perfil_cliente"],
                 "items":          [],
                 "total_tienda":   0.0,
                 "total_orden":    float(fila["total_orden"] or 0),
@@ -592,9 +594,15 @@ def obtener_pedidos_tienda(id_tienda: int):
     for id_orden, pedido in ordenes.items():
         if str(pedido["estado"]).lower() in ("pagado", "enviado", "entregada") and id_orden in envios_map:
             e = envios_map[id_orden]
+            empresa = next(
+                (empresa for empresa in EMPRESAS_MENSAJERIA if empresa["id_empresa"] == e["id_empresa"]),
+                {},
+            )
             pedido["envio"] = {
                 "id_empresa":             e["id_empresa"],
                 "empresa_mensajeria":     e["empresa_mensajeria"],
+                "sitio_web":              empresa.get("sitio_web"),
+                "url_rastreo":            empresa.get("url_rastreo", empresa.get("sitio_web")),
                 "numero_guia":            e["numero_guia"],
                 "estado_envio":           e["estado_envio"],
                 "fecha_estimada_entrega": str(e["fecha_estimada_entrega"]) if e["fecha_estimada_entrega"] else None,
@@ -622,6 +630,8 @@ def obtener_ventas_tienda(id_tienda: int):
                 "id_libro": item["id_libro"],
                 "titulo": item["titulo"],
                 "autor_libro": item["autor_libro"],
+                "imagen": item.get("imagen"),
+                "foto_perfil_cliente": p.get("foto_perfil_cliente"),
                 "precio_libro": item["precio_libro"],
                 "cantidad": item["cantidad"],
                 "total": item["precio_libro"] * item["cantidad"]

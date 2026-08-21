@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from app.auth import verify_token
 from app.schemas import PagoRequest
+from app.schemas import CancelacionOrdenRequest
 from app.models.payments import obtener_orden, registrar_pago, obtener_ordenes_usuario, cancelar_orden
 from app.email import enviar_email_confirmacion  
 from app.models.usuarios import obtener_email_usuario
@@ -57,13 +58,14 @@ def process_payment(data: PagoRequest, user=Depends(get_current_user)):
     if not resultado["ok"]:
         raise HTTPException(status_code=400, detail=resultado["error"])
     
-    # Registro automático de ingreso en BookyPago Finanzas
-    id_vendedor = _resolver_vendedor(id_usuario, data.order_id)
-    registrar_ingreso_venta(
-        id_venta=data.order_id,
-        monto_venta=data.amount,
-        id_vendedor=id_vendedor,
-    )
+    # No duplicar el ingreso financiero cuando el cliente repite la solicitud.
+    if not resultado.get("already_paid"):
+        id_vendedor = _resolver_vendedor(id_usuario, data.order_id)
+        registrar_ingreso_venta(
+            id_venta=data.order_id,
+            monto_venta=data.amount,
+            id_vendedor=id_vendedor,
+        )
     
     return resultado
 
@@ -115,9 +117,9 @@ async def send_order_confirmation(id_orden: int, user=Depends(get_current_user))
 
 # ── Endpoint para cancelar una orden ──
 @router.delete("/api/v1/orders/{id_orden}")
-def cancel_order(id_orden: int, user=Depends(get_current_user)):
+def cancel_order(id_orden: int, data: CancelacionOrdenRequest, user=Depends(get_current_user)):
     id_usuario = int(user["sub"])
-    resultado = cancelar_orden(id_usuario, id_orden)
+    resultado = cancelar_orden(id_usuario, id_orden, data.motivo.strip())
     if not resultado["ok"]:
         raise HTTPException(status_code=400, detail=resultado["error"])
     return resultado

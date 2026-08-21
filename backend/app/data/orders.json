@@ -575,8 +575,125 @@
         }
       ],
       "total": 121231.0,
-      "estado": "pendiente",
-      "id_orden_db": 47
+      "estado": "entregada",
+      "id_orden_db": 47,
+      "metodo_pago": "Transferencia Bancaria",
+      "fecha_entrega_confirmada": "2026-08-21T01:25:48.632014Z"
+    },
+    {
+      "id_orden": 28,
+      "codigo_compra": "BH-02203E4252",
+      "fecha": "2026-08-21T01:38:33.971243Z",
+      "items": [
+        {
+          "id_libro": 47,
+          "titulo": "Dune Remastered",
+          "autor_libro": "Frank Herbert",
+          "precio_libro": 95000.0,
+          "cantidad": 1,
+          "imagen": "https://covers.openlibrary.org/b/id/8259443-L.jpg",
+          "id_variante": null,
+          "variante_label": null
+        },
+        {
+          "id_libro": 42,
+          "titulo": "Bajo la misma estrella",
+          "autor_libro": "John Green",
+          "precio_libro": 25000.0,
+          "cantidad": 1,
+          "imagen": "https://covers.openlibrary.org/b/id/12411542-L.jpg",
+          "id_variante": null,
+          "variante_label": null
+        },
+        {
+          "id_libro": 36,
+          "titulo": "It (Eso)",
+          "autor_libro": "Stephen King",
+          "precio_libro": 68000.0,
+          "cantidad": 1,
+          "imagen": "https://covers.openlibrary.org/b/id/12852110-L.jpg",
+          "id_variante": null,
+          "variante_label": null
+        },
+        {
+          "id_libro": 32,
+          "titulo": "Frida Kahlo: Una biografía",
+          "autor_libro": "Hayden Herrera",
+          "precio_libro": 45000.0,
+          "cantidad": 1,
+          "imagen": "https://covers.openlibrary.org/b/id/11252110-L.jpg",
+          "id_variante": null,
+          "variante_label": null
+        }
+      ],
+      "total": 233000.0,
+      "estado": "pagado",
+      "id_orden_db": 48,
+      "metodo_pago": "Transferencia Bancaria"
+    },
+    {
+      "id_orden": 29,
+      "codigo_compra": "BH-7099885BE1",
+      "fecha": "2026-08-21T01:44:07.623974Z",
+      "items": [
+        {
+          "id_libro": 50,
+          "titulo": "caminos elevados",
+          "autor_libro": "jose jose",
+          "precio_libro": 34000.0,
+          "cantidad": 1,
+          "imagen": null,
+          "id_variante": null,
+          "variante_label": null
+        },
+        {
+          "id_libro": 49,
+          "titulo": "erwerwe",
+          "autor_libro": "werwerwer",
+          "precio_libro": 121231.0,
+          "cantidad": 1,
+          "imagen": null,
+          "id_variante": null,
+          "variante_label": null
+        },
+        {
+          "id_libro": 22,
+          "titulo": "Crimen y castigo",
+          "autor_libro": "Fiódor Dostoyevski",
+          "precio_libro": 32000.0,
+          "cantidad": 1,
+          "imagen": "https://covers.openlibrary.org/b/id/12655122-L.jpg",
+          "id_variante": null,
+          "variante_label": null
+        }
+      ],
+      "total": 187231.0,
+      "estado": "entregada",
+      "id_orden_db": 49,
+      "metodo_pago": "Transferencia Bancaria",
+      "fecha_entrega_confirmada": "2026-08-21T01:48:39.207821Z"
+    },
+    {
+      "id_orden": 30,
+      "codigo_compra": "BH-C349A563FB",
+      "fecha": "2026-08-21T01:51:55.246955Z",
+      "items": [
+        {
+          "id_libro": 22,
+          "titulo": "Crimen y castigo",
+          "autor_libro": "Fiódor Dostoyevski",
+          "precio_libro": 32000.0,
+          "cantidad": 1,
+          "imagen": "https://covers.openlibrary.org/b/id/12655122-L.jpg",
+          "id_variante": null,
+          "variante_label": null
+        }
+      ],
+      "total": 32000.0,
+      "estado": "cancelada",
+      "id_orden_db": 50,
+      "metodo_pago": "Transferencia Bancaria",
+      "motivo_cancelacion": "weqweq"
     }
   ],
   "17": [

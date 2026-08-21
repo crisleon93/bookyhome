@@ -169,12 +169,14 @@ export default function VendedorSidebar({ userName = 'Vendedor', profileImage = 
       <div style={{
         position: 'relative',
         marginBottom: sidebarOpen ? '10px' : '20px',
-        padding: sidebarOpen ? '0 10px' : '0',
+        paddingTop: 0,
+        paddingRight: sidebarOpen ? '10px' : '0',
+        paddingBottom: 0,
+        paddingLeft: sidebarOpen ? '10px' : '0',
         display: 'flex',
         justifyContent: sidebarOpen ? 'flex-start' : 'center',
         alignItems: 'center',
         minHeight: sidebarOpen ? undefined : '80px',
-        paddingTop: sidebarOpen ? '0' : '0',
       }}>
         <div style={{ display: 'flex', justifyContent: sidebarOpen ? 'flex-start' : 'center', width: '100%', marginTop: sidebarOpen ? '0' : '70px' }}>
           {avatarSrc ? (

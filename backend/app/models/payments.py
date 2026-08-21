@@ -126,6 +126,62 @@ def obtener_ordenes_usuario(id_usuario):
                     res = cursor.fetchone()
                     if res:
                         item['nombre_tienda'] = res['nombre_tienda']
+
+        # Recuperar órdenes que existen en MySQL pero no tienen copia local.
+        # Esto evita que el seguimiento del comprador aparezca vacío después
+        # de una limpieza o migración de orders.json.
+        ids_locales = {order.get("id_orden_db") for order in user_orders}
+        for order_db in ordenes_db:
+            if order_db["id_orden"] in ids_locales:
+                continue
+            cursor.execute("""
+                SELECT do.id_libro, do.cantidad, do.precio_unitario,
+                       do.precio_final, l.titulo, l.autor_libro,
+                       t.nombre_tienda
+                FROM detalle_orden do
+                JOIN libros l ON l.id_libro = do.id_libro
+                LEFT JOIN tiendas t ON t.id_tienda = l.id_tienda
+                WHERE do.id_orden = %s
+                ORDER BY do.id_detalle
+            """, (order_db["id_orden"],))
+            items = [
+                {
+                    "id_libro": item["id_libro"],
+                    "titulo": item["titulo"],
+                    "autor_libro": item["autor_libro"],
+                    "cantidad": item["cantidad"],
+                    "precio_libro": float(item["precio_unitario"] or 0),
+                    "total": float(item["precio_final"] or 0),
+                    "nombre_tienda": item["nombre_tienda"],
+                }
+                for item in cursor.fetchall()
+            ]
+            fecha = order_db["fecha_orden"]
+            envio = None
+            if order_db.get("numero_guia"):
+                empresa = next(
+                    (empresa for empresa in EMPRESAS_MENSAJERIA if empresa["id_empresa"] == order_db["id_empresa"]),
+                    {},
+                )
+                envio = {
+                    "id_empresa": order_db["id_empresa"],
+                    "empresa_mensajeria": order_db["empresa_mensajeria"],
+                    "numero_guia": order_db["numero_guia"],
+                    "estado_envio": order_db["estado_envio"] or "Guía registrada",
+                    "sitio_web": empresa.get("sitio_web"),
+                    "url_rastreo": empresa.get("url_rastreo", empresa.get("sitio_web")),
+                    "fecha_despacho": order_db["fecha_despacho"],
+                    "origen": order_db["nombre_tienda"] or "Tienda vendedora",
+                }
+            user_orders.append({
+                "id_orden": order_db["id_orden"],
+                "id_orden_db": order_db["id_orden"],
+                "fecha": fecha.isoformat() if hasattr(fecha, "isoformat") else fecha,
+                "estado": order_db["estado_orden"],
+                "total": float(order_db["total"] or 0),
+                "items": items,
+                "envio": envio,
+            })
     except Exception as e:
         print("Error obteniendo nombres de tiendas en ordenes:", e)
     finally:
@@ -147,6 +203,13 @@ def registrar_pago(id_usuario, id_orden, amount, payment_method, coupon_code=Non
 
     if not target_order:
         return {'ok': False, 'error': 'Orden no encontrada'}
+
+    if target_order.get('estado') == 'pagado':
+        return {
+            'ok': True,
+            'already_paid': True,
+            'message': 'La orden ya estaba marcada como pagada',
+        }
 
     if target_order.get('estado') != 'pendiente':
         return {'ok': False, 'error': f'La orden ya se encuentra en estado: {target_order.get("estado")}'}
@@ -230,25 +293,38 @@ def registrar_pago(id_usuario, id_orden, amount, payment_method, coupon_code=Non
     return {'ok': True, 'transaction': transaction}
 
 
-def cancelar_orden(id_usuario, id_orden):
+def cancelar_orden(id_usuario, id_orden, motivo):
     orders = _load_store(ORDER_FILE)
     user_orders = orders.get(str(id_usuario), [])
 
-    target_order = None
+    from app.database import get_db
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    try:
+        cursor.execute(
+            "SELECT id_orden, estado_orden FROM ordenes_compra WHERE id_orden = %s AND id_usuario = %s",
+            (int(id_orden), id_usuario),
+        )
+        order_db = cursor.fetchone()
+        if not order_db:
+            return {'ok': False, 'error': 'Orden no encontrada'}
+        if str(order_db['estado_orden']).lower() not in ('pendiente', 'enviado'):
+            return {'ok': False, 'error': 'Solo puedes cancelar pedidos pendientes o que estén en camino'}
+        cursor.execute(
+            "UPDATE ordenes_compra SET estado_orden = 'cancelada' WHERE id_orden = %s AND id_usuario = %s AND estado_orden IN ('pendiente', 'enviado')",
+            (int(id_orden), id_usuario),
+        )
+        db.commit()
+    finally:
+        cursor.close()
+        db.close()
+
     for order in user_orders:
-        if order.get('id_orden') == int(id_orden):
-            target_order = order
+        if order.get('id_orden_db') == int(id_orden) or (order.get('id_orden_db') is None and order.get('id_orden') == int(id_orden)):
+            order['estado'] = 'cancelada'
+            order['motivo_cancelacion'] = motivo
             break
-
-    if not target_order:
-        return {'ok': False, 'error': 'Orden no encontrada'}
-
-    if target_order.get('estado') != 'pendiente':
-        return {'ok': False, 'error': f'Solo se pueden cancelar órdenes en estado pendiente. Estado actual: {target_order.get("estado")}'}
-
-    # Eliminar la orden de la lista
-    user_orders = [o for o in user_orders if o.get('id_orden') != int(id_orden)]
     orders[str(id_usuario)] = user_orders
     _save_store(ORDER_FILE, orders)
 
-    return {'ok': True, 'message': 'Orden cancelada exitosamente'}
+    return {'ok': True, 'message': 'Orden cancelada exitosamente', 'motivo': motivo}
