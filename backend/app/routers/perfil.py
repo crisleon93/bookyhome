@@ -572,15 +572,11 @@ def obtener_estadisticas_reales(user_id: int = Depends(get_current_user)):
 
 @router.put("/ordenes/{id_orden}/estado")
 def actualizar_estado_orden(id_orden: int, data: ActualizarEstadoOrden, user_id: int = Depends(get_current_user)):
-    """Actualiza el estado de una orden en MySQL (solo vendedores, solo sus propias Ã³rdenes)"""
-
-    # La recepción solo puede ser confirmada por el comprador desde su panel.
-    estados_validos = ["pagado", "enviado", "cancelada"]
-    if data.estado.lower() not in estados_validos:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Estado no vÃ¡lido. Estados vÃ¡lidos: {', '.join(estados_validos)}"
-        )
+    """Bloquea cambios manuales: el estado avanza desde su evento correspondiente."""
+    raise HTTPException(
+        status_code=409,
+        detail="El estado se actualiza automáticamente según el pago, el envío o la confirmación del comprador."
+    )
 
     db = get_db()
     cursor = db.cursor(dictionary=True)

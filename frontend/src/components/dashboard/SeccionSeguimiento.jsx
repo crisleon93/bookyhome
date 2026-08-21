@@ -1,9 +1,16 @@
 import { useState, useEffect, useCallback, useLayoutEffect, useRef } from "react";
 import { IconTruck } from "../Icons";
-import { confirmarEntrega, getOrdenes } from "../../services/api";
+import { cancelOrder, confirmarEntrega, getOrdenes } from "../../services/api";
 
 const ordenarPorFecha = (ordenes) => [...ordenes].sort((a, b) => String(b.fecha || "").localeCompare(String(a.fecha || "")));
 const idVisible = (orden) => orden.id_orden_db || orden.id_orden;
+const urlRastreo = (envio) => {
+  if (!envio) return null;
+  if (String(envio.empresa_mensajeria || "").toLowerCase().includes("interrapid")) {
+    return "https://www.interrapidisimo.com";
+  }
+  return envio.url_rastreo || envio.sitio_web || null;
+};
 const estilos = {
   esperando: { etiqueta: "Esperando envío", borde: "#d18b21", fondo: "#fff7e6", texto: "#92400e", badge: "#fef3c7" },
   camino: { etiqueta: "En camino", borde: "#2563eb", fondo: "#eff6ff", texto: "#1d4ed8", badge: "#dbeafe" },
@@ -62,6 +69,9 @@ export default function SeccionSeguimiento({ userId }) {
   const [vista, setVista] = useState("esperando");
   const [detalleAbierto, setDetalleAbierto] = useState(null);
   const [confirmacionPendiente, setConfirmacionPendiente] = useState(null);
+  const [cancelacionPendiente, setCancelacionPendiente] = useState(null);
+  const [motivoCancelacion, setMotivoCancelacion] = useState('');
+  const [cancelando, setCancelando] = useState(false);
   const [confirmando, setConfirmando] = useState(null);
   const [aviso, setAviso] = useState(null);
   const posicionScroll = useRef(0);
@@ -125,6 +135,25 @@ export default function SeccionSeguimiento({ userId }) {
     }
   };
 
+  const cancelarPedido = async () => {
+    const orden = cancelacionPendiente;
+    const motivo = motivoCancelacion.trim();
+    if (!orden || motivo.length < 5) return;
+    setCancelando(true);
+    try {
+      await cancelOrder(idVisible(orden), motivo);
+      setCancelacionPendiente(null);
+      setMotivoCancelacion('');
+      setAviso({ tipo: "exito", texto: `El pedido #${idVisible(orden)} fue cancelado.` });
+      await cargarOrdenes();
+      setVista("esperando");
+    } catch (error) {
+      setAviso({ tipo: "error", texto: error.response?.data?.detail || "No se pudo cancelar el pedido." });
+    } finally {
+      setCancelando(false);
+    }
+  };
+
   const TarjetaPedido = ({ orden, tipo }) => {
     const estilo = estilos[tipo];
     const envio = orden.envio;
@@ -140,7 +169,10 @@ export default function SeccionSeguimiento({ userId }) {
         </div>
         <div style={{ marginTop: "18px", paddingTop: "15px", borderTop: "1px solid #eee", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "14px", flexWrap: "wrap" }}>
           <span style={{ color: "#666", fontSize: "0.88rem" }}>{tipo === "esperando" ? "El vendedor aún está preparando el envío." : esEntregado ? "Entrega confirmada por el comprador." : "Tu pedido está en ruta."}</span>
-          {tipo === "camino" && <button className="btn btn-vinotinto" type="button" disabled={confirmando === idVisible(orden)} onClick={() => setConfirmacionPendiente(orden)} style={{ width: "auto", padding: "9px 14px", fontSize: "0.82rem" }}>{confirmando === idVisible(orden) ? "Confirmando..." : "Confirmar que recibí el pedido"}</button>}
+          {tipo === "camino" && <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", justifyContent: "center" }}>
+            <button className="btn btn-vinotinto" type="button" disabled={confirmando === idVisible(orden) || cancelando} onClick={() => setConfirmacionPendiente(orden)} style={{ width: "auto", padding: "9px 14px", fontSize: "0.82rem" }}>{confirmando === idVisible(orden) ? "Confirmando..." : "Confirmar que recibí el pedido"}</button>
+            <button type="button" disabled={cancelando} onClick={() => { setCancelacionPendiente(orden); setMotivoCancelacion(''); }} style={{ width: "auto", padding: "9px 14px", fontSize: "0.82rem", border: "1px solid #c0392b", borderRadius: "6px", background: "white", color: "#b42318", cursor: "pointer", fontWeight: 700 }}>Cancelar pedido</button>
+          </div>}
           {tipo !== "esperando" && <button type="button" onClick={() => abrirDetalle(orden)} style={{ width: "auto", padding: "9px 14px", fontSize: "0.82rem", border: `1px solid ${estilo.borde}`, borderRadius: "6px", background: "white", color: estilo.texto, cursor: "pointer", fontWeight: 700 }}>{esEntregado ? "Información de entrega" : "Información del envío"}</button>}
         </div>
       </article>
@@ -189,13 +221,14 @@ export default function SeccionSeguimiento({ userId }) {
               {esDetalleEntregado && <div style={{ marginTop: "20px", padding: "13px 14px", borderRadius: "9px", background: "#ecfdf3", color: "#166534", fontSize: "0.88rem" }}>Tiempo total de entrega: <strong>{diasEntre(fechaDespacho || detalleAbierto.fecha, detalleAbierto.fecha_entrega_confirmada) || "No disponible"}</strong></div>}
               <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "24px", flexWrap: "wrap" }}>
                 <button type="button" onClick={() => setDetalleAbierto(null)} style={{ padding: "10px 16px", borderRadius: "7px", border: "1px solid #d1d5db", background: "white", cursor: "pointer", fontWeight: 700 }}>Cerrar</button>
-                {!esDetalleEntregado && (detalleAbierto.envio?.url_rastreo || detalleAbierto.envio?.sitio_web) && <a href={detalleAbierto.envio.url_rastreo || detalleAbierto.envio.sitio_web} target="_blank" rel="noreferrer" className="btn btn-vinotinto" style={{ width: "auto", padding: "10px 16px", fontSize: "0.84rem" }}>Ver rastreo</a>}
+                {!esDetalleEntregado && urlRastreo(detalleAbierto.envio) && <a href={urlRastreo(detalleAbierto.envio)} target="_blank" rel="noreferrer" className="btn btn-vinotinto" style={{ width: "auto", padding: "10px 16px", fontSize: "0.84rem" }}>Ver rastreo</a>}
               </div>
             </div>
           </section>
         </div>
       )}
       {confirmacionPendiente && <div role="dialog" aria-modal="true" aria-label="Confirmar entrega" onClick={() => setConfirmacionPendiente(null)} style={{ position: "fixed", inset: 0, zIndex: 1001, background: "rgba(36, 20, 27, 0.45)", display: "grid", placeItems: "center", padding: "20px" }}><div className="pl-card" onClick={(event) => event.stopPropagation()} style={{ width: "min(430px, 100%)", padding: "24px", boxSizing: "border-box" }}><h3 style={{ margin: 0 }}>¿Recibiste tu pedido?</h3><p style={{ color: "#666", lineHeight: 1.5 }}>Al confirmar, el pedido #{idVisible(confirmacionPendiente)} pasará a “Entregado”.</p><div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "20px" }}><button type="button" onClick={() => setConfirmacionPendiente(null)} style={{ padding: "9px 14px", borderRadius: "6px", border: "1px solid #ccc", background: "white", cursor: "pointer" }}>Cancelar</button><button className="btn btn-vinotinto" type="button" onClick={confirmarRecepcion} style={{ width: "auto", padding: "9px 14px" }}>Sí, confirmar entrega</button></div></div></div>}
+      {cancelacionPendiente && <div role="dialog" aria-modal="true" aria-label="Cancelar pedido" onClick={() => !cancelando && setCancelacionPendiente(null)} style={{ position: "fixed", inset: 0, zIndex: 1001, background: "rgba(36, 20, 27, 0.45)", display: "grid", placeItems: "center", padding: "20px" }}><div className="pl-card" onClick={(event) => event.stopPropagation()} style={{ width: "min(470px, 100%)", padding: "24px", boxSizing: "border-box" }}><h3 style={{ margin: 0, color: "#b42318" }}>Cancelar pedido #{idVisible(cancelacionPendiente)}</h3><p style={{ color: "#666", lineHeight: 1.5 }}>Indica el motivo de la cancelación. Esta acción actualizará el pedido para el comprador y el vendedor.</p><label htmlFor="motivo-cancelacion" style={{ display: "block", fontWeight: 700, marginBottom: "6px" }}>Motivo</label><textarea id="motivo-cancelacion" value={motivoCancelacion} onChange={(event) => setMotivoCancelacion(event.target.value)} placeholder="Ej. Ya no necesito el pedido" maxLength={500} rows={4} style={{ width: "100%", boxSizing: "border-box", resize: "vertical", padding: "10px", border: "1px solid #d1d5db", borderRadius: "7px", fontFamily: "inherit" }} /><div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "20px" }}><button type="button" onClick={() => setCancelacionPendiente(null)} disabled={cancelando} style={{ padding: "9px 14px", borderRadius: "6px", border: "1px solid #ccc", background: "white", cursor: "pointer" }}>Volver</button><button type="button" onClick={cancelarPedido} disabled={cancelando || motivoCancelacion.trim().length < 5} style={{ padding: "9px 14px", borderRadius: "6px", border: "none", background: "#b42318", color: "white", cursor: "pointer", fontWeight: 700, opacity: cancelando || motivoCancelacion.trim().length < 5 ? 0.55 : 1 }}>{cancelando ? "Cancelando..." : "Confirmar cancelación"}</button></div></div></div>}
       {aviso && <div role="dialog" aria-modal="true" aria-label="Resultado de la entrega" onClick={() => setAviso(null)} style={{ position: "fixed", inset: 0, zIndex: 1002, background: "rgba(36, 20, 27, 0.45)", display: "grid", placeItems: "center", padding: "20px" }}><div className="pl-card" onClick={(event) => event.stopPropagation()} style={{ width: "min(420px, 100%)", padding: "24px", boxSizing: "border-box" }}><h3 style={{ margin: 0, color: aviso.tipo === "exito" ? "#166534" : "#b42318" }}>{aviso.tipo === "exito" ? "Entrega confirmada" : "No fue posible confirmar"}</h3><p style={{ color: "#555", lineHeight: 1.5 }}>{aviso.texto}</p><div style={{ display: "flex", justifyContent: "flex-end", marginTop: "20px" }}><button className="btn btn-vinotinto" type="button" onClick={() => setAviso(null)} style={{ width: "auto", padding: "9px 14px" }}>Entendido</button></div></div></div>}
     </>
   );

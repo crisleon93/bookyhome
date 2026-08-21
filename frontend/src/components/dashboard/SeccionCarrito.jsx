@@ -237,6 +237,10 @@ export default function SeccionCarrito({ userId }) {
   };
 
   const processPaymentApi = async (method) => {
+    if (order?.estado && String(order.estado).toLowerCase() !== 'pendiente') {
+      setCheckoutError('Esta orden ya no está pendiente de pago. Actualiza tus pedidos para consultar su estado.');
+      return;
+    }
     setPaymentProcessing(true);
     setCheckoutError("");
     try {

@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useContext } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
-  ActivityIndicator, RefreshControl,
+  ActivityIndicator, RefreshControl, Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
@@ -9,7 +9,7 @@ import { AuthContext } from '../context/AuthContext';
 import { useChatSocket } from '../context/ChatSocketContext';
 import {
   getMisLibros, getStatsVendedor, getTopVendidos,
-  getAlertasStock, getMisPedidos,
+  getAlertasStock, getMisPedidos, getApiBaseUrl,
 } from '../services/api';
 import SidebarVendedor from '../components/SidebarVendedor';
 
@@ -29,6 +29,21 @@ const fmt = (val) =>
     : '$' + String(Math.floor(val)).replace(/\B(?=(\d{3})+(?!\d))/g, '.') + ' COP';
 
 const RANK_COLORS = ['#F59E0B', '#94A3B8', '#CD7C2F'];
+
+const getCustomerAvatarUri = (photo) => {
+  if (!photo) return null;
+  return photo.startsWith('http')
+    ? photo
+    : `${getApiBaseUrl()}/${photo.replace(/^\/+/, '')}`;
+};
+
+const getCustomerInitials = (name) =>
+  String(name || 'Comprador')
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part.charAt(0).toUpperCase())
+    .join('');
 
 export default function VendedorHome({ navigation: navProp }) {
   const navigation = navProp || useNavigation();
@@ -273,13 +288,18 @@ export default function VendedorHome({ navigation: navProp }) {
                       onPress={() => navigation.navigate('PedidosVendedor')}
                       activeOpacity={0.7}
                     >
-                      <View style={s.pedidoIconBox}>
-                        <Text style={{ fontSize: 16 }}>📋</Text>
+                      <View style={s.customerAvatar}>
+                        {getCustomerAvatarUri(p.foto_perfil_cliente)
+                          ? <Image
+                              source={{ uri: getCustomerAvatarUri(p.foto_perfil_cliente) }}
+                              style={s.customerAvatarImage}
+                            />
+                          : <Text style={s.customerAvatarText}>{getCustomerInitials(p.cliente)}</Text>}
                       </View>
                       <View style={{ flex: 1 }}>
-                        <Text style={s.itemTitle}>Pedido #{p.id_orden}</Text>
+                        <Text style={s.itemTitle} numberOfLines={1}>{p.cliente || 'Comprador'}</Text>
                         <Text style={s.itemSub}>
-                          {p.fecha
+                          Pedido #{p.id_orden} · {p.fecha
                             ? new Date(p.fecha).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' })
                             : 'Sin fecha'}
                         </Text>
@@ -388,6 +408,9 @@ const s = StyleSheet.create({
   /* ── Pedidos ── */
   pedidoRow:    { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, gap: 12 },
   pedidoIconBox: { width: 40, height: 40, borderRadius: 10, backgroundColor: '#F0F4FF', alignItems: 'center', justifyContent: 'center' },
+  customerAvatar: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#F0F4FF', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  customerAvatarImage: { width: '100%', height: '100%' },
+  customerAvatarText: { color: PRIMARY, fontSize: 13, fontWeight: '800' },
 
   /* ── Items genéricos ── */
   itemTitle: { fontSize: 13, fontWeight: '700', color: TEXT },

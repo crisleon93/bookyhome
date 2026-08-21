@@ -11,7 +11,7 @@ ORDER_FILE = os.path.join(STORAGE_DIR, "orders.json")
 # API externa: el seguimiento es manual y el vendedor actualiza esta información.
 EMPRESAS_MENSAJERIA = [
     {"id_empresa": 1, "nombre_empresa": "Servientrega", "sitio_web": "https://www.servientrega.com", "url_rastreo": "https://www.servientrega.com/wps/portal/rastreo-destinatario"},
-    {"id_empresa": 2, "nombre_empresa": "Interrapidisimo", "sitio_web": "https://www.interrapidisimo.com", "url_rastreo": "https://interrapidisimo.com/sigue-tu-envio/"},
+    {"id_empresa": 2, "nombre_empresa": "Interrapidisimo", "sitio_web": "https://www.interrapidisimo.com", "url_rastreo": "https://www.interrapidisimo.com"},
     {"id_empresa": 3, "nombre_empresa": "Coordinadora", "sitio_web": "https://www.coordinadora.com"},
     {"id_empresa": 4, "nombre_empresa": "Envia", "sitio_web": "https://www.envia.co"},
     {"id_empresa": 5, "nombre_empresa": "TCC", "sitio_web": "https://www.tcc.com.co"},
