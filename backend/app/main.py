@@ -168,5 +168,8 @@ def root():
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 import os as _os
+from pathlib import Path as _Path
 _os.makedirs("uploads/libros_digitales", exist_ok=True)
 app.mount("/static_digital", StaticFiles(directory="uploads/libros_digitales"), name="static_digital")
+_email_static_dir = _Path(__file__).resolve().parent / "static" / "email"
+app.mount("/static/email", StaticFiles(directory=str(_email_static_dir)), name="email_assets")
