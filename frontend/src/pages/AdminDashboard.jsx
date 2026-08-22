@@ -127,7 +127,7 @@ export default function AdminDashboard() {
   useEffect(() => {
     const role = getUserRole();
     if (role !== 'admin') {
-      navigate('/login');
+      navigate('/');
       return;
     }
 
@@ -253,7 +253,6 @@ export default function AdminDashboard() {
     return acc;
   }, {});
 
-  const totalVentas = ordenes.reduce((acc, o) => acc + Number(o.total || 0), 0);
   const ordenesHoy = ordenes.filter((o) => {
     if (!o.fecha) return false;
     const hoy = new Date().toLocaleDateString('es-CO');
@@ -396,7 +395,7 @@ export default function AdminDashboard() {
         <button
           onClick={() => {
             localStorage.removeItem('token');
-            navigate('/login');
+            navigate('/');
           }}
           title={!sidebarOpen ? 'Cerrar sesión' : undefined}
           style={{

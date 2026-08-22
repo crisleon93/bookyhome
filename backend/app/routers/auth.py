@@ -1,8 +1,8 @@
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from app.auth import create_token, verify_token
-from app.email import enviar_email_recuperacion, enviar_email_agradecimiento_confirmacion
-from app.models.usuarios import obtener_usuario_por_email, actualizar_password, verificar_email_usuario, obtener_usuario_por_token
+from app.email import enviar_email_recuperacion, enviar_email_agradecimiento_confirmacion, get_frontend_url
+from app.models.usuarios import obtener_usuario_por_email, actualizar_password, verificar_email_usuario, obtener_usuario_por_token, obtener_usuario_por_id
 
 router = APIRouter()
 
@@ -157,12 +157,8 @@ async def verify_email(token: str, request: Request):
         if wants_json:
             raise HTTPException(status_code=400, detail=detail)
         return HTMLResponse(
-            content=_render_verify_email_page(
-                success=False,
-                title="Verificación fallida",
-                message=detail,
-            ),
-            status_code=400,
+          content=_render_verify_email_page(success=False, title="Verificación fallida", message=detail),
+          status_code=400,
         )
 
     resultado = verificar_email_usuario(token)
@@ -171,12 +167,8 @@ async def verify_email(token: str, request: Request):
         if wants_json:
             raise HTTPException(status_code=400, detail=detail)
         return HTMLResponse(
-            content=_render_verify_email_page(
-                success=False,
-                title="Verificación fallida",
-                message=detail,
-            ),
-            status_code=400,
+          content=_render_verify_email_page(success=False, title="Verificación fallida", message=detail),
+          status_code=400,
         )
 
     try:
@@ -190,9 +182,95 @@ async def verify_email(token: str, request: Request):
         return {"mensaje": mensaje}
 
     return HTMLResponse(
-        content=_render_verify_email_page(
-            success=True,
-            title="¡Correo verificado!",
-            message=mensaje,
-        )
+        content="""<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Verificando correo... - BookyHome</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: linear-gradient(135deg, #7A1E3A 0%, #9c2a4a 100%);
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+    }
+    .container {
+      text-align: center;
+      padding: 2rem;
+      max-width: 400px;
+    }
+    .spinner {
+      width: 50px;
+      height: 50px;
+      border: 4px solid rgba(255,255,255,0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 1.5rem;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    h1 {
+      margin: 0 0 0.5rem;
+      font-size: 1.5rem;
+    }
+    p {
+      margin: 0;
+      opacity: 0.9;
+      font-size: 1rem;
+    }
+    .success {
+      display: none;
+      background: rgba(255,255,255,0.1);
+      padding: 1.5rem;
+      border-radius: 12px;
+      margin-top: 1rem;
+    }
+    .success.visible {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="spinner"></div>
+    <h1>Verificando tu correo...</h1>
+    <p>Cargando...</p>
+    <div class="success" id="success">
+      <h1>¡Correo verificado! ✅</h1>
+      <p>Esta pestaña se cerrará automáticamente.</p>
+      <p style="margin-top: 1rem; font-size: 0.9rem; opacity: 0.8;">
+        Regresa a la pestaña de BookyHome para iniciar sesión.
+      </p>
+    </div>
+  </div>
+  <script>
+    // Intentar cerrar la ventana inmediatamente
+    window.close();
+    
+    // Mostrar mensaje de éxito después de un breve momento
+    setTimeout(() => {
+      document.querySelector('.spinner').style.display = 'none';
+      document.querySelector('h1').textContent = '¡Correo verificado! ✅';
+      document.querySelector('p').textContent = 'Regresa a la pestaña de BookyHome para iniciar sesión.';
+      document.getElementById('success').classList.add('visible');
+      
+      // Intentar cerrar nuevamente
+      window.close();
+      
+      // Intento final de cierre
+      setTimeout(() => {
+        window.close();
+      }, 1500);
+    }, 800);
+  </script>
+</body>
+</html>""",
+        status_code=200,
     )

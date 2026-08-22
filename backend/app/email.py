@@ -86,7 +86,6 @@ async def enviar_email_recuperacion(email: str, token: str):
 
 
 async def enviar_email_confirmacion_registro(email: str, token: str):
-    # El enlace debe apuntar al backend (accesible desde el móvil), no al frontend local.
     enlace = f"{get_public_api_url()}/verify-email?token={token}"
 
     mensaje = MessageSchema(
@@ -94,15 +93,75 @@ async def enviar_email_confirmacion_registro(email: str, token: str):
         recipients=[email],
         body=f"""
         <html>
-        <body style="font-family: Montserrat, sans-serif; padding: 2rem; color: #2A2A2A;">
-            <div style="max-width: 500px; margin: 0 auto; background: #fff; border-radius: 12px; padding: 2rem; box-shadow: 0 4px 20px rgba(0,0,0,0.08);">
-                <h2 style="color: #7A1E3A;">BookyHome</h2>
-                <p>¡Gracias por registrarte en BookyHome!</p>
-                <p>Para completar tu registro y evitar spam, por favor confirma tu correo electrónico haciendo clic en el botón:</p>
-                <a href="{enlace}" style="display: inline-block; background: #7A1E3A; color: white; padding: 0.85rem 2rem; border-radius: 6px; text-decoration: none; font-weight: 700; margin: 1rem 0;">
-                    Confirmar correo
-                </a>
-                <p style="color: #888; font-size: 0.85rem;">Este enlace expira en 24 horas. Si no creaste esta cuenta, ignora este email.</p>
+        <head>
+            <style>
+                @media (prefers-color-scheme: dark) {{
+                    .logo-light {{ display: none !important; }}
+                    .logo-dark {{ display: block !important; }}
+                }}
+                @media (prefers-color-scheme: light) {{
+                    .logo-light {{ display: block !important; }}
+                    .logo-dark {{ display: none !important; }}
+                }}
+            </style>
+        </head>
+        <body style="font-family: Montserrat, sans-serif; padding: 2rem; color: #2A2A2A; background: #F4EDE2;">
+            <div style="max-width: 500px; margin: 0 auto; background: #FFFFFF; border-radius: 16px; padding: 2.5rem; box-shadow: 0 8px 32px rgba(0,0,0,0.1);">
+                <div style="text-align: center; margin-bottom: 2rem;">
+                    <!-- Logo para tema claro (vinotinto) -->
+                    <div class="logo-light" style="margin-bottom: 1rem;">
+                        <div style="background: linear-gradient(135deg, #7A1E3A 0%, #C5425A 100%); color: white; padding: 1rem 2rem; border-radius: 12px; display: inline-block;">
+                            <h2 style="color: white; margin: 0; font-size: 1.8rem; font-weight: 800; letter-spacing: -0.5px;">📚 BookyHome</h2>
+                        </div>
+                    </div>
+                    <!-- Logo para tema oscuro (blanco) -->
+                    <div class="logo-dark" style="margin-bottom: 1rem;">
+                        <div style="background: linear-gradient(135deg, #2A2A2A 0%, #4a4a4a 100%); color: white; padding: 1rem 2rem; border-radius: 12px; display: inline-block;">
+                            <h2 style="color: white; margin: 0; font-size: 1.8rem; font-weight: 800; letter-spacing: -0.5px;">📚 BookyHome</h2>
+                        </div>
+                    </div>
+                    <p style="color: #888; margin: 0.5rem 0 0; font-size: 0.9rem;">Tu librería de confianza</p>
+                </div>
+                
+                <div style="background: linear-gradient(135deg, #7A1E3A 0%, #C5425A 100%); border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem; text-align: center;">
+                    <div style="color: white; font-size: 3rem; margin-bottom: 0.5rem;">📧</div>
+                    <h3 style="color: white; margin: 0; font-size: 1.3rem;">¡Bienvenido a BookyHome!</h3>
+                </div>
+                
+                <p style="font-size: 1.05rem; line-height: 1.6; margin-bottom: 1.5rem;">
+                    ¡Gracias por registrarte! Estás a un paso de acceder a miles de libros y comenzar tu viaje literario con nosotros.
+                </p>
+                
+                <p style="font-size: 1rem; line-height: 1.6; margin-bottom: 2rem; color: #555;">
+                    Para completar tu registro y garantizar la seguridad de tu cuenta, por favor confirma tu correo electrónico haciendo clic en el siguiente botón:
+                </p>
+                
+                <div style="text-align: center; margin: 2rem 0;">
+                    <a href="{enlace}" style="display: inline-block; background: linear-gradient(135deg, #7A1E3A 0%, #C5425A 100%); color: white; padding: 1rem 2.5rem; border-radius: 8px; text-decoration: none; font-weight: 700; font-size: 1.1rem; box-shadow: 0 4px 15px rgba(122, 30, 58, 0.3);">
+                        ✅ Confirmar mi correo electrónico
+                    </a>
+                </div>
+                
+                <div style="background: #F4EDE2; border-left: 4px solid #7A1E3A; padding: 1rem; margin: 2rem 0; border-radius: 6px;">
+                    <p style="margin: 0; font-size: 0.9rem; color: #666;">
+                        <strong>⏰ Importante:</strong> Este enlace expira en 24 horas. Si no creaste esta cuenta, simplemente ignora este email.
+                    </p>
+                </div>
+                
+                <div style="background: #F4EDE2; border-left: 4px solid #C5425A; padding: 1rem; margin: 2rem 0; border-radius: 6px;">
+                    <p style="margin: 0; font-size: 0.9rem; color: #666;">
+                        <strong>💡 Nota:</strong> Al hacer clic en el enlace de confirmación, se abrirá brevemente una pestaña nueva que se cerrará automáticamente. Esto es normal y necesario por seguridad.
+                    </p>
+                </div>
+                
+                <div style="text-align: center; margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid #eee;">
+                    <p style="color: #888; font-size: 0.85rem; margin: 0;">
+                        ¿Tienes problemas? Contáctanos en <a href="mailto:soporte@bookyhome.com" style="color: #7A1E3A; text-decoration: none;">soporte@bookyhome.com</a>
+                    </p>
+                    <p style="color: #aaa; font-size: 0.8rem; margin: 0.5rem 0 0;">
+                        Este correo es generado automáticamente, por favor no respondas a este mensaje.
+                    </p>
+                </div>
             </div>
         </body>
         </html>
@@ -188,24 +247,80 @@ async def enviar_email_confirmacion(email: str, orden: dict):
 
 
 async def enviar_email_agradecimiento_confirmacion(email: str):
-    login_url = f"{get_frontend_url()}/login"
-
     mensaje = MessageSchema(
         subject="¡Correo confirmado! — BookyHome",
         recipients=[email],
         body=f"""
         <html>
-        <body style="font-family: Montserrat, sans-serif; padding: 2rem; color: #2A2A2A;">
-            <div style="max-width: 500px; margin: 0 auto; background: #fff; border-radius: 12px; padding: 2rem; box-shadow: 0 4px 20px rgba(0,0,0,0.08);">
-                <h2 style="color: #7A1E3A;">BookyHome</h2>
-                <h3 style="margin: 0 0 8px;">¡Gracias por confirmar tu correo! 🎉</h3>
-                <p>Tu cuenta ha sido verificada exitosamente. Ahora puedes iniciar sesión y comenzar a disfrutar de BookyHome.</p>
-                <a href="{login_url}" style="display: inline-block; background: #7A1E3A; color: white; padding: 0.85rem 2rem; border-radius: 6px; text-decoration: none; font-weight: 700; margin: 1rem 0;">
-                    Iniciar sesión
-                </a>
-                <p style="color: #888; font-size: 0.85rem; margin-top: 24px;">
-                    Si tienes alguna pregunta, no dudes en contactarnos. Este correo es generado automáticamente, por favor no respondas a este mensaje.
+        <head>
+            <style>
+                @media (prefers-color-scheme: dark) {{
+                    .logo-light {{ display: none !important; }}
+                    .logo-dark {{ display: block !important; }}
+                }}
+                @media (prefers-color-scheme: light) {{
+                    .logo-light {{ display: block !important; }}
+                    .logo-dark {{ display: none !important; }}
+                }}
+            </style>
+        </head>
+        <body style="font-family: Montserrat, sans-serif; padding: 2rem; color: #2A2A2A; background: #F4EDE2;">
+            <div style="max-width: 500px; margin: 0 auto; background: #FFFFFF; border-radius: 16px; padding: 2.5rem; box-shadow: 0 8px 32px rgba(0,0,0,0.1);">
+                <div style="text-align: center; margin-bottom: 2rem;">
+                    <!-- Logo para tema claro (vinotinto) -->
+                    <div class="logo-light" style="margin-bottom: 1rem;">
+                        <div style="background: linear-gradient(135deg, #7A1E3A 0%, #C5425A 100%); color: white; padding: 1rem 2rem; border-radius: 12px; display: inline-block;">
+                            <h2 style="color: white; margin: 0; font-size: 1.8rem; font-weight: 800; letter-spacing: -0.5px;">📚 BookyHome</h2>
+                        </div>
+                    </div>
+                    <!-- Logo para tema oscuro (blanco) -->
+                    <div class="logo-dark" style="margin-bottom: 1rem;">
+                        <div style="background: linear-gradient(135deg, #2A2A2A 0%, #4a4a4a 100%); color: white; padding: 1rem 2rem; border-radius: 12px; display: inline-block;">
+                            <h2 style="color: white; margin: 0; font-size: 1.8rem; font-weight: 800; letter-spacing: -0.5px;">📚 BookyHome</h2>
+                        </div>
+                    </div>
+                    <p style="color: #888; margin: 0.5rem 0 0; font-size: 0.9rem;">Tu librería de confianza</p>
+                </div>
+                
+                <div style="background: linear-gradient(135deg, #15803d 0%, #22c55e 100%); border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem; text-align: center;">
+                    <div style="color: white; font-size: 3rem; margin-bottom: 0.5rem;">🎉</div>
+                    <h3 style="color: white; margin: 0; font-size: 1.3rem;">¡Correo confirmado exitosamente!</h3>
+                </div>
+                
+                <p style="font-size: 1.05rem; line-height: 1.6; margin-bottom: 1.5rem;">
+                    ¡Excelente! Tu cuenta ha sido verificada correctamente y ya está lista para usar.
                 </p>
+                
+                <div style="background: #f0fdf4; border-left: 4px solid #15803d; padding: 1.5rem; margin: 2rem 0; border-radius: 8px;">
+                    <h4 style="color: #15803d; margin: 0 0 0.5rem; font-size: 1.1rem;">🚀 ¿Qué puedes hacer ahora?</h4>
+                    <ul style="margin: 0; padding-left: 1.5rem; color: #555; font-size: 0.95rem; line-height: 1.8;">
+                        <li>Iniciar sesión en tu cuenta de BookyHome</li>
+                        <li>Explorar nuestro catálogo de miles de libros</li>
+                        <li>Crear tu lista de deseos y favoritos</li>
+                        <li>Comenzar a comprar los libros que amas</li>
+                    </ul>
+                </div>
+                
+                <div style="background: #F4EDE2; border-left: 4px solid #7A1E3A; padding: 1rem; margin: 2rem 0; border-radius: 6px;">
+                    <p style="margin: 0; font-size: 0.9rem; color: #666;">
+                        <strong>💡 Siguiente paso:</strong> Regresa a la pestaña original del navegador donde dejaste el registro abierto. El modal de inicio de sesión se abrirá automáticamente para que puedas acceder a tu cuenta.
+                    </p>
+                </div>
+                
+                <div style="text-align: center; margin: 2rem 0;">
+                    <div style="display: inline-block; background: #f0fdf4; color: #15803d; padding: 0.8rem 2rem; border-radius: 8px; font-weight: 700; font-size: 1rem; border: 2px solid #15803d;">
+                        ✅ Cuenta verificada y lista para usar
+                    </div>
+                </div>
+                
+                <div style="text-align: center; margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid #eee;">
+                    <p style="color: #888; font-size: 0.85rem; margin: 0;">
+                        ¿Tienes preguntas? Estamos aquí para ayudarte en <a href="mailto:soporte@bookyhome.com" style="color: #7A1E3A; text-decoration: none;">soporte@bookyhome.com</a>
+                    </p>
+                    <p style="color: #aaa; font-size: 0.8rem; margin: 0.5rem 0 0;">
+                        Este correo es generado automáticamente, por favor no respondas a este mensaje.
+                    </p>
+                </div>
             </div>
         </body>
         </html>

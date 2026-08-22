@@ -197,6 +197,7 @@ export default function PublicarLibro() {
           setActiveSide={setActiveSide}
           handleLogout={() => {
             localStorage.removeItem("token");
+            window.dispatchEvent(new CustomEvent('auth-change', { detail: { authenticated: false } }));
             navigate("/");
           }}
         />
@@ -219,6 +220,7 @@ export default function PublicarLibro() {
         setActiveSide={handleSidebarSelect}
         handleLogout={() => {
           localStorage.removeItem("token");
+          window.dispatchEvent(new CustomEvent('auth-change', { detail: { authenticated: false } }));
           navigate("/");
         }}
       />

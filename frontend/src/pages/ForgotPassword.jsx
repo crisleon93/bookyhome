@@ -1,6 +1,4 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
-import Header from '../components/Header'
 import { forgotPassword } from '../services/api'
 
 
@@ -20,7 +18,7 @@ const IconCheck = () => (
   </svg>
 )
 
-function ForgotPassword() {
+function ForgotPassword({ isModal = false, onClose }) {
   const [email,    setEmail]    = useState('')
   const [loading,  setLoading]  = useState(false)
   const [exito,    setExito]    = useState('')
@@ -55,7 +53,7 @@ function ForgotPassword() {
 
   return (
     <>
-    <main className="auth-main">
+    <main className={`auth-main${isModal ? ' auth-main--modal' : ''}`}>
       <div className="auth-card">
 
         {/* Icono candado */}
@@ -108,7 +106,19 @@ function ForgotPassword() {
         )}
 
         <div className="auth-footer-links">
-          <p><Link to="/login">← Volver al inicio de sesión</Link></p>
+          {isModal ? (
+            <p>
+              <button
+                type="button"
+                onClick={onClose}
+                style={{ background: 'none', border: 'none', color: 'var(--vinotinto)', fontWeight: '700', cursor: 'pointer', textDecoration: 'underline', padding: 0, fontFamily: 'inherit', fontSize: 'inherit' }}
+              >
+                ← Volver al inicio de sesión
+              </button>
+            </p>
+          ) : (
+            <p>← Volver al inicio de sesión</p>
+          )}
         </div>
 
       </div>

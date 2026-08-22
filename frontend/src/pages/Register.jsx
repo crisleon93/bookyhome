@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 
 import { Link, useNavigate } from 'react-router-dom'
 
-import { register } from '../services/api'
+import { register, checkEmailVerification } from '../services/api'
 
 import { notify } from '../components/ToastProvider'
 
@@ -40,9 +40,9 @@ function Register({ isModal = false, onSuccess }) {
 
   const [exito, setExito] = useState(false)
 
-  const [countdown, setCountdown] = useState(5)
-
   const [loading, setLoading] = useState(false)
+
+  const [polling, setPolling] = useState(false)
 
 
 
@@ -189,6 +189,7 @@ function Register({ isModal = false, onSuccess }) {
     e.preventDefault()
 
     setError('')
+    setExito(false)
 
 
 
@@ -217,10 +218,8 @@ function Register({ isModal = false, onSuccess }) {
 
 
       setExito(true)
-
+      setPolling(true)
       notify('Cuenta creada exitosamente. Por favor verifica tu correo electrónico.', 'success')
-
-      setCountdown(5)
 
     } catch (err) {
 
@@ -238,33 +237,37 @@ function Register({ isModal = false, onSuccess }) {
 
   }
 
-
-
+  // Polling para verificar si el correo fue confirmado
   useEffect(() => {
+    if (!polling || !email) return
 
-    if (!exito) return
-
-    if (countdown === 0) {
-
-      if (isModal && onSuccess) {
-
-        onSuccess()
-
-      } else {
-
-        navigate('/login')
-
+    const checkVerification = async () => {
+      try {
+        const response = await checkEmailVerification(email)
+        if (response.data.verificado) {
+          setPolling(false)
+          setExito(false)
+          // Cerrar modal de registro si es modal
+          if (isModal && onSuccess) onSuccess()
+          // Abrir modal de login
+          setTimeout(() => {
+            window.dispatchEvent(new CustomEvent('bookyhome:open-login'))
+          }, 100)
+          notify('¡Correo verificado! Ahora puedes iniciar sesión.', 'success')
+        }
+      } catch (err) {
+        console.error('Error verificando correo:', err)
       }
-
-      return
-
     }
 
-    const timer = setTimeout(() => setCountdown(c => c - 1), 1000)
+    // Verificar inmediatamente
+    checkVerification()
 
-    return () => clearTimeout(timer)
+    // Luego verificar cada 3 segundos
+    const interval = setInterval(checkVerification, 3000)
 
-  }, [exito, countdown, navigate, isModal, onSuccess])
+    return () => clearInterval(interval)
+  }, [polling, email, isModal, onSuccess])
 
 
 
@@ -286,33 +289,9 @@ function Register({ isModal = false, onSuccess }) {
 
             <IconCheck />
 
-            <span>¡Cuenta creada exitosamente! Serás redirigido en <strong>{countdown}</strong> segundos...</span>
+            <span>¡Cuenta creada exitosamente! Revisa tu correo y haz clic en el enlace de confirmación. El modal de inicio de sesión se abrirá automáticamente cuando confirmes tu correo.</span>
 
           </div>
-
-          <button 
-
-            onClick={() => {
-
-              if (isModal && onSuccess) {
-
-                onSuccess()
-
-              } else {
-
-                navigate('/login')
-
-              }
-
-            }}
-
-            style={{ background: 'none', border: 'none', color: '#2e7d32', fontWeight: '700', cursor: 'pointer', textDecoration: 'underline' }}
-
-          >
-
-            Ir al login ahora →
-
-          </button>
 
         </div>
 
