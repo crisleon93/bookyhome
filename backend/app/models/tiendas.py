@@ -1,7 +1,7 @@
 from app.database import get_db
 from app.auth import hash_password
 
-def crear_libreria(nombre, nombre_libreria, direccion, telefono, email, password):
+def crear_libreria(nombre, nombre_libreria, direccion, telefono, email, password, token_verificacion=None):
     db = get_db()
     cursor = db.cursor(dictionary=True)
 
@@ -9,10 +9,11 @@ def crear_libreria(nombre, nombre_libreria, direccion, telefono, email, password
         cursor.execute(
             """
             INSERT INTO usuarios
-            (nombre_usuario, correo_usuario, contrasena_usuario, rol, fecha_registro)
-            VALUES (%s, %s, %s, %s, CURDATE())
+            (nombre_usuario, correo_usuario, contrasena_usuario, rol, fecha_registro,
+             email_verificado, token_verificacion)
+            VALUES (%s, %s, %s, %s, CURDATE(), FALSE, %s)
             """,
-            (nombre, email, hash_password(password), "vendedor")
+            (nombre, email, hash_password(password), "vendedor", token_verificacion)
         )
 
         id_usuario = cursor.lastrowid

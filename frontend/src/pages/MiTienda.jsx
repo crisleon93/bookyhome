@@ -626,7 +626,11 @@ function SeccionCalificacionesVendedor({ tiendaId }) {
 /* ================= COMPONENTE PRINCIPAL ================= */
 export default function MiTienda() {
   const navigate = useNavigate();
-  const handleLogout = () => { localStorage.removeItem("token"); navigate("/"); };
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    window.dispatchEvent(new CustomEvent('auth-change', { detail: { authenticated: false } }));
+    navigate("/");
+  };
   const [userName,      setUserName]      = useState(() => {
     const token = localStorage.getItem("token");
     if (token) {
@@ -897,7 +901,7 @@ export default function MiTienda() {
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    if (!token) { navigate("/login"); return; }
+    if (!token) { navigate("/"); return; }
 
     let mounted = true;
 

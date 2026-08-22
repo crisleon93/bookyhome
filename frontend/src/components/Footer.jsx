@@ -39,10 +39,10 @@ function Footer() {
         <div className="footer-column">
           <h3>Vender</h3>
           <ul>
-            <li><Link to="/libreria" className="highlight">Vender en BookyHome</Link></li>
-            <li><Link to="/libreria">Planes y tarifas</Link></li>
-            <li><Link to="/vendedor/dashboard">Centro de vendedores</Link></li>
-            <li><Link to="/faq-vendedores">FAQ vendedores</Link></li>
+            <li><Link to="/" className="highlight">Vender en BookyHome</Link></li>
+            <li><Link to="/">Planes y tarifas</Link></li>
+            <li><Link to="/">Centro de vendedores</Link></li>
+            <li><Link to="/">FAQ vendedores</Link></li>
           </ul>
         </div>
 
@@ -50,10 +50,10 @@ function Footer() {
         <div className="footer-column">
           <h3>Mi Cuenta</h3>
           <ul>
-            <li><Link to="/login">Iniciar sesión / Registro</Link></li>
-            <li><Link to="/post-login?seccion=Mis Compras">Mis compras</Link></li>
-            <li><Link to="/post-login?seccion=Lista%20de%20Deseos">Lista de deseos</Link></li>
-            <li><Link to="/soporte">Ayuda y Soporte</Link></li>
+            <li><Link to="/">Iniciar sesión / Registro</Link></li>
+            <li><Link to="/">Mis compras</Link></li>
+            <li><Link to="/">Lista de deseos</Link></li>
+            <li><Link to="/">Ayuda y Soporte</Link></li>
           </ul>
         </div>
 

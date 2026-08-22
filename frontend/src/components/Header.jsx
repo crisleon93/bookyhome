@@ -20,14 +20,14 @@ import {
   IconEyeClosed,
   IconBell,
   IconTruck,
-  IconMessage,
-  IconLogOut
+  IconMessage
 } from './Icons';
 import { login } from '../services/api';
 import { jwtDecode } from 'jwt-decode';
 import { notify } from './ToastProvider';
 import Register from '../pages/Register';
 import Libreria from '../pages/Libreria';
+import ForgotPassword from '../pages/ForgotPassword';
 import { notificacionesService } from '../services/notificaciones';
 import { chatService } from '../services/chat';
 
@@ -77,6 +77,7 @@ function Header({ variant, hasSidebar }) {
   const [detectingLocation, setDetectingLocation] = useState(false);
   const [locationError, setLocationError] = useState('');
   const [loginOpen, setLoginOpen] = useState(false);
+  const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false);
   const [registerOpen, setRegisterOpen] = useState(false);
   const [libreriaOpen, setLibreriaOpen] = useState(false);
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
@@ -84,7 +85,6 @@ function Header({ variant, hasSidebar }) {
   const [loginError, setLoginError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [dropdownOpen, setDropdownOpen] = useState(false);
   const [showPass, setShowPass] = useState(false);
   const [noLeidosNotif, setNoLeidosNotif] = useState(0);
   const [noLeidosMensajes, setNoLeidosMensajes] = useState(0);
@@ -202,13 +202,6 @@ function Header({ variant, hasSidebar }) {
       window.removeEventListener('storage', syncAuth);
     };
   }, []);
-
-  useEffect(() => {
-    if (!dropdownOpen) return;
-    const handleClose = () => setDropdownOpen(false);
-    window.addEventListener('click', handleClose);
-    return () => window.removeEventListener('click', handleClose);
-  }, [dropdownOpen]);
 
   // Cargar contadores de notificaciones y mensajes
   useEffect(() => {
@@ -383,47 +376,14 @@ function Header({ variant, hasSidebar }) {
                       <span className="quick-access-label">Favoritos</span>
                     </Link>
                     
-                    <div className="user-dropdown-wrapper">
-                      <button
-                        type="button"
-                        className="quick-access-item user-dropdown-btn"
-                        title="Mi cuenta"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setDropdownOpen(!dropdownOpen);
-                        }}
-                      >
-                        <IconUser />
-                        <span className="quick-access-label">Perfil</span>
-                      </button>
-                      <div className={`user-dropdown-menu ${dropdownOpen ? 'open' : ''}`}>
-                        <Link
-                          to="/?seccion=Mi%20Perfil"
-                          className="user-dropdown-item"
-                          onClick={() => setDropdownOpen(false)}
-                        >
-                          <IconUser width={16} height={16} />
-                          <span>Mi Perfil</span>
-                        </Link>
-                        <div className="user-dropdown-divider" />
-                        <button
-                          type="button"
-                          className="user-dropdown-item"
-                          style={{ color: '#dc2626' }}
-                          onClick={() => {
-                            setDropdownOpen(false);
-                            localStorage.removeItem("token");
-                            setAuthState({ isLoggedIn: false, userRole: null });
-                            window.dispatchEvent(new CustomEvent('auth-change', { detail: { authenticated: false } }));
-                            notify("Sesión cerrada", "info");
-                            navigate("/");
-                          }}
-                        >
-                          <IconLogOut width={16} height={16} />
-                          <span>Cerrar Sesión</span>
-                        </button>
-                      </div>
-                    </div>
+                    <Link
+                      to="/?seccion=Mi%20Perfil"
+                      className="quick-access-item"
+                      title="Mi perfil"
+                    >
+                      <IconUser />
+                      <span className="quick-access-label">Perfil</span>
+                    </Link>
                   </div>
                 </>
               ) : (
@@ -529,7 +489,15 @@ function Header({ variant, hasSidebar }) {
               </button>
             </form>
             <div className="auth-footer-links">
-              <p><Link to="/forgot-password" onClick={() => setLoginOpen(false)}>Olvidé mi contraseña</Link></p>
+              <p>
+                <button
+                  type="button"
+                  onClick={() => { setLoginOpen(false); setForgotPasswordOpen(true); }}
+                  style={{ background: 'none', border: 'none', color: 'var(--vinotinto)', fontWeight: '700', cursor: 'pointer', textDecoration: 'underline', padding: 0, fontFamily: 'inherit', fontSize: 'inherit' }}
+                >
+                  Olvidé mi contraseña
+                </button>
+              </p>
               <p>
                 ¿No tienes cuenta?{' '}
                 <button 
@@ -541,6 +509,20 @@ function Header({ variant, hasSidebar }) {
                 </button>
               </p>
             </div>
+          </div>
+        </div>
+      )}
+
+      {forgotPasswordOpen && (
+        <div className="modal-overlay open" onClick={e => { if (e.target === e.currentTarget) setForgotPasswordOpen(false) }}>
+          <div className="modal-box modal-box--forgot" style={{ position: 'relative' }}>
+            <button className="modal-close" aria-label="Cerrar" onClick={() => setForgotPasswordOpen(false)}>
+              <IconClose />
+            </button>
+            <ForgotPassword
+              isModal={true}
+              onClose={() => { setForgotPasswordOpen(false); setLoginOpen(true); }}
+            />
           </div>
         </div>
       )}

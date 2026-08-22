@@ -1148,6 +1148,16 @@ body.auth-page {
   padding: 1rem 1.4rem 1.2rem;
 }
 
+.auth-main--modal {
+  min-height: auto;
+  padding: 0;
+  background: transparent;
+}
+
+.auth-main--modal .auth-card {
+  box-shadow: none;
+}
+
 .auth-card {
   background: var(--blanco);
   border-radius: 12px;
@@ -1398,7 +1408,7 @@ body.auth-page {
 .toast {
   position: fixed;
   right: 22px;
-  bottom: 22px;
+  top: 22px;
   z-index: 1400;
   max-width: 360px;
   padding: 0.9rem 1rem;
@@ -1706,6 +1716,13 @@ body.auth-page {
   animation: slideUp 0.2s ease;
 }
 .modal-box--sm { max-width: 420px; }
+.modal-box--forgot {
+  max-width: 520px;
+  max-height: none;
+  overflow: visible;
+  padding: 0;
+  background: transparent;
+}
 
 .modal-header {
   display: flex;

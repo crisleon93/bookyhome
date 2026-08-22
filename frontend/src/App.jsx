@@ -8,24 +8,17 @@ import CookieBanner from './components/CookieBanner';
 import { ToastProvider } from './components/ToastProvider';
 
 import Home from './pages/Home';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import Libreria from './pages/Libreria';
-import ForgotPassword from './pages/ForgotPassword';
-import ResetPassword from './pages/Resetpassword';
 import MiTienda from './pages/MiTienda';
 import PrivateRoute from './components/PrivateRoute';
 import PublicarLibro from './pages/PublicarLibro';
 import AdminDashboard from './pages/AdminDashboard';
 import Historial from './pages/Historial';
-import VerifyEmail from './pages/VerifyEmail';
 import ListaDeseos from './pages/ListaDeseos';
 import Devoluciones from './pages/Devoluciones';
 import BookyPagoFinanzas from './pages/BookyPagoFinanzas';
 import Chat from './pages/Chat';
 
 import { getUserRole } from './hooks/useAuth';
-import LegalPage from './pages/LegalPage';
 
 function App() {
   return (
@@ -61,11 +54,6 @@ function MainLayout() {
     window.addEventListener('storage', checkToken);
     window.addEventListener('auth-change', checkToken);
     
-    // También escuchar cambios en el localStorage directamente
-    const handleStorageChange = () => {
-      checkToken();
-    };
-    
     // Verificar periódicamente por si el token se estableció
     const interval = setInterval(checkToken, 1000);
     
@@ -87,13 +75,10 @@ function MainLayout() {
       <Routes>
         {/* ── RUTAS PÚBLICAS ── */}
         <Route path="/" element={<Home />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/verify-email" element={<VerifyEmail />} />
-        <Route path="/libreria" element={<Libreria />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/reset-password" element={<ResetPassword />} />
-        <Route path="/legal" element={<LegalPage />} />
+        <Route path="/register" element={<Navigate to="/" replace />} />
+        <Route path="/forgot-password" element={<Navigate to="/" replace />} />
+        <Route path="/reset-password" element={<Navigate to="/" replace />} />
+        <Route path="/legal" element={<Navigate to="/" replace />} />
 
         {/* ── RUTAS PROTEGIDAS GENERALES (Cualquier usuario logueado) ── */}
         <Route element={<PrivateRoute />}>
@@ -128,7 +113,7 @@ function MainLayout() {
             ) : (userRole === 'usuario' || userRole === 'comprador') ? (
               <Navigate to="/" replace />
             ) : (
-              <Navigate to="/login" replace />
+              <Navigate to="/" replace />
             )
           }
         />

@@ -10,6 +10,8 @@ from app.models.tiendas import (
     actualizar_tienda,
 )
 from app.auth import verify_token
+from app.email import enviar_email_confirmacion_registro, is_smtp_configured
+import secrets
 
 router = APIRouter()
 security = HTTPBearer()
@@ -24,14 +26,16 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
 
 
 @router.post("/libreria")
-def registrar_libreria(data: LibreriaRegistro):
+async def registrar_libreria(data: LibreriaRegistro):
+    token_verificacion = secrets.token_urlsafe(32)
     resultado = crear_libreria(
         data.nombre,
         data.libreria,
         data.direccion,
         data.telefono,
         data.email,
-        data.password
+        data.password,
+        token_verificacion
     )
 
     if not resultado["ok"]:
@@ -39,7 +43,21 @@ def registrar_libreria(data: LibreriaRegistro):
             raise HTTPException(status_code=400, detail="Ya existe una cuenta con ese email")
         raise HTTPException(status_code=500, detail=f"Error al registrar la librería: {resultado['error']}")
 
-    return {"mensaje": "Librería registrada exitosamente"}
+    if is_smtp_configured():
+        try:
+            await enviar_email_confirmacion_registro(data.email, token_verificacion)
+            print(f"✅ Correo de confirmación enviado a {data.email}", flush=True)
+        except Exception as exc:
+            print(f"❌ Error enviando correo de confirmación a {data.email}: {exc}", flush=True)
+            return {
+                "mensaje": "Librería registrada, pero no se pudo enviar el correo de verificación.",
+                "email_enviado": False,
+            }
+
+    return {
+        "mensaje": "Librería registrada exitosamente. Revisa tu correo para verificar la cuenta.",
+        "email_enviado": is_smtp_configured(),
+    }
 
 
 @router.get("/tiendas")
