@@ -53,7 +53,7 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
 def obtener_notificaciones_usuario(
     user_id: int = Depends(get_current_user),
     solo_no_leidas: bool = False,
-    limit: int = 20,
+    limit: int = 50,
     offset: int = 0
 ):
     """Obtiene notificaciones del usuario"""
@@ -67,7 +67,9 @@ def obtener_notificaciones_usuario(
                 n.tipo,
                 n.titulo,
                 n.cuerpo,
+                n.cuerpo AS descripcion,
                 n.id_referencia,
+                n.id_referencia AS referencia_id,
                 n.leida,
                 n.fecha_creacion
             FROM notificaciones n
@@ -98,11 +100,12 @@ def obtener_notificaciones_usuario(
         
         return {
             "notificaciones": notificaciones,
-            "no_leidas": no_leidas["total"]
+            "no_leidas": no_leidas["total"] if no_leidas else 0
         }
     finally:
         cursor.close()
         db.close()
+
 
 @router.post("")
 def crear_notificacion(data: NotificacionCreate, user_id: int = Depends(get_current_user)):

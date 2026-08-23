@@ -245,16 +245,15 @@ def registrar_pago(id_usuario, id_orden, amount, payment_method, coupon_code=Non
                     "UPDATE ordenes_compra SET estado_orden = 'pagado' WHERE id_orden = %s AND id_usuario = %s",
                     (id_orden_db, id_usuario),
                 )
-                db.commit()
             elif id_libros:
-                fmt = ','.join(['%s'] * len(id_libros))
+                fmt2 = ','.join(['%s'] * len(id_libros))
                 cursor.execute(f"""
                     SELECT DISTINCT oc.id_orden
                     FROM ordenes_compra oc
                     JOIN detalle_orden do ON do.id_orden = oc.id_orden
                     WHERE oc.id_usuario = %s
                       AND oc.estado_orden = 'pendiente'
-                      AND do.id_libro IN ({fmt})
+                      AND do.id_libro IN ({fmt2})
                     ORDER BY oc.fecha_orden DESC
                     LIMIT 1
                 """, (id_usuario, *id_libros))
@@ -264,12 +263,38 @@ def registrar_pago(id_usuario, id_orden, amount, payment_method, coupon_code=Non
                         "UPDATE ordenes_compra SET estado_orden = 'pagado' WHERE id_orden = %s",
                         (row['id_orden'],)
                     )
-                    db.commit()
+
+            # Notificar al comprador de su compra exitosa
+            cursor.execute("""
+                INSERT INTO notificaciones (id_usuario, tipo, titulo, cuerpo, id_referencia, leida, fecha_creacion)
+                VALUES (%s, 'pedido', '¡Compra realizada con éxito!', %s, %s, FALSE, NOW())
+            """, (id_usuario, f"Tu pedido #{id_orden} por ${int(amount_paid):,} ha sido confirmado exitosamente.", id_orden))
+
+            # Notificar a los vendedores de los libros comprados
+            if id_libros:
+                fmt3 = ','.join(['%s'] * len(id_libros))
+                cursor.execute(f"""
+                    SELECT DISTINCT t.id_usuario AS id_vendedor, t.nombre_tienda
+                    FROM libros l
+                    JOIN tiendas t ON t.id_tienda = l.id_tienda
+                    WHERE l.id_libro IN ({fmt3})
+                """, tuple(id_libros))
+                vendedores = cursor.fetchall()
+                for v in vendedores:
+                    if v.get("id_vendedor") and v["id_vendedor"] != id_usuario:
+                        cursor.execute("""
+                            INSERT INTO notificaciones (id_usuario, tipo, titulo, cuerpo, id_referencia, leida, fecha_creacion)
+                            VALUES (%s, 'pedido', '¡Nueva venta recibida!', %s, %s, FALSE, NOW())
+                        """, (v["id_vendedor"], f"Has recibido una nueva compra para la orden #{id_orden} por ${int(amount_paid):,}.", id_orden))
+
+            db.commit()
+
         finally:
             cursor.close()
             db.close()
     except Exception as e:
         print(f"⚠️ No se pudo sincronizar estado de pago en MySQL: {e}")
+
 
     # Registrar el pago
     payments = _load_store(PAYMENT_FILE)

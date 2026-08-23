@@ -17,6 +17,34 @@ def ensure_quejas_schema():
         db = get_db()
         cursor = db.cursor()
 
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS planes_herramientas (
+                id_plan INT AUTO_INCREMENT PRIMARY KEY,
+                nombre_plan VARCHAR(50) NOT NULL,
+                precio_mensual DECIMAL(10, 2) NOT NULL,
+                estadisticas_basicas INT DEFAULT 0,
+                estadisticas_avanzadas INT DEFAULT 0,
+                exportar_reportes INT DEFAULT 0,
+                soporte_prioritario INT DEFAULT 0,
+                historial_meses INT DEFAULT 1,
+                impulsos_con_descuento DECIMAL(5, 2) DEFAULT 0.00,
+                descripcion TEXT
+            )
+        """)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS suscripciones_herramientas (
+                id_suscripcion INT AUTO_INCREMENT PRIMARY KEY,
+                id_tienda INT NOT NULL,
+                id_plan INT NOT NULL,
+                fecha_inicio DATE NOT NULL,
+                fecha_fin DATE NOT NULL,
+                estado VARCHAR(50) DEFAULT 'Activa',
+                metodo_pago VARCHAR(50),
+                monto_pagado DECIMAL(10, 2),
+                renovacion_automatica BOOLEAN DEFAULT FALSE
+            )
+        """)
+
         cursor.execute("SHOW TABLES LIKE %s", ("solicitudes_soporte",))
         if not cursor.fetchone():
             cursor.execute("""
@@ -56,7 +84,9 @@ def ensure_quejas_schema():
             cursor.execute("ALTER TABLE solicitudes_soporte ADD COLUMN tipo_solicitud VARCHAR(30) NOT NULL DEFAULT 'soporte'")
 
         try:
+            cursor.execute("SET FOREIGN_KEY_CHECKS=0")
             cursor.execute("ALTER TABLE solicitudes_soporte MODIFY COLUMN id_tienda INT NULL")
+            cursor.execute("SET FOREIGN_KEY_CHECKS=1")
         except Exception:
             pass
 

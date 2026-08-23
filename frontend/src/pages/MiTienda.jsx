@@ -1,4 +1,4 @@
-﻿// src/pages/MiTienda.jsx
+// src/pages/MiTienda.jsx
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
@@ -879,6 +879,9 @@ export default function MiTienda() {
       case "entrega":
       case "pago":
         setActiveSide("Pedidos");
+        break;
+      case "sistema":
+        setActiveSide("Quejas y reclamos");
         break;
       default:
         break;
@@ -3042,7 +3045,7 @@ export default function MiTienda() {
                 </div>
                 <div className="notif-contenido">
                   <h3>{notif.titulo}</h3>
-                  <p>{notif.descripcion}</p>
+                  <p>{notif.descripcion || notif.cuerpo}</p>
                   <small>{new Date(notif.fecha_creacion).toLocaleString()}</small>
                 </div>
                 <div className="notif-acciones">

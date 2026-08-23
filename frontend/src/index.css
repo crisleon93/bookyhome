@@ -219,7 +219,7 @@ header.scrolled { box-shadow: 0 2px 20px rgba(122, 30, 58, 0.15); }
 
 .search-wrapper {
   flex: 1 1 520px;
-  max-width: 720px;
+  max-width: 900px;
   min-width: 180px;
   position: relative;
   display: flex;
@@ -315,7 +315,7 @@ header.scrolled { box-shadow: 0 2px 20px rgba(122, 30, 58, 0.15); }
 .quick-access {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 1.5rem;
 }
 
 .quick-access-item {
@@ -383,6 +383,12 @@ button.quick-access-item {
   letter-spacing: -0.01em;
   text-align: center;
   line-height: 1.1;
+}
+
+@media (min-width: 768px) {
+  .quick-access-label {
+    display: none;
+  }
 }
 
 .notification-badge {
@@ -1408,8 +1414,8 @@ body.auth-page {
 .toast {
   position: fixed;
   right: 22px;
-  top: 22px;
-  z-index: 1400;
+  bottom: 22px;
+  z-index: 999999;
   max-width: 360px;
   padding: 0.9rem 1rem;
   border-radius: 8px;

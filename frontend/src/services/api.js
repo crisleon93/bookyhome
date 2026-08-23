@@ -67,6 +67,7 @@ export const getPedidosElegiblesDevolucion = () => api.get('/devoluciones/elegib
 export const solicitarDevolucion = (payload) => api.post('/devoluciones', payload)
 export const getQuejas = () => api.get('/quejas')
 export const crearQueja = (formData) => api.post('/quejas', formData, { headers: { 'Content-Type': 'multipart/form-data' } })
+export const cancelarQueja = (id) => api.delete(`/quejas/${id}`)
 export const getQuejasAdmin = () => api.get('/quejas/admin/todas')
 export const resolverQueja = (id, payload) => api.patch(`/quejas/admin/${id}`, payload)
 export const getQuejasVendedor = () => api.get('/quejas/vendedor')
