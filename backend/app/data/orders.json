@@ -3483,5 +3483,38 @@
       "metodo_pago": "PayPal",
       "fecha_entrega_confirmada": "2026-08-20T01:11:41.352870Z"
     }
+  ],
+  "36": [
+    {
+      "id_orden": 1,
+      "codigo_compra": "BH-65342D9D84",
+      "fecha": "2026-08-23T18:13:37.803195Z",
+      "items": [
+        {
+          "id_libro": 50,
+          "titulo": "caminos elevados",
+          "autor_libro": "jose jose",
+          "precio_libro": 34000.0,
+          "cantidad": 1,
+          "imagen": null,
+          "id_variante": null,
+          "variante_label": null
+        },
+        {
+          "id_libro": 49,
+          "titulo": "erwerwe",
+          "autor_libro": "werwerwer",
+          "precio_libro": 121231.0,
+          "cantidad": 1,
+          "imagen": null,
+          "id_variante": null,
+          "variante_label": null
+        }
+      ],
+      "total": 155231.0,
+      "estado": "pagado",
+      "id_orden_db": 51,
+      "metodo_pago": "Transferencia Bancaria"
+    }
   ]
 }

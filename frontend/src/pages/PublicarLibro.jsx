@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "../services/api";
+import { jwtDecode } from "jwt-decode";
+import axios, { getApiBaseUrl } from "../services/api";
 import SellerSidebar from "../components/VendedorSidebar";
 import '../styles/publicar.css';
 
@@ -17,6 +18,20 @@ const IDIOMAS = ['Español', 'Inglés', 'Portugués', 'Francés', 'Otro'];
 export default function PublicarLibro() {
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
+
+  const [userName, setUserName] = useState(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      try {
+        const payload = jwtDecode(token);
+        return payload.nombre || "Vendedor";
+      } catch {
+        return "Vendedor";
+      }
+    }
+    return "Vendedor";
+  });
+  const [userPhotoUrl, setUserPhotoUrl] = useState(null);
 
   const [categorias, setCategorias] = useState([]);
   const [previews, setPreviews] = useState([]);
@@ -192,7 +207,8 @@ export default function PublicarLibro() {
     return (
       <div className="dashboard-container">
         <SellerSidebar
-          userName="Vendedor"
+          userName={userName}
+          userPhotoUrl={userPhotoUrl}
           activeSide={activeSide}
           setActiveSide={setActiveSide}
           handleLogout={() => {
@@ -215,7 +231,8 @@ export default function PublicarLibro() {
   return (
     <div className="dashboard-container">
       <SellerSidebar
-        userName="Vendedor"
+        userName={userName}
+        userPhotoUrl={userPhotoUrl}
         activeSide={activeSide}
         setActiveSide={handleSidebarSelect}
         handleLogout={() => {

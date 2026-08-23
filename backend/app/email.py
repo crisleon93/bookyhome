@@ -3,6 +3,7 @@ from fastapi_mail.schemas import MultipartSubtypeEnum
 from dotenv import load_dotenv
 import os
 from pathlib import Path
+from datetime import datetime
 
 
 # Paleta BookyHome — los 5 colores de frontend/src/index.css
@@ -290,67 +291,153 @@ async def enviar_email_confirmacion_registro(email: str, token: str):
     await fm.send_message(mensaje)
 
 
+def _format_date(iso_str: str) -> str:
+    if not iso_str:
+        return ""
+    try:
+        clean_str = str(iso_str).replace("Z", "+00:00")
+        dt = datetime.fromisoformat(clean_str)
+        meses = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"]
+        return f"{dt.day} de {meses[dt.month - 1]} de {dt.year}, {dt.strftime('%H:%M')}"
+    except Exception:
+        return str(iso_str).split("T")[0]
+
+
 async def enviar_email_confirmacion(email: str, orden: dict):
-    items_html = "".join([
-        f"""
-        <tr>
-            <td style="padding: 8px 0; border-bottom: 1px solid {BRAND['beige']}; color: {BRAND['gris_carbon']};">{item['titulo']}</td>
-            <td style="padding: 8px 0; border-bottom: 1px solid {BRAND['beige']}; text-align:center; color: {BRAND['gris_carbon']};">{item['cantidad']}</td>
-            <td style="padding: 8px 0; border-bottom: 1px solid {BRAND['beige']}; text-align:right; font-weight:700; color: {BRAND['vinotinto']};">
-                ${'{:,.0f}'.format(item['precio_libro'] * item['cantidad'])}
-            </td>
-        </tr>
-        """
-        for item in orden.get("items", [])
-    ])
+    fecha_formateada = _format_date(orden.get("fecha", ""))
+    codigo_compra = orden.get("codigo_compra") or f"BH-ORD{orden.get('id_orden', '')}"
+    metodo_pago = orden.get("metodo_pago", "Pago digital verificado")
+    
+    items = orden.get("items", [])
+    items_rows = []
+    for item in items:
+        titulo = item.get("titulo", "Libro")
+        autor = item.get("autor_libro", "")
+        autor_html = f'<div style="font-size: 11.5px; color: #6B7280; margin-top: 2px;">{autor}</div>' if autor else ''
+        cant = item.get("cantidad", 1)
+        subt = item.get("precio_libro", 0) * cant
+        
+        items_rows.append(f"""
+            <tr>
+                <td style="padding: 10px 0; border-bottom: 1px solid #F3F4F6; vertical-align: middle;">
+                    <div style="font-weight: 600; color: {BRAND['gris_carbon']}; font-size: 13.5px;">{titulo}</div>
+                    {autor_html}
+                </td>
+                <td style="padding: 10px 8px; border-bottom: 1px solid #F3F4F6; text-align: center; color: #4B5563; font-size: 13px; vertical-align: middle;">
+                    x{cant}
+                </td>
+                <td style="padding: 10px 0; border-bottom: 1px solid #F3F4F6; text-align: right; font-weight: 700; color: {BRAND['vinotinto']}; font-size: 13.5px; vertical-align: middle;">
+                    ${'{:,.0f}'.format(subt).replace(',', '.')} COP
+                </td>
+            </tr>
+        """)
+    items_html = "".join(items_rows)
 
     coupon_html = ""
     if orden.get("cupon_aplicado") and orden.get("total_con_descuento") is not None:
+        desc_val = orden['total'] - orden['total_con_descuento']
         coupon_html = f"""
-            <div style="display:flex; justify-content:space-between; margin-bottom: 12px; background: {BRAND['beige']}; padding: 6px 10px; border-radius: 6px; border-left: 3px solid {BRAND['rojo_suave']};">
-                <span style="color: {BRAND['vinotinto']};">Cupón {orden['cupon_aplicado']}</span>
-                <span style="color: {BRAND['rojo_suave']}; font-weight:700;">-${'{:,.0f}'.format(orden['total'] - orden['total_con_descuento'])} COP</span>
-            </div>
+            <tr>
+                <td style="padding: 6px 0; color: #059669; font-size: 13px;">
+                    🏷️ Cupón <strong>{orden['cupon_aplicado']}</strong>
+                </td>
+                <td style="padding: 6px 0; text-align: right; color: #059669; font-weight: 700; font-size: 13px;">
+                    -${'{:,.0f}'.format(desc_val).replace(',', '.')} COP
+                </td>
+            </tr>
         """
+
+    total_final = orden.get("total_con_descuento", orden.get("total", 0))
+    frontend_url = get_frontend_url()
+    enlace_compras = f"{frontend_url}/?seccion=Mis%20Compras"
 
     content = f"""
         {_email_header_html()}
-        {_email_hero_html("🎉", f"¡Compra confirmada! #{orden['id_orden']}", gradient=True)}
-        <p style="font-size: 0.95rem; line-height: 1.65; margin: 0 0 1.25rem; color: {BRAND['gris_carbon']};">
-            Gracias por tu compra. Aquí tienes el resumen de tu pedido:
+        {_email_hero_html("🧾", "Comprobante de Pago", gradient=True)}
+        
+        <p style="font-size: 13.5px; line-height: 1.5; margin: 0 0 14px; color: {BRAND['gris_carbon']}; text-align: center;">
+            Este correo certifica el pago exitoso de tu orden en <strong>BookyHome</strong>. Guarda este comprobante para tu control y seguimiento.
         </p>
-        <div style="background: {BRAND['beige']}; border-radius: 8px; padding: 1rem; margin-bottom: 1.25rem; border-left: 4px solid {BRAND['vinotinto']};">
-            <p style="margin: 0 0 0.35rem; font-size: 0.72rem; color: {BRAND['rojo_suave']}; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 700;">Detalles de la orden</p>
-            <p style="margin: 5px 0; font-size: 0.9rem; color: {BRAND['gris_carbon']};"><strong>ID Orden:</strong> #{orden['id_orden']}</p>
-            <p style="margin: 5px 0; font-size: 0.9rem; color: {BRAND['gris_carbon']};"><strong>Fecha:</strong> {orden.get('fecha', '')}</p>
-            <p style="margin: 5px 0; font-size: 0.9rem; color: {BRAND['gris_carbon']};"><strong>Método de pago:</strong> {orden.get('metodo_pago', 'Confirmado digitalmente')}</p>
-        </div>
-        <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem; margin-bottom: 1rem;">
+
+        <!-- Tarjeta de Metadatos del Comprobante -->
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background: #FAF7F2; border-radius: 8px; border: 1px solid #EADBCE; margin-bottom: 16px;">
+            <tr>
+                <td style="padding: 14px 16px;">
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                        <tr>
+                            <td style="padding-bottom: 8px; font-size: 12px; color: #6B7280; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;" colspan="2">
+                                Resumen de Transacción
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 4px 0; font-size: 13px; color: #4B5563;"><strong>N° de Orden:</strong></td>
+                            <td style="padding: 4px 0; font-size: 13px; color: {BRAND['vinotinto']}; font-weight: 700; text-align: right;">#{orden.get('id_orden')}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 4px 0; font-size: 13px; color: #4B5563;"><strong>Código de compra:</strong></td>
+                            <td style="padding: 4px 0; font-size: 13px; color: #1F2937; font-weight: 600; text-align: right; font-family: monospace;">{codigo_compra}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 4px 0; font-size: 13px; color: #4B5563;"><strong>Fecha y hora:</strong></td>
+                            <td style="padding: 4px 0; font-size: 13px; color: #1F2937; text-align: right;">{fecha_formateada}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 4px 0; font-size: 13px; color: #4B5563;"><strong>Método de pago:</strong></td>
+                            <td style="padding: 4px 0; font-size: 13px; color: #1F2937; text-align: right;">{metodo_pago}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 4px 0; font-size: 13px; color: #4B5563;"><strong>Estado del pago:</strong></td>
+                            <td style="padding: 4px 0; text-align: right;">
+                                <span style="display: inline-block; background: #D1FAE5; color: #065F46; font-size: 11.5px; font-weight: 700; padding: 2px 8px; border-radius: 12px; border: 1px solid #6EE7B7;">
+                                    ✓ Aprobado / Pagado
+                                </span>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+
+        <!-- Tabla de Productos -->
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 12px;">
             <thead>
-                <tr style="border-bottom: 2px solid {BRAND['rojo_suave']};">
-                    <th style="padding: 8px 0; text-align:left; color: {BRAND['vinotinto']};">Libro</th>
-                    <th style="padding: 8px 0; text-align:center; color: {BRAND['vinotinto']};">Cant.</th>
-                    <th style="padding: 8px 0; text-align:right; color: {BRAND['vinotinto']};">Precio</th>
+                <tr style="border-bottom: 2px solid {BRAND['vinotinto']};">
+                    <th style="padding: 8px 0; text-align: left; color: {BRAND['vinotinto']}; font-size: 12.5px; font-weight: 700; text-transform: uppercase;">Detalle del Libro</th>
+                    <th style="padding: 8px 8px; text-align: center; color: {BRAND['vinotinto']}; font-size: 12.5px; font-weight: 700; text-transform: uppercase;">Cant.</th>
+                    <th style="padding: 8px 0; text-align: right; color: {BRAND['vinotinto']}; font-size: 12.5px; font-weight: 700; text-transform: uppercase;">Subtotal</th>
                 </tr>
             </thead>
-            <tbody>{items_html}</tbody>
+            <tbody>
+                {items_html}
+            </tbody>
         </table>
-        <div style="border-top: 2px solid {BRAND['beige']}; padding-top: 0.75rem; font-size: 0.95rem; color: {BRAND['gris_carbon']};">
-            <div style="display:flex; justify-content:space-between; margin-bottom: 6px;">
-                <span>Subtotal</span>
-                <span>${'{:,.0f}'.format(orden['total'])} COP</span>
-            </div>
+
+        <!-- Totales -->
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top: 8px; margin-bottom: 16px;">
+            <tr>
+                <td style="padding: 6px 0; color: #6B7280; font-size: 13px;">Subtotal productos:</td>
+                <td style="padding: 6px 0; text-align: right; font-weight: 600; color: #374151; font-size: 13px;">
+                    ${'{:,.0f}'.format(orden.get('total', 0)).replace(',', '.')} COP
+                </td>
+            </tr>
             {coupon_html}
-            <div style="display:flex; justify-content:space-between; font-size: 1.1rem; font-weight: 800; color: {BRAND['gris_carbon']};">
-                <span>Total pagado</span>
-                <span style="color: {BRAND['rojo_suave']};">${'{:,.0f}'.format(orden.get('total_con_descuento', orden['total']))} COP</span>
-            </div>
-        </div>
+            <tr style="border-top: 1.5px solid #E5E7EB;">
+                <td style="padding: 12px 0 4px; font-size: 15px; font-weight: 800; color: {BRAND['gris_carbon']};">
+                    Total Pagado:
+                </td>
+                <td style="padding: 12px 0 4px; text-align: right; font-size: 17px; font-weight: 800; color: {BRAND['rojo_suave']};">
+                    ${'{:,.0f}'.format(total_final).replace(',', '.')} COP
+                </td>
+            </tr>
+        </table>
+
+        {_email_button_html("Ver mis compras y seguimiento", enlace_compras)}
+
         {_email_footer_html()}
     """
 
     mensaje = _build_branded_message(
-        subject=f"Confirmación de compra #{orden['id_orden']} — BookyHome",
+        subject=f"Comprobante de Pago — Orden #{orden['id_orden']} · BookyHome",
         recipients=[email],
         html_content=content,
     )

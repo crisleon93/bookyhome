@@ -1,9 +1,11 @@
 import { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { IconPackage, IconCheck, IconLock } from "../Icons";
 import { getDevoluciones, getOrdenes, getOrden, sendConfirmationEmail } from "../../services/api";
 import { notify } from "../ToastProvider";
 
 export default function SeccionMisCompras({ userId }) {
+  const navigate = useNavigate();
   const [ordenes, setOrdenes] = useState([]);
   const [devoluciones, setDevoluciones] = useState([]);
   const [ordenesLoading, setOrdenesLoading] = useState(false);
@@ -57,13 +59,18 @@ export default function SeccionMisCompras({ userId }) {
     setEnviandoEmail(true);
     try {
       await sendConfirmationEmail(ordenSeleccionada.id_orden);
-      notify('Correo de confirmación enviado', 'success');
+      notify('Comprobante de compra enviado al correo', 'success');
     } catch {
-      notify('No se pudo enviar el correo', 'error');
+      notify('No se pudo enviar el comprobante al correo', 'error');
     } finally {
       setEnviandoEmail(false);
     }
   };
+
+  const formatNumber = (value) =>
+    Number(value || 0).toLocaleString("es-CO", {
+      maximumFractionDigits: 0
+    });
 
   const formatCurrency = (value) =>
     Number(value || 0).toLocaleString("es-CO", {
@@ -78,8 +85,13 @@ export default function SeccionMisCompras({ userId }) {
       return { pago: 'Reembolsado', entrega: 'Devolución', pagoClase: 'devolucion', entregaClase: 'devolucion', completada: false };
     }
 
-    const estado = String(orden.estado || '').toLowerCase();
+    const estado = String(orden.estado || orden.estado_orden || '').toLowerCase();
     const estadoEnvio = String(orden.envio?.estado_envio || '').toLowerCase();
+
+    if (estado.includes('cancelad') || estadoEnvio.includes('cancelad')) {
+      return { pago: 'Cancelada', entrega: null, pagoClase: 'cancelado', entregaClase: null, completada: false, esCancelada: true };
+    }
+
     const entregada = estado.includes('entregad') || estadoEnvio.includes('entregad');
     const enCamino = estado.includes('enviad') || estadoEnvio.includes('transito') || estadoEnvio.includes('camino');
 
@@ -110,56 +122,116 @@ export default function SeccionMisCompras({ userId }) {
                 const estadoVisible = obtenerEstadoVisible(orden);
                 return (
                   <>
-              <div className="pl-order-left">
-                <span className="pl-order-emoji" style={{ display: 'flex', alignItems: 'center' }}>
-                  {estadoVisible.completada && <IconCheck width={20} height={20} strokeWidth={2} style={{ color: 'green' }} />}
-                </span>
-                <div>
-                  <p className="pl-order-title">Orden #{orden.id_orden}</p>
-                  <p className="pl-order-meta">
-                    {orden.fecha ? new Date(orden.fecha).toLocaleDateString("es-CO") : ""}
-                    {" · "}{orden.items?.length || 0} producto{orden.items?.length === 1 ? "" : "s"}
-                    {" · "}
-                    <span className={`pl-badge pl-badge--${estadoVisible.pagoClase}`}>
-                      {estadoVisible.pago}
-                    </span>
-                    {estadoVisible.entrega && <span className={`pl-badge pl-badge--${estadoVisible.entregaClase}`} style={{ marginLeft: 6 }}>{estadoVisible.entrega}</span>}
-                  </p>
-                </div>
-              </div>
-              <div className="pl-order-right" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <span className="pl-order-price">
-                  {formatCurrency(orden.total)}
-                </span>
-                {estadoVisible.pago === "Pagado" && (
-                  <button
-                    onClick={() => handleVerBaucher(orden)}
-                    className="btn btn-vinotinto"
-                    style={{
-                      padding: "6px 12px",
-                      fontSize: "0.8rem",
-                      borderRadius: "6px",
-                      background: "var(--vinotinto)",
-                      color: "white",
-                      border: "none",
-                      cursor: "pointer",
-                      fontWeight: 600,
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "6px"
-                    }}
-                  >
-                    <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                      <polyline points="14 2 14 8 20 8"></polyline>
-                      <line x1="16" y1="13" x2="8" y2="13"></line>
-                      <line x1="16" y1="17" x2="8" y2="17"></line>
-                      <polyline points="10 9 9 9 8 9"></polyline>
-                    </svg>
-                    Ver Baucher
-                  </button>
-                )}
-              </div>
+                    <div className="pl-order-left">
+                      <span className="pl-order-emoji">
+                        {estadoVisible.completada ? (
+                          <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                            <polyline points="22 4 12 14.01 9 11.01" />
+                          </svg>
+                        ) : estadoVisible.esCancelada ? (
+                          <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                            <circle cx="12" cy="12" r="10" />
+                            <line x1="15" y1="9" x2="9" y2="15" />
+                            <line x1="9" y1="9" x2="15" y2="15" />
+                          </svg>
+                        ) : estadoVisible.pago === "Pendiente de pago" ? (
+                          <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                            <circle cx="12" cy="12" r="10" />
+                            <polyline points="12 6 12 12 16 14" />
+                          </svg>
+                        ) : (
+                          <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                            <rect x="1" y="3" width="15" height="13" />
+                            <polygon points="16 8 20 8 23 11 23 16 16 16 16 8" />
+                            <circle cx="5.5" cy="18.5" r="2.5" />
+                            <circle cx="18.5" cy="18.5" r="2.5" />
+                          </svg>
+                        )}
+                      </span>
+                      <div>
+                        <p className="pl-order-title">Orden #{orden.id_orden}</p>
+                        <div className="pl-order-meta">
+                          <span className="pl-order-meta-fecha">
+                            {orden.fecha ? new Date(orden.fecha).toLocaleDateString("es-CO") : ""}
+                          </span>
+                          <span className="pl-order-meta-divider">·</span>
+                          <span className="pl-order-meta-items">
+                            {orden.items?.length || 0} producto{orden.items?.length === 1 ? "" : "s"}
+                          </span>
+                          <span className="pl-order-meta-divider">·</span>
+                          <div className="pl-order-meta-badges">
+                            <span className={`pl-badge pl-badge--${estadoVisible.pagoClase}`}>
+                              {estadoVisible.pago}
+                            </span>
+                            {estadoVisible.entrega && (
+                              <span className={`pl-badge pl-badge--${estadoVisible.entregaClase}`}>
+                                {estadoVisible.entrega}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="pl-order-right">
+                      <div className="pl-order-price">
+                        <span className="pl-order-currency">$</span>
+                        <span className="pl-order-amount">{formatNumber(orden.total)}</span>
+                      </div>
+                      <div className="pl-order-action">
+                        {estadoVisible.pago === "Pendiente de pago" && (
+                          <button
+                            onClick={() => navigate('/?seccion=Carrito')}
+                            className="btn btn-vinotinto"
+                            style={{
+                              padding: "6px 14px",
+                              fontSize: "0.8rem",
+                              borderRadius: "6px",
+                              background: "var(--vinotinto)",
+                              color: "white",
+                              border: "none",
+                              cursor: "pointer",
+                              fontWeight: 600,
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "6px",
+                              whiteSpace: "nowrap"
+                            }}
+                          >
+                            Pagar orden
+                          </button>
+                        )}
+                        {estadoVisible.pago === "Pagado" && (
+                          <button
+                            onClick={() => handleVerBaucher(orden)}
+                            className="btn btn-vinotinto"
+                            style={{
+                              padding: "6px 12px",
+                              fontSize: "0.8rem",
+                              borderRadius: "6px",
+                              background: "var(--vinotinto)",
+                              color: "white",
+                              border: "none",
+                              cursor: "pointer",
+                              fontWeight: 600,
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "6px",
+                              whiteSpace: "nowrap"
+                            }}
+                          >
+                            <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                              <polyline points="14 2 14 8 20 8"></polyline>
+                              <line x1="16" y1="13" x2="8" y2="13"></line>
+                              <line x1="16" y1="17" x2="8" y2="17"></line>
+                              <polyline points="10 9 9 9 8 9"></polyline>
+                            </svg>
+                            Ver Baucher
+                          </button>
+                        )}
+                      </div>
+                    </div>
                   </>
                 );
               })()}

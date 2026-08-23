@@ -93,7 +93,19 @@ function SidebarIcon(props) {
 
 export default function VendedorSidebar({ userName = 'Vendedor', profileImage = null, userPhotoUrl = null, activeSide = 'Inicio', setActiveSide, handleLogout }) {
   const navigate = useNavigate();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    const saved = localStorage.getItem('vendedor_sidebar_open');
+    return saved !== null ? saved === 'true' : true;
+  });
+
+  const handleToggleSidebar = () => {
+    setSidebarOpen((prev) => {
+      const next = !prev;
+      localStorage.setItem('vendedor_sidebar_open', String(next));
+      return next;
+    });
+  };
+
   const [noLeidosNotif, setNoLeidosNotif] = useState(0);
   const [noLeidosMensajes, setNoLeidosMensajes] = useState(0);
   const avatarSrc = profileImage || userPhotoUrl || null;
@@ -210,7 +222,7 @@ export default function VendedorSidebar({ userName = 'Vendedor', profileImage = 
         </div>
 
         <button
-          onClick={() => setSidebarOpen(!sidebarOpen)}
+          onClick={handleToggleSidebar}
           style={{
             position: 'absolute',
             right: sidebarOpen ? '0' : '8px',
