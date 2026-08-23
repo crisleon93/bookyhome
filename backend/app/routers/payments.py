@@ -112,7 +112,7 @@ async def send_order_confirmation(id_orden: int, user=Depends(get_current_user))
         raise HTTPException(status_code=404, detail="Email del usuario no encontrado")
 
     await enviar_email_confirmacion(email, orden)
-    return {"ok": True, "message": "Correo de confirmación enviado"}
+    return {"ok": True, "message": "Comprobante de compra enviado al correo"}
 
 
 # ── Endpoint para cancelar una orden ──

@@ -2238,33 +2238,98 @@ body.auth-page {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 14px 0;
+  padding: 16px 20px;
+  border-bottom: 1px solid #f0ece6;
+  transition: background-color 0.15s ease;
+}
+.pl-order-row:last-child {
+  border-bottom: none;
+}
+.pl-order-row:hover {
+  background-color: #faf8f5;
 }
 .pl-order-left {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 16px;
+  flex: 1;
+  min-width: 0;
 }
-.pl-order-emoji { width: 20px; flex: 0 0 20px; font-size: 1.6rem; }
+.pl-order-emoji {
+  width: 28px;
+  min-width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 .pl-order-title {
   font-weight: 700;
-  font-size: 0.88rem;
+  font-size: 0.95rem;
   color: var(--gris-carbon);
-  margin-bottom: 3px;
+  margin: 0 0 4px 0;
 }
 .pl-order-meta {
-  font-size: 0.78rem;
-  color: #888;
+  font-size: 0.82rem;
+  color: #777;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.pl-order-meta-fecha {
+  min-width: 85px;
+  display: inline-block;
+  color: #666;
+}
+.pl-order-meta-divider {
+  color: #d0c9bf;
+  user-select: none;
+}
+.pl-order-meta-items {
+  min-width: 95px;
+  display: inline-block;
+  color: #666;
+}
+.pl-order-meta-badges {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 .pl-order-right {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
+  flex-shrink: 0;
 }
 .pl-order-price {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  min-width: 110px;
   font-weight: 800;
-  font-size: 0.88rem;
+  font-size: 0.95rem;
   color: var(--gris-carbon);
+  font-variant-numeric: tabular-nums;
+}
+.pl-order-currency {
+  font-weight: 800;
+  color: var(--gris-carbon);
+}
+.pl-order-amount {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+  text-align: right;
+  min-width: 75px;
+  display: inline-block;
+}
+.pl-order-action {
+  min-width: 125px;
+  display: flex;
+  justify-content: flex-end;
 }
 
 .pl-badge {
@@ -2289,6 +2354,11 @@ body.auth-page {
   border: 1px solid #fcd34d;
 }
 .pl-badge--devolucion {
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fca5a5;
+}
+.pl-badge--cancelado {
   background: #fee2e2;
   color: #991b1b;
   border: 1px solid #fca5a5;

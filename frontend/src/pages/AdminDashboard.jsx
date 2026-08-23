@@ -5,7 +5,7 @@ import api, { getApiBaseUrl } from '../services/api';
 import { notify } from '../components/ToastProvider';
 import BookyPagoFinanzas from './BookyPagoFinanzas';
 import {
-  IconLayoutDashboard, IconTrendingUp, IconUser, IconBook, IconStore, IconPackage,
+  IconLayoutDashboard, IconTrendingUp, IconUser, IconUsers, IconBook, IconStore, IconPackage,
   IconSettings, IconChevronLeft, IconMenu, IconLogOut, IconLock, IconUnlock,
   IconCheck, IconBan, IconEye, IconTrash, IconDollar, IconCart, IconTool, IconAlertTriangle, IconWallet,
   IconInfo, IconTruck, IconMessage, IconStoreAlt, IconSearch, IconClose, IconPhone, IconMail,
@@ -95,7 +95,7 @@ export default function AdminDashboard() {
     try {
       const res = await api.get(`/quejas/${reclamo.id_solicitud}/mensajes`);
       setChatMensajes(res.data || []);
-    } catch (err) {
+    } catch {
       setChatMensajes([]);
     } finally {
       setCargandoChat(false);
@@ -328,6 +328,75 @@ export default function AdminDashboard() {
     return new Date(o.fecha).toLocaleDateString('es-CO') === hoy;
   }).length;
 
+  const compradoresCount = usuarios.filter(u => (u.rol || '').toLowerCase() === 'comprador').length;
+  const vendedoresCount = usuarios.filter(u => (u.rol || '').toLowerCase() === 'vendedor').length;
+  const adminsCount = usuarios.filter(u => (u.rol || '').toLowerCase() === 'admin' || (u.rol || '').toLowerCase() === 'administrador').length;
+
+  const tiendasActivasCount = tiendas.filter(t => ['activa', 'activo', 'habilitada', 'habilitado', 'aprobada', 'aprobado'].includes((t.estado_tienda || '').toLowerCase().trim())).length;
+  const tiendasPendientesCount = tiendas.filter(t => ['pendiente', 'en revision', 'en revisión', 'por revisar'].includes((t.estado_tienda || '').toLowerCase().trim())).length;
+  const tiendasSuspendidasCount = tiendas.filter(t => ['suspendida', 'suspendido', 'inactiva', 'inactivo', 'pausada', 'pausado'].includes((t.estado_tienda || '').toLowerCase().trim())).length;
+
+  const librosActivosCount = libros.filter(l => !l.oculto).length;
+  const totalCategorias = Object.keys(categoriaCount).length;
+
+  const reclamosPendientes = reclamos.filter(r => ['Abierto', 'En revision', 'En revisión', 'abierto', 'en revision', 'en revisión'].includes(r.estado));
+  const reclamosPendientesCount = reclamosPendientes.length;
+
+  const ordenesCompletadas = ordenes.filter(o => ['completada', 'entregado', 'finalizada'].includes((o.estado || '').toLowerCase())).length;
+
+  const getIniciales = (nombre) => {
+    if (!nombre) return 'US';
+    const partes = nombre.trim().split(/\s+/);
+    if (partes.length === 1) return partes[0].substring(0, 2).toUpperCase();
+    return (partes[0][0] + partes[1][0]).toUpperCase();
+  };
+
+  const getRolBadgeProps = (rol) => {
+    const r = (rol || '').toLowerCase();
+    if (r === 'admin' || r === 'administrador') {
+      return {
+        bg: '#FDF2F4',
+        color: VINOTINTO,
+        border: '#F8D2DA',
+        label: 'Administrador',
+        avatarGradient: 'linear-gradient(135deg, #7A1E3A 0%, #a32d52 100%)',
+      };
+    }
+    if (r === 'vendedor') {
+      return {
+        bg: '#FFFBEB',
+        color: '#B45309',
+        border: '#FDE68A',
+        label: 'Vendedor',
+        avatarGradient: 'linear-gradient(135deg, #D97706 0%, #F59E0B 100%)',
+      };
+    }
+    return {
+      bg: '#ECFDF5',
+      color: '#047857',
+      border: '#A7F3D0',
+      label: 'Comprador',
+      avatarGradient: 'linear-gradient(135deg, #059669 0%, #10B981 100%)',
+    };
+  };
+
+  const getEstadoTiendaBadgeProps = (estado) => {
+    const e = (estado || '').toLowerCase().trim();
+    if (['activa', 'activo', 'habilitada', 'habilitado', 'aprobada', 'aprobado'].includes(e)) {
+      return { bg: '#ECFDF5', color: '#047857', border: '#A7F3D0', dot: '#10B981', label: 'Activa' };
+    }
+    if (['pendiente', 'en revision', 'en revisión', 'por revisar'].includes(e)) {
+      return { bg: '#FFFBEB', color: '#B45309', border: '#FDE68A', dot: '#F59E0B', label: 'Pendiente' };
+    }
+    if (['pausada', 'pausado', 'vacaciones', 'en vacaciones'].includes(e)) {
+      return { bg: '#FFF7ED', color: '#C2410C', border: '#FDBA74', dot: '#EA580C', label: 'En Vacaciones' };
+    }
+    if (['suspendida', 'suspendido'].includes(e)) {
+      return { bg: '#FEF2F2', color: '#B91C1C', border: '#FECACA', dot: '#EF4444', label: 'Suspendida' };
+    }
+    return { bg: '#FDF2F4', color: '#7A1E3A', border: '#F8D2DA', dot: '#9B2C4E', label: 'Inactiva' };
+  };
+
   const BarraProgreso = ({ label, value, max, color }) => (
     <div style={{ marginBottom: '16px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
@@ -500,113 +569,693 @@ export default function AdminDashboard() {
           </h1>
         </div>
 
-        {/* DASHBOARD REESTRUCTURADO */}
-        {activeSection === 'dashboard' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
+        {/* ESTILOS SCOPED PARA EL DASHBOARD */}
+        <style>{`
+          .admin-kpi-card {
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+          }
+          .admin-kpi-card:hover {
+            transform: translateY(-4px) !important;
+            box-shadow: 0 16px 32px rgba(122, 30, 58, 0.08), 0 4px 12px rgba(0,0,0,0.04) !important;
+            border-color: #D4C3BA !important;
+          }
+          .admin-hero-btn {
+            transition: all 0.2s ease !important;
+          }
+          .admin-hero-btn:hover {
+            transform: translateY(-2px) !important;
+            filter: brightness(1.06) !important;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.18) !important;
+          }
+          .admin-table-row {
+            transition: background-color 0.15s ease !important;
+          }
+          .admin-table-row:hover {
+            background-color: #FAF5EE !important;
+          }
+        `}</style>
 
-            {/* Grid de 3 Tarjetas Operacionales Limpias */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
-              {[
-                { label: 'Total Usuarios', value: stats.usuarios, Icon: IconUser },
-                { label: 'Total Libros',   value: stats.libros,  Icon: IconBook },
-                { label: 'Total Tiendas',  value: stats.tiendas, Icon: IconStore },
-              ].map((stat) => (
-                <div key={stat.label} style={{
-                  background: WHITE, borderRadius: '14px', padding: '28px',
-                  boxShadow: '0 4px 20px rgba(0,0,0,0.04)', textAlign: 'center',
-                  border: `1px solid ${BORDER}`,
-                }}>
+        {/* DASHBOARD REESTRUCTURADO Y PREMIUM */}
+        {activeSection === 'dashboard' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
+
+            {/* ALERTA DE ATENCIÓN PRIORITARIA */}
+            {(reclamosPendientesCount > 0 || tiendasPendientesCount > 0) && (
+              <div style={{
+                background: '#FFFBEB',
+                border: '1.5px solid #FCD34D',
+                borderRadius: '16px',
+                padding: '16px 20px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '14px',
+                boxShadow: '0 4px 14px rgba(245, 158, 11, 0.08)',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
                   <div style={{
-                    width: '52px', height: '52px', borderRadius: '26px',
-                    background: '#F5EAED', color: VINOTINTO,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    margin: '0 auto',
+                    width: '42px', height: '42px', borderRadius: '12px',
+                    background: '#FEF3C7', color: '#D97706',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
                   }}>
-                    <stat.Icon className="" width={24} height={24} style={{ color: VINOTINTO }} />
+                    <IconAlertTriangle width={22} height={22} style={{ color: '#D97706' }} />
                   </div>
-                  <div style={{ fontSize: '2.2rem', fontWeight: 800, color: VINOTINTO, margin: '14px 0 4px' }}>
-                    {stat.value}
+                  <div>
+                    <div style={{ fontWeight: 800, color: '#92400E', fontSize: '0.96rem' }}>
+                      Atención requerida del Administrador
+                    </div>
+                    <div style={{ color: '#B45309', fontSize: '0.86rem', marginTop: '2px' }}>
+                      {reclamosPendientesCount > 0 && `Tienes ${reclamosPendientesCount} solicitud(es) de quejas o reclamos abiertas para responder. `}
+                      {tiendasPendientesCount > 0 && `Hay ${tiendasPendientesCount} librería(s) pendiente(s) de revisión y aprobación.`}
+                    </div>
                   </div>
-                  <div style={{ color: GRAY, fontWeight: 600, fontSize: '0.9rem' }}>{stat.label}</div>
                 </div>
-              ))}
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  {reclamosPendientesCount > 0 && (
+                    <button
+                      onClick={() => setActiveSection('reclamos')}
+                      style={{
+                        background: '#D97706', color: WHITE, border: 'none',
+                        padding: '8px 16px', borderRadius: '8px', fontWeight: 700,
+                        fontSize: '0.84rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px'
+                      }}
+                    >
+                      Resolver Reclamos →
+                    </button>
+                  )}
+                  {tiendasPendientesCount > 0 && (
+                    <button
+                      onClick={() => setActiveSection('tiendas')}
+                      style={{
+                        background: '#047857', color: WHITE, border: 'none',
+                        padding: '8px 16px', borderRadius: '8px', fontWeight: 700,
+                        fontSize: '0.84rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px'
+                      }}
+                    >
+                      Revisar Tiendas →
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* 2. GRID DE 4 TARJETAS KPI */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px' }}>
+
+              {/* KPI 1: USUARIOS */}
+              <div
+                onClick={() => setActiveSection('usuarios')}
+                className="admin-kpi-card"
+                style={{
+                  background: WHITE,
+                  borderRadius: '16px',
+                  padding: '24px',
+                  boxShadow: '0 4px 20px rgba(0,0,0,0.04)',
+                  border: `1px solid ${BORDER}`,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '14px' }}>
+                  <div style={{
+                    width: '48px', height: '48px', borderRadius: '14px',
+                    background: '#FDF2F4', color: VINOTINTO,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    boxShadow: '0 4px 12px rgba(122, 30, 58, 0.1)'
+                  }}>
+                    <IconUsers width={24} height={24} style={{ color: VINOTINTO }} />
+                  </div>
+                  <span style={{
+                    background: '#FDF2F4', color: VINOTINTO,
+                    padding: '3px 10px', borderRadius: '20px',
+                    fontSize: '0.75rem', fontWeight: 700, border: '1px solid #F8D2DA'
+                  }}>
+                    Ecosistema
+                  </span>
+                </div>
+                <div>
+                  <div style={{ fontSize: '2.4rem', fontWeight: 900, color: VINOTINTO, lineHeight: 1 }}>
+                    {stats.usuarios}
+                  </div>
+                  <div style={{ color: CARBON, fontWeight: 700, fontSize: '0.95rem', marginTop: '6px' }}>
+                    Usuarios Totales
+                  </div>
+                </div>
+                <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid #F4EDE2', display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                  <span style={{ background: '#ECFDF5', color: '#047857', padding: '2px 8px', borderRadius: '10px', fontSize: '0.75rem', fontWeight: 600 }}>
+                    {compradoresCount} compradores
+                  </span>
+                  <span style={{ background: '#FFFBEB', color: '#B45309', padding: '2px 8px', borderRadius: '10px', fontSize: '0.75rem', fontWeight: 600 }}>
+                    {vendedoresCount} vendedores
+                  </span>
+                </div>
+              </div>
+
+              {/* KPI 2: LIBROS */}
+              <div
+                onClick={() => setActiveSection('libros')}
+                className="admin-kpi-card"
+                style={{
+                  background: WHITE,
+                  borderRadius: '16px',
+                  padding: '24px',
+                  boxShadow: '0 4px 20px rgba(0,0,0,0.04)',
+                  border: `1px solid ${BORDER}`,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '14px' }}>
+                  <div style={{
+                    width: '48px', height: '48px', borderRadius: '14px',
+                    background: '#F3E8FF', color: '#7E22CE',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    boxShadow: '0 4px 12px rgba(126, 34, 206, 0.1)'
+                  }}>
+                    <IconBook width={24} height={24} style={{ color: '#7E22CE' }} />
+                  </div>
+                  <span style={{
+                    background: '#F3E8FF', color: '#7E22CE',
+                    padding: '3px 10px', borderRadius: '20px',
+                    fontSize: '0.75rem', fontWeight: 700, border: '1px solid #E9D5FF'
+                  }}>
+                    Catálogo
+                  </span>
+                </div>
+                <div>
+                  <div style={{ fontSize: '2.4rem', fontWeight: 900, color: '#581C87', lineHeight: 1 }}>
+                    {stats.libros}
+                  </div>
+                  <div style={{ color: CARBON, fontWeight: 700, fontSize: '0.95rem', marginTop: '6px' }}>
+                    Libros Publicados
+                  </div>
+                </div>
+                <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid #F4EDE2', display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                  <span style={{ background: '#FAF5FF', color: '#6B21A8', padding: '2px 8px', borderRadius: '10px', fontSize: '0.75rem', fontWeight: 600 }}>
+                    {librosActivosCount} disponibles
+                  </span>
+                  <span style={{ background: '#F3F4F6', color: '#4B5563', padding: '2px 8px', borderRadius: '10px', fontSize: '0.75rem', fontWeight: 600 }}>
+                    {totalCategorias} categorías
+                  </span>
+                </div>
+              </div>
+
+              {/* KPI 3: TIENDAS */}
+              <div
+                onClick={() => setActiveSection('tiendas')}
+                className="admin-kpi-card"
+                style={{
+                  background: WHITE,
+                  borderRadius: '16px',
+                  padding: '24px',
+                  boxShadow: '0 4px 20px rgba(0,0,0,0.04)',
+                  border: `1px solid ${BORDER}`,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '14px' }}>
+                  <div style={{
+                    width: '48px', height: '48px', borderRadius: '14px',
+                    background: '#ECFDF5', color: '#047857',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    boxShadow: '0 4px 12px rgba(4, 120, 87, 0.1)'
+                  }}>
+                    <IconStore width={24} height={24} style={{ color: '#047857' }} />
+                  </div>
+                  <span style={{
+                    background: '#ECFDF5', color: '#047857',
+                    padding: '3px 10px', borderRadius: '20px',
+                    fontSize: '0.75rem', fontWeight: 700, border: '1px solid #A7F3D0'
+                  }}>
+                    {tiendasActivasCount} Activas
+                  </span>
+                </div>
+                <div>
+                  <div style={{ fontSize: '2.4rem', fontWeight: 900, color: '#064E3B', lineHeight: 1 }}>
+                    {stats.tiendas}
+                  </div>
+                  <div style={{ color: CARBON, fontWeight: 700, fontSize: '0.95rem', marginTop: '6px' }}>
+                    Librerías & Tiendas
+                  </div>
+                </div>
+                <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid #F4EDE2', display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                  <span style={{ background: '#ECFDF5', color: '#047857', padding: '2px 8px', borderRadius: '10px', fontSize: '0.75rem', fontWeight: 600 }}>
+                    {tiendasActivasCount} verificadas
+                  </span>
+                  {tiendasPendientesCount > 0 ? (
+                    <span style={{ background: '#FEF3C7', color: '#B45309', padding: '2px 8px', borderRadius: '10px', fontSize: '0.75rem', fontWeight: 700 }}>
+                      {tiendasPendientesCount} pendientes
+                    </span>
+                  ) : (
+                    <span style={{ background: '#F3F4F6', color: '#4B5563', padding: '2px 8px', borderRadius: '10px', fontSize: '0.75rem', fontWeight: 600 }}>
+                      Al día
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* KPI 4: ÓRDENES & TRANSACCIONES */}
+              <div
+                onClick={() => setActiveSection('ordenes')}
+                className="admin-kpi-card"
+                style={{
+                  background: WHITE,
+                  borderRadius: '16px',
+                  padding: '24px',
+                  boxShadow: '0 4px 20px rgba(0,0,0,0.04)',
+                  border: `1px solid ${BORDER}`,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '14px' }}>
+                  <div style={{
+                    width: '48px', height: '48px', borderRadius: '14px',
+                    background: '#EFF6FF', color: '#1D4ED8',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    boxShadow: '0 4px 12px rgba(29, 78, 216, 0.1)'
+                  }}>
+                    <IconPackage width={24} height={24} style={{ color: '#1D4ED8' }} />
+                  </div>
+                  <span style={{
+                    background: '#EFF6FF', color: '#1D4ED8',
+                    padding: '3px 10px', borderRadius: '20px',
+                    fontSize: '0.75rem', fontWeight: 700, border: '1px solid #BFDBFE'
+                  }}>
+                    Transacciones
+                  </span>
+                </div>
+                <div>
+                  <div style={{ fontSize: '2.4rem', fontWeight: 900, color: '#1E3A8A', lineHeight: 1 }}>
+                    {stats.ordenes}
+                  </div>
+                  <div style={{ color: CARBON, fontWeight: 700, fontSize: '0.95rem', marginTop: '6px' }}>
+                    Órdenes Procesadas
+                  </div>
+                </div>
+                <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid #F4EDE2', display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                  <span style={{ background: '#EFF6FF', color: '#1D4ED8', padding: '2px 8px', borderRadius: '10px', fontSize: '0.75rem', fontWeight: 600 }}>
+                    {ordenesHoy} creadas hoy
+                  </span>
+                  <span style={{ background: '#ECFDF5', color: '#047857', padding: '2px 8px', borderRadius: '10px', fontSize: '0.75rem', fontWeight: 600 }}>
+                    {ordenesCompletadas} entregadas
+                  </span>
+                </div>
+              </div>
+
             </div>
 
-            {/* Grid de Tablas de Monitoreo Directo */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+            {/* 3. RESUMEN ANALÍTICO Y DISTRIBUCIÓN */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px' }}>
 
-              {/* Tabla: Últimos Usuarios */}
-              <div style={{ background: WHITE, borderRadius: '14px', padding: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.04)', border: `1px solid ${BORDER}` }}>
-                <h3 style={{ margin: '0 0 16px', color: VINOTINTO, display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.05rem', fontWeight: 700 }}>
-                  <IconUser className="" width={20} height={20} style={{ color: VINOTINTO }} />
-                  Últimos Usuarios Registrados
-                </h3>
+              {/* Distribución de la Comunidad */}
+              <div style={{
+                background: WHITE,
+                borderRadius: '16px',
+                padding: '24px',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.04)',
+                border: `1px solid ${BORDER}`,
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+                  <h3 style={{ margin: 0, color: VINOTINTO, display: 'flex', alignItems: 'center', gap: '10px', fontSize: '1.05rem', fontWeight: 800 }}>
+                    <IconUsers width={20} height={20} style={{ color: VINOTINTO }} />
+                    Distribución de la Comunidad
+                  </h3>
+                  <span style={{ fontSize: '0.8rem', color: GRAY, fontWeight: 600 }}>
+                    {stats.usuarios} miembros en total
+                  </span>
+                </div>
+
+                {/* Roles Progress and percentages */}
+                {[
+                  { label: 'Compradores', count: compradoresCount, color: '#10B981', bg: '#ECFDF5', border: '#A7F3D0' },
+                  { label: 'Vendedores / Librerías', count: vendedoresCount, color: '#F59E0B', bg: '#FFFBEB', border: '#FDE68A' },
+                  { label: 'Administradores', count: adminsCount, color: VINOTINTO, bg: '#FDF2F4', border: '#F8D2DA' },
+                ].map((item) => {
+                  const pct = stats.usuarios > 0 ? Math.round((item.count / stats.usuarios) * 100) : 0;
+                  return (
+                    <div key={item.label} style={{ marginBottom: '18px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: item.color }} />
+                          <span style={{ fontWeight: 700, fontSize: '0.88rem', color: CARBON }}>{item.label}</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ fontSize: '0.82rem', color: GRAY, fontWeight: 600 }}>{item.count} usuarios</span>
+                          <span style={{ background: item.bg, color: item.color, border: `1px solid ${item.border}`, padding: '2px 8px', borderRadius: '8px', fontSize: '0.78rem', fontWeight: 800 }}>
+                            {pct}%
+                          </span>
+                        </div>
+                      </div>
+                      <div style={{ background: '#F3F4F6', borderRadius: '10px', height: '8px', overflow: 'hidden' }}>
+                        <div style={{
+                          background: item.color,
+                          height: '100%',
+                          borderRadius: '10px',
+                          width: `${pct}%`,
+                          transition: 'width 0.6s cubic-bezier(0.4, 0, 0.2, 1)'
+                        }} />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Categorías Principales y Salud Operativa */}
+              <div style={{
+                background: WHITE,
+                borderRadius: '16px',
+                padding: '24px',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.04)',
+                border: `1px solid ${BORDER}`,
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between'
+              }}>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+                    <h3 style={{ margin: 0, color: VINOTINTO, display: 'flex', alignItems: 'center', gap: '10px', fontSize: '1.05rem', fontWeight: 800 }}>
+                      <IconBook width={20} height={20} style={{ color: VINOTINTO }} />
+                      Categorías más Populares
+                    </h3>
+                    <button
+                      onClick={() => setActiveSection('libros')}
+                      style={{ background: 'none', border: 'none', color: VINOTINTO, fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer' }}
+                    >
+                      Explorar catálogo →
+                    </button>
+                  </div>
+
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '20px' }}>
+                    {Object.entries(categoriaCount).slice(0, 6).map(([cat, count]) => (
+                      <div
+                        key={cat}
+                        style={{
+                          background: '#F9F6F0',
+                          border: '1px solid #EAE4D9',
+                          padding: '6px 12px',
+                          borderRadius: '12px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          fontSize: '0.82rem',
+                        }}
+                      >
+                        <span style={{ fontWeight: 700, color: CARBON }}>{cat}</span>
+                        <span style={{ background: VINOTINTO, color: WHITE, padding: '1px 6px', borderRadius: '10px', fontSize: '0.72rem', fontWeight: 800 }}>
+                          {count}
+                        </span>
+                      </div>
+                    ))}
+                    {Object.keys(categoriaCount).length === 0 && (
+                      <div style={{ color: GRAY, fontSize: '0.85rem' }}>No hay libros categorizados aún.</div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Estado Operativo de Tiendas */}
+                <div style={{ background: '#FAF8F5', borderRadius: '12px', padding: '14px 18px', border: `1px solid ${BORDER}` }}>
+                  <div style={{ fontSize: '0.84rem', fontWeight: 700, color: CARBON, marginBottom: '10px', display: 'flex', justifyContent: 'space-between' }}>
+                    <span>Estado Operativo de Librerías</span>
+                    <span style={{ color: GREEN, fontWeight: 800 }}>{tiendasActivasCount} de {stats.tiendas} operando</span>
+                  </div>
+                  <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem', color: '#166534', fontWeight: 700 }}>
+                      <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#16a34a' }} />
+                      {tiendasActivasCount} Activas
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem', color: '#9a3412', fontWeight: 700 }}>
+                      <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#ea580c' }} />
+                      {tiendasPendientesCount} Pendientes
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem', color: '#991b1b', fontWeight: 700 }}>
+                      <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#ef4444' }} />
+                      {tiendasSuspendidasCount} Suspendidas
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            {/* 4. GRID DE TABLAS DE MONITOREO DIRECTO CON AVATARES Y ACCIONES */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))', gap: '24px' }}>
+
+              {/* Card Tabla: Últimos Usuarios */}
+              <div style={{
+                background: WHITE,
+                borderRadius: '16px',
+                padding: '24px',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.04)',
+                border: `1px solid ${BORDER}`,
+                display: 'flex',
+                flexDirection: 'column',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '18px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#FDF2F4', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <IconUser width={18} height={18} style={{ color: VINOTINTO }} />
+                    </div>
+                    <div>
+                      <h3 style={{ margin: 0, color: VINOTINTO, fontSize: '1.05rem', fontWeight: 800 }}>
+                        Últimos Usuarios Registrados
+                      </h3>
+                      <span style={{ fontSize: '0.78rem', color: GRAY, fontWeight: 500 }}>Nuevos registros en la plataforma</span>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setActiveSection('usuarios')}
+                    style={{
+                      background: '#FAF5EE',
+                      border: `1px solid ${BORDER}`,
+                      color: VINOTINTO,
+                      padding: '6px 12px',
+                      borderRadius: '8px',
+                      fontSize: '0.8rem',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      transition: 'all 0.15s ease'
+                    }}
+                  >
+                    Ver todos ({stats.usuarios}) →
+                  </button>
+                </div>
+
                 <div style={{ overflowX: 'auto' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.86rem' }}>
                     <thead>
-                      <tr style={{ borderBottom: `2px solid ${BEIGE}`, color: GRAY, textAlign: 'left' }}>
-                        <th style={{ padding: '10px 8px' }}>Nombre</th>
+                      <tr style={{ borderBottom: `2px solid #F4EDE2`, color: GRAY, textAlign: 'left', fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                        <th style={{ padding: '10px 8px' }}>Usuario</th>
                         <th style={{ padding: '10px 8px' }}>Correo</th>
                         <th style={{ padding: '10px 8px' }}>Rol</th>
+                        <th style={{ padding: '10px 8px', textAlign: 'right' }}>Estado</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {[...usuarios].reverse().slice(0, 5).map((u) => (
-                        <tr key={u.id_usuario} style={{ borderBottom: '1px solid #FAF8F5' }}>
-                          <td style={{ padding: '10px 8px', fontWeight: 600 }}>{u.nombre_usuario}</td>
-                          <td style={{ padding: '10px 8px', color: '#555' }}>{u.correo_usuario}</td>
-                          <td style={{ padding: '10px 8px' }}>
-                            <span style={{
-                              background: u.rol === 'admin' ? VINOTINTO : u.rol === 'vendedor' ? ORANGE : GREEN,
-                              color: WHITE, padding: '3px 8px', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 600
-                            }}>
-                              {u.rol}
-                            </span>
-                          </td>
+                      {[...usuarios].reverse().slice(0, 5).map((u) => {
+                        const rolProps = getRolBadgeProps(u.rol);
+                        const isBloqueado = u.estado_usuario === 'Bloqueado';
+                        return (
+                          <tr key={u.id_usuario} className="admin-table-row" style={{ borderBottom: '1px solid #FAF7F2' }}>
+                            <td style={{ padding: '12px 8px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <div style={{
+                                  width: '32px', height: '32px', borderRadius: '50%',
+                                  background: rolProps.avatarGradient,
+                                  color: WHITE,
+                                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                  fontSize: '0.75rem', fontWeight: 800, flexShrink: 0,
+                                  boxShadow: '0 2px 6px rgba(0,0,0,0.1)'
+                                }}>
+                                  {getIniciales(u.nombre_usuario)}
+                                </div>
+                                <span style={{ fontWeight: 700, color: CARBON }}>
+                                  {u.nombre_usuario}
+                                </span>
+                              </div>
+                            </td>
+                            <td style={{ padding: '12px 8px', color: '#555', fontSize: '0.82rem' }}>
+                              {u.correo_usuario}
+                            </td>
+                            <td style={{ padding: '12px 8px' }}>
+                              <span style={{
+                                background: rolProps.bg,
+                                color: rolProps.color,
+                                border: `1px solid ${rolProps.border}`,
+                                padding: '3px 10px',
+                                borderRadius: '12px',
+                                fontSize: '0.75rem',
+                                fontWeight: 700,
+                                textTransform: 'capitalize'
+                              }}>
+                                {u.rol}
+                              </span>
+                            </td>
+                            <td style={{ padding: '12px 8px', textAlign: 'right' }}>
+                              <span style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                fontSize: '0.75rem',
+                                fontWeight: 700,
+                                color: isBloqueado ? RED : GREEN,
+                                background: isBloqueado ? '#FEF2F2' : '#ECFDF5',
+                                padding: '2px 8px',
+                                borderRadius: '10px',
+                                border: `1px solid ${isBloqueado ? '#FECACA' : '#A7F3D0'}`
+                              }}>
+                                <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: isBloqueado ? RED : GREEN }} />
+                                {isBloqueado ? 'Bloqueado' : 'Activo'}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                      {usuarios.length === 0 && (
+                        <tr>
+                          <td colSpan={4} style={{ padding: '24px', textAlign: 'center', color: GRAY }}>No hay usuarios registrados aún.</td>
                         </tr>
-                      ))}
+                      )}
                     </tbody>
                   </table>
                 </div>
               </div>
 
-              {/* Tabla: Últimas Tiendas */}
-              <div style={{ background: WHITE, borderRadius: '14px', padding: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.04)', border: `1px solid ${BORDER}` }}>
-                <h3 style={{ margin: '0 0 16px', color: VINOTINTO, display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.05rem', fontWeight: 700 }}>
-                  <IconStore className="" width={20} height={20} style={{ color: VINOTINTO }} />
-                  Últimas Tiendas Creadas
-                </h3>
+              {/* Card Tabla: Últimas Tiendas */}
+              <div style={{
+                background: WHITE,
+                borderRadius: '16px',
+                padding: '24px',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.04)',
+                border: `1px solid ${BORDER}`,
+                display: 'flex',
+                flexDirection: 'column',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '18px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#ECFDF5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <IconStore width={18} height={18} style={{ color: '#047857' }} />
+                    </div>
+                    <div>
+                      <h3 style={{ margin: 0, color: VINOTINTO, fontSize: '1.05rem', fontWeight: 800 }}>
+                        Últimas Tiendas Creadas
+                      </h3>
+                      <span style={{ fontSize: '0.78rem', color: GRAY, fontWeight: 500 }}>Librerías y vendedores asociados</span>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setActiveSection('tiendas')}
+                    style={{
+                      background: '#FAF5EE',
+                      border: `1px solid ${BORDER}`,
+                      color: VINOTINTO,
+                      padding: '6px 12px',
+                      borderRadius: '8px',
+                      fontSize: '0.8rem',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      transition: 'all 0.15s ease'
+                    }}
+                  >
+                    Gestionar todas ({stats.tiendas}) →
+                  </button>
+                </div>
+
                 <div style={{ overflowX: 'auto' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.86rem' }}>
                     <thead>
-                      <tr style={{ borderBottom: `2px solid ${BEIGE}`, color: GRAY, textAlign: 'left' }}>
-                        <th style={{ padding: '10px 8px' }}>Tienda</th>
+                      <tr style={{ borderBottom: `2px solid #F4EDE2`, color: GRAY, textAlign: 'left', fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                        <th style={{ padding: '10px 8px' }}>Librería</th>
                         <th style={{ padding: '10px 8px' }}>Teléfono</th>
-                        <th style={{ padding: '10px 8px' }}>Fecha</th>
+                        <th style={{ padding: '10px 8px' }}>Registro</th>
+                        <th style={{ padding: '10px 8px', textAlign: 'right' }}>Estado</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {[...tiendas].reverse().slice(0, 5).map((t) => (
-                        <tr key={t.id_tienda} style={{ borderBottom: '1px solid #FAF8F5' }}>
-                          <td style={{ padding: '10px 8px', fontWeight: 600, color: VINOTINTO }}>{t.nombre_tienda}</td>
-                          <td style={{ padding: '10px 8px', color: '#555' }}>{t.telefono || '-'}</td>
-                          <td style={{ padding: '10px 8px', color: GRAY }}>
-                            {t.fecha_creacion
-                              ? new Date(t.fecha_creacion).toLocaleDateString('es-ES', {
-                                  day: '2-digit',
-                                  month: '2-digit',
-                                  year: 'numeric'
-                                })
-                              : '-'}
-                          </td>
+                      {[...tiendas].reverse().slice(0, 5).map((t) => {
+                        const badgeProps = getEstadoTiendaBadgeProps(t.estado_tienda);
+                        return (
+                          <tr key={t.id_tienda} className="admin-table-row" style={{ borderBottom: '1px solid #FAF7F2' }}>
+                            <td style={{ padding: '12px 8px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <div style={{
+                                  width: '32px', height: '32px', borderRadius: '8px',
+                                  background: '#FDF2F4', color: VINOTINTO,
+                                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                  fontWeight: 800, fontSize: '0.8rem', flexShrink: 0
+                                }}>
+                                  <IconStore width={16} height={16} style={{ color: VINOTINTO }} />
+                                </div>
+                                <span style={{ fontWeight: 700, color: VINOTINTO }}>
+                                  {t.nombre_tienda}
+                                </span>
+                              </div>
+                            </td>
+                            <td style={{ padding: '12px 8px', color: '#555', fontSize: '0.82rem' }}>
+                              {t.telefono ? (
+                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                  <IconPhone width={13} height={13} style={{ color: GRAY }} />
+                                  {t.telefono}
+                                </span>
+                              ) : '-'}
+                            </td>
+                            <td style={{ padding: '12px 8px', color: GRAY, fontSize: '0.82rem' }}>
+                              {t.fecha_creacion
+                                ? new Date(t.fecha_creacion).toLocaleDateString('es-ES', {
+                                    day: '2-digit',
+                                    month: 'short',
+                                    year: 'numeric'
+                                  })
+                                : '-'}
+                            </td>
+                            <td style={{ padding: '12px 8px', textAlign: 'right' }}>
+                              <span style={{
+                                background: badgeProps.bg,
+                                color: badgeProps.color,
+                                border: `1px solid ${badgeProps.border}`,
+                                padding: '3px 10px',
+                                borderRadius: '12px',
+                                fontSize: '0.75rem',
+                                fontWeight: 700,
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '5px'
+                              }}>
+                                <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: badgeProps.dot }} />
+                                {badgeProps.label}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                      {tiendas.length === 0 && (
+                        <tr>
+                          <td colSpan={4} style={{ padding: '24px', textAlign: 'center', color: GRAY }}>No hay tiendas registradas aún.</td>
                         </tr>
-                      ))}
+                      )}
                     </tbody>
                   </table>
                 </div>
               </div>
 
             </div>
+
           </div>
         )}
 
@@ -1152,8 +1801,6 @@ export default function AdminDashboard() {
           const totalAbiertos = reclamosClientes.filter(r => r.estado === 'Abierto').length;
           const totalEnRevision = reclamosClientes.filter(r => r.estado === 'En revisión' || r.estado === 'En revision').length;
           const totalResueltos = reclamosClientes.filter(r => r.estado === 'Resuelto').length;
-          const totalRechazados = reclamosClientes.filter(r => r.estado === 'Rechazado' || r.estado === 'Cerrado').length;
-
           return (
             <div style={{ display: 'grid', gap: '20px' }}>
               {/* STATS HEADER CARDS */}

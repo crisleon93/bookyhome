@@ -70,6 +70,12 @@ export default function SeccionCarrito({ userId }) {
   const [couponSuccess, setCouponSuccess] = useState("");
   const [discountAmount, setDiscountAmount] = useState(0);
   
+  const esOrdenPendiente = (o) => {
+    if (!o) return false;
+    const est = String(o.estado || o.estado_orden || '').toLowerCase().trim();
+    return est === 'pendiente' || est === 'pendiente de pago' || est.startsWith('pend');
+  };
+
   const formatCurrency = (value) =>
     Number(value || 0).toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
 
@@ -237,7 +243,7 @@ export default function SeccionCarrito({ userId }) {
   };
 
   const processPaymentApi = async (method) => {
-    if (order?.estado && String(order.estado).toLowerCase() !== 'pendiente') {
+    if (order?.estado && !esOrdenPendiente(order)) {
       setCheckoutError('Esta orden ya no está pendiente de pago. Actualiza tus pedidos para consultar su estado.');
       return;
     }
@@ -389,7 +395,7 @@ export default function SeccionCarrito({ userId }) {
             </div>
           </div>
         </div>
-      ) : carrito.length === 0 && ordenes.filter(o => o.estado === 'pendiente').length === 0 ? (
+      ) : carrito.length === 0 && ordenes.filter(esOrdenPendiente).length === 0 ? (
         <div className="pl-card" style={{ padding: "40px" }}><CartEmptyState onGoToCatalog={onGoToCatalog} /></div>
       ) : mostrarCheckout ? (
         <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: "24px" }}>
@@ -647,7 +653,7 @@ export default function SeccionCarrito({ userId }) {
         </div>
       ) : (
         <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "20px" }}>
-          {ordenes.filter(o => o.estado === 'pendiente').map((orden) => (
+          {ordenes.filter(esOrdenPendiente).map((orden) => (
             <div key={orden.id_orden} style={{
               background: "#fff3e0",
               padding: "20px",
