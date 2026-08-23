@@ -43,173 +43,233 @@ def current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
 
 
 def _order_store(cursor, id_orden, id_usuario):
+    from app.models.payments import obtener_ordenes_usuario, obtener_orden
+    try:
+        ordenes = obtener_ordenes_usuario(id_usuario) or []
+    except Exception:
+        ordenes = []
 
-    # Las compras activas del checkout se almacenan en orders.json; se valida
+    orden = next((o for o in ordenes if str(o.get("id_orden")) == str(id_orden) or str(o.get("id_orden_db")) == str(id_orden)), None)
+    if not orden:
+        try:
+            orden = obtener_orden(id_usuario, id_orden)
+        except Exception:
+            orden = None
 
-    # con esa misma fuente para que Mis compras y Quejas muestren lo mismo.
+    if not orden:
+        try:
+            cursor.execute("SELECT id_orden, estado_orden FROM ordenes_compra WHERE id_orden=%s AND id_usuario=%s", (id_orden, id_usuario))
+            db_ord = cursor.fetchone()
+            if db_ord:
+                orden = {"id_orden": db_ord["id_orden"], "estado": db_ord["estado_orden"]}
+        except Exception:
+            pass
 
-    from app.models.payments import obtener_orden
-
-    orden = obtener_orden(id_usuario, id_orden)
-
-    if not orden or str(orden.get("estado", "")).lower() != "pagado":
-
+    if not orden:
         return None
 
-    libros = [item.get("id_libro") for item in orden.get("items", []) if item.get("id_libro")]
+    id_tienda = None
+    libros = [item.get("id_libro") for item in (orden.get("items", []) if orden else []) if item.get("id_libro")]
+    if libros:
+        try:
+            placeholders = ", ".join(["%s"] * len(libros))
+            cursor.execute(f"SELECT id_tienda FROM libros WHERE id_libro IN ({placeholders}) LIMIT 1", tuple(libros))
+            tienda = cursor.fetchone()
+            if tienda:
+                id_tienda = tienda["id_tienda"]
+        except Exception:
+            pass
 
-    if not libros:
+    if not id_tienda:
+        try:
+            cursor.execute("SELECT id_tienda FROM envios WHERE id_orden=%s LIMIT 1", (id_orden,))
+            env = cursor.fetchone()
+            if env:
+                id_tienda = env["id_tienda"]
+        except Exception:
+            pass
 
-        return None
+    if not id_tienda:
+        try:
+            cursor.execute("""
+                SELECT l.id_tienda FROM detalle_orden do
+                JOIN libros l ON l.id_libro = do.id_libro
+                WHERE do.id_orden = %s LIMIT 1
+            """, (id_orden,))
+            det = cursor.fetchone()
+            if det:
+                id_tienda = det["id_tienda"]
+        except Exception:
+            pass
 
-    placeholders = ", ".join(["%s"] * len(libros))
+    # Validar que id_tienda exista en tabla tiendas para no violar Foreign Key
+    if id_tienda:
+        try:
+            cursor.execute("SELECT id_tienda FROM tiendas WHERE id_tienda=%s", (id_tienda,))
+            if not cursor.fetchone():
+                id_tienda = None
+        except Exception:
+            id_tienda = None
 
-    cursor.execute(f"SELECT id_tienda FROM libros WHERE id_libro IN ({placeholders}) LIMIT 1", tuple(libros))
-
-    tienda = cursor.fetchone()
-
-    if not tienda:
-
-        return None
-
-    return {"id_tienda": tienda["id_tienda"]}
-
-
-
+    return {"id_tienda": id_tienda}
 
 
 @router.get("")
-
 def mis_quejas(user=Depends(current_user)):
-
     db = get_db(); cursor = db.cursor(dictionary=True)
-
     try:
-
         cursor.execute("""
-
-            SELECT id_solicitud, id_orden, asunto, descripcion, categoria,
-
-                   estado, respuesta, evidencia_url, fecha_creacion, fecha_resolucion
-
-            FROM solicitudes_soporte
-
-            WHERE id_usuario = %s AND tipo_solicitud = 'reclamo'
-
-            ORDER BY fecha_creacion DESC
-
+            SELECT ss.id_solicitud, ss.id_orden, ss.asunto, ss.descripcion, ss.categoria,
+                   ss.estado, ss.respuesta, ss.evidencia_url, ss.fecha_creacion, ss.fecha_resolucion,
+                   t.nombre_tienda
+            FROM solicitudes_soporte ss
+            LEFT JOIN tiendas t ON t.id_tienda = ss.id_tienda
+            WHERE ss.id_usuario = %s AND ss.tipo_solicitud = 'reclamo'
+            ORDER BY ss.fecha_creacion DESC
         """, (int(user["sub"]),))
-
-        return cursor.fetchall()
-
+        rows = cursor.fetchall()
+        from app.models.payments import obtener_orden
+        uid = int(user["sub"])
+        for row in rows:
+            try:
+                orden = obtener_orden(uid, row["id_orden"])
+                if orden and orden.get("items"):
+                    item0 = orden["items"][0]
+                    row["imagen_libro"] = item0.get("imagen_url") or item0.get("imagen")
+                    row["titulo_libro"] = item0.get("titulo") or item0.get("nombre_libro")
+                    row["total_items"] = len(orden["items"])
+                else:
+                    row["imagen_libro"] = None
+                    row["titulo_libro"] = None
+                    row["total_items"] = 0
+            except Exception:
+                row["imagen_libro"] = None
+                row["titulo_libro"] = None
+                row["total_items"] = 0
+        return rows
     finally:
-
         cursor.close(); db.close()
 
 
-
-
-
 @router.post("")
-
 async def crear_queja(
-
     id_orden: int = Form(...), motivo: str = Form(...), descripcion: str = Form(...),
-
     evidencia: UploadFile | None = File(None), user=Depends(current_user)
-
 ):
-
     if not motivo.strip() or not descripcion.strip():
-
         raise HTTPException(status_code=400, detail="El motivo y la descripción son obligatorios")
 
-    if evidencia and evidencia.content_type not in {"image/jpeg", "image/png", "image/webp"}:
-
+    if evidencia and evidencia.filename and evidencia.content_type not in {"image/jpeg", "image/png", "image/webp", "image/jpg"}:
         raise HTTPException(status_code=400, detail="La evidencia debe ser JPG, PNG o WEBP")
 
     db = get_db(); cursor = db.cursor(dictionary=True)
-
     try:
-
         orden = _order_store(cursor, id_orden, int(user["sub"]))
-
         if not orden:
-
             raise HTTPException(status_code=404, detail="La orden no pertenece a tu cuenta o aún no está pagada")
 
         cursor.execute("""
-
             SELECT id_solicitud FROM solicitudes_soporte
-
             WHERE id_usuario=%s AND id_orden=%s AND tipo_solicitud='reclamo'
-
               AND estado IN ('Abierto', 'En revisión')
-
             LIMIT 1
-
         """, (int(user["sub"]), id_orden))
 
         if cursor.fetchone():
-
             raise HTTPException(status_code=409, detail="Ya tienes un reclamo activo para esta compra")
 
         evidencia_url = None
-
-        if evidencia:
-
+        if evidencia and evidencia.filename:
             extension = os.path.splitext(evidencia.filename or "")[1].lower() or ".jpg"
-
             filename = f"{uuid.uuid4().hex}{extension}"
-
+            os.makedirs(UPLOAD_DIR, exist_ok=True)
             with open(os.path.join(UPLOAD_DIR, filename), "wb") as target:
-
                 target.write(await evidencia.read())
-
             evidencia_url = f"/uploads/quejas/{filename}"
 
+        # Fallback seguro para id_tienda si la base de datos requiere una tienda válida
+        id_tienda_final = orden.get("id_tienda")
+        if not id_tienda_final:
+            try:
+                cursor.execute("SELECT id_tienda FROM tiendas LIMIT 1")
+                t_row = cursor.fetchone()
+                if t_row:
+                    id_tienda_final = t_row["id_tienda"]
+            except Exception:
+                id_tienda_final = None
+
         cursor.execute("""
-
             INSERT INTO solicitudes_soporte
-
-              (id_tienda, id_usuario, id_orden, asunto, descripcion, categoria, estado, evidencia_url, tipo_solicitud)
-
-            VALUES (%s, %s, %s, %s, %s, 'reclamo', 'Abierto', %s, 'reclamo')
-
-        """, (orden["id_tienda"], int(user["sub"]), id_orden, motivo.strip()[:150], descripcion.strip()[:2000], evidencia_url))
+              (id_tienda, id_usuario, id_orden, asunto, descripcion, categoria, prioridad, estado, evidencia_url, tipo_solicitud, fecha_creacion)
+            VALUES (%s, %s, %s, %s, %s, 'reclamo', 'Normal', 'Abierto', %s, 'reclamo', NOW())
+        """, (id_tienda_final, int(user["sub"]), id_orden, motivo.strip()[:150], descripcion.strip()[:2000], evidencia_url))
 
         id_solicitud = cursor.lastrowid
 
-        # Notificar al vendedor (si existe) y a administradores
+        # Notificar al vendedor (si existe), al comprador y a administradores
         try:
+            # Al comprador
+            cursor.execute("""
+                INSERT INTO notificaciones (id_usuario, tipo, titulo, cuerpo, id_referencia, leida, fecha_creacion)
+                VALUES (%s, 'sistema', 'Reclamo registrado', %s, %s, FALSE, NOW())
+            """, (int(user["sub"]), f"Tu solicitud de reclamo para la orden #{id_orden} ha sido registrada con éxito.", id_solicitud))
+
             id_vendedor = None
-            if orden.get("id_tienda"):
-                cursor.execute("SELECT id_usuario FROM tiendas WHERE id_tienda=%s", (orden.get("id_tienda"),))
+            if id_tienda_final:
+                cursor.execute("SELECT id_usuario FROM tiendas WHERE id_tienda=%s", (id_tienda_final,))
                 row = cursor.fetchone()
                 if row:
                     id_vendedor = row.get("id_usuario")
 
             mensaje_vendedor = f"Nuevo reclamo recibido (#{id_solicitud}) para la orden #{id_orden}"
             if id_vendedor:
-                cursor.execute("INSERT INTO notificaciones (id_usuario, tipo, titulo, cuerpo, id_referencia) VALUES (%s, 'reclamo', 'Nuevo reclamo recibido', %s, %s)", (id_vendedor, mensaje_vendedor, id_solicitud))
+                cursor.execute("INSERT INTO notificaciones (id_usuario, tipo, titulo, cuerpo, id_referencia, leida, fecha_creacion) VALUES (%s, 'sistema', 'Nuevo reclamo recibido', %s, %s, FALSE, NOW())", (id_vendedor, mensaje_vendedor, id_solicitud))
 
             cursor.execute("SELECT id_usuario FROM usuarios WHERE rol IN ('admin','administrador')")
             admins = cursor.fetchall() or []
             mensaje_admin = f"Nueva solicitud de reclamo #{id_solicitud} creada por el usuario {user.get('sub')}"
             for a in admins:
                 try:
-                    cursor.execute("INSERT INTO notificaciones (id_usuario, tipo, titulo, cuerpo, id_referencia) VALUES (%s, 'reclamo', 'Nueva solicitud de reclamo', %s, %s)", (a.get('id_usuario'), mensaje_admin, id_solicitud))
+                    cursor.execute("INSERT INTO notificaciones (id_usuario, tipo, titulo, cuerpo, id_referencia, leida, fecha_creacion) VALUES (%s, 'sistema', 'Nueva solicitud de reclamo', %s, %s, FALSE, NOW())", (a.get('id_usuario'), mensaje_admin, id_solicitud))
                 except Exception:
                     pass
-        except Exception:
-            pass
+        except Exception as err:
+            print(f"Error generando notificaciones de queja: {err}")
 
         db.commit()
-
         return {"ok": True, "id_solicitud": id_solicitud}
-
+    except HTTPException:
+        db.rollback()
+        raise
+    except Exception as e:
+        db.rollback()
+        print(f"Error creando queja: {e}")
+        raise HTTPException(status_code=500, detail=f"Error al registrar reclamo: {str(e)}")
     finally:
+        cursor.close(); db.close()
 
+
+
+@router.delete("/{id_solicitud}")
+def cancelar_queja(id_solicitud: int, user=Depends(current_user)):
+    db = get_db(); cursor = db.cursor(dictionary=True)
+    try:
+        cursor.execute(
+            "SELECT id_solicitud, estado FROM solicitudes_soporte WHERE id_solicitud=%s AND id_usuario=%s AND tipo_solicitud='reclamo'",
+            (id_solicitud, int(user["sub"]))
+        )
+        row = cursor.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="Reclamo no encontrado")
+        if row["estado"] not in ("Abierto",):
+            raise HTTPException(status_code=400, detail="Solo puedes cancelar reclamos en estado Abierto")
+        cursor.execute(
+            "UPDATE solicitudes_soporte SET estado='Cerrado', respuesta='Cancelado por el usuario' WHERE id_solicitud=%s",
+            (id_solicitud,)
+        )
+        db.commit()
+        return {"ok": True}
+    finally:
         cursor.close(); db.close()
 
 
@@ -283,38 +343,49 @@ def _acceso_reclamo(cursor, id_solicitud, user):
 
 
 @router.get("/vendedor")
-
 def quejas_vendedor(user=Depends(current_user)):
-
     db = get_db(); cursor = db.cursor(dictionary=True)
-
     try:
-
         cursor.execute("""
-
             SELECT s.id_solicitud, s.id_orden, s.asunto, s.descripcion, s.categoria,
-
-                   s.estado, s.respuesta, s.evidencia_url, s.fecha_creacion,
-
-                   u.nombre_usuario AS comprador
-
+                   s.estado, s.respuesta, s.evidencia_url, s.fecha_creacion, s.fecha_resolucion,
+                   s.id_usuario,
+                   u.nombre_usuario AS comprador, u.correo_usuario AS correo_comprador,
+                   t.nombre_tienda
             FROM solicitudes_soporte s
-
             JOIN tiendas t ON t.id_tienda = s.id_tienda
-
             JOIN usuarios u ON u.id_usuario = s.id_usuario
-
-            WHERE t.id_usuario=%s AND s.tipo_solicitud='reclamo'
-
+            WHERE (t.id_usuario = %s OR s.id_tienda IN (SELECT id_tienda FROM tiendas WHERE id_usuario = %s))
+              AND s.tipo_solicitud = 'reclamo'
             ORDER BY s.fecha_creacion DESC
+        """, (int(user["sub"]), int(user["sub"])))
+        rows = cursor.fetchall()
 
-        """, (int(user["sub"]),))
+        from app.models.payments import obtener_orden
+        for row in rows:
+            try:
+                orden = obtener_orden(row["id_usuario"], row["id_orden"])
+                if orden and orden.get("items"):
+                    item0 = orden["items"][0]
+                    row["imagen_libro"] = item0.get("imagen_url") or item0.get("imagen")
+                    row["titulo_libro"] = item0.get("titulo") or item0.get("nombre_libro")
+                    row["total_items"] = len(orden["items"])
+                    row["total_orden"] = orden.get("total") or orden.get("monto_total")
+                else:
+                    row["imagen_libro"] = None
+                    row["titulo_libro"] = None
+                    row["total_items"] = 0
+                    row["total_orden"] = None
+            except Exception:
+                row["imagen_libro"] = None
+                row["titulo_libro"] = None
+                row["total_items"] = 0
+                row["total_orden"] = None
 
-        return cursor.fetchall()
-
+        return rows
     finally:
-
         cursor.close(); db.close()
+
 
 
 
@@ -373,14 +444,15 @@ def enviar_mensaje_reclamo(id_solicitud: int, data: MensajeReclamo, user=Depends
         cursor.execute("INSERT INTO mensajes_reclamo (id_solicitud, id_usuario, mensaje) VALUES (%s, %s, %s)", (id_solicitud, int(user["sub"]), data.mensaje.strip()))
 
         if int(user["sub"]) == solicitud["id_vendedor"]:
-
             cursor.execute("UPDATE solicitudes_soporte SET estado='En revisión' WHERE id_solicitud=%s AND estado='Abierto'", (id_solicitud,))
-
-            cursor.execute("INSERT INTO notificaciones (id_usuario, tipo, titulo, cuerpo, id_referencia) VALUES (%s, 'reclamo', 'Nueva respuesta de la librería', %s, %s)", (solicitud["id_comprador"], "La librería respondió a tu reclamo.", id_solicitud))
-
+            cursor.execute("INSERT INTO notificaciones (id_usuario, tipo, titulo, cuerpo, id_referencia, leida, fecha_creacion) VALUES (%s, 'sistema', 'Nueva respuesta de la librería', %s, %s, FALSE, NOW())", (solicitud["id_comprador"], "La librería respondió a tu reclamo.", id_solicitud))
         elif int(user["sub"]) == solicitud["id_comprador"] and solicitud["id_vendedor"]:
-
-            cursor.execute("INSERT INTO notificaciones (id_usuario, tipo, titulo, cuerpo, id_referencia) VALUES (%s, 'reclamo', 'Nueva respuesta del comprador', %s, %s)", (solicitud["id_vendedor"], "El comprador respondió a un reclamo.", id_solicitud))
+            cursor.execute("INSERT INTO notificaciones (id_usuario, tipo, titulo, cuerpo, id_referencia, leida, fecha_creacion) VALUES (%s, 'sistema', 'Nueva respuesta del comprador', %s, %s, FALSE, NOW())", (solicitud["id_vendedor"], "El comprador respondió a un reclamo.", id_solicitud))
+        elif user.get("rol") in {"admin", "administrador"}:
+            if solicitud.get("id_vendedor"):
+                cursor.execute("INSERT INTO notificaciones (id_usuario, tipo, titulo, cuerpo, id_referencia, leida, fecha_creacion) VALUES (%s, 'sistema', 'Mensaje del administrador', %s, %s, FALSE, NOW())", (solicitud["id_vendedor"], f"El administrador envió un mensaje sobre el reclamo #{id_solicitud}.", id_solicitud))
+            if solicitud.get("id_comprador"):
+                cursor.execute("INSERT INTO notificaciones (id_usuario, tipo, titulo, cuerpo, id_referencia, leida, fecha_creacion) VALUES (%s, 'sistema', 'Mensaje del administrador', %s, %s, FALSE, NOW())", (solicitud["id_comprador"], f"El administrador envió un mensaje en tu reclamo #{id_solicitud}.", id_solicitud))
 
         db.commit()
 
@@ -452,7 +524,7 @@ def crear_soporte(data: SoporteCrear, user=Depends(current_user)):
             for a in admins:
                 try:
                     cursor.execute(
-                        "INSERT INTO notificaciones (id_usuario, tipo, titulo, cuerpo, id_referencia) VALUES (%s, 'soporte', 'Nuevo ticket de soporte', %s, %s)",
+                        "INSERT INTO notificaciones (id_usuario, tipo, titulo, cuerpo, id_referencia) VALUES (%s, 'sistema', 'Nuevo ticket de soporte', %s, %s)",
                         (a.get('id_usuario'), mensaje_admin, id_solicitud)
                     )
                 except Exception:
@@ -473,41 +545,42 @@ def crear_soporte(data: SoporteCrear, user=Depends(current_user)):
 
 
 @router.get("/admin/todas")
-
 def todas_las_quejas(user=Depends(current_user)):
-
     if user.get("rol") not in {"admin", "administrador"}:
-
         raise HTTPException(status_code=403, detail="Solo el administrador puede ver los reclamos")
-
     db = get_db(); cursor = db.cursor(dictionary=True)
-
     try:
-
         cursor.execute("""
-
-            SELECT s.id_solicitud, s.id_orden, s.asunto, s.descripcion, s.categoria, s.tipo_solicitud, s.estado,
-
+            SELECT s.id_solicitud, s.id_usuario, s.id_orden, s.id_tienda, s.asunto, s.descripcion, s.categoria, s.tipo_solicitud, s.estado,
                    s.respuesta, s.evidencia_url, s.fecha_creacion, u.nombre_usuario AS comprador,
-
-                   u.rol AS rol_usuario, t.nombre_tienda, t.id_usuario AS id_vendedor
-
+                   u.correo_usuario AS correo_comprador, u.rol AS rol_usuario, t.nombre_tienda, t.id_usuario AS id_vendedor,
+                   t.telefono AS telefono_tienda, t.direccion AS direccion_tienda,
+                   uv.nombre_usuario AS nombre_vendedor, uv.correo_usuario AS correo_vendedor
             FROM solicitudes_soporte s
-
             JOIN usuarios u ON u.id_usuario = s.id_usuario
-
             LEFT JOIN tiendas t ON t.id_tienda = s.id_tienda
-
+            LEFT JOIN usuarios uv ON uv.id_usuario = t.id_usuario
             WHERE s.tipo_solicitud IN ('reclamo', 'soporte')
-
             ORDER BY s.fecha_creacion DESC
-
         """)
+        rows = cursor.fetchall()
 
-        return cursor.fetchall()
+        from app.models.payments import obtener_orden
+        for row in rows:
+            try:
+                if row.get("id_orden") and row.get("id_usuario"):
+                    orden = obtener_orden(int(row["id_usuario"]), int(row["id_orden"]))
+                    if orden and orden.get("items"):
+                        item0 = orden["items"][0]
+                        row["imagen_libro"] = item0.get("imagen_url") or item0.get("imagen")
+                        row["titulo_libro"] = item0.get("titulo") or item0.get("nombre_libro")
+                        row["total_items"] = len(orden["items"])
+                        row["total_orden"] = orden.get("total")
+            except Exception:
+                pass
 
+        return rows
     finally:
-
         cursor.close(); db.close()
 
 
@@ -544,17 +617,15 @@ def resolver_queja(id_solicitud: int, data: Resolucion, user=Depends(current_use
 
         cursor.execute("UPDATE solicitudes_soporte SET estado=%s, respuesta=%s, fecha_resolucion=NOW() WHERE id_solicitud=%s", (data.estado, data.respuesta, id_solicitud))
 
-        if ticket["id_vendedor"]:
+        if ticket.get("id_vendedor"):
+            cursor.execute("INSERT INTO notificaciones (id_usuario, tipo, titulo, cuerpo, id_referencia, leida, fecha_creacion) VALUES (%s, 'sistema', 'Reclamo resuelto / actualizado', %s, %s, FALSE, NOW())", (ticket["id_vendedor"], f"El administrador actualizó el reclamo #{id_solicitud} a '{data.estado}': {data.respuesta}", id_solicitud))
 
-            cursor.execute("INSERT INTO notificaciones (id_usuario, tipo, titulo, cuerpo, id_referencia) VALUES (%s, 'reclamo', 'Reclamo requiere atención', %s, %s)", (ticket["id_vendedor"], f"El administrador revisó el reclamo #{id_solicitud}: {data.respuesta}", id_solicitud))
-
-        cursor.execute("INSERT INTO notificaciones (id_usuario, tipo, titulo, cuerpo, id_referencia) VALUES (%s, 'soporte', 'Ticket actualizado', %s, %s)", (ticket["id_comprador"], f"El administrador actualizó tu solicitud #{id_solicitud}: {data.respuesta}", id_solicitud))
+        if ticket.get("id_comprador"):
+            cursor.execute("INSERT INTO notificaciones (id_usuario, tipo, titulo, cuerpo, id_referencia, leida, fecha_creacion) VALUES (%s, 'sistema', 'Reclamo resuelto / actualizado', %s, %s, FALSE, NOW())", (ticket["id_comprador"], f"Tu reclamo #{id_solicitud} ha sido marcado como '{data.estado}': {data.respuesta}", id_solicitud))
 
         db.commit()
-
         return {"ok": True}
-
     finally:
-
         cursor.close(); db.close()
+
 

@@ -61,7 +61,20 @@ export default function SeccionNotificaciones() {
       const data = await notificacionesService.obtener(false, 50, 0);
       const notificacionesAPI = data.notificaciones || [];
       const notificacionesOrdenes = generarNotificacionesOrdenes();
-      const todasNotificaciones = [...notificacionesOrdenes, ...notificacionesAPI];
+
+      // API primero (más recientes y con tipos sistema/reclamo), luego automáticas de órdenes
+      // Evitar duplicar: si ya hay una notif API de tipo 'pedido' con mismo id_referencia, omitir la automática
+      const idsRefCubiertos = new Set(
+        notificacionesAPI
+          .filter(n => n.tipo === 'pedido' || n.tipo === 'pago')
+          .map(n => String(n.referencia_id || n.id_referencia))
+      );
+      const ordenesNoRepetidas = notificacionesOrdenes.filter(
+        n => !idsRefCubiertos.has(String(n.referencia_id))
+      );
+
+      const todasNotificaciones = [...notificacionesAPI, ...ordenesNoRepetidas];
+
       if (notificacionesFilter === "no_leidas") {
         setNotificaciones(todasNotificaciones.filter(n => !n.leida));
       } else {
@@ -79,6 +92,7 @@ export default function SeccionNotificaciones() {
       if (!silent) setNotificacionesLoading(false);
     }
   }, [notificacionesFilter, generarNotificacionesOrdenes]);
+
 
   useEffect(() => {
     cargarNotificaciones();
@@ -137,6 +151,10 @@ export default function SeccionNotificaciones() {
       navigate('/?seccion=Mis%20Compras');
     } else if (notif.tipo === 'mensaje' && notif.referencia_id) {
       navigate(`/?seccion=Mensajes&sala=${notif.referencia_id}`);
+    } else if (notif.tipo === 'pedido') {
+      navigate('/?seccion=Mis%20Compras');
+    } else if (notif.tipo === 'sistema') {
+      navigate('/?seccion=Quejas%20y%20reclamos');
     }
   };
 
@@ -161,10 +179,12 @@ export default function SeccionNotificaciones() {
       pedido: <IconPackage width={24} height={24} strokeWidth={1.5} style={{ color: '#7A1E3A' }} />,
       pago: <IconCreditCard width={24} height={24} strokeWidth={1.5} style={{ color: '#10b981' }} />,
       envio: <IconTruck width={24} height={24} strokeWidth={1.5} style={{ color: '#8b5cf6' }} />,
+      sistema: <IconInfo width={24} height={24} strokeWidth={1.5} style={{ color: '#7A1E3A' }} />,
       default: <IconInfo width={24} height={24} strokeWidth={1.5} style={{ color: '#6b7280' }} />
     };
     return iconos[tipo] || iconos.default;
   };
+
 
   return (
     <div className="pl-card" style={{ padding: "2.5rem 2rem", background: "linear-gradient(135deg, #faf8f6 0%, #f5f0eb 100%)" }}>
@@ -386,7 +406,7 @@ export default function SeccionNotificaciones() {
                   color: "#555",
                   lineHeight: "1.5"
                 }}>
-                  {notif.descripcion}
+                  {notif.descripcion || notif.cuerpo}
                 </p>
                 <div style={{
                   display: "flex",
@@ -400,13 +420,15 @@ export default function SeccionNotificaciones() {
                     <circle cx="12" cy="12" r="10"/>
                     <polyline points="12 6 12 12 16 14"/>
                   </svg>
-                  {new Date(notif.fecha_creacion).toLocaleString('es-CO', {
-                    year: 'numeric',
-                    month: 'short',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                  })}
+                  {notif.fecha_creacion
+                    ? new Date(notif.fecha_creacion).toLocaleString('es-CO', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })
+                    : 'Ahora'}
                 </div>
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: "8px", alignItems: "flex-end" }}>
