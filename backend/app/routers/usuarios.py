@@ -6,7 +6,7 @@ from app.models.usuarios import crear_usuario, login_usuario, obtener_todos_usua
 
 from app.models.tiendas import obtener_tienda_por_usuario
 
-from app.auth import create_token, verify_token
+from app.auth import create_token, verify_token, require_role
 
 from app.email import enviar_email_confirmacion_registro, is_smtp_configured
 
@@ -173,7 +173,7 @@ def login(data: UsuarioLogin):
 
 # ========================
 
-@router.get("/usuarios")
+@router.get("/usuarios", dependencies=[Depends(require_role("admin", "administrador"))])
 
 def get_usuarios():
 
@@ -193,7 +193,7 @@ class BloquearPayload(BaseModel):
 
 
 
-@router.patch("/usuarios/{id_usuario}/bloquear")
+@router.patch("/usuarios/{id_usuario}/bloquear", dependencies=[Depends(require_role("admin", "administrador"))])
 
 def bloquear(id_usuario: int, payload: BloquearPayload):
 

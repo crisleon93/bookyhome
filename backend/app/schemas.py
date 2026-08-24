@@ -1,6 +1,6 @@
 from pydantic import BaseModel, EmailStr
 from pydantic import BaseModel, Field
-from typing import List, Optional
+from typing import List, Optional, Literal
 
 # ===========================
 # USUARIOS
@@ -11,7 +11,7 @@ class UsuarioRegistro(BaseModel):
     email: EmailStr
     password: str
     telefono: str
-    rol: str = "comprador"  # 'comprador' | 'vendedor'
+    rol: Literal["comprador", "vendedor"] = "comprador"
 
 class UsuarioLogin(BaseModel):
     email: EmailStr
