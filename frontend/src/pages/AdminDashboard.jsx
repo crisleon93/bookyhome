@@ -4,6 +4,7 @@ import { getUserRole } from '../hooks/useAuth';
 import api, { getApiBaseUrl } from '../services/api';
 import { notify } from '../components/ToastProvider';
 import BookyPagoFinanzas from './BookyPagoFinanzas';
+import SeccionPerfilAdmin from '../components/dashboard/SeccionPerfilAdmin';
 import {
   IconLayoutDashboard, IconTrendingUp, IconUser, IconUsers, IconBook, IconStore, IconPackage,
   IconSettings, IconChevronLeft, IconMenu, IconLogOut, IconLock, IconUnlock,
@@ -49,6 +50,7 @@ const NAV_ITEMS = [
   { id: 'finanzas',  label: 'Finanzas',  Icon: IconWallet },
   { id: 'reclamos',  label: 'Quejas y reclamos', Icon: IconAlertTriangle },
   { id: 'soporte',   label: 'Soporte técnico', Icon: IconTool },
+  { id: 'perfil',    label: 'Mi Perfil', Icon: IconSettings },
 ];
 
 // Ícono de sidebar: tamaño y color fijos, ignora className/defaults de cada ícono
@@ -88,6 +90,41 @@ export default function AdminDashboard() {
   const [chatNuevoMensaje, setChatNuevoMensaje] = useState('');
   const [cargandoChat, setCargandoChat] = useState(false);
   const [enviandoMensaje, setEnviandoMensaje] = useState(false);
+  const [perfilSidebar, setPerfilSidebar] = useState({ nombre: '', correo: '', foto: null, bannerUrl: null, bannerColor: '#7A1E3A' });
+
+  useEffect(() => {
+    const cargarPerfilSidebar = async () => {
+      try {
+        const res = await api.get('/perfil/mi-perfil');
+        if (!res.data) return;
+        const base = getApiBaseUrl();
+        setPerfilSidebar({
+          nombre: res.data.nombre_usuario || 'Administrador',
+          correo: res.data.correo_usuario || '',
+          foto: res.data.foto_perfil ? `${base}/${res.data.foto_perfil.replace(/^\//, '')}` : null,
+          bannerUrl: res.data.banner_perfil ? `${base}/${res.data.banner_perfil.replace(/^\//, '')}` : null,
+          bannerColor: res.data.banner_perfil ? null : (res.data.banner_color || '#7A1E3A'),
+        });
+      } catch (error) {
+        console.error('Error cargando perfil del sidebar:', error);
+      }
+    };
+    cargarPerfilSidebar();
+
+    const handlePhotoUpdate = (e) => {
+      if (e.detail?.url) setPerfilSidebar(p => ({ ...p, foto: e.detail.url }));
+    };
+    const handleBannerUpdate = (e) => {
+      if (e.detail?.bannerUrl) setPerfilSidebar(p => ({ ...p, bannerUrl: e.detail.bannerUrl, bannerColor: null }));
+      else if (e.detail?.bannerColor) setPerfilSidebar(p => ({ ...p, bannerColor: e.detail.bannerColor, bannerUrl: null }));
+    };
+    window.addEventListener('profile-photo-updated', handlePhotoUpdate);
+    window.addEventListener('profile-banner-updated', handleBannerUpdate);
+    return () => {
+      window.removeEventListener('profile-photo-updated', handlePhotoUpdate);
+      window.removeEventListener('profile-banner-updated', handleBannerUpdate);
+    };
+  }, []);
 
   const abrirChatReclamo = async (reclamo) => {
     setChatModalReclamo(reclamo);
@@ -156,12 +193,14 @@ export default function AdminDashboard() {
   useEffect(() => {
     if (activeSection === 'reclamos') cargarReclamos();
     if (activeSection === 'soporte') cargarSoporte();
+    if (activeSection === 'dashboard') { cargarReclamos(); cargarSoporte(); }
   }, [activeSection]);
 
   useEffect(() => {
     const refrescar = () => {
       if (activeSection === 'reclamos') cargarReclamos();
       if (activeSection === 'soporte') cargarSoporte();
+      if (activeSection === 'dashboard') { cargarReclamos(); cargarSoporte(); }
     };
     window.addEventListener('bookyhome-complaint-updated', refrescar);
     const intervalId = window.setInterval(refrescar, 10000);
@@ -339,8 +378,11 @@ export default function AdminDashboard() {
   const librosActivosCount = libros.filter(l => !l.oculto).length;
   const totalCategorias = Object.keys(categoriaCount).length;
 
-  const reclamosPendientes = reclamos.filter(r => ['Abierto', 'En revision', 'En revisión', 'abierto', 'en revision', 'en revisión'].includes(r.estado));
+  const estaPendienteSolicitud = (estado) => ['abierto', 'en revision', 'en revisión'].includes((estado || '').toLowerCase().trim());
+  const esReclamoTipo = (tipo) => ['reclamo', 'queja', 'quejas'].includes((tipo || '').toLowerCase().trim());
+  const reclamosPendientes = reclamos.filter(r => esReclamoTipo(r.tipo_solicitud) && estaPendienteSolicitud(r.estado));
   const reclamosPendientesCount = reclamosPendientes.length;
+  const soportePendientesCountDash = reclamos.filter(r => !esReclamoTipo(r.tipo_solicitud) && estaPendienteSolicitud(r.estado)).length;
 
   const ordenesCompletadas = ordenes.filter(o => ['completada', 'entregado', 'finalizada'].includes((o.estado || '').toLowerCase())).length;
 
@@ -476,59 +518,126 @@ export default function AdminDashboard() {
         background: VINOTINTO, color: WHITE,
         padding: '24px 14px', display: 'flex', flexDirection: 'column', gap: '6px',
         transition: 'width 0.25s ease', flexShrink: 0,
+        position: 'sticky', top: 0, height: '100vh', overflow: 'hidden',
       }}>
-        <div style={{
-          display: 'flex', alignItems: 'center',
-          justifyContent: sidebarOpen ? 'space-between' : 'center',
-          marginBottom: '26px', paddingLeft: sidebarOpen ? '10px' : 0,
-        }}>
-          {sidebarOpen && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <SidebarIcon Icon={IconSettings} size={22} />
-              <span style={{ fontSize: '1.05rem', fontWeight: 800 }}>Admin Panel</span>
+        {sidebarOpen ? (
+          /* ── Sidebar ABIERTO: banner como fondo, avatar + info encima ── */
+          <div style={{
+            margin: '-24px -14px 16px -14px',
+            background: perfilSidebar.bannerUrl
+              ? `url(${perfilSidebar.bannerUrl}) center/cover no-repeat`
+              : (perfilSidebar.bannerColor || '#7A1E3A'),
+            padding: '12px 14px 12px 24px',
+            position: 'relative',
+          }}>
+            <div style={{ position: 'relative', zIndex: 1 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                {perfilSidebar.foto ? (
+                  <img src={perfilSidebar.foto} alt="Foto de perfil" style={{
+                    width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover',
+                    border: '2px solid rgba(255,255,255,0.5)', flexShrink: 0,
+                  }} />
+                ) : (
+                  <div style={{
+                    width: '40px', height: '40px', borderRadius: '50%', flexShrink: 0,
+                    background: 'rgba(255,255,255,0.2)', border: '2px solid rgba(255,255,255,0.4)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontWeight: 700, color: WHITE, textTransform: 'uppercase', fontSize: '1rem',
+                  }}>
+                    {(perfilSidebar.nombre || 'A').charAt(0)}
+                  </div>
+                )}
+                <button
+                  onClick={() => setSidebarOpen(false)}
+                  style={{
+                    background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.3)',
+                    color: WHITE, width: '26px', height: '26px', borderRadius: '6px',
+                    cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}
+                  title="Contraer menú"
+                >
+                  <SidebarIcon Icon={IconChevronLeft} size={15} />
+                </button>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
+                <SidebarIcon Icon={IconSettings} size={12} />
+                <span style={{ fontSize: '0.66rem', fontWeight: 800, letterSpacing: '1.2px', color: 'rgba(255,255,255,0.9)', textTransform: 'uppercase', textShadow: '0 1px 3px rgba(0,0,0,0.6)' }}>Admin Panel</span>
+              </div>
+              <div style={{ fontSize: '0.88rem', fontWeight: 700, color: WHITE, textShadow: '0 1px 3px rgba(0,0,0,0.6)' }}>{perfilSidebar.nombre || 'Administrador'}</div>
+              <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.9)', textShadow: '0 1px 3px rgba(0,0,0,0.6)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{perfilSidebar.correo}</div>
             </div>
-          )}
-          <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            style={{
-              background: 'rgba(255,255,255,0.12)', border: 'none', color: WHITE,
-              width: '34px', height: '34px', borderRadius: '8px', cursor: 'pointer',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-            }}
-            title={sidebarOpen ? 'Contraer menú' : 'Expandir menú'}
-          >
-            {sidebarOpen
-              ? <SidebarIcon Icon={IconChevronLeft} size={20} />
-              : <SidebarIcon Icon={IconMenu} size={20} />}
-          </button>
-        </div>
-
-        {NAV_ITEMS.map((item) => {
-          const active = activeSection === item.id;
-          return (
+          </div>
+        ) : (
+          /* ── Sidebar CERRADO: banner de fondo + hamburguesa + avatar ── */
+          <div style={{
+            margin: '-24px -14px 20px -14px',
+            background: perfilSidebar.bannerUrl
+              ? `url(${perfilSidebar.bannerUrl}) center/cover no-repeat`
+              : (perfilSidebar.bannerColor || '#7A1E3A'),
+            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+            width: 'calc(100% + 28px)',
+            padding: '12px 0',
+            gap: '8px',
+          }}>
             <button
-              key={item.id}
-              onClick={() => setActiveSection(item.id)}
-              title={!sidebarOpen ? item.label : undefined}
+              onClick={() => setSidebarOpen(true)}
               style={{
-                background: active ? 'rgba(255,255,255,0.18)' : 'none',
-                border: 'none', color: '#FFFFFF',
-                padding: sidebarOpen ? '12px 14px' : '12px',
-                borderRadius: '8px', cursor: 'pointer', textAlign: 'left',
-                fontWeight: 600, fontSize: '0.9rem',
-                display: 'flex', alignItems: 'center',
-                justifyContent: sidebarOpen ? 'flex-start' : 'center',
-                gap: '12px', fontFamily: "'Montserrat', sans-serif",
-                transition: 'background 0.15s ease',
+                background: 'rgba(255,255,255,0.16)', border: '1px solid rgba(255,255,255,0.2)',
+                color: WHITE, width: '34px', height: '34px', borderRadius: '8px',
+                cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                boxShadow: '0 4px 14px rgba(0,0,0,0.15)',
               }}
+              title="Expandir menú"
             >
-              <span style={{ display: 'flex', flexShrink: 0 }}>
-                <SidebarIcon Icon={item.Icon} size={20} />
-              </span>
-              {sidebarOpen && <span>{item.label}</span>}
+              <SidebarIcon Icon={IconMenu} size={20} />
             </button>
-          );
-        })}
+            {perfilSidebar.foto ? (
+              <img src={perfilSidebar.foto} alt="Foto de perfil" style={{
+                width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover',
+                border: '2px solid rgba(255,255,255,0.35)',
+              }} />
+            ) : (
+              <div style={{
+                width: '36px', height: '36px', borderRadius: '50%',
+                background: 'rgba(255,255,255,0.15)', border: '2px solid rgba(255,255,255,0.35)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontWeight: 700, color: WHITE, textTransform: 'uppercase', fontSize: '1rem',
+              }}>
+                {(perfilSidebar.nombre || 'A').charAt(0)}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Navigation */}
+        <div className="sidebar-nav-scroll" style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
+          {NAV_ITEMS.map((item) => {
+            const active = activeSection === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => setActiveSection(item.id)}
+                title={!sidebarOpen ? item.label : undefined}
+                style={{
+                  background: active ? 'rgba(255,255,255,0.18)' : 'none',
+                  border: 'none', color: '#FFFFFF',
+                  padding: sidebarOpen ? '12px 14px' : '12px',
+                  borderRadius: '8px', cursor: 'pointer', textAlign: 'left',
+                  fontWeight: 600, fontSize: '0.9rem', flexShrink: 0,
+                  display: 'flex', alignItems: 'center',
+                  justifyContent: sidebarOpen ? 'flex-start' : 'center',
+                  gap: '12px', fontFamily: "'Montserrat', sans-serif",
+                  transition: 'background 0.15s ease',
+                }}
+              >
+                <span style={{ display: 'flex', flexShrink: 0 }}>
+                  <SidebarIcon Icon={item.Icon} size={20} />
+                </span>
+                {sidebarOpen && <span>{item.label}</span>}
+              </button>
+            );
+          })}
+        </div>
 
         <button
           onClick={() => {
@@ -600,7 +709,7 @@ export default function AdminDashboard() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
 
             {/* ALERTA DE ATENCIÓN PRIORITARIA */}
-            {(reclamosPendientesCount > 0 || tiendasPendientesCount > 0) && (
+            {(reclamosPendientesCount > 0 || soportePendientesCountDash > 0 || tiendasPendientesCount > 0) && (
               <div style={{
                 background: '#FFFBEB',
                 border: '1.5px solid #FCD34D',
@@ -626,7 +735,8 @@ export default function AdminDashboard() {
                       Atención requerida del Administrador
                     </div>
                     <div style={{ color: '#B45309', fontSize: '0.86rem', marginTop: '2px' }}>
-                      {reclamosPendientesCount > 0 && `Tienes ${reclamosPendientesCount} solicitud(es) de quejas o reclamos abiertas para responder. `}
+                      {reclamosPendientesCount > 0 && `Tienes ${reclamosPendientesCount} queja(s) o reclamo(s) abierta(s) para responder. `}
+                      {soportePendientesCountDash > 0 && `Hay ${soportePendientesCountDash} ticket(s) de soporte técnico sin resolver. `}
                       {tiendasPendientesCount > 0 && `Hay ${tiendasPendientesCount} librería(s) pendiente(s) de revisión y aprobación.`}
                     </div>
                   </div>
@@ -654,6 +764,18 @@ export default function AdminDashboard() {
                       }}
                     >
                       Revisar Tiendas →
+                    </button>
+                  )}
+                  {soportePendientesCountDash > 0 && (
+                    <button
+                      onClick={() => setActiveSection('soporte')}
+                      style={{
+                        background: '#2563eb', color: WHITE, border: 'none',
+                        padding: '8px 16px', borderRadius: '8px', fontWeight: 700,
+                        fontSize: '0.84rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px'
+                      }}
+                    >
+                      Atender Soporte →
                     </button>
                   )}
                 </div>
@@ -1979,14 +2101,14 @@ export default function AdminDashboard() {
                               fontSize: '0.78rem', fontWeight: 800,
                               boxShadow: '0 2px 8px rgba(122,30,58,0.2)',
                             }}>
-                              #{reclamo.id_solicitud}
+                              #{reclamo.numero || reclamo.id_solicitud}
                             </div>
                           )}
 
                           <div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 2 }}>
                               <span style={{ fontSize: '0.78rem', color: '#888', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                                Reclamo #{reclamo.id_solicitud}
+                                Reclamo #{reclamo.numero || reclamo.id_solicitud}
                               </span>
                               {reclamo.id_orden && (
                                 <span style={{ background: '#f7e9ee', color: VINOTINTO, padding: '2px 8px', borderRadius: 8, fontSize: '0.76rem', fontWeight: 700 }}>
@@ -2263,41 +2385,242 @@ export default function AdminDashboard() {
         {/* SOPORTE TÉCNICO */}
         {activeSection === 'soporte' && (
           <div style={{ display: 'grid', gap: '20px' }}>
-            <div style={{ display: 'flex', gap: 12, marginBottom: 8 }}>
-              <button onClick={() => setVistaSoporte('compradores')} style={{ border: vistaSoporte === 'compradores' ? `2px solid ${VINOTINTO}` : `1px solid ${BORDER}`, background: vistaSoporte === 'compradores' ? VINOTINTO : WHITE, color: vistaSoporte === 'compradores' ? WHITE : VINOTINTO, borderRadius: 10, padding: '12px 20px', cursor: 'pointer', fontWeight: 700, fontSize: '0.95rem', transition: 'all 0.2s' }}>Soporte · Compradores</button>
-              <button onClick={() => setVistaSoporte('vendedores')} style={{ border: vistaSoporte === 'vendedores' ? `2px solid ${VINOTINTO}` : `1px solid ${BORDER}`, background: vistaSoporte === 'vendedores' ? VINOTINTO : WHITE, color: vistaSoporte === 'vendedores' ? WHITE : VINOTINTO, borderRadius: 10, padding: '12px 20px', cursor: 'pointer', fontWeight: 700, fontSize: '0.95rem', transition: 'all 0.2s' }}>Soporte · Vendedores</button>
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 8 }}>
+              {[
+                { id: 'compradores', label: 'Soporte · Compradores', count: soporteCompradores.length },
+                { id: 'vendedores', label: 'Soporte · Vendedores', count: soporteVendedores.length },
+              ].map((v) => {
+                const activo = vistaSoporte === v.id;
+                return (
+                  <button key={v.id} onClick={() => setVistaSoporte(v.id)} style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 8,
+                    border: activo ? `2px solid ${VINOTINTO}` : `1.5px solid ${BORDER}`,
+                    background: activo ? `linear-gradient(135deg, ${VINOTINTO} 0%, #9b2c4e 100%)` : WHITE,
+                    color: activo ? WHITE : VINOTINTO,
+                    borderRadius: 999, padding: '10px 20px', cursor: 'pointer',
+                    fontWeight: 700, fontSize: '0.9rem', transition: 'all 0.2s',
+                    boxShadow: activo ? '0 4px 14px rgba(122,30,58,0.25)' : 'none',
+                  }}>
+                    <IconTool width={16} height={16} strokeWidth={2} />
+                    {v.label}
+                    <span style={{ background: activo ? 'rgba(255,255,255,0.25)' : '#f7e9ee', borderRadius: 999, padding: '1px 9px', fontSize: '0.78rem', fontWeight: 800 }}>
+                      {v.count}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
+
             {soporteMostrado.length === 0 ? (
-              <div style={{ background: WHITE, borderRadius: 14, padding: 40, textAlign: 'center', color: GRAY, border: `1px solid ${BORDER}` }}>
-                <p style={{ margin: 0, fontSize: '1.1rem' }}>No hay tickets de soporte pendientes para {vistaSoporte === 'compradores' ? 'compradores' : 'vendedores'}.</p>
+              <div style={{ background: WHITE, borderRadius: 16, padding: '48px 24px', textAlign: 'center', border: '1.5px dashed #eee3e9' }}>
+                <div style={{ width: 56, height: 56, margin: '0 auto 14px', borderRadius: '50%', background: '#fdf2f4', display: 'grid', placeItems: 'center' }}>
+                  <IconTool width={26} height={26} style={{ color: VINOTINTO }} />
+                </div>
+                <p style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: CARBON }}>No hay tickets de soporte</p>
+                <p style={{ margin: '6px 0 0', fontSize: '0.88rem', color: GRAY }}>
+                  No hay tickets pendientes para {vistaSoporte === 'compradores' ? 'compradores' : 'vendedores'}.
+                </p>
               </div>
             ) : (
-              soporteMostrado.map((ticket) => (
-                <article key={ticket.id_solicitud} style={{ background: WHITE, border: `1px solid ${BORDER}`, borderRadius: 16, padding: 24, boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, marginBottom: 16 }}>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-                        <strong style={{ fontSize: '1.1rem', color: VINOTINTO }}>Soporte #{ticket.id_solicitud}</strong>
-                        <span style={{ background: '#e0f2fe', color: '#0369a1', padding: '4px 10px', borderRadius: 12, fontSize: '0.85rem', fontWeight: 600 }}>{(ticket.rol_usuario || '').toLowerCase() === 'vendedor' ? 'Vendedor' : 'Comprador'}</span>
+              soporteMostrado.map((ticket) => {
+                const estadoCfg = ESTADO_CONFIG_ADMIN[ticket.estado] || ESTADO_CONFIG_ADMIN['Cerrado'];
+                const fechaStr = ticket.fecha_creacion
+                  ? new Date(ticket.fecha_creacion).toLocaleDateString('es-CO', { day: '2-digit', month: 'long', year: 'numeric' })
+                  : null;
+                return (
+                <article key={ticket.id_solicitud} style={{
+                  borderRadius: 16,
+                  border: '1.5px solid #eee3e9',
+                  borderLeft: `6px solid ${estadoCfg.dot}`,
+                  overflow: 'hidden',
+                  background: WHITE,
+                  boxShadow: '0 3px 14px rgba(122,30,58,0.09)',
+                  transition: 'box-shadow 0.2s ease, transform 0.2s ease',
+                }}
+                  onMouseEnter={(e) => { e.currentTarget.style.boxShadow = '0 10px 30px rgba(122,30,58,0.16)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.boxShadow = '0 3px 14px rgba(122,30,58,0.09)'; e.currentTarget.style.transform = 'translateY(0)'; }}
+                >
+                  {/* Header de la card */}
+                  <div style={{
+                    background: 'linear-gradient(135deg, #fdf8f9 0%, #f9f0f3 100%)',
+                    padding: '16px 20px',
+                    borderBottom: '1.5px solid #f0e8ec',
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 14, minWidth: 0 }}>
+                      <div style={{
+                        position: 'relative',
+                        width: 54, height: 54, borderRadius: '50%', flexShrink: 0,
+                        background: 'linear-gradient(135deg, #7A1E3A 0%, #9b2c4e 100%)', color: WHITE,
+                        display: 'grid', placeItems: 'center',
+                        fontSize: '0.85rem', fontWeight: 800,
+                        border: '2px solid #fff',
+                        boxShadow: '0 0 0 1.5px #ecdce3, 0 4px 12px rgba(122,30,58,0.22)',
+                      }}>
+                        {(ticket.comprador || '?').charAt(0).toUpperCase()}
+                        {ticket.foto_comprador && (
+                          <img
+                            src={ticket.foto_comprador.startsWith('http') ? ticket.foto_comprador : `${getApiBaseUrl()}/${ticket.foto_comprador.replace(/^\//, '')}`}
+                            alt={ticket.comprador || 'Usuario'}
+                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }}
+                          />
+                        )}
                       </div>
-                      <p style={{ margin: '4px 0', color: GRAY, fontSize: '0.95rem' }}>{ticket.comprador}</p>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, flexWrap: 'wrap' }}>
+                          <span style={{
+                            background: 'linear-gradient(135deg, #7A1E3A 0%, #9b2c4e 100%)', color: WHITE,
+                            borderRadius: 7, padding: '3px 11px',
+                            fontSize: '0.73rem', fontWeight: 800, letterSpacing: '0.04em',
+                            boxShadow: '0 2px 8px rgba(122,30,58,0.3)',
+                            whiteSpace: 'nowrap',
+                          }}>
+                            TICKET #{ticket.numero || ticket.id_solicitud}
+                          </span>
+                          <span style={{
+                            display: 'inline-flex', alignItems: 'center', gap: 5,
+                            background: WHITE, border: '1.5px solid #ecdce3', color: VINOTINTO,
+                            borderRadius: 7, padding: '2px 10px',
+                            fontSize: '0.73rem', fontWeight: 700,
+                            whiteSpace: 'nowrap',
+                          }}>
+                            <IconUser width={12} height={12} strokeWidth={2} />
+                            {(ticket.rol_usuario || '').toLowerCase() === 'vendedor' ? 'Vendedor' : 'Comprador'}
+                          </span>
+                        </div>
+                        <strong style={{ fontSize: '1.02rem', color: CARBON, fontWeight: 800, display: 'block', lineHeight: 1.35 }}>
+                          {ticket.comprador}
+                        </strong>
+                      </div>
                     </div>
-                    <span style={{ background: ticket.estado === 'Resuelto' ? '#dcfce7' : ticket.estado === 'En revisión' ? '#fff7ed' : '#f3f4f6', color: CARBON, padding: '6px 12px', borderRadius: 20, fontSize: '0.85rem', fontWeight: 700, whiteSpace: 'nowrap' }}>{ticket.estado}</span>
+                    <span style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 6,
+                      background: estadoCfg.bg, color: estadoCfg.color,
+                      border: `1px solid ${estadoCfg.border}`,
+                      padding: '5px 12px', borderRadius: 20,
+                      fontSize: '0.78rem', fontWeight: 700, whiteSpace: 'nowrap',
+                    }}>
+                      <span style={{ width: 7, height: 7, borderRadius: '50%', background: estadoCfg.dot, display: 'inline-block' }} />
+                      {ticket.estado}
+                    </span>
                   </div>
-                  <p style={{ margin: '0 0 8px', fontWeight: 700, fontSize: '1rem', color: CARBON }}>{ticket.asunto}</p>
-                  <p style={{ margin: '0 0 12px', color: '#555', lineHeight: 1.5 }}>{ticket.descripcion}</p>
-                  {ticket.respuesta && (
-                    <div style={{ margin: '12px 0', padding: 14, background: BEIGE, borderRadius: 10, borderLeft: `4px solid ${VINOTINTO}` }}>
-                      <strong style={{ color: VINOTINTO, display: 'block', marginBottom: 4 }}>Respuesta del administrador:</strong>
-                      <p style={{ margin: 0, color: '#555', lineHeight: 1.5 }}>{ticket.respuesta}</p>
+
+                  {/* Cuerpo */}
+                  <div style={{ padding: '16px 20px', display: 'grid', gap: 14 }}>
+                    {/* Metadata */}
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
+                      <div style={{
+                        display: 'inline-flex', alignItems: 'center', gap: 6,
+                        background: '#fdf2f4', border: '1px solid #f0dde4',
+                        borderRadius: 20, padding: '5px 12px',
+                        color: VINOTINTO, fontSize: '0.8rem', fontWeight: 700,
+                      }}>
+                        <IconTool width={13} height={13} />
+                        {ticket.categoria || 'Soporte'}
+                      </div>
+                      {ticket.correo_comprador && (
+                        <div style={{
+                          display: 'inline-flex', alignItems: 'center', gap: 5,
+                          background: '#f0f9ff', border: '1px solid #bae6fd',
+                          borderRadius: 20, padding: '5px 12px',
+                          color: '#0369a1', fontSize: '0.78rem', fontWeight: 600,
+                        }}>
+                          <IconMail width={13} height={13} />
+                          {ticket.correo_comprador}
+                        </div>
+                      )}
+                      {fechaStr && (
+                        <div style={{
+                          display: 'inline-flex', alignItems: 'center', gap: 5,
+                          background: '#f9fafb', border: '1px solid #e5e7eb',
+                          borderRadius: 20, padding: '5px 12px',
+                          color: '#6b7280', fontSize: '0.78rem', fontWeight: 600,
+                        }}>
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" width={13} height={13}>
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
+                          </svg>
+                          {fechaStr}
+                        </div>
+                      )}
                     </div>
-                  )}
-                  <div style={{ display: 'flex', gap: 12, marginTop: 16, paddingTop: 16, borderTop: '1px solid #f0f0f0' }}>
-                    <button onClick={() => abrirModal(ticket, 'En revisión')} style={{ border: `1px solid ${VINOTINTO}`, background: WHITE, color: VINOTINTO, borderRadius: 8, padding: '10px 16px', cursor: 'pointer', fontWeight: 600, fontSize: '0.9rem', transition: 'all 0.2s' }}>En revisión</button>
-                    <button onClick={() => abrirModal(ticket, 'Resuelto')} style={{ border: 0, background: VINOTINTO, color: WHITE, borderRadius: 8, padding: '10px 16px', cursor: 'pointer', fontWeight: 600, fontSize: '0.9rem', transition: 'all 0.2s' }}>Resolver y notificar</button>
+
+                    {/* Asunto y descripción */}
+                    <div style={{ padding: '12px 14px', background: '#fafafa', borderRadius: 10, border: '1px solid #f0f0f0' }}>
+                      <p style={{ margin: 0, color: '#555', lineHeight: 1.65, fontSize: '0.92rem' }}>
+                        <span style={{ fontWeight: 700, color: CARBON, display: 'block', marginBottom: 4, fontSize: '0.82rem' }}>
+                          {ticket.asunto}
+                        </span>
+                        {ticket.descripcion}
+                      </p>
+                    </div>
+
+                    {/* Respuesta del admin */}
+                    {ticket.respuesta && (
+                      <div style={{
+                        padding: '14px 16px',
+                        background: 'linear-gradient(135deg, #fdf8f9 0%, #f9f0f3 100%)',
+                        borderRadius: 12, borderLeft: '4px solid #7A1E3A',
+                      }}>
+                        <p style={{ margin: '0 0 6px', color: VINOTINTO, display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.78rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                          <IconMessage width={14} height={14} />
+                          Respuesta del administrador
+                        </p>
+                        <p style={{ margin: 0, color: '#444', lineHeight: 1.65, fontSize: '0.92rem' }}>{ticket.respuesta}</p>
+                      </div>
+                    )}
+
+                    {/* Acciones */}
+                    <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', paddingTop: 4 }}>
+                      <button
+                        onClick={() => abrirModal(ticket, 'En revisión')}
+                        style={{
+                          display: 'inline-flex', alignItems: 'center', gap: 6,
+                          border: '1.5px solid #fdba74', background: WHITE, color: '#c2410c',
+                          borderRadius: 8, padding: '10px 18px', cursor: 'pointer',
+                          fontWeight: 700, fontSize: '0.88rem', transition: 'all 0.2s',
+                        }}
+                        onMouseEnter={(e) => { e.currentTarget.style.background = '#fff7ed'; e.currentTarget.style.borderColor = '#ea580c'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.background = WHITE; e.currentTarget.style.borderColor = '#fdba74'; }}
+                      >
+                        <IconEye width={15} height={15} />
+                        Marcar en revisión
+                      </button>
+                      <button
+                        onClick={() => abrirModal(ticket, 'Rechazado')}
+                        style={{
+                          display: 'inline-flex', alignItems: 'center', gap: 6,
+                          border: '1.5px solid #fca5a5', background: '#fef2f2', color: '#dc2626',
+                          borderRadius: 8, padding: '10px 18px', cursor: 'pointer',
+                          fontWeight: 700, fontSize: '0.88rem', transition: 'all 0.2s',
+                        }}
+                        onMouseEnter={(e) => { e.currentTarget.style.background = '#fee2e2'; e.currentTarget.style.borderColor = '#ef4444'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.background = '#fef2f2'; e.currentTarget.style.borderColor = '#fca5a5'; }}
+                      >
+                        <IconBan width={15} height={15} />
+                        Rechazar ticket
+                      </button>
+                      <button
+                        onClick={() => abrirModal(ticket, 'Resuelto')}
+                        style={{
+                          display: 'inline-flex', alignItems: 'center', gap: 6,
+                          border: 'none',
+                          background: `linear-gradient(135deg, ${VINOTINTO} 0%, #9b2c4e 100%)`,
+                          color: WHITE, borderRadius: 8, padding: '10px 22px', cursor: 'pointer',
+                          fontWeight: 700, fontSize: '0.88rem',
+                          boxShadow: '0 4px 14px rgba(122,30,58,0.25)', transition: 'all 0.2s',
+                        }}
+                        onMouseEnter={(e) => { e.currentTarget.style.background = VINOTINTO_DARK; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.background = `linear-gradient(135deg, ${VINOTINTO} 0%, #9b2c4e 100%)`; }}
+                      >
+                        <IconCheck width={15} height={15} strokeWidth={2.5} />
+                        Resolver y notificar
+                      </button>
+                    </div>
                   </div>
                 </article>
-              ))
+                );
+              })
             )}
           </div>
         )}
@@ -2366,7 +2689,7 @@ export default function AdminDashboard() {
 
               <div style={{ background: '#fafafa', border: `1px solid ${BORDER}`, borderRadius: 10, padding: '10px 14px', marginBottom: 16 }}>
                 <p style={{ margin: 0, color: CARBON, fontSize: '0.88rem', fontWeight: 600 }}>
-                  {modalReclamo?.tipo_solicitud === 'soporte' ? 'Ticket de Soporte' : 'Reclamo'} #{modalReclamo?.id_solicitud}
+                  {modalReclamo?.tipo_solicitud === 'soporte' ? 'Ticket de Soporte' : 'Reclamo'} #{modalReclamo?.numero || modalReclamo?.id_solicitud}
                   {modalReclamo?.id_orden ? ` · Orden #${modalReclamo.id_orden}` : ''}
                 </p>
                 <p style={{ margin: '2px 0 0', color: GRAY, fontSize: '0.82rem' }}>
@@ -2444,6 +2767,10 @@ export default function AdminDashboard() {
         {/* FINANZAS - BOOKYPAGO */}
         {activeSection === 'finanzas' && (
           <BookyPagoFinanzas />
+        )}
+
+        {activeSection === 'perfil' && (
+          <SeccionPerfilAdmin stats={stats} />
         )}
 
         {/* MODAL DE CHAT Y CONTACTO CON LA TIENDA */}

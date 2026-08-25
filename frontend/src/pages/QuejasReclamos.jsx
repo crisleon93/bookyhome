@@ -75,6 +75,7 @@ export default function QuejasReclamos() {
   const [modalDetalles, setModalDetalles] = useState(null);
   const [showOrdenes, setShowOrdenes] = useState(false);
   const [filtroEstado, setFiltroEstado] = useState("Todos");
+  const [paginaReclamos, setPaginaReclamos] = useState(1);
   const [cancelando, setCancelando] = useState(null);
 
   function tiempoTranscurrido(fechaStr) {
@@ -162,6 +163,12 @@ export default function QuejasReclamos() {
   };
 
   const ordenInfo = ordenes.find(o => String(o.id_orden) === String(ordenSeleccionada));
+
+  const RECLAMOS_POR_PAGINA = 5;
+  const reclamosFiltrados = quejas.filter(q => filtroEstado === "Todos" || q.estado === filtroEstado);
+  const totalPaginasReclamos = Math.max(1, Math.ceil(reclamosFiltrados.length / RECLAMOS_POR_PAGINA));
+  const paginaActualReclamos = Math.min(paginaReclamos, totalPaginasReclamos);
+  const reclamosVisibles = reclamosFiltrados.slice((paginaActualReclamos - 1) * RECLAMOS_POR_PAGINA, paginaActualReclamos * RECLAMOS_POR_PAGINA);
 
   const getOrdenImagen = (orden) => {
     const item = orden?.items?.[0] || {};
@@ -548,25 +555,33 @@ export default function QuejasReclamos() {
           })()}
 
           {/* Filtros */}
-          {quejas.length > 1 && (
+          {quejas.length > 0 && (
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-              {["Todos", "Abierto", "En revisión", "Resuelto", "Cerrado", "Rechazado"].filter(f =>
-                f === "Todos" || quejas.some(q => q.estado === f)
-              ).map(f => (
-                <button
-                  key={f}
-                  type="button"
-                  onClick={() => setFiltroEstado(f)}
-                  style={{
-                    padding: "5px 14px", borderRadius: 20, border: "1.5px solid",
-                    borderColor: filtroEstado === f ? "#7A1E3A" : "#e5e7eb",
-                    background: filtroEstado === f ? "#7A1E3A" : "#fff",
-                    color: filtroEstado === f ? "#fff" : "#555",
-                    fontSize: "0.8rem", fontWeight: 700, cursor: "pointer",
-                    fontFamily: "inherit", transition: "all 0.18s",
-                  }}
-                >{f}</button>
-              ))}
+              {["Todos", "Abierto", "En revisión", "Resuelto", "Rechazado"].map(f => {
+                const cfg = f === "Todos"
+                  ? { dot: "#7A1E3A", border: "#7A1E3A", color: "#7A1E3A" }
+                  : (ESTADO_CONFIG[f] || ESTADO_CONFIG["Cerrado"]);
+                const activo = filtroEstado === f;
+                return (
+                  <button
+                    key={f}
+                    type="button"
+                    onClick={() => { setFiltroEstado(f); setPaginaReclamos(1); }}
+                    style={{
+                      display: "inline-flex", alignItems: "center", gap: 6,
+                      padding: "5px 14px", borderRadius: 20,
+                      border: `1.5px solid ${activo ? cfg.dot : cfg.border}`,
+                      background: activo ? cfg.dot : "#fff",
+                      color: activo ? "#fff" : cfg.color,
+                      fontSize: "0.8rem", fontWeight: 700, cursor: "pointer",
+                      fontFamily: "inherit", transition: "all 0.18s",
+                    }}
+                  >
+                    <span style={{ width: 6, height: 6, borderRadius: "50%", background: activo ? "#fff" : cfg.dot, display: "inline-block" }} />
+                    {f}
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>
@@ -576,9 +591,14 @@ export default function QuejasReclamos() {
             <div style={{ fontSize: "2.5rem", marginBottom: 12 }}>?</div>
             <p style={{ color: "#888", fontSize: "0.95rem", margin: 0 }}>No tienes solicitudes previas.</p>
           </div>
+        ) : reclamosFiltrados.length === 0 ? (
+          <div style={{ padding: "40px 0", textAlign: "center" }}>
+            <p style={{ color: "#888", fontSize: "0.95rem", margin: 0 }}>No tienes solicitudes con el estado seleccionado.</p>
+          </div>
         ) : (
-          <div style={{ display: "grid", gap: 16 }}>
-            {quejas.filter(q => filtroEstado === "Todos" || q.estado === filtroEstado).map((queja) => {
+          <>
+          <div style={{ display: "grid", gap: 22 }}>
+            {reclamosVisibles.map((queja) => {
               const STEPS = ["Abierto", "En revisión", "Resuelto"];
               const stepIdx = STEPS.indexOf(queja.estado);
               const progreso = stepIdx === -1 ? (queja.estado === "Rechazado" ? -1 : 0) : stepIdx;
@@ -592,47 +612,74 @@ export default function QuejasReclamos() {
               const imgSrc = queja.imagen_libro
                 ? (queja.imagen_libro.startsWith("http") ? queja.imagen_libro : `${getApiBaseUrl()}${queja.imagen_libro}`)
                 : null;
+              const estadoCfg = ESTADO_CONFIG[queja.estado] || ESTADO_CONFIG["Cerrado"];
               return (
               <article key={queja.id_solicitud} style={{
                 borderRadius: 16,
-                border: "1.5px solid #f0e8ec",
+                border: "1.5px solid #eee3e9",
+                borderLeft: `6px solid ${estadoCfg.dot}`,
                 overflow: "hidden",
                 background: "#fff",
-                boxShadow: "0 2px 12px rgba(122,30,58,0.06)",
-              }}>
+                boxShadow: "0 3px 14px rgba(122,30,58,0.09)",
+                transition: "box-shadow 0.2s ease, transform 0.2s ease",
+              }}
+                onMouseEnter={(e) => { e.currentTarget.style.boxShadow = "0 10px 30px rgba(122,30,58,0.16)"; e.currentTarget.style.transform = "translateY(-2px)"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.boxShadow = "0 3px 14px rgba(122,30,58,0.09)"; e.currentTarget.style.transform = "translateY(0)"; }}
+              >
                 {/* Header de la card */}
                 <div style={{
                   background: "linear-gradient(135deg, #fdf8f9 0%, #f9f0f3 100%)",
-                  padding: "14px 20px",
+                  padding: "16px 20px",
                   borderBottom: "1.5px solid #f0e8ec",
                   display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12,
                 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 14, minWidth: 0 }}>
                     {/* Imagen del libro o fallback */}
                     {imgSrc ? (
                       <img
                         src={imgSrc}
                         alt="libro"
-                        style={{ width: 48, height: 48, borderRadius: 8, objectFit: "cover", flexShrink: 0, border: "1px solid #f0dde4", boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}
+                        style={{ width: 54, height: 54, borderRadius: 10, objectFit: "cover", flexShrink: 0, border: "2px solid #fff", boxShadow: "0 0 0 1px #eee3e9, 0 4px 12px rgba(122,30,58,0.18)" }}
                       />
                     ) : (
                       <div style={{
-                        width: 48, height: 48, borderRadius: 8, flexShrink: 0,
-                        background: "#7A1E3A", color: "#fff",
+                        width: 54, height: 54, borderRadius: 10, flexShrink: 0,
+                        background: "linear-gradient(135deg, #7A1E3A 0%, #9b2c4e 100%)", color: "#fff",
                         display: "grid", placeItems: "center",
-                        fontSize: "0.72rem", fontWeight: 800,
+                        fontSize: "0.78rem", fontWeight: 800,
                         letterSpacing: "-0.5px",
+                        boxShadow: "0 4px 12px rgba(122,30,58,0.28)",
                       }}>
-                        #{queja.id_solicitud}
+                        #{queja.numero || queja.id_solicitud}
                       </div>
                     )}
-                    <div>
-                      <p style={{ margin: 0, fontSize: "0.74rem", color: "#999", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                        Solicitud #{queja.id_solicitud} · Orden #{queja.id_orden}
-                      </p>
-                      <strong style={{ fontSize: "0.95rem", color: "#111", fontWeight: 800, display: "block", marginTop: 2 }}>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6, flexWrap: "wrap" }}>
+                        <span style={{
+                          background: "linear-gradient(135deg, #7A1E3A 0%, #9b2c4e 100%)", color: "#fff",
+                          borderRadius: 7, padding: "3px 11px",
+                          fontSize: "0.73rem", fontWeight: 800, letterSpacing: "0.04em",
+                          boxShadow: "0 2px 8px rgba(122,30,58,0.3)",
+                          whiteSpace: "nowrap",
+                        }}>
+                          SOLICITUD #{queja.numero || queja.id_solicitud}
+                        </span>
+                        {queja.id_orden && (
+                          <span style={{
+                            display: "inline-flex", alignItems: "center", gap: 5,
+                            background: "#fff", border: "1.5px solid #ecdce3", color: "#7A1E3A",
+                            borderRadius: 7, padding: "2px 10px",
+                            fontSize: "0.73rem", fontWeight: 700,
+                            whiteSpace: "nowrap",
+                          }}>
+                            <IconPackage width={12} height={12} strokeWidth={2} />
+                            Orden #{queja.id_orden}
+                          </span>
+                        )}
+                      </div>
+                      <strong style={{ fontSize: "1.02rem", color: "#111", fontWeight: 800, display: "block", lineHeight: 1.35 }}>
                         {queja.titulo_libro || "Libro"}
-                        {queja.total_items > 1 ? <span style={{ fontWeight: 500, color: "#888", fontSize: "0.82rem" }}> +{queja.total_items - 1} más</span> : null}
+                        {queja.total_items > 1 ? <span style={{ fontWeight: 600, color: "#888", fontSize: "0.85rem" }}> +{queja.total_items - 1} más</span> : null}
                       </strong>
                     </div>
                   </div>
@@ -653,24 +700,25 @@ export default function QuejasReclamos() {
                             <div key={step} style={{ display: "flex", flexDirection: "column", alignItems: "center", flex: 1 }}>
                               <div style={{
                                 width: 24, height: 24, borderRadius: "50%",
-                                background: done ? "#7A1E3A" : "#f0e8ec",
-                                border: current ? "2px solid #7A1E3A" : "none",
+                                background: done ? estadoCfg.dot : "#f0e8ec",
+                                border: current ? `2px solid ${estadoCfg.dot}` : "none",
                                 display: "grid", placeItems: "center",
                                 transition: "all 0.3s",
                               }}>
                                 {done && <span style={{ color: "#fff", fontSize: "0.65rem", fontWeight: 900 }}>✓</span>}
                               </div>
-                              <span style={{ fontSize: "0.7rem", marginTop: 4, color: done ? "#7A1E3A" : "#aaa", fontWeight: done ? 700 : 500 }}>{step}</span>
+                              <span style={{ fontSize: "0.7rem", marginTop: 4, color: done ? estadoCfg.color : "#aaa", fontWeight: done ? 700 : 500 }}>{step}</span>
                             </div>
                           );
                         })}
                       </div>
-                      <div style={{ height: 4, borderRadius: 4, background: "#f0e8ec", position: "relative" }}>
+                      <div style={{ height: 5, borderRadius: 4, background: "#f0e8ec", position: "relative" }}>
                         <div style={{
                           position: "absolute", left: 0, top: 0, height: "100%", borderRadius: 4,
-                          background: "linear-gradient(90deg, #7A1E3A, #c0587a)",
+                          background: `linear-gradient(90deg, ${estadoCfg.dot}, ${estadoCfg.border})`,
+                          boxShadow: `0 0 8px ${estadoCfg.dot}66`,
                           width: progreso === 0 ? "10%" : progreso === 1 ? "55%" : "100%",
-                          transition: "width 0.5s ease",
+                          transition: "width 0.5s ease, background 0.5s ease",
                         }} />
                       </div>
                     </div>
@@ -814,6 +862,48 @@ export default function QuejasReclamos() {
               );
             })}
           </div>
+
+          {totalPaginasReclamos > 1 && (
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 16, marginTop: 24, paddingTop: 20, borderTop: "1px solid #f0f0f0", flexWrap: "wrap" }}>
+              <button
+                type="button"
+                disabled={paginaActualReclamos === 1}
+                onClick={() => setPaginaReclamos(paginaActualReclamos - 1)}
+                style={{
+                  padding: "8px 18px", borderRadius: 20, border: "1.5px solid",
+                  borderColor: paginaActualReclamos === 1 ? "#e5e7eb" : "#7A1E3A",
+                  background: "#fff",
+                  color: paginaActualReclamos === 1 ? "#bbb" : "#7A1E3A",
+                  fontSize: "0.82rem", fontWeight: 700, cursor: paginaActualReclamos === 1 ? "not-allowed" : "pointer",
+                  fontFamily: "inherit", transition: "all 0.18s",
+                }}
+              >
+                ← Anterior
+              </button>
+
+              <span style={{ fontSize: "0.85rem", color: "#666", fontWeight: 600 }}>
+                Página {paginaActualReclamos} de {totalPaginasReclamos}
+                <span style={{ color: "#aaa", fontWeight: 500 }}> · {reclamosFiltrados.length} solicitud{reclamosFiltrados.length > 1 ? "es" : ""}</span>
+              </span>
+
+              <button
+                type="button"
+                disabled={paginaActualReclamos === totalPaginasReclamos}
+                onClick={() => setPaginaReclamos(paginaActualReclamos + 1)}
+                style={{
+                  padding: "8px 18px", borderRadius: 20, border: "1.5px solid",
+                  borderColor: paginaActualReclamos === totalPaginasReclamos ? "#e5e7eb" : "#7A1E3A",
+                  background: "#fff",
+                  color: paginaActualReclamos === totalPaginasReclamos ? "#bbb" : "#7A1E3A",
+                  fontSize: "0.82rem", fontWeight: 700, cursor: paginaActualReclamos === totalPaginasReclamos ? "not-allowed" : "pointer",
+                  fontFamily: "inherit", transition: "all 0.18s",
+                }}
+              >
+                Siguiente →
+              </button>
+            </div>
+          )}
+          </>
         )}
       </section>
 

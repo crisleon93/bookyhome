@@ -36,6 +36,7 @@ frontend/.pnpm-store/
 .env
 .env.local
 /backups/
+/scripts/backups/*.sql
 .DS_Store
 Thumbs.db
 
