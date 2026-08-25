@@ -3,7 +3,7 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-$projectRoot = Split-Path -Parent $PSScriptRoot
+$projectRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 $backupDirectory = Join-Path $projectRoot 'backups'
 
 New-Item -ItemType Directory -Force -Path $backupDirectory | Out-Null

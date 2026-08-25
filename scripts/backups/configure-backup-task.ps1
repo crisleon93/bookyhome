@@ -5,7 +5,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $taskName = 'BookyHome - Backup diario'
-$projectRoot = Split-Path -Parent $PSScriptRoot
+$projectRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 $backupScript = Join-Path $PSScriptRoot 'backup-db.ps1'
 
 if (-not (Test-Path $backupScript)) {
