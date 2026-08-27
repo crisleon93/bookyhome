@@ -5,9 +5,9 @@ import {
 } from 'react-native';
 import {
   IconClose, IconChevronRight, IconLogout,
-  IconHome, IconBook, IconBooks, IconPackage, IconStore,
-  IconDollar, IconStar, IconAlertTriangle, IconChat,
-  IconBell, IconUser, IconTruck, IconCreditCard,
+  IconStoreAlt, IconBookOpen, IconPlus, IconCartAlt, IconShoppingBag,
+  IconNomina, IconStar, IconAlertTriangle, IconMail,
+  IconBell, IconUser, IconSettings, IconLayers, IconTag, IconTicket, IconBolt,
 } from './Icons';
 import { useNotifications } from '../context/NotificationContext';
 import { getConfigLibreria, getApiBaseUrl } from '../services/api';
@@ -125,26 +125,28 @@ export default function SidebarVendedor({ visible, onClose, user, navigation, on
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{ paddingVertical: 10, paddingBottom: 30 }}
           >
-            <MenuItem icon={<IconHome    size={19} color={WHITE} />} label="Inicio"             onPress={() => go('VendorHome')} />
+            <MenuItem icon={<IconStoreAlt  size={19} color={WHITE} />} label="Inicio"             onPress={() => go('VendorHome')} />
             <Sep />
-            <MenuItem icon={<IconBooks   size={19} color={WHITE} />} label="Mis Libros"         onPress={() => go('Libreria')} />
-            <MenuItem icon={<IconBook    size={19} color={WHITE} />} label="Publicar Libro"     onPress={() => go('PublicarLibro')} />
+            <MenuItem icon={<IconBookOpen  size={19} color={WHITE} />} label="Mis Libros"         onPress={() => go('Libreria')} />
+            <MenuItem icon={<IconPlus      size={19} color={WHITE} />} label="Publicar Libro"     onPress={() => go('PublicarLibro')} />
+            <MenuItem icon={<IconTag       size={19} color={WHITE} />} label="Promociones"        onPress={() => go('PromocionesVendedor')} />
+            <MenuItem icon={<IconTicket    size={19} color={WHITE} />} label="Cupones"             onPress={() => go('CuponesVendedor')} />
             <Sep />
-            <MenuItem icon={<IconStore   size={19} color={WHITE} />} label="Ventas"             onPress={() => go('VentasVendedor')} />
-            <MenuItem icon={<IconPackage size={19} color={WHITE} />} label="Pedidos"            onPress={() => go('PedidosVendedor')} />
+            <MenuItem icon={<IconCartAlt      size={19} color={WHITE} />} label="Ventas"          onPress={() => go('VentasVendedor')} />
+            <MenuItem icon={<IconShoppingBag  size={19} color={WHITE} />} label="Pedidos"         onPress={() => go('PedidosVendedor')} />
             <Sep />
-            <MenuItem icon={<IconDollar  size={19} color={WHITE} />} label="Nómina"             onPress={null} soon />
-            <MenuItem icon={<IconStar    size={19} color={WHITE} />} label="Calificaciones"     onPress={() => go('CalificacionesVendedor')} />
+            <MenuItem icon={<IconNomina    size={19} color={WHITE} />} label="Nómina"             onPress={null} soon />
+            <MenuItem icon={<IconStar      size={19} color={WHITE} />} label="Calificaciones"     onPress={() => go('CalificacionesVendedor')} />
             <MenuItem icon={<IconAlertTriangle size={19} color={WHITE} />} label="Quejas y reclamos" onPress={() => go('QuejasReclamos')} />
             <Sep />
-            <MenuItem icon={<IconBell    size={19} color={WHITE} />} label="Notificaciones"     onPress={() => go('Notifications')} badge={unreadNotifCount} />
-            <MenuItem icon={<IconChat    size={19} color={WHITE} />} label="Mensajes"           onPress={() => go('Messages')} badge={unreadMsgCount} />
+            <MenuItem icon={<IconBell      size={19} color={WHITE} />} label="Notificaciones"     onPress={() => go('Notifications')} badge={unreadNotifCount} />
+            <MenuItem icon={<IconMail      size={19} color={WHITE} />} label="Mensajes"           onPress={() => go('Messages')} badge={unreadMsgCount} />
             <Sep />
-            <MenuItem icon={<IconUser    size={19} color={WHITE} />} label="Perfil"             onPress={() => go('PerfilTienda', { id_tienda: user?.id_tienda })} />
-            <MenuItem icon={<IconTruck   size={19} color={WHITE} />} label="Configuración"      onPress={() => go('ConfiguracionTienda')} />
+            <MenuItem icon={<IconUser      size={19} color={WHITE} />} label="Perfil"             onPress={() => go('PerfilTienda', { id_tienda: user?.id_tienda })} />
+            <MenuItem icon={<IconSettings  size={19} color={WHITE} />} label="Configuración"      onPress={() => go('ConfiguracionTienda')} />
             <Sep />
-            <MenuItem icon={<IconCreditCard size={19} color={WHITE} />} label="Suscripciones"   onPress={() => go('SuscripcionesVendedor')} />
-            <MenuItem icon={<IconStore   size={19} color={WHITE} />} label="Impulsos"           onPress={() => go('ImpulsosVendedor')} />
+            <MenuItem icon={<IconLayers    size={19} color={WHITE} />} label="Suscripciones"      onPress={() => go('SuscripcionesVendedor')} />
+            <MenuItem icon={<IconBolt      size={19} color={WHITE} />} label="Impulsos"           onPress={() => go('ImpulsosVendedor')} />
           </ScrollView>
 
           {/* ── Cerrar sesión ── */}

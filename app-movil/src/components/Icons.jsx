@@ -350,3 +350,137 @@ export const IconDollar = ({ size = 20, color = '#7A1E3A' }) => (
   </Svg>
 );
 
+// ── Etiqueta / Tag ───────────────────────────────────────────────────────────
+export const IconTag = ({ size = 20, color = '#7A1E3A' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <Path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
+    <Line x1="7" y1="7" x2="7.01" y2="7" />
+  </Svg>
+);
+
+// ── Plus / Agregar ────────────────────────────────────────────────────────────
+export const IconPlus = ({ size = 20, color = '#7A1E3A' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <Line x1="12" y1="5" x2="12" y2="19" />
+    <Line x1="5" y1="12" x2="19" y2="12" />
+  </Svg>
+);
+
+// ── Editar / Lápiz ────────────────────────────────────────────────────────────
+export const IconEdit = ({ size = 20, color = '#7A1E3A' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <Path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+    <Path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+  </Svg>
+);
+
+// ── Basura / Eliminar ─────────────────────────────────────────────────────────
+export const IconTrash = ({ size = 20, color = '#7A1E3A' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <Polyline points="3 6 5 6 21 6" />
+    <Path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+    <Line x1="10" y1="11" x2="10" y2="17" />
+    <Line x1="14" y1="11" x2="14" y2="17" />
+  </Svg>
+);
+
+// ── Check / Aprobado ──────────────────────────────────────────────────────────
+export const IconCheck = ({ size = 20, color = '#7A1E3A' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <Polyline points="20 6 9 17 4 12" />
+  </Svg>
+);
+
+// ── Cupón / Ticket ────────────────────────────────────────────────────────────
+export const IconTicket = ({ size = 20, color = '#7A1E3A' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+    <Path d="M15 5v2" stroke={color}/>
+    <Path d="M15 11v2" stroke={color}/>
+    <Path d="M15 17v2" stroke={color}/>
+    <Path d="M5 5h14a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-3a2 2 0 0 0 0-4V7a2 2 0 0 1 2-2z" stroke={color}/>
+  </Svg>
+);
+
+// ── Tienda (mostrador) — igual que IconStoreAlt de la web ─────────────────────
+export const IconStoreAlt = ({ size = 22, color = '#7A1E3A' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+    stroke={color} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+    <Path d="M8.25 21v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21m0 0h4.5V3.545M12.75 21h7.5V10.75M2.25 21h1.5m18 0h-18M2.25 9l4.5-1.636M18.75 3l-1.5.545m0 6.205 3 1m1.5.5-1.5-.5M6.75 7.364V3h-3v18m3-13.636 10.5-3.819" stroke={color}/>
+  </Svg>
+);
+
+// ── Libro abierto con líneas — igual que IconBookOpen de la web ───────────────
+export const IconBookOpen = ({ size = 22, color = '#7A1E3A' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+    stroke={color} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+    <Path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" stroke={color}/>
+    <Path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z" stroke={color}/>
+    <Path d="M12 6v12" stroke={color}/>
+    <Path d="M8 10h4" stroke={color}/>
+    <Path d="M8 14h3" stroke={color}/>
+  </Svg>
+);
+
+// ── Carrito alt — igual que IconCartAlt de la web ─────────────────────────────
+export const IconCartAlt = ({ size = 22, color = '#7A1E3A' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+    stroke={color} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+    <Path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-1.5 6h11M10 21a1 1 0 100-2 1 1 0 000 2zm8 0a1 1 0 100-2 1 1 0 000 2z" stroke={color}/>
+  </Svg>
+);
+
+// ── Shopping Bag / Bolsa — igual que IconShoppingBag de la web ────────────────
+export const IconShoppingBag = ({ size = 22, color = '#7A1E3A' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+    stroke={color} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+    <Path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" stroke={color}/>
+    <Line x1="3" y1="6" x2="21" y2="6" stroke={color}/>
+    <Path d="M16 10a4 4 0 0 1-8 0" stroke={color}/>
+  </Svg>
+);
+
+// ── Nómina (tarjeta con línea central) — igual que el SVG inline de la web ────
+export const IconNomina = ({ size = 20, color = '#7A1E3A' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+    stroke={color} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+    <Rect x="2" y="5" width="20" height="14" rx="2" stroke={color}/>
+    <Line x1="2" y1="10" x2="22" y2="10" stroke={color}/>
+    <Line x1="12" y1="19" x2="12" y2="19" stroke={color}/>
+    <Line x1="12" y1="10" x2="12" y2="15" stroke={color}/>
+  </Svg>
+);
+
+// ── Suscripciones (capas/layers) — igual que el SVG inline de la web ──────────
+export const IconLayers = ({ size = 20, color = '#7A1E3A' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+    stroke={color} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+    <Path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke={color}/>
+  </Svg>
+);
+
+// ── Impulsos (rayo/bolt) — igual que el SVG inline de la web ─────────────────
+export const IconBolt = ({ size = 20, color = '#7A1E3A' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+    stroke={color} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+    <Path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" stroke={color}/>
+  </Svg>
+);
+
+// ── Configuración (engranaje) — igual que IconSettings de la web ──────────────
+export const IconSettings = ({ size = 22, color = '#7A1E3A' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+    stroke={color} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+    <Path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37z" stroke={color}/>
+    <Path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" stroke={color}/>
+  </Svg>
+);
+
+// ── Herramienta (llave inglesa) — igual que IconTool de la web ────────────────
+export const IconTool = ({ size = 22, color = '#7A1E3A' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+    stroke={color} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+    <Path d="M14.7 6.3a5 5 0 0 0-6.9 6.9L3 18a2.1 2.1 0 1 0 3 3l4.8-4.8a5 5 0 0 0 6.9-6.9l-3.1 3.1-2.6-.5-.5-2.6 3.2-3Z" stroke={color}/>
+  </Svg>
+);
+
+

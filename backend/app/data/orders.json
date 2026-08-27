@@ -272,9 +272,10 @@
         }
       ],
       "total": 95000.0,
-      "estado": "pagado",
+      "estado": "cancelada",
       "metodo_pago": "Pago en Efecty",
-      "id_orden_db": 34
+      "id_orden_db": 34,
+      "motivo_cancelacion": "Cancelación solicitada por el comprador"
     },
     {
       "id_orden": 15,
@@ -697,8 +698,8 @@
     },
     {
       "id_orden": 31,
-      "codigo_compra": "BH-1BF3C0FEA9",
-      "fecha": "2026-08-22T18:49:46.899932Z",
+      "codigo_compra": "BH-F1D403752D",
+      "fecha": "2026-08-26T21:14:25.552752Z",
       "items": [
         {
           "id_libro": 2,
@@ -712,109 +713,198 @@
         }
       ],
       "total": 12000.0,
-      "estado": "pagado",
-      "id_orden_db": 29,
-      "metodo_pago": "Nequi"
+      "estado": "cancelada",
+      "id_orden_db": 33,
+      "metodo_pago": "Tarjeta de Crédito",
+      "motivo_cancelacion": "Cancelación solicitada por el comprador"
     },
     {
       "id_orden": 32,
-      "codigo_compra": "BH-76FC018534",
-      "fecha": "2026-08-27T20:15:26.307373Z",
+      "codigo_compra": "BH-4731F3B7A0",
+      "fecha": "2026-08-27T19:00:16.063917Z",
       "items": [
         {
           "id_libro": 45,
           "titulo": "Libro de Prueba Oculto",
           "autor_libro": "Autor Anónimo",
           "precio_libro": 15000.0,
+          "cantidad": 2,
+          "imagen": null,
+          "id_variante": null,
+          "variante_label": null
+        },
+        {
+          "id_libro": 43,
+          "titulo": "Kimetsu no Yaiba - Tomo 1",
+          "autor_libro": "Koyoharu Gotouge",
+          "precio_libro": 35000.0,
+          "cantidad": 1,
+          "imagen": "https://covers.openlibrary.org/b/id/10322110-L.jpg",
+          "id_variante": null,
+          "variante_label": null
+        },
+        {
+          "id_libro": 46,
+          "titulo": "El Futuro es Ahora",
+          "autor_libro": "Isaac Asimov",
+          "precio_libro": 85000.0,
           "cantidad": 1,
           "imagen": null,
           "id_variante": null,
           "variante_label": null
         }
       ],
-      "total": 15000.0,
-      "estado": "pendiente",
-      "id_orden_db": 30
+      "total": 150000.0,
+      "estado": "pagado",
+      "id_orden_db": 32,
+      "metodo_pago": "Tarjeta de Crédito"
     },
     {
       "id_orden": 33,
-      "codigo_compra": "BH-7E5215E7A0",
-      "fecha": "2026-08-27T20:26:39.847261Z",
+      "codigo_compra": "BH-91008ED44D",
+      "fecha": "2026-08-27T19:02:59.321704Z",
       "items": [
         {
-          "id_libro": 44,
-          "titulo": "El principito",
-          "autor_libro": "Antoine de Saint-Exupéry",
-          "precio_libro": 20000.0,
+          "id_libro": 47,
+          "titulo": "Dune Remastered",
+          "autor_libro": "Frank Herbert",
+          "precio_libro": 95000.0,
           "cantidad": 1,
-          "imagen": "https://covers.openlibrary.org/b/id/12688412-L.jpg",
+          "imagen": null,
           "id_variante": null,
           "variante_label": null
         }
       ],
-      "total": 20000.0,
-      "estado": "pendiente",
-      "id_orden_db": 31
-    },
-    {
-      "id_orden": 34,
-      "codigo_compra": "BH-77BEB26942",
-      "fecha": "2026-08-27T20:29:47.325381Z",
-      "items": [
-        {
-          "id_libro": 44,
-          "titulo": "El principito",
-          "autor_libro": "Antoine de Saint-Exupéry",
-          "precio_libro": 20000.0,
-          "cantidad": 1,
-          "imagen": "https://covers.openlibrary.org/b/id/12688412-L.jpg",
-          "id_variante": null,
-          "variante_label": null
-        }
-      ],
-      "total": 20000.0,
-      "estado": "pendiente",
-      "id_orden_db": 32
-    },
-    {
-      "id_orden": 35,
-      "codigo_compra": "BH-D61F33822E",
-      "fecha": "2026-08-27T20:30:27.088276Z",
-      "items": [
-        {
-          "id_libro": 10,
-          "titulo": "Aventura en la Selva",
-          "autor_libro": "M. Castro",
-          "precio_libro": 27000.0,
-          "cantidad": 1,
-          "imagen": "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=400&q=80",
-          "id_variante": null,
-          "variante_label": null
-        }
-      ],
-      "total": 27000.0,
+      "total": 95000.0,
       "estado": "pendiente",
       "id_orden_db": 33
     },
     {
-      "id_orden": 36,
-      "codigo_compra": "BH-D429DB462A",
-      "fecha": "2026-08-27T20:31:14.398712Z",
+      "id_orden": 34,
+      "codigo_compra": "BH-4F58511B60",
+      "fecha": "2026-08-27T20:05:10.888511Z",
       "items": [
         {
-          "id_libro": 44,
-          "titulo": "El principito",
-          "autor_libro": "Antoine de Saint-Exupéry",
-          "precio_libro": 20000.0,
+          "id_libro": 49,
+          "titulo": "Bookyhome",
+          "autor_libro": "BookyHOME",
+          "precio_libro": 50000.0,
           "cantidad": 1,
-          "imagen": "https://covers.openlibrary.org/b/id/12688412-L.jpg",
+          "imagen": "/uploads/libros/b57c63d492194e08a78131f8b791145a.png",
           "id_variante": null,
           "variante_label": null
         }
       ],
-      "total": 20000.0,
+      "total": 50000.0,
       "estado": "pendiente",
       "id_orden_db": 34
+    },
+    {
+      "id_orden": 35,
+      "codigo_compra": "BH-5D201CD1C8",
+      "fecha": "2026-08-27T20:11:41.961609Z",
+      "items": [
+        {
+          "id_libro": 49,
+          "titulo": "Bookyhome",
+          "autor_libro": "BookyHOME",
+          "precio_libro": 50000.0,
+          "cantidad": 1,
+          "imagen": "/uploads/libros/b57c63d492194e08a78131f8b791145a.png",
+          "id_variante": null,
+          "variante_label": null
+        }
+      ],
+      "total": 50000.0,
+      "estado": "pagado",
+      "id_orden_db": 35,
+      "metodo_pago": "Tarjeta de Crédito"
+    },
+    {
+      "id_orden": 36,
+      "codigo_compra": "BH-BC61C1DAA3",
+      "fecha": "2026-08-27T20:14:44.737890Z",
+      "items": [
+        {
+          "id_libro": 49,
+          "titulo": "Bookyhome",
+          "autor_libro": "BookyHOME",
+          "precio_libro": 50000.0,
+          "cantidad": 1,
+          "imagen": "/uploads/libros/b57c63d492194e08a78131f8b791145a.png",
+          "id_variante": null,
+          "variante_label": null
+        }
+      ],
+      "total": 50000.0,
+      "estado": "pagado",
+      "id_orden_db": 36,
+      "metodo_pago": "Tarjeta de Crédito",
+      "cupon_aplicado": "CUNDO",
+      "total_con_descuento": 42500.0
+    },
+    {
+      "id_orden": 37,
+      "codigo_compra": "BH-951D5B86E8",
+      "fecha": "2026-08-27T20:22:14.333976Z",
+      "items": [
+        {
+          "id_libro": 48,
+          "titulo": "1984 - Edici??n Especial",
+          "autor_libro": "George Orwell",
+          "precio_libro": 75000.0,
+          "cantidad": 1,
+          "imagen": null,
+          "id_variante": null,
+          "variante_label": null
+        }
+      ],
+      "total": 75000.0,
+      "estado": "pagado",
+      "id_orden_db": 37,
+      "metodo_pago": "Tarjeta de Crédito"
+    },
+    {
+      "id_orden": 38,
+      "codigo_compra": "BH-2964EF406A",
+      "fecha": "2026-08-27T20:33:45.245102Z",
+      "items": [
+        {
+          "id_libro": 50,
+          "titulo": "Satanas",
+          "autor_libro": "Mario mendoza",
+          "precio_libro": 45000.0,
+          "cantidad": 1,
+          "imagen": null,
+          "id_variante": null,
+          "variante_label": null
+        }
+      ],
+      "total": 45000.0,
+      "estado": "pagado",
+      "id_orden_db": 38,
+      "metodo_pago": "PayPal"
+    },
+    {
+      "id_orden": 39,
+      "codigo_compra": "BH-A9A02B90BC",
+      "fecha": "2026-08-27T20:41:23.728290Z",
+      "items": [
+        {
+          "id_libro": 2,
+          "titulo": "Amor en Invierno",
+          "autor_libro": "L. Moreno",
+          "precio_libro": 28000.0,
+          "cantidad": 1,
+          "imagen": "https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?w=400&q=80",
+          "id_variante": 4,
+          "variante_label": "Tapa Blanda · Espanol · 1ra Edicion"
+        }
+      ],
+      "total": 28000.0,
+      "estado": "pagado",
+      "id_orden_db": 39,
+      "metodo_pago": "PayPal"
     }
   ],
   "17": [
@@ -3404,6 +3494,38 @@
       "total": 22000.0,
       "estado": "pagado",
       "metodo_pago": "PayPal"
+    },
+    {
+      "id_orden": 21,
+      "codigo_compra": "BH-718514A882",
+      "fecha": "2026-08-26T21:01:57.834154Z",
+      "items": [
+        {
+          "id_libro": 45,
+          "titulo": "Libro de Prueba Oculto",
+          "autor_libro": "Autor Anónimo",
+          "precio_libro": 15000.0,
+          "cantidad": 3,
+          "imagen": null,
+          "id_variante": null,
+          "variante_label": null
+        }
+      ],
+      "total": 45000.0,
+      "estado": "enviado",
+      "id_orden_db": 32,
+      "metodo_pago": "Tarjeta de Crédito",
+      "envio": {
+        "id_empresa": 1,
+        "empresa_mensajeria": "Servientrega",
+        "sitio_web": "https://www.servientrega.com",
+        "url_rastreo": "https://www.servientrega.com/wps/portal/rastreo-destinatario",
+        "numero_guia": "7654567845",
+        "estado_envio": "Guía registrada",
+        "fecha_despacho_con_hora": "2026-08-26T21:21:19.710631+00:00",
+        "actualizado_en": "2026-08-26T21:21:19.710631+00:00",
+        "origen": "Librería El Sótano · Calle 45 # 13-22"
+      }
     }
   ],
   "33": [
