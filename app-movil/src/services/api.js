@@ -12,8 +12,7 @@ const api = axios.create({
 export const login = (credentials) => api.post('/login', credentials);
 export const register = (data) => api.post('/register', data);
 export const forgotPassword = (data) => api.post('/forgot-password', data);
-export const resetPassword = (data) => api.post('/reset-password', data);
-export const verifyEma/* il  */= ({ token }) => api.get('/verify-email', { params: { token } });
+export const verifyEmail = ({ token }) => api.get('/verify-email', { params: { token } });
 
 // ===== Catálogo =====
 export const getBooks = (params) => api.get('/api/stored/libros', { params });
@@ -83,9 +82,15 @@ export const updateDireccion = (id, data) => api.put(`/perfil/direcciones/${id}`
 export const deleteDireccion = (id) => api.delete(`/perfil/direcciones/${id}`);
 export const setPrincipalDireccion = (id) => api.put(`/perfil/direcciones/${id}`, { es_principal: true });
 
-// ===== Cupones =====
+// ===== Cupones (comprador) =====
 export const validarCupon = (data) => api.post('/cupones/validar', data);
 export const aplicarCupon = (data) => api.post('/cupones/aplicar', data);
+
+// ===== Cupones (vendedor — gestión CRUD) =====
+export const getCuponesVendedor    = (id_tienda) => api.get(`/cupones/tienda/${id_tienda}`);
+export const crearCupon            = (data)       => api.post('/cupones', data);
+export const actualizarCupon       = (id, data)   => api.patch(`/cupones/${id}`, data);
+export const eliminarCupon         = (id)         => api.delete(`/cupones/${id}`);
 
 // ===== Librería (Vendedor) =====
 export const getLibreria = () => api.get('/tiendas/mi-tienda');
@@ -122,6 +127,15 @@ export const getTiposImpulso = () => api.get('/impulsos/tipos');
 export const getMisImpulsos = () => api.get('/impulsos/mis-impulsos');
 export const contratarImpulso = (data) => api.post('/impulsos/contratar', data);
 export const cancelarImpulso = (id_impulso) => api.delete(`/impulsos/${id_impulso}`);
+
+// ===== Ofertas y Promociones del vendedor =====
+export const getOfertas = () => api.get('/ofertas');
+export const getOfertaById = (id) => api.get(`/ofertas/${id}`);
+export const crearOferta = (formData) =>
+  api.post('/ofertas', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+export const updateOferta = (id, formData) =>
+  api.put(`/ofertas/${id}`, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+export const deleteOferta = (id) => api.delete(`/ofertas/${id}`);
 
 // ===== Pedidos del vendedor =====
 export const getMisVentas = () => api.get('/libros/mis-ventas');

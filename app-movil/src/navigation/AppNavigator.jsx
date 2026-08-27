@@ -36,6 +36,8 @@ import CalificacionesVendedor from '../screens/CalificacionesVendedor';
 import SuscripcionesVendedor from '../screens/SuscripcionesVendedor';
 import ImpulsosVendedor from '../screens/ImpulsosVendedor';
 import MobileMenuButton from '../components/MobileMenuButton';
+import PromocionesVendedor from '../screens/PromocionesVendedor';
+import CuponesVendedor from '../screens/CuponesVendedor';
 
 const Stack = createNativeStackNavigator();
 
@@ -76,6 +78,8 @@ export default function AppNavigator() {
           <Stack.Screen name="CalificacionesVendedor" component={CalificacionesVendedor} options={{ headerShown: false }} />
           <Stack.Screen name="SuscripcionesVendedor" component={SuscripcionesVendedor} options={{ headerShown: false }} />
           <Stack.Screen name="ImpulsosVendedor" component={ImpulsosVendedor} options={{ headerShown: false }} />
+          <Stack.Screen name="PromocionesVendedor" component={PromocionesVendedor} options={{ headerShown: false }} />
+          <Stack.Screen name="CuponesVendedor" component={CuponesVendedor} options={{ headerShown: false }} />
           <Stack.Screen name="Direcciones" component={Direcciones} options={{ title: 'Mis direcciones' }} />
           <Stack.Screen name="ConfiguracionTienda" component={ConfiguracionTienda} options={{ headerShown: false }} />
           <Stack.Screen name="PerfilTienda" component={PerfilTienda} options={{ headerShown: false }} />
