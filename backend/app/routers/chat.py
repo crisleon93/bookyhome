@@ -1,4 +1,4 @@
-﻿from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel
 from app.database import get_db
@@ -55,15 +55,14 @@ def get_current_user_rol(credentials: HTTPAuthorizationCredentials = Depends(sec
     return payload.get("rol")
 
 
-# ============= ENDPOINTS =============
-
-@router.get("/salas")
+# ============= ENDPOINTS =============@router.get("/salas")
 def obtener_salas_usuario(user_id: int = Depends(get_current_user), rol: str = Depends(get_current_user_rol)):
-    """Obtiene todas las salas de chat del usuario (comprador o vendedor)"""
+    """Obtiene todas las salas de chat del usuario (comprador, vendedor o admin)"""
     db = get_db()
     cursor = db.cursor(dictionary=True)
     try:
-        if rol == 'vendedor':
+        rol_lower = (rol or '').lower()
+        if rol_lower == 'vendedor':
             filtro = "t.id_usuario = %s"
         else:
             filtro = "sc.id_usuario = %s"
@@ -75,9 +74,16 @@ def obtener_salas_usuario(user_id: int = Depends(get_current_user), rol: str = D
                 sc.id_tienda,
                 t.nombre_tienda,
                 u.nombre_usuario as nombre_comprador,
+                u.rol as rol_comprador,
                 m.mensaje as ultimo_mensaje,
                 DATE_FORMAT(m.enviado_en, '%Y-%m-%d %H:%i:%S') as fecha_ultimo_mensaje,
-                COUNT(CASE WHEN m.mensaje_leido = FALSE THEN 1 END) as no_leidos
+                (
+                    SELECT COUNT(*) 
+                    FROM mensajes m2 
+                    WHERE m2.id_sala = sc.id_sala 
+                      AND m2.mensaje_leido = FALSE 
+                      AND m2.id_remitente != %s
+                ) as no_leidos
             FROM salasChats sc
             LEFT JOIN tiendas t ON sc.id_tienda = t.id_tienda
             LEFT JOIN usuarios u ON sc.id_usuario = u.id_usuario
@@ -88,15 +94,11 @@ def obtener_salas_usuario(user_id: int = Depends(get_current_user), rol: str = D
                     WHERE id_sala = sc.id_sala
                 )
             WHERE {filtro} AND m.mensaje IS NOT NULL
-            GROUP BY sc.id_sala, t.nombre_tienda, u.nombre_usuario, m.mensaje, m.enviado_en
+            GROUP BY sc.id_sala, sc.id_usuario, sc.id_tienda, t.nombre_tienda, u.nombre_usuario, u.rol, m.mensaje, m.enviado_en
             ORDER BY m.enviado_en DESC
         """
-        cursor.execute(query, (user_id,))
+        cursor.execute(query, (user_id, user_id))
         salas = cursor.fetchall()
-        
-        # Log para depuraciÃ³n
-        for sala in salas:
-            print(f"Sala {sala['id_sala']}: nombre_tienda={sala.get('nombre_tienda')}, nombre_comprador={sala.get('nombre_comprador')}")
         
         return {"salas": salas}
     finally:
@@ -148,6 +150,7 @@ def crear_sala_chat(data: SalaCreate, user_id: int = Depends(get_current_user)):
         cursor.close()
         db.close()
 
+
 @router.get("/salas/{id_sala}/mensajes")
 def obtener_mensajes_sala(
     id_sala: int,
@@ -156,11 +159,11 @@ def obtener_mensajes_sala(
     user_id: int = Depends(get_current_user),
     rol: str = Depends(get_current_user_rol),
 ):
-    """Obtiene los mensajes de una sala de chat, solo si el usuario pertenece a ella"""
+    """Obtiene los mensajes de una sala de chat, solo si el usuario pertenece a ella o es admin"""
     db = get_db()
     cursor = db.cursor(dictionary=True)
     try:
-        # Verificar que la sala existe y obtener sus dueÃ±os (comprador y tienda)
+        # Verificar que la sala existe y obtener sus dueños (comprador y tienda)
         cursor.execute("""
             SELECT sc.id_usuario as id_comprador, t.id_usuario as id_vendedor
             FROM salasChats sc
@@ -172,10 +175,11 @@ def obtener_mensajes_sala(
         if not sala:
             raise HTTPException(status_code=404, detail="Sala no encontrada")
 
+        es_admin = (rol or '').lower() in ('admin', 'administrador')
         es_comprador_dueno = rol != 'vendedor' and user_id == sala['id_comprador']
         es_vendedor_dueno = rol == 'vendedor' and user_id == sala['id_vendedor']
 
-        if not (es_comprador_dueno or es_vendedor_dueno):
+        if not (es_comprador_dueno or es_vendedor_dueno or es_admin):
             raise HTTPException(status_code=403, detail="No tienes acceso a esta sala")
 
         query = """
@@ -218,20 +222,29 @@ def _guardar_mensaje_sync(id_sala: int, user_id: int, texto: str) -> dict:
     """Valida acceso, inserta el mensaje y devuelve todo lo necesario para
     responder por REST y/o transmitir por WS. Corre en threadpool (bloqueante)."""
     if not texto.strip():
-        raise HTTPException(status_code=400, detail="El mensaje no puede estar vacÃ­o")
+        raise HTTPException(status_code=400, detail="El mensaje no puede estar vacío")
     if len(texto) > 500:
-        raise HTTPException(status_code=400, detail="El mensaje es muy largo (mÃ¡ximo 500 caracteres)")
+        raise HTTPException(status_code=400, detail="El mensaje es muy largo (máximo 500 caracteres)")
 
     db = get_db()
     cursor = db.cursor(dictionary=True)
     try:
         cursor.execute("""
-            SELECT id_usuario FROM salasChats
-            WHERE id_sala = %s AND (id_usuario = %s
-                OR id_tienda IN (SELECT id_tienda FROM tiendas WHERE id_usuario = %s))
-        """, (id_sala, user_id, user_id))
-        if not cursor.fetchone():
-            raise HTTPException(status_code=403, detail="No tienes acceso a esta sala")
+            SELECT sc.id_usuario as id_comprador, t.id_usuario as id_vendedor
+            FROM salasChats sc
+            JOIN tiendas t ON sc.id_tienda = t.id_tienda
+            WHERE sc.id_sala = %s
+        """, (id_sala,))
+        sala_info = cursor.fetchone()
+        if not sala_info:
+            raise HTTPException(status_code=404, detail="Sala no encontrada")
+
+        es_participante = (user_id == sala_info['id_comprador'] or user_id == sala_info['id_vendedor'])
+        if not es_participante:
+            cursor.execute("SELECT rol FROM usuarios WHERE id_usuario = %s", (user_id,))
+            u_check = cursor.fetchone()
+            if not u_check or (u_check.get('rol') or '').lower() not in ('admin', 'administrador'):
+                raise HTTPException(status_code=403, detail="No tienes acceso a esta sala")
 
         cursor.execute("""
             INSERT INTO mensajes
@@ -267,10 +280,10 @@ def _guardar_mensaje_sync(id_sala: int, user_id: int, texto: str) -> dict:
                 else participantes["id_comprador"]
             )
 
-        # Insertar notificaciÃ³n persistente en BD para el destinatario
+        # Insertar notificación persistente en BD para el destinatario
         if destinatario_id is not None:
             remitente = mensaje_completo.get("nombre_remitente", "Alguien")
-            preview = texto[:80] + ("â€¦" if len(texto) > 80 else "")
+            preview = texto[:80] + ("…" if len(texto) > 80 else "")
             try:
                 cursor.execute("""
                     SELECT id_notificacion
@@ -292,7 +305,7 @@ def _guardar_mensaje_sync(id_sala: int, user_id: int, texto: str) -> dict:
                     """, (destinatario_id, f"Nuevo mensaje de {remitente}", preview, id_sala))
                     db.commit()
             except Exception:
-                pass  # No interrumpir el flujo si la notificaciÃ³n falla
+                pass  # No interrumpir el flujo si la notificación falla
 
         return {"mensaje": mensaje_completo, "destinatario_id": destinatario_id}
     except HTTPException:
@@ -320,7 +333,7 @@ async def enviar_y_notificar(id_sala: int, user_id: int, texto: str) -> dict:
 
 @router.post("/mensajes")
 async def enviar_mensaje(data: MensajeCreate, user_id: int = Depends(get_current_user)):
-    """EnvÃ­a un mensaje en una sala de chat (y lo transmite en vivo si el otro estÃ¡ conectado)"""
+    """Envía un mensaje en una sala de chat (y lo transmite en vivo si el otro está conectado)"""
     mensaje = await enviar_y_notificar(data.id_sala, user_id, data.mensaje)
     return {
         "ok": True,
@@ -334,7 +347,7 @@ def marcar_mensaje_leido(
     user_id: int = Depends(get_current_user),
     rol: str = Depends(get_current_user_rol),
 ):
-    """Marca un mensaje como leÃ­do, solo si el usuario pertenece a la sala"""
+    """Marca un mensaje como leído, solo si el usuario pertenece a la sala o es admin"""
     db = get_db()
     cursor = db.cursor(dictionary=True)
     try:
@@ -350,10 +363,11 @@ def marcar_mensaje_leido(
         if not info:
             raise HTTPException(status_code=404, detail="Mensaje no encontrado")
 
+        es_admin = (rol or '').lower() in ('admin', 'administrador')
         es_comprador_dueno = rol != 'vendedor' and user_id == info['id_comprador']
         es_vendedor_dueno = rol == 'vendedor' and user_id == info['id_vendedor']
 
-        if not (es_comprador_dueno or es_vendedor_dueno):
+        if not (es_comprador_dueno or es_vendedor_dueno or es_admin):
             raise HTTPException(status_code=403, detail="No tienes acceso a este mensaje")
 
         cursor.execute("""
@@ -363,7 +377,7 @@ def marcar_mensaje_leido(
         """, (id_mensaje,))
 
         db.commit()
-        return {"ok": True, "mensaje": "Mensaje marcado como leÃ­do"}
+        return {"ok": True, "mensaje": "Mensaje marcado como leído"}
     except HTTPException:
         raise
     except Exception as e:
@@ -379,7 +393,7 @@ def marcar_sala_leida(
     user_id: int = Depends(get_current_user),
     rol: str = Depends(get_current_user_rol),
 ):
-    """Marca como leÃ­dos los mensajes de una sala que el usuario no enviÃ³"""
+    """Marca como leídos los mensajes de una sala que el usuario no envió"""
     db = get_db()
     cursor = db.cursor(dictionary=True)
     try:
@@ -394,10 +408,11 @@ def marcar_sala_leida(
         if not sala:
             raise HTTPException(status_code=404, detail="Sala no encontrada")
 
+        es_admin = (rol or '').lower() in ('admin', 'administrador')
         es_comprador_dueno = rol != 'vendedor' and user_id == sala['id_comprador']
         es_vendedor_dueno = rol == 'vendedor' and user_id == sala['id_vendedor']
 
-        if not (es_comprador_dueno or es_vendedor_dueno):
+        if not (es_comprador_dueno or es_vendedor_dueno or es_admin):
             raise HTTPException(status_code=403, detail="No tienes acceso a esta sala")
 
         cursor.execute("""
@@ -407,7 +422,7 @@ def marcar_sala_leida(
         """, (id_sala, user_id))
 
         db.commit()
-        return {"ok": True, "mensaje": "Sala marcada como leÃ­da"}
+        return {"ok": True, "mensaje": "Sala marcada como leída"}
     except HTTPException:
         raise
     except Exception as e:

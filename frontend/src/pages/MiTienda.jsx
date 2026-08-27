@@ -827,8 +827,7 @@ export default function MiTienda() {
   const cargarNotificaciones = useCallback(async (silent = false) => {
     try {
       if (!silent) setNotificacionesLoading(true);
-      const soloNoLeidas = notificacionesFilter === "no_leidas";
-      const data = await notificacionesService.obtener(soloNoLeidas, 50, 0);
+      const data = await notificacionesService.obtener(false, 50, 0);
       setNotificaciones(data.notificaciones || []);
     } catch (err) {
       console.error("Error cargando notificaciones:", err);
@@ -836,7 +835,23 @@ export default function MiTienda() {
     } finally {
       if (!silent) setNotificacionesLoading(false);
     }
-  }, [notificacionesFilter]);
+  }, []);
+
+  const FILTROS_VENDEDOR = {
+    todas:          null,
+    no_leidas:      null,
+    ventas_envios:  ["pedido", "entrega"],
+    reclamos:       ["sistema"],
+    resenas:        ["resena"],
+    mensajes:       ["mensaje"],
+  };
+
+  const aplicarFiltroVendedor = (lista) => {
+    if (notificacionesFilter === "no_leidas") return lista.filter((n) => !n.leida);
+    const tipos = FILTROS_VENDEDOR[notificacionesFilter];
+    if (!tipos) return lista;
+    return lista.filter((n) => tipos.includes(n.tipo));
+  };
 
   const handleMarcarLeida = async (id_notificacion) => {
     try {
@@ -3022,23 +3037,43 @@ export default function MiTienda() {
         </div>
 
         <div className="notif-filtros">
-          <button className={`filtro ${notificacionesFilter === "todas" ? "active" : ""}`} onClick={() => setNotificacionesFilter("todas")}>
-            Todas
-          </button>
-          <button className={`filtro ${notificacionesFilter === "no_leidas" ? "active" : ""}`} onClick={() => setNotificacionesFilter("no_leidas")}>
-            No leídas
-          </button>
+          {[
+            { key: "todas",         label: "Todas",          tipos: null },
+            { key: "no_leidas",     label: "No leídas",      tipos: null,                          soloNoLeidas: true },
+            { key: "ventas_envios", label: "Ventas y envíos", tipos: ["pedido", "entrega"] },
+            { key: "reclamos",      label: "Reclamos",        tipos: ["sistema"] },
+            { key: "resenas",       label: "Reseñas",         tipos: ["resena"] },
+            { key: "mensajes",      label: "Mensajes",        tipos: ["mensaje"] },
+          ].map(({ key, label, tipos, soloNoLeidas }) => {
+            const count = soloNoLeidas
+              ? notificaciones.filter((n) => !n.leida).length
+              : tipos
+                ? notificaciones.filter((n) => tipos.includes(n.tipo)).length
+                : notificaciones.length;
+            return (
+              <button
+                key={key}
+                className={`filtro ${notificacionesFilter === key ? "active" : ""}`}
+                onClick={() => setNotificacionesFilter(key)}
+              >
+                {label}
+                {count > 0 && (
+                  <span className="filtro-badge">{count > 99 ? "99+" : count}</span>
+                )}
+              </button>
+            );
+          })}
         </div>
 
         <div className="notif-lista">
           {notificacionesLoading ? (
             <div className="loading">Cargando...</div>
-          ) : notificaciones.length === 0 ? (
+          ) : aplicarFiltroVendedor(notificaciones).length === 0 ? (
             <div className="notif-empty">
-              <p>{notificacionesFilter === "no_leidas" ? "No tienes notificaciones sin leer" : "No tienes notificaciones"}</p>
+              <p>{notificacionesFilter === "no_leidas" ? "No tienes notificaciones sin leer" : "No tienes notificaciones en esta categoría"}</p>
             </div>
           ) : (
-            notificaciones.map((notif) => (
+            aplicarFiltroVendedor(notificaciones).map((notif) => (
               <div key={notif.id_notificacion} className={`notif-item ${notif.leida ? "" : "no-leida"}`} onClick={() => handleClickNotificacion(notif)}>
                 <div className="notif-icono">
                   <span>{getIconoTipo(notif.tipo)}</span>

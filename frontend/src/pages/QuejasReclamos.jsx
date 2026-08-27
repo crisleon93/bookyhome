@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { crearQueja, getOrdenes, getQuejas, getApiBaseUrl, cancelarQueja } from "../services/api";
+import { crearQueja, getOrdenes, getQuejas, getApiBaseUrl, cancelarQueja, getMensajesReclamo, enviarMensajeReclamo } from "../services/api";
 import { IconCheck, IconAlertTriangle, IconEye, IconBook, IconPackage, IconInfo, IconTruck, IconMessage, IconStore, IconStoreAlt } from "../components/Icons";
 
 const MOTIVO_ICON_MAP = {
@@ -77,6 +77,10 @@ export default function QuejasReclamos() {
   const [filtroEstado, setFiltroEstado] = useState("Todos");
   const [paginaReclamos, setPaginaReclamos] = useState(1);
   const [cancelando, setCancelando] = useState(null);
+  const [mensajesChat, setMensajesChat] = useState({});      // { id_solicitud: [] }
+  const [mensajeChatInput, setMensajeChatInput] = useState({}); // { id_solicitud: "" }
+  const [enviandoMensaje, setEnviandoMensaje] = useState(null);
+  const [chatAbierto, setChatAbierto] = useState(null);      // id_solicitud activo
 
   function tiempoTranscurrido(fechaStr) {
     if (!fechaStr) return null;
@@ -176,6 +180,30 @@ export default function QuejasReclamos() {
   };
   const getOrdenTienda = (orden) => {
     return orden?.nombre_tienda || orden?.items?.[0]?.nombre_tienda || "BookyHome";
+  };
+
+  const abrirChat = async (id_solicitud) => {
+    if (chatAbierto === id_solicitud) { setChatAbierto(null); return; }
+    setChatAbierto(id_solicitud);
+    if (!mensajesChat[id_solicitud]) {
+      try {
+        const res = await getMensajesReclamo(id_solicitud);
+        setMensajesChat(prev => ({ ...prev, [id_solicitud]: res.data || [] }));
+      } catch { setMensajesChat(prev => ({ ...prev, [id_solicitud]: [] })); }
+    }
+  };
+
+  const handleEnviarMensaje = async (id_solicitud) => {
+    const texto = (mensajeChatInput[id_solicitud] || "").trim();
+    if (!texto) return;
+    setEnviandoMensaje(id_solicitud);
+    try {
+      await enviarMensajeReclamo(id_solicitud, texto);
+      setMensajeChatInput(prev => ({ ...prev, [id_solicitud]: "" }));
+      const res = await getMensajesReclamo(id_solicitud);
+      setMensajesChat(prev => ({ ...prev, [id_solicitud]: res.data || [] }));
+    } catch { /* silencioso */ }
+    finally { setEnviandoMensaje(null); }
   };
 
   return (
@@ -818,6 +846,111 @@ export default function QuejasReclamos() {
                         Respuesta del administrador
                       </p>
                       <p style={{ margin: 0, color: "#444", lineHeight: 1.65, fontSize: "0.92rem" }}>{queja.respuesta}</p>
+                    </div>
+                  )}
+
+                  {/* Conversación del reclamo */}
+                  {queja.estado !== "Cerrado" && queja.estado !== "Resuelto" && queja.estado !== "Rechazado" && (
+                    <div>
+                      <button
+                        type="button"
+                        onClick={() => abrirChat(queja.id_solicitud)}
+                        style={{
+                          display: "inline-flex", alignItems: "center", gap: 7,
+                          border: "1.5px solid #e0dbd4",
+                          background: chatAbierto === queja.id_solicitud ? "#fdf8f9" : "#fff",
+                          padding: "8px 16px", color: "#7A1E3A", cursor: "pointer",
+                          fontWeight: 700, fontSize: "0.82rem", borderRadius: 8,
+                          fontFamily: "inherit", transition: "all 0.2s",
+                        }}
+                      >
+                        <IconMessage width={15} height={15} />
+                        {chatAbierto === queja.id_solicitud ? "Ocultar conversación" : "Ver conversación con la librería"}
+                      </button>
+
+                      {chatAbierto === queja.id_solicitud && (
+                        <div style={{ marginTop: 12, border: "1.5px solid #e5e7eb", borderRadius: 12, overflow: "hidden", boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
+                          {/* Header del chat */}
+                          <div style={{ padding: "12px 16px", background: "linear-gradient(135deg, #7A1E3A 0%, #9b2c4e 100%)", display: "flex", alignItems: "center", gap: 8 }}>
+                            <IconMessage width={16} height={16} style={{ color: "#fff" }} />
+                            <span style={{ color: "#fff", fontWeight: 700, fontSize: "0.85rem" }}>
+                              Conversación · Reclamo #{queja.id_solicitud}
+                            </span>
+                          </div>
+
+                          {/* Mensajes */}
+                          <div style={{ maxHeight: 320, overflowY: "auto", padding: "16px", display: "flex", flexDirection: "column", gap: 12, background: "#f8f7f5" }}>
+                            {!mensajesChat[queja.id_solicitud] ? (
+                              <p style={{ color: "#aaa", fontSize: "0.85rem", textAlign: "center", margin: "20px 0" }}>Cargando...</p>
+                            ) : mensajesChat[queja.id_solicitud].length === 0 ? (
+                              <div style={{ textAlign: "center", padding: "24px 0" }}>
+                                <div style={{ fontSize: "2rem", marginBottom: 8 }}>💬</div>
+                                <p style={{ color: "#aaa", fontSize: "0.85rem", margin: 0 }}>Aún no hay mensajes. Escribe para iniciar la conversación.</p>
+                              </div>
+                            ) : (
+                              mensajesChat[queja.id_solicitud].map((m, i) => {
+                                const esComprador = m.rol === "usuario" || m.rol === "comprador";
+                                const esAdmin = m.rol === "admin" || m.rol === "administrador";
+                                const hora = m.creado_en
+                                  ? new Date(m.creado_en).toLocaleString("es-CO", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "short" })
+                                  : "";
+                                return (
+                                  <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: esComprador ? "flex-end" : "flex-start" }}>
+                                    {/* Nombre del remitente */}
+                                    <span style={{ fontSize: "0.72rem", fontWeight: 700, color: esAdmin ? "#0369a1" : esComprador ? "#7A1E3A" : "#555", marginBottom: 4, paddingLeft: esComprador ? 0 : 4, paddingRight: esComprador ? 4 : 0 }}>
+                                      {esAdmin ? "🛡️ Administrador" : esComprador ? "Tú" : `📦 ${m.nombre_usuario || "Librería"}`}
+                                    </span>
+                                    {/* Burbuja */}
+                                    <div style={{
+                                      maxWidth: "72%",
+                                      padding: "10px 14px",
+                                      borderRadius: esComprador ? "16px 16px 4px 16px" : "16px 16px 16px 4px",
+                                      background: esComprador ? "#7A1E3A" : esAdmin ? "#e0f2fe" : "#ffffff",
+                                      color: esComprador ? "#fff" : "#1a1a1a",
+                                      fontSize: "0.9rem", lineHeight: 1.55,
+                                      boxShadow: "0 2px 6px rgba(0,0,0,0.08)",
+                                      border: esAdmin ? "1px solid #bae6fd" : esComprador ? "none" : "1px solid #e5e7eb",
+                                    }}>
+                                      <p style={{ margin: 0 }}>{m.mensaje}</p>
+                                    </div>
+                                    {/* Hora */}
+                                    {hora && <span style={{ fontSize: "0.68rem", color: "#aaa", marginTop: 3, paddingLeft: esComprador ? 0 : 4, paddingRight: esComprador ? 4 : 0 }}>{hora}</span>}
+                                  </div>
+                                );
+                              })
+                            )}
+                          </div>
+
+                          {/* Input para responder */}
+                          <div style={{ display: "flex", gap: 8, padding: "12px 14px", borderTop: "1.5px solid #e5e7eb", background: "#fff", alignItems: "center" }}>
+                            <input
+                              value={mensajeChatInput[queja.id_solicitud] || ""}
+                              onChange={e => setMensajeChatInput(prev => ({ ...prev, [queja.id_solicitud]: e.target.value }))}
+                              onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleEnviarMensaje(queja.id_solicitud); } }}
+                              placeholder="Escribe un mensaje a la librería..."
+                              style={{ flex: 1, padding: "10px 14px", borderRadius: 10, border: "1.5px solid #e5e7eb", fontSize: "0.9rem", fontFamily: "inherit", outline: "none", background: "#f9fafb", transition: "border-color 0.2s" }}
+                              onFocus={e => e.target.style.borderColor = "#7A1E3A"}
+                              onBlur={e => e.target.style.borderColor = "#e5e7eb"}
+                            />
+                            <button
+                              onClick={() => handleEnviarMensaje(queja.id_solicitud)}
+                              disabled={enviandoMensaje === queja.id_solicitud || !mensajeChatInput[queja.id_solicitud]?.trim()}
+                              style={{
+                                padding: "10px 20px",
+                                background: enviandoMensaje === queja.id_solicitud || !mensajeChatInput[queja.id_solicitud]?.trim()
+                                  ? "#d1c0c5" : "#7A1E3A",
+                                color: "#fff", border: "none", borderRadius: 10,
+                                fontWeight: 700, fontSize: "0.88rem",
+                                cursor: enviandoMensaje === queja.id_solicitud || !mensajeChatInput[queja.id_solicitud]?.trim() ? "not-allowed" : "pointer",
+                                fontFamily: "inherit", transition: "background 0.2s",
+                                whiteSpace: "nowrap",
+                              }}
+                            >
+                              {enviandoMensaje === queja.id_solicitud ? "Enviando..." : "Enviar"}
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
 

@@ -684,6 +684,32 @@ def confirmar_entrega(id_orden: int, user_id: int = Depends(get_current_user)):
         if orden:
             cursor.execute("UPDATE ordenes_compra SET estado_orden = 'entregada' WHERE id_orden = %s", (id_orden,))
             cursor.execute("UPDATE envios SET estado_envio = 'Entregado' WHERE id_orden = %s", (id_orden,))
+
+            # Notificar al vendedor que el comprador confirmó la entrega
+            try:
+                cursor.execute("""
+                    SELECT t.id_usuario AS id_vendedor, t.nombre_tienda
+                    FROM detalle_orden do
+                    JOIN libros l ON l.id_libro = do.id_libro
+                    JOIN tiendas t ON t.id_tienda = l.id_tienda
+                    WHERE do.id_orden = %s
+                    LIMIT 1
+                """, (id_orden,))
+                tienda = cursor.fetchone()
+                if tienda and tienda.get("id_vendedor"):
+                    cursor.execute("""
+                        INSERT INTO notificaciones
+                            (id_usuario, tipo, titulo, cuerpo, id_referencia, leida, fecha_creacion)
+                        VALUES (%s, 'entrega', 'Pedido entregado y confirmado',
+                                %s, %s, FALSE, NOW())
+                    """, (
+                        tienda["id_vendedor"],
+                        f'El comprador confirmó la recepción del pedido #{id_orden}. La venta ha sido completada exitosamente.',
+                        id_orden,
+                    ))
+            except Exception:
+                pass  # No interrumpir el flujo si la notificación falla
+
             db.commit()
     finally:
         cursor.close()

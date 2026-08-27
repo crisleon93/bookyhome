@@ -28,7 +28,7 @@ export default function SeccionPerfilAdmin({ stats }) {
 
   const cargarGestion = useCallback(async () => {
     try {
-      const res = await api.get('/quejas/admin');
+      const res = await api.get('/quejas/admin/todas');
       const lista = Array.isArray(res.data) ? res.data : [];
       setGestion({
         reclamos: lista.filter(s => s.tipo_solicitud === 'Reclamo').length,
