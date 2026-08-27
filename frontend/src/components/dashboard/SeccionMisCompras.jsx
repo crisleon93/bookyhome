@@ -10,6 +10,11 @@ export default function SeccionMisCompras({ userId }) {
   const [devoluciones, setDevoluciones] = useState([]);
   const [ordenesLoading, setOrdenesLoading] = useState(false);
 
+  // Filtros y Búsqueda
+  const [filtroEstado, setFiltroEstado] = useState('todos');
+  const [busqueda, setBusqueda] = useState('');
+  const [ordenarPor, setOrdenarPor] = useState('recientes');
+
   // Baucher states
   const [mostrarBaucher, setMostrarBaucher] = useState(false);
   const [ordenSeleccionada, setOrdenSeleccionada] = useState(null);
@@ -101,22 +106,406 @@ export default function SeccionMisCompras({ userId }) {
     return { pago: 'Pendiente de pago', entrega: null, pagoClase: 'procesando', entregaClase: 'procesando', completada: false };
   };
 
+  // Contadores para métricas y tabs de filtro
+  const totalCompras = ordenes.length;
+  const totalEntregadas = ordenes.filter(o => {
+    const est = obtenerEstadoVisible(o);
+    return est.completada || est.entrega === 'Entregado';
+  }).length;
+  const totalEnCamino = ordenes.filter(o => {
+    const est = obtenerEstadoVisible(o);
+    return ['En camino', 'Preparando envío'].includes(est.entrega);
+  }).length;
+  const totalPendientes = ordenes.filter(o => {
+    const est = obtenerEstadoVisible(o);
+    return est.pago === 'Pendiente de pago';
+  }).length;
+  const totalCanceladas = ordenes.filter(o => {
+    const est = obtenerEstadoVisible(o);
+    return est.esCancelada || est.pago === 'Cancelada';
+  }).length;
+
+  // Filtrado y Ordenamiento
+  const ordenesFiltradas = ordenes
+    .filter((orden) => {
+      const estadoVisible = obtenerEstadoVisible(orden);
+
+      // Filtro de Estado
+      if (filtroEstado === 'entregado' && !(estadoVisible.completada || estadoVisible.entrega === 'Entregado')) {
+        return false;
+      }
+      if (filtroEstado === 'camino' && !['En camino', 'Preparando envío'].includes(estadoVisible.entrega)) {
+        return false;
+      }
+      if (filtroEstado === 'pendiente' && estadoVisible.pago !== 'Pendiente de pago') {
+        return false;
+      }
+      if (filtroEstado === 'cancelado' && !(estadoVisible.esCancelada || estadoVisible.pago === 'Cancelada')) {
+        return false;
+      }
+
+      // Buscador
+      if (busqueda.trim()) {
+        const q = busqueda.toLowerCase().trim();
+        const qClean = q.replace(/^#/, '');
+        const idMatch = String(orden.id_orden).includes(qClean);
+        const fechaMatch = orden.fecha && new Date(orden.fecha).toLocaleDateString('es-CO').toLowerCase().includes(q);
+        const itemsMatch = Array.isArray(orden.items) && orden.items.some(item =>
+          (item.titulo || item.nombre_libro || '').toLowerCase().includes(q) ||
+          (item.autor_libro || item.autor || '').toLowerCase().includes(q)
+        );
+        const estadoMatch =
+          (estadoVisible.pago || '').toLowerCase().includes(q) ||
+          (estadoVisible.entrega || '').toLowerCase().includes(q);
+
+        return idMatch || fechaMatch || itemsMatch || estadoMatch;
+      }
+
+      return true;
+    })
+    .sort((a, b) => {
+      if (ordenarPor === 'recientes') {
+        return (new Date(b.fecha || 0) - new Date(a.fecha || 0)) || (Number(b.id_orden) - Number(a.id_orden));
+      }
+      if (ordenarPor === 'antiguas') {
+        return (new Date(a.fecha || 0) - new Date(b.fecha || 0)) || (Number(a.id_orden) - Number(b.id_orden));
+      }
+      if (ordenarPor === 'mayor_precio') {
+        return Number(b.total || 0) - Number(a.total || 0);
+      }
+      if (ordenarPor === 'menor_precio') {
+        return Number(a.total || 0) - Number(b.total || 0);
+      }
+      return 0;
+    });
+
+  const limpiarFiltros = () => {
+    setFiltroEstado('todos');
+    setBusqueda('');
+    setOrdenarPor('recientes');
+  };
+
   return (
     <>
-      <div className="pl-card" style={{ padding: "2.5rem 2rem", marginBottom: 24 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          <IconPackage width={28} height={28} strokeWidth={2} style={{ color: '#7A1E3A' }} />
-          <h2 style={{ margin: 0 }}>Mis Compras</h2>
+      {/* ── HEADER CARD & METRICS ── */}
+      <div className="pl-card" style={{ padding: "2rem", marginBottom: 20 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 16, marginBottom: 20 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+            <div style={{
+              width: 46,
+              height: 46,
+              borderRadius: 12,
+              background: "linear-gradient(135deg, #7A1E3A 0%, #9B2C4E 100%)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              boxShadow: "0 4px 14px rgba(122,30,58,0.25)"
+            }}>
+              <IconPackage width={24} height={24} strokeWidth={2.2} style={{ color: '#fff' }} />
+            </div>
+            <div>
+              <h2 style={{ margin: 0, fontSize: "1.4rem", fontWeight: 800, color: "#1F2937" }}>Mis Compras</h2>
+              <p style={{ margin: "2px 0 0", fontSize: "0.86rem", color: "#6B7280" }}>
+                Historial, estado de entrega y comprobantes de pago de tus pedidos
+              </p>
+            </div>
+          </div>
+          <span style={{
+            background: "#FDF2F4",
+            color: "#7A1E3A",
+            padding: "6px 14px",
+            borderRadius: 20,
+            fontSize: "0.85rem",
+            fontWeight: 800,
+            border: "1px solid #F8D2DA"
+          }}>
+            {totalCompras} {totalCompras === 1 ? 'Compra registrada' : 'Compras registradas'}
+          </span>
+        </div>
+
+        {/* Mini KPIs de Resumen */}
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))",
+          gap: "12px",
+          borderTop: "1px solid #F3F4F6",
+          paddingTop: "16px"
+        }}>
+          {/* Total */}
+          <div
+            onClick={() => setFiltroEstado('todos')}
+            style={{
+              background: filtroEstado === 'todos' ? '#FDF2F4' : '#FAFAF9',
+              border: `1.5px solid ${filtroEstado === 'todos' ? '#7A1E3A' : '#E5E7EB'}`,
+              borderRadius: 12,
+              padding: "10px 14px",
+              cursor: "pointer",
+              transition: "all 0.2s ease"
+            }}
+          >
+            <span style={{ fontSize: "0.74rem", color: "#6B7280", fontWeight: 700, textTransform: "uppercase" }}>Total</span>
+            <div style={{ fontSize: "1.2rem", fontWeight: 800, color: "#1F2937", marginTop: 2 }}>{totalCompras}</div>
+          </div>
+
+          {/* Entregadas */}
+          <div
+            onClick={() => setFiltroEstado('entregado')}
+            style={{
+              background: filtroEstado === 'entregado' ? '#ECFDF5' : '#FAFAF9',
+              border: `1.5px solid ${filtroEstado === 'entregado' ? '#047857' : '#E5E7EB'}`,
+              borderRadius: 12,
+              padding: "10px 14px",
+              cursor: "pointer",
+              transition: "all 0.2s ease"
+            }}
+          >
+            <span style={{ fontSize: "0.74rem", color: "#047857", fontWeight: 700, textTransform: "uppercase" }}>✓ Entregadas</span>
+            <div style={{ fontSize: "1.2rem", fontWeight: 800, color: "#047857", marginTop: 2 }}>{totalEntregadas}</div>
+          </div>
+
+          {/* En camino */}
+          <div
+            onClick={() => setFiltroEstado('camino')}
+            style={{
+              background: filtroEstado === 'camino' ? '#EFF6FF' : '#FAFAF9',
+              border: `1.5px solid ${filtroEstado === 'camino' ? '#2563EB' : '#E5E7EB'}`,
+              borderRadius: 12,
+              padding: "10px 14px",
+              cursor: "pointer",
+              transition: "all 0.2s ease"
+            }}
+          >
+            <span style={{ fontSize: "0.74rem", color: "#2563EB", fontWeight: 700, textTransform: "uppercase" }}>🚚 En camino</span>
+            <div style={{ fontSize: "1.2rem", fontWeight: 800, color: "#2563EB", marginTop: 2 }}>{totalEnCamino}</div>
+          </div>
+
+          {/* Pendientes */}
+          <div
+            onClick={() => setFiltroEstado('pendiente')}
+            style={{
+              background: filtroEstado === 'pendiente' ? '#FFFBEB' : '#FAFAF9',
+              border: `1.5px solid ${filtroEstado === 'pendiente' ? '#D97706' : '#E5E7EB'}`,
+              borderRadius: 12,
+              padding: "10px 14px",
+              cursor: "pointer",
+              transition: "all 0.2s ease"
+            }}
+          >
+            <span style={{ fontSize: "0.74rem", color: "#B45309", fontWeight: 700, textTransform: "uppercase" }}>⏱️ Por Pagar</span>
+            <div style={{ fontSize: "1.2rem", fontWeight: 800, color: "#B45309", marginTop: 2 }}>{totalPendientes}</div>
+          </div>
+
+          {/* Canceladas */}
+          <div
+            onClick={() => setFiltroEstado('cancelado')}
+            style={{
+              background: filtroEstado === 'cancelado' ? '#FEF2F2' : '#FAFAF9',
+              border: `1.5px solid ${filtroEstado === 'cancelado' ? '#DC2626' : '#E5E7EB'}`,
+              borderRadius: 12,
+              padding: "10px 14px",
+              cursor: "pointer",
+              transition: "all 0.2s ease"
+            }}
+          >
+            <span style={{ fontSize: "0.74rem", color: "#DC2626", fontWeight: 700, textTransform: "uppercase" }}>❌ Canceladas</span>
+            <div style={{ fontSize: "1.2rem", fontWeight: 800, color: "#DC2626", marginTop: 2 }}>{totalCanceladas}</div>
+          </div>
         </div>
       </div>
 
+      {/* ── BARRA DE BÚSQUEDA Y FILTROS ── */}
+      <div className="pl-card" style={{ padding: "16px 20px", marginBottom: 20 }}>
+        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 14 }}>
+          {/* Buscador */}
+          <div style={{ position: "relative", flex: "1 1 260px", minWidth: 220 }}>
+            <input
+              type="text"
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+              placeholder="Buscar por # orden, libro o fecha..."
+              style={{
+                width: "100%",
+                padding: "10px 36px 10px 38px",
+                borderRadius: 10,
+                border: "1.5px solid #E5E7EB",
+                fontSize: "0.88rem",
+                outline: "none",
+                fontFamily: "inherit",
+                boxSizing: "border-box",
+                background: "#FAFAF9",
+                color: "#1F2937",
+                transition: "border-color 0.2s"
+              }}
+              onFocus={(e) => e.target.style.borderColor = '#7A1E3A'}
+              onBlur={(e) => e.target.style.borderColor = '#E5E7EB'}
+            />
+            {/* Icono Lupa */}
+            <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#9CA3AF", display: "flex", pointerEvents: "none" }}>
+              <svg width={17} height={17} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+            </span>
+            {/* Botón Borrar */}
+            {busqueda && (
+              <button
+                onClick={() => setBusqueda('')}
+                style={{
+                  position: "absolute",
+                  right: 10,
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  background: "transparent",
+                  border: "none",
+                  color: "#9CA3AF",
+                  cursor: "pointer",
+                  fontWeight: 800,
+                  fontSize: "0.9rem",
+                  padding: 4
+                }}
+              >
+                ✕
+              </button>
+            )}
+          </div>
+
+          {/* Selector de Ordenamiento */}
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ fontSize: "0.82rem", color: "#6B7280", fontWeight: 600, whiteSpace: "nowrap" }}>Ordenar:</span>
+            <select
+              value={ordenarPor}
+              onChange={(e) => setOrdenarPor(e.target.value)}
+              style={{
+                padding: "9px 12px",
+                borderRadius: 10,
+                border: "1.5px solid #E5E7EB",
+                background: "#fff",
+                fontSize: "0.84rem",
+                fontWeight: 700,
+                color: "#374151",
+                outline: "none",
+                cursor: "pointer",
+                fontFamily: "inherit"
+              }}
+            >
+              <option value="recientes">📅 Más recientes</option>
+              <option value="antiguas">📅 Más antiguas</option>
+              <option value="mayor_precio">💰 Mayor valor</option>
+              <option value="menor_precio">💵 Menor valor</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Tabs de Filtro de Estado con Chips */}
+        <div style={{
+          display: "flex",
+          gap: "8px",
+          flexWrap: "wrap",
+          marginTop: "14px",
+          paddingTop: "14px",
+          borderTop: "1px solid #F3F4F6"
+        }}>
+          {[
+            { id: 'todos', label: 'Todos', count: totalCompras, icon: null },
+            { id: 'entregado', label: 'Entregadas', count: totalEntregadas, icon: '✓', color: '#047857', bg: '#ECFDF5' },
+            { id: 'camino', label: 'En camino', count: totalEnCamino, icon: '🚚', color: '#2563EB', bg: '#EFF6FF' },
+            { id: 'pendiente', label: 'Pendientes de pago', count: totalPendientes, icon: '⏱️', color: '#B45309', bg: '#FFFBEB' },
+            { id: 'cancelado', label: 'Canceladas', count: totalCanceladas, icon: '❌', color: '#DC2626', bg: '#FEF2F2' },
+          ].map((tab) => {
+            const activo = filtroEstado === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setFiltroEstado(tab.id)}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  padding: "6px 14px",
+                  borderRadius: "20px",
+                  border: activo ? "1.5px solid #7A1E3A" : "1.5px solid #E5E7EB",
+                  background: activo ? "#7A1E3A" : "#FFFFFF",
+                  color: activo ? "#FFFFFF" : "#4B5563",
+                  fontSize: "0.82rem",
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  transition: "all 0.15s ease",
+                  boxShadow: activo ? "0 2px 8px rgba(122,30,58,0.25)" : "none"
+                }}
+              >
+                {tab.icon && <span>{tab.icon}</span>}
+                <span>{tab.label}</span>
+                <span style={{
+                  padding: "1px 7px",
+                  borderRadius: "10px",
+                  fontSize: "0.74rem",
+                  fontWeight: 800,
+                  background: activo ? "rgba(255,255,255,0.28)" : "#F3F4F6",
+                  color: activo ? "#FFFFFF" : "#6B7280"
+                }}>
+                  {tab.count}
+                </span>
+              </button>
+            );
+          })}
+
+          {(filtroEstado !== 'todos' || busqueda.trim()) && (
+            <button
+              onClick={limpiarFiltros}
+              style={{
+                marginLeft: "auto",
+                background: "none",
+                border: "none",
+                color: "#7A1E3A",
+                fontSize: "0.8rem",
+                fontWeight: 700,
+                cursor: "pointer",
+                textDecoration: "underline",
+                padding: "6px 4px"
+              }}
+            >
+              Restablecer filtros
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* ── LISTA DE COMPRAS ── */}
       {ordenesLoading ? (
         <div className="empty-state"><p>Cargando tus compras...</p></div>
-      ) : ordenes.length === 0 ? (
-        <div className="empty-state"><p>Aún no tienes compras realizadas</p></div>
+      ) : ordenesFiltradas.length === 0 ? (
+        <div className="pl-card" style={{ padding: "48px 24px", textAlign: "center" }}>
+          <div style={{ fontSize: "2.5rem", marginBottom: 12 }}>📦</div>
+          <h3 style={{ margin: 0, fontSize: "1.1rem", fontWeight: 700, color: "#1F2937" }}>
+            No se encontraron compras
+          </h3>
+          <p style={{ margin: "6px 0 18px", fontSize: "0.88rem", color: "#6B7280" }}>
+            {busqueda || filtroEstado !== 'todos'
+              ? 'No hay órdenes que coincidan con los criterios de búsqueda o filtros seleccionados.'
+              : 'Aún no has realizado ninguna compra en BookyHome.'}
+          </p>
+          {(busqueda || filtroEstado !== 'todos') && (
+            <button
+              onClick={limpiarFiltros}
+              style={{
+                padding: "8px 18px",
+                borderRadius: 8,
+                background: "#7A1E3A",
+                color: "#fff",
+                border: "none",
+                fontWeight: 700,
+                fontSize: "0.85rem",
+                cursor: "pointer",
+                boxShadow: "0 2px 8px rgba(122,30,58,0.25)"
+              }}
+            >
+              Mostrar todas las compras
+            </button>
+          )}
+        </div>
       ) : (
         <div className="pl-card">
-          {ordenes.map((orden) => (
+          {ordenesFiltradas.map((orden) => (
             <div key={orden.id_orden} className="pl-order-row">
               {(() => {
                 const estadoVisible = obtenerEstadoVisible(orden);

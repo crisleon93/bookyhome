@@ -65,13 +65,26 @@ def listar_tiendas():
     return obtener_tiendas()
 
 
+ESTADOS_TIENDA_VALIDOS = {'activa', 'pendiente', 'vacaciones', 'suspendida', 'inactiva'}
+
 @router.patch("/tiendas/{id_tienda}/estado")
-def cambiar_estado_tienda(id_tienda: int, payload: dict):
-    nuevo_estado = payload.get("estado")
-    resultado = actualizar_estado_tienda(id_tienda, nuevo_estado)
+def cambiar_estado_tienda(id_tienda: int, payload: dict, user_payload: dict = Depends(get_current_user)):
+    nuevo_estado = (payload.get("estado") or "").strip().lower()
+    motivo = (payload.get("motivo") or "").strip()
+    if nuevo_estado not in ESTADOS_TIENDA_VALIDOS:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Estado inválido. Valores permitidos: {', '.join(sorted(ESTADOS_TIENDA_VALIDOS))}"
+        )
+    admin_id = int(user_payload.get("sub", 1)) if user_payload else None
+    resultado = actualizar_estado_tienda(id_tienda, nuevo_estado, motivo=motivo, admin_user_id=admin_id)
     if not resultado["ok"]:
         raise HTTPException(status_code=400, detail=resultado["error"])
-    return {"ok": True, "estado": nuevo_estado}
+    return {
+        "ok": True,
+        "estado": nuevo_estado,
+        "mensaje_enviado": resultado.get("mensaje_enviado", False)
+    }
 
 
 @router.get("/tiendas/mi-tienda")

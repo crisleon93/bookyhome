@@ -31,7 +31,6 @@ export default function Chat({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [usuarioActual, setUsuarioActual] = useState(null);
-  const [shouldScrollToBottom, setShouldScrollToBottom] = useState(false);
 
   // helpers de fecha para separadores
   const formatFechaSeparador = (fechaStr) => {
@@ -329,6 +328,10 @@ export default function Chat({
     const esVendedor = rol === "vendedor" || usuarioActual?.id_rol === 2;
 
     if (esVendedor) {
+      const rolComprador = (sala.rol_comprador || "").toLowerCase();
+      if (rolComprador === "admin" || rolComprador === "administrador" || (sala.nombre_comprador || '').toLowerCase().includes('admin')) {
+        return `🛡️ ${sala.nombre_comprador || "Administración BookyHome"}`;
+      }
       return sala.nombre_comprador || sala.nombre_cliente || sala.nombre_usuario || "Comprador";
     } else {
       return sala.nombre_tienda || sala.nombre_libreria || sala.nombre_vendedor || "Tienda / Vendedor";

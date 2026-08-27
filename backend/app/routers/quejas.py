@@ -622,11 +622,25 @@ def resolver_queja(id_solicitud: int, data: Resolucion, user=Depends(current_use
 
         cursor.execute("UPDATE solicitudes_soporte SET estado=%s, respuesta=%s, fecha_resolucion=NOW() WHERE id_solicitud=%s", (data.estado, data.respuesta, id_solicitud))
 
-        if ticket.get("id_vendedor"):
-            cursor.execute("INSERT INTO notificaciones (id_usuario, tipo, titulo, cuerpo, id_referencia, leida, fecha_creacion) VALUES (%s, 'sistema', 'Reclamo resuelto / actualizado', %s, %s, FALSE, NOW())", (ticket["id_vendedor"], f"El administrador actualizó el reclamo #{id_solicitud} a '{data.estado}': {data.respuesta}", id_solicitud))
+        es_soporte = (ticket.get("tipo_solicitud") or "").lower() == "soporte"
+        titulo_notif = "Ticket de soporte actualizado" if es_soporte else "Reclamo resuelto / actualizado"
+        cuerpo_base = (
+            f"Tu ticket #{id_solicitud} ha sido marcado como '{data.estado}': {data.respuesta}"
+            if es_soporte
+            else f"Tu reclamo #{id_solicitud} ha sido marcado como '{data.estado}': {data.respuesta}"
+        )[:280]
 
+        usuarios_notificar = set()
         if ticket.get("id_comprador"):
-            cursor.execute("INSERT INTO notificaciones (id_usuario, tipo, titulo, cuerpo, id_referencia, leida, fecha_creacion) VALUES (%s, 'sistema', 'Reclamo resuelto / actualizado', %s, %s, FALSE, NOW())", (ticket["id_comprador"], f"Tu reclamo #{id_solicitud} ha sido marcado como '{data.estado}': {data.respuesta}", id_solicitud))
+            usuarios_notificar.add(ticket["id_comprador"])
+        if ticket.get("id_vendedor"):
+            usuarios_notificar.add(ticket["id_vendedor"])
+
+        for uid in usuarios_notificar:
+            cursor.execute(
+                "INSERT INTO notificaciones (id_usuario, tipo, titulo, cuerpo, id_referencia, leida, fecha_creacion) VALUES (%s, 'sistema', %s, %s, %s, FALSE, NOW())",
+                (uid, titulo_notif, cuerpo_base, id_solicitud)
+            )
 
         db.commit()
         return {"ok": True}

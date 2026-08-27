@@ -99,6 +99,23 @@ def registrar_envio(id_comprador, id_orden, id_tienda, id_empresa, numero_guia):
             "UPDATE ordenes_compra SET estado_orden = 'enviado' WHERE id_orden = %s AND estado_orden = 'pagado'",
             (id_orden,),
         )
+
+        # Notificar al comprador que su pedido fue enviado
+        try:
+            nombre_tienda = orden.get("nombre_tienda", "la librería")
+            cursor.execute("""
+                INSERT INTO notificaciones
+                    (id_usuario, tipo, titulo, cuerpo, id_referencia, leida, fecha_creacion)
+                VALUES (%s, 'entrega', '¡Tu pedido está en camino!',
+                        %s, %s, FALSE, NOW())
+            """, (
+                id_comprador,
+                f'Tu pedido #{id_orden} de "{nombre_tienda}" ha sido despachado con guía {numero_guia}. ¡Ya viene en camino!',
+                id_orden,
+            ))
+        except Exception:
+            pass  # No interrumpir el flujo si la notificación falla
+
         db.commit()
 
     finally:
