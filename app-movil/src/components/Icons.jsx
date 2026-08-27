@@ -305,6 +305,43 @@ export const IconChat = ({ size = 20, color = '#7A1E3A' }) => (
   </Svg>
 );
 
+// ── Candado abierto (desbloquear) ─────────────────────────────────────────────
+export const IconUnlock = ({ size = 18, color = '#2e7d32' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+    stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+    <Rect x="3" y="11" width="18" height="11" rx="2" ry="2" stroke={color}/>
+    <Path d="M7 11V7a5 5 0 0 1 9.9-1" stroke={color}/>
+  </Svg>
+);
+
+// ── Papelera ──────────────────────────────────────────────────────────────────
+export const IconTrash = ({ size = 18, color = '#c62828' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+    stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+    <Polyline points="3 6 5 6 21 6" stroke={color}/>
+    <Path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" stroke={color}/>
+    <Path d="M10 11v6" stroke={color}/>
+    <Path d="M14 11v6" stroke={color}/>
+    <Path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" stroke={color}/>
+  </Svg>
+);
+
+// ── Chevron izquierdo ─────────────────────────────────────────────────────────
+export const IconChevronLeft = ({ size = 22, color = '#7A1E3A' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+    stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <Polyline points="15 18 9 12 15 6" stroke={color}/>
+  </Svg>
+);
+
+// ── Check (palomita) ──────────────────────────────────────────────────────────
+export const IconCheck = ({ size = 18, color = '#2e7d32' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+    stroke={color} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+    <Polyline points="20 6 9 17 4 12" stroke={color}/>
+  </Svg>
+);
+
 // ── Moneda / Precio ─────────────────────────────────────────────────────────
 export const IconDollar = ({ size = 20, color = '#7A1E3A' }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
