@@ -23,6 +23,29 @@ export function AuthProvider({ children }) {
   const [biometricLocked, setBiometricLocked] = useState(false);
   const [pendingToken, setPendingToken] = useState(null);
   const appState = useRef(AppState.currentState);
+  const authFailureHandled = useRef(false);
+
+  useEffect(() => {
+    const interceptorId = api.interceptors.response.use(
+      (response) => response,
+      async (error) => {
+        if (error.response?.status === 401 && !authFailureHandled.current) {
+          authFailureHandled.current = true;
+          delete api.defaults.headers.common.Authorization;
+          setToken(null);
+          setUser(null);
+          setPendingToken(null);
+          setBiometricLocked(false);
+          setBiometricEnabled(false);
+          await AsyncStorage.multiRemove(['token', 'biometricEnabled']);
+          authFailureHandled.current = false;
+        }
+        return Promise.reject(error);
+      },
+    );
+
+    return () => api.interceptors.response.eject(interceptorId);
+  }, []);
 
   useEffect(() => {
     const restore = async () => {
@@ -86,6 +109,7 @@ export function AuthProvider({ children }) {
       return;
     }
     api.defaults.headers.common.Authorization = `Bearer ${newToken}`;
+    authFailureHandled.current = false;
     const payload = decodeJwtPayload(newToken);
     const safeUser = payload || {
       sub: 'usuario',

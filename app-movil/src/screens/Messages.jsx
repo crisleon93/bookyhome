@@ -14,6 +14,7 @@ import { useNavigation } from '@react-navigation/native';
 import { IconChevronRight } from '../components/Icons';
 import { useChatSocket } from '../context/ChatSocketContext';
 import { AuthContext } from '../context/AuthContext';
+import SidebarMenu from '../components/SidebarMenu';
 import SidebarVendedor from '../components/SidebarVendedor';
 const PRIMARY = '#7A1E3A';
 const BG = '#F9F6F1';
@@ -81,14 +82,6 @@ export default function Messages() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => setSidebarVisible(true)} style={styles.menuBtn}>
-          <Text style={styles.menuIcon}>☰</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Mensajes</Text>
-        <View style={{ width: 36 }} />
-      </View>
-
       {loadingSalas ? (
         <View style={styles.centered}>
           <ActivityIndicator color={PRIMARY} />
@@ -112,36 +105,33 @@ export default function Messages() {
         />
       )}
 
-      <SidebarVendedor
-        visible={sidebarVisible}
-        onClose={() => setSidebarVisible(false)}
-        user={user}
-        navigation={navigation}
-        onSignOut={signOut}
-      />
+      {user?.rol === 'vendedor' ? (
+        <SidebarVendedor
+          visible={sidebarVisible}
+          onClose={() => setSidebarVisible(false)}
+          user={user}
+          navigation={navigation}
+          onSignOut={signOut}
+        />
+      ) : (
+        <SidebarMenu
+          visible={sidebarVisible}
+          onClose={() => setSidebarVisible(false)}
+          user={user}
+          navigation={navigation}
+          onSignOut={signOut}
+        />
+      )}
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#7A1E3A' },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: PRIMARY,
-    paddingHorizontal: 12,
-    paddingVertical: 14,
-  },
-  backBtn: { width: 32, justifyContent: 'center', alignItems: 'flex-start' },
-  backText: { color: WHITE, fontSize: 28, fontWeight: '400', lineHeight: 28 },
-  menuBtn:  { width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.15)', justifyContent: 'center', alignItems: 'center' },
-  menuIcon: { color: WHITE, fontSize: 20, fontWeight: '700' },
-  headerTitle: { color: WHITE, fontSize: 17, fontWeight: '800' },
+  safe: { flex: 1, backgroundColor: PRIMARY },
 
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32 },
-  emptyTitle: { fontSize: 15, fontWeight: '700', color: '#1A1A1A', marginBottom: 6, textAlign: 'center' },
-  emptySubtitle: { fontSize: 13, color: TEXT_MUTED, textAlign: 'center' },
+  emptyTitle: { fontSize: 15, fontWeight: '700', color: WHITE, marginBottom: 6, textAlign: 'center' },
+  emptySubtitle: { fontSize: 13, color: 'rgba(255,255,255,0.75)', textAlign: 'center' },
 
   salaItem: {
     flexDirection: 'row',

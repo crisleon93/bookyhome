@@ -694,6 +694,127 @@
       "id_orden_db": 50,
       "metodo_pago": "Transferencia Bancaria",
       "motivo_cancelacion": "weqweq"
+    },
+    {
+      "id_orden": 31,
+      "codigo_compra": "BH-1BF3C0FEA9",
+      "fecha": "2026-08-22T18:49:46.899932Z",
+      "items": [
+        {
+          "id_libro": 2,
+          "titulo": "Amor en Invierno",
+          "autor_libro": "L. Moreno",
+          "precio_libro": 12000.0,
+          "cantidad": 1,
+          "imagen": "https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?w=400&q=80",
+          "id_variante": 5,
+          "variante_label": "Digital · Espanol · 1ra Edicion"
+        }
+      ],
+      "total": 12000.0,
+      "estado": "pagado",
+      "id_orden_db": 29,
+      "metodo_pago": "Nequi"
+    },
+    {
+      "id_orden": 32,
+      "codigo_compra": "BH-76FC018534",
+      "fecha": "2026-08-27T20:15:26.307373Z",
+      "items": [
+        {
+          "id_libro": 45,
+          "titulo": "Libro de Prueba Oculto",
+          "autor_libro": "Autor Anónimo",
+          "precio_libro": 15000.0,
+          "cantidad": 1,
+          "imagen": null,
+          "id_variante": null,
+          "variante_label": null
+        }
+      ],
+      "total": 15000.0,
+      "estado": "pendiente",
+      "id_orden_db": 30
+    },
+    {
+      "id_orden": 33,
+      "codigo_compra": "BH-7E5215E7A0",
+      "fecha": "2026-08-27T20:26:39.847261Z",
+      "items": [
+        {
+          "id_libro": 44,
+          "titulo": "El principito",
+          "autor_libro": "Antoine de Saint-Exupéry",
+          "precio_libro": 20000.0,
+          "cantidad": 1,
+          "imagen": "https://covers.openlibrary.org/b/id/12688412-L.jpg",
+          "id_variante": null,
+          "variante_label": null
+        }
+      ],
+      "total": 20000.0,
+      "estado": "pendiente",
+      "id_orden_db": 31
+    },
+    {
+      "id_orden": 34,
+      "codigo_compra": "BH-77BEB26942",
+      "fecha": "2026-08-27T20:29:47.325381Z",
+      "items": [
+        {
+          "id_libro": 44,
+          "titulo": "El principito",
+          "autor_libro": "Antoine de Saint-Exupéry",
+          "precio_libro": 20000.0,
+          "cantidad": 1,
+          "imagen": "https://covers.openlibrary.org/b/id/12688412-L.jpg",
+          "id_variante": null,
+          "variante_label": null
+        }
+      ],
+      "total": 20000.0,
+      "estado": "pendiente",
+      "id_orden_db": 32
+    },
+    {
+      "id_orden": 35,
+      "codigo_compra": "BH-D61F33822E",
+      "fecha": "2026-08-27T20:30:27.088276Z",
+      "items": [
+        {
+          "id_libro": 10,
+          "titulo": "Aventura en la Selva",
+          "autor_libro": "M. Castro",
+          "precio_libro": 27000.0,
+          "cantidad": 1,
+          "imagen": "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=400&q=80",
+          "id_variante": null,
+          "variante_label": null
+        }
+      ],
+      "total": 27000.0,
+      "estado": "pendiente",
+      "id_orden_db": 33
+    },
+    {
+      "id_orden": 36,
+      "codigo_compra": "BH-D429DB462A",
+      "fecha": "2026-08-27T20:31:14.398712Z",
+      "items": [
+        {
+          "id_libro": 44,
+          "titulo": "El principito",
+          "autor_libro": "Antoine de Saint-Exupéry",
+          "precio_libro": 20000.0,
+          "cantidad": 1,
+          "imagen": "https://covers.openlibrary.org/b/id/12688412-L.jpg",
+          "id_variante": null,
+          "variante_label": null
+        }
+      ],
+      "total": 20000.0,
+      "estado": "pendiente",
+      "id_orden_db": 34
     }
   ],
   "17": [

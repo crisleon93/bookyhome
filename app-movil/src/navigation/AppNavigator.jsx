@@ -1,4 +1,5 @@
 import React, { useContext } from 'react';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { AuthContext } from '../context/AuthContext';
 
@@ -34,6 +35,7 @@ import VentasVendedor from '../screens/VentasVendedor';
 import CalificacionesVendedor from '../screens/CalificacionesVendedor';
 import SuscripcionesVendedor from '../screens/SuscripcionesVendedor';
 import ImpulsosVendedor from '../screens/ImpulsosVendedor';
+import MobileMenuButton from '../components/MobileMenuButton';
 
 const Stack = createNativeStackNavigator();
 
@@ -41,7 +43,13 @@ export default function AppNavigator() {
   const { user, token, loading, biometricLocked } = useContext(AuthContext);
   const isAuthenticated = Boolean(token || user);
 
-  if (loading) return null;
+  if (loading) {
+    return (
+      <View style={styles.loadingScreen}>
+        <ActivityIndicator size="large" color="#7A1E3A" />
+      </View>
+    );
+  }
 
   return (
     <Stack.Navigator initialRouteName={!isAuthenticated ? 'Home' : undefined}>
@@ -82,12 +90,27 @@ export default function AppNavigator() {
         </>
       ) : (
         // ─── Rutas comprador ─────────────────────────────────────────────────
-        <>
+        <Stack.Group screenOptions={{
+          headerStyle: { backgroundColor: '#7A1E3A' },
+          headerTintColor: '#FFFFFF',
+          headerTitleStyle: { color: '#FFFFFF' },
+          headerLeft: () => <MobileMenuButton tintColor="#FFFFFF" />,
+        }}>
           <Stack.Screen name="PostLogin" component={PostLogin} options={{ headerShown: false }} />
           <Stack.Screen name="Profile" component={Profile} options={{ title: 'Mi Perfil' }} />
           <Stack.Screen name="Direcciones" component={Direcciones} options={{ title: 'Mis direcciones' }} />
-          <Stack.Screen name="History" component={History} options={{ title: 'Mis compras' }} />
-          <Stack.Screen name="Notifications" component={Notifications} options={{ headerShown: false }} />
+          <Stack.Screen
+            name="History"
+            component={History}
+            options={{
+              title: 'Mis compras',
+              headerStyle: { backgroundColor: '#7A1E3A' },
+              headerTintColor: '#FFFFFF',
+              headerTitleStyle: { color: '#FFFFFF' },
+              headerLeft: () => <MobileMenuButton tintColor="#FFFFFF" />,
+            }}
+          />
+          <Stack.Screen name="Notifications" component={Notifications} options={{ title: 'Notificaciones' }} />
           <Stack.Screen name="BookDetail" component={BookDetail} options={{ title: 'Detalle del libro' }} />
           <Stack.Screen name="Cart" component={Cart} options={{ title: 'Mi Carrito' }} />
           <Stack.Screen name="Checkout" component={Checkout} options={{ title: 'Pago Seguro' }} />
@@ -96,11 +119,20 @@ export default function AppNavigator() {
           <Stack.Screen name="PublicarLibro" component={PublicarLibro} options={{ title: 'Publicar Libro' }} />
           <Stack.Screen name="ConfiguracionTienda" component={ConfiguracionTienda} options={{ title: 'Configuración de Tienda' }} />
           <Stack.Screen name="PerfilTienda" component={PerfilTienda} options={{ title: 'Perfil de Tienda', headerBackTitle: 'Atrás' }} />
-          <Stack.Screen name="Messages" component={Messages} options={{ headerShown: false }} />
+          <Stack.Screen name="Messages" component={Messages} options={{ title: 'Mensajes' }} />
           <Stack.Screen name="Chat" component={Chat} options={{ title: 'Chat' }} />
           <Stack.Screen name="QuejasReclamos" component={QuejasReclamos} options={{ title: 'Quejas y reclamos' }} />
-        </>
+        </Stack.Group>
       )}
     </Stack.Navigator>
   );
 }
+
+const styles = StyleSheet.create({
+  loadingScreen: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F9F6F1',
+  },
+});

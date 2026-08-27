@@ -5,9 +5,10 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
-import { getOrdenes, getQuejas, crearQueja, getApiBaseUrl } from '../services/api';
+import { getOrdenes, getQuejas, crearQueja, cancelarQueja, getApiBaseUrl } from '../services/api';
 import { IconAlertTriangle, IconCheck, IconEye, IconChevronRight } from '../components/Icons';
 import { AuthContext } from '../context/AuthContext';
+import SidebarMenu from '../components/SidebarMenu';
 import SidebarVendedor from '../components/SidebarVendedor';
 
 const PRIMARY = '#7A1E3A';
@@ -38,6 +39,8 @@ export default function QuejasReclamos({ navigation }) {
   const [enviando, setEnviando] = useState(false);
   const [mensajeExito, setMensajeExito] = useState('');
   const [vistaEvidencia, setVistaEvidencia] = useState(null);
+  const [filtroEstado, setFiltroEstado] = useState('Todos');
+  const [cancelando, setCancelando] = useState(null);
   
   // Modals for selection
   const [showOrdenModal, setShowOrdenModal] = useState(false);
@@ -133,7 +136,7 @@ export default function QuejasReclamos({ navigation }) {
     if (estado === 'Resuelto') {
       bg = '#DCFCE7';
       text = '#166534';
-    } else if (estado === 'En revisión') {
+    } else if (estado === 'En revisión' || estado === 'En revision') {
       bg = '#FEF3C7';
       text = '#B45309';
     }
@@ -147,13 +150,14 @@ export default function QuejasReclamos({ navigation }) {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
-      {/* Header */}
-      <View style={styles.topHeader}>
-        <TouchableOpacity onPress={() => setSidebarVisible(true)} style={styles.menuBtn}>
-          <Text style={styles.menuIcon}>☰</Text>
-        </TouchableOpacity>
-        <Text style={styles.topHeaderTitle}>Quejas y reclamos</Text>
-      </View>
+      {user?.rol === 'vendedor' && (
+        <View style={styles.topHeader}>
+          <TouchableOpacity onPress={() => setSidebarVisible(true)} style={styles.menuBtn}>
+            <Text style={styles.menuIcon}>☰</Text>
+          </TouchableOpacity>
+          <Text style={styles.topHeaderTitle}>Quejas y reclamos</Text>
+        </View>
+      )}
 
       <ScrollView contentContainerStyle={styles.scroll}>
         
@@ -264,17 +268,52 @@ export default function QuejasReclamos({ navigation }) {
 
         {/* Historial */}
         <View style={styles.card}>
-          <Text style={styles.historyTitle}>Mis quejas y reclamos</Text>
+          <View style={styles.historyHeading}>
+            <Text style={styles.historyTitle}>Mis quejas y reclamos</Text>
+            {quejas.length > 0 && <Text style={styles.historyCount}>{quejas.length} solicitud{quejas.length !== 1 ? 'es' : ''}</Text>}
+          </View>
+          {quejas.length > 1 && (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
+              {['Todos', 'Abierto', 'En revisión', 'Resuelto', 'Cerrado', 'Rechazado']
+                .filter(estado => estado === 'Todos' || quejas.some(q => q.estado === estado || (estado === 'En revisión' && q.estado === 'En revision')))
+                .map(estado => (
+                  <TouchableOpacity
+                    key={estado}
+                    style={[styles.filterBtn, filtroEstado === estado && styles.filterBtnActive]}
+                    onPress={() => setFiltroEstado(estado)}
+                  >
+                    <Text style={[styles.filterText, filtroEstado === estado && styles.filterTextActive]}>{estado}</Text>
+                  </TouchableOpacity>
+                ))}
+            </ScrollView>
+          )}
           
           {quejas.length === 0 && !cargando ? (
             <Text style={styles.emptyHistory}>No tienes solicitudes previas.</Text>
           ) : (
-            quejas.map((queja) => (
+            quejas.filter(queja => filtroEstado === 'Todos' || queja.estado === filtroEstado || (filtroEstado === 'En revisión' && queja.estado === 'En revision')).map((queja) => (
               <View key={queja.id_solicitud} style={styles.historyItem}>
                 <View style={styles.historyHeader}>
-                  <Text style={styles.historyItemTitle}>Orden #{queja.id_orden} · {queja.asunto}</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.historyMeta}>Solicitud #{queja.id_solicitud} · Orden #{queja.id_orden}</Text>
+                    <Text style={styles.historyItemTitle}>{queja.titulo_libro || queja.asunto || 'Libro'}</Text>
+                    {queja.nombre_tienda && <Text style={styles.historyStore}>{queja.nombre_tienda}</Text>}
+                  </View>
                   {renderBadge(queja.estado)}
                 </View>
+
+                {['Abierto', 'En revisión', 'En revision'].includes(queja.estado) && (
+                  <View style={styles.progressRow}>
+                    {['Abierto', 'En revisión', 'Resuelto'].map((paso, index) => {
+                      const estadoActual = queja.estado === 'En revision' ? 'En revisión' : queja.estado;
+                      const actual = ['Abierto', 'En revisión', 'Resuelto'].indexOf(estadoActual);
+                      return <View key={paso} style={styles.progressStep}>
+                        <View style={[styles.progressDot, index <= actual && styles.progressDotActive]} />
+                        <Text style={[styles.progressText, index <= actual && styles.progressTextActive]}>{paso}</Text>
+                      </View>;
+                    })}
+                  </View>
+                )}
                 
                 <Text style={styles.historyDesc}>{queja.descripcion}</Text>
                 
@@ -294,6 +333,24 @@ export default function QuejasReclamos({ navigation }) {
                     <Text style={styles.respuestaTitle}>Respuesta del administrador:</Text>
                     <Text style={styles.respuestaText}>{queja.respuesta}</Text>
                   </View>
+                )}
+
+                {queja.estado === 'Abierto' && (
+                  <TouchableOpacity
+                    style={styles.cancelBtn}
+                    disabled={cancelando === queja.id_solicitud}
+                    onPress={() => Alert.alert('Cancelar reclamo', '¿Seguro que quieres cancelar este reclamo?', [
+                      { text: 'No', style: 'cancel' },
+                      { text: 'Sí, cancelar', style: 'destructive', onPress: async () => {
+                        setCancelando(queja.id_solicitud);
+                        try { await cancelarQueja(queja.id_solicitud); await cargar(); }
+                        catch (err) { Alert.alert('Error', err.response?.data?.detail || 'No se pudo cancelar.'); }
+                        finally { setCancelando(null); }
+                      } },
+                    ])}
+                  >
+                    <Text style={styles.cancelBtnText}>{cancelando === queja.id_solicitud ? 'Cancelando...' : 'Cancelar reclamo'}</Text>
+                  </TouchableOpacity>
                 )}
               </View>
             ))
@@ -394,13 +451,23 @@ export default function QuejasReclamos({ navigation }) {
         </View>
       </Modal>
 
-      <SidebarVendedor
-        visible={sidebarVisible}
-        onClose={() => setSidebarVisible(false)}
-        user={user}
-        navigation={navigation}
-        onSignOut={signOut}
-      />
+      {user?.rol === 'vendedor' ? (
+        <SidebarVendedor
+          visible={sidebarVisible}
+          onClose={() => setSidebarVisible(false)}
+          user={user}
+          navigation={navigation}
+          onSignOut={signOut}
+        />
+      ) : (
+        <SidebarMenu
+          visible={sidebarVisible}
+          onClose={() => setSidebarVisible(false)}
+          user={user}
+          navigation={navigation}
+          onSignOut={signOut}
+        />
+      )}
     </SafeAreaView>
   );
 }
@@ -411,7 +478,7 @@ const styles = StyleSheet.create({
   menuBtn:         { width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.15)', justifyContent: 'center', alignItems: 'center' },
   menuIcon:        { color: WHITE, fontSize: 20, fontWeight: '700' },
   topHeaderTitle:  { fontSize: 18, fontWeight: '800', color: WHITE },
-  scroll: { padding: 16, paddingBottom: 40, backgroundColor: BG },
+  scroll: { padding: 16, paddingBottom: 40, backgroundColor: PRIMARY },
   
   headerBox: {
     flexDirection: 'row', alignItems: 'center', gap: 16,
@@ -478,7 +545,14 @@ const styles = StyleSheet.create({
   submitBtnText: { color: WHITE, fontSize: 15, fontWeight: '700' },
 
   historyTitle: { fontSize: 18, fontWeight: '800', color: PRIMARY, marginBottom: 16 },
-  emptyHistory: { textAlign: 'center', color: GRAY, paddingVertical: 24 },
+  historyHeading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+  historyCount: { color: PRIMARY, backgroundColor: '#F7E9EE', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, fontSize: 11, fontWeight: '700' },
+  filterRow: { gap: 8, paddingBottom: 12 },
+  filterBtn: { borderWidth: 1, borderColor: '#DDD', borderRadius: 16, paddingHorizontal: 12, paddingVertical: 6, backgroundColor: WHITE },
+  filterBtnActive: { backgroundColor: PRIMARY, borderColor: PRIMARY },
+  filterText: { color: '#555', fontSize: 12, fontWeight: '600' },
+  filterTextActive: { color: WHITE },
+  emptyHistory: { textAlign: 'center', color: WHITE, paddingVertical: 24 },
   historyItem: {
     borderTopWidth: 1, borderTopColor: BORDER,
     paddingVertical: 16,
@@ -487,7 +561,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start',
     marginBottom: 8, gap: 10,
   },
-  historyItemTitle: { fontSize: 15, fontWeight: '700', color: '#333', flex: 1, lineHeight: 20 },
+  historyMeta: { fontSize: 11, color: GRAY, marginBottom: 3 },
+  historyItemTitle: { fontSize: 15, fontWeight: '700', color: '#333', lineHeight: 20 },
+  historyStore: { fontSize: 12, color: PRIMARY, marginTop: 3 },
+  progressRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12, paddingHorizontal: 4 },
+  progressStep: { alignItems: 'center', flex: 1 },
+  progressDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#E5DCE0', marginBottom: 4 },
+  progressDotActive: { backgroundColor: PRIMARY },
+  progressText: { color: '#AAA', fontSize: 10, textAlign: 'center' },
+  progressTextActive: { color: PRIMARY, fontWeight: '700' },
   badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
   badgeText: { fontSize: 11, fontWeight: '700' },
   historyDesc: { fontSize: 14, color: '#555', lineHeight: 20, marginBottom: 12 },
@@ -505,6 +587,8 @@ const styles = StyleSheet.create({
   },
   respuestaTitle: { fontSize: 13, fontWeight: '700', color: PRIMARY, marginBottom: 4 },
   respuestaText: { fontSize: 14, color: '#555', lineHeight: 20 },
+  cancelBtn: { alignSelf: 'flex-end', borderWidth: 1, borderColor: '#FCA5A5', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8, marginTop: 12 },
+  cancelBtnText: { color: '#DC2626', fontSize: 12, fontWeight: '700' },
 
   // Modals
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },

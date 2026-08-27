@@ -84,6 +84,8 @@ origins = [
     "http://localhost:3000",
     "http://localhost:8081",       # Expo web (dev)
     "http://127.0.0.1:8081",
+    "http://localhost:8082",       # Expo web (puerto alternativo)
+    "http://127.0.0.1:8082",
     "http://192.168.0.5:8081",    # Expo web desde la IP local
 ]
 
@@ -91,6 +93,7 @@ app.add_middleware(
 
     CORSMiddleware,
     allow_origins=origins,     
+    allow_origin_regex=r"https?://(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+):\d+",
     allow_credentials=True,     
     allow_methods=["*"],
 

@@ -54,6 +54,11 @@ export default function SidebarVendedor({ visible, onClose, user, navigation, on
   const [logoUrl, setLogoUrl] = useState(null);
 
   useEffect(() => {
+    if (user?.rol !== 'vendedor' || !user?.id_tienda) {
+      setLogoUrl(null);
+      return;
+    }
+
     getConfigLibreria()
       .then(r => {
         const raw = r?.data?.logo_url;
@@ -62,7 +67,7 @@ export default function SidebarVendedor({ visible, onClose, user, navigation, on
         setLogoUrl(raw.startsWith('http') ? raw : `${base}/${raw.replace(/^\/+/, '')}`);
       })
       .catch(() => {});
-  }, []);
+  }, [user?.id_tienda, user?.rol]);
 
   useEffect(() => {
     if (visible) {

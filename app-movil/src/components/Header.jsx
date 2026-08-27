@@ -307,8 +307,8 @@ const styles = StyleSheet.create({
     marginRight: 2,
     marginLeft: 0,
   },
-  logoImg: { width: 160, height: 51, resizeMode: 'contain', marginLeft: 0 },
-  logoImgDash: { width: 130, height: 41, resizeMode: 'contain', marginLeft: 0 },
+  logoImg: { width: 160, height: 51, marginLeft: 0 },
+  logoImgDash: { width: 130, height: 41, marginLeft: 0 },
   logoText: { fontSize: 17, fontWeight: '800', color: VINOTINTO },
   logoTextWhite: { color: WHITE },
 
@@ -339,9 +339,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 2,
     paddingBottom: 6,
-    shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
+    boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.04)',
     elevation: 2,
   },
   searchWrapper: {
