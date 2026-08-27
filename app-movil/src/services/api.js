@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://192.168.1.6:8000';
+
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://192.168.137.218:8000';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -38,7 +39,14 @@ export const sendConfirmationEmail = (orderId) => api.post(`/api/v1/orders/${ord
 export const getProfile = () => api.get('/perfil/mi-perfil');
 export const updateProfile = (payload) => api.put('/perfil/actualizar', payload);
 export const updatePreferences = (payload) => api.put('/perfil/preferencias', payload);
+export const uploadProfilePhoto = (formData) =>
+  api.post('/perfil/foto-perfil', formData);
+export const uploadBannerPhoto = (formData) =>
+  api.post('/perfil/banner', formData);
+export const saveBannerColor = (bannerColor) => api.patch('/perfil/banner-color', { banner_color: bannerColor });
+export const getEstadisticasUsuario = () => api.get('/perfil/estadisticas/usuario');
 export const getPurchaseHistory = () => api.get('/perfil/historial/compras');
+export const getDevoluciones = () => api.get('/devoluciones');
 
 // ===== Notificaciones =====
 export const getNotifications = (soloNoLeidas = false, limit = 50, offset = 0) =>

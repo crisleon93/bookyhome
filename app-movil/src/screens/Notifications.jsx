@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { getNotifications, markNotificationRead, markAllNotificationsRead, deleteNotification } from '../services/api';
 import { useNotifications } from '../context/NotificationContext';
 import { AuthContext } from '../context/AuthContext';
+import SidebarMenu from '../components/SidebarMenu';
 import SidebarVendedor from '../components/SidebarVendedor';
 
 const PRIMARY = '#7A1E3A';
@@ -148,21 +149,25 @@ export default function Notifications({ navigation }) {
 
   return (
     <SafeAreaView style={s.safe}>
-      {/* ── Header vino ── */}
-      <View style={s.header}>
-        <TouchableOpacity onPress={() => setSidebarVisible(true)} style={s.menuBtn}>
-          <Text style={s.menuIcon}>☰</Text>
-        </TouchableOpacity>
-        <View style={{ flex: 1 }}>
-          <Text style={s.headerTitle}>Notificaciones</Text>
-          <Text style={s.headerSub}>Mantente al día con tus pedidos y mensajes</Text>
-        </View>
-        {noLeidas > 0 && (
-          <View style={s.unreadBadge}>
-            <Text style={s.unreadBadgeText}>{noLeidas}</Text>
+      {user?.rol === 'vendedor' && (
+        <>
+          {/* ── Header vino del vendedor ── */}
+          <View style={s.header}>
+            <TouchableOpacity onPress={() => setSidebarVisible(true)} style={s.menuBtn}>
+              <Text style={s.menuIcon}>☰</Text>
+            </TouchableOpacity>
+            <View style={{ flex: 1 }}>
+              <Text style={s.headerTitle}>Notificaciones</Text>
+              <Text style={s.headerSub}>Mantente al día con tus pedidos y mensajes</Text>
+            </View>
+            {noLeidas > 0 && (
+              <View style={s.unreadBadge}>
+                <Text style={s.unreadBadgeText}>{noLeidas}</Text>
+              </View>
+            )}
           </View>
-        )}
-      </View>
+        </>
+      )}
 
       {/* ── Body crema ── */}
       <View style={s.body}>
@@ -241,13 +246,23 @@ export default function Notifications({ navigation }) {
         </View>
       </Modal>
 
-      <SidebarVendedor
-        visible={sidebarVisible}
-        onClose={() => setSidebarVisible(false)}
-        user={user}
-        navigation={navigation}
-        onSignOut={signOut}
-      />
+      {user?.rol === 'vendedor' ? (
+        <SidebarVendedor
+          visible={sidebarVisible}
+          onClose={() => setSidebarVisible(false)}
+          user={user}
+          navigation={navigation}
+          onSignOut={signOut}
+        />
+      ) : (
+        <SidebarMenu
+          visible={sidebarVisible}
+          onClose={() => setSidebarVisible(false)}
+          user={user}
+          navigation={navigation}
+          onSignOut={signOut}
+        />
+      )}
 
     </SafeAreaView>
   );
@@ -258,6 +273,9 @@ const s = StyleSheet.create({
 
   /* header */
   header:           { paddingHorizontal: 20, paddingTop: 10, paddingBottom: 22, flexDirection: 'row', alignItems: 'center', gap: 12 },
+  headerActions:    { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  backBtn:          { width: 32, justifyContent: 'center', alignItems: 'flex-start' },
+  backText:         { color: WHITE, fontSize: 28, fontWeight: '400', lineHeight: 28 },
   menuBtn:          { width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.15)', justifyContent: 'center', alignItems: 'center' },
   menuIcon:         { color: WHITE, fontSize: 20, fontWeight: '700' },
   headerTitle:      { fontSize: 20, fontWeight: '900', color: WHITE, letterSpacing: -0.3 },
@@ -266,7 +284,7 @@ const s = StyleSheet.create({
   unreadBadgeText:  { color: PRIMARY, fontWeight: '900', fontSize: 13 },
 
   /* body */
-  body:   { flex: 1, backgroundColor: BG, borderTopLeftRadius: 28, borderTopRightRadius: 28 },
+  body:   { flex: 1, backgroundColor: PRIMARY, borderTopLeftRadius: 28, borderTopRightRadius: 28 },
 
   /* filtros */
   filterRow:       { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingTop: 16, paddingBottom: 10, gap: 8 },
@@ -275,7 +293,7 @@ const s = StyleSheet.create({
   filterText:      { fontSize: 13, fontWeight: '600', color: MUTED },
   filterTextActive:{ color: WHITE, fontWeight: '700' },
   markAllBtn:      { marginLeft: 'auto', paddingVertical: 7, paddingHorizontal: 10 },
-  markAllText:     { color: PRIMARY, fontWeight: '700', fontSize: 13 },
+  markAllText:     { color: WHITE, fontWeight: '700', fontSize: 13 },
 
   /* card */
   card:        { backgroundColor: WHITE, borderRadius: 16, marginBottom: 10, borderWidth: 1, borderColor: BORDER, overflow: 'hidden', elevation: 2, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 4, shadowOffset: { width: 0, height: 2 } },
@@ -304,9 +322,9 @@ const s = StyleSheet.create({
 
   /* estados */
   centered:     { flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 60 },
-  emptyTitle:   { fontSize: 16, fontWeight: '700', color: TEXT, marginBottom: 6 },
-  emptySubtitle:{ fontSize: 13, color: MUTED, textAlign: 'center' },
-  errorText:    { color: '#DC2626', textAlign: 'center', fontSize: 13 },
+  emptyTitle:   { fontSize: 16, fontWeight: '700', color: WHITE, marginBottom: 6 },
+  emptySubtitle:{ fontSize: 13, color: 'rgba(255,255,255,0.75)', textAlign: 'center' },
+  errorText:    { color: '#FFD7DF', textAlign: 'center', fontSize: 13 },
 
   /* modal eliminar */
   modalOverlay:      { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32 },

@@ -377,6 +377,9 @@ export default function Checkout({ route, navigation }) {
           <TouchableOpacity style={styles.payBtn} onPress={handleCardSubmit}>
             <Text style={styles.payBtnText}>Confirmar Pago</Text>
           </TouchableOpacity>
+          <TouchableOpacity onPress={() => navigation.navigate('Cart')} style={styles.backToCart}>
+            <Text style={styles.backToCartText}>Volver al carrito</Text>
+          </TouchableOpacity>
         </View>
       ) : paymentMethod === 'paypal' ? (
         <View style={styles.paypalCard}>
@@ -485,6 +488,8 @@ const styles = StyleSheet.create({
   content: { padding: 16, paddingBottom: 40 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   loadingText: { marginTop: 12, fontSize: 14, color: '#666' },
+  backToCart: { alignSelf: 'flex-start', marginTop: 12, paddingVertical: 10, paddingHorizontal: 16, borderWidth: 1, borderColor: '#7A1E3A', borderRadius: 6, backgroundColor: '#fff' },
+  backToCartText: { color: '#7A1E3A', fontSize: 13, fontWeight: '700', textAlign: 'center' },
   sectionHeader: { fontSize: 16, fontWeight: '700', color: '#2A2A2A', marginTop: 20, marginBottom: 12 },
   orderSummaryCard: { backgroundColor: '#fff', borderRadius: 8, padding: 16, borderWidth: 1, borderColor: '#e0dbd4' },
   summaryItem: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },

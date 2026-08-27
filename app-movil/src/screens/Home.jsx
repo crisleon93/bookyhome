@@ -12,38 +12,38 @@ import { IconShield, IconTruck, IconBook } from '../components/Icons';
 
 const { width } = Dimensions.get('window');
 
-const VINOTINTO  = '#7A1E3A';
+const VINOTINTO = '#7A1E3A';
 const VINOTINTO2 = '#4B1E2F';
-const BEIGE      = '#F0E8DB';
-const WHITE      = '#FFFFFF';
-const DARK       = '#2A2A2A';
-const GRAY       = '#666';
+const BEIGE = '#F0E8DB';
+const WHITE = '#FFFFFF';
+const DARK = '#2A2A2A';
+const GRAY = '#666';
 
 import { LinearGradient } from 'expo-linear-gradient';
 
 const CATEGORIES = [
-  { label: 'Ficción',    img: require('../assets/ficcion.png') },
-  { label: 'Romance',    img: require('../assets/romance.png') },
-  { label: 'Historia',   img: require('../assets/historia.png') },
-  { label: 'Ciencia',    img: require('../assets/ciencia.png') },
-  { label: 'Poesía',     img: require('../assets/poesia.png') },
-  { label: 'Filosofía',  img: require('../assets/filosofia.png') },
-  { label: 'Arte',       img: require('../assets/arte.png') },
-  { label: 'Biografía',  img: require('../assets/biografia.png') },
-  { label: 'Infantil',   img: require('../assets/infantil.png') },
+  { label: 'Ficción', img: require('../assets/ficcion.png') },
+  { label: 'Romance', img: require('../assets/romance.png') },
+  { label: 'Historia', img: require('../assets/historia.png') },
+  { label: 'Ciencia', img: require('../assets/ciencia.png') },
+  { label: 'Poesía', img: require('../assets/poesia.png') },
+  { label: 'Filosofía', img: require('../assets/filosofia.png') },
+  { label: 'Arte', img: require('../assets/arte.png') },
+  { label: 'Biografía', img: require('../assets/biografia.png') },
+  { label: 'Infantil', img: require('../assets/infantil.png') },
   { label: 'Tecnología', img: require('../assets/tecnologia.png') },
 ];
 
 const FEATURES = [
-  { Icon: IconShield, title: 'Compra Protegida',     desc: 'Tu dinero está seguro. Recibe el producto que esperabas o te devolvemos tu dinero. Sistema de protección integral.' },
-  { Icon: IconTruck,  title: 'Envío a Todo el País', desc: 'Envío gratis en compras mayores a $30.000. Seguimiento en tiempo real y entrega garantizada.' },
-  { Icon: IconBook,   title: 'Amplio Catálogo',      desc: 'Desde clásicos hasta novedades. Encuentra libros nuevos, usados y de colección de múltiples librerías.' },
+  { Icon: IconShield, title: 'Compra Protegida', desc: 'Tu dinero está seguro. Recibe el producto que esperabas o te devolvemos tu dinero. Sistema de protección integral.' },
+  { Icon: IconTruck, title: 'Envío a Todo el País', desc: 'Envío gratis en compras mayores a $30.000. Seguimiento en tiempo real y entrega garantizada.' },
+  { Icon: IconBook, title: 'Amplio Catálogo', desc: 'Desde clásicos hasta novedades. Encuentra libros nuevos, usados y de colección de múltiples librerías.' },
 ];
 
 const STEPS = [
-  { num: '1', title: 'Regístrate gratis', desc: 'Crea tu cuenta en minutos y accede a miles de libros de librerías verificadas.',                                      color: VINOTINTO  },
-  { num: '2', title: 'Busca y compara',   desc: 'Encuentra tu libro ideal comparando precios, condiciones y reseñas de diferentes vendedores.',                        color: '#C5425A'  },
-  { num: '3', title: 'Compra seguro',     desc: 'Paga de forma segura y recibe tu libro en la puerta de tu casa con envío protegido.',                                 color: VINOTINTO  },
+  { num: '1', title: 'Regístrate gratis', desc: 'Crea tu cuenta en minutos y accede a miles de libros de librerías verificadas.', color: VINOTINTO },
+  { num: '2', title: 'Busca y compara', desc: 'Encuentra tu libro ideal comparando precios, condiciones y reseñas de diferentes vendedores.', color: '#C5425A' },
+  { num: '3', title: 'Compra seguro', desc: 'Paga de forma segura y recibe tu libro en la puerta de tu casa con envío protegido.', color: VINOTINTO },
 ];
 
 // ── Stat icons: mismos SVG paths que el sitio web ──────────────────────────
@@ -51,40 +51,40 @@ const STEPS = [
 const IconLibro = () => (
   <Svg width="24" height="24" viewBox="0 0 24 24" fill="none"
     stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <Path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2ZM12 6v12M8 10h4M8 14h3"/>
+    <Path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2ZM12 6v12M8 10h4M8 14h3" />
   </Svg>
 );
 
 const IconLibreria = () => (
   <Svg width="24" height="24" viewBox="0 0 24 24" fill="none"
     stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <Path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-    <Path d="M9 22V12h6v10"/>
+    <Path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+    <Path d="M9 22V12h6v10" />
   </Svg>
 );
 
 const IconUsuarios = () => (
   <Svg width="24" height="24" viewBox="0 0 24 24" fill="none"
     stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <Path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-    <Circle cx="9" cy="7" r="4"/>
-    <Path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-    <Path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+    <Path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+    <Circle cx="9" cy="7" r="4" />
+    <Path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+    <Path d="M16 3.13a4 4 0 0 1 0 7.75" />
   </Svg>
 );
 
 const IconEstrella = () => (
   <Svg width="24" height="24" viewBox="0 0 24 24" fill="none"
     stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <Path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+    <Path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
   </Svg>
 );
 
 const STATS = [
-  { val: '+10,000', lbl: 'Libros disponibles',   Icon: IconLibro,    iconBg: VINOTINTO },
-  { val: '+150',    lbl: 'Librerías asociadas',   Icon: IconLibreria, iconBg: '#C5425A' },
-  { val: '+50,000', lbl: 'Usuarios activos',      Icon: IconUsuarios, iconBg: VINOTINTO },
-  { val: '4.8',     lbl: 'Calificación promedio', Icon: IconEstrella, iconBg: '#C5425A' },
+  { val: '+10,000', lbl: 'Libros disponibles', Icon: IconLibro, iconBg: VINOTINTO },
+  { val: '+150', lbl: 'Librerías asociadas', Icon: IconLibreria, iconBg: '#C5425A' },
+  { val: '+50,000', lbl: 'Usuarios activos', Icon: IconUsuarios, iconBg: VINOTINTO },
+  { val: '4.8', lbl: 'Calificación promedio', Icon: IconEstrella, iconBg: '#C5425A' },
 ];
 
 const HERO_IMAGE = {
@@ -178,9 +178,9 @@ export default function Home({ navigation }) {
               </TouchableOpacity>
             ))}
           </View>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.catalogBtn}
-            onPress={() => navigation.navigate('Login')} 
+            onPress={() => navigation.navigate('Login')}
             activeOpacity={0.85}
           >
             <Text style={styles.catalogBtnText}>Ver catálogo completo</Text>
@@ -244,46 +244,46 @@ const styles = StyleSheet.create({
     paddingVertical: 24, paddingHorizontal: 16,
     borderBottomWidth: 1, borderBottomColor: '#F0EBE5',
   },
-  statsGrid:      { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-around', gap: 16 },
-  statItem:       { alignItems: 'center', width: '42%', marginVertical: 12 },
+  statsGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-around', gap: 16 },
+  statItem: { alignItems: 'center', width: '42%', marginVertical: 12 },
   statIconCircle: { width: 65, height: 65, borderRadius: 32.5, justifyContent: 'center', alignItems: 'center', marginBottom: 12 },
-  statEmoji:      { fontSize: 26 },
-  statVal:        { fontSize: 24, fontWeight: '800', color: DARK },
-  statLbl:        { fontSize: 13, color: GRAY, marginTop: 4, textAlign: 'center', fontWeight: '500' },
+  statEmoji: { fontSize: 26 },
+  statVal: { fontSize: 24, fontWeight: '800', color: DARK },
+  statLbl: { fontSize: 13, color: GRAY, marginTop: 4, textAlign: 'center', fontWeight: '500' },
 
   /* Sections */
-  section:      { paddingHorizontal: 16, paddingVertical: 32 },
+  section: { paddingHorizontal: 16, paddingVertical: 32 },
   sectionTitle: { fontSize: 22, fontWeight: '800', color: DARK, textAlign: 'center', marginBottom: 8 },
-  sectionSub:   { fontSize: 14, color: GRAY, textAlign: 'center', marginBottom: 24 },
+  sectionSub: { fontSize: 14, color: GRAY, textAlign: 'center', marginBottom: 24 },
 
   /* Features */
-  featureCard:     { flexDirection: 'row', alignItems: 'flex-start', gap: 14, backgroundColor: WHITE, borderRadius: 14, padding: 16, marginBottom: 12, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
+  featureCard: { flexDirection: 'row', alignItems: 'flex-start', gap: 14, backgroundColor: WHITE, borderRadius: 14, padding: 16, marginBottom: 12, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
   featureIconWrap: { width: 46, height: 46, borderRadius: 23, backgroundColor: '#FCE8EC', justifyContent: 'center', alignItems: 'center' },
-  featureTitle:    { fontSize: 14, fontWeight: '700', color: DARK, marginBottom: 4 },
-  featureDesc:     { fontSize: 12, color: GRAY, lineHeight: 18 },
+  featureTitle: { fontSize: 14, fontWeight: '700', color: DARK, marginBottom: 4 },
+  featureDesc: { fontSize: 12, color: GRAY, lineHeight: 18 },
 
   /* Categories */
-  catGrid:    { flexDirection: 'row', flexWrap: 'wrap', gap: 10, justifyContent: 'center', marginBottom: 16 },
-  catCard:    { width: CARD_W, height: 86, borderRadius: 12, overflow: 'hidden' },
-  catCardBg:  { width: '100%', height: '100%', justifyContent: 'flex-end' },
+  catGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, justifyContent: 'center', marginBottom: 16 },
+  catCard: { width: CARD_W, height: 86, borderRadius: 12, overflow: 'hidden' },
+  catCardBg: { width: '100%', height: '100%', justifyContent: 'flex-end' },
   catCardImg: { borderRadius: 12 },
   catOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.38)', borderRadius: 12 },
-  catLabel:   { color: WHITE, fontWeight: '700', fontSize: 13, padding: 10 },
+  catLabel: { color: WHITE, fontWeight: '700', fontSize: 13, padding: 10 },
   catalogBtn: { backgroundColor: VINOTINTO, paddingVertical: 14, paddingHorizontal: 24, borderRadius: 6, alignItems: 'center', alignSelf: 'center', marginTop: 12, marginBottom: 8, width: '100%' },
   catalogBtnText: { color: WHITE, fontWeight: '800', fontSize: 15 },
 
   /* Steps */
-  stepsRow:    { flexDirection: 'row', gap: 12, marginTop: 10 },
-  stepItem:    { flex: 1, alignItems: 'center' },
+  stepsRow: { flexDirection: 'row', gap: 12, marginTop: 10 },
+  stepItem: { flex: 1, alignItems: 'center' },
   stepNumWrap: { width: 52, height: 52, borderRadius: 26, justifyContent: 'center', alignItems: 'center', marginBottom: 12 },
-  stepNum:     { color: WHITE, fontSize: 20, fontWeight: '800' },
-  stepTitle:   { fontSize: 13, fontWeight: '700', color: DARK, marginBottom: 6, textAlign: 'center' },
-  stepDesc:    { fontSize: 11, color: GRAY, lineHeight: 17, textAlign: 'center' },
+  stepNum: { color: WHITE, fontSize: 20, fontWeight: '800' },
+  stepTitle: { fontSize: 13, fontWeight: '700', color: DARK, marginBottom: 6, textAlign: 'center' },
+  stepDesc: { fontSize: 11, color: GRAY, lineHeight: 17, textAlign: 'center' },
 
   /* Librería CTA */
-  libCta:        { paddingHorizontal: 24, paddingVertical: 36, alignItems: 'center' },
-  libCtaTitle:   { color: WHITE, fontSize: 24, fontWeight: '800', textAlign: 'center', marginBottom: 10 },
-  libCtaSub:     { color: 'rgba(255,255,255,0.8)', fontSize: 15, textAlign: 'center', lineHeight: 22, marginBottom: 24 },
-  libCtaBtn:     { backgroundColor: WHITE, borderRadius: 6, paddingHorizontal: 28, paddingVertical: 14 },
+  libCta: { paddingHorizontal: 24, paddingVertical: 36, alignItems: 'center' },
+  libCtaTitle: { color: WHITE, fontSize: 24, fontWeight: '800', textAlign: 'center', marginBottom: 10 },
+  libCtaSub: { color: 'rgba(255,255,255,0.8)', fontSize: 15, textAlign: 'center', lineHeight: 22, marginBottom: 24 },
+  libCtaBtn: { backgroundColor: WHITE, borderRadius: 6, paddingHorizontal: 28, paddingVertical: 14 },
   libCtaBtnText: { color: VINOTINTO, fontWeight: '800', fontSize: 15 },
 });

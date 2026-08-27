@@ -135,107 +135,107 @@ export default function ConfiguracionTienda({ navigation }) {
         <Text style={styles.topHeaderTitle}>Configuración de tienda</Text>
       </View>
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>Configuración de Tienda</Text>
-      
-      {/* Imágenes */}
-      <View style={styles.imagesCard}>
-        <Text style={styles.label}>Imágenes del Perfil</Text>
-        
-        {/* Banner */}
-        <TouchableOpacity style={styles.bannerContainer} onPress={() => handlePickImage('banner')}>
-          {config.banner_url ? (
-            <Image source={getImageUri(config.banner_url)} style={styles.bannerImg} />
-          ) : (
-            <View style={styles.bannerPlaceholder}>
-              <Text style={styles.uploadText}>Subir Banner (16:9)</Text>
-            </View>
-          )}
+        <Text style={styles.title}>Configuración de Tienda</Text>
+
+        {/* Imágenes */}
+        <View style={styles.imagesCard}>
+          <Text style={styles.label}>Imágenes del Perfil</Text>
+
+          {/* Banner */}
+          <TouchableOpacity style={styles.bannerContainer} onPress={() => handlePickImage('banner')}>
+            {config.banner_url ? (
+              <Image source={getImageUri(config.banner_url)} style={styles.bannerImg} />
+            ) : (
+              <View style={styles.bannerPlaceholder}>
+                <Text style={styles.uploadText}>Subir Banner (16:9)</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+
+          {/* Logo */}
+          <TouchableOpacity style={styles.logoContainer} onPress={() => handlePickImage('logo')}>
+            {config.logo_url ? (
+              <Image source={getImageUri(config.logo_url)} style={styles.logoImg} />
+            ) : (
+              <View style={styles.logoPlaceholder}>
+                <Text style={styles.uploadText}>Subir Logo</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+        </View>
+
+        {/* Información Básica */}
+        <View style={styles.card}>
+          <Text style={styles.label}>Información Pública</Text>
+
+          <TextInput
+            style={[styles.input, styles.textArea]}
+            placeholder="Descripción breve de tu tienda..."
+            multiline
+            value={config.descripcion}
+            onChangeText={(v) => handleChange('descripcion', v)}
+          />
+
+          <TextInput
+            style={styles.input}
+            placeholder="Ciudad de Origen"
+            value={config.ciudad_origen}
+            onChangeText={(v) => handleChange('ciudad_origen', v)}
+          />
+
+          <TextInput
+            style={styles.input}
+            placeholder="Email Público (Contacto)"
+            keyboardType="email-address"
+            value={config.email_publico}
+            onChangeText={(v) => handleChange('email_publico', v)}
+          />
+
+          <TextInput
+            style={styles.input}
+            placeholder="Horario de Atención (Ej: Lun-Vie 9am-6pm)"
+            value={config.horario_atencion}
+            onChangeText={(v) => handleChange('horario_atencion', v)}
+          />
+        </View>
+
+        {/* Logística y Políticas */}
+        <View style={styles.card}>
+          <Text style={styles.label}>Políticas y Logística</Text>
+
+          <TextInput
+            style={styles.input}
+            placeholder="Días promedio de despacho"
+            keyboardType="numeric"
+            value={String(config.tiempo_despacho_dias)}
+            onChangeText={(v) => handleChange('tiempo_despacho_dias', v)}
+          />
+
+          <TextInput
+            style={[styles.input, styles.textArea]}
+            placeholder="Políticas de envío (costos, transportadoras...)"
+            multiline
+            value={config.politica_envios}
+            onChangeText={(v) => handleChange('politica_envios', v)}
+          />
+
+          <TextInput
+            style={[styles.input, styles.textArea]}
+            placeholder="Políticas de devoluciones y garantías..."
+            multiline
+            value={config.politica_devoluciones}
+            onChangeText={(v) => handleChange('politica_devoluciones', v)}
+          />
+        </View>
+
+        <TouchableOpacity style={[styles.saveBtn, saving && styles.disabledBtn]} onPress={handleSave} disabled={saving || loading}>
+          <Text style={styles.saveBtnText}>{saving ? 'Guardando...' : 'Guardar Cambios'}</Text>
         </TouchableOpacity>
 
-        {/* Logo */}
-        <TouchableOpacity style={styles.logoContainer} onPress={() => handlePickImage('logo')}>
-          {config.logo_url ? (
-            <Image source={getImageUri(config.logo_url)} style={styles.logoImg} />
-          ) : (
-            <View style={styles.logoPlaceholder}>
-              <Text style={styles.uploadText}>Subir Logo</Text>
-            </View>
-          )}
-        </TouchableOpacity>
-      </View>
-
-      {/* Información Básica */}
-      <View style={styles.card}>
-        <Text style={styles.label}>Información Pública</Text>
-        
-        <TextInput
-          style={[styles.input, styles.textArea]}
-          placeholder="Descripción breve de tu tienda..."
-          multiline
-          value={config.descripcion}
-          onChangeText={(v) => handleChange('descripcion', v)}
-        />
-        
-        <TextInput
-          style={styles.input}
-          placeholder="Ciudad de Origen"
-          value={config.ciudad_origen}
-          onChangeText={(v) => handleChange('ciudad_origen', v)}
-        />
-        
-        <TextInput
-          style={styles.input}
-          placeholder="Email Público (Contacto)"
-          keyboardType="email-address"
-          value={config.email_publico}
-          onChangeText={(v) => handleChange('email_publico', v)}
-        />
-
-        <TextInput
-          style={styles.input}
-          placeholder="Horario de Atención (Ej: Lun-Vie 9am-6pm)"
-          value={config.horario_atencion}
-          onChangeText={(v) => handleChange('horario_atencion', v)}
-        />
-      </View>
-
-      {/* Logística y Políticas */}
-      <View style={styles.card}>
-        <Text style={styles.label}>Políticas y Logística</Text>
-        
-        <TextInput
-          style={styles.input}
-          placeholder="Días promedio de despacho"
-          keyboardType="numeric"
-          value={String(config.tiempo_despacho_dias)}
-          onChangeText={(v) => handleChange('tiempo_despacho_dias', v)}
-        />
-        
-        <TextInput
-          style={[styles.input, styles.textArea]}
-          placeholder="Políticas de envío (costos, transportadoras...)"
-          multiline
-          value={config.politica_envios}
-          onChangeText={(v) => handleChange('politica_envios', v)}
-        />
-
-        <TextInput
-          style={[styles.input, styles.textArea]}
-          placeholder="Políticas de devoluciones y garantías..."
-          multiline
-          value={config.politica_devoluciones}
-          onChangeText={(v) => handleChange('politica_devoluciones', v)}
-        />
-      </View>
-
-      <TouchableOpacity style={[styles.saveBtn, saving && styles.disabledBtn]} onPress={handleSave} disabled={saving || loading}>
-        <Text style={styles.saveBtnText}>{saving ? 'Guardando...' : 'Guardar Cambios'}</Text>
-      </TouchableOpacity>
-      
-      {loading && saving === false && (
-        <ActivityIndicator size="small" color="#7A1E3A" style={{ marginTop: 10 }} />
-      )}
-    </ScrollView>
+        {loading && saving === false && (
+          <ActivityIndicator size="small" color="#7A1E3A" style={{ marginTop: 10 }} />
+        )}
+      </ScrollView>
 
       <SidebarVendedor
         visible={sidebarVisible}
@@ -249,30 +249,30 @@ export default function ConfiguracionTienda({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container:      { flex: 1, backgroundColor: '#fdfbfa' },
-  center:         { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  topHeader:      { flexDirection: 'row', alignItems: 'center', backgroundColor: '#7A1E3A', paddingHorizontal: 16, paddingVertical: 14, gap: 12 },
-  menuBtn:        { width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.15)', justifyContent: 'center', alignItems: 'center' },
-  menuIcon:       { color: '#FFFFFF', fontSize: 20, fontWeight: '700' },
+  container: { flex: 1, backgroundColor: '#fdfbfa' },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  topHeader: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#7A1E3A', paddingHorizontal: 16, paddingVertical: 14, gap: 12 },
+  menuBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.15)', justifyContent: 'center', alignItems: 'center' },
+  menuIcon: { color: '#FFFFFF', fontSize: 20, fontWeight: '700' },
   topHeaderTitle: { fontSize: 18, fontWeight: '800', color: '#FFFFFF' },
   content: { padding: 16, paddingBottom: 40 },
   title: { fontSize: 22, fontWeight: '800', color: '#7A1E3A', marginBottom: 20 },
-  
+
   card: { backgroundColor: '#fff', borderRadius: 8, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: '#eee' },
   imagesCard: { backgroundColor: '#fff', borderRadius: 8, marginBottom: 16, borderWidth: 1, borderColor: '#eee', position: 'relative', height: 200 },
-  
+
   label: { fontSize: 14, fontWeight: '700', color: '#2A2A2A', marginBottom: 10 },
   input: { borderWidth: 1, borderColor: '#e0dbd4', borderRadius: 6, padding: 12, marginBottom: 12, fontSize: 14, color: '#333', backgroundColor: '#fafafa' },
   textArea: { minHeight: 80, textAlignVertical: 'top' },
-  
+
   bannerContainer: { height: 120, width: '100%', backgroundColor: '#eee', borderTopLeftRadius: 8, borderTopRightRadius: 8, overflow: 'hidden' },
   bannerImg: { width: '100%', height: '100%', resizeMode: 'cover' },
   bannerPlaceholder: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  
+
   logoContainer: { position: 'absolute', bottom: 15, left: 16, width: 80, height: 80, borderRadius: 40, backgroundColor: '#ddd', borderWidth: 3, borderColor: '#fff', overflow: 'hidden', zIndex: 10 },
   logoImg: { width: '100%', height: '100%', resizeMode: 'cover' },
   logoPlaceholder: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 5 },
-  
+
   uploadText: { fontSize: 10, color: '#666', fontWeight: 'bold', textAlign: 'center' },
 
   saveBtn: { backgroundColor: '#7A1E3A', paddingVertical: 15, borderRadius: 8, alignItems: 'center', marginTop: 10 },

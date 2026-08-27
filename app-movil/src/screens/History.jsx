@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useContext } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -7,14 +7,13 @@ import {
   StyleSheet,
   ActivityIndicator,
   Alert,
-  Linking,
   Modal,
   ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Print from 'expo-print';
-import { getOrdenes, getOrderDetails, getApiBaseUrl, sendConfirmationEmail } from '../services/api';
-import { AuthContext } from '../context/AuthContext';
+import { getOrdenes, getDevoluciones, getOrderDetails, sendConfirmationEmail } from '../services/api';
+import { IconAlertTriangle, IconStar, IconTruck } from '../components/Icons';
 
 const PRIMARY = '#7A1E3A';
 const WHITE = '#FFFFFF';
@@ -23,8 +22,7 @@ const BORDER = '#E0DBD4';
 const TEXT = '#2A2A2A';
 const MUTED = '#777';
 
-export default function History() {
-  const { token } = useContext(AuthContext);
+export default function History({ navigation }) {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -33,14 +31,16 @@ export default function History() {
   const [detalleLoading, setDetalleLoading] = useState(false);
   const [emailLoading, setEmailLoading] = useState(false);
   const [printLoading, setPrintLoading] = useState(false);
+  const [devoluciones, setDevoluciones] = useState([]);
 
   useEffect(() => {
     const loadHistory = async () => {
       try {
         // La web usa este mismo endpoint. Sus identificadores permiten abrir
         // exactamente la misma orden en el checkout móvil.
-        const res = await getOrdenes();
-        setHistory(res.data || []);
+        const [ordenesRes, devolucionesRes] = await Promise.all([getOrdenes(), getDevoluciones()]);
+        setHistory(ordenesRes.data || []);
+        setDevoluciones(devolucionesRes.data || []);
       } catch (e) {
         console.log('Error loading history', e.message);
         setError('No se pudo cargar el historial');
@@ -50,15 +50,6 @@ export default function History() {
     };
     loadHistory();
   }, []);
-
-  const handleDescargar = (id_variante, titulo) => {
-    if (!token) {
-      Alert.alert('Sesión expirada', 'Inicia sesión nuevamente.');
-      return;
-    }
-    const url = `${getApiBaseUrl()}/libros/descargar/${id_variante}?token=${token}`;
-    Linking.openURL(url);
-  };
 
   const handleVerOrden = async (orden) => {
     setOrdenSeleccionada(orden);
@@ -74,29 +65,36 @@ export default function History() {
     }
   };
 
-  const obtenerPasoActual = (orden) => {
-    const estado = String(orden?.estado || '').toLowerCase();
-    const estadoEnvio = String(orden?.envio?.estado_envio || '').toLowerCase();
+  const obtenerEstadoVisible = (orden) => {
+    const devolucion = devoluciones.find((item) => Number(item.id_orden) === Number(orden.id_orden));
+    const estadoDevolucion = String(devolucion?.estado_devolucion || '').toLowerCase();
+    if (['completada', 'resuelta', 'reembolsada', 'devuelta'].includes(estadoDevolucion)) {
+      return { pago: 'Reembolsado', entrega: 'Devolución', color: '#7A1E3A', entregaColor: '#7A1E3A' };
+    }
 
-    // El pedido mantiene el pago y el envío por separado. Se usa el estado
-    // más avanzado para que la línea se actualice al registrar la guía o al
-    // confirmar la entrega, aunque la orden siga figurando como “pagado”.
-    if (estado.includes('entreg') || estadoEnvio.includes('entreg')) return 3;
-    if (
-      estado.includes('enviad') ||
-      estadoEnvio.includes('transit') ||
-      estadoEnvio.includes('camino') ||
-      estadoEnvio.includes('despach')
-    ) return 2;
-    if (
-      estado.includes('proceso') ||
-      estado.includes('prepar') ||
-      estadoEnvio.includes('guía registrada') ||
-      estadoEnvio.includes('guia registrada') ||
-      orden?.envio?.numero_guia
-    ) return 1;
-    if (estado.includes('pagad') || estado.includes('complet')) return 0;
-    return -1;
+    const estado = String(orden.estado || orden.estado_orden || '').toLowerCase();
+    const estadoEnvio = String(orden.envio?.estado_envio || '').toLowerCase();
+    if (estado.includes('cancelad') || estadoEnvio.includes('cancelad')) {
+      return { pago: 'Cancelada', entrega: null, color: '#DC2626' };
+    }
+    if (estado.includes('entregad') || estadoEnvio.includes('entregad')) {
+      return { pago: 'Pagado', entrega: 'Entregado', color: '#16A34A', entregaColor: '#16A34A' };
+    }
+    if (estado.includes('enviad') || estadoEnvio.includes('transit') || estadoEnvio.includes('camino')) {
+      return { pago: 'Pagado', entrega: 'En camino', color: '#16A34A', entregaColor: '#2563EB' };
+    }
+    if (estado === 'pagado') {
+      return { pago: 'Pagado', entrega: 'Preparando envío', color: '#16A34A', entregaColor: '#D97706' };
+    }
+    return { pago: 'Pendiente de pago', entrega: null, color: '#D97706' };
+  };
+
+  const renderEstadoIcono = (orden, estadoVisible) => {
+    if (estadoVisible.pago === 'Cancelada') return <IconAlertTriangle size={20} color="#DC2626" />;
+    if (estadoVisible.pago === 'Pendiente de pago') return <IconAlertTriangle size={20} color="#D97706" />;
+    if (estadoVisible.entrega === 'Entregado') return <IconStar size={20} color="#16A34A" filled />;
+    if (estadoVisible.entrega === 'En camino' || estadoVisible.entrega === 'Preparando envío') return <IconTruck size={20} color="#2563EB" />;
+    return <IconTruck size={20} color="#2563EB" />;
   };
 
   const enviarComprobante = async () => {
@@ -128,36 +126,38 @@ export default function History() {
     }
   };
 
-  const renderItem = ({ item }) => (
+  const renderItem = ({ item }) => {
+    const estadoVisible = obtenerEstadoVisible(item);
+    return (
     <View style={styles.card}>
-      <View style={styles.cardHeader}>
+      <View style={styles.statusIcon}>{renderEstadoIcono(item, estadoVisible)}</View>
+      <View style={styles.orderInfo}>
         <Text style={styles.cardTitle}>Orden #{item.id_orden}</Text>
-      <Text style={styles.cardStatus}>{item.estado || 'Pendiente'}</Text>
+        <View style={styles.metaRow}>
+          <Text style={styles.cardText}>{item.fecha ? new Date(item.fecha).toLocaleDateString('es-CO') : 'Sin fecha'}</Text>
+          <Text style={styles.metaDivider}>·</Text>
+          <Text style={styles.cardText}>{item.items?.length || 0} producto{item.items?.length === 1 ? '' : 's'}</Text>
+        </View>
+        <View style={styles.statusGroup}>
+          <Text style={[styles.statusBadge, { color: estadoVisible.color, backgroundColor: `${estadoVisible.color}18`, borderColor: `${estadoVisible.color}55` }]}>{estadoVisible.pago}</Text>
+          {estadoVisible.entrega && <Text style={[styles.statusBadge, { color: estadoVisible.entregaColor, backgroundColor: `${estadoVisible.entregaColor}18`, borderColor: `${estadoVisible.entregaColor}55` }]}>{estadoVisible.entrega}</Text>}
+        </View>
       </View>
-      <Text style={styles.cardText}>Fecha: {item.fecha ? new Date(item.fecha).toLocaleDateString('es-CO') : 'Sin fecha'}</Text>
-      <Text style={styles.cardText}>Total: ${Number(item.total ?? 0).toLocaleString('es-CO')}</Text>
-      <Text style={styles.cardText}>Items: {item.items?.length || 0}</Text>
-      {item.items?.length ? <Text style={styles.cardText}>Libros: {item.items.map((libro) => libro.titulo).join(', ')}</Text> : null}
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10 }}>
-        <TouchableOpacity
-          style={styles.detailBtn}
-          onPress={() => handleVerOrden(item)}
-        >
-          <Text style={styles.detailBtnText}>Ver orden</Text>
-        </TouchableOpacity>
-        {/* Botón de descarga si hay variantes digitales */}
-        {item.items?.filter((d) => d.variante_label?.includes('Digital') || d.tipo_tapa === 'Digital').map((d, idx) => (
-          <TouchableOpacity
-            key={idx}
-            style={[styles.detailBtn, { backgroundColor: '#2e7d32' }]}
-            onPress={() => handleDescargar(d.id_variante, d.titulo)}
-          >
-            <Text style={styles.detailBtnText}>📥 {d.titulo}</Text>
+      <View style={styles.orderAction}>
+        <Text style={styles.orderTotal}>$ {Number(item.total ?? 0).toLocaleString('es-CO')}</Text>
+        {estadoVisible.pago === 'Pendiente de pago' ? (
+          <TouchableOpacity style={styles.detailBtn} onPress={() => navigation.navigate('Checkout', { orderId: item.id_orden })}>
+            <Text style={styles.detailBtnText}>Pagar orden</Text>
           </TouchableOpacity>
-        ))}
+        ) : (
+          <TouchableOpacity style={styles.detailBtn} onPress={() => handleVerOrden(item)}>
+            <Text style={styles.detailBtnText}>Ver Baucher</Text>
+          </TouchableOpacity>
+        )}
       </View>
     </View>
-  );
+    );
+  };
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -205,22 +205,7 @@ export default function History() {
                   <View style={styles.detailRow}><Text style={styles.detailLabel}>Número de orden</Text><Text style={styles.detailValue}>#{ordenSeleccionada.id_orden}</Text></View>
                   <View style={styles.detailRow}><Text style={styles.detailLabel}>Fecha</Text><Text style={styles.detailValue}>{ordenSeleccionada.fecha ? new Date(ordenSeleccionada.fecha).toLocaleDateString('es-CO') : '—'}</Text></View>
                   <View style={styles.detailRow}><Text style={styles.detailLabel}>Método de pago</Text><Text style={styles.detailValue}>{ordenSeleccionada.metodo_pago || 'Pendiente de pago'}</Text></View>
-                  <View style={styles.detailRow}><Text style={styles.detailLabel}>Estado</Text><Text style={styles.statusBadge}>{ordenSeleccionada.estado || 'pendiente'}</Text></View>
-                </View>
-
-                <Text style={styles.productsTitle}>Estado de tu pedido</Text>
-                <View style={styles.timeline}>
-                  {['Pagado', 'En proceso', 'Enviado', 'Entregado'].map((paso, index) => {
-                    const pasoActual = obtenerPasoActual(ordenSeleccionada);
-                    const activo = index <= pasoActual;
-                    return (
-                      <View key={paso} style={styles.timelineStep}>
-                        {index > 0 && <View style={[styles.timelineLine, index <= pasoActual && styles[`timelineLine${index}`]]} />}
-                        <View style={[styles.timelineDot, activo && styles[`timelineDot${index}`]]}><Text style={styles.timelineDotText}>{activo ? '✓' : index + 1}</Text></View>
-                        <Text style={[styles.timelineLabel, activo && styles[`timelineLabel${index}`]]}>{paso}</Text>
-                      </View>
-                    );
-                  })}
+                  <View style={styles.detailRow}><Text style={styles.detailLabel}>Estado</Text><Text style={styles.detailStatusBadge}>{ordenSeleccionada.estado || 'pendiente'}</Text></View>
                 </View>
 
                 <Text style={styles.productsTitle}>Productos comprados</Text>
@@ -256,35 +241,47 @@ export default function History() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#7A1E3A' },
-  container: { flex: 1, padding: 16 },
+  safe: { flex: 1, backgroundColor: PRIMARY },
+  container: { flex: 1, padding: 16, backgroundColor: PRIMARY },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  title: { fontSize: 22, fontWeight: '800', color: TEXT, marginBottom: 6 },
-  subtitle: { fontSize: 14, color: MUTED, marginBottom: 18 },
+  title: { fontSize: 22, fontWeight: '800', color: WHITE, marginBottom: 6 },
+  subtitle: { fontSize: 14, color: 'rgba(255,255,255,0.75)', marginBottom: 18 },
   list: { paddingBottom: 24 },
   card: {
     backgroundColor: WHITE,
     borderRadius: 14,
-    padding: 16,
-    marginBottom: 14,
+    paddingVertical: 20,
+    paddingHorizontal: 16,
+    marginBottom: 18,
+    minHeight: 104,
     borderWidth: 1,
     borderColor: BORDER,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
   },
-  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },
-  cardTitle: { fontSize: 16, fontWeight: '700', color: TEXT },
-  cardStatus: { fontSize: 13, color: PRIMARY, fontWeight: '700' },
-  cardText: { color: MUTED, marginBottom: 4 },
+  statusIcon: { width: 36, alignItems: 'center', justifyContent: 'center' },
+  orderInfo: { flex: 1, minWidth: 0 },
+  cardHeader: { marginBottom: 4 },
+  cardTitle: { fontSize: 16, fontWeight: '800', color: TEXT },
+  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 3 },
+  metaDivider: { color: '#C8C0BA', fontSize: 13 },
+  cardText: { color: MUTED, marginBottom: 0, fontSize: 12 },
+  statusGroup: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 8 },
+  statusBadge: { borderWidth: 1, borderRadius: 12, paddingHorizontal: 9, paddingVertical: 4, fontSize: 11, fontWeight: '700' },
+  orderAction: { alignItems: 'flex-end', width: 116 },
+  orderTotal: { color: TEXT, fontSize: 15, fontWeight: '800', marginBottom: 8 },
   detailBtn: {
-    marginTop: 10,
-    alignSelf: 'flex-start',
+    width: 116,
+    alignItems: 'center',
     backgroundColor: PRIMARY,
-    borderRadius: 12,
+    borderRadius: 7,
     paddingVertical: 10,
-    paddingHorizontal: 18,
+    paddingHorizontal: 8,
   },
-  detailBtnText: { color: WHITE, fontWeight: '700' },
-  emptyText: { color: MUTED, textAlign: 'center', marginTop: 20 },
-  errorText: { color: '#C5425A', textAlign: 'center' },
+  detailBtnText: { color: WHITE, fontWeight: '700', fontSize: 11, textAlign: 'center' },
+  emptyText: { color: WHITE, textAlign: 'center', marginTop: 20 },
+  errorText: { color: '#FFD7DF', textAlign: 'center' },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 18 },
   detailModal: { maxHeight: '88%', backgroundColor: WHITE, borderRadius: 18, padding: 20 },
   detailLoading: { alignItems: 'center', gap: 14, paddingVertical: 45 },
@@ -297,7 +294,7 @@ const styles = StyleSheet.create({
   detailRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 12 },
   detailLabel: { color: MUTED, fontSize: 13, flex: 1 },
   detailValue: { color: TEXT, fontSize: 13, fontWeight: '700', flexShrink: 1, textAlign: 'right' },
-  statusBadge: { color: '#287A45', backgroundColor: '#E8F5E9', paddingHorizontal: 9, paddingVertical: 3, borderRadius: 12, fontWeight: '800', fontSize: 12, textTransform: 'capitalize' },
+  detailStatusBadge: { color: '#287A45', backgroundColor: '#E8F5E9', paddingHorizontal: 9, paddingVertical: 3, borderRadius: 12, fontWeight: '800', fontSize: 12, textTransform: 'capitalize' },
   productsTitle: { color: TEXT, fontSize: 16, fontWeight: '800', marginTop: 18, marginBottom: 10 },
   productRow: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: '#FAF8F6', borderWidth: 1, borderColor: BORDER, borderRadius: 9, padding: 12, marginBottom: 8 },
   productTitle: { color: TEXT, fontSize: 14, fontWeight: '700', marginBottom: 3 },

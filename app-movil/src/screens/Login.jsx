@@ -103,6 +103,8 @@ export default function Login({ navigation }) {
   };
 
   const handleLogin = async () => {
+    if (loading) return;
+
     if (!email.trim() || !password) {
       Alert.alert('Error', 'Ingresa email y contraseña');
       return;
@@ -121,6 +123,9 @@ export default function Login({ navigation }) {
         await signIn(token, { enableBiometrics: false });
       }
     } catch (err) {
+      if (err.code === 'ERR_CANCELED' || err.name === 'CanceledError') {
+        return;
+      }
       const msg = err.response?.data?.detail || err.message || 'Error';
       Alert.alert('Error', String(msg));
     } finally {
@@ -469,9 +474,7 @@ const styles = StyleSheet.create({
     padding: 28,
     width: '100%',
     maxWidth: 460,
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowRadius: 20,
+    boxShadow: '0px 4px 20px rgba(0, 0, 0, 0.08)',
     elevation: 4,
   },
   heroContainer: { alignItems: 'center', marginBottom: 4 },
@@ -542,7 +545,7 @@ const styles = StyleSheet.create({
   bioModalCard: {
     backgroundColor: WHITE, borderRadius: 18, width: '100%',
     overflow: 'hidden',
-    shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 20, elevation: 8,
+    boxShadow: '0px 4px 20px rgba(0, 0, 0, 0.15)', elevation: 8,
   },
   bioModalHeader: {
     backgroundColor: VINOTINTO, paddingVertical: 18, paddingHorizontal: 24,
@@ -571,7 +574,7 @@ const styles = StyleSheet.create({
     color: GRAY, fontSize: 14, fontWeight: '600',
   },
   bioSuccessOverlay: { flex: 1, backgroundColor: 'rgba(42, 18, 28, 0.5)', justifyContent: 'center', paddingHorizontal: 28 },
-  bioSuccessCard: { backgroundColor: WHITE, borderWidth: 2, borderColor: VINOTINTO, borderRadius: 18, padding: 26, alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.24, shadowRadius: 14, elevation: 8 },
+  bioSuccessCard: { backgroundColor: WHITE, borderWidth: 2, borderColor: VINOTINTO, borderRadius: 18, padding: 26, alignItems: 'center', boxShadow: '0px 4px 14px rgba(0, 0, 0, 0.24)', elevation: 8 },
   bioSuccessIcon: { width: 58, height: 58, borderRadius: 29, backgroundColor: VINOTINTO, alignItems: 'center', justifyContent: 'center', marginBottom: 14 },
   bioSuccessIconText: { color: WHITE, fontSize: 30, fontWeight: '900' },
   bioSuccessTitle: { color: VINOTINTO, fontSize: 21, fontWeight: '800', marginBottom: 8 },

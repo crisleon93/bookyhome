@@ -92,12 +92,12 @@ export default function ListaDeseos({ navigation }) {
 }
 
 const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FAF8F5', paddingHorizontal: 16, paddingTop: 16 },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FAF8F5', padding: 24 },
-  header: { fontSize: 20, fontWeight: '700', color: '#7A1E3A', marginBottom: 14 },
+  container: { flex: 1, backgroundColor: '#7A1E3A', paddingHorizontal: 16, paddingTop: 16 },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#7A1E3A', padding: 24 },
+  header: { fontSize: 20, fontWeight: '700', color: '#FFFFFF', marginBottom: 14 },
   emptyIcon: { fontSize: 52, marginBottom: 12 },
-  emptyTitle: { fontSize: 18, fontWeight: '700', color: '#333', marginBottom: 6 },
-  emptySubtitle: { fontSize: 14, color: '#888', textAlign: 'center', marginBottom: 20, lineHeight: 20 },
+  emptyTitle: { fontSize: 18, fontWeight: '700', color: '#FFFFFF', marginBottom: 6 },
+  emptySubtitle: { fontSize: 14, color: 'rgba(255,255,255,0.75)', textAlign: 'center', marginBottom: 20, lineHeight: 20 },
   btn: { backgroundColor: '#7A1E3A', paddingVertical: 12, paddingHorizontal: 28, borderRadius: 10 },
   btnText: { color: 'white', fontWeight: '700', fontSize: 15 },
   card: { flexDirection: 'row', backgroundColor: 'white', borderRadius: 12, marginBottom: 12, overflow: 'hidden', elevation: 2, shadowColor: '#000', shadowOpacity: 0.07, shadowRadius: 6, shadowOffset: { width: 0, height: 2 } },

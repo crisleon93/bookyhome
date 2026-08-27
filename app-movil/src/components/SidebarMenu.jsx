@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity,
+  View, Text, StyleSheet, TouchableOpacity, Image,
   Modal, Animated, Dimensions, Platform
 } from 'react-native';
 import { 
@@ -8,14 +8,23 @@ import {
   IconStore, IconPackage, IconLogout, IconChevronRight, IconBell, IconChat, IconLocation
 } from './Icons';
 import { useNotifications } from '../context/NotificationContext';
+import { getApiBaseUrl, getProfile } from '../services/api';
+import { LinearGradient } from 'expo-linear-gradient';
 
 const { width } = Dimensions.get('window');
 const DRAWER_WIDTH = width * 0.75 > 320 ? 320 : width * 0.75;
+const USE_NATIVE_DRIVER = Platform.OS !== 'web';
 
 export default function SidebarMenu({ visible, onClose, user, navigation, onSignOut }) {
   const slideAnim = useRef(new Animated.Value(-DRAWER_WIDTH)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
+  const [profile, setProfile] = React.useState(null);
   const { unreadNotifCount, unreadMsgCount } = useNotifications();
+
+  useEffect(() => {
+    if (!visible) return;
+    getProfile().then((response) => setProfile(response.data || {})).catch(() => {});
+  }, [visible]);
 
   useEffect(() => {
     if (visible) {
@@ -23,12 +32,12 @@ export default function SidebarMenu({ visible, onClose, user, navigation, onSign
         Animated.timing(slideAnim, {
           toValue: 0,
           duration: 300,
-          useNativeDriver: true,
+          useNativeDriver: USE_NATIVE_DRIVER,
         }),
         Animated.timing(fadeAnim, {
           toValue: 1,
           duration: 300,
-          useNativeDriver: true,
+          useNativeDriver: USE_NATIVE_DRIVER,
         })
       ]).start();
     } else {
@@ -36,12 +45,12 @@ export default function SidebarMenu({ visible, onClose, user, navigation, onSign
         Animated.timing(slideAnim, {
           toValue: -DRAWER_WIDTH,
           duration: 250,
-          useNativeDriver: true,
+          useNativeDriver: USE_NATIVE_DRIVER,
         }),
         Animated.timing(fadeAnim, {
           toValue: 0,
           duration: 250,
-          useNativeDriver: true,
+          useNativeDriver: USE_NATIVE_DRIVER,
         })
       ]).start();
     }
@@ -57,16 +66,30 @@ export default function SidebarMenu({ visible, onClose, user, navigation, onSign
   };
 
   const isVendedor = user?.rol === 'vendedor';
+  const profilePhoto = profile?.foto_perfil;
+  const profilePhotoUrl = profilePhoto
+    ? `${getApiBaseUrl()}/${profilePhoto.replace(/^\/+/, '')}`
+    : null;
+  const bannerPath = profile?.banner_perfil;
+  const bannerUrl = bannerPath
+    ? `${getApiBaseUrl()}/${bannerPath.replace(/^\/+/, '')}`
+    : null;
+  const headerColor = profile?.banner_color && !profile.banner_color.startsWith('linear-gradient')
+    ? profile.banner_color
+    : '#7A1E3A';
+  const bannerGradient = profile?.banner_color?.startsWith('linear-gradient')
+    ? profile.banner_color.match(/#[0-9a-f]{6}/gi)
+    : null;
 
   const MenuItem = ({ icon, label, onPress, isLogout, badge }) => (
     <TouchableOpacity
-      style={styles.menuItem}
+      style={[styles.menuItem, isLogout && styles.logoutItem]}
       onPress={onPress}
       activeOpacity={0.7}
     >
       <View style={styles.menuItemLeft}>
         {icon}
-        <Text style={[styles.menuItemText, isLogout && { color: '#D32F2F', fontWeight: '700' }]}>
+        <Text style={[styles.menuItemText, isLogout && styles.logoutText]}>
           {label}
         </Text>
       </View>
@@ -76,7 +99,7 @@ export default function SidebarMenu({ visible, onClose, user, navigation, onSign
             <Text style={styles.badgeText}>{badge > 99 ? '99+' : badge}</Text>
           </View>
         )}
-        {!isLogout && <IconChevronRight size={16} color="#ccc" />}
+        {!isLogout && <IconChevronRight size={16} color="rgba(255,255,255,0.45)" />}
       </View>
     </TouchableOpacity>
   );
@@ -88,12 +111,24 @@ export default function SidebarMenu({ visible, onClose, user, navigation, onSign
           <TouchableOpacity style={{ flex: 1 }} onPress={onClose} activeOpacity={1} />
         </Animated.View>
         
-        <Animated.View style={[styles.drawer, { transform: [{ translateX: slideAnim }] }]}>
+        <Animated.View style={[styles.drawer, { transform: [{ translateX: slideAnim }] }]}> 
           {/* Header del drawer */}
-          <View style={styles.header}>
+          <View style={[styles.header, { backgroundColor: headerColor }]}>
+            {bannerUrl ? (
+              <Image source={{ uri: bannerUrl }} style={styles.headerBanner} />
+            ) : bannerGradient?.length >= 2 ? (
+              <LinearGradient colors={bannerGradient} style={styles.headerBanner} />
+            ) : (
+              <View style={[styles.headerBanner, { backgroundColor: headerColor }]} />
+            )}
+            <View style={styles.headerOverlay} />
             <View style={styles.userInfo}>
               <View style={styles.avatar}>
-                <Text style={styles.avatarText}>{user?.nombre?.charAt(0)?.toUpperCase() || 'U'}</Text>
+                {profilePhotoUrl ? (
+                  <Image source={{ uri: profilePhotoUrl }} style={styles.avatarImage} />
+                ) : (
+                  <Text style={styles.avatarText}>{user?.nombre?.charAt(0)?.toUpperCase() || 'U'}</Text>
+                )}
               </View>
               <View>
                 <Text style={styles.userName} numberOfLines={1}>{user?.nombre || 'Usuario'}</Text>
@@ -109,44 +144,51 @@ export default function SidebarMenu({ visible, onClose, user, navigation, onSign
           <View style={styles.menuContent}>
             <Text style={styles.sectionTitle}>MI CUENTA</Text>
 
+            {!isVendedor && (
+              <MenuItem
+                icon={<IconStore size={22} color="#FFF" />}
+                label="Inicio"
+                onPress={() => navigateTo('PostLogin')}
+              />
+            )}
             <MenuItem
-              icon={<IconUser size={22} color="#555" />}
+              icon={<IconUser size={22} color="#FFF" />}
               label="Mi Perfil"
               onPress={() => navigateTo('Profile')}
             />
             <MenuItem
-              icon={<IconChat size={22} color="#555" />}
+              icon={<IconChat size={22} color="#FFF" />}
               label="Mensajes"
               badge={unreadMsgCount}
               onPress={() => navigateTo('Messages')}
             />
             <MenuItem
-              icon={<IconPackage size={22} color="#555" />}
+              icon={<IconPackage size={22} color="#FFF" />}
               label="Mi Carrito"
               onPress={() => navigateTo('Cart')}
             />
             <MenuItem
-              icon={<IconLocation size={22} color="#555" />}
+              icon={<IconLocation size={22} color="#FFF" />}
               label="Direcciones"
               onPress={() => navigateTo('Direcciones')}
             />
             <MenuItem
-              icon={<IconFavorites size={22} color="#555" />}
+              icon={<IconFavorites size={22} color="#FFF" />}
               label="Lista de Deseos"
               onPress={() => navigateTo('ListaDeseos')}
             />
             <MenuItem
-              icon={<IconHistory size={22} color="#555" />}
+              icon={<IconHistory size={22} color="#FFF" />}
               label="Mis compras"
               onPress={() => navigateTo('History')}
             />
             <MenuItem
-              icon={<IconAlertTriangle size={22} color="#555" />}
+              icon={<IconAlertTriangle size={22} color="#FFF" />}
               label="Quejas y reclamos"
               onPress={() => navigateTo('QuejasReclamos')}
             />
             <MenuItem
-              icon={<IconBell size={22} color="#555" />}
+              icon={<IconBell size={22} color="#FFF" />}
               label="Notificaciones"
               badge={unreadNotifCount}
               onPress={() => navigateTo('Notifications')}
@@ -156,12 +198,12 @@ export default function SidebarMenu({ visible, onClose, user, navigation, onSign
               <>
                 <Text style={styles.sectionTitle}>MI LIBRERÍA</Text>
                 <MenuItem 
-                  icon={<IconStore size={22} color="#555" />} 
+                  icon={<IconStore size={22} color="#FFF" />} 
                   label="Panel de Tienda" 
                   onPress={() => navigateTo('VendorHome')} 
                 />
                 <MenuItem 
-                  icon={<IconPackage size={22} color="#555" />} 
+                  icon={<IconPackage size={22} color="#FFF" />} 
                   label="Mi Librería" 
                   onPress={() => navigateTo('Libreria')} 
                 />
@@ -172,7 +214,7 @@ export default function SidebarMenu({ visible, onClose, user, navigation, onSign
             
             <View style={styles.divider} />
             <MenuItem 
-              icon={<IconLogout size={22} color="#D32F2F" />} 
+              icon={<IconLogout size={22} color="#7A1E3A" />} 
               label="Cerrar Sesión" 
               onPress={() => {
                 onClose();
@@ -199,20 +241,12 @@ const styles = StyleSheet.create({
   drawer: {
     width: DRAWER_WIDTH,
     height: '100%',
-    backgroundColor: '#FFF',
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 2, height: 0 },
-        shadowOpacity: 0.25,
-        shadowRadius: 5,
-      },
-      android: {
-        elevation: 5,
-      },
-    }),
+    backgroundColor: '#7A1E3A',
+    boxShadow: '2px 0px 5px rgba(0, 0, 0, 0.25)',
+    elevation: 5,
   },
   header: {
+    position: 'relative',
     backgroundColor: '#7A1E3A',
     paddingTop: Platform.OS === 'ios' ? 50 : 30,
     paddingBottom: 20,
@@ -221,24 +255,40 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
+  headerBanner: {
+    ...StyleSheet.absoluteFillObject,
+    width: '100%',
+    height: '100%',
+  },
+  headerOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.2)',
+  },
   userInfo: {
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
+    zIndex: 1,
   },
   avatar: {
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: '#F4EDE2',
+    backgroundColor: 'rgba(255,255,255,0.2)',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 15,
+    zIndex: 1,
+  },
+  avatarImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 25,
   },
   avatarText: {
     fontSize: 22,
     fontWeight: 'bold',
-    color: '#7A1E3A',
+    color: '#FFF',
   },
   userName: {
     fontSize: 16,
@@ -252,6 +302,7 @@ const styles = StyleSheet.create({
   },
   closeBtn: {
     padding: 5,
+    zIndex: 1,
   },
   menuContent: {
     flex: 1,
@@ -260,7 +311,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#999',
+    color: 'rgba(255,255,255,0.6)',
     letterSpacing: 1,
     marginLeft: 20,
     marginTop: 15,
@@ -273,6 +324,12 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 20,
   },
+  logoutItem: {
+    backgroundColor: '#FFF',
+    marginHorizontal: 12,
+    marginBottom: 12,
+    borderRadius: 10,
+  },
   menuItemLeft: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -284,12 +341,16 @@ const styles = StyleSheet.create({
   },
   menuItemText: {
     fontSize: 15,
-    color: '#333',
+    color: '#FFF',
     marginLeft: 15,
     fontWeight: '500',
   },
+  logoutText: {
+    color: '#7A1E3A',
+    fontWeight: '700',
+  },
   badge: {
-    backgroundColor: '#7A1E3A',
+    backgroundColor: '#FFF',
     borderRadius: 10,
     minWidth: 20,
     height: 20,
@@ -298,7 +359,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 5,
   },
   badgeText: {
-    color: '#FFF',
+    color: '#7A1E3A',
     fontSize: 11,
     fontWeight: '800',
   },
@@ -307,7 +368,7 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 1,
-    backgroundColor: '#F0F0F0',
+    backgroundColor: 'rgba(255,255,255,0.12)',
     marginVertical: 10,
   }
 });
