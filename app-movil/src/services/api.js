@@ -1,5 +1,6 @@
 import axios from 'axios';
 
+
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://192.168.137.218:8000';
 
 const api = axios.create({
@@ -144,5 +145,23 @@ export const getApiBaseUrl = () => api.defaults.baseURL;
 export const getOrdenes = () => api.get('/api/v1/orders');
 export const getQuejas = () => api.get('/quejas');
 export const crearQueja = (formData) => api.post('/quejas', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+
+// ===== Administración =====
+// El panel conserva las mismas fuentes de datos que el dashboard web.
+export const getAdminUsuarios = () => api.get('/usuarios');
+export const getAdminLibros = () => api.get('/api/stored/libros');
+export const getAdminOrdenes = () => api.get('/api/v1/admin/orders');
+export const getAdminTiendas = () => api.get('/tiendas');
+export const getAdminSolicitudes = () => api.get('/quejas/admin/todas');
+
+// Mutaciones admin — equivalentes a las acciones del dashboard web
+export const bloquearUsuario = (id, bloqueado) =>
+  api.patch(`/usuarios/${id}/bloquear`, { bloqueado });
+export const ocultarLibroAdmin = (id, oculto) =>
+  api.patch(`/libros/${id}/ocultar`, { oculto });
+export const eliminarLibroAdmin = (id) =>
+  api.delete(`/libros/${id}`);
+export const cambiarEstadoTienda = (id, estado) =>
+  api.patch(`/tiendas/${id}/estado`, { estado });
 
 export default api;

@@ -4,6 +4,8 @@
 
 Este directorio (`database/migrations/`) contiene **scripts SQL incrementales**. Su objetivo es actualizar la estructura o los datos de la base de datos *sin tener que borrarla ni recrearla desde cero*.
 
+El procedimiento completo para aplicar migraciones, crear backups y restaurar datos esta documentado en [docs/implantacion/plan-migracion-respaldos.md](../../docs/implantacion/plan-migracion-respaldos.md).
+
 ## 🚫 LO QUE **NO** DEBES HACER (Errores Comunes)
 
 1. **NO** copies y pegues el código de estos archivos dentro del archivo principal `database/bookyhome.sql`. Ese archivo es solo para la carga inicial de una base de datos virgen.

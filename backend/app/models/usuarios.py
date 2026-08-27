@@ -105,7 +105,7 @@ def obtener_todos_usuarios():
     """Recupera todos los usuarios registrados en el sistema."""
     db = get_db()
     cursor = db.cursor(dictionary=True)
-    cursor.execute("SELECT id_usuario, nombre_usuario, correo_usuario, rol, estado_usuario, fecha_registro FROM usuarios")
+    cursor.execute("SELECT id_usuario, nombre_usuario, correo_usuario, rol, telefono, foto_perfil, estado_usuario, email_verificado, DATE_FORMAT(fecha_registro, '%Y-%m-%d') as fecha_registro FROM usuarios ORDER BY id_usuario ASC")
     usuarios = cursor.fetchall()
     cursor.close()
     db.close()

@@ -2,11 +2,22 @@ import { createContext, useContext, useEffect, useMemo, useState } from 'react'
 
 const ToastContext = createContext(null)
 
+const formatToastMessage = (message) => {
+  if (typeof message === 'string' || typeof message === 'number') return String(message)
+  if (Array.isArray(message)) {
+    return message.map(formatToastMessage).filter(Boolean).join(' | ')
+  }
+  if (message && typeof message === 'object') {
+    return formatToastMessage(message.msg || message.detail || message.message || 'Ha ocurrido un error')
+  }
+  return 'Ha ocurrido un error'
+}
+
 export function ToastProvider({ children }) {
   const [toast, setToast] = useState(null)
 
   const showToast = (message, type = 'info') => {
-    setToast({ message, type })
+    setToast({ message: formatToastMessage(message), type })
   }
 
   useEffect(() => {

@@ -42,6 +42,7 @@ const Stack = createNativeStackNavigator();
 export default function AppNavigator() {
   const { user, token, loading, biometricLocked } = useContext(AuthContext);
   const isAuthenticated = Boolean(token || user);
+  const isAdmin = user?.rol === 'admin' || user?.rol === 'administrador';
 
   if (loading) {
     return (
@@ -83,7 +84,7 @@ export default function AppNavigator() {
           <Stack.Screen name="Chat" component={Chat} options={{ title: 'Chat' }} />
           <Stack.Screen name="QuejasReclamos" component={QuejasReclamos} options={{ headerShown: false }} />
         </>
-      ) : user.rol === 'admin' ? (
+      ) : isAdmin ? (
         // ─── Rutas admin ─────────────────────────────────────────────────────
         <>
           <Stack.Screen name="AdminHome" component={AdminHome} options={{ headerShown: false }} />

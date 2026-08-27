@@ -121,7 +121,8 @@ def mis_quejas(user=Depends(current_user)):
         cursor.execute("""
             SELECT ss.id_solicitud, ss.id_orden, ss.asunto, ss.descripcion, ss.categoria,
                    ss.estado, ss.respuesta, ss.evidencia_url, ss.fecha_creacion, ss.fecha_resolucion,
-                   t.nombre_tienda
+                   t.nombre_tienda,
+                   ROW_NUMBER() OVER (ORDER BY ss.id_solicitud ASC) AS numero
             FROM solicitudes_soporte ss
             LEFT JOIN tiendas t ON t.id_tienda = ss.id_tienda
             WHERE ss.id_usuario = %s AND ss.tipo_solicitud = 'reclamo'
@@ -476,7 +477,8 @@ def mi_soporte(user=Depends(current_user)):
 
         cursor.execute("""
 
-            SELECT id_solicitud, asunto, descripcion, categoria, estado, respuesta, fecha_creacion, fecha_resolucion
+            SELECT id_solicitud, asunto, descripcion, categoria, estado, respuesta, fecha_creacion, fecha_resolucion,
+                   ROW_NUMBER() OVER (ORDER BY id_solicitud ASC) AS numero
 
             FROM solicitudes_soporte
 
@@ -552,7 +554,10 @@ def todas_las_quejas(user=Depends(current_user)):
     try:
         cursor.execute("""
             SELECT s.id_solicitud, s.id_usuario, s.id_orden, s.id_tienda, s.asunto, s.descripcion, s.categoria, s.tipo_solicitud, s.estado,
-                   s.respuesta, s.evidencia_url, s.fecha_creacion, u.nombre_usuario AS comprador,
+                   s.respuesta, s.evidencia_url, s.fecha_creacion,
+                   ROW_NUMBER() OVER (PARTITION BY s.id_usuario, s.tipo_solicitud ORDER BY s.id_solicitud ASC) AS numero,
+                   u.nombre_usuario AS comprador,
+                   u.foto_perfil AS foto_comprador,
                    u.correo_usuario AS correo_comprador, u.rol AS rol_usuario, t.nombre_tienda, t.id_usuario AS id_vendedor,
                    t.telefono AS telefono_tienda, t.direccion AS direccion_tienda,
                    uv.nombre_usuario AS nombre_vendedor, uv.correo_usuario AS correo_vendedor
@@ -617,11 +622,25 @@ def resolver_queja(id_solicitud: int, data: Resolucion, user=Depends(current_use
 
         cursor.execute("UPDATE solicitudes_soporte SET estado=%s, respuesta=%s, fecha_resolucion=NOW() WHERE id_solicitud=%s", (data.estado, data.respuesta, id_solicitud))
 
-        if ticket.get("id_vendedor"):
-            cursor.execute("INSERT INTO notificaciones (id_usuario, tipo, titulo, cuerpo, id_referencia, leida, fecha_creacion) VALUES (%s, 'sistema', 'Reclamo resuelto / actualizado', %s, %s, FALSE, NOW())", (ticket["id_vendedor"], f"El administrador actualizó el reclamo #{id_solicitud} a '{data.estado}': {data.respuesta}", id_solicitud))
+        es_soporte = (ticket.get("tipo_solicitud") or "").lower() == "soporte"
+        titulo_notif = "Ticket de soporte actualizado" if es_soporte else "Reclamo resuelto / actualizado"
+        cuerpo_base = (
+            f"Tu ticket #{id_solicitud} ha sido marcado como '{data.estado}': {data.respuesta}"
+            if es_soporte
+            else f"Tu reclamo #{id_solicitud} ha sido marcado como '{data.estado}': {data.respuesta}"
+        )[:280]
 
+        usuarios_notificar = set()
         if ticket.get("id_comprador"):
-            cursor.execute("INSERT INTO notificaciones (id_usuario, tipo, titulo, cuerpo, id_referencia, leida, fecha_creacion) VALUES (%s, 'sistema', 'Reclamo resuelto / actualizado', %s, %s, FALSE, NOW())", (ticket["id_comprador"], f"Tu reclamo #{id_solicitud} ha sido marcado como '{data.estado}': {data.respuesta}", id_solicitud))
+            usuarios_notificar.add(ticket["id_comprador"])
+        if ticket.get("id_vendedor"):
+            usuarios_notificar.add(ticket["id_vendedor"])
+
+        for uid in usuarios_notificar:
+            cursor.execute(
+                "INSERT INTO notificaciones (id_usuario, tipo, titulo, cuerpo, id_referencia, leida, fecha_creacion) VALUES (%s, 'sistema', %s, %s, %s, FALSE, NOW())",
+                (uid, titulo_notif, cuerpo_base, id_solicitud)
+            )
 
         db.commit()
         return {"ok": True}

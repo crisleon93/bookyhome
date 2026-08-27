@@ -12,6 +12,10 @@ from dotenv import load_dotenv
 
 from fastapi.staticfiles import StaticFiles
 
+from contextlib import asynccontextmanager
+
+from apscheduler.schedulers.background import BackgroundScheduler
+
 from app.routers import libros
 
 
@@ -68,9 +72,22 @@ from app.database import ensure_quejas_schema, ensure_banner_perfil_schema
 
 load_dotenv()
 
+# ========================
+# Scheduler — tareas programadas
+# ========================
+from app.tasks.auto_entrega import ejecutar_auto_confirmacion
 
+scheduler = BackgroundScheduler(timezone="America/Bogota")
+# Corre todos los días a las 3:00 AM hora Colombia
+scheduler.add_job(ejecutar_auto_confirmacion, "cron", hour=3, minute=0, id="auto_entrega")
 
-app = FastAPI()
+@asynccontextmanager
+async def lifespan(app):
+    scheduler.start()
+    yield
+    scheduler.shutdown(wait=False)
+
+app = FastAPI(lifespan=lifespan)
 ensure_quejas_schema()
 ensure_banner_perfil_schema()
 

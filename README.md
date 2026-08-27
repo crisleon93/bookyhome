@@ -202,6 +202,10 @@ docker compose up -d --build backend
 - El frontend web y el backend quedan disponibles en `localhost`.
 - La app movil debe usar la IP local del computador, no `localhost`.
 
+## Respaldos y restauracion
+
+La guia completa para crear backups, configurarlos automaticamente y restaurarlos esta en [scripts/README.md](scripts/README.md). La carpeta `scripts/` contiene las herramientas compartidas y `backups/` contiene los archivos generados, excluidos de Git porque pueden incluir datos reales.
+
 ## Como ejecutar la app movil con Expo
 
 ### Requisitos
