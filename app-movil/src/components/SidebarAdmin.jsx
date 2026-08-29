@@ -4,8 +4,8 @@ import {
   StyleSheet, Text, TouchableOpacity, View,
 } from 'react-native';
 import {
-  IconAlertTriangle, IconBook, IconChat, IconClose, IconDollar,
-  IconHistory, IconHome, IconLogout, IconPackage, IconStore, IconUser,
+  IconAlertTriangle, IconBook, IconClose, IconLayoutDashboard, IconLogout,
+  IconPackage, IconSettings, IconStore, IconTool, IconTrendingUp, IconUser, IconWallet,
 } from './Icons';
 
 const { width } = Dimensions.get('window');
@@ -15,16 +15,16 @@ const VINOTINTO_DARK = '#5e1629';
 const WHITE          = '#FFFFFF';
 
 const ADMIN_SECTIONS = [
-  { label: 'Dashboard',         Icon: IconHome,          id: 'dashboard' },
-  { label: 'Reportes',          Icon: IconHistory                        },
+  { label: 'Dashboard',         Icon: IconLayoutDashboard,id: 'dashboard' },
+  { label: 'Reportes',          Icon: IconTrendingUp,    id: 'reportes'  },
   { label: 'Usuarios',          Icon: IconUser,          id: 'usuarios'  },
   { label: 'Libros',            Icon: IconBook,          id: 'libros'    },
   { label: 'Tiendas',           Icon: IconStore,         id: 'tiendas'   },
   { label: 'Órdenes',           Icon: IconPackage,       id: 'ordenes'   },
-  { label: 'Finanzas',          Icon: IconDollar                         },
+  { label: 'Finanzas',          Icon: IconWallet,        id: 'finanzas'  },
   { label: 'Quejas y reclamos', Icon: IconAlertTriangle                  },
-  { label: 'Soporte técnico',   Icon: IconChat                           },
-  { label: 'Mi perfil',         Icon: IconUser                           },
+  { label: 'Soporte técnico',   Icon: IconTool                           },
+  { label: 'Mi perfil',         Icon: IconSettings                       },
 ];
 
 // ─── Item deshabilitado ───────────────────────────────────────────────────────
@@ -75,8 +75,8 @@ export default function SidebarAdmin({
 
   useEffect(() => {
     Animated.parallel([
-      Animated.timing(slideAnim, { toValue: visible ? 0 : -DRAWER_WIDTH, duration: visible ? 280 : 220, useNativeDriver: true }),
-      Animated.timing(fadeAnim,  { toValue: visible ? 1 : 0,             duration: visible ? 280 : 220, useNativeDriver: true }),
+      Animated.timing(slideAnim, { toValue: visible ? 0 : -DRAWER_WIDTH, duration: visible ? 280 : 220, useNativeDriver: Platform.OS !== 'web' }),
+      Animated.timing(fadeAnim,  { toValue: visible ? 1 : 0,             duration: visible ? 280 : 220, useNativeDriver: Platform.OS !== 'web' }),
     ]).start();
   }, [visible, fadeAnim, slideAnim]);
 
@@ -140,7 +140,7 @@ export default function SidebarAdmin({
             })}
 
             <Text style={st.description}>
-              Reportes, finanzas, reclamos, soporte y perfil se habilitarán progresivamente.
+              Reclamos, soporte y perfil se habilitarán progresivamente.
             </Text>
           </ScrollView>
 

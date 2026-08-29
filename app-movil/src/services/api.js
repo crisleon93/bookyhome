@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://192.168.137.218:8000';
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://192.168.1.6:8000';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -175,7 +175,19 @@ export const ocultarLibroAdmin = (id, oculto) =>
   api.patch(`/libros/${id}/ocultar`, { oculto });
 export const eliminarLibroAdmin = (id) =>
   api.delete(`/libros/${id}`);
-export const cambiarEstadoTienda = (id, estado) =>
-  api.patch(`/tiendas/${id}/estado`, { estado });
+export const cambiarEstadoTienda = (id, estado, motivo) =>
+  api.patch(`/tiendas/${id}/estado`, {
+    estado,
+    ...(motivo ? { motivo } : {}),
+  });
+
+// ===== BookyPago Finanzas (Administración) =====
+export const getFinanzasBalance = () => api.get('/api/v1/bookypago-finanzas/balance');
+export const getFinanzasEstadisticas = () => api.get('/api/v1/bookypago-finanzas/estadisticas');
+export const getFinanzasHistorial = () => api.get('/api/v1/bookypago-finanzas/historial?dias=30');
+export const getFinanzasNomina = () => api.get('/api/v1/bookypago-finanzas/nomina');
+export const getCuentasBancariasVendedor = (idVendedor) => api.get(`/api/v1/bookypago-finanzas/cuentas-bancarias/${idVendedor}`);
+export const procesarNominaVendedor = (idVendedor, idMetodo) =>
+  api.post(`/api/v1/bookypago-finanzas/nomina/procesar/${idVendedor}`, { id_metodo: idMetodo });
 
 export default api;

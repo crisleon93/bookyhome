@@ -2180,6 +2180,16 @@
       "fecha": "2026-08-13T02:23:03.656615Z",
       "estado": "procesado",
       "num_pagos": 1
+    },
+    {
+      "id": 6,
+      "tipo": "nomina",
+      "id_vendedor": 2,
+      "monto": 23800.0,
+      "referencia": "TRF-Bancolombia-9-01-20260829163808",
+      "fecha": "2026-08-29T16:38:08.372683Z",
+      "estado": "procesado",
+      "num_pagos": 1
     }
   ]
 }
