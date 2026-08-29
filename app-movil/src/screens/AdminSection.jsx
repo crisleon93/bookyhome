@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
+  Modal,
   Platform,
   RefreshControl,
   ScrollView,
@@ -103,6 +104,14 @@ const isSuspendedStore = (s) =>
     (s || '').toLowerCase().trim()
   );
 
+const ESTADOS_TIENDA = [
+  { value: 'activa',      label: 'Activa',          color: '#047857', bg: '#ECFDF5', border: '#A7F3D0' },
+  { value: 'pendiente',   label: 'Pendiente',        color: '#B45309', bg: '#FFFBEB', border: '#FDE68A' },
+  { value: 'vacaciones',  label: 'En Vacaciones',    color: '#C2410C', bg: '#FFF7ED', border: '#FDBA74' },
+  { value: 'suspendida',  label: 'Suspendida',       color: '#B91C1C', bg: '#FEF2F2', border: '#FECACA' },
+  { value: 'inactiva',    label: 'Inactiva',         color: '#7A1E3A', bg: '#FDF2F4', border: '#F8D2DA' },
+];
+
 const ROL_COLORS = {
   admin:        { color: VINOTINTO,  bg: '#FDF2F4',  border: '#F8D2DA' },
   administrador:{ color: VINOTINTO,  bg: '#FDF2F4',  border: '#F8D2DA' },
@@ -137,6 +146,10 @@ export default function AdminSection({ route, navigation }) {
 
   // Estado de acciones en curso (para deshabilitar botones mientras se procesa)
   const actionInProgress = useRef({});
+
+  // ─── Modal de cambio de estado de tienda ─────────────────────────────────
+  const [modalTienda, setModalTienda] = useState(null); // tienda seleccionada
+  const [guardandoEstado, setGuardandoEstado] = useState(false);
 
   // ─── Carga de datos ──────────────────────────────────────────────────────────
   const load = useCallback(async (refresh = false) => {
@@ -316,45 +329,32 @@ export default function AdminSection({ route, navigation }) {
   }, []);
 
   // ─── Acciones tiendas ──────────────────────────────────────────────────────
-  const toggleTienda = useCallback(async (tienda) => {
-    const key = `t-${tienda.id_tienda}`;
-    if (actionInProgress.current[key]) return;
-    actionInProgress.current[key] = true;
+  const cambiarEstadoTiendaModal = useCallback((tienda) => {
+    setModalTienda(tienda);
+  }, []);
 
-    const activa       = isActiveStore(tienda.estado_tienda);
-    const nuevoEstado  = activa ? 'Suspendida' : 'Activa';
-
-    Alert.alert(
-      `¿${activa ? 'Suspender' : 'Activar'} tienda?`,
-      `"${tienda.nombre_tienda}" pasará al estado ${nuevoEstado}.`,
-      [
-        {
-          text: 'Cancelar',
-          style: 'cancel',
-          onPress: () => { actionInProgress.current[key] = false; },
-        },
-        {
-          text: activa ? 'Suspender' : 'Activar',
-          style: activa ? 'destructive' : 'default',
-          onPress: async () => {
-            try {
-              await cambiarEstadoTienda(tienda.id_tienda, nuevoEstado);
-              setItems((prev) =>
-                prev.map((t) =>
-                  t.id_tienda === tienda.id_tienda
-                    ? { ...t, estado_tienda: nuevoEstado }
-                    : t
-                )
-              );
-            } catch (e) {
-              Alert.alert('Error', e.response?.data?.detail || 'No se pudo cambiar el estado de la tienda.');
-            } finally {
-              actionInProgress.current[key] = false;
-            }
-          },
-        },
-      ]
-    );
+  const aplicarEstadoTienda = useCallback(async (tienda, nuevoEstado) => {
+    const estadoActual = (tienda.estado_tienda || '').toLowerCase();
+    if (estadoActual === nuevoEstado) {
+      setModalTienda(null);
+      return;
+    }
+    setGuardandoEstado(true);
+    try {
+      await cambiarEstadoTienda(tienda.id_tienda, nuevoEstado);
+      setItems((prev) =>
+        prev.map((t) =>
+          t.id_tienda === tienda.id_tienda
+            ? { ...t, estado_tienda: nuevoEstado }
+            : t
+        )
+      );
+      setModalTienda(null);
+    } catch (e) {
+      Alert.alert('Error', e.response?.data?.detail || 'No se pudo cambiar el estado.');
+    } finally {
+      setGuardandoEstado(false);
+    }
   }, []);
 
   // ─── Renderizado de filas ─────────────────────────────────────────────────
@@ -477,13 +477,8 @@ export default function AdminSection({ route, navigation }) {
   }, [toggleOcultar, confirmarEliminarLibro]);
 
   const renderTienda = useCallback(({ item: t }) => {
-    const activa     = isActiveStore(t.estado_tienda);
-    const suspendida = isSuspendedStore(t.estado_tienda);
-    const estadoColor = activa
-      ? { bg: '#ECFDF5', border: '#A7F3D0', text: '#047857' }
-      : suspendida
-      ? { bg: '#FEF2F2', border: '#FECACA', text: '#991B1B' }
-      : { bg: '#FEF3C7', border: '#FDE68A', text: '#B45309' };
+    const estadoActual = (t.estado_tienda || '').toLowerCase();
+    const estadoConfig = ESTADOS_TIENDA.find(e => e.value === estadoActual) || ESTADOS_TIENDA[4];
 
     return (
       <View style={styles.card}>
@@ -500,28 +495,29 @@ export default function AdminSection({ route, navigation }) {
         </View>
 
         <View style={styles.badgeRow}>
-          <View style={[styles.badge, { backgroundColor: estadoColor.bg, borderColor: estadoColor.border }]}>
-            <Text style={[styles.badgeText, { color: estadoColor.text }]}>
-              {t.estado_tienda || 'Pendiente'}
+          <View style={[styles.badge, { backgroundColor: estadoConfig.bg, borderColor: estadoConfig.border }]}>
+            <View style={{ width: 7, height: 7, borderRadius: 3.5, backgroundColor: estadoConfig.color }} />
+            <Text style={[styles.badgeText, { color: estadoConfig.color, marginLeft: 5 }]}>
+              {estadoConfig.label}
             </Text>
           </View>
         </View>
 
         <TouchableOpacity
           style={[styles.actionBtn, {
-            backgroundColor: activa ? '#FEF2F2' : '#ECFDF5',
-            borderColor:      activa ? '#FECACA' : '#A7F3D0',
+            backgroundColor: estadoConfig.bg,
+            borderColor: estadoConfig.border,
           }]}
-          onPress={() => toggleTienda(t)}
+          onPress={() => cambiarEstadoTiendaModal(t)}
           activeOpacity={0.75}
         >
-          <Text style={[styles.actionText, { color: activa ? RED : GREEN }]}>
-            {activa ? 'Suspender' : 'Activar'}
+          <Text style={[styles.actionText, { color: estadoConfig.color }]}>
+            Cambiar Estado
           </Text>
         </TouchableOpacity>
       </View>
     );
-  }, [toggleTienda]);
+  }, [cambiarEstadoTiendaModal]);
 
   const renderOrden = useCallback(({ item: o }) => (
     <View style={styles.card}>

@@ -9,6 +9,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AuthContext } from '../context/AuthContext';
 import SidebarAdmin from '../components/SidebarAdmin';
+import FinanzasAdmin from './FinanzasAdmin';
 import {
   IconAlertTriangle, IconBook, IconCheck,
   IconEye, IconEyeOff, IconLock, IconMenu,
@@ -75,6 +76,8 @@ const ROL_COLORS = {
 };
 
 const SECTION_CONFIG = {
+  reportes: { title: 'Sistema de Reportes', subtitle: 'Indicadores globales de BookyHome', Icon: IconPackage, color: '#1E40AF', soft: '#EFF6FF' },
+  finanzas: { title: 'BookyPago Finanzas', subtitle: 'Sistema de gestión financiera de BookyHome', Icon: IconPackage, color: VINOTINTO, soft: '#FDF2F4' },
   usuarios: { title: 'Usuarios',  subtitle: 'Gestiona los usuarios registrados',    Icon: IconUser,    color: VINOTINTO,  soft: '#FDF2F4' },
   libros:   { title: 'Libros',    subtitle: 'Catálogo publicado en BookyHome',       Icon: IconBook,    color: '#7E22CE',  soft: '#F3E8FF' },
   tiendas:  { title: 'Tiendas',   subtitle: 'Librerías y vendedores asociados',      Icon: IconStore,   color: '#047857',  soft: '#ECFDF5' },
@@ -90,10 +93,42 @@ const initials = (name) =>
 const isPending      = (s) => ['abierto', 'en revision', 'en revisión'].includes((s || '').toLowerCase().trim());
 const isActiveStore  = (s) => ['activa', 'activo', 'habilitada', 'habilitado', 'aprobada', 'aprobado'].includes((s || '').toLowerCase().trim());
 const isPendingStore = (s) => ['pendiente', 'en revision', 'en revisión', 'por revisar'].includes((s || '').toLowerCase().trim());
-const isSuspStore    = (s) => ['suspendida', 'suspendido', 'inactiva', 'inactivo', 'pausada', 'pausado'].includes((s || '').toLowerCase().trim());
+const isSuspendedStore = (s) => ['suspendida', 'suspendido', 'inactiva', 'inactivo', 'pausada', 'pausado'].includes((s || '').toLowerCase().trim());
+const isVacationStore = (s) => ['vacaciones', 'en vacaciones'].includes((s || '').toLowerCase().trim());
 const getRolColors   = (rol) => ROL_COLORS[(rol || '').toLowerCase()] || { bg: '#F3F4F6', color: GRAY, border: '#D1D5DB' };
-const getStoreColors = (estado) => isActiveStore(estado) ? COLORS.active : isPendingStore(estado) ? COLORS.pending : COLORS.suspended;
+const getStoreColors = (estado) => {
+  const state = (estado || '').toLowerCase().trim();
+  if (isActiveStore(state)) return COLORS.active;
+  if (isPendingStore(state)) return COLORS.pending;
+  if (isSuspendedStore(state)) return COLORS.suspended;
+  if (isVacationStore(state)) return { bg: '#FFF7ED', color: '#C2410C', border: '#FDBA74' };
+  return { bg: '#F3F4F6', color: GRAY, border: '#D1D5DB' };
+};
 const fmtPrice       = (p) => `$${Number(p || 0).toLocaleString('es-CO')}`;
+
+const ESTADOS_TIENDA = [
+  { value: 'activa',      label: 'Activa',          color: '#047857', bg: '#ECFDF5', border: '#A7F3D0' },
+  { value: 'pendiente',   label: 'Pendiente',        color: '#B45309', bg: '#FFFBEB', border: '#FDE68A' },
+  { value: 'vacaciones',  label: 'En Vacaciones',    color: '#C2410C', bg: '#FFF7ED', border: '#FDBA74' },
+  { value: 'suspendida',  label: 'Suspendida',       color: '#B91C1C', bg: '#FEF2F2', border: '#FECACA' },
+  { value: 'inactiva',    label: 'Inactiva',         color: '#7A1E3A', bg: '#FDF2F4', border: '#F8D2DA' },
+];
+
+const MOTIVOS_SUSPENSION_PREDEFINIDOS = [
+  'Incumplimiento de las políticas y términos de servicio de la plataforma.',
+  'Publicaciones de libros no autorizadas, fraudulentas o piratería.',
+  'Reclamos reiterados de compradores sin respuesta ni solución.',
+  'Sospecha de actividad irregular, fraude o suplantación de identidad.',
+  'Información de contacto, ubicación o documentos de tienda inválidos.',
+];
+
+const MENSAJES_ESTADO_TIENDA = {
+  activa:     { icon: '✅', desc: 'La librería quedará activa y visible para los compradores.' },
+  pendiente:  { icon: '🕐', desc: 'La librería quedará en revisión y no podrá operar hasta ser aprobada.' },
+  vacaciones: { icon: '🏖️', desc: 'La librería entrará en modo vacaciones y sus productos no estarán disponibles temporalmente.' },
+  suspendida: { icon: '🚫', desc: 'La librería será suspendida por incumplimiento. No podrá vender ni recibir pedidos en la plataforma.' },
+  inactiva:   { icon: '⭕', desc: 'La librería quedará marcada como inactiva.' },
+};
 
 // ─── ConfirmModal ─────────────────────────────────────────────────────────────
 function ConfirmModal({ visible, title, message, confirmText, confirmColor = RED, onConfirm, onCancel }) {
@@ -228,6 +263,116 @@ function PanelHeader({ iconNode, title, subtitle, extra, linkText, onLink }) {
   );
 }
 
+const categoryTheme = (name) => {
+  const text = (name || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  if (text.includes('ficcion') && !text.includes('cientifica')) return { color: '#B91C1C', bg: '#FEF2F2', border: '#FECACA', icon: '📖' };
+  if (text.includes('fantasia')) return { color: '#4338CA', bg: '#EEF2FF', border: '#C7D2FE', icon: '🧙' };
+  if (text.includes('terror')) return { color: '#6B21A8', bg: '#FAF5FF', border: '#E9D5FF', icon: '👻' };
+  if (text.includes('juvenil')) return { color: '#D97706', bg: '#FFFBEB', border: '#FDE68A', icon: '🎒' };
+  if (text.includes('ciencia') || text.includes('cientifica')) return { color: '#047857', bg: '#ECFDF5', border: '#A7F3D0', icon: '🔬' };
+  if (text.includes('romance')) return { color: '#DB2777', bg: '#FDF2F8', border: '#FBCFE8', icon: '💖' };
+  if (text.includes('aventura')) return { color: '#EA580C', bg: '#FFF7ED', border: '#FFEDD5', icon: '🗺️' };
+  if (text.includes('historia')) return { color: '#92400E', bg: '#FEF3C7', border: '#FDE68A', icon: '🏛️' };
+  if (text.includes('tecnologia')) return { color: '#0E7490', bg: '#ECFEFF', border: '#A5F3FC', icon: '💻' };
+  if (text.includes('infantil')) return { color: '#0284C7', bg: '#F0F9FF', border: '#BAE6FD', icon: '🧸' };
+  if (text.includes('arte')) return { color: '#9333EA', bg: '#FAF5FF', border: '#F3E8FF', icon: '🎨' };
+  if (text.includes('biografia')) return { color: '#1E40AF', bg: '#EFF6FF', border: '#BFDBFE', icon: '👤' };
+  if (text.includes('educacion')) return { color: '#15803D', bg: '#F0FDF4', border: '#BBF7D0', icon: '🎓' };
+  if (text.includes('poesia')) return { color: '#BE185D', bg: '#FDF2F8', border: '#FCE7F3', icon: '✍️' };
+  if (text.includes('filosofia')) return { color: '#475569', bg: '#F8FAFC', border: '#E2E8F0', icon: '🧠' };
+  return { color: VINOTINTO, bg: '#FDF2F4', border: '#F8D2DA', icon: '📚' };
+};
+
+function ReportKpi({ title, value, badge, sub, color, bg, border, Icon }) {
+  return <View style={[rs.kpi, { borderColor: border }]}>
+    <View style={[rs.kpiBar, { backgroundColor: color }]} />
+    <View style={rs.kpiHead}><Text style={rs.kpiTitle}>{title}</Text><View style={[rs.kpiIcon, { backgroundColor: bg }]}><Icon size={18} color={color} /></View></View>
+    <View style={rs.kpiValueRow}><Text style={rs.kpiValue}>{value}</Text><View style={[rs.kpiBadge, { backgroundColor: bg, borderColor: border }]}><Text style={[rs.kpiBadgeText, { color }]}>{badge}</Text></View></View>
+    <Text style={rs.kpiSub}>{sub}</Text>
+  </View>;
+}
+
+function ReportRow({ icon, label, desc, count, total, color }) {
+  const pct = total ? Math.round((count / total) * 100) : 0;
+  return <View style={rs.row}><View style={rs.rowTop}><View style={rs.rowText}><Text style={rs.rowIcon}>{icon}</Text><View style={{ flex: 1 }}><Text style={rs.rowLabel}>{label}</Text><Text style={rs.rowDesc}>{desc}</Text></View></View><Text style={[rs.rowCount, { color }]}>{count} <Text style={rs.rowPct}>({pct}%)</Text></Text></View><View style={rs.track}><View style={[rs.fill, { backgroundColor: color, width: `${pct}%` }]} /></View></View>;
+}
+
+function AdminReports({ data, stats }) {
+  const totalUsers = data.usuarios.length;
+  const roleItems = [
+    { key: 'comprador', label: 'Compradores', icon: '🛒', color: '#047857', bg: '#ECFDF5', border: '#A7F3D0', desc: 'Usuarios lectores y clientes' },
+    { key: 'vendedor', label: 'Vendedores', icon: '🏪', color: '#D97706', bg: '#FFFBEB', border: '#FDE68A', desc: 'Librerías y tiendas asociadas' },
+    { key: 'administrador', label: 'Administradores', icon: '🛡️', color: VINOTINTO, bg: '#FDF2F4', border: '#F8D2DA', desc: 'Gestión total de la plataforma' },
+  ].map((item) => ({ ...item, count: item.key === 'comprador' ? stats.buyers : item.key === 'vendedor' ? stats.sellers : stats.admins }));
+  const categories = Object.entries(stats.categories).sort(([, a], [, b]) => b - a).slice(0, 8);
+  const storeItems = [
+    { key: 'activa', label: 'Activas / Operativas', icon: '🟢', color: '#047857', desc: 'Visibles en el catálogo y vendiendo' },
+    { key: 'vacaciones', label: 'En Vacaciones', icon: '🏖️', color: '#EA580C', desc: 'En pausa temporal programada' },
+    { key: 'pendiente', label: 'Pendientes de Revisión', icon: '🕐', color: '#D97706', desc: 'Esperando validación de admin' },
+    { key: 'suspendida', label: 'Suspendidas', icon: '🚫', color: '#DC2626', desc: 'Sancionadas por incumplimiento' },
+    { key: 'inactiva', label: 'Inactivas', icon: '⭕', color: VINOTINTO, desc: 'Deshabilitadas del sistema' },
+  ];
+  const orderItems = [
+    { key: 'pagada', label: 'Pagadas / Preparación', icon: '💳', color: '#D97706', desc: 'Pago confirmado por BookyPago' },
+    { key: 'entregada', label: 'Entregadas con éxito', icon: '✅', color: '#047857', desc: 'Recibidas por el comprador' },
+    { key: 'enviada', label: 'En Camino / Enviadas', icon: '🚚', color: '#1E40AF', desc: 'Con número de guía activo' },
+    { key: 'procesando', label: 'En Proceso', icon: '⚙️', color: '#7C3AED', desc: 'En alistamiento por la tienda' },
+    { key: 'pendiente', label: 'Pendientes de Pago', icon: '⏳', color: '#EA580C', desc: 'Esperando confirmación' },
+    { key: 'cancelada', label: 'Canceladas', icon: '❌', color: '#DC2626', desc: 'Canceladas o no concretadas' },
+  ];
+  const storeCounts = data.tiendas.reduce((acc, store) => {
+    const state = (store.estado_tienda || '').toLowerCase().trim();
+    const key = isActiveStore(state) ? 'activa' :
+                ['vacaciones', 'en vacaciones', 'pausada', 'pausado'].includes(state) ? 'vacaciones' :
+                isPendingStore(state) ? 'pendiente' :
+                ['suspendida', 'suspendido'].includes(state) ? 'suspendida' : 'inactiva';
+    acc[key] = (acc[key] || 0) + 1;
+    return acc;
+  }, {});
+  const orderCounts = data.ordenes.reduce((acc, order) => {
+    const state = (order.estado || '').toLowerCase().trim();
+    const key = ['pagado', 'pagada', 'pago confirmado', 'aprobada', 'aprobado'].includes(state) ? 'pagada' :
+                ['entregado', 'entregada', 'completada', 'finalizada'].includes(state) ? 'entregada' :
+                ['enviado', 'enviada', 'despachado', 'en camino'].includes(state) ? 'enviada' :
+                ['procesando', 'en proceso', 'preparando'].includes(state) ? 'procesando' :
+                ['cancelado', 'cancelada', 'anulado', 'rechazada'].includes(state) ? 'cancelada' : 'pendiente';
+    acc[key] = (acc[key] || 0) + 1;
+    return acc;
+  }, {});
+  const activeStores = storeCounts.activa || 0;
+  const successfulOrders = (orderCounts.entregada || 0) + (orderCounts.pagada || 0) + (orderCounts.enviada || 0);
+  const storePct = data.tiendas.length ? Math.round((activeStores / data.tiendas.length) * 100) : 0;
+  const orderPct = data.ordenes.length ? Math.round((successfulOrders / data.ordenes.length) * 100) : 0;
+  return <ScrollView style={{ flex: 1 }} contentContainerStyle={rs.content} showsVerticalScrollIndicator={false}>
+    <View style={rs.kpiGrid}>
+      <ReportKpi title="ÓRDENES" value={data.ordenes.length} badge={`${stats.ordersToday} hoy`} sub="Flujo total de compras" color="#1E40AF" bg="#EFF6FF" border="#BFDBFE" Icon={IconPackage} />
+      <ReportKpi title="LIBROS ACTIVOS" value={data.libros.length} badge={`${Object.keys(stats.categories).length} géneros`} sub="Catálogo publicado" color="#6D28D9" bg="#F5F3FF" border="#DDD6FE" Icon={IconBook} />
+      <ReportKpi title="LIBRERÍAS" value={data.tiendas.length} badge={`${activeStores} activas`} sub={`${storePct}% operativas`} color="#047857" bg="#ECFDF5" border="#A7F3D0" Icon={IconStore} />
+      <ReportKpi title="USUARIOS" value={totalUsers} badge={`${stats.sellers} vendedores`} sub={`${stats.buyers} compradores`} color={VINOTINTO} bg="#FDF2F4" border="#F8D2DA" Icon={IconUser} />
+    </View>
+    <View style={rs.card}><PanelHeader iconNode={<IconUser size={20} color={VINOTINTO} />} title="Usuarios por Rol" subtitle="Composición de la comunidad BookyHome" extra={`${totalUsers} Total`} />
+      <View style={rs.miniGrid}>{roleItems.map((item) => <View key={item.key} style={[rs.mini, { backgroundColor: item.bg, borderColor: item.border }]}><Text>{item.icon}</Text><Text style={[rs.miniCount, { color: item.color }]}>{item.count}</Text><Text style={[rs.miniLabel, { color: item.color }]}>{item.label}</Text><Text style={rs.miniPct}>{totalUsers ? Math.round(item.count / totalUsers * 100) : 0}% del total</Text></View>)}</View>
+      <View style={rs.composed}>{roleItems.map((item) => <View key={item.key} style={{ height: '100%', backgroundColor: item.color, width: `${totalUsers ? item.count / totalUsers * 100 : 0}%` }} />)}</View>
+      {roleItems.map((item) => <ReportRow key={item.key} {...item} total={totalUsers} />)}
+    </View>
+    <View style={rs.card}><PanelHeader iconNode={<IconBook size={20} color="#6D28D9" />} title="Libros por Categoría" subtitle="Ranking de géneros en el catálogo" extra={`${data.libros.length} Libros`} />
+      {categories.length >= 3 && <View style={rs.miniGrid}>{categories.slice(0, 3).map(([name, count], index) => { const theme = categoryTheme(name); return <View key={name} style={[rs.mini, { backgroundColor: theme.bg, borderColor: theme.border }]}><Text style={[rs.miniLabel, { color: theme.color }]}>{['🥇 1º', '🥈 2º', '🥉 3º'][index]}</Text><Text style={[rs.miniCount, { color: theme.color }]}>{count}</Text><Text style={rs.miniLabel} numberOfLines={1}>{theme.icon} {name}</Text><Text style={[rs.miniPct, { color: theme.color }]}>{data.libros.length ? Math.round(count / data.libros.length * 100) : 0}% catálogo</Text></View>; })}</View>}
+      {categories.length ? categories.map(([name, count], index) => { const theme = categoryTheme(name); return <ReportRow key={name} icon={`${theme.icon} #${index + 1}`} label={name} desc="Categoría del catálogo" count={count} total={data.libros.length} color={theme.color} />; }) : <Text style={s.emptyTxt}>No hay libros categorizados aún.</Text>}
+      <Text style={rs.footer}>✨ Total de {Object.keys(stats.categories).length} categorías en plataforma · {data.libros.length} ejemplares</Text>
+    </View>
+    <View style={rs.card}><PanelHeader iconNode={<IconStore size={20} color="#047857" />} title="Tiendas por Estado" subtitle="Salud y disponibilidad de librerías" extra={`${data.tiendas.length} Librerías`} />
+      <View style={rs.highlight}><Text style={rs.highlightTitle}>✓ TASA DE OPERATIVIDAD</Text><Text style={rs.highlightText}><Text style={{ fontWeight: '800' }}>{activeStores} de {data.tiendas.length}</Text> librerías activas vendiendo</Text><Text style={rs.highlightPct}>{storePct}%</Text></View>
+      <View style={rs.composed}>{storeItems.map((item) => <View key={item.key} style={{ height: '100%', backgroundColor: item.color, width: `${data.tiendas.length ? (storeCounts[item.key] || 0) / data.tiendas.length * 100 : 0}%` }} />)}</View>
+      {storeItems.map((item) => <ReportRow key={item.key} {...item} count={storeCounts[item.key] || 0} total={data.tiendas.length} />)}
+    </View>
+    <View style={rs.card}><PanelHeader iconNode={<IconPackage size={20} color="#1E40AF" />} title="Órdenes por Estado" subtitle="Pipeline y ciclo de vida de pedidos" extra={`${data.ordenes.length} Órdenes`} />
+      <View style={[rs.highlight, { backgroundColor: '#F8FAFC', borderColor: '#E2E8F0' }]}><Text style={[rs.highlightTitle, { color: '#475569' }]}>TASA DE EFECTIVIDAD</Text><Text style={[rs.highlightText, { color: '#334155' }]}>{successfulOrders} órdenes procesadas con éxito</Text><Text style={[rs.highlightPct, { color: '#1E40AF' }]}>{orderPct}%</Text></View>
+      <View style={rs.composed}>{orderItems.map((item) => <View key={item.key} style={{ height: '100%', backgroundColor: item.color, width: `${data.ordenes.length ? (orderCounts[item.key] || 0) / data.ordenes.length * 100 : 0}%` }} />)}</View>
+      {orderItems.map((item) => <ReportRow key={item.key} {...item} count={orderCounts[item.key] || 0} total={data.ordenes.length} />)}
+    </View>
+  </ScrollView>;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 //  COMPONENTE PRINCIPAL
 // ─────────────────────────────────────────────────────────────────────────────
@@ -250,16 +395,30 @@ export default function AdminHome() {
   const [modal, setModal] = useState({ visible: false, title: '', message: '', confirmText: '', confirmColor: RED, onConfirm: null });
   const [infoModal, setInfoModal] = useState({ visible: false, title: '', message: '' });
 
+  // Flujo equivalente al dashboard web para los estados de una librería.
+  const [modalEstadoTienda, setModalEstadoTienda] = useState(null);
+  const [motivoSuspension, setMotivoSuspension] = useState('');
+  const [errorMotivoSuspension, setErrorMotivoSuspension] = useState('');
+  const [guardandoEstadoTienda, setGuardandoEstadoTienda] = useState(false);
+
   const showConfirm = (opts) => setModal({ visible: true, ...opts });
   const hideConfirm = () => setModal((m) => ({ ...m, visible: false }));
   const showInfo    = (title, message) => setInfoModal({ visible: true, title, message });
   const hideInfo    = () => setInfoModal((m) => ({ ...m, visible: false }));
 
   // ── Filtros por sección ───────────────────────────────────────────────────
-  const [filtroRol,       setFiltroRol]       = useState('todos');
-  const [filtroCategoria, setFiltroCategoria] = useState('todas');
-  const [busqueda,        setBusqueda]        = useState('');
-  const [pagina,          setPagina]          = useState(1);
+  const [filtroRol,          setFiltroRol]          = useState('todos');
+  const [filtroEstadoUsuario, setFiltroEstadoUsuario] = useState('todos'); // 'todos' | 'Activo' | 'Bloqueado'
+  const [filtroCategoria,    setFiltroCategoria]    = useState('todas');
+  const [busqueda,           setBusqueda]           = useState('');
+  const [pagina,             setPagina]             = useState(1);
+
+  // ── Modal ficha de usuario ────────────────────────────────────────────────
+  const [fichaUsuarioId, setFichaUsuarioId] = useState(null);
+  // Derivar el objeto usuario actualizado del array (para reflejar cambios de estado en tiempo real)
+  const fichaUsuario = fichaUsuarioId != null
+    ? data.usuarios.find((u) => u.id_usuario === fichaUsuarioId) || null
+    : null;
 
   // Libro expandido (acordeón)
   const [expandedLibro,  setExpandedLibro]  = useState(null);
@@ -300,6 +459,7 @@ export default function AdminHome() {
     setBusqueda('');
     setPagina(1);
     setFiltroRol('todos');
+    setFiltroEstadoUsuario('todos');
     setFiltroCategoria('todas');
     setExpandedLibro(null);
     setExpandedTienda(null);
@@ -319,7 +479,8 @@ export default function AdminHome() {
       activeBooks:   data.libros.filter((l) => !l.oculto).length,
       activeStores:  data.tiendas.filter((t) => isActiveStore(t.estado_tienda)).length,
       pendingStores: data.tiendas.filter((t) => isPendingStore(t.estado_tienda)).length,
-      suspStores:    data.tiendas.filter((t) => isSuspStore(t.estado_tienda)).length,
+      suspendedStores: data.tiendas.filter((t) => isSuspendedStore(t.estado_tienda)).length,
+      vacationStores: data.tiendas.filter((t) => isVacationStore(t.estado_tienda)).length,
       categories:    cats,
       ordersToday:   data.ordenes.filter((o) => o.fecha && new Date(o.fecha).toLocaleDateString('es-CO') === today).length,
       completed:     data.ordenes.filter((o) => ['completada', 'entregado', 'finalizada'].includes((o.estado || '').toLowerCase())).length,
@@ -342,7 +503,7 @@ export default function AdminHome() {
   // ── Filtrado y paginación por sección ─────────────────────────────────────
   const sectionItems = useMemo(() => {
     const q = busqueda.trim().toLowerCase();
-    let list = activeSection === 'usuarios' ? data.usuarios.slice().reverse()
+    let list = activeSection === 'usuarios' ? data.usuarios.slice() // Sin reverse, orden igual a la web
              : activeSection === 'libros'   ? data.libros.slice().reverse()
              : activeSection === 'tiendas'  ? data.tiendas.slice().reverse()
              : activeSection === 'ordenes'  ? data.ordenes.slice().sort((a, b) => {
@@ -356,6 +517,15 @@ export default function AdminHome() {
 
     if (activeSection === 'usuarios') {
       if (filtroRol !== 'todos') list = list.filter((u) => (u.rol || '').toLowerCase() === filtroRol);
+      if (filtroEstadoUsuario !== 'todos') {
+        list = list.filter((u) => {
+          const estado = (u.estado_usuario || 'Activo').toLowerCase();
+          return (
+            (filtroEstadoUsuario === 'Activo' && estado === 'activo') ||
+            (filtroEstadoUsuario === 'Bloqueado' && estado === 'bloqueado')
+          );
+        });
+      }
       if (q) list = list.filter((u) =>
         (u.nombre_usuario || '').toLowerCase().includes(q) ||
         (u.correo_usuario || '').toLowerCase().includes(q));
@@ -377,7 +547,7 @@ export default function AdminHome() {
         (o.estado || '').toLowerCase().includes(q));
 
     return list;
-  }, [activeSection, data, busqueda, filtroRol, filtroCategoria]);
+  }, [activeSection, data, busqueda, filtroRol, filtroEstadoUsuario, filtroCategoria]);
 
   const totalPages = Math.ceil(sectionItems.length / PER_PAGE) || 1;
   const pageSafe   = Math.min(pagina, totalPages);
@@ -387,8 +557,10 @@ export default function AdminHome() {
   const handleBloqueo = useCallback((u) => {
     const bloqueado = u.estado_usuario !== 'Bloqueado';
     showConfirm({
-      title:        bloqueado ? '¿Bloquear usuario?' : '¿Desbloquear usuario?',
-      message:      `${u.nombre_usuario} ${bloqueado ? 'no podrá ingresar a la plataforma.' : 'recuperará el acceso a la plataforma.'}`,
+      title:        bloqueado ? 'Bloquear Acceso a Usuario' : 'Restaurar Acceso a Usuario',
+      message:      bloqueado
+        ? '⚠️ Al bloquear a este usuario, se cerrará su sesión de inmediato y se le impedirá ingresar a la plataforma, comprar o administrar su tienda hasta que sea reactivado.'
+        : '✅ Al restaurar el acceso, el usuario podrá volver a iniciar sesión y utilizar todas las funciones de BookyHome según su rol.',
       confirmText:  bloqueado ? 'Bloquear' : 'Desbloquear',
       confirmColor: bloqueado ? RED : GREEN,
       onConfirm: async () => {
@@ -458,28 +630,47 @@ export default function AdminHome() {
 
   // ── Acciones — Tiendas ────────────────────────────────────────────────────
   const handleEstadoTienda = useCallback((t) => {
-    const activa      = isActiveStore(t.estado_tienda);
-    const nuevoEstado = activa ? 'Suspendida' : 'Activa';
-    showConfirm({
-      title:        activa ? '¿Suspender tienda?' : '¿Activar tienda?',
-      message:      `"${t.nombre_tienda}" pasará al estado ${nuevoEstado}.`,
-      confirmText:  activa ? 'Suspender' : 'Activar',
-      confirmColor: activa ? RED : GREEN,
-      onConfirm: async () => {
-        hideConfirm();
-        try {
-          await cambiarEstadoTienda(t.id_tienda, nuevoEstado);
-          setData((prev) => ({
-            ...prev,
-            tiendas: prev.tiendas.map((x) =>
-              x.id_tienda === t.id_tienda ? { ...x, estado_tienda: nuevoEstado } : x),
-          }));
-        } catch (e) {
-          showInfo('Error', e.response?.data?.detail || 'No se pudo cambiar el estado de la tienda.');
-        }
-      },
+    setMotivoSuspension('');
+    setErrorMotivoSuspension('');
+    setModalEstadoTienda({ tienda: t, nuevoEstado: null });
+  }, []);
+
+  const seleccionarEstadoTienda = useCallback((nuevoEstado) => {
+    setModalEstadoTienda((actual) => {
+      if (!actual || (actual.tienda.estado_tienda || '').toLowerCase() === nuevoEstado) return null;
+      return { ...actual, nuevoEstado };
     });
   }, []);
+
+  const confirmarEstadoTienda = useCallback(async () => {
+    if (!modalEstadoTienda?.nuevoEstado) return;
+    const { tienda, nuevoEstado } = modalEstadoTienda;
+    if (nuevoEstado === 'suspendida' && !motivoSuspension.trim()) {
+      setErrorMotivoSuspension('Debes ingresar o seleccionar un motivo para suspender la librería.');
+      return;
+    }
+    setGuardandoEstadoTienda(true);
+    try {
+      await cambiarEstadoTienda(tienda.id_tienda, nuevoEstado, motivoSuspension.trim());
+      setData((prev) => ({
+        ...prev,
+        tiendas: prev.tiendas.map((x) =>
+          x.id_tienda === tienda.id_tienda ? { ...x, estado_tienda: nuevoEstado } : x),
+      }));
+      const cfg = ESTADOS_TIENDA.find((estado) => estado.value === nuevoEstado);
+      showInfo(
+        'Estado actualizado',
+        nuevoEstado === 'suspendida'
+          ? 'Librería suspendida y notificación enviada al chat del vendedor'
+          : `Librería actualizada a: ${cfg?.label || nuevoEstado}`
+      );
+      setModalEstadoTienda(null);
+    } catch (e) {
+      showInfo('Error', e.response?.data?.detail || 'Error al cambiar el estado');
+    } finally {
+      setGuardandoEstadoTienda(false);
+    }
+  }, [modalEstadoTienda, motivoSuspension]);
 
   // ─────────────────────────────────────────────────────────────────────────
   //  RENDER — tarjetas de cada sección
@@ -497,7 +688,10 @@ export default function AdminHome() {
           </View>
           <View style={s.cardMid}>
             <Text style={s.cardName} numberOfLines={1}>{u.nombre_usuario || 'Usuario'}</Text>
-            <Text style={s.cardSub}  numberOfLines={1}>{u.correo_usuario  || 'Sin correo'}</Text>
+            <Text style={s.cardSub}  numberOfLines={1}>{u.correo_usuario || u.correo || u.email || 'Sin correo'}</Text>
+            {!!(u.telefono || u.phone) && (
+              <Text style={[s.cardSub, { marginTop: 1 }]} numberOfLines={1}>📞 {u.telefono || u.phone}</Text>
+            )}
           </View>
         </View>
         {/* Badges */}
@@ -514,19 +708,29 @@ export default function AdminHome() {
             </Text>
           </View>
         </View>
-        {/* Acción */}
-        <TouchableOpacity
-          style={[s.actionBtn, { backgroundColor: bloqueado ? '#ECFDF5' : '#FEF2F2', borderColor: bloqueado ? '#A7F3D0' : '#FECACA' }]}
-          onPress={() => handleBloqueo(u)}
-          activeOpacity={0.75}
-        >
-          {bloqueado
-            ? <IconUnlock size={14} color={GREEN} />
-            : <IconLock   size={14} color={RED}   />}
-          <Text style={[s.actionTxt, { color: bloqueado ? GREEN : RED }]}>
-            {bloqueado ? 'Desbloquear' : 'Bloquear'}
-          </Text>
-        </TouchableOpacity>
+        {/* Acciones: Ver Ficha + Bloquear/Desbloquear */}
+        <View style={s.actionRow}>
+          <TouchableOpacity
+            style={[s.actionBtn, s.actionHalf, { backgroundColor: '#F3F4F6', borderColor: '#E5E7EB' }]}
+            onPress={() => setFichaUsuarioId(u.id_usuario)}
+            activeOpacity={0.75}
+          >
+            <IconEye size={13} color={CARBON} />
+            <Text style={[s.actionTxt, { color: CARBON }]}>Ficha</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[s.actionBtn, s.actionHalf, { backgroundColor: bloqueado ? '#ECFDF5' : '#FEF2F2', borderColor: bloqueado ? '#A7F3D0' : '#FECACA' }]}
+            onPress={() => handleBloqueo(u)}
+            activeOpacity={0.75}
+          >
+            {bloqueado
+              ? <IconUnlock size={14} color={GREEN} />
+              : <IconLock   size={14} color={RED}   />}
+            <Text style={[s.actionTxt, { color: bloqueado ? GREEN : RED }]}>
+              {bloqueado ? 'Desbloquear' : 'Bloquear'}
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
     );
   }, [handleBloqueo]);
@@ -639,8 +843,8 @@ export default function AdminHome() {
 
   // ── Tarjeta Tienda (con acordeón) ────────────────────────────────────────
   const renderTienda = useCallback(({ item: t }) => {
-    const activa   = isActiveStore(t.estado_tienda);
-    const sc       = getStoreColors(t.estado_tienda);
+    const estadoActual = (t.estado_tienda || '').toLowerCase();
+    const estadoConfig = ESTADOS_TIENDA.find(e => e.value === estadoActual) || ESTADOS_TIENDA[4];
     const expanded = expandedTienda === t.id_tienda;
     const fecha    = t.fecha_creacion
       ? new Date(t.fecha_creacion).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' })
@@ -665,9 +869,9 @@ export default function AdminHome() {
           </View>
           {/* Badge estado + chevron */}
           <View style={{ alignItems: 'flex-end', gap: 4 }}>
-            <View style={[s.badge, { backgroundColor: sc.bg, borderColor: sc.border }]}>
-              <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: sc.color, marginRight: 4 }} />
-              <Text style={[s.badgeTxt, { color: sc.color }]}>{t.estado_tienda || 'Pendiente'}</Text>
+            <View style={[s.badge, { backgroundColor: estadoConfig.bg, borderColor: estadoConfig.border }]}>
+              <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: estadoConfig.color, marginRight: 4 }} />
+              <Text style={[s.badgeTxt, { color: estadoConfig.color }]}>{estadoConfig.label}</Text>
             </View>
             <View style={s.chevronWrap}>
               <Text style={s.chevronTxt}>{expanded ? '▲' : '▼'}</Text>
@@ -703,20 +907,20 @@ export default function AdminHome() {
             {/* Estado actual */}
             <View style={[s.detailRow, { marginBottom: 14 }]}>
               <Text style={s.detailLabel}>Estado</Text>
-              <View style={[s.badge, { backgroundColor: sc.bg, borderColor: sc.border }]}>
-                <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: sc.color, marginRight: 4 }} />
-                <Text style={[s.badgeTxt, { color: sc.color }]}>{t.estado_tienda || 'Pendiente'}</Text>
+              <View style={[s.badge, { backgroundColor: estadoConfig.bg, borderColor: estadoConfig.border }]}>
+                <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: estadoConfig.color, marginRight: 4 }} />
+                <Text style={[s.badgeTxt, { color: estadoConfig.color }]}>{estadoConfig.label}</Text>
               </View>
             </View>
 
             {/* Acción */}
             <TouchableOpacity
-              style={[s.actionBtn, { backgroundColor: activa ? '#FEF2F2' : '#ECFDF5', borderColor: activa ? '#FECACA' : '#A7F3D0' }]}
+              style={[s.actionBtn, { backgroundColor: estadoConfig.bg, borderColor: estadoConfig.border }]}
               onPress={() => handleEstadoTienda(t)}
               activeOpacity={0.75}
             >
-              <Text style={[s.actionTxt, { color: activa ? RED : GREEN }]}>
-                {activa ? 'Suspender tienda' : 'Activar tienda'}
+              <Text style={[s.actionTxt, { color: estadoConfig.color }]}>
+                Cambiar Estado
               </Text>
             </TouchableOpacity>
           </View>
@@ -771,8 +975,130 @@ export default function AdminHome() {
   // ─────────────────────────────────────────────────────────────────────────
   const cfg = SECTION_CONFIG[activeSection];
 
+  // KPI cards de la sección usuarios (calculadas fuera del useMemo para depender de data)
+  const usuariosKpi = useMemo(() => {
+    if (activeSection !== 'usuarios') return null;
+    const total       = data.usuarios.length;
+    const compradores = data.usuarios.filter((u) => (u.rol || '').toLowerCase() === 'comprador').length;
+    const vendedores  = data.usuarios.filter((u) => (u.rol || '').toLowerCase() === 'vendedor').length;
+    const bloqueados  = data.usuarios.filter((u) => (u.estado_usuario || '').toLowerCase() === 'bloqueado').length;
+    const activos     = total - bloqueados;
+    const tiendasActivas = data.tiendas.filter((t) => isActiveStore(t.estado_tienda)).length;
+    return [
+      {
+        key: 'total',
+        label: 'Total Usuarios',
+        value: total,
+        badge: `${activos} activos`,
+        sub: 'Comunidad registrada',
+        Icon: IconUser,
+        color: VINOTINTO,
+        bg: '#FDF2F4',
+        border: '#F8D2DA',
+        onPress: () => { setFiltroRol('todos'); setPagina(1); },
+      },
+      {
+        key: 'compradores',
+        label: 'Compradores',
+        value: compradores,
+        badge: total ? `${Math.round((compradores / total) * 100)}% del total` : '0%',
+        sub: 'Lectores y clientes',
+        Icon: IconPackage,
+        color: '#047857',
+        bg: '#ECFDF5',
+        border: '#A7F3D0',
+        onPress: () => { setFiltroRol('comprador'); setPagina(1); },
+      },
+      {
+        key: 'vendedores',
+        label: 'Vendedores',
+        value: vendedores,
+        badge: total ? `${Math.round((vendedores / total) * 100)}% del total` : '0%',
+        sub: `${tiendasActivas} tiendas asociadas`,
+        Icon: IconStore,
+        color: '#D97706',
+        bg: '#FFFBEB',
+        border: '#FDE68A',
+        onPress: () => { setFiltroRol('vendedor'); setPagina(1); },
+      },
+      {
+        key: 'bloqueados',
+        label: 'Bloqueados',
+        value: bloqueados,
+        badge: bloqueados > 0 ? 'Sancionados' : 'Sin bloqueos',
+        sub: bloqueados > 0 ? 'Acceso revocado' : 'Todo operativo',
+        Icon: IconLock,
+        color: bloqueados > 0 ? '#DC2626' : '#6B7280',
+        bg: bloqueados > 0 ? '#FEF2F2' : '#F3F4F6',
+        border: bloqueados > 0 ? '#FECACA' : '#E5E7EB',
+        onPress: () => { setFiltroRol('todos'); setFiltroEstadoUsuario('Bloqueado'); setPagina(1); },
+      },
+    ];
+  }, [activeSection, data.usuarios, data.tiendas]);
+
   const SectionListHeader = useMemo(() => (
     <View style={{ marginBottom: 12 }}>
+
+      {/* ── KPI cards sección usuarios: 2 filas de 2 ── */}
+      {activeSection === 'usuarios' && usuariosKpi && (
+        <View style={{ marginBottom: 14 }}>
+          <View style={{ flexDirection: 'row', gap: 8, marginBottom: 8 }}>
+            {usuariosKpi.slice(0, 2).map((k) => (
+              <TouchableOpacity
+                key={k.key}
+                style={[s.kpiCardUsuario, { borderColor: k.border }]}
+                activeOpacity={0.8}
+                onPress={k.onPress}
+              >
+                <View style={[s.kpiCardUsuarioBar, { backgroundColor: k.color }]} />
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <Text style={{ fontSize: 10, fontWeight: '700', color: '#6B7280', textTransform: 'uppercase', letterSpacing: 0.04, flex: 1 }}>
+                    {k.label}
+                  </Text>
+                  <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: k.bg, alignItems: 'center', justifyContent: 'center' }}>
+                    <k.Icon width={16} height={16} style={{ color: k.color }} />
+                  </View>
+                </View>
+                <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8, marginBottom: 4 }}>
+                  <Text style={[s.kpiCardUsuarioValue, { color: CARBON }]}>{k.value}</Text>
+                  <View style={{ borderWidth: 1, borderRadius: 10, paddingHorizontal: 6, paddingVertical: 2, backgroundColor: k.bg, borderColor: k.border }}>
+                    <Text style={{ fontSize: 9, fontWeight: '700', color: k.color }}>{k.badge}</Text>
+                  </View>
+                </View>
+                <Text style={[s.kpiCardUsuarioSub, { color: '#9CA3AF' }]}>{k.sub}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            {usuariosKpi.slice(2, 4).map((k) => (
+              <TouchableOpacity
+                key={k.key}
+                style={[s.kpiCardUsuario, { borderColor: k.border }]}
+                activeOpacity={0.8}
+                onPress={k.onPress}
+              >
+                <View style={[s.kpiCardUsuarioBar, { backgroundColor: k.color }]} />
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <Text style={{ fontSize: 10, fontWeight: '700', color: '#6B7280', textTransform: 'uppercase', letterSpacing: 0.04, flex: 1 }}>
+                    {k.label}
+                  </Text>
+                  <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: k.bg, alignItems: 'center', justifyContent: 'center' }}>
+                    <k.Icon width={16} height={16} style={{ color: k.color }} />
+                  </View>
+                </View>
+                <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8, marginBottom: 4 }}>
+                  <Text style={[s.kpiCardUsuarioValue, { color: CARBON }]}>{k.value}</Text>
+                  <View style={{ borderWidth: 1, borderRadius: 10, paddingHorizontal: 6, paddingVertical: 2, backgroundColor: k.bg, borderColor: k.border }}>
+                    <Text style={{ fontSize: 9, fontWeight: '700', color: k.color }}>{k.badge}</Text>
+                  </View>
+                </View>
+                <Text style={[s.kpiCardUsuarioSub, { color: '#9CA3AF' }]}>{k.sub}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+      )}
+
       {/* Buscador */}
       <TextInput
         style={s.searchInput}
@@ -790,9 +1116,9 @@ export default function AdminHome() {
         returnKeyType="search"
       />
 
-      {/* Pills rol */}
+      {/* Pills rol (solo usuarios) */}
       {activeSection === 'usuarios' && (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 10 }} contentContainerStyle={{ gap: 7 }}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 8 }} contentContainerStyle={{ gap: 7 }}>
           {['todos', 'comprador', 'vendedor', 'admin'].map((r) => (
             <TouchableOpacity
               key={r}
@@ -800,14 +1126,42 @@ export default function AdminHome() {
               onPress={() => { setFiltroRol(r); setPagina(1); }}
             >
               <Text style={[s.pillTxt, filtroRol === r && s.pillTxtActive]}>
-                {r === 'todos' ? 'Todos' : r.charAt(0).toUpperCase() + r.slice(1)}
+                {r === 'todos' ? '👥 Todos' : r === 'comprador' ? '🛒 Comprador' : r === 'vendedor' ? '🏪 Vendedor' : '🛡️ Admin'}
               </Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
       )}
 
-      {/* Pills categoría */}
+      {/* Pills estado (solo usuarios) */}
+      {activeSection === 'usuarios' && (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 8 }} contentContainerStyle={{ gap: 7 }}>
+          {['Activo', 'Bloqueado'].map((e) => (
+            <TouchableOpacity
+              key={e}
+              style={[s.pill, filtroEstadoUsuario === e && s.pillActive]}
+              onPress={() => { setFiltroEstadoUsuario(e); setPagina(1); }}
+            >
+              <Text style={[s.pillTxt, filtroEstadoUsuario === e && s.pillTxtActive]}>
+                {e === 'Activo' ? '✅ Solo Activos' : '🚫 Solo Bloqueados'}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      )}
+
+      {/* Limpiar filtros (solo usuarios, si hay algo activo) */}
+      {activeSection === 'usuarios' && (busqueda || filtroRol !== 'todos' || (filtroEstadoUsuario !== 'todos' && filtroEstadoUsuario)) && (
+        <TouchableOpacity
+          style={s.clearFiltersBtn}
+          onPress={() => { setBusqueda(''); setFiltroRol('todos'); setFiltroEstadoUsuario('todos'); setPagina(1); }}
+          activeOpacity={0.8}
+        >
+          <Text style={s.clearFiltersTxt}>↺ Limpiar filtros</Text>
+        </TouchableOpacity>
+      )}
+
+      {/* Pills categoría (solo libros) */}
       {activeSection === 'libros' && categorias.length > 1 && (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 10 }} contentContainerStyle={{ gap: 7 }}>
           {categorias.map((c) => (
@@ -826,10 +1180,10 @@ export default function AdminHome() {
 
       <Text style={s.counter}>
         {sectionItems.length} {activeSection} encontrado{sectionItems.length !== 1 ? 's' : ''}
-        {busqueda || filtroRol !== 'todos' || filtroCategoria !== 'todas' ? ' (filtrado)' : ''}
+        {busqueda || filtroRol !== 'todos' || (filtroEstadoUsuario !== 'todos' && filtroEstadoUsuario) || filtroCategoria !== 'todas' ? ' (filtrado)' : ''}
       </Text>
     </View>
-  ), [activeSection, busqueda, filtroRol, filtroCategoria, categorias, sectionItems.length]);
+  ), [activeSection, busqueda, filtroRol, filtroEstadoUsuario, filtroCategoria, categorias, sectionItems.length, usuariosKpi]);
 
   // ── Paginación ────────────────────────────────────────────────────────────
   const SectionListFooter = useMemo(() => {
@@ -1020,7 +1374,7 @@ export default function AdminHome() {
               <View style={s.legend}>
                 <View style={s.legendItem}><View style={[s.legendDot, { backgroundColor: '#16a34a' }]} /><Text style={{ color: '#166534', fontSize: 11, fontWeight: '700' }}>{stats.activeStores} Activas</Text></View>
                 <View style={s.legendItem}><View style={[s.legendDot, { backgroundColor: '#ea580c' }]} /><Text style={{ color: '#9a3412', fontSize: 11, fontWeight: '700' }}>{stats.pendingStores} Pendientes</Text></View>
-                <View style={s.legendItem}><View style={[s.legendDot, { backgroundColor: '#ef4444' }]} /><Text style={{ color: '#991b1b', fontSize: 11, fontWeight: '700' }}>{stats.suspStores} Suspendidas</Text></View>
+                <View style={s.legendItem}><View style={[s.legendDot, { backgroundColor: '#ef4444' }]} /><Text style={{ color: '#991b1b', fontSize: 11, fontWeight: '700' }}>{stats.suspendedStores} Suspendidas/Inactivas</Text></View>
               </View>
             </View>
           </View>
@@ -1122,6 +1476,12 @@ export default function AdminHome() {
 
         </ScrollView>
 
+      ) : activeSection === 'reportes' ? (
+        <AdminReports data={data} stats={stats} />
+
+      ) : activeSection === 'finanzas' ? (
+        <FinanzasAdmin />
+
       ) : (
         /* ══════════════ SECCIÓN ══════════════ */
         <FlatList
@@ -1155,6 +1515,256 @@ export default function AdminHome() {
         onSelectDashboard={() => { setActiveSection('dashboard'); }}
         onSelectSection={(sec) => { setActiveSection(sec); }}
       />
+
+      {/* ── Modal Ficha de Usuario ─────────────────────────────────────────── */}
+      {fichaUsuario != null && (() => {
+        const u           = fichaUsuario;
+        const esBloqueado = (u.estado_usuario || '').toLowerCase() === 'bloqueado';
+        const rolKey      = (u.rol || 'comprador').toLowerCase().trim();
+        const tiendaVinculada = data.tiendas.find(
+          (t) => Number(t.id_usuario) === Number(u.id_usuario)
+        );
+        const rolEmoji = rolKey.includes('admin') ? '🛡️' : rolKey === 'vendedor' ? '🏪' : '🛒';
+        const rolLabel = rolKey.includes('admin') ? 'Administrador' : rolKey === 'vendedor' ? 'Vendedor' : 'Comprador';
+
+        return (
+          <Modal
+            visible
+            transparent
+            animationType="fade"
+            statusBarTranslucent
+            onRequestClose={() => setFichaUsuarioId(null)}
+          >
+            {/* fondo oscuro: toca fuera para cerrar */}
+            <TouchableOpacity
+              style={fm.overlay}
+              activeOpacity={1}
+              onPress={() => setFichaUsuarioId(null)}
+            >
+              {/* la tarjeta no propaga el toque al overlay */}
+              <View style={fm.card} onStartShouldSetResponder={() => true}>
+
+                {/* ── Header vinotinto ── */}
+                <View style={fm.header}>
+                  <View style={fm.headerAvatar}>
+                    <Text style={fm.headerAvatarTxt}>{initials(u.nombre_usuario)}</Text>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={fm.headerName} numberOfLines={1}>{u.nombre_usuario || 'Usuario'}</Text>
+                    <Text style={fm.headerSub}>Ficha de Usuario · ID #{u.id_usuario}</Text>
+                  </View>
+                  <TouchableOpacity style={fm.closeBtn} onPress={() => setFichaUsuarioId(null)} activeOpacity={0.8}>
+                    <Text style={fm.closeBtnTxt}>✕</Text>
+                  </TouchableOpacity>
+                </View>
+
+                {/* ── Cuerpo scrolleable ── */}
+                <ScrollView
+                  style={{ flexGrow: 0 }}
+                  contentContainerStyle={fm.body}
+                  showsVerticalScrollIndicator={false}
+                  bounces={false}
+                >
+                  {/* Grid 2 cols: Rol + Estado */}
+                  <View style={fm.grid2}>
+                    <View style={fm.infoBox}>
+                      <Text style={fm.infoBoxLabel}>ROL DE CUENTA</Text>
+                      <Text style={fm.infoBoxValue}>{rolEmoji} {rolLabel}</Text>
+                    </View>
+                    <View style={fm.infoBox}>
+                      <Text style={fm.infoBoxLabel}>ESTADO ACTUAL</Text>
+                      <Text style={[fm.infoBoxValue, { color: esBloqueado ? RED : '#047857' }]}>
+                        {esBloqueado ? '🔒 Bloqueado' : '🟢 Activo'}
+                      </Text>
+                    </View>
+                  </View>
+
+                  {/* Información de Contacto y Cuenta */}
+                  <View style={fm.section}>
+                    <Text style={fm.sectionTitle}>INFORMACIÓN DE CONTACTO Y CUENTA</Text>
+
+                    <View style={fm.dataRow}>
+                      <Text style={fm.dataLabel}>Correo Electrónico:</Text>
+                      <Text style={fm.dataValue} numberOfLines={1}>{u.correo_usuario || '—'}</Text>
+                    </View>
+                    <View style={fm.dataRow}>
+                      <Text style={fm.dataLabel}>Teléfono:</Text>
+                      <Text style={fm.dataValue}>{u.telefono || 'No registrado'}</Text>
+                    </View>
+                    <View style={fm.dataRow}>
+                      <Text style={fm.dataLabel}>Fecha de Registro:</Text>
+                      <Text style={fm.dataValue}>{u.fecha_registro || 'N/A'}</Text>
+                    </View>
+                    <View style={[fm.dataRow, { borderBottomWidth: 0 }]}>
+                      <Text style={fm.dataLabel}>Verificación Email:</Text>
+                      <Text style={[fm.dataValue, { color: u.email_verificado ? '#047857' : '#D97706' }]}>
+                        {u.email_verificado ? '✓ Verificado' : '⏳ Pendiente'}
+                      </Text>
+                    </View>
+                  </View>
+
+                  {/* Librería vinculada (solo vendedores) */}
+                  {tiendaVinculada && (
+                    <View style={fm.tiendaBox}>
+                      <Text style={fm.tiendaTitle}>🏪 LIBRERÍA VINCULADA</Text>
+                      <View style={fm.tiendaRow}>
+                        <View style={{ flex: 1 }}>
+                          <Text style={fm.tiendaNombre}>{tiendaVinculada.nombre_tienda}</Text>
+                          <Text style={fm.tiendaId}>ID Tienda: #{tiendaVinculada.id_tienda}</Text>
+                        </View>
+                        <View style={[fm.tiendaEstadoBadge, {
+                          backgroundColor: isActiveStore(tiendaVinculada.estado_tienda) ? '#047857' : RED,
+                        }]}>
+                          <Text style={fm.tiendaEstadoTxt}>
+                            {tiendaVinculada.estado_tienda || 'Activa'}
+                          </Text>
+                        </View>
+                      </View>
+                    </View>
+                  )}
+                </ScrollView>
+
+                {/* ── Footer: Cerrar + Bloquear ── */}
+                <View style={fm.footer}>
+                  <TouchableOpacity
+                    style={fm.footerBtnSecondary}
+                    onPress={() => setFichaUsuarioId(null)}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={fm.footerBtnSecondaryTxt}>Cerrar</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[fm.footerBtnPrimary, { backgroundColor: esBloqueado ? GREEN : RED }]}
+                    onPress={() => {
+                      setFichaUsuarioId(null);
+                      handleBloqueo(u);
+                    }}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={fm.footerBtnPrimaryTxt}>
+                      {esBloqueado ? '🔓 Desbloquear' : '🔒 Bloquear'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
+              </View>
+            </TouchableOpacity>
+          </Modal>
+        );
+      })()}
+
+      {/* Modal de estado de tienda: mismos estados, mensajes y colores de la web */}
+      {modalEstadoTienda && (() => {
+        const { tienda, nuevoEstado } = modalEstadoTienda;
+        const estadoActual = (tienda.estado_tienda || 'pendiente').toLowerCase();
+        const cfgEstado = ESTADOS_TIENDA.find((estado) => estado.value === nuevoEstado);
+        const esSuspension = nuevoEstado === 'suspendida';
+        const info = MENSAJES_ESTADO_TIENDA[nuevoEstado];
+        const cerrar = () => {
+          if (!guardandoEstadoTienda) setModalEstadoTienda(null);
+        };
+
+        return (
+          <Modal visible transparent animationType="fade" statusBarTranslucent onRequestClose={cerrar}>
+            <View style={tm.overlay}>
+              <View style={tm.card}>
+                {!nuevoEstado ? (
+                  <>
+                    <View style={[tm.header, { backgroundColor: VINOTINTO }]}>
+                      <View style={tm.headerIcon}><IconStore size={24} color={WHITE} /></View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={tm.headerEyebrow}>Cambiar estado</Text>
+                        <Text style={tm.headerTitle}>Selecciona un estado</Text>
+                      </View>
+                      <TouchableOpacity style={tm.close} onPress={cerrar}><Text style={tm.closeText}>✕</Text></TouchableOpacity>
+                    </View>
+                    <View style={tm.body}>
+                      <Text style={tm.storeLabel}>LIBRERÍA A MODIFICAR</Text>
+                      <Text style={tm.storeName}>{tienda.nombre_tienda || `ID #${tienda.id_tienda}`}</Text>
+                      <Text style={tm.storeId}>ID #{tienda.id_tienda} · Estado actual: {ESTADOS_TIENDA.find((e) => e.value === estadoActual)?.label || estadoActual}</Text>
+                      <Text style={tm.chooseLabel}>Selecciona el nuevo estado</Text>
+                      {ESTADOS_TIENDA.map((estado) => {
+                        const actual = estado.value === estadoActual;
+                        return (
+                          <TouchableOpacity
+                            key={estado.value}
+                            style={[tm.statusOption, { backgroundColor: estado.bg, borderColor: estado.border }, actual && tm.statusOptionDisabled]}
+                            onPress={() => seleccionarEstadoTienda(estado.value)}
+                            disabled={actual}
+                            activeOpacity={0.75}
+                          >
+                            <View style={[tm.statusDot, { backgroundColor: estado.color }]} />
+                            <Text style={[tm.statusOptionText, { color: estado.color }]}>{estado.label}</Text>
+                            <Text style={[tm.statusCurrent, { color: estado.color }]}>{actual ? 'Estado actual' : '›'}</Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
+                  </>
+                ) : (
+                  <>
+                    <View style={[tm.header, { backgroundColor: esSuspension ? '#B91C1C' : cfgEstado.color }]}>
+                      <View style={tm.headerEmoji}><Text style={{ fontSize: 24 }}>{info.icon}</Text></View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={tm.headerEyebrow}>{esSuspension ? 'Acción Disciplinaria' : 'Cambiar estado'}</Text>
+                        <Text style={tm.headerTitle}>{esSuspension ? 'Suspender Librería' : `Marcar como ${cfgEstado.label}`}</Text>
+                      </View>
+                      <TouchableOpacity style={tm.close} onPress={cerrar} disabled={guardandoEstadoTienda}><Text style={tm.closeText}>✕</Text></TouchableOpacity>
+                    </View>
+                    <ScrollView contentContainerStyle={tm.body} keyboardShouldPersistTaps="handled">
+                      <View style={[tm.storeBox, { backgroundColor: cfgEstado.bg, borderColor: cfgEstado.border }]}>
+                        <View style={{ flex: 1 }}>
+                          <Text style={[tm.storeLabel, { color: cfgEstado.color }]}>LIBRERÍA A MODIFICAR</Text>
+                          <Text style={[tm.storeName, { color: cfgEstado.color }]}>{tienda.nombre_tienda || `ID #${tienda.id_tienda}`}</Text>
+                        </View>
+                        <View style={[tm.idBadge, { backgroundColor: cfgEstado.color }]}><Text style={tm.idBadgeText}>ID #{tienda.id_tienda}</Text></View>
+                      </View>
+                      <Text style={tm.description}>{info.desc}</Text>
+
+                      {esSuspension && (
+                        <View>
+                          <View style={tm.notice}>
+                            <Text style={tm.noticeText}>💬  <Text style={{ fontWeight: '800' }}>Notificación formal al vendedor:</Text> El motivo ingresado se enviará inmediatamente como mensaje en la sección de Chat del vendedor.</Text>
+                          </View>
+                          <Text style={tm.reasonLabel}>MOTIVOS FRECUENTES (TOCA PARA SELECCIONAR)</Text>
+                          <View style={tm.reasonChips}>
+                            {MOTIVOS_SUSPENSION_PREDEFINIDOS.map((motivo) => {
+                              const seleccionado = motivoSuspension === motivo;
+                              return (
+                                <TouchableOpacity key={motivo} style={[tm.reasonChip, seleccionado && tm.reasonChipSelected]} onPress={() => { setMotivoSuspension(motivo); setErrorMotivoSuspension(''); }}>
+                                  <Text style={[tm.reasonChipText, seleccionado && tm.reasonChipTextSelected]}>{seleccionado ? '✓ ' : '+ '}{motivo}</Text>
+                                </TouchableOpacity>
+                              );
+                            })}
+                          </View>
+                          <View style={tm.reasonHeading}><Text style={tm.reasonFieldLabel}>Explicación detallada del motivo *</Text><Text style={[tm.count, motivoSuspension.length > 400 && tm.countWarning]}>{motivoSuspension.length} / 450</Text></View>
+                          <TextInput
+                            value={motivoSuspension}
+                            onChangeText={(texto) => { setMotivoSuspension(texto); if (texto.trim()) setErrorMotivoSuspension(''); }}
+                            placeholder="Escribe detalladamente las razones por las cuales se suspende la librería..."
+                            placeholderTextColor="#9CA3AF"
+                            multiline
+                            maxLength={450}
+                            textAlignVertical="top"
+                            style={[tm.reasonInput, errorMotivoSuspension && tm.reasonInputError]}
+                          />
+                          {!!errorMotivoSuspension && <Text style={tm.reasonError}>⚠️ {errorMotivoSuspension}</Text>}
+                        </View>
+                      )}
+                      <View style={tm.actions}>
+                        <TouchableOpacity style={tm.cancelButton} onPress={cerrar} disabled={guardandoEstadoTienda}><Text style={tm.cancelButtonText}>Cancelar</Text></TouchableOpacity>
+                        <TouchableOpacity style={[tm.confirmButton, { backgroundColor: esSuspension ? '#B91C1C' : cfgEstado.color }, guardandoEstadoTienda && tm.buttonDisabled]} onPress={confirmarEstadoTienda} disabled={guardandoEstadoTienda}>
+                          <Text style={tm.confirmButtonText}>{guardandoEstadoTienda ? 'Procesando...' : esSuspension ? '🚫 Suspender y Notificar' : 'Confirmar'}</Text>
+                        </TouchableOpacity>
+                      </View>
+                    </ScrollView>
+                  </>
+                )}
+              </View>
+            </View>
+          </Modal>
+        );
+      })()}
 
       {/* Modal de confirmación */}
       <ConfirmModal
@@ -1246,6 +1856,13 @@ const s = StyleSheet.create({
   pillTxtActive:{ color: WHITE },
   counter:      { color: GRAY, fontSize: 11, marginBottom: 6, marginLeft: 2 },
 
+  // KPI cards de usuarios (estilo web)
+  kpiCardUsuario: { flex: 1, backgroundColor: WHITE, borderWidth: 1, borderRadius: 16, padding: 16, elevation: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.04, shadowRadius: 20, overflow: 'hidden', position: 'relative', justifyContent: 'space-between' },
+  kpiCardUsuarioBar: { position: 'absolute', top: 0, left: 0, right: 0, height: 4 },
+  kpiCardUsuarioValue: { fontSize: 28, fontWeight: '900', color: CARBON, lineHeight: 32 },
+  kpiCardUsuarioLabel: { fontSize: 10, fontWeight: '700', color: '#6B7280', textTransform: 'uppercase', letterSpacing: 0.04 },
+  kpiCardUsuarioSub: { fontSize: 11, color: '#9CA3AF', fontWeight: '500' },
+
   // Tarjeta de ítem
   card:         { backgroundColor: WHITE, borderWidth: 1, borderColor: BORDER, borderRadius: 16, padding: 14, marginBottom: 10 },
   cardBloqueado:{ borderColor: '#FECACA' },
@@ -1285,4 +1902,150 @@ const s = StyleSheet.create({
   pageBtnTxt:    { color: WHITE, fontWeight: '700', fontSize: 13 },
   pageBtnTxtOff: { color: GRAY },
   pageInfo:      { color: CARBON, fontWeight: '700', fontSize: 13 },
+});
+
+// ─── Estilos del modal Ficha de Usuario ──────────────────────────────────────
+const fm = StyleSheet.create({
+  // Overlay: fondo oscuro semitransparente, centra la tarjeta
+  overlay:   { flex: 1, backgroundColor: 'rgba(0,0,0,0.65)', alignItems: 'center', justifyContent: 'center', padding: 20 },
+
+  // Tarjeta central (igual al maxWidth 520 de la web)
+  card: {
+    backgroundColor: WHITE,
+    borderRadius: 20,
+    width: '100%',
+    maxWidth: 480,
+    overflow: 'hidden',
+    elevation: 30,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.3,
+    shadowRadius: 24,
+  },
+
+  // Header
+  header:          { flexDirection: 'row', alignItems: 'center', backgroundColor: VINOTINTO, paddingHorizontal: 20, paddingVertical: 18, gap: 12 },
+  headerAvatar:    { width: 52, height: 52, borderRadius: 26, backgroundColor: 'rgba(255,255,255,0.22)', alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: 'rgba(255,255,255,0.6)', flexShrink: 0 },
+  headerAvatarTxt: { color: WHITE, fontWeight: '900', fontSize: 18 },
+  headerName:      { color: WHITE, fontSize: 15, fontWeight: '800' },
+  headerSub:       { color: 'rgba(255,255,255,0.82)', fontSize: 11, marginTop: 2 },
+  closeBtn:        { width: 34, height: 34, borderRadius: 17, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+  closeBtnTxt:     { color: WHITE, fontWeight: '800', fontSize: 14 },
+
+  // Cuerpo
+  body: { padding: 20, paddingBottom: 12 },
+
+  // Grid 2 columnas rol/estado
+  grid2:        { flexDirection: 'row', gap: 10, marginBottom: 16 },
+  infoBox:      { flex: 1, backgroundColor: '#FAFAF9', borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 12, padding: 12 },
+  infoBoxLabel: { fontSize: 9, color: '#9CA3AF', fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 },
+  infoBoxValue: { fontSize: 14, fontWeight: '800', color: CARBON },
+
+  // Sección de contacto
+  section:      { backgroundColor: '#FAFAF9', borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 14, paddingHorizontal: 14, paddingTop: 12, paddingBottom: 4, marginBottom: 14 },
+  sectionTitle: { fontSize: 9, color: '#6B7280', fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10 },
+  dataRow:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderBottomWidth: 1, borderBottomColor: '#F0F0EE', paddingVertical: 9 },
+  dataLabel:    { fontSize: 13, color: '#6B7280', flex: 1 },
+  dataValue:    { fontSize: 13, fontWeight: '700', color: CARBON, textAlign: 'right', flexShrink: 1, maxWidth: '58%' },
+
+  // Tienda vinculada
+  tiendaBox:         { backgroundColor: '#ECFDF5', borderWidth: 1.5, borderColor: '#A7F3D0', borderRadius: 14, padding: 14, marginBottom: 8 },
+  tiendaTitle:       { fontSize: 9, color: '#047857', fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 8 },
+  tiendaRow:         { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  tiendaNombre:      { color: '#065F46', fontSize: 14, fontWeight: '800' },
+  tiendaId:          { color: '#047857', fontSize: 11, marginTop: 2 },
+  tiendaEstadoBadge: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 10 },
+  tiendaEstadoTxt:   { color: WHITE, fontWeight: '800', fontSize: 11, textTransform: 'capitalize' },
+
+  // Footer
+  footer:               { flexDirection: 'row', gap: 10, padding: 16, borderTopWidth: 1, borderTopColor: BORDER },
+  footerBtnSecondary:   { flex: 1, borderWidth: 1.5, borderColor: BORDER, borderRadius: 12, paddingVertical: 13, alignItems: 'center' },
+  footerBtnSecondaryTxt:{ color: '#4B5563', fontWeight: '700', fontSize: 14 },
+  footerBtnPrimary:     { flex: 1, borderRadius: 12, paddingVertical: 13, alignItems: 'center', elevation: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.18, shadowRadius: 8 },
+  footerBtnPrimaryTxt:  { color: WHITE, fontWeight: '800', fontSize: 14 },
+});
+
+const rs = StyleSheet.create({
+  content: { padding: 14, paddingBottom: 36 },
+  kpiGrid: { flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -5 },
+  kpi: { width: '50%', backgroundColor: WHITE, borderWidth: 1, borderRadius: 16, padding: 14, marginBottom: 10, overflow: 'hidden', elevation: 3, shadowColor: '#000', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.05, shadowRadius: 10 },
+  kpiBar: { position: 'absolute', left: 0, top: 0, right: 0, height: 4 },
+  kpiHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 3, marginBottom: 10 },
+  kpiTitle: { color: '#6B7280', fontSize: 9, fontWeight: '800', letterSpacing: 0.5, flex: 1 },
+  kpiIcon: { width: 34, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  kpiValueRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 5 },
+  kpiValue: { color: CARBON, fontSize: 26, fontWeight: '900', lineHeight: 31 },
+  kpiBadge: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 6, paddingVertical: 2, maxWidth: 82 },
+  kpiBadgeText: { fontSize: 9, fontWeight: '800' },
+  kpiSub: { color: '#9CA3AF', fontSize: 10, fontWeight: '600', marginTop: 5 },
+  card: { backgroundColor: WHITE, borderWidth: 1, borderColor: BORDER, borderRadius: 18, padding: 16, marginTop: 14, elevation: 3, shadowColor: '#000', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.05, shadowRadius: 12 },
+  miniGrid: { flexDirection: 'row', gap: 6, marginBottom: 14 },
+  mini: { flex: 1, borderWidth: 1.5, borderRadius: 11, paddingVertical: 9, paddingHorizontal: 5, alignItems: 'center', minWidth: 0 },
+  miniCount: { fontSize: 18, fontWeight: '900', lineHeight: 22, marginTop: 2 },
+  miniLabel: { color: CARBON, fontSize: 9, fontWeight: '800', marginTop: 2, textAlign: 'center' },
+  miniPct: { color: '#6B7280', fontSize: 8, fontWeight: '600', marginTop: 2, textAlign: 'center' },
+  composed: { height: 9, borderRadius: 20, backgroundColor: '#F3F4F6', overflow: 'hidden', flexDirection: 'row', marginBottom: 13 },
+  row: { backgroundColor: '#FAFAF9', borderWidth: 1, borderColor: '#F0ECE6', borderRadius: 11, padding: 10, marginBottom: 8 },
+  rowTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 7 },
+  rowText: { flexDirection: 'row', alignItems: 'center', flex: 1, paddingRight: 6 },
+  rowIcon: { fontSize: 15, marginRight: 7 },
+  rowLabel: { color: CARBON, fontSize: 12, fontWeight: '800' },
+  rowDesc: { color: '#9CA3AF', fontSize: 9, marginTop: 1 },
+  rowCount: { fontSize: 14, fontWeight: '900' },
+  rowPct: { color: '#6B7280', fontSize: 10, fontWeight: '700' },
+  track: { height: 7, backgroundColor: '#E5E7EB', borderRadius: 10, overflow: 'hidden' },
+  fill: { height: '100%', borderRadius: 10 },
+  highlight: { backgroundColor: '#F0FDF4', borderWidth: 1.5, borderColor: '#BBF7D0', borderRadius: 13, padding: 12, marginBottom: 13, position: 'relative', paddingRight: 68 },
+  highlightTitle: { color: '#047857', fontSize: 9, fontWeight: '900', letterSpacing: 0.4 },
+  highlightText: { color: '#166534', fontSize: 11, marginTop: 3, lineHeight: 16 },
+  highlightPct: { color: '#047857', fontSize: 22, fontWeight: '900', position: 'absolute', right: 12, top: 19 },
+  footer: { borderTopWidth: 1, borderTopColor: BORDER, borderStyle: 'dashed', paddingTop: 10, marginTop: 4, color: '#6D28D9', fontSize: 10, fontWeight: '700', textAlign: 'center' },
+});
+
+// ─── Estilos del modal de estados de tienda ──────────────────────────────────
+const tm = StyleSheet.create({
+  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', alignItems: 'center', justifyContent: 'center', padding: 18 },
+  card: { backgroundColor: WHITE, borderRadius: 20, width: '100%', maxWidth: 540, maxHeight: '92%', overflow: 'hidden', elevation: 24, shadowColor: '#000', shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.3, shadowRadius: 24 },
+  header: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 20, paddingVertical: 18 },
+  headerIcon: { width: 48, height: 48, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' },
+  headerEmoji: { width: 48, height: 48, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' },
+  headerEyebrow: { color: 'rgba(255,255,255,0.82)', fontSize: 10, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.6 },
+  headerTitle: { color: WHITE, fontSize: 18, fontWeight: '800', marginTop: 2 },
+  close: { width: 32, height: 32, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' },
+  closeText: { color: WHITE, fontSize: 14, fontWeight: '800' },
+  body: { padding: 20 },
+  storeLabel: { color: '#6B7280', fontSize: 10, fontWeight: '800', letterSpacing: 0.5 },
+  storeName: { color: CARBON, fontSize: 16, fontWeight: '800', marginTop: 4 },
+  storeId: { color: GRAY, fontSize: 12, marginTop: 3 },
+  chooseLabel: { color: '#374151', fontSize: 12, fontWeight: '800', marginTop: 22, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.35 },
+  statusOption: { minHeight: 48, borderWidth: 1.5, borderRadius: 12, paddingHorizontal: 13, marginBottom: 8, flexDirection: 'row', alignItems: 'center' },
+  statusOptionDisabled: { opacity: 0.68 },
+  statusDot: { width: 9, height: 9, borderRadius: 5, marginRight: 10 },
+  statusOptionText: { flex: 1, fontSize: 14, fontWeight: '800' },
+  statusCurrent: { fontSize: 11, fontWeight: '700' },
+  storeBox: { borderWidth: 1.5, borderRadius: 14, padding: 13, flexDirection: 'row', alignItems: 'center', gap: 10 },
+  idBadge: { borderRadius: 14, paddingHorizontal: 9, paddingVertical: 5 },
+  idBadgeText: { color: WHITE, fontSize: 11, fontWeight: '800' },
+  description: { color: '#4B5563', fontSize: 13, lineHeight: 20, marginTop: 16, marginBottom: 16 },
+  notice: { backgroundColor: '#FFFBEB', borderColor: '#FDE68A', borderWidth: 1, borderRadius: 10, padding: 12, marginBottom: 14 },
+  noticeText: { color: '#92400E', fontSize: 12, lineHeight: 18 },
+  reasonLabel: { color: '#374151', fontSize: 10, fontWeight: '800', letterSpacing: 0.35, marginBottom: 8 },
+  reasonChips: { gap: 6, marginBottom: 14 },
+  reasonChip: { backgroundColor: '#F3F4F6', borderColor: '#E5E7EB', borderWidth: 1, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 7 },
+  reasonChipSelected: { backgroundColor: '#B91C1C', borderColor: '#B91C1C' },
+  reasonChipText: { color: '#374151', fontSize: 11, lineHeight: 15 },
+  reasonChipTextSelected: { color: WHITE, fontWeight: '700' },
+  reasonHeading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 },
+  reasonFieldLabel: { color: '#1F2937', fontSize: 12, fontWeight: '800' },
+  count: { color: '#9CA3AF', fontSize: 11, fontWeight: '600' },
+  countWarning: { color: '#DC2626' },
+  reasonInput: { minHeight: 92, borderWidth: 1.5, borderColor: '#D1D5DB', borderRadius: 10, backgroundColor: '#FAFAFA', color: CARBON, fontSize: 13, lineHeight: 19, paddingHorizontal: 12, paddingVertical: 10 },
+  reasonInputError: { borderColor: '#EF4444' },
+  reasonError: { color: '#DC2626', fontSize: 11, fontWeight: '700', marginTop: 6 },
+  actions: { flexDirection: 'row', gap: 10, marginTop: 18 },
+  cancelButton: { flex: 1, alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: BORDER, borderRadius: 10, minHeight: 46, paddingHorizontal: 10 },
+  cancelButtonText: { color: '#4B5563', fontSize: 14, fontWeight: '700' },
+  confirmButton: { flex: 1.2, alignItems: 'center', justifyContent: 'center', borderRadius: 10, minHeight: 46, paddingHorizontal: 10 },
+  confirmButtonText: { color: WHITE, fontSize: 13, fontWeight: '800', textAlign: 'center' },
+  buttonDisabled: { opacity: 0.7 },
 });

@@ -46,6 +46,7 @@ def obtener_tiendas():
         cursor.execute("""
             SELECT
                 t.id_tienda,
+                t.id_usuario,
                 t.nombre_tienda,
                 t.direccion,
                 t.telefono,

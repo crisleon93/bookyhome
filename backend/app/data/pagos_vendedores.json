@@ -1474,7 +1474,9 @@
     "monto": 23800.0,
     "id_venta": 39,
     "fecha_venta": "2026-08-27T20:41:34.422099Z",
-    "estado": "pendiente",
-    "fecha_programada": 1788486094.422112
+    "estado": "procesado",
+    "fecha_programada": 1788486094.422112,
+    "fecha_pago": "2026-08-29T16:38:08.318527Z",
+    "referencia": "TRF-Bancolombia-9-01-20260829163808"
   }
 ]

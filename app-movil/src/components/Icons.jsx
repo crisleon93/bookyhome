@@ -374,23 +374,6 @@ export const IconEdit = ({ size = 20, color = '#7A1E3A' }) => (
   </Svg>
 );
 
-// ── Basura / Eliminar ─────────────────────────────────────────────────────────
-export const IconTrash = ({ size = 20, color = '#7A1E3A' }) => (
-  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <Polyline points="3 6 5 6 21 6" />
-    <Path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-    <Line x1="10" y1="11" x2="10" y2="17" />
-    <Line x1="14" y1="11" x2="14" y2="17" />
-  </Svg>
-);
-
-// ── Check / Aprobado ──────────────────────────────────────────────────────────
-export const IconCheck = ({ size = 20, color = '#7A1E3A' }) => (
-  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <Polyline points="20 6 9 17 4 12" />
-  </Svg>
-);
-
 // ── Cupón / Ticket ────────────────────────────────────────────────────────────
 export const IconTicket = ({ size = 20, color = '#7A1E3A' }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -480,6 +463,81 @@ export const IconTool = ({ size = 22, color = '#7A1E3A' }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none"
     stroke={color} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
     <Path d="M14.7 6.3a5 5 0 0 0-6.9 6.9L3 18a2.1 2.1 0 1 0 3 3l4.8-4.8a5 5 0 0 0 6.9-6.9l-3.1 3.1-2.6-.5-.5-2.6 3.2-3Z" stroke={color}/>
+  </Svg>
+);
+
+// ── Iconos del menú de administración — equivalentes exactos de la web ──────
+export const IconLayoutDashboard = ({ size = 20, color = '#7A1E3A' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <Rect x="3" y="3" width="7" height="9" stroke={color}/><Rect x="14" y="3" width="7" height="5" stroke={color}/><Rect x="14" y="12" width="7" height="9" stroke={color}/><Rect x="3" y="16" width="7" height="5" stroke={color}/>
+  </Svg>
+);
+
+export const IconTrendingUp = ({ size = 20, color = '#7A1E3A' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <Polyline points="22 7 13.5 15.5 8.5 10.5 2 17" stroke={color}/><Polyline points="16 7 22 7 22 13" stroke={color}/>
+  </Svg>
+);
+
+export const IconWallet = ({ size = 22, color = '#7A1E3A' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <Path d="M21 12V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v5M3 12v9a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-9M3 12h18M18 12a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h2v-8h-2z" stroke={color}/>
+  </Svg>
+);
+
+export const IconChartBar = ({ size = 20, color = '#7A1E3A' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <Line x1="12" y1="20" x2="12" y2="10" stroke={color}/><Line x1="18" y1="20" x2="18" y2="4" stroke={color}/><Line x1="6" y1="20" x2="6" y2="16" stroke={color}/>
+  </Svg>
+);
+
+export const IconRefresh = ({ size = 20, color = '#7A1E3A' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <Polyline points="23 4 23 10 17 10" stroke={color}/><Polyline points="1 20 1 14 7 14" stroke={color}/><Path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" stroke={color}/>
+  </Svg>
+);
+
+// ── Flecha izquierda ─────────────────────────────────────────────────────────
+export const IconArrowLeft = ({ size = 20, color = '#FFFFFF' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <Line x1="19" y1="12" x2="5" y2="12" stroke={color}/>
+    <Polyline points="12 19 5 12 12 5" stroke={color}/>
+  </Svg>
+);
+
+// ── Usuarios múltiples ───────────────────────────────────────────────────────
+export const IconUsers = ({ size = 22, color = '#7A1E3A' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <Path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke={color}/>
+    <Circle cx="9" cy="7" r="4" stroke={color}/>
+    <Path d="M23 21v-2a4 4 0 0 0-3-3.87" stroke={color}/>
+    <Path d="M16 3.13a4 4 0 0 1 0 7.75" stroke={color}/>
+  </Svg>
+);
+
+// ── Dashboard ────────────────────────────────────────────────────────────────
+export const IconDashboard = ({ size = 20, color = '#7A1E3A' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <Rect x="3" y="3" width="7" height="9" stroke={color}/><Rect x="14" y="3" width="7" height="5" stroke={color}/><Rect x="14" y="12" width="7" height="9" stroke={color}/><Rect x="3" y="16" width="7" height="5" stroke={color}/>
+  </Svg>
+);
+
+// ── Finanzas ─────────────────────────────────────────────────────────────────
+export const IconFinance = ({ size = 20, color = '#7A1E3A' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <Polyline points="22 7 13.5 15.5 8.5 10.5 2 17" stroke={color}/>
+    <Polyline points="16 7 22 7 22 13" stroke={color}/>
+  </Svg>
+);
+
+// ── Reportes ─────────────────────────────────────────────────────────────────
+export const IconReport = ({ size = 20, color = '#7A1E3A' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <Path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke={color}/>
+    <Polyline points="14 2 14 8 20 8" stroke={color}/>
+    <Line x1="16" y1="13" x2="8" y2="13" stroke={color}/>
+    <Line x1="16" y1="17" x2="8" y2="17" stroke={color}/>
+    <Polyline points="10 9 9 9 8 9" stroke={color}/>
   </Svg>
 );
 
