@@ -118,6 +118,25 @@ app.add_middleware(
 
 )
 
+# Permite payloads de hasta 20MB (necesario para audio base64 en mensajes de voz)
+from starlette.middleware.base import BaseHTTPMiddleware
+from fastapi import Request
+
+class MaxBodySizeMiddleware(BaseHTTPMiddleware):
+    def __init__(self, app, max_body_size: int = 20 * 1024 * 1024):
+        super().__init__(app)
+        self.max_body_size = max_body_size
+
+    async def dispatch(self, request: Request, call_next):
+        if request.headers.get("content-length"):
+            content_length = int(request.headers["content-length"])
+            if content_length > self.max_body_size:
+                from fastapi.responses import JSONResponse
+                return JSONResponse({"detail": "Payload demasiado grande (máx 20MB)"}, status_code=413)
+        return await call_next(request)
+
+app.add_middleware(MaxBodySizeMiddleware, max_body_size=20 * 1024 * 1024)
+
 
 
 # ========================

@@ -1,6 +1,6 @@
 // src/pages/MiTienda.jsx
 import { useState, useEffect, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import api, { getApiBaseUrl } from "../services/api";
 import { notificacionesService } from "../services/notificaciones";
@@ -645,10 +645,18 @@ export default function MiTienda() {
   });
   const [userPhotoUrl,  setUserPhotoUrl]  = useState(null);
   const [loading]                 = useState(false);
-  const [activeSide,    setActiveSide]    = useState(() => {
+  const location = useLocation();
+  const [activeSide, setActiveSide] = useState(() => {
     const seccion = new URLSearchParams(window.location.search).get('seccion');
     return seccion || 'Inicio';
   });
+
+  useEffect(() => {
+    const seccion = new URLSearchParams(location.search).get('seccion');
+    if (seccion) {
+      setActiveSide(seccion);
+    }
+  }, [location.search]);
   const [selectedSalaInChat, setSelectedSalaInChat] = useState(null);
   const [libros,        setLibros]        = useState([]);
   const [loadingLibros, setLoadingLibros] = useState(false);
@@ -2679,40 +2687,49 @@ export default function MiTienda() {
                     </td>
                     <td style={{ padding: "12px" }}>
                       {(() => {
-                        const estado = pedido.estado?.toLowerCase();
-                        const colores = {
-                          pagado:   { border: "#1e8a45", bg: "#eafaf1", color: "#145c2e" },
-                          enviado:  { border: "#2979c7", bg: "#eaf3ff", color: "#1a4f8a" },
-                          entregada:{ border: "#7A1E3A", bg: "#f8e9ee", color: "#7A1E3A" },
-                          cancelada:{ border: "#c0392b", bg: "#fdecea", color: "#7b1e1e" },
+                        const rawEstado = (pedido.estado || "").toLowerCase().trim();
+                        let estadoNorm = "pendiente";
+                        if (["pagado", "pagada", "aprobado", "aprobada"].includes(rawEstado)) estadoNorm = "pagado";
+                        else if (["enviado", "enviada", "en_camino"].includes(rawEstado)) estadoNorm = "enviado";
+                        else if (["entregado", "entregada", "completado", "completada"].includes(rawEstado)) estadoNorm = "entregada";
+                        else if (["cancelado", "cancelada", "anulado", "anulada"].includes(rawEstado)) estadoNorm = "cancelada";
+
+                        const estilos = {
+                          pagado:   { border: "#1e8a45", bg: "#eafaf1", color: "#145c2e", label: "Pagada" },
+                          enviado:  { border: "#2979c7", bg: "#eaf3ff", color: "#1a4f8a", label: "Enviada" },
+                          entregada:{ border: "#7A1E3A", bg: "#f8e9ee", color: "#7A1E3A", label: "Entregada" },
+                          cancelada:{ border: "#c0392b", bg: "#fdecea", color: "#7b1e1e", label: "Cancelada" },
+                          pendiente:{ border: "#e67e22", bg: "#fef5e7", color: "#b95c00", label: "Pendiente" },
                         };
-                        const c = colores[estado];
-                        if (c) {
-                          const etiquetas = { pagado: "Pagado", enviado: "Enviado", entregada: "Entregada", cancelada: "Cancelada" };
-                          return <div style={{ padding: "8px 12px", borderRadius: "8px", border: `2px solid ${c.border}`, backgroundColor: c.bg, color: c.color, fontSize: "0.85rem", fontWeight: "700", minWidth: "120px", textAlign: "center" }}>{etiquetas[estado] || "Estado desconocido"}</div>;
-                        }
+                        const c = estilos[estadoNorm] || estilos.pendiente;
                         return (
                           <div style={{
                             padding: "8px 12px",
                             borderRadius: "8px",
-                            border: "1px solid #ddd",
-                            backgroundColor: "#f5f5f5",
-                            color: "#999",
+                            border: `2px solid ${c.border}`,
+                            backgroundColor: c.bg,
+                            color: c.color,
                             fontSize: "0.85rem",
-                            fontWeight: "600",
+                            fontWeight: "700",
                             minWidth: "120px",
                             textAlign: "center"
                           }}>
-                            {pedido.estado || "Pendiente"}
+                            {c.label}
                           </div>
                         );
                       })()}
                     </td>
                     <td style={{ padding: "12px", minWidth: "145px" }}>
                       {(() => {
-                        const estado = pedido.estado?.toLowerCase();
-                        // Orden cancelada
-                        if (estado === "cancelada") {
+                        const rawEstado = (pedido.estado || "").toLowerCase().trim();
+                        let estadoNorm = "pendiente";
+                        if (["pagado", "pagada", "aprobado", "aprobada"].includes(rawEstado)) estadoNorm = "pagado";
+                        else if (["enviado", "enviada", "en_camino"].includes(rawEstado)) estadoNorm = "enviado";
+                        else if (["entregado", "entregada", "completado", "completada"].includes(rawEstado)) estadoNorm = "entregada";
+                        else if (["cancelado", "cancelada", "anulado", "anulada"].includes(rawEstado)) estadoNorm = "cancelada";
+
+                        // 1. Orden cancelada
+                        if (estadoNorm === "cancelada") {
                           return (
                             <div style={{
                               padding: "7px 11px",
@@ -2728,7 +2745,8 @@ export default function MiTienda() {
                             </div>
                           );
                         }
-                        // Guía ya registrada — se muestra en cualquier estado
+
+                        // 2. Guía ya registrada
                         if (pedido.envio) {
                           return (
                             <div style={{ fontSize: "0.78rem", lineHeight: 1.5 }}>
@@ -2736,7 +2754,7 @@ export default function MiTienda() {
                                 {pedido.envio.empresa_mensajeria}
                               </strong>
                               <span style={{ color: "#6d6265" }}>Guía {pedido.envio.numero_guia}</span>
-                              {["pagado", "enviado"].includes(estado) && (
+                              {["pagado", "enviado"].includes(estadoNorm) && (
                                 <button
                                   onClick={() => abrirRegistroEnvio(pedido)}
                                   style={{
@@ -2759,8 +2777,9 @@ export default function MiTienda() {
                             </div>
                           );
                         }
-                        // Sin Guía — botón disponible si está pagado o enviado
-                        if (["pagado", "enviado"].includes(estado)) {
+
+                        // 3. Pagada o enviada pero sin guía: botón para registrarla
+                        if (["pagado", "enviado"].includes(estadoNorm)) {
                           return (
                             <button
                               onClick={() => abrirRegistroEnvio(pedido)}
@@ -2780,8 +2799,9 @@ export default function MiTienda() {
                             </button>
                           );
                         }
-                        // Entregada sin Guía
-                        if (estado === "entregada") {
+
+                        // 4. Entregada sin guía
+                        if (estadoNorm === "entregada") {
                           return (
                             <div style={{
                               padding: "7px 11px",
@@ -2797,7 +2817,8 @@ export default function MiTienda() {
                             </div>
                           );
                         }
-                        // Pendiente u otro
+
+                        // 5. Pendiente de pago real
                         return (
                           <div style={{
                             padding: "7px 11px",
@@ -3139,7 +3160,8 @@ export default function MiTienda() {
       case "Calificaciones": return renderCalificaciones();
       case "Quejas y reclamos": return <QuejasVendedor />;
       case "Soporte técnico": return <Soporte />;
-      case "Envios":        return renderEnvios();
+      case "Envios":
+      case "Envíos":        return renderEnvios();
       case "Clientes":      return renderProximamente("Clientes");
       case "Configuración": return renderConfiguracion();
       case "Perfil":        return renderPerfil();
@@ -3153,7 +3175,7 @@ export default function MiTienda() {
   };
 
   return (
-    <div className="dashboard-container">
+    <div className="dashboard-container seller-dashboard">
       <SellerSidebar
         userName={userName}
         userPhotoUrl={userPhotoUrl}
@@ -3162,17 +3184,15 @@ export default function MiTienda() {
         handleLogout={handleLogout}
       />
 
-      <button
-        type="button"
-        className="dashboard-tracking-shortcut"
-        onClick={() => cambiarSeccion("Envios")}
-        aria-label="Gestionar envíos"
-      >
-        <IconTruck width={22} height={22} strokeWidth={2} />
-        <span>Envíos</span>
-      </button>
-
-      <main className="dashboard-main"><div className="dashboard-section">{renderContenido()}</div></main>
+      <main className={`dashboard-main ${activeSide === 'Mensajes' ? 'dashboard-main--chat' : ''}`}>
+        {activeSide === 'Mensajes' ? (
+          <div style={{ height: '100%', width: '100%', overflow: 'hidden', display: 'flex', flexDirection: 'column', flex: 1 }}>
+            <Chat embedded={true} selectedSalaProp={selectedSalaInChat} onSelectSala={(id) => setSelectedSalaInChat(id)} />
+          </div>
+        ) : (
+          <div style={{ height: '100%', width: '100%', overflow: 'auto' }}>{renderContenido()}</div>
+        )}
+      </main>
 
       {modalEditar && (
         <ModalEditarLibro

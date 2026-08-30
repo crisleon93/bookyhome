@@ -16,7 +16,8 @@ import {
   IconChevronLeft,
   IconMenu,
   IconLogOut,
-  IconStar
+  IconStar,
+  IconTruck
 } from './Icons';
 
 const VINOTINTO = '#7A1E3A';
@@ -30,6 +31,7 @@ const MENU_LINKS = [
   { name: 'Cupones' },
   { name: 'Ventas' },
   { name: 'Pedidos' },
+  { name: 'Envíos' },
   { name: 'Nómina' },
   { name: 'Calificaciones' },
   { name: 'Quejas y reclamos' },
@@ -57,6 +59,7 @@ const ICONS = {
   ),
   Ventas: <IconCart width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
   Pedidos: <IconShoppingBag width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
+  'Envíos': <IconTruck width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
   Nómina: (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={WHITE} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
       <rect x="2" y="5" width="20" height="14" rx="2"></rect>

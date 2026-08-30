@@ -52,4 +52,14 @@ export const chatService = {
     );
     return response.data;
   },
+
+  eliminarSala: async (id_sala) => {
+    const response = await api.delete(`/chat/salas/${id_sala}`);
+    return response.data;
+  },
+
+  vaciarChat: async (id_sala) => {
+    const response = await api.delete(`/chat/salas/${id_sala}/mensajes`);
+    return response.data;
+  },
 };

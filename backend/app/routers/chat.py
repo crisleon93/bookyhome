@@ -75,9 +75,13 @@ def obtener_salas_usuario(user_id: int = Depends(get_current_user), rol: str = D
                 sc.id_tienda,
                 t.nombre_tienda,
                 u.nombre_usuario as nombre_comprador,
+                u.correo_usuario as correo_comprador,
+                u.telefono as telefono_comprador,
                 u.rol as rol_comprador,
+                ut.correo_usuario as correo_tienda,
+                ut.telefono as telefono_tienda,
                 m.mensaje as ultimo_mensaje,
-                DATE_FORMAT(m.enviado_en, '%Y-%m-%d %H:%i:%S') as fecha_ultimo_mensaje,
+                DATE_FORMAT(COALESCE(m.enviado_en, sc.actualizado_en, sc.creado_en), '%Y-%m-%d %H:%i:%S') as fecha_ultimo_mensaje,
                 (
                     SELECT COUNT(*) 
                     FROM mensajes m2 
@@ -88,18 +92,25 @@ def obtener_salas_usuario(user_id: int = Depends(get_current_user), rol: str = D
             FROM salasChats sc
             LEFT JOIN tiendas t ON sc.id_tienda = t.id_tienda
             LEFT JOIN usuarios u ON sc.id_usuario = u.id_usuario
+            LEFT JOIN usuarios ut ON t.id_usuario = ut.id_usuario
             LEFT JOIN mensajes m ON sc.id_sala = m.id_sala
                 AND m.enviado_en = (
                     SELECT MAX(enviado_en) 
                     FROM mensajes 
                     WHERE id_sala = sc.id_sala
                 )
-            WHERE {filtro} AND m.mensaje IS NOT NULL
-            GROUP BY sc.id_sala, sc.id_usuario, sc.id_tienda, t.nombre_tienda, u.nombre_usuario, u.rol, m.mensaje, m.enviado_en
-            ORDER BY m.enviado_en DESC
+            WHERE {filtro}
+            GROUP BY sc.id_sala, sc.id_usuario, sc.id_tienda, t.nombre_tienda, u.nombre_usuario, u.correo_usuario, u.telefono, u.rol, ut.correo_usuario, ut.telefono, m.mensaje, m.enviado_en, sc.actualizado_en, sc.creado_en
+            ORDER BY COALESCE(m.enviado_en, sc.actualizado_en, sc.creado_en) DESC
         """
         cursor.execute(query, (user_id, user_id))
         salas = cursor.fetchall()
+        for s in salas:
+            um = s.get("ultimo_mensaje")
+            if um and um.startswith("[AUDIO]"):
+                s["ultimo_mensaje"] = "🎤 Nota de voz"
+            elif um and um.startswith("[FILE]"):
+                s["ultimo_mensaje"] = "📎 Archivo adjunto"
         
         return {"salas": salas}
     finally:
@@ -189,6 +200,7 @@ def obtener_mensajes_sala(
                 m.id_sala,
                 m.id_remitente,
                 u.nombre_usuario as nombre_remitente,
+                u.foto_perfil as foto_remitente,
                 m.mensaje,
                 DATE_FORMAT(m.enviado_en, '%Y-%m-%d %H:%i:%S') as enviado_en,
                 m.mensaje_leido
@@ -201,6 +213,20 @@ def obtener_mensajes_sala(
         cursor.execute(query, (id_sala, limit, offset))
         mensajes = cursor.fetchall()
         mensajes.reverse()
+
+        participantes = _obtener_participantes_sala(cursor, id_sala)
+        destinatario_id = None
+        if participantes:
+            destinatario_id = (
+                participantes["id_vendedor"]
+                if user_id == participantes["id_comprador"]
+                else participantes["id_comprador"]
+            )
+        destinatario_conectado = manager.esta_conectado(destinatario_id) if destinatario_id else False
+
+        for m in mensajes:
+            m["entregado"] = bool(m.get("mensaje_leido") or destinatario_conectado)
+
         return {"mensajes": mensajes}
     except HTTPException:
         raise
@@ -224,8 +250,8 @@ def _guardar_mensaje_sync(id_sala: int, user_id: int, texto: str) -> dict:
     responder por REST y/o transmitir por WS. Corre en threadpool (bloqueante)."""
     if not texto.strip():
         raise HTTPException(status_code=400, detail="El mensaje no puede estar vacío")
-    if len(texto) > 500:
-        raise HTTPException(status_code=400, detail="El mensaje es muy largo (máximo 500 caracteres)")
+    if len(texto) > 15000000:
+        raise HTTPException(status_code=400, detail="El archivo/mensaje es muy grande (máximo 15MB)")
 
     db = get_db()
     cursor = db.cursor(dictionary=True)
@@ -263,6 +289,7 @@ def _guardar_mensaje_sync(id_sala: int, user_id: int, texto: str) -> dict:
         cursor.execute("""
             SELECT m.id_mensaje, m.id_sala, m.id_remitente,
                    u.nombre_usuario AS nombre_remitente,
+                   u.foto_perfil AS foto_remitente,
                    m.mensaje,
                    DATE_FORMAT(m.enviado_en, '%Y-%m-%d %H:%i:%S') AS enviado_en,
                    m.mensaje_leido
@@ -284,7 +311,12 @@ def _guardar_mensaje_sync(id_sala: int, user_id: int, texto: str) -> dict:
         # Insertar notificación persistente en BD para el destinatario
         if destinatario_id is not None:
             remitente = mensaje_completo.get("nombre_remitente", "Alguien")
-            preview = texto[:80] + ("…" if len(texto) > 80 else "")
+            if texto.startswith("[AUDIO]"):
+                preview = "🎤 Nota de voz"
+            elif texto.startswith("[FILE]"):
+                preview = "📎 Archivo adjunto"
+            else:
+                preview = texto[:80] + ("…" if len(texto) > 80 else "")
             try:
                 cursor.execute("""
                     SELECT id_notificacion
@@ -324,10 +356,20 @@ async def enviar_y_notificar(id_sala: int, user_id: int, texto: str) -> dict:
     mensaje = resultado["mensaje"]
     destinatario_id = resultado["destinatario_id"]
 
-    payload_ws = {"tipo": "nuevo_mensaje", "mensaje": mensaje}
-
+    entregado = False
     if destinatario_id is not None:
-        await manager.enviar_a_usuario(destinatario_id, payload_ws)
+        payload_ws = {"tipo": "nuevo_mensaje", "mensaje": mensaje}
+        entregado = await manager.enviar_a_usuario(destinatario_id, payload_ws)
+
+    mensaje["entregado"] = bool(entregado)
+
+    if entregado:
+        # Notificar también al emisor que el mensaje fue entregado en tiempo real
+        await manager.enviar_a_usuario(user_id, {
+            "tipo": "mensaje_entregado",
+            "id_mensaje": mensaje["id_mensaje"],
+            "id_sala": id_sala
+        })
 
     return mensaje
 
@@ -339,7 +381,9 @@ async def enviar_mensaje(data: MensajeCreate, user_id: int = Depends(get_current
     return {
         "ok": True,
         "id_mensaje": mensaje["id_mensaje"],
-        "mensaje": "Mensaje enviado"
+        "mensaje": "Mensaje enviado",
+        "entregado": mensaje.get("entregado", False),
+        "data": mensaje
     }
 
 @router.put("/mensajes/{id_mensaje}/leer")
@@ -389,12 +433,12 @@ def marcar_mensaje_leido(
         db.close()
 
 @router.put("/salas/{id_sala}/marcar-leidos")
-def marcar_sala_leida(
+async def marcar_sala_leida(
     id_sala: int,
     user_id: int = Depends(get_current_user),
     rol: str = Depends(get_current_user_rol),
 ):
-    """Marca como leídos los mensajes de una sala que el usuario no envió"""
+    """Marca como leídos los mensajes de una sala que el usuario no envió y notifica al emisor"""
     db = get_db()
     cursor = db.cursor(dictionary=True)
     try:
@@ -423,7 +467,107 @@ def marcar_sala_leida(
         """, (id_sala, user_id))
 
         db.commit()
+
+        otro_usuario_id = (
+            sala["id_vendedor"]
+            if user_id == sala["id_comprador"]
+            else sala["id_comprador"]
+        )
+        if otro_usuario_id:
+            await manager.enviar_a_usuario(otro_usuario_id, {
+                "tipo": "mensajes_leidos",
+                "id_sala": id_sala
+            })
+
         return {"ok": True, "mensaje": "Sala marcada como leída"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        cursor.close()
+        db.close()
+
+
+@router.delete("/salas/{id_sala}")
+def eliminar_sala_chat(
+    id_sala: int,
+    user_id: int = Depends(get_current_user),
+    rol: str = Depends(get_current_user_rol),
+):
+    """Elimina permanentemente una sala de chat y todos sus mensajes asociados"""
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    try:
+        cursor.execute("""
+            SELECT sc.id_usuario as id_comprador, t.id_usuario as id_vendedor
+            FROM salasChats sc
+            LEFT JOIN tiendas t ON sc.id_tienda = t.id_tienda
+            WHERE sc.id_sala = %s
+        """, (id_sala,))
+        sala = cursor.fetchone()
+
+        if not sala:
+            raise HTTPException(status_code=404, detail="Sala no encontrada")
+
+        es_admin = (rol or '').lower() in ('admin', 'administrador')
+        es_comprador = rol != 'vendedor' and user_id == sala['id_comprador']
+        es_vendedor = rol == 'vendedor' and user_id == sala['id_vendedor']
+
+        if not (es_comprador or es_vendedor or es_admin):
+            raise HTTPException(status_code=403, detail="No tienes permiso para eliminar esta sala")
+
+        # Eliminar mensajes primero (FK)
+        cursor.execute("DELETE FROM mensajes WHERE id_sala = %s", (id_sala,))
+        # Eliminar notificaciones asociadas
+        cursor.execute("DELETE FROM notificaciones WHERE tipo = 'mensaje' AND id_referencia = %s", (id_sala,))
+        # Eliminar sala
+        cursor.execute("DELETE FROM salasChats WHERE id_sala = %s", (id_sala,))
+
+        db.commit()
+        return {"ok": True, "mensaje": "Conversación eliminada correctamente"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        cursor.close()
+        db.close()
+
+
+@router.delete("/salas/{id_sala}/mensajes")
+def vaciar_mensajes_sala(
+    id_sala: int,
+    user_id: int = Depends(get_current_user),
+    rol: str = Depends(get_current_user_rol),
+):
+    """Elimina todos los mensajes de una sala de chat"""
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    try:
+        cursor.execute("""
+            SELECT sc.id_usuario as id_comprador, t.id_usuario as id_vendedor
+            FROM salasChats sc
+            LEFT JOIN tiendas t ON sc.id_tienda = t.id_tienda
+            WHERE sc.id_sala = %s
+        """, (id_sala,))
+        sala = cursor.fetchone()
+
+        if not sala:
+            raise HTTPException(status_code=404, detail="Sala no encontrada")
+
+        es_admin = (rol or '').lower() in ('admin', 'administrador')
+        es_comprador = rol != 'vendedor' and user_id == sala['id_comprador']
+        es_vendedor = rol == 'vendedor' and user_id == sala['id_vendedor']
+
+        if not (es_comprador or es_vendedor or es_admin):
+            raise HTTPException(status_code=403, detail="No tienes permiso para vaciar esta sala")
+
+        cursor.execute("DELETE FROM mensajes WHERE id_sala = %s", (id_sala,))
+        db.commit()
+        return {"ok": True, "mensaje": "Mensajes eliminados correctamente"}
     except HTTPException:
         raise
     except Exception as e:

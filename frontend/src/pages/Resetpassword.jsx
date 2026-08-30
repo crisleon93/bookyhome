@@ -61,7 +61,7 @@ function ResetPassword() {
   // Countdown para redirigir al login tras éxito
   useEffect(() => {
     if (!exito) return
-    if (countdown === 0) { navigate('/login'); return }
+    if (countdown === 0) { navigate('/'); return }
     const timer = setTimeout(() => setCountdown(c => c - 1), 1000)
     return () => clearTimeout(timer)
   }, [exito, countdown, navigate])

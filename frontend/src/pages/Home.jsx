@@ -20,6 +20,7 @@ import Chat from './Chat'
 import ListaDeseos from './ListaDeseos'
 import QuejasReclamos from './QuejasReclamos'
 import Soporte from './Soporte'
+import CarruselPublico from '../components/CarruselPublico'
 
 import ficcion from '../assets/ficcion.png'
 import romance from '../assets/romance.png'
@@ -66,11 +67,11 @@ const IconArrow = () => (
 
 // ── Datos ─────────────────────────────────────────────────────────────────────
 
-const STATS = [
-  { icon: 'M4 19.5A2.5 2.5 0 0 1 6.5 17H20M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2ZM12 6v12M8 10h4M8 14h3', color: 'icon-vinotinto', num: '+10,000', label: 'Libros disponibles' },
-  { icon: 'M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM9 22V12h6v10', color: 'icon-rojo', num: '+150', label: 'Librerías asociadas' },
-  { icon: <IconUsers />, color: 'icon-vinotinto', num: '+50,000', label: 'Usuarios activos' },
-  { icon: 'M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z', color: 'icon-rojo', num: '4.8', label: 'Calificación promedio' },
+const STATS_CONFIG = [
+  { key: 'libros_disponibles',  icon: 'M4 19.5A2.5 2.5 0 0 1 6.5 17H20M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2ZM12 6v12M8 10h4M8 14h3', color: 'icon-vinotinto', label: 'Libros disponibles',   prefix: '+', decimals: 0 },
+  { key: 'librerias_asociadas', icon: 'M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM9 22V12h6v10',                                                           color: 'icon-rojo',      label: 'Librerías asociadas',  prefix: '+', decimals: 0 },
+  { key: 'usuarios_activos',    icon: null,                                                                                                                        color: 'icon-vinotinto', label: 'Usuarios registrados', prefix: '+', decimals: 0 },
+  { key: 'calificacion_promedio',icon: 'M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z',                         color: 'icon-rojo',      label: 'Calificación promedio', prefix: '',  decimals: 1 },
 ]
 
 const BENEFITS = [
@@ -184,6 +185,20 @@ function Home() {
   const [activeSide, setActiveSide] = useState('Inicio')
   const [catalogoLibroInicial, setCatalogoLibroInicial] = useState(null)
   const [selectedSalaInChat, setSelectedSalaInChat] = useState(null)
+
+  // Stats públicos
+  const [stats, setStats] = useState({
+    libros_disponibles: null,
+    librerias_asociadas: null,
+    usuarios_activos: null,
+    calificacion_promedio: null,
+  })
+
+  useEffect(() => {
+    api.get('/catalogo/stats')
+      .then(res => setStats(res.data))
+      .catch(() => {})
+  }, [])
   // Check authentication
   useEffect(() => {
     const checkAuth = () => {
@@ -281,10 +296,14 @@ function Home() {
   useEffect(() => {
     const params = new URLSearchParams(location.search)
     const seccion = params.get('seccion')
+    const salaParam = params.get('sala')
     if (seccion && isAuthenticated) {
       startTransition(() => {
         setActiveSide(seccion === 'Direcciones' ? 'Mi Perfil' : seccion)
       })
+    }
+    if (salaParam) {
+      setSelectedSalaInChat(Number(salaParam))
     }
   }, [location.search, isAuthenticated])
   
@@ -308,9 +327,9 @@ function Home() {
           activeSide={activeSide}
           onSelect={handleSelectSection}
         />
-        <main className="dashboard-main">
+        <main className={`dashboard-main ${activeSide === 'Mensajes' ? 'dashboard-main--chat' : ''}`}>
           {activeSide === 'Inicio' && (
-            <div className="dashboard-section">
+            <div style={{ height: '100%', width: '100%', overflow: 'auto' }}>
               <SeccionInicio
                 userName={userName}
                 onGoToCatalog={() => handleSelectSection('Catálogo')}
@@ -322,28 +341,22 @@ function Home() {
               />
             </div>
           )}
-          {activeSide === 'Catálogo' && (
-            <div className="dashboard-section"><Catalogo
-              libroInicial={catalogoLibroInicial}
-              onLibroInicialConsumido={() => setCatalogoLibroInicial(null)}
-            /></div>
-          )}
           {activeSide === 'Mensajes' && (
-            <div style={{ height: 'calc(100vh - 120px)', minHeight: 'calc(100vh - 120px)' }}>
+            <div style={{ height: '100%', width: '100%', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
               <Chat embedded={true} selectedSalaProp={selectedSalaInChat} onSelectSala={(id) => setSelectedSalaInChat(id)} />
             </div>
           )}
           {activeSide === 'Carrito' && (
-            <div className="dashboard-section"><SeccionCarrito userId={userId} /></div>
+            <div style={{ height: '100%', width: '100%', overflow: 'auto' }}><SeccionCarrito userId={userId} /></div>
           )}
           {activeSide === 'Mis Compras' && (
-            <div className="dashboard-section"><SeccionMisCompras userId={userId} /></div>
+            <div style={{ height: '100%', width: '100%', overflow: 'auto' }}><SeccionMisCompras userId={userId} /></div>
           )}
           {activeSide === 'Seguimiento' && (
-            <div className="dashboard-section"><SeccionSeguimiento userId={userId} /></div>
+            <div style={{ height: '100%', width: '100%', overflow: 'auto' }}><SeccionSeguimiento userId={userId} /></div>
           )}
           {activeSide === 'Lista de Deseos' && (
-            <div className="dashboard-section"><ListaDeseos
+            <div style={{ height: '100%', width: '100%', overflow: 'auto' }}><ListaDeseos
               embedded
               onIrCatalogo={() => handleSelectSection('Catálogo')}
               onVerLibro={(libro) => {
@@ -353,25 +366,33 @@ function Home() {
             /></div>
           )}
           {activeSide === 'Favoritos' && (
-            <div className="dashboard-section"><SeccionFavoritos
+            <div style={{ height: '100%', width: '100%', overflow: 'auto' }}><SeccionFavoritos
               onGoToCatalog={() => handleSelectSection('Catálogo')}
               onSetActiveSide={handleSelectSection}
             /></div>
           )}
           {activeSide === 'Mi Perfil' && (
-            <div className="dashboard-section"><SeccionMiPerfil userId={userId} /></div>
+            <div style={{ height: '100%', width: '100%', overflow: 'auto' }}><SeccionMiPerfil userId={userId} /></div>
           )}
           {activeSide === 'Mis Direcciones' && (
-            <div className="dashboard-section"><SeccionMisDirecciones /></div>
+            <div style={{ height: '100%', width: '100%', overflow: 'auto' }}><SeccionMisDirecciones /></div>
           )}
           {activeSide === 'Configuración' && (
-            <div className="dashboard-section"><SeccionConfiguracion userId={userId} /></div>
+            <div style={{ height: '100%', width: '100%', overflow: 'auto' }}><SeccionConfiguracion userId={userId} /></div>
           )}
           {activeSide === 'Notificaciones' && (
-            <div className="dashboard-section"><SeccionNotificaciones /></div>
+            <div style={{ height: '100%', width: '100%', overflow: 'auto' }}><SeccionNotificaciones /></div>
           )}
-          {activeSide === 'Quejas y reclamos' && <div className="dashboard-section"><QuejasReclamos /></div>}
-          {activeSide === 'Soporte técnico' && <div className="dashboard-section"><Soporte /></div>}
+          {activeSide === 'Catálogo' && (
+            <div style={{ height: '100%', width: '100%', overflow: 'auto' }}>
+              <Catalogo
+                libroInicial={catalogoLibroInicial}
+                onLibroInicialConsumido={() => setCatalogoLibroInicial(null)}
+              />
+            </div>
+          )}
+          {activeSide === 'Quejas y reclamos' && <div style={{ height: '100%', width: '100%', overflow: 'auto' }}><QuejasReclamos /></div>}
+          {activeSide === 'Soporte técnico' && <div style={{ height: '100%', width: '100%', overflow: 'auto' }}><Soporte /></div>}
         </main>
       </div>
     )
@@ -444,24 +465,37 @@ function Home() {
       {/* STATS */}
       <section className="stats">
         <div className="layout-container stats-container">
-          {STATS.map((s, i) => (
-            <div key={i} className="stat-item">
-              <div className={`stat-icon ${s.color}`}>
-                {typeof s.icon === 'string' ? (
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d={s.icon}/>
-                  </svg>
-                ) : (
-                  s.icon
-                )}
+          {STATS_CONFIG.map((s, i) => {
+            const valor = stats[s.key]
+            const num = valor === null
+              ? '...'
+              : s.decimals > 0
+                ? `${s.prefix}${Number(valor).toFixed(s.decimals)}`
+                : `${s.prefix}${Number(valor).toLocaleString('es-CO')}`
+            return (
+              <div key={i} className="stat-item">
+                <div className={`stat-icon ${s.color}`}>
+                  {s.icon ? (
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d={s.icon}/>
+                    </svg>
+                  ) : (
+                    <IconUsers />
+                  )}
+                </div>
+                <h2>{num}</h2>
+                <p>{s.label}</p>
               </div>
-              <h2>{s.num}</h2>
-              <p>{s.label}</p>
-            </div>
-          ))}
+            )
+          })}
         </div>
       </section>
+
+      {/* CARRUSELES PÚBLICOS */}
+      <CarruselPublico
+        onVerDetalles={(libro) => navigate(`/catalogo?q=${encodeURIComponent(libro.titulo)}`)}
+      />
 
       {/* BENEFITS */}
       <section className="benefits">
@@ -530,7 +564,13 @@ function Home() {
         <div className="layout-container">
           <h2>¿Tienes una librería?</h2>
           <p>Únete a nuestra red de librerías y alcanza a miles de lectores en todo el país.</p>
-          <Link to="/libreria" className="btn btn-primary">Registrar mi librería</Link>
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={() => window.dispatchEvent(new CustomEvent('bookyhome:open-library-register'))}
+          >
+            Registrar mi librería
+          </button>
         </div>
       </section>
 

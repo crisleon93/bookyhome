@@ -116,7 +116,7 @@ function Register({ isModal = false, onSuccess }) {
 
     if (!nombre.trim()) {
 
-      setError('El nombre es obligatorio')
+      notify('El nombre es obligatorio', 'error')
 
       return false
 
@@ -124,7 +124,7 @@ function Register({ isModal = false, onSuccess }) {
 
     if (!apellidos.trim()) {
 
-      setError('Los apellidos son obligatorios')
+      notify('Los apellidos son obligatorios', 'error')
 
       return false
 
@@ -132,7 +132,7 @@ function Register({ isModal = false, onSuccess }) {
 
     if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
 
-      setError('Ingresa un email válido')
+      notify('Ingresa un email válido', 'error')
 
       return false
 
@@ -140,7 +140,7 @@ function Register({ isModal = false, onSuccess }) {
 
     if (!telefono.trim()) {
 
-      setError('El teléfono es obligatorio')
+      notify('El teléfono es obligatorio', 'error')
 
       return false
 
@@ -148,7 +148,7 @@ function Register({ isModal = false, onSuccess }) {
 
     if (!/^\d{7,15}$/.test(telefono.trim())) {
 
-      setError('Ingresa un número de teléfono válido (solo números, entre 7 y 15 dígitos)')
+      notify('Ingresa un número de teléfono válido (solo números, entre 7 y 15 dígitos)', 'error')
 
       return false
 
@@ -156,7 +156,7 @@ function Register({ isModal = false, onSuccess }) {
 
     if (!password.trim() || password.length < 8) {
 
-      setError('La contraseña debe tener al menos 8 caracteres')
+      notify('La contraseña debe tener al menos 8 caracteres', 'error')
 
       return false
 
@@ -164,7 +164,7 @@ function Register({ isModal = false, onSuccess }) {
 
     if (password !== confirmPassword) {
 
-      setError('Las contraseñas no coinciden')
+      notify('Las contraseñas no coinciden', 'error')
 
       return false
 
@@ -172,7 +172,7 @@ function Register({ isModal = false, onSuccess }) {
 
     if (!terminosCompletos) {
 
-      setError('Debes aceptar tanto los Términos y Condiciones como la Política de Privacidad')
+      notify('Debes aceptar tanto los Términos y Condiciones como la Política de Privacidad', 'error')
 
       return false
 
@@ -299,15 +299,7 @@ function Register({ isModal = false, onSuccess }) {
 
 
 
-      {error && (
 
-        <span className="error-msg" style={{ textAlign: 'center', display: 'block', marginBottom: '1rem' }}>
-
-          {error}
-
-        </span>
-
-      )}
 
 
 
