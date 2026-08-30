@@ -7,6 +7,35 @@ router = APIRouter(prefix="/catalogo", tags=["Catálogo"])
 
 # ============= ENDPOINTS =============
 
+@router.get("/stats")
+def get_stats_publicos():
+    """Estadísticas públicas de la plataforma para mostrar en la Home"""
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    try:
+        cursor.execute("SELECT COUNT(*) AS total FROM libros WHERE stock > 0 AND oculto = 0")
+        libros = cursor.fetchone()["total"]
+
+        cursor.execute("SELECT COUNT(*) AS total FROM tiendas")
+        librerias = cursor.fetchone()["total"]
+
+        cursor.execute("SELECT COUNT(*) AS total FROM usuarios")
+        usuarios = cursor.fetchone()["total"]
+
+        cursor.execute("SELECT ROUND(AVG(calificacion), 1) AS promedio FROM calificaciones_tiendas")
+        row = cursor.fetchone()
+        calificacion = float(row["promedio"]) if row["promedio"] else 0.0
+
+        return {
+            "libros_disponibles": libros,
+            "librerias_asociadas": librerias,
+            "usuarios_activos": usuarios,
+            "calificacion_promedio": calificacion
+        }
+    finally:
+        cursor.close()
+        db.close()
+
 @router.get("/busqueda-avanzada")
 def busqueda_avanzada(
     q: Optional[str] = Query(None, min_length=1, description="Búsqueda por título, autor, etc"),
@@ -209,6 +238,63 @@ def obtener_categorias():
         cursor.close()
         db.close()
 
+
+@router.get("/autocompletado")
+def autocompletado(
+    q: str = Query(..., min_length=1, description="Texto de búsqueda para autocompletado"),
+    limite: int = Query(8, ge=1, le=20, description="Máximo de sugerencias a retornar")
+):
+    """
+    Endpoint para autocompletado de búsqueda.
+    
+    Retorna sugerencias de libros basadas en el texto de búsqueda.
+    Optimizado para respuestas rápidas con datos mínimos necesarios.
+    """
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    
+    try:
+        search_term = f"%{q}%"
+        
+        query = """
+            SELECT 
+                l.id_libro,
+                l.titulo,
+                l.autor_libro,
+                l.precio_libro,
+                (SELECT url_imagen FROM imagenes_libro WHERE id_libro = l.id_libro LIMIT 1) as imagen_url,
+                t.nombre_tienda
+            FROM libros l
+            LEFT JOIN tiendas t ON l.id_tienda = t.id_tienda
+            WHERE 
+                l.stock > 0 
+                AND l.oculto = 0
+                AND (l.titulo LIKE %s OR l.autor_libro LIKE %s)
+            ORDER BY 
+                CASE 
+                    WHEN l.titulo LIKE %s THEN 1
+                    WHEN l.autor_libro LIKE %s THEN 2
+                    ELSE 3
+                END,
+                l.stock DESC,
+                l.fecha_listado DESC
+            LIMIT %s
+        """
+        
+        cursor.execute(query, [search_term, search_term, search_term, search_term, limite])
+        sugerencias = cursor.fetchall()
+        
+        return {
+            "sugerencias": sugerencias,
+            "total": len(sugerencias)
+        }
+        
+    except Exception as e:
+        print(f"Error en autocompletado: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        cursor.close()
+        db.close()
 
 @router.get("/buscar-por-isbn/{isbn}")
 def buscar_por_isbn(isbn: str):

@@ -63,6 +63,10 @@ export default function SeccionCarrito({ userId }) {
   const [paypalError, setPaypalError] = useState("");
   const [paypalProcessing, setPaypalProcessing] = useState(false);
   
+  // Modal cancelar orden
+  const [ordenACancelar, setOrdenACancelar] = useState(null);
+  const [cancelandoOrden, setCancelandoOrden] = useState(false);
+  
   // Coupon
   const [couponCode, setCouponCode] = useState("");
   const [couponLoading, setCouponLoading] = useState(false);
@@ -150,15 +154,22 @@ export default function SeccionCarrito({ userId }) {
     loadData();
   };
 
-  const onSetOrdenACancelar = async (orden) => {
-    if (window.confirm(`¿Estás seguro de cancelar la orden #${orden.id_orden}?`)) {
-      try {
-        await cancelOrder(orden.id_orden);
-        notify('Orden cancelada', 'success');
-        loadData();
-      } catch {
-        notify('No se pudo cancelar la orden', 'error');
-      }
+  const onSetOrdenACancelar = (orden) => {
+    setOrdenACancelar(orden);
+  };
+
+  const onConfirmarCancelarOrden = async () => {
+    if (!ordenACancelar) return;
+    setCancelandoOrden(true);
+    try {
+      await cancelOrder(ordenACancelar.id_orden);
+      notify('Orden cancelada exitosamente', 'success');
+      setOrdenACancelar(null);
+      loadData();
+    } catch {
+      notify('No se pudo cancelar la orden', 'error');
+    } finally {
+      setCancelandoOrden(false);
     }
   };
 
@@ -732,6 +743,127 @@ export default function SeccionCarrito({ userId }) {
               <button onClick={onGoToCatalog} style={{ background: "none", border: "1.5px solid var(--vinotinto)", color: "var(--vinotinto)", borderRadius: "8px", padding: "10px 20px", fontWeight: 700, width: "auto", minWidth: 250 }}>Seguir comprando</button>
             </div>
           )}
+        </div>
+      )}
+
+      {/* MODAL DE CONFIRMACIÓN PARA CANCELAR ORDEN */}
+      {ordenACancelar && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Confirmar cancelación de orden"
+          className="modal-overlay open"
+          onClick={(e) => {
+            if (e.target === e.currentTarget && !cancelandoOrden) setOrdenACancelar(null);
+          }}
+          style={{ zIndex: 1100 }}
+        >
+          <div
+            className="pl-card"
+            style={{
+              width: "min(440px, 92vw)",
+              padding: "28px 24px",
+              borderRadius: "16px",
+              boxShadow: "0 20px 50px rgba(0,0,0,0.25)",
+              textAlign: "center",
+              position: "relative",
+              background: "#fff",
+              boxSizing: "border-box",
+              animation: "slideUp 0.2s ease"
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              className="modal-close"
+              aria-label="Cerrar"
+              disabled={cancelandoOrden}
+              onClick={() => setOrdenACancelar(null)}
+              style={{
+                position: "absolute",
+                top: "16px",
+                right: "16px",
+                border: "none",
+                background: "transparent",
+                cursor: "pointer",
+                fontSize: "1.3rem",
+                color: "#888"
+              }}
+            >
+              &times;
+            </button>
+
+            <div
+              style={{
+                width: "56px",
+                height: "56px",
+                borderRadius: "50%",
+                background: "#fee2e2",
+                color: "#dc2626",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                margin: "0 auto 16px"
+              }}
+            >
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
+            </div>
+
+            <h3 style={{ margin: "0 0 8px", fontSize: "1.25rem", fontWeight: 800, color: "var(--gris-carbon)" }}>
+              ¿Cancelar compra?
+            </h3>
+            <p style={{ margin: "0 0 8px", color: "#555", fontSize: "0.95rem", lineHeight: 1.5 }}>
+              ¿Estás seguro de que deseas cancelar la <strong>Orden #{ordenACancelar.id_orden}</strong>?
+            </p>
+            <p style={{ margin: "0 0 24px", color: "#888", fontSize: "0.85rem" }}>
+              Esta acción anulará el proceso de compra pendiente.
+            </p>
+
+            <div style={{ display: "flex", gap: "12px", justifyContent: "center" }}>
+              <button
+                type="button"
+                disabled={cancelandoOrden}
+                onClick={() => setOrdenACancelar(null)}
+                style={{
+                  flex: 1,
+                  padding: "11px 16px",
+                  borderRadius: "8px",
+                  border: "1.5px solid #d1d5db",
+                  background: "#fff",
+                  color: "#374151",
+                  fontWeight: 700,
+                  fontSize: "0.9rem",
+                  cursor: "pointer"
+                }}
+              >
+                No, mantener
+              </button>
+              <button
+                type="button"
+                className="btn btn-rojo"
+                disabled={cancelandoOrden}
+                onClick={onConfirmarCancelarOrden}
+                style={{
+                  flex: 1,
+                  marginTop: 0,
+                  padding: "11px 16px",
+                  borderRadius: "8px",
+                  fontWeight: 700,
+                  fontSize: "0.9rem",
+                  cursor: "pointer",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "6px"
+                }}
+              >
+                {cancelandoOrden ? "Cancelando..." : "Sí, cancelar"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </>

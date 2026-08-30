@@ -171,8 +171,8 @@ const LibroCard = ({ libro, onVerDetalles }) => {
   return (
     <div
       style={{
-        width: 160,
-        flexShrink: 0,
+        display: 'flex',
+        flexDirection: 'column',
         background: 'white',
         borderRadius: '10px',
         overflow: 'hidden',
@@ -180,12 +180,13 @@ const LibroCard = ({ libro, onVerDetalles }) => {
         cursor: 'pointer',
         transition: 'all 0.15s ease',
         boxShadow: '0 2px 6px rgba(0,0,0,0.05)',
+        height: '100%',
       }}
       onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 8px 20px rgba(0,0,0,0.12)'; }}
       onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 2px 6px rgba(0,0,0,0.05)'; }}
     >
       {/* Portada */}
-      <div style={{ height: 170, background: `linear-gradient(135deg, ${VINOTINTO} 0%, ${VINOTINTO2} 100%)`, position: 'relative', overflow: 'hidden' }}>
+      <div style={{ height: 180, background: `linear-gradient(135deg, ${VINOTINTO} 0%, ${VINOTINTO2} 100%)`, position: 'relative', overflow: 'hidden', flexShrink: 0 }}>
         <img
           src={imageUrl}
           alt={libro.titulo}
@@ -197,9 +198,15 @@ const LibroCard = ({ libro, onVerDetalles }) => {
         {/* Badge estado */}
         {outOfStock && (
           <span style={{
-            position: 'absolute', top: 8, left: 8,
-            background: 'rgba(0,0,0,0.6)', color: 'white',
-            fontSize: '0.65rem', padding: '2px 7px', borderRadius: '20px', fontWeight: 600,
+            position: 'absolute',
+            top: 8,
+            left: 8,
+            background: 'rgba(0,0,0,0.6)',
+            color: 'white',
+            fontSize: '0.65rem',
+            padding: '2px 7px',
+            borderRadius: '20px',
+            fontWeight: 600
           }}>Sin stock</span>
         )}
         
@@ -208,12 +215,17 @@ const LibroCard = ({ libro, onVerDetalles }) => {
           onClick={(e) => { e.stopPropagation(); toggleListaDeseos(); }}
           disabled={wishlistLoading}
           style={{
-            position: 'absolute', top: 8, right: 8,
+            position: 'absolute',
+            top: 8,
+            right: 8,
             background: 'rgba(255,255,255,0.9)',
             border: 'none',
             borderRadius: '50%',
-            width: 32, height: 32,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            width: 32,
+            height: 32,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
             cursor: wishlistLoading ? 'not-allowed' : 'pointer',
             opacity: wishlistLoading ? 0.7 : 1,
             boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
@@ -230,7 +242,7 @@ const LibroCard = ({ libro, onVerDetalles }) => {
       </div>
 
       {/* Info */}
-      <div style={{ padding: '10px 10px 12px' }}>
+      <div style={{ padding: '12px', display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
         {/* Categoría */}
         {categoria && (
           <span style={{
@@ -241,23 +253,32 @@ const LibroCard = ({ libro, onVerDetalles }) => {
             color: categoriaColor(categoria).color,
             fontSize: '0.65rem',
             fontWeight: '700',
-            marginBottom: '4px',
+            marginBottom: '6px',
+            alignSelf: 'flex-start',
           }}>
             {categoria}
           </span>
         )}
 
         <p style={{
-          margin: '0 0 3px 0', fontSize: '0.8rem', fontWeight: 700, color: '#1a1a1a',
-          display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', lineHeight: 1.3,
+          margin: '0 0 4px 0',
+          fontSize: '0.85rem',
+          fontWeight: 700,
+          color: '#1a1a1a',
+          display: '-webkit-box',
+          WebkitLineClamp: 2,
+          WebkitBoxOrient: 'vertical',
+          overflow: 'hidden',
+          lineHeight: 1.3,
+          minHeight: '2.6em',
         }}>{libro.titulo}</p>
         
-        <p style={{ margin: '0 0 6px 0', fontSize: '0.7rem', color: '#888', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        <p style={{ margin: '0 0 8px 0', fontSize: '0.75rem', color: '#888', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {author}
         </p>
 
         {/* Calificación y disponibilidad */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', flexWrap: 'wrap' }}>
           {calificacionTienda > 0 && (
             <span style={{ display: 'flex', alignItems: 'center', gap: '2px', fontSize: '0.7rem', color: '#666' }}>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="#f59e0b" stroke="#f59e0b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -269,8 +290,11 @@ const LibroCard = ({ libro, onVerDetalles }) => {
           )}
           
           <span style={{ 
-            display: 'flex', alignItems: 'center', gap: '2px', 
-            fontSize: '0.65rem', fontWeight: 600,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '2px', 
+            fontSize: '0.65rem',
+            fontWeight: 600,
             color: outOfStock ? '#dc2626' : '#16a34a',
           }}>
             {outOfStock ? (
@@ -289,28 +313,28 @@ const LibroCard = ({ libro, onVerDetalles }) => {
           </span>
         </div>
 
-        <p style={{ margin: 0, fontSize: '0.9rem', fontWeight: 800, color: VINOTINTO }}>
+        <p style={{ margin: '0 0 4px 0', fontSize: '0.95rem', fontWeight: 800, color: VINOTINTO }}>
           ${price.toLocaleString('es-CO')}
         </p>
         
         {libro.nombre_tienda && (
-          <p style={{ margin: '3px 0 0', fontSize: '0.65rem', color: '#aaa', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          <p style={{ margin: '0 0 8px 0', fontSize: '0.7rem', color: '#aaa', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {libro.nombre_tienda}
           </p>
         )}
 
-        {/* Botón Ver detalles */}
+        {/* Botón Ver detalles - siempre al fondo */}
         <button
           onClick={() => onVerDetalles && onVerDetalles(libro)}
           style={{
             width: '100%',
-            marginTop: '8px',
-            padding: '8px 12px',
+            marginTop: 'auto',
+            padding: '10px 12px',
             background: VINOTINTO,
             color: 'white',
             border: 'none',
             borderRadius: '6px',
-            fontSize: '0.75rem',
+            fontSize: '0.8rem',
             fontWeight: '600',
             cursor: 'pointer',
             transition: 'all 0.15s',

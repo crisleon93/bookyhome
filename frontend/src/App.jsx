@@ -8,6 +8,8 @@ import CookieBanner from './components/CookieBanner';
 import { ToastProvider } from './components/ToastProvider';
 
 import Home from './pages/Home';
+import Catalogo from './pages/Catalogo';
+import ResetPassword from './pages/ResetPassword';
 import MiTienda from './pages/MiTienda';
 import PrivateRoute from './components/PrivateRoute';
 import PublicarLibro from './pages/PublicarLibro';
@@ -16,7 +18,7 @@ import Historial from './pages/Historial';
 import ListaDeseos from './pages/ListaDeseos';
 import Devoluciones from './pages/Devoluciones';
 import BookyPagoFinanzas from './pages/BookyPagoFinanzas';
-import Chat from './pages/Chat';
+
 
 import { getUserRole } from './hooks/useAuth';
 
@@ -75,9 +77,10 @@ function MainLayout() {
       <Routes>
         {/* ── RUTAS PÚBLICAS ── */}
         <Route path="/" element={<Home />} />
+        <Route path="/catalogo" element={<Catalogo />} />
         <Route path="/register" element={<Navigate to="/" replace />} />
         <Route path="/forgot-password" element={<Navigate to="/" replace />} />
-        <Route path="/reset-password" element={<Navigate to="/" replace />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/legal" element={<Navigate to="/" replace />} />
 
         {/* ── RUTAS PROTEGIDAS GENERALES (Cualquier usuario logueado) ── */}
@@ -87,7 +90,7 @@ function MainLayout() {
           <Route path="/lista-deseos" element={<ListaDeseos />} />
           <Route path="/devoluciones" element={<Devoluciones />} />
           <Route path="/favoritos" element={<Navigate to="/lista-deseos" replace />} />
-          <Route path="/chat/:id_sala" element={<Chat />} />
+
         </Route>
 
         {/* ── RUTAS EXCLUSIVAS DE VENDEDOR ── */}

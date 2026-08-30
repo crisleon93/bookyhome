@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import api, { addToCart, removeFromCart, usuarioPuedeCalificarTienda, crearCalificacionTienda, getCalificacionesTienda, actualizarCalificacionTienda } from '../services/api';
 import { notify } from '../components/ToastProvider';
-import FiltrosCatalogo from '../components/FiltrosCatalogo';
 import LibroCard from '../components/LibroCard';
 import { chatService } from '../services/chat';
 import '../styles/catalogo.css';
@@ -29,6 +28,8 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
 
   const [filtros, setFiltros] = useState({
     q: searchParams.get('q') || '',
+    nombre_tienda: searchParams.get('nombre_tienda') || '',
+    correo_vendedor: searchParams.get('correo_vendedor') || '',
     categoria_id: null,
     precio_min: 0,
     precio_max: 1000000,
@@ -37,6 +38,23 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
     ordenar_por: 'relevancia',
     categoria_nombre: searchParams.get('categoria') || null
   });
+
+  // Actualizar filtros cuando cambian los searchParams
+  useEffect(() => {
+    setFiltros({
+      q: searchParams.get('q') || '',
+      nombre_tienda: searchParams.get('nombre_tienda') || '',
+      correo_vendedor: searchParams.get('correo_vendedor') || '',
+      categoria_id: searchParams.get('categoria_id') ? parseInt(searchParams.get('categoria_id')) : null,
+      precio_min: searchParams.get('precio_min') ? parseInt(searchParams.get('precio_min')) : 0,
+      precio_max: searchParams.get('precio_max') ? parseInt(searchParams.get('precio_max')) : 1000000,
+      calificacion_min: searchParams.get('calificacion_min') ? parseInt(searchParams.get('calificacion_min')) : 0,
+      disponible: searchParams.get('disponible') === 'true',
+      ordenar_por: searchParams.get('ordenar_por') || 'relevancia',
+      categoria_nombre: searchParams.get('categoria') || null
+    });
+    setPagina(1); // Resetear a la primera página cuando cambian los filtros
+  }, [searchParams]);
 
   useEffect(() => {
     if (!libroInicial) return;
@@ -52,6 +70,8 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
       const params = new URLSearchParams();
       
       if (filtros.q) params.append('q', filtros.q);
+      if (filtros.nombre_tienda) params.append('nombre_tienda', filtros.nombre_tienda);
+      if (filtros.correo_vendedor) params.append('correo_vendedor', filtros.correo_vendedor);
       if (filtros.categoria_id) params.append('categoria_id', filtros.categoria_id);
       if (filtros.categoria_nombre && !filtros.categoria_id) params.append('categoria', filtros.categoria_nombre);
       if (filtros.precio_min) params.append('precio_min', filtros.precio_min);
@@ -76,11 +96,6 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
   useEffect(() => {
     cargarLibros();
   }, [cargarLibros]);
-
-  const handleFiltrosChange = (nuevosFiltros) => {
-    setFiltros(nuevosFiltros);
-    setPagina(1);
-  };
 
   const handleAddToCart = async (libro) => {
     const token = localStorage.getItem('token');
@@ -167,7 +182,7 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
       }
 
       // Navegar a PostLogin con la sección Mensajes y el id_sala seleccionado
-      navigate(`/post-login?seccion=Mensajes&sala=${idSala}`);
+      navigate(`/?seccion=Mensajes&sala=${idSala}`);
     } catch (error) {
       console.error('Error al crear sala de chat:', error);
       const errorMsg = error.response?.data?.detail || error.message || 'No se pudo iniciar el chat. Intenta nuevamente.';
@@ -284,14 +299,6 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
         </svg>
         Catálogo de libros
       </h1>
-
-      {/* FILTROS AVANZADOS */}
-      {!mostrarDetalles && (
-        <FiltrosCatalogo
-          onFiltrosChange={handleFiltrosChange}
-          filtrosActivos={filtros}
-        />
-      )}
 
       {/* RESULTADOS */}
       {loading ? (
@@ -863,15 +870,7 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
         }}>
           <p>No se encontraron libros con los filtros seleccionados</p>
           <button
-            onClick={() => handleFiltrosChange({
-              q: '',
-              categoria_id: null,
-              precio_min: 0,
-              precio_max: 1000000,
-              calificacion_min: 0,
-              disponible: true,
-              ordenar_por: 'relevancia'
-            })}
+            onClick={() => navigate('/?seccion=Catálogo')}
             style={{
               background: 'var(--vinotinto)',
               color: 'white',

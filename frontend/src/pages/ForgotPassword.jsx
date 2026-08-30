@@ -51,11 +51,57 @@ function ForgotPassword({ isModal = false, onClose }) {
     }
   }
 
-  return (
-    <>
-    <main className={`auth-main${isModal ? ' auth-main--modal' : ''}`}>
-      <div className="auth-card">
+  if (isModal) {
+    return (
+      <>
+        {exito && (
+          <div className="flash flash--success">
+            <IconCheck />
+            {exito}
+          </div>
+        )}
 
+        {error && (
+          <span className="error-msg" style={{ textAlign: 'center', display: 'block', marginBottom: '1rem' }}>
+            {error}
+          </span>
+        )}
+
+        {!exito && (
+          <form onSubmit={handleSubmit} noValidate>
+            <div className="form-group">
+              <label htmlFor="fp-email">Email</label>
+              <input
+                id="fp-email"
+                type="email"
+                placeholder="ejemplo@gmail.com"
+                value={email}
+                onChange={e => { setEmail(e.target.value); setEmailErr('') }}
+                className={emailErr ? 'input-error' : ''}
+              />
+              {emailErr && <span className="error-msg">{emailErr}</span>}
+            </div>
+
+            <button type="submit" className="btn-primary" disabled={loading}>
+              {loading ? 'Enviando...' : 'Enviar enlace'}
+            </button>
+          </form>
+        )}
+
+        <div className="form-links">
+          <p>
+            <button type="button" onClick={onClose} className="link-button">
+              ← Volver al inicio de sesión
+            </button>
+          </p>
+        </div>
+      </>
+    )
+  }
+
+  return (
+    <main className="auth-main">
+      <div className="auth-card">
         {/* Icono candado */}
         <div className="auth-icon-top">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
@@ -84,11 +130,11 @@ function ForgotPassword({ isModal = false, onClose }) {
         {!exito && (
           <form onSubmit={handleSubmit} noValidate>
             <div className="auth-field">
-              <label htmlFor="email">Email</label>
+              <label htmlFor="fp-email">Email</label>
               <div className="auth-input-wrapper">
                 <IconMail />
                 <input
-                  id="email"
+                  id="fp-email"
                   type="email"
                   placeholder="ejemplo@gmail.com"
                   value={email}
@@ -106,24 +152,10 @@ function ForgotPassword({ isModal = false, onClose }) {
         )}
 
         <div className="auth-footer-links">
-          {isModal ? (
-            <p>
-              <button
-                type="button"
-                onClick={onClose}
-                style={{ background: 'none', border: 'none', color: 'var(--vinotinto)', fontWeight: '700', cursor: 'pointer', textDecoration: 'underline', padding: 0, fontFamily: 'inherit', fontSize: 'inherit' }}
-              >
-                ← Volver al inicio de sesión
-              </button>
-            </p>
-          ) : (
-            <p>← Volver al inicio de sesión</p>
-          )}
+          <p>← Volver al inicio de sesión</p>
         </div>
-
       </div>
     </main>
-    </>
   )
 }
 

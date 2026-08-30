@@ -75,7 +75,7 @@ function CarruselLibros({ libros, onVerLibro }) {
     if (ref.current) ref.current.scrollBy({ left: dir * 340, behavior: 'smooth' });
   };
   return (
-    <div style={{ position: 'relative' }}>
+    <div style={{ position: 'relative', overflow: 'hidden', paddingBottom: '4px' }}>
       {/* Flecha izquierda */}
       <button onClick={() => scroll(-1)} style={{
         position: 'absolute', left: -16, top: '50%', transform: 'translateY(-50%)',
@@ -87,7 +87,7 @@ function CarruselLibros({ libros, onVerLibro }) {
       </button>
       {/* Carrusel */}
       <div ref={ref} style={{
-        display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '6px',
+        display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '0',
         scrollbarWidth: 'none', msOverflowStyle: 'none',
       }}
         className="carrusel-scroll"

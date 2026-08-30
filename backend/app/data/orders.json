@@ -905,6 +905,26 @@
       "estado": "pagado",
       "id_orden_db": 39,
       "metodo_pago": "PayPal"
+    },
+    {
+      "id_orden": 40,
+      "codigo_compra": "BH-47977D903C",
+      "fecha": "2026-08-29T18:47:26.394085Z",
+      "items": [
+        {
+          "id_libro": 2,
+          "titulo": "Amor en Invierno",
+          "autor_libro": "L. Moreno",
+          "precio_libro": 28000.0,
+          "cantidad": 1,
+          "imagen": null,
+          "id_variante": null,
+          "variante_label": null
+        }
+      ],
+      "total": 28000.0,
+      "estado": "pendiente",
+      "id_orden_db": 52
     }
   ],
   "17": [
