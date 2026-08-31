@@ -12,6 +12,7 @@ import Home from '../screens/Home';
 import RegisterLibrary from '../screens/RegisterLibrary';
 
 import PostLogin from '../screens/PostLogin';
+import Catalogo from '../screens/Catalogo';
 import Profile from '../screens/Profile';
 import History from '../screens/History';
 import Notifications from '../screens/Notifications';
@@ -102,6 +103,7 @@ export default function AppNavigator() {
           headerLeft: () => <MobileMenuButton tintColor="#FFFFFF" />,
         }}>
           <Stack.Screen name="PostLogin" component={PostLogin} options={{ headerShown: false }} />
+          <Stack.Screen name="Catalogo" component={Catalogo} options={{ headerShown: false }} />
           <Stack.Screen name="Profile" component={Profile} options={{ title: 'Mi Perfil' }} />
           <Stack.Screen name="Direcciones" component={Direcciones} options={{ title: 'Mis direcciones' }} />
           <Stack.Screen

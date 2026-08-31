@@ -1,5 +1,5 @@
 param(
-    [string]$Time = '20:00',
+    [string]$Time = '11:00',
     [int]$RetentionDays = 30
 )
 

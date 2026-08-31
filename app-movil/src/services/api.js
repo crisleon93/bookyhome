@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://192.168.1.6:8000';
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://192.168.137.218:8000';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -16,8 +16,11 @@ export const verifyEmail = ({ token }) => api.get('/verify-email', { params: { t
 
 // ===== Catálogo =====
 export const getBooks = (params) => api.get('/api/stored/libros', { params });
+export const getStoredLibros = () => api.get('/api/stored/libros');
+export const getBusquedaAvanzada = (params) => api.get('/catalogo/busqueda-avanzada', { params });
 export const getBookById = (id) => api.get(`/api/stored/libros/${id}`);
 export const getVariantes = (id_libro) => api.get(`/libros/${id_libro}/variantes`);
+export const getCuponesDisponibles = () => api.get('/cupones/disponibles');
 export const crearVariante = (id_libro, data) => api.post(`/libros/${id_libro}/variantes`, data);
 export const getBookAvailability = (id, cantidad) => api.get(`/libros/${id}/disponibilidad`, { params: { cantidad } });
 export const getBookOffer = (id) => api.get(`/ofertas/libro/${id}/activa`);

@@ -56,6 +56,7 @@ def get_current_user_rol(credentials: HTTPAuthorizationCredentials = Depends(sec
 
 
 # ============= ENDPOINTS =============
+
 @router.get("/salas")
 def obtener_salas_usuario(user_id: int = Depends(get_current_user), rol: str = Depends(get_current_user_rol)):
     """Obtiene todas las salas de chat del usuario (comprador, vendedor o admin)"""
