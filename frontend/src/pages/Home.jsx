@@ -21,6 +21,7 @@ import ListaDeseos from './ListaDeseos'
 import QuejasReclamos from './QuejasReclamos'
 import Soporte from './Soporte'
 import CarruselPublico from '../components/CarruselPublico'
+import LibreriasDestacadas from '../components/LibreriasDestacadas'
 
 import ficcion from '../assets/ficcion.png'
 import romance from '../assets/romance.png'
@@ -161,6 +162,12 @@ function ModalOption({ to, onClick, iconPath, title, desc, onClose }) {
 function Home() {
   const [joinOpen,     setJoinOpen]     = useState(false)
   const [registerOpen, setRegisterOpen] = useState(false)
+
+  useEffect(() => {
+    const openJoin = () => setJoinOpen(true)
+    window.addEventListener('bookyhome:open-join', openJoin)
+    return () => window.removeEventListener('bookyhome:open-join', openJoin)
+  }, [])
   const [heroImageIndex, setHeroImageIndex] = useState(0)
   const navigate = useNavigate()
   const location = useLocation()
@@ -497,6 +504,9 @@ function Home() {
         onVerDetalles={(libro) => navigate(`/catalogo?q=${encodeURIComponent(libro.titulo)}`)}
       />
 
+      {/* LIBRERÍAS DESTACADAS */}
+      <LibreriasDestacadas />
+
       {/* BENEFITS */}
       <section className="benefits">
         <div className="layout-container">
@@ -585,7 +595,7 @@ function Home() {
         <ModalOption
           onClick={() => window.dispatchEvent(new CustomEvent('bookyhome:open-register'))}
           onClose={() => setJoinOpen(false)}
-          iconPath="M19 7.5v3m0 0v3m0-3h3m-3 0h-3m-4.5-1.5a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM3 19.235v-.11a6.375 6.375 0 0112.75 0v.109A12.318 12.318 0 019.374 21c-2.331 0-4.512-.645-6.374-1.766z"
+          iconPath="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M8.5 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM20 8v6M17 11h6"
           title="Soy nuevo" desc="Crear una cuenta gratis" />
       </Modal>
 

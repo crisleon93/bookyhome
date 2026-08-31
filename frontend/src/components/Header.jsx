@@ -741,7 +741,7 @@ function Header({ variant, hasSidebar }) {
   const navigate = useNavigate();
   const [modalOpen, setModalOpen] = useState(false);
   const [locationOpen, setLocationOpen] = useState(false);
-  const [selectedLocation, setSelectedLocation] = useState(localStorage.getItem('bookyhome_location') || 'Todo el país (Colombia)');
+  const [selectedLocation, setSelectedLocation] = useState(localStorage.getItem('bookyhome_location') || 'Colombia');
   const [detectingLocation, setDetectingLocation] = useState(false);
   const [locationError, setLocationError] = useState('');
   const [loginOpen, setLoginOpen] = useState(false);
@@ -1098,7 +1098,7 @@ function Header({ variant, hasSidebar }) {
             <div className="layout-container" style={{ display: 'flex', alignItems: 'center', minHeight: '32px' }}>
               <div className="location" style={{ cursor: 'pointer', userSelect: 'none' }} onClick={(e) => { e.stopPropagation(); setLocationOpen(prev => !prev); }}>
                 <IconLocation />
-                <span>Enviar a: {selectedLocation}</span>
+                <span>Envíos a {selectedLocation === 'Colombia' ? 'Colombia' : `${selectedLocation}, Colombia`}</span>
                 <span style={{ fontSize: '10px', marginLeft: '6px' }}>▼</span>
               </div>
             </div>
@@ -1381,7 +1381,10 @@ function Header({ variant, hasSidebar }) {
               <div className="form-group">
                 <label>Email</label>
                 <input
+                  id="login-email"
+                  name="email"
                   type="email"
+                  autoComplete="email"
                   value={loginForm.email}
                   onChange={(e) => { setLoginForm({...loginForm, email: e.target.value}); setLoginEmailErr(''); }}
                   className={loginEmailErr ? 'input-error' : ''}
@@ -1392,7 +1395,10 @@ function Header({ variant, hasSidebar }) {
                 <label>Contraseña</label>
                 <div className="password-input">
                   <input
+                    id="login-password"
+                    name="password"
                     type={showPass ? "text" : "password"}
+                    autoComplete="current-password"
                     value={loginForm.password}
                     onChange={(e) => { setLoginForm({...loginForm, password: e.target.value}); setLoginPassErr(''); }}
                     className={loginPassErr ? 'input-error' : ''}
@@ -1471,73 +1477,113 @@ function Header({ variant, hasSidebar }) {
       {ReactDOM.createPortal(
         locationOpen ? (
           <div
-            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 99999 }}
+            style={{ position: 'fixed', inset: 0, background: 'rgba(10,10,10,0.6)', backdropFilter: 'blur(3px)', WebkitBackdropFilter: 'blur(3px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 99999 }}
             onMouseDown={() => setLocationOpen(false)}
           >
             <div
-              style={{ background: '#fff', borderRadius: '12px', padding: '2rem', width: '100%', maxWidth: '380px', position: 'relative', boxShadow: '0 20px 60px rgba(0,0,0,0.25)', margin: '0 20px' }}
+              style={{ background: '#fff', borderRadius: '16px', width: '100%', maxWidth: '460px', position: 'relative', boxShadow: '0 32px 72px rgba(0,0,0,0.28)', margin: '0 16px', overflow: 'hidden', animation: 'legalModalIn 0.22s cubic-bezier(0.22,1,0.36,1) both' }}
               onMouseDown={e => e.stopPropagation()}
             >
-              <button
-                onMouseDown={() => setLocationOpen(false)}
-                style={{ position: 'absolute', top: '12px', right: '12px', background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.4rem', color: '#aaa', lineHeight: 1 }}
-              >✕</button>
-              <h2 style={{ margin: '0 0 0.3rem', fontSize: '1.3rem', fontWeight: 800, color: '#2A2A2A', textAlign: 'center' }}>Elige tu ubicación</h2>
-              <p style={{ textAlign: 'center', color: '#888', fontSize: '0.85rem', marginBottom: '1.2rem' }}>Selecciona dónde quieres recibir tus compras.</p>
-              <button
-                type="button"
-                onClick={detectUserLocation}
-                disabled={detectingLocation}
-                style={{
-                  width: '100%',
-                  padding: '11px 16px',
-                  marginBottom: '10px',
-                  border: '1.5px solid #7A1E3A',
-                  borderRadius: '8px',
-                  background: '#fff',
-                  color: '#7A1E3A',
-                  cursor: detectingLocation ? 'wait' : 'pointer',
-                  fontFamily: 'inherit',
-                  fontSize: '14px',
-                  fontWeight: 700,
-                }}
-              >
-                {detectingLocation ? 'Detectando ubicación...' : 'Usar mi ubicación actual'}
-              </button>
-              {locationError && (
-                <p style={{ color: '#9b1c31', fontSize: '0.78rem', textAlign: 'center', margin: '0 0 10px' }}>
-                  {locationError}
-                </p>
-              )}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {['Todo el país (Colombia)', 'Bogotá', 'Medellín', 'Cali', 'Barranquilla', 'Cartagena', 'Bucaramanga'].map((city) => (
-                  <button
-                    key={city}
-                    onMouseDown={(e) => {
-                      e.stopPropagation();
-                      setSelectedLocation(city);
-                      setLocationOpen(false);
-                      localStorage.setItem('bookyhome_location', city);
-                      notify(`Ubicación actualizada a ${city}`, 'success');
-                    }}
-                    style={{
-                      width: '100%',
-                      padding: '12px 16px',
-                      textAlign: 'left',
-                      background: selectedLocation === city ? '#F4EDE2' : '#fff',
-                      border: selectedLocation === city ? '2px solid #7A1E3A' : '1.5px solid #e5e0d8',
-                      borderRadius: '8px',
-                      cursor: 'pointer',
-                      fontFamily: 'inherit',
-                      fontSize: '15px',
-                      fontWeight: selectedLocation === city ? 700 : 400,
-                      color: '#2A2A2A',
-                    }}
-                  >
-                    {selectedLocation === city && <span style={{ color: '#7A1E3A', marginRight: '8px' }}>✓</span>}
-                    {city}
-                  </button>
-                ))}
+              {/* Header vinotinto */}
+              <div style={{ background: '#7A1E3A', padding: '1.2rem 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+                  </svg>
+                  <span style={{ color: '#fff', fontWeight: 700, fontSize: '1.05rem' }}>Elige tu ubicación</span>
+                </div>
+                <button
+                  onMouseDown={() => setLocationOpen(false)}
+                  style={{ background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: '50%', width: '2rem', height: '2rem', cursor: 'pointer', color: '#fff', fontSize: '1.1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.18s' }}
+                >✕</button>
+              </div>
+
+              {/* Cuerpo */}
+              <div style={{ padding: '1.25rem 1.5rem 1.5rem' }}>
+                <p style={{ color: '#888', fontSize: '0.82rem', margin: '0 0 1rem', textAlign: 'center' }}>Selecciona la ciudad donde quieres recibir tus compras.</p>
+
+                {/* Botón GPS */}
+                <button
+                  type="button"
+                  onClick={detectUserLocation}
+                  disabled={detectingLocation}
+                  style={{
+                    width: '100%',
+                    padding: '10px 16px',
+                    marginBottom: '1rem',
+                    border: '1.5px solid #7A1E3A',
+                    borderRadius: '8px',
+                    background: detectingLocation ? '#f9f3f5' : '#fff',
+                    color: '#7A1E3A',
+                    cursor: detectingLocation ? 'wait' : 'pointer',
+                    fontFamily: 'inherit',
+                    fontSize: '13.5px',
+                    fontWeight: 700,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '7px',
+                    transition: 'background 0.18s',
+                  }}
+                >
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
+                  </svg>
+                  {detectingLocation ? 'Detectando ubicación...' : 'Usar mi ubicación actual'}
+                </button>
+
+                {locationError && (
+                  <p style={{ color: '#9b1c31', fontSize: '0.78rem', textAlign: 'center', margin: '-0.5rem 0 0.75rem' }}>
+                    {locationError}
+                  </p>
+                )}
+
+                {/* Separador */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+                  <div style={{ flex: 1, height: '1px', background: '#ede8e3' }} />
+                  <span style={{ fontSize: '0.75rem', color: '#bbb', fontWeight: 600, letterSpacing: '0.04em' }}>CIUDADES</span>
+                  <div style={{ flex: 1, height: '1px', background: '#ede8e3' }} />
+                </div>
+
+                {/* Grid 2 columnas */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', maxHeight: '280px', overflowY: 'auto', paddingRight: '2px' }}>
+                  {['Bogotá', 'Medellín', 'Cali', 'Barranquilla', 'Cartagena', 'Santa Marta', 'Bucaramanga', 'Pereira', 'Manizales', 'Armenia', 'Ibagué', 'Neiva', 'Villavicencio', 'Pasto'].map((city) => {
+                    const isSelected = selectedLocation === city;
+                    return (
+                      <button
+                        key={city}
+                        onMouseDown={(e) => {
+                          e.stopPropagation();
+                          setSelectedLocation(city);
+                          setLocationOpen(false);
+                          localStorage.setItem('bookyhome_location', city);
+                          notify(`Ubicación actualizada a ${city}`, 'success');
+                        }}
+                        style={{
+                          padding: '10px 12px',
+                          textAlign: 'left',
+                          background: isSelected ? '#7A1E3A' : '#faf8f6',
+                          border: isSelected ? '2px solid #7A1E3A' : '1.5px solid #ede8e3',
+                          borderRadius: '8px',
+                          cursor: 'pointer',
+                          fontFamily: 'inherit',
+                          fontSize: '13.5px',
+                          fontWeight: isSelected ? 700 : 500,
+                          color: isSelected ? '#fff' : '#2A2A2A',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          transition: 'all 0.15s',
+                        }}
+                      >
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke={isSelected ? '#fff' : '#bbb'} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+                        </svg>
+                        {city}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             </div>
           </div>

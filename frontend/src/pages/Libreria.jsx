@@ -14,6 +14,7 @@ import {
   IconCheck
 } from '../components/Icons'
 import { LegalModal, Terminos, Privacidad } from '../components/Legal'
+import LeafletAddressPickerModal from '../components/LeafletAddressPickerModal'
 
 function Libreria({ isModal = false, onSuccess }) {
   // ========================
@@ -22,9 +23,9 @@ function Libreria({ isModal = false, onSuccess }) {
   const [nombre,    setNombre]    = useState('')
   const [libreria,  setLibreria]  = useState('')
   const [ciudad,    setCiudad]    = useState('')
-  const [tipoVia,   setTipoVia]   = useState('')
-  const [numeroVia, setNumeroVia] = useState('')
+  const [direccion, setDireccion] = useState('')
   const [complemento, setComplemento] = useState('')
+  const [mapaOpen,  setMapaOpen]  = useState(false)
   const [telefono,  setTelefono]  = useState('')
   const [email,     setEmail]     = useState('')
   const [password,  setPassword]  = useState('')
@@ -45,7 +46,7 @@ function Libreria({ isModal = false, onSuccess }) {
   // ========================
   // Constantes derivadas
   // ========================
-  const direccionCompleta = [ciudad, tipoVia && numeroVia ? `${tipoVia} ${numeroVia}` : '', complemento]
+  const direccionCompleta = [ciudad, direccion.trim(), complemento.trim()]
     .filter(Boolean)
     .join(', ')
 
@@ -69,8 +70,7 @@ function Libreria({ isModal = false, onSuccess }) {
     nombre.trim() &&
     libreria.trim() &&
     ciudad &&
-    tipoVia &&
-    numeroVia.trim() &&
+    direccion.trim() &&
     /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) &&
     /^\d{7,15}$/.test(telefono.trim()) &&
     password.length >= 8 &&
@@ -95,7 +95,7 @@ function Libreria({ isModal = false, onSuccess }) {
       setError('El nombre de la librería es obligatorio')
       return false
     }
-    if (!ciudad || !tipoVia || !numeroVia.trim()) {
+    if (!ciudad || !direccion.trim()) {
       setError('Completa la ubicación de la tienda')
       return false
     }
@@ -221,59 +221,33 @@ function Libreria({ isModal = false, onSuccess }) {
             </div>
           </div>
 
-          {/* Dirección */}
-          <div className="auth-field auth-field--full">
-            <label htmlFor="ciudad">Ubicación de la tienda</label>
-            <div className="address-grid">
-              <div className="auth-input-wrapper">
-                <IconLocation />
-                <select
-                  id="ciudad"
-                  className="auth-select"
-                  value={ciudad}
-                  onChange={e => { setCiudad(e.target.value); setError('') }}
-                >
-                  <option value="">Ciudad</option>
-                  <option value="Bogota">Bogotá</option>
-                  <option value="Medellin">Medellín</option>
-                  <option value="Cali">Cali</option>
-                  <option value="Barranquilla">Barranquilla</option>
-                  <option value="Cartagena">Cartagena</option>
-                </select>
-              </div>
-              <div className="auth-input-wrapper">
-                <IconLocation />
-                <select
-                  className="auth-select"
-                  value={tipoVia}
-                  onChange={e => { setTipoVia(e.target.value); setError('') }}
-                >
-                  <option value="">Tipo de vía</option>
-                  <option value="Calle">Calle</option>
-                  <option value="Carrera">Carrera</option>
-                  <option value="Avenida">Avenida</option>
-                  <option value="Diagonal">Diagonal</option>
-                  <option value="Transversal">Transversal</option>
-                </select>
-              </div>
-              <div className="auth-input-wrapper">
-                <IconLocation />
-                <input
-                  type="text"
-                  placeholder="Número: 45 # 12-30"
-                  value={numeroVia}
-                  onChange={e => { setNumeroVia(e.target.value); setError('') }}
-                />
-              </div>
-              <div className="auth-input-wrapper">
-                <IconLocation />
-                <input
-                  type="text"
-                  placeholder="Complemento: local, piso, barrio"
-                  value={complemento}
-                  onChange={e => setComplemento(e.target.value)}
-                />
-              </div>
+          {/* Ciudad + Teléfono */}
+          <div className="auth-field">
+            <label htmlFor="ciudad">Ciudad</label>
+            <div className="auth-input-wrapper">
+              <IconLocation />
+              <select
+                id="ciudad"
+                className="auth-select"
+                value={ciudad}
+                onChange={e => { setCiudad(e.target.value); setError('') }}
+              >
+                <option value="">Selecciona tu ciudad</option>
+                <option value="Bogota">Bogotá</option>
+                <option value="Medellin">Medellín</option>
+                <option value="Cali">Cali</option>
+                <option value="Barranquilla">Barranquilla</option>
+                <option value="Cartagena">Cartagena</option>
+                <option value="Santa Marta">Santa Marta</option>
+                <option value="Bucaramanga">Bucaramanga</option>
+                <option value="Pereira">Pereira</option>
+                <option value="Manizales">Manizales</option>
+                <option value="Armenia">Armenia</option>
+                <option value="Ibague">Ibagué</option>
+                <option value="Neiva">Neiva</option>
+                <option value="Villavicencio">Villavicencio</option>
+                <option value="Pasto">Pasto</option>
+              </select>
             </div>
           </div>
 
@@ -292,7 +266,67 @@ function Libreria({ isModal = false, onSuccess }) {
             </div>
           </div>
 
-          {/* Email */}
+          {/* Dirección + botón mapa — misma fila del grid */}
+          <div className="auth-field">
+            <label htmlFor="direccion">Dirección de la tienda</label>
+            <div className="auth-input-wrapper">
+              <IconLocation />
+              <input
+                id="direccion"
+                type="text"
+                placeholder="Ej: Calle 45 # 12-30"
+                value={direccion}
+                onChange={e => { setDireccion(e.target.value); setError('') }}
+              />
+            </div>
+          </div>
+
+          <div className="auth-field">
+            <label>&nbsp;</label>
+            <button
+              type="button"
+              onClick={() => setMapaOpen(true)}
+              style={{
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                padding: '0.56rem 1rem',
+                border: '1.5px solid var(--vinotinto)',
+                borderRadius: '8px',
+                background: '#fff',
+                color: 'var(--vinotinto)',
+                fontFamily: 'inherit',
+                fontSize: '0.9rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                boxSizing: 'border-box',
+              }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+              </svg>
+              Elegir en mapa
+            </button>
+          </div>
+
+          {/* Complemento — columna izquierda */}
+          <div className="auth-field">
+            <label htmlFor="complemento">Complemento <span style={{ fontWeight: 400, color: '#aaa', fontSize: '0.8rem' }}>(opcional)</span></label>
+            <div className="auth-input-wrapper">
+              <IconLocation />
+              <input
+                id="complemento"
+                type="text"
+                placeholder="Local, piso, barrio, referencia"
+                value={complemento}
+                onChange={e => setComplemento(e.target.value)}
+              />
+            </div>
+          </div>
+
+          {/* Email — columna derecha */}
           <div className="auth-field">
             <label htmlFor="email">Email</label>
             <div className="auth-input-wrapper">
@@ -423,6 +457,22 @@ function Libreria({ isModal = false, onSuccess }) {
       >
         <Privacidad />
       </LegalModal>
+
+      {mapaOpen && (
+        <LeafletAddressPickerModal
+          isOpen={mapaOpen}
+          onClose={() => setMapaOpen(false)}
+          initialCity={ciudad}
+          onGpsCity={(ciudadResuelta) => {
+            setCiudad(ciudadResuelta);
+          }}
+          onSelect={(data) => {
+            if (data.direccion)     setDireccion(data.direccion)
+            if (data.ciudadResuelta) setCiudad(data.ciudadResuelta)
+            setMapaOpen(false)
+          }}
+        />
+      )}
     </div>
   )
 
