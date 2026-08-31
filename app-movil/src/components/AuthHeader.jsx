@@ -22,5 +22,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  logo: { width: 160, height: 51, resizeMode: 'contain' },
+  logo: { width: 160, height: 51 },
 });

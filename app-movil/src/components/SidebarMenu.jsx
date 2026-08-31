@@ -145,11 +145,18 @@ export default function SidebarMenu({ visible, onClose, user, navigation, onSign
             <Text style={styles.sectionTitle}>MI CUENTA</Text>
 
             {!isVendedor && (
-              <MenuItem
-                icon={<IconStore size={22} color="#FFF" />}
-                label="Inicio"
-                onPress={() => navigateTo('PostLogin')}
-              />
+              <>
+                <MenuItem
+                  icon={<IconStore size={22} color="#FFF" />}
+                  label="Inicio"
+                  onPress={() => navigateTo('PostLogin')}
+                />
+                <MenuItem
+                  icon={<IconPackage size={22} color="#FFF" />}
+                  label="Catálogo"
+                  onPress={() => navigateTo('Catalogo')}
+                />
+              </>
             )}
             <MenuItem
               icon={<IconUser size={22} color="#FFF" />}

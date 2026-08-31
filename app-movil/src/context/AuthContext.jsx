@@ -15,6 +15,10 @@ function decodeJwtPayload(token) {
   }
 }
 
+function isTokenExpired(payload) {
+  return !payload?.exp || payload.exp * 1000 <= Date.now();
+}
+
 export function AuthProvider({ children }) {
   const [token, setToken] = useState(null);
   const [user, setUser] = useState(null);
@@ -54,6 +58,12 @@ export function AuthProvider({ children }) {
         const storedBiometricEnabled = await AsyncStorage.getItem('biometricEnabled');
 
         if (storedToken) {
+          const payload = decodeJwtPayload(storedToken);
+          if (!payload || isTokenExpired(payload)) {
+            await AsyncStorage.multiRemove(['token', 'biometricEnabled']);
+            return;
+          }
+
           if (storedBiometricEnabled === 'true') {
             setPendingToken(storedToken);
             setBiometricEnabled(true);
@@ -61,8 +71,7 @@ export function AuthProvider({ children }) {
           } else {
             api.defaults.headers.common.Authorization = `Bearer ${storedToken}`;
             setToken(storedToken);
-            const payload = decodeJwtPayload(storedToken);
-            if (payload) setUser(payload);
+            setUser(payload);
           }
         }
       } catch (error) {

@@ -1,5 +1,5 @@
 // src/screens/PostLogin.jsx
-import React, { useCallback, useContext, useEffect, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useState, useRef } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import {
   View, Text, FlatList, Image, TouchableOpacity,
@@ -7,11 +7,12 @@ import {
   ScrollView, Modal, Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { addFavorito, getBooks, getApiBaseUrl, getFavoritos, searchByISBN } from '../services/api';
+import { LinearGradient } from 'expo-linear-gradient';
+import { addFavorito, getBooks, getApiBaseUrl, getFavoritos, searchByISBN, getStoredLibros, getOrdenes, getCuponesDisponibles } from '../services/api';
 import { AuthContext } from '../context/AuthContext';
 import { CartContext } from '../context/CartContext';
 import Header from '../components/Header';
-import { IconBooks, IconStore, IconStar, IconCart, IconFavorites, IconMail, IconPackage, IconDollar, IconBook } from '../components/Icons';
+import { IconBooks, IconStore, IconStar, IconCart, IconFavorites, IconMail, IconPackage, IconDollar, IconBook, IconBookOpen } from '../components/Icons';
 
 const PRIMARY = '#7A1E3A';
 const BG      = '#F9F6F1';
@@ -32,7 +33,7 @@ const CATEGORIES = [
   { id: 8, label: 'Tecnología', emoji: '💻' },
 ];
 
-export default function PostLogin({ navigation }) {
+export default function PostLogin({ navigation, route }) {
   const [books, setBooks]               = useState([]);
   const [filtered, setFiltered]         = useState([]);
   const [loading, setLoading]           = useState(true);
@@ -41,6 +42,9 @@ export default function PostLogin({ navigation }) {
   const [scanningISBN, setScanningISBN] = useState(false);
   const [favoriteIds, setFavoriteIds] = useState(new Set());
   const [favoriteNotice, setFavoriteNotice] = useState(false);
+  const [novedades, setNovedades] = useState([]);
+  const [ultimasCompras, setUltimasCompras] = useState([]);
+  const [tieneCupones, setTieneCupones] = useState(false);
   const { signOut, user } = useContext(AuthContext);
   const { cart } = useContext(CartContext);
 
@@ -63,10 +67,23 @@ export default function PostLogin({ navigation }) {
   useEffect(() => {
     const loadBooks = async () => {
       try {
-        const res  = await getBooks();
-        const data = res.data || [];
+        const [resBooks, resNovedades, resOrdenes, resCupones] = await Promise.all([
+          getBooks(),
+          getStoredLibros(),
+          getOrdenes(),
+          getCuponesDisponibles(),
+        ]);
+
+        const data = resBooks.data || [];
+        const novedadesData = resNovedades.data || [];
+        const comprasData = resOrdenes.data?.orders || resOrdenes.data || [];
+        const cuponesData = resCupones.data || [];
+
         setBooks(data);
         setFiltered(data);
+        setNovedades(novedadesData.slice(0, 10));
+        setUltimasCompras(comprasData.slice(0, 3));
+        setTieneCupones(cuponesData.length > 0);
       } catch (e) {
         console.log('Error fetching libros', e.message);
       } finally {
@@ -171,6 +188,19 @@ export default function PostLogin({ navigation }) {
 
   const activeFilterCount = [filters.precioMin, filters.precioMax, filters.tienda, filters.correoVendedor, filters.estado, filters.formato].filter(Boolean).length;
 
+  useEffect(() => {
+    const categoryId = route?.params?.categoryId;
+    if (!categoryId) return;
+
+    const targetCategory = CATEGORIES.find((cat) => cat.id === Number(categoryId));
+    if (!targetCategory) return;
+
+    setActiveCategory(targetCategory.id);
+    setSearch('');
+    applyFilters('', targetCategory.id, filters);
+    navigation.setParams({ categoryId: undefined });
+  }, [route?.params?.categoryId]);
+
   // Handler para ISBN escaneado
   const handleBarcodeScanned = async (isbn) => {
     setScanningISBN(true);
@@ -218,14 +248,18 @@ export default function PostLogin({ navigation }) {
     }
   };
 
+  const openCatalog = (categoryId = null) => {
+    setSearch('');
+    setActiveCategory(categoryId);
+    applyFilters('', categoryId, filters);
+    navigation.navigate('Catalogo', { categoryId: categoryId ?? undefined });
+  };
+
   const handleCategory = (cat) => {
     if (activeCategory === cat.id) {
-      setActiveCategory(null);
-      applyFilters(search, null, filters);
+      openCatalog(null);
     } else {
-      setActiveCategory(cat.id);
-      setSearch('');
-      applyFilters('', cat.id, filters);
+      openCatalog(cat.id);
     }
   };
 
@@ -279,7 +313,7 @@ export default function PostLogin({ navigation }) {
               }
             }}
           >
-            <IconFavorites size={14} color={isFavorite ? WHITE : PRIMARY} />
+            <IconFavorites size={14} color={PRIMARY} />
             <Text style={[styles.favoriteBtnText, isFavorite && styles.favoriteBtnTextActive]}>{isFavorite ? 'En favoritos' : 'Agregar a favoritos'}</Text>
           </TouchableOpacity>
         </View>
@@ -288,99 +322,194 @@ export default function PostLogin({ navigation }) {
   };
 
   // El greeting va aquí dentro del ListHeader, no en el Header
-  const ListHeader = () => (
-    <View>
-      {/* Saludo debajo del Header */}
-      <View style={styles.greetingRow}>
-        <Text style={styles.greetingText}>
-          Hola, {user?.nombre || user?.email?.split('@')[0] || 'lector'} 👋
-        </Text>
-        <Text style={styles.greetingSub}>¿Qué libro buscas hoy?</Text>
-      </View>
+  const ListHeader = () => {
+    const nombre = user?.nombre?.split(' ')[0] || user?.email?.split('@')[0] || 'lector';
+    const saludo = new Date().getHours() < 12 ? 'Buenos días' : new Date().getHours() < 18 ? 'Buenas tardes' : 'Buenas noches';
+    const recentBooks = (novedades.length ? novedades : books.slice(0, 8));
+    const recentBooksRef = useRef(null);
 
-      {/* Stats strip */}
-      <View style={styles.statsStrip}>
-        {[
-          { value: '+10.000', label: 'Libros', icon: <IconBooks size={18} color={PRIMARY} /> },
-          { value: '+150',    label: 'Librerías', icon: <IconStore size={18} color={PRIMARY} /> },
-          { value: '4.8',     label: 'Calificación', icon: <IconStar size={18} color={PRIMARY} /> },
-        ].map((s, i) => (
-          <View key={i} style={styles.statItem}>
-            <View style={styles.statIconWrap}>{s.icon}</View>
-            <Text style={styles.statValue}>{s.value}</Text>
-            <Text style={styles.statLabel}>{s.label}</Text>
+    const scrollRecentBooks = (direction) => {
+      recentBooksRef.current?.scrollTo({ x: direction * 260, animated: true });
+    };
+
+    return (
+      <View style={styles.homeIntroWrap}>
+        <View style={styles.greetingRow}>
+          <Text style={styles.greetingText}>{saludo}, {nombre} 👋</Text>
+          <Text style={styles.greetingSub}>¿Qué quieres leer hoy?</Text>
+        </View>
+
+        <LinearGradient colors={[PRIMARY, '#2D0B18']} style={styles.heroCard}>
+          <View style={styles.heroContent}>
+            <View style={styles.heroTextWrap}>
+              <Text style={styles.heroBadge}>BookyHome</Text>
+              <Text style={styles.heroTitle}>El marketplace que conecta lectores con librerías</Text>
+              <Text style={styles.heroSub}>Miles de títulos de las mejores librerías independientes del país.</Text>
+              <View style={styles.heroActions}>
+                <TouchableOpacity style={styles.heroPrimaryBtn} onPress={() => openCatalog(null)} activeOpacity={0.9}>
+                  <Text style={styles.heroPrimaryBtnText}>Explorar catálogo</Text>
+                </TouchableOpacity>
+                {tieneCupones && (
+                  <TouchableOpacity style={styles.heroSecondaryBtn} onPress={() => setShowFilters(true)} activeOpacity={0.9}>
+                    <Text style={styles.heroSecondaryBtnText}>🎟️ Ver cupones</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            </View>
+            <View style={styles.heroIconWrap}>
+              <View style={styles.heroIconCircle}>
+                <IconBookOpen size={42} color="#FFFFFF" />
+              </View>
+            </View>
           </View>
-        ))}
+        </LinearGradient>
+
+        <View style={styles.statsStrip}>
+          {[
+            { value: '+10.000', label: 'Libros', icon: <IconBooks size={18} color={PRIMARY} /> },
+            { value: '+150',    label: 'Librerías', icon: <IconStore size={18} color={PRIMARY} /> },
+            { value: '4.8',     label: 'Calificación', icon: <IconStar size={18} color={PRIMARY} /> },
+          ].map((s, i) => (
+            <View key={i} style={styles.statItem}>
+              <View style={styles.statIconWrap}>{s.icon}</View>
+              <Text style={styles.statValue}>{s.value}</Text>
+              <Text style={styles.statLabel}>{s.label}</Text>
+            </View>
+          ))}
+        </View>
+
+        {tieneCupones && (
+          <View style={styles.sectionBlock}>
+            <Text style={styles.sectionTitle}>🎟️ Cupones disponibles</Text>
+            <View style={styles.couponBox}>
+              <Text style={styles.couponText}>Tienes descuentos activos para tu próxima compra.</Text>
+              <TouchableOpacity style={styles.smallAction} onPress={() => setShowFilters(true)}>
+                <Text style={styles.smallActionText}>Ver ofertas</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+
+        <View style={styles.sectionBlock}>
+          <View style={styles.sectionHeaderRow}>
+            <Text style={styles.sectionTitle}>📚 Recién llegados</Text>
+            <TouchableOpacity onPress={() => navigation.navigate('BookDetail', { book: recentBooks[0] || books[0] })}>
+              <Text style={styles.linkText}>Ver todos →</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.carouselWrap}>
+            <TouchableOpacity style={styles.carouselArrow} onPress={() => scrollRecentBooks(-1)} activeOpacity={0.8}>
+              <Text style={styles.carouselArrowText}>‹</Text>
+            </TouchableOpacity>
+
+            <ScrollView
+              ref={recentBooksRef}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.horizontalCardList}
+              snapToInterval={170}
+              decelerationRate="fast"
+            >
+              {recentBooks.map((libro) => {
+                const imageUrl = libro.imagen || libro.imagen_url;
+                const finalImageUrl = imageUrl ? (imageUrl.startsWith('http') ? imageUrl : `${getApiBaseUrl()}${imageUrl}`) : null;
+                return (
+                  <TouchableOpacity key={libro.id_libro || libro.id} style={styles.bookCard} onPress={() => navigation.navigate('BookDetail', { book: libro })} activeOpacity={0.9}>
+                    {finalImageUrl ? (
+                      <Image source={{ uri: finalImageUrl }} style={styles.bookCardImage} resizeMode="cover" />
+                    ) : (
+                      <View style={[styles.bookCardImage, styles.bookCardPlaceholder]}>
+                        <Text style={styles.placeholderEmoji}>📚</Text>
+                      </View>
+                    )}
+                    <View style={styles.bookCardBody}>
+                      <Text style={styles.bookCardTitle} numberOfLines={2}>{libro.titulo || libro.nombre || 'Sin título'}</Text>
+                      <Text style={styles.bookCardAuthor} numberOfLines={1}>{libro.autor_libro || libro.autor || 'Autor desconocido'}</Text>
+                      <Text style={styles.bookCardPrice}>${Number(libro.precio_libro ?? libro.precio ?? 0).toLocaleString('es-CO')}</Text>
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+
+            <TouchableOpacity style={styles.carouselArrow} onPress={() => scrollRecentBooks(1)} activeOpacity={0.8}>
+              <Text style={styles.carouselArrowText}>›</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {ultimasCompras.length > 0 && (
+          <View style={styles.sectionBlock}>
+            <View style={styles.sectionHeaderRow}>
+              <Text style={styles.sectionTitle}>🛍️ Tus últimas compras</Text>
+              <TouchableOpacity onPress={() => navigation.navigate('History')}>
+                <Text style={styles.linkText}>Ver todas →</Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.purchaseList}>
+              {ultimasCompras.map((orden, idx) => {
+                const libros = orden.libros || orden.items || orden.productos || orden.detalles || [];
+                const primerLibro = Array.isArray(libros) && libros.length > 0 ? libros[0] : null;
+                const imagen = primerLibro?.imagen_url || primerLibro?.imagen || primerLibro?.portada || orden.imagen || orden.portada;
+                const finalImageUrl = imagen ? (imagen.startsWith('http') ? imagen : `${getApiBaseUrl()}${imagen.replace(/^\//, '')}`) : null;
+                const titulo = primerLibro?.titulo || primerLibro?.nombre_libro || primerLibro?.nombre || orden.titulo || orden.nombre_libro || 'Compra';
+
+                return (
+                  <TouchableOpacity key={idx} style={styles.purchaseItem} onPress={() => navigation.navigate('History')}>
+                    {finalImageUrl ? <Image source={{ uri: finalImageUrl }} style={styles.purchaseImage} /> : <View style={[styles.purchaseImage, styles.purchasePlaceholder]}><Text style={styles.placeholderEmoji}>📖</Text></View>}
+                    <View style={styles.purchaseInfo}>
+                      <Text style={styles.purchaseTitle} numberOfLines={2}>{titulo}</Text>
+                      <Text style={styles.purchaseMeta}>Pedido #{orden.id_orden || orden.id || idx + 1}</Text>
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
+        )}
+
+        <View style={styles.sectionBlock}>
+          <View style={styles.sectionHeaderRow}>
+            <Text style={styles.sectionTitle}>Explora por categoría</Text>
+          </View>
+
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryList}>
+            {CATEGORIES.map((cat) => {
+              const catBooks = books.filter((libro) => {
+                const nombreCategoria = (libro.nombre_categoria || libro.categoria || '').toLowerCase();
+                return nombreCategoria.includes(cat.label.toLowerCase());
+              });
+
+              const libro = catBooks[0] || null;
+              const imageUrl = libro?.imagen || libro?.imagen_url;
+              const finalImageUrl = imageUrl ? (imageUrl.startsWith('http') ? imageUrl : `${getApiBaseUrl()}${imageUrl}`) : null;
+
+              return (
+                <TouchableOpacity
+                  key={cat.id}
+                  style={styles.categoryCard}
+                  onPress={() => openCatalog(cat.id)}
+                  activeOpacity={0.9}
+                >
+                  {finalImageUrl ? (
+                    <Image source={{ uri: finalImageUrl }} style={styles.categoryImage} resizeMode="cover" />
+                  ) : (
+                    <View style={[styles.categoryImage, styles.categoryPlaceholder]}>
+                      <Text style={styles.placeholderEmoji}>📚</Text>
+                    </View>
+                  )}
+                  <Text style={styles.categoryTitle}>{cat.label}</Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        </View>
+
       </View>
-
-      {/* Categorías */}
-      <Text style={styles.sectionTitle}>Explorar categorías</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.catScroll}>
-        {/* Botón de Filtros */}
-        <TouchableOpacity
-          style={[styles.catChip, { backgroundColor: activeFilterCount > 0 ? PRIMARY : WHITE, borderColor: activeFilterCount > 0 ? PRIMARY : BORDER }]}
-          onPress={() => setShowFilters(true)}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.catEmoji}>🔍</Text>
-          <Text style={[styles.catLabel, activeFilterCount > 0 && { color: WHITE }]}>
-            Filtros{activeFilterCount > 0 ? ` (${activeFilterCount})` : ''}
-          </Text>
-        </TouchableOpacity>
-        {CATEGORIES.map(cat => (
-          <TouchableOpacity
-            key={cat.id}
-            style={[styles.catChip, activeCategory === cat.id && styles.catChipActive]}
-            onPress={() => handleCategory(cat)}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.catEmoji}>{cat.emoji}</Text>
-            <Text style={[styles.catLabel, activeCategory === cat.id && styles.catLabelActive]}>
-              {cat.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-
-      {/* Filtros activos */}
-      {activeFilterCount > 0 && (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ paddingLeft: 16, marginBottom: 8 }}>
-          {filters.tienda ? (
-            <View style={styles.filterTag}><Text style={styles.filterTagText}>🏪 {filters.tienda}</Text></View>
-          ) : null}
-          {filters.precioMin ? (
-            <View style={styles.filterTag}><Text style={styles.filterTagText}>Min: ${filters.precioMin}</Text></View>
-          ) : null}
-          {filters.precioMax ? (
-            <View style={styles.filterTag}><Text style={styles.filterTagText}>Max: ${filters.precioMax}</Text></View>
-          ) : null}
-          {filters.estado ? (
-            <View style={styles.filterTag}><Text style={styles.filterTagText}>📦 {filters.estado === 'nuevo' ? 'Nuevo' : filters.estado === 'usado_buen_estado' ? 'Buen estado' : 'Regular'}</Text></View>
-          ) : null}
-          {filters.formato ? (
-            <View style={styles.filterTag}><Text style={styles.filterTagText}>{filters.formato === 'digital' ? '💾 Digital' : '📖 Físico'}</Text></View>
-          ) : null}
-          <TouchableOpacity style={[styles.filterTag, { backgroundColor: 'rgba(255,255,255,0.3)' }]} onPress={handleClearFilters}>
-            <Text style={[styles.filterTagText, { fontWeight: '800' }]}>✕ Limpiar</Text>
-          </TouchableOpacity>
-        </ScrollView>
-      )}
-
-      {/* Título del catálogo */}
-      <Text style={styles.sectionTitle}>
-        {activeCategory
-          ? CATEGORIES.find(c => c.id === activeCategory)?.label
-          : search
-          ? `Resultados para "${search}"`
-          : 'Catálogo completo'}
-        {` (${filtered.length})`}
-      </Text>
-
-      {filtered.length === 0 && !loading && (
-        <Text style={styles.emptyText}>No se encontraron libros.</Text>
-      )}
-    </View>
-  );
+    );
+  };
 
   return (
     // SafeAreaView ya lo maneja Header internamente via StatusBar,
@@ -404,16 +533,12 @@ export default function PostLogin({ navigation }) {
         </View>
       ) : (
         <FlatList
-          data={filtered}
-          keyExtractor={(item) =>
-            String(item.id_libro || item.id || item.id_producto || Math.random())
-          }
-          renderItem={renderBook}
+          data={[]}
+          keyExtractor={() => 'home-empty'}
+          renderItem={() => null}
           ListHeaderComponent={ListHeader}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
-          numColumns={2}
-          columnWrapperStyle={styles.columnWrapper}
         />
       )}
 
@@ -612,10 +737,280 @@ const styles = StyleSheet.create({
   statValue: { fontSize: 16, fontWeight: '800', color: PRIMARY },
   statLabel: { fontSize: 11, color: GRAY, marginTop: 2 },
 
-  /* Categorías */
+  homeIntroWrap: {
+    paddingBottom: 12,
+  },
+  heroCard: {
+    marginHorizontal: 16,
+    marginTop: 6,
+    borderRadius: 18,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOpacity: 0.12,
+    shadowRadius: 10,
+    elevation: 6,
+  },
+  heroContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 18,
+    paddingVertical: 20,
+  },
+  heroTextWrap: {
+    flex: 1,
+    paddingRight: 10,
+  },
+  heroBadge: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: 'rgba(255,255,255,0.8)',
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+    marginBottom: 8,
+  },
+  heroTitle: {
+    fontSize: 26,
+    fontWeight: '800',
+    color: WHITE,
+    lineHeight: 32,
+    marginBottom: 8,
+  },
+  heroSub: {
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.8)',
+    lineHeight: 20,
+    marginBottom: 18,
+  },
+  heroActions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  heroPrimaryBtn: {
+    backgroundColor: WHITE,
+    borderRadius: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  heroPrimaryBtnText: {
+    color: PRIMARY,
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  heroSecondaryBtn: {
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.35)',
+    borderRadius: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  heroSecondaryBtnText: {
+    color: WHITE,
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  heroIconWrap: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  heroIconCircle: {
+    width: 84,
+    height: 84,
+    borderRadius: 42,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sectionBlock: {
+    marginTop: 18,
+    paddingHorizontal: 16,
+  },
   sectionTitle: {
     fontSize: 16, fontWeight: '700', color: WHITE,
-    marginHorizontal: 16, marginTop: 22, marginBottom: 10,
+    marginBottom: 10,
+  },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  linkText: {
+    fontSize: 12,
+    color: WHITE,
+    fontWeight: '700',
+    opacity: 0.9,
+  },
+  couponBox: {
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    borderRadius: 12,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.16)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 10,
+  },
+  couponText: {
+    color: WHITE,
+    fontSize: 12.5,
+    fontWeight: '600',
+    flex: 1,
+    lineHeight: 18,
+  },
+  smallAction: {
+    backgroundColor: WHITE,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
+  smallActionText: {
+    color: PRIMARY,
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  carouselWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  carouselArrow: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: 'rgba(255,255,255,0.85)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  carouselArrowText: {
+    color: PRIMARY,
+    fontSize: 24,
+    fontWeight: '800',
+    lineHeight: 24,
+  },
+  horizontalCardList: {
+    paddingRight: 16,
+    paddingLeft: 6,
+    alignItems: 'flex-start',
+  },
+  categoryList: {
+    paddingRight: 16,
+    paddingLeft: 0,
+    alignItems: 'stretch',
+  },
+  categoryCard: {
+    width: 150,
+    marginRight: 12,
+    backgroundColor: WHITE,
+    borderRadius: 12,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  categoryImage: {
+    width: '100%',
+    height: 170,
+    backgroundColor: '#EFE7E0',
+  },
+  categoryPlaceholder: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  categoryTitle: {
+    color: PRIMARY,
+    fontSize: 12,
+    fontWeight: '700',
+    paddingHorizontal: 10,
+    paddingVertical: 10,
+  },
+  bookCard: {
+    width: 150,
+    marginRight: 12,
+    backgroundColor: WHITE,
+    borderRadius: 12,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  bookCardImage: {
+    width: '100%',
+    height: 170,
+    backgroundColor: '#EFE7E0',
+  },
+  bookCardPlaceholder: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  placeholderEmoji: {
+    fontSize: 28,
+  },
+  bookCardBody: {
+    padding: 10,
+  },
+  bookCardTitle: {
+    color: PRIMARY,
+    fontSize: 12,
+    fontWeight: '800',
+    marginBottom: 4,
+  },
+  bookCardAuthor: {
+    color: GRAY,
+    fontSize: 11,
+    marginBottom: 6,
+  },
+  bookCardPrice: {
+    color: PRIMARY,
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  purchaseList: {
+    gap: 10,
+  },
+  purchaseItem: {
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.18)',
+    padding: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  purchaseImage: {
+    width: 56,
+    height: 56,
+    borderRadius: 10,
+    backgroundColor: '#EFE7E0',
+  },
+  purchasePlaceholder: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  purchaseInfo: {
+    flex: 1,
+  },
+  purchaseTitle: {
+    color: WHITE,
+    fontSize: 13,
+    fontWeight: '700',
+    marginBottom: 2,
+  },
+  purchaseMeta: {
+    color: 'rgba(255,255,255,0.7)',
+    fontSize: 11,
+  },
+  filterRowScroll: {
+    paddingBottom: 6,
   },
   catScroll: { paddingLeft: 16, marginBottom: 4 },
   catChip: {
@@ -640,7 +1035,7 @@ const styles = StyleSheet.create({
   cardImg:            { width: '100%', height: 150, backgroundColor: '#EEE' },
   cardImgPlaceholder: { justifyContent: 'center', alignItems: 'center' },
   cardInfo:   { padding: 10 },
-  cardTitle:  { fontSize: 13, fontWeight: '700', color: '#1A1A1A', marginBottom: 3 },
+  cardTitle:  { fontSize: 13, fontWeight: '700', color: PRIMARY, marginBottom: 3 },
   cardAuthor: { fontSize: 11, color: GRAY, marginBottom: 6 },
   cardPrice:  { fontSize: 15, fontWeight: '800', color: PRIMARY, marginBottom: 8 },
   addBtn:     { 
@@ -648,10 +1043,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 
   },
   addBtnText: { color: WHITE, fontSize: 11, fontWeight: '700' },
-  favoriteBtn: { marginTop: 7, borderWidth: 1, borderColor: PRIMARY, borderRadius: 8, paddingVertical: 7, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
+  favoriteBtn: {
+    marginTop: 7,
+    backgroundColor: '#F7F3F0',
+    borderWidth: 1,
+    borderColor: '#E7D6CF',
+    borderRadius: 8,
+    paddingVertical: 7,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+  },
   favoriteBtnText: { color: PRIMARY, fontSize: 11, fontWeight: '700' },
-  favoriteBtnActive: { backgroundColor: PRIMARY },
-  favoriteBtnTextActive: { color: WHITE },
+  favoriteBtnActive: { backgroundColor: '#F4E5E5', borderColor: PRIMARY },
+  favoriteBtnTextActive: { color: PRIMARY },
   favoriteOverlay: { flex: 1, backgroundColor: 'rgba(42, 18, 28, 0.48)', justifyContent: 'center', padding: 28 },
   favoriteNoticeCard: { backgroundColor: WHITE, borderRadius: 18, padding: 26, alignItems: 'center', borderWidth: 2, borderColor: '#7A1E3A', shadowColor: '#000', shadowOpacity: 0.25, shadowRadius: 14, elevation: 8 },
   favoriteNoticeIcon: { width: 58, height: 58, borderRadius: 29, backgroundColor: PRIMARY, justifyContent: 'center', alignItems: 'center', marginBottom: 14 },

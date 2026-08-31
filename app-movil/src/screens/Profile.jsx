@@ -220,12 +220,12 @@ export default function Profile() {
     <SafeAreaView style={styles.safe}>
       {loading ? (
         <View style={styles.centered}>
-          <ActivityIndicator size="large" color={PRIMARY} />
+          <ActivityIndicator size="large" color={WHITE} />
         </View>
       ) : (
-        <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
+        <ScrollView style={styles.scrollView} contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
           <View style={styles.sectionHeading}>
-            <IconUser size={28} color={PRIMARY} />
+            <IconUser size={28} color={WHITE} />
             <Text style={styles.title}>Mi Perfil</Text>
           </View>
           <Text style={styles.subtitle}>Actualiza tus datos, personaliza tu perfil y revisa tu actividad.</Text>
@@ -405,12 +405,16 @@ export default function Profile() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: PRIMARY },
+  scrollView: {
+    flex: 1,
+    backgroundColor: PRIMARY,
+  },
   container: {
     padding: 16,
     paddingBottom: 30,
     backgroundColor: PRIMARY,
   },
-  centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: PRIMARY },
   sectionHeading: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 6 },
   title: { fontSize: 24, fontWeight: '800', color: WHITE },
   subtitle: { fontSize: 14, color: 'rgba(255,255,255,0.75)', marginBottom: 20 },
