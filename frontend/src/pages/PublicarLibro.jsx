@@ -32,6 +32,7 @@ export default function PublicarLibro() {
     return "Vendedor";
   });
   const [userPhotoUrl, setUserPhotoUrl] = useState(null);
+  const [bannerUrl, setBannerUrl] = useState(null);
 
   const [categorias, setCategorias] = useState([]);
   const [previews, setPreviews] = useState([]);
@@ -74,6 +75,22 @@ export default function PublicarLibro() {
     stock: "",
     estado_libro: "",
   });
+
+  // Cargar logo y banner de la tienda para el sidebar
+  useEffect(() => {
+    axios.get("/configuracion")
+      .then((r) => {
+        const base = getApiBaseUrl();
+        const resolve = (url) => {
+          if (!url) return null;
+          if (url.startsWith('http')) return url;
+          return `${base}${url}`;
+        };
+        if (r.data?.logo_url) setUserPhotoUrl(resolve(r.data.logo_url));
+        if (r.data?.banner_url) setBannerUrl(resolve(r.data.banner_url));
+      })
+      .catch(() => {});
+  }, []);
 
   // Cargar categorías al montar
   useEffect(() => {
@@ -209,6 +226,7 @@ export default function PublicarLibro() {
         <SellerSidebar
           userName={userName}
           userPhotoUrl={userPhotoUrl}
+          bannerUrl={bannerUrl}
           activeSide={activeSide}
           setActiveSide={setActiveSide}
           handleLogout={() => {
@@ -233,6 +251,7 @@ export default function PublicarLibro() {
       <SellerSidebar
         userName={userName}
         userPhotoUrl={userPhotoUrl}
+        bannerUrl={bannerUrl}
         activeSide={activeSide}
         setActiveSide={handleSidebarSelect}
         handleLogout={() => {

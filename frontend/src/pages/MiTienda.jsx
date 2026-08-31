@@ -1,4 +1,4 @@
-// src/pages/MiTienda.jsx
+﻿// src/pages/MiTienda.jsx
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
@@ -644,6 +644,7 @@ export default function MiTienda() {
     return "Vendedor";
   });
   const [userPhotoUrl,  setUserPhotoUrl]  = useState(null);
+  const [bannerUrl,     setBannerUrl]     = useState(null);
   const [loading]                 = useState(false);
   const location = useLocation();
   const [activeSide, setActiveSide] = useState(() => {
@@ -672,7 +673,12 @@ export default function MiTienda() {
     horario_atencion: "",
     politica_devoluciones: "",
     politica_envios: "",
-    tiempo_despacho_dias: 2
+    tiempo_despacho_dias: 2,
+    logo_url: "",
+    banner_url: "",
+    descripcion: "",
+    ciudad_origen: "",
+    email_publico: ""
   });
   const [tiendaForm,    setTiendaForm]    = useState({ nombre_tienda: "", direccion: "", telefono: "" });
   const [tiendaMsg,     setTiendaMsg]     = useState("");
@@ -713,6 +719,29 @@ export default function MiTienda() {
   const [historialPagos, setHistorialPagos] = useState([]);
   const [loadingNomina, setLoadingNomina] = useState(false);
   const [expandedPayment, setExpandedPayment] = useState(null);
+
+  // ── Perfil personal ──────────────────────────────────────────────
+  const [perfilName,        setPerfilName]        = useState('');
+  const [perfilSurname,     setPerfilSurname]      = useState('');
+  const [perfilPhone,       setPerfilPhone]        = useState('');
+  const [perfilCity,        setPerfilCity]         = useState('');
+  const [perfilAddress,     setPerfilAddress]      = useState('');
+  const [perfilEmail,       setPerfilEmail]        = useState('');
+  const [profilePhotoUrl,   setProfilePhotoUrl]    = useState(null);
+  const [perfilBannerUrl,   setPerfilBannerUrl]    = useState(null);
+  const [perfilBannerColor, setPerfilBannerColor]  = useState('#7A1E3A');
+  const [showBannerEditor,  setShowBannerEditor]   = useState(false);
+  const [perfilFotoUploading, setPerfilFotoUploading] = useState(false);
+  const [perfilBannerUploading, setPerfilBannerUploading] = useState(false);
+  const [notifPromociones,  setNotifPromociones]   = useState(true);
+  const [notifPedidos,      setNotifPedidos]        = useState(true);
+  const [notifNovedades,    setNotifNovedades]      = useState(false);
+  const [estadisticas,      setEstadisticas]        = useState(null);
+  const [categoriasFav,     setCategoriasFav]       = useState([]);
+  const [nivelFidelizacion, setNivelFidelizacion]   = useState(null);
+  const [savingPerfil,      setSavingPerfil]        = useState(false);
+  const [perfilMsg,         setPerfilMsg]           = useState('');
+  const [perfilLoaded,      setPerfilLoaded]        = useState(false);
 
   const cargarCuentasBancarias = async () => {
     try {
@@ -934,13 +963,34 @@ export default function MiTienda() {
     api.get("/perfil/mi-perfil")
       .then((res) => {
         if (!mounted || !res?.data) return;
-        const fotoPerfil = res.data.foto_perfil;
+        const d = res.data;
+        const fotoPerfil = d.foto_perfil;
         if (fotoPerfil) {
           setUserPhotoUrl(resolveImageUrl(fotoPerfil));
+          setProfilePhotoUrl(resolveImageUrl(fotoPerfil));
         }
-        if (res.data.nombre_usuario) {
-          setUserName(res.data.nombre_usuario);
+        if (d.nombre_usuario) {
+          setUserName(d.nombre_usuario);
+          const parts = d.nombre_usuario.trim().split(/\s+/);
+          setPerfilName(parts.shift() || '');
+          setPerfilSurname(parts.join(' '));
         }
+        setPerfilPhone(d.telefono || '');
+        setPerfilCity(d.ciudad || '');
+        setPerfilAddress(d.direccion || '');
+        setPerfilEmail(d.correo_usuario || '');
+        if (d.banner_perfil) {
+          setPerfilBannerUrl(resolveImageUrl(d.banner_perfil));
+          setPerfilBannerColor(null);
+        } else if (d.banner_color) {
+          setPerfilBannerColor(d.banner_color);
+          setPerfilBannerUrl(null);
+        }
+        const pref = d.preferencias || {};
+        setNotifPromociones(pref.notificaciones_promociones ?? true);
+        setNotifPedidos(pref.notificaciones_pedidos ?? true);
+        setNotifNovedades(pref.notificaciones_novedades ?? false);
+        setPerfilLoaded(true);
       })
       .catch((err) => {
         console.error("Error cargando perfil del vendedor:", err);
@@ -948,6 +998,35 @@ export default function MiTienda() {
 
     return () => { mounted = false; };
   }, [navigate]);
+
+  // Cargar estadísticas de usuario (para sección Perfil)
+  const cargarEstadisticasUsuario = () => {
+    api.get("/perfil/estadisticas/usuario")
+      .then((res) => {
+        const data = res.data || {};
+        const puntos = Number(data.total_gastado || 0);
+        const nivel = data.nivel_fidelizacion || 'Bronce';
+        const umbrales = { Bronce: 50000, Plata: 150000, Oro: 300000 };
+        const niveles = ['Bronce', 'Plata', 'Oro', 'Platino'];
+        const idx = niveles.indexOf(nivel);
+        const siguiente = idx >= 0 && idx < niveles.length - 1 ? niveles[idx + 1] : null;
+        setEstadisticas({
+          total_gastado: puntos,
+          num_compras: Number(data.num_compras || 0),
+          ticket_promedio: Number(data.ticket_promedio || 0),
+        });
+        setCategoriasFav(data.categorias_favoritas || []);
+        setNivelFidelizacion({
+          nivel, puntos, siguiente_nivel: siguiente,
+          puntos_para_siguiente: siguiente ? Math.max((umbrales[nivel] || 0) - puntos, 0) : 0,
+        });
+      })
+      .catch(() => {
+        setEstadisticas({ total_gastado: 0, num_compras: 0, ticket_promedio: 0 });
+        setCategoriasFav([]);
+        setNivelFidelizacion({ nivel: 'Bronce', puntos: 0, siguiente_nivel: 'Plata', puntos_para_siguiente: 50000 });
+      });
+  };
 
   // Sincronizar activeSide con la URL: usamos history.replaceState en lugar de
   // navigate() para no disparar el ciclo de re-render de React Router (que causa
@@ -1072,6 +1151,8 @@ export default function MiTienda() {
       cargarVentas();
     } else if (activeSide === "Mis Libros" || activeSide === "Inicio") {
       cargarLibros();
+    } else if (activeSide === "Perfil") {
+      cargarEstadisticasUsuario();
     }
   }, [activeSide, cargarPedidos, cargarVentas, cargarLibros]);
 
@@ -1169,11 +1250,31 @@ export default function MiTienda() {
     api.get("/configuracion")
       .then((r) => {
         if (r.data) {
+          if (r.data.logo_url) {
+            // El logo de la tienda tiene prioridad en el panel vendedor
+            setUserPhotoUrl(resolveImageUrl(r.data.logo_url));
+            // Fallback: si no hay foto de perfil personal, usar el logo de la tienda
+            setProfilePhotoUrl(prev => prev || resolveImageUrl(r.data.logo_url));
+          }
+          if (r.data.banner_url) {
+            setBannerUrl(resolveImageUrl(r.data.banner_url));
+            // Fallback: si no hay banner personal, usar el banner de la tienda
+            setPerfilBannerUrl(prev => {
+              if (prev) return prev;
+              setPerfilBannerColor(null);
+              return resolveImageUrl(r.data.banner_url);
+            });
+          }
           setConfigForm({
             horario_atencion: r.data.horario_atencion || "",
             politica_devoluciones: r.data.politica_devoluciones || "",
             politica_envios: r.data.politica_envios || "",
-            tiempo_despacho_dias: r.data.tiempo_despacho_dias || 2
+            tiempo_despacho_dias: r.data.tiempo_despacho_dias || 2,
+            logo_url: r.data.logo_url || "",
+            banner_url: r.data.banner_url || "",
+            descripcion: r.data.descripcion || "",
+            ciudad_origen: r.data.ciudad_origen || "",
+            email_publico: r.data.email_publico || "",
           });
         }
       })
@@ -1534,870 +1635,467 @@ export default function MiTienda() {
     </>
   );
 
-  const renderPerfil = () => (
-    <>
-      <div className="welcome-card">
-        <h1 style={{ fontSize: "1.55rem", marginBottom: "4px", display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <IconUser width={24} height={24} strokeWidth={2} style={{ color: '#7A1E3A' }} />
-          Perfil del negocio
-        </h1>
-        <p style={{ margin: 0 }}>Resumen de tu tienda y tus datos públicos.</p>
-      </div>
+  const renderPerfil = () => {
+    const PRIMARY = '#7A1E3A';
+    const BORDER  = '#E0DBD4';
+    const TEXT    = '#2A2A2A';
+    const MUTED   = '#777';
 
-      <div className="pl-card" style={{ padding: "2rem", marginTop: "20px" }}>
-        {!tiendaInfo ? (
-          <p style={{ color: "#888" }}>Cargando información de la tienda...</p>
-        ) : (
-          <div style={{ display: "grid", gap: "18px" }}>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
-              <div>
-                <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>Nombre de la tienda</label>
-                <div style={{ padding: "12px 14px", borderRadius: "8px", background: "#fafafa", border: "1px solid #ddd" }}>
-                  {tiendaInfo.nombre_tienda || "--"}
-                </div>
-              </div>
-              <div>
-                <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>Teléfono</label>
-                <div style={{ padding: "12px 14px", borderRadius: "8px", background: "#fafafa", border: "1px solid #ddd" }}>
-                  {tiendaInfo.telefono || "--"}
-                </div>
-              </div>
-            </div>
+    const getNivelColor = (nivel) => ({
+      Bronce:  { bg: '#FFF8E1', border: '#CD7F32', text: '#CD7F32' },
+      Plata:   { bg: '#F5F5F5', border: '#C0C0C0', text: '#757575' },
+      Oro:     { bg: '#FFFDE7', border: '#FFD700', text: '#FF8F00' },
+      Platino: { bg: '#E3F2FD', border: '#90CAF9', text: '#1565C0' },
+    }[nivel] || { bg: '#FFF8E1', border: '#CD7F32', text: '#CD7F32' });
 
-            <div>
-              <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>Dirección</label>
-              <div style={{ padding: "12px 14px", borderRadius: "8px", background: "#fafafa", border: "1px solid #ddd" }}>
-                {tiendaInfo.direccion || "--"}
-              </div>
-            </div>
+    const handleFotoUpload = async (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      setPerfilFotoUploading(true);
+      const fd = new FormData();
+      fd.append('file', file);
+      try {
+        const res = await api.post('/perfil/foto-perfil', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+        const url = resolveImageUrl(res.data?.url || res.data?.foto_perfil);
+        setProfilePhotoUrl(url);
+        setUserPhotoUrl(url);
+        window.dispatchEvent(new CustomEvent('profile-photo-updated', { detail: { url } }));
+        setPerfilMsg('Foto actualizada');
+        setTimeout(() => setPerfilMsg(''), 3000);
+      } catch { setPerfilMsg('Error al subir la foto'); }
+      finally { setPerfilFotoUploading(false); }
+    };
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
-              <div>
-                <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>Miembro desde</label>
-                <div style={{ padding: "12px 14px", borderRadius: "8px", background: "#fafafa", border: "1px solid #ddd" }}>
-                  {tiendaInfo.fecha_creacion || "--"}
-                </div>
-              </div>
-              <div>
-                <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>Libros publicados</label>
-                <div style={{ padding: "12px 14px", borderRadius: "8px", background: "#fafafa", border: "1px solid #ddd" }}>
-                  {statsLibros.totalLibros}
-                </div>
-              </div>
-            </div>
+    const handleBannerUpload = async (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      setPerfilBannerUploading(true);
+      const fd = new FormData();
+      fd.append('file', file);
+      try {
+        const res = await api.post('/perfil/banner', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+        const url = resolveImageUrl(res.data?.url || res.data?.banner_perfil);
+        setPerfilBannerUrl(url);
+        setPerfilBannerColor(null);
+        setBannerUrl(url);
+        setShowBannerEditor(false);
+        window.dispatchEvent(new CustomEvent('profile-banner-updated', { detail: { bannerUrl: url, bannerColor: null } }));
+        setPerfilMsg('Banner actualizado');
+        setTimeout(() => setPerfilMsg(''), 3000);
+      } catch { setPerfilMsg('Error al subir el banner'); }
+      finally { setPerfilBannerUploading(false); }
+    };
 
-            <button
-              style={{
-                background: "var(--vinotinto)", color: "white", border: "none",
-                padding: "12px 24px", borderRadius: "8px", fontWeight: 700,
-                fontSize: "0.95rem", cursor: "pointer", fontFamily: "Montserrat, sans-serif", width: "fit-content"
-              }}
-              onClick={() => setActiveSide("Configuración")}
-            >
-              Editar Configuración
-            </button>
-          </div>
-        )}
-      </div>
+    const handleBannerColor = async (color) => {
+      try {
+        await api.patch('/perfil/banner-color', { banner_color: color });
+        setPerfilBannerColor(color);
+        setPerfilBannerUrl(null);
+        setBannerUrl(null);
+        setShowBannerEditor(false);
+        window.dispatchEvent(new CustomEvent('profile-banner-updated', { detail: { bannerUrl: null, bannerColor: color } }));
+        setPerfilMsg('Color de banner guardado');
+        setTimeout(() => setPerfilMsg(''), 3000);
+      } catch { setPerfilMsg('Error al guardar el color'); }
+    };
 
-      {/* Sección de Cuentas Bancarias en el Perfil */}
-      <div className="pl-card" style={{ padding: "2rem", marginTop: "20px" }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
-          <IconCreditCard width={24} height={24} strokeWidth={2} style={{ color: '#7A1E3A' }} />
-          <h2 style={{ margin: 0, fontSize: "1.3rem" }}>Cuentas Bancarias</h2>
-        </div>
-        
-        {cuentasBancarias.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '30px', background: '#fafafa', borderRadius: '8px' }}>
-            <IconCreditCard width={48} height={48} strokeWidth={1.5} style={{ color: '#ccc', marginBottom: '15px' }} />
-            <p style={{ color: '#666', marginBottom: '15px' }}>No tienes cuentas bancarias registradas</p>
-            <button
-              onClick={() => setMostrarFormCuenta(true)}
-              style={{
-                background: "var(--vinotinto)", color: "white", border: "none",
-                padding: "10px 20px", borderRadius: "6px", fontWeight: 600,
-                cursor: "pointer", fontFamily: "Montserrat, sans-serif"
-              }}
-            >
-              Agregar cuenta bancaria
-            </button>
-          </div>
-        ) : (
-          <div style={{ display: 'grid', gap: '12px' }}>
-            {cuentasBancarias.map((cuenta) => (
-              <div
-                key={cuenta.id_metodo}
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  padding: '16px',
-                  background: cuenta.es_principal ? '#f0f8ff' : '#fafafa',
-                  border: cuenta.es_principal ? '2px solid #4a90e2' : '1px solid #ddd',
-                  borderRadius: '8px'
-                }}
-              >
-                <div>
-                  <div style={{ fontWeight: 600, marginBottom: '4px' }}>
-                    {cuenta.banco} - {cuenta.tipo_cuenta}
-                    {cuenta.es_principal && (
-                      <span style={{
-                        background: '#4a90e2', color: 'white',
-                        padding: '2px 8px', borderRadius: '4px',
-                        fontSize: '0.75rem', marginLeft: '8px'
-                      }}>
-                        Principal
-                      </span>
-                    )}
-                  </div>
-                  <div style={{ color: '#666', fontSize: '0.9rem' }}>
-                    ****{cuenta.numero_cuenta.slice(-4)}
-                  </div>
-                  <div style={{ color: '#888', fontSize: '0.85rem' }}>
-                    {cuenta.titular}
-                  </div>
-                </div>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  {!cuenta.es_principal && (
-                    <button
-                      onClick={() => handleMarcarPrincipal(cuenta.id)}
-                      style={{
-                        background: '#4a90e2', color: 'white', border: 'none',
-                        padding: '6px 12px', borderRadius: '4px', fontSize: '0.85rem',
-                        cursor: 'pointer', fontWeight: 500
-                      }}
-                    >
-                      Principal
-                    </button>
-                  )}
-                  <button
-                    onClick={() => confirmarEliminarCuenta(cuenta)}
-                    style={{
-                      background: '#dc3545', color: 'white', border: 'none',
-                      padding: '6px 12px', borderRadius: '4px', fontSize: '0.85rem',
-                      cursor: 'pointer', fontWeight: 500
-                    }}
-                  >
-                    Eliminar
-                  </button>
-                </div>
-              </div>
-            ))}
-            <button
-              onClick={() => setMostrarFormCuenta(true)}
-              style={{
-                background: 'white', color: 'var(--vinotinto)', border: '2px solid var(--vinotinto)',
-                padding: '10px 20px', borderRadius: '6px', fontWeight: 600,
-                cursor: 'pointer', fontFamily: 'Montserrat, sans-serif', marginTop: '10px'
-              }}
-            >
-              + Agregar nueva cuenta
-            </button>
-          </div>
-        )}
-      </div>
+    const handleSavePerfil = async () => {
+      setSavingPerfil(true);
+      try {
+        const payload = {
+          nombre_usuario: `${perfilName.trim()} ${perfilSurname.trim()}`.trim() || undefined,
+          telefono: perfilPhone.trim() || undefined,
+          ciudad: perfilCity.trim() || undefined,
+          direccion: perfilAddress.trim() || undefined,
+        };
+        await api.put('/perfil/mi-perfil', payload);
+        await api.put('/perfil/preferencias', {
+          notificaciones_promociones: notifPromociones,
+          notificaciones_pedidos: notifPedidos,
+          notificaciones_novedades: notifNovedades,
+        });
+        setUserName(`${perfilName.trim()} ${perfilSurname.trim()}`.trim());
+        await cargarEstadisticasUsuario();
+        setPerfilMsg('Perfil actualizado correctamente');
+        setTimeout(() => setPerfilMsg(''), 3500);
+      } catch { setPerfilMsg('Error al guardar el perfil'); }
+      finally { setSavingPerfil(false); }
+    };
 
-      {/* Modal para agregar cuenta bancaria */}
-      {mostrarFormCuenta && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          background: 'rgba(0,0,0,0.6)', display: 'flex',
-          alignItems: 'center', justifyContent: 'center', zIndex: 1000,
-          backdropFilter: 'blur(4px)'
-        }}>
-          <div style={{
-            background: 'white', padding: '30px', borderRadius: '16px',
-            maxWidth: '550px', width: '95%', maxHeight: '90vh', overflowY: 'auto',
-            boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
-            animation: 'fadeIn 0.3s ease'
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px' }}>
-              <h3 style={{ margin: 0, fontSize: '1.4rem', fontWeight: 700, color: '#7A1E3A' }}>
-                Agregar cuenta bancaria
-              </h3>
-              <button
-                onClick={() => setMostrarFormCuenta(false)}
-                style={{
-                  background: 'none', border: 'none', fontSize: '1.5rem',
-                  cursor: 'pointer', color: '#999', padding: '5px',
-                  borderRadius: '50%', width: '35px', height: '35px',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  transition: 'all 0.2s'
-                }}
-                onMouseEnter={(e) => e.target.style.background = '#f5f5f5'}
-                onMouseLeave={(e) => e.target.style.background = 'none'}
-              >
-                x
-              </button>
-            </div>
-            <div style={{ display: 'grid', gap: '16px' }}>
-              <div>
-                <label style={{ display: 'block', fontWeight: 600, marginBottom: '6px', color: '#444', fontSize: '0.9rem' }}>
-                  Tipo de cuenta *
-                </label>
-                <select
-                  value={cuentaForm.tipo_cuenta}
-                  onChange={(e) => setCuentaForm({...cuentaForm, tipo_cuenta: e.target.value})}
-                  style={{ padding: '12px 16px', border: '1px solid #ddd', borderRadius: '8px', width: '100%', fontSize: '0.95rem', outline: 'none', transition: 'border-color 0.2s' }}
-                >
-                  <option value="">Selecciona tipo de cuenta</option>
-                  <option value="Ahorros">Ahorros</option>
-                  <option value="Corriente">Corriente</option>
-                  <option value="Nequi">Nequi</option>
-                  <option value="Daviplata">Daviplata</option>
-                </select>
-              </div>
-              <div>
-                <label style={{ display: 'block', fontWeight: 600, marginBottom: '6px', color: '#444', fontSize: '0.9rem' }}>
-                  Banco *
-                </label>
-                <select
-                  value={cuentaForm.banco}
-                  onChange={(e) => setCuentaForm({...cuentaForm, banco: e.target.value})}
-                  style={{ padding: '12px 16px', border: '1px solid #ddd', borderRadius: '8px', width: '100%', fontSize: '0.95rem', outline: 'none', transition: 'border-color 0.2s' }}
-                >
-                  <option value="">Selecciona el banco</option>
-                  <option value="Bancolombia">Bancolombia</option>
-                  <option value="Davivienda">Davivienda</option>
-                  <option value="Banco de Bogotá">Banco de Bogotá</option>
-                  <option value="BBVA Colombia">BBVA Colombia</option>
-                  <option value="Scotiabank Colpatria">Scotiabank Colpatria</option>
-                  <option value="Banco Popular">Banco Popular</option>
-                  <option value="Banco GNB Sudameris">Banco GNB Sudameris</option>
-                  <option value="Citibank Colombia">Citibank Colombia</option>
-                  <option value="HSBC Colombia">HSBC Colombia</option>
-                  <option value="Banco Pichincha">Banco Pichincha</option>
-                  <option value="Bancoomeva">Bancoomeva</option>
-                  <option value="Banco Falabella">Banco Falabella</option>
-                  <option value="Banco Agrario">Banco Agrario</option>
-                  <option value="Banco WWB">Banco WWB</option>
-                  <option value="Caja Social">Caja Social</option>
-                  <option value="Colpatria">Colpatria</option>
-                  <option value="Conavi">Conavi</option>
-                  <option value="Mibanco">Mibanco</option>
-                  <option value="Lulo Bank">Lulo Bank</option>
-                  <option value="Rappi">Rappi</option>
-                  <option value="Nu">Nu</option>
-                  <option value="Nequi">Nequi</option>
-                  <option value="Daviplata">Daviplata</option>
-                  <option value="PSE">PSE</option>
-                  <option value="Efecty">Efecty</option>
-                  <option value="Baloto">Baloto</option>
-                  <option value="Gana">Gana</option>
-                  <option value="AstroPay">AstroPay</option>
-                  <option value="PayU">PayU</option>
-                  <option value="Otro">Otro banco</option>
-                </select>
-              </div>
-              <div>
-                <label style={{ display: 'block', fontWeight: 600, marginBottom: '6px', color: '#444', fontSize: '0.9rem' }}>
-                  Número de cuenta *
-                </label>
-                <input
-                  type="text"
-                  placeholder="Ej: 123-456789-01"
-                  value={cuentaForm.numero_cuenta}
-                  onChange={(e) => setCuentaForm({...cuentaForm, numero_cuenta: e.target.value})}
-                  style={{ padding: '12px 16px', border: '1px solid #ddd', borderRadius: '8px', width: '100%', fontSize: '0.95rem', outline: 'none', transition: 'border-color 0.2s' }}
-                />
-              </div>
-              <div>
-                <label style={{ display: 'block', fontWeight: 600, marginBottom: '6px', color: '#444', fontSize: '0.9rem' }}>
-                  Titular de la cuenta *
-                </label>
-                <input
-                  type="text"
-                  placeholder="Nombre completo del titular"
-                  value={cuentaForm.nombre_titular}
-                  onChange={(e) => setCuentaForm({...cuentaForm, nombre_titular: e.target.value})}
-                  style={{ padding: '12px 16px', border: '1px solid #ddd', borderRadius: '8px', width: '100%', fontSize: '0.95rem', outline: 'none', transition: 'border-color 0.2s' }}
-                />
-              </div>
-              <div>
-                <label style={{ display: 'block', fontWeight: 600, marginBottom: '6px', color: '#444', fontSize: '0.9rem' }}>
-                  Cédula del titular *
-                </label>
-                <input
-                  type="text"
-                  placeholder="Número de documento"
-                  value={cuentaForm.cedula_titular}
-                  onChange={(e) => setCuentaForm({...cuentaForm, cedula_titular: e.target.value})}
-                  style={{ padding: '12px 16px', border: '1px solid #ddd', borderRadius: '8px', width: '100%', fontSize: '0.95rem', outline: 'none', transition: 'border-color 0.2s' }}
-                />
-              </div>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px', background: '#f7e9ee', borderRadius: '8px', border: '1px solid #f0e0e6' }}>
-                <input
-                  type="checkbox"
-                  checked={cuentaForm.es_principal}
-                  onChange={(e) => setCuentaForm({...cuentaForm, es_principal: e.target.checked})}
-                  style={{ width: '18px', height: '18px', cursor: 'pointer' }}
-                />
-                <span style={{ fontWeight: 600, color: '#7A1E3A', fontSize: '0.9rem' }}>
-                  Establecer como cuenta principal para recibir pagos
-                </span>
-              </label>
-              <div style={{ display: 'flex', gap: '12px', marginTop: '10px' }}>
-                <button
-                  onClick={handleAgregarCuenta}
-                  style={{
-                    background: 'var(--vinotinto)', color: 'white', border: 'none',
-                    padding: '14px 28px', borderRadius: '8px', fontWeight: 700,
-                    cursor: 'pointer', fontFamily: 'Montserrat, sans-serif', flex: 1,
-                    fontSize: '1rem', transition: 'all 0.2s'
-                  }}
-                  onMouseEnter={(e) => e.target.style.background = '#6a1832'}
-                  onMouseLeave={(e) => e.target.style.background = 'var(--vinotinto)'}
-                >
-                  Guardar cuenta
-                </button>
-                <button
-                  onClick={() => setMostrarFormCuenta(false)}
-                  style={{
-                    background: '#f5f5f5', color: '#333', border: '1px solid #ddd',
-                    padding: '14px 28px', borderRadius: '8px', fontWeight: 600,
-                    cursor: 'pointer', fontFamily: 'Montserrat, sans-serif', flex: 1,
-                    fontSize: '1rem', transition: 'all 0.2s'
-                  }}
-                  onMouseEnter={(e) => e.target.style.background = '#e5e5e5'}
-                  onMouseLeave={(e) => e.target.style.background = '#f5f5f5'}
-                >
-                  Cancelar
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+    const umbralesPuntos = { Bronce: 50000, Plata: 150000, Oro: 300000 };
 
-      {/* Modal de confirmación para eliminar cuenta */}
-      {cuentaAEliminar && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          background: 'rgba(0,0,0,0.6)', display: 'flex',
-          alignItems: 'center', justifyContent: 'center', zIndex: 1000,
-          backdropFilter: 'blur(4px)'
-        }}>
-          <div style={{
-            background: 'white', padding: '30px', borderRadius: '16px',
-            maxWidth: '450px', width: '95%',
-            boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
-            animation: 'fadeIn 0.3s ease'
-          }}>
-            <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-              <div style={{
-                width: '60px', height: '60px', borderRadius: '50%',
-                background: '#fee2e2', display: 'flex', alignItems: 'center',
-                justifyContent: 'center', margin: '0 auto 15px'
-              }}>
-                <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#dc3545" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M3 6h18"></path>
-                  <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
-                  <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
-                </svg>
-              </div>
-              <h3 style={{ margin: '0 0 10px', fontSize: '1.3rem', fontWeight: 700, color: '#333' }}>
-                ¿Eliminar cuenta bancaria?
-              </h3>
-              <p style={{ margin: 0, color: '#666', fontSize: '0.95rem', lineHeight: 1.5 }}>
-                Estás a punto de eliminar la cuenta <strong>{cuentaAEliminar.banco}</strong> - {cuentaAEliminar.tipo_cuenta} (****{cuentaAEliminar.numero_cuenta?.slice(-4)}).
-              </p>
-              <p style={{ margin: '10px 0 0', color: '#999', fontSize: '0.85rem' }}>
-                Esta acción no se puede deshacer.
-              </p>
-            </div>
-            <div style={{ display: 'flex', gap: '12px' }}>
-              <button
-                onClick={() => setCuentaAEliminar(null)}
-                style={{
-                  background: '#f5f5f5', color: '#333', border: '1px solid #ddd',
-                  padding: '12px 24px', borderRadius: '8px', fontWeight: 600,
-                  cursor: 'pointer', fontFamily: 'Montserrat, sans-serif', flex: 1,
-                  fontSize: '0.95rem', transition: 'all 0.2s'
-                }}
-                onMouseEnter={(e) => e.target.style.background = '#e5e5e5'}
-                onMouseLeave={(e) => e.target.style.background = '#f5f5f5'}
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={() => handleEliminarCuenta(cuentaAEliminar.id_metodo)}
-                style={{
-                  background: '#dc3545', color: 'white', border: 'none',
-                  padding: '12px 24px', borderRadius: '8px', fontWeight: 700,
-                  cursor: 'pointer', fontFamily: 'Montserrat, sans-serif', flex: 1,
-                  fontSize: '0.95rem', transition: 'all 0.2s'
-                }}
-                onMouseEnter={(e) => e.target.style.background = '#c82333'}
-                onMouseLeave={(e) => e.target.style.background = '#dc3545'}
-              >
-                Eliminar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+    const card = {
+      background: '#fff', borderRadius: '14px', padding: '1.5rem',
+      marginBottom: '1.25rem', border: `1px solid ${BORDER}`,
+      boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+    };
+    const cardTitle = {
+      fontSize: '1.1rem', fontWeight: 800, color: PRIMARY,
+      marginBottom: '1.1rem', display: 'flex', alignItems: 'center', gap: '8px',
+    };
+    const inp = {
+      width: '100%', padding: '10px 14px', borderRadius: '8px',
+      border: `1px solid ${BORDER}`, fontSize: '0.92rem',
+      fontFamily: 'Montserrat, sans-serif', color: TEXT, background: '#fafafa',
+      boxSizing: 'border-box',
+    };
+    const lbl = { display: 'block', fontWeight: 600, color: '#444', marginBottom: '5px', fontSize: '0.88rem' };
+    const btnPrimary = {
+      background: PRIMARY, color: '#fff', border: 'none', borderRadius: '8px',
+      padding: '10px 20px', fontWeight: 700, fontSize: '0.88rem',
+      cursor: 'pointer', fontFamily: 'Montserrat, sans-serif',
+    };
 
-      {/* Modal de éxito al agregar cuenta */}
-      {mostrarExitoCuenta && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          background: 'rgba(0,0,0,0.6)', display: 'flex',
-          alignItems: 'center', justifyContent: 'center', zIndex: 1000,
-          backdropFilter: 'blur(4px)'
-        }}>
-          <div style={{
-            background: 'white', padding: '30px', borderRadius: '16px',
-            maxWidth: '400px', width: '95%',
-            boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
-            animation: 'fadeIn 0.3s ease'
-          }}>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{
-                width: '70px', height: '70px', borderRadius: '50%',
-                background: '#dcfce7', display: 'flex', alignItems: 'center',
-                justifyContent: 'center', margin: '0 auto 20px'
-              }}>
-                <svg width="35" height="35" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="20 6 9 17 4 12"></polyline>
-                </svg>
-              </div>
-              <h3 style={{ margin: '0 0 10px', fontSize: '1.4rem', fontWeight: 700, color: '#16a34a' }}>
-                ¡Cuenta agregada exitosamente!
-              </h3>
-              <p style={{ margin: 0, color: '#666', fontSize: '0.95rem', lineHeight: 1.5 }}>
-                Tu cuenta bancaria ha sido registrada correctamente en el sistema.
-              </p>
-              <button
-                onClick={() => setMostrarExitoCuenta(false)}
-                style={{
-                  background: '#16a34a', color: 'white', border: 'none',
-                  padding: '12px 32px', borderRadius: '8px', fontWeight: 700,
-                  cursor: 'pointer', fontFamily: 'Montserrat, sans-serif',
-                  fontSize: '1rem', marginTop: '20px', transition: 'all 0.2s'
-                }}
-                onMouseEnter={(e) => e.target.style.background = '#15803d'}
-                onMouseLeave={(e) => e.target.style.background = '#16a34a'}
-              >
-                Aceptar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </>
-  );
+    const BANNER_COLORS = [
+      '#7A1E3A', '#1E3A7A', '#1E7A3A', '#7A6A1E', '#3A1E7A', '#1E6A7A', '#2A2A2A', '#8B4513',
+      'linear-gradient(135deg,#7A1E3A,#3A1E7A)',
+      'linear-gradient(135deg,#1E3A7A,#1E7A6A)',
+      'linear-gradient(135deg,#7A6A1E,#7A1E3A)',
+      'linear-gradient(135deg,#2A2A2A,#7A1E3A)',
+      'linear-gradient(135deg,#0f2027,#203a43,#2c5364)',
+      'linear-gradient(135deg,#373B44,#4286f4)',
+      'linear-gradient(135deg,#834d9b,#d04ed6)',
+      'linear-gradient(135deg,#f093fb,#f5576c)',
+    ];
 
-  const renderNomina = () => {
-    const token = localStorage.getItem("token");
-    let userId = 'N/A';
-    try {
-      const payload = jwtDecode(token);
-      userId = payload.sub;
-    } catch (e) {
-      console.error('Error decodificando token:', e);
-    }
+    const getImgUrl = (url) => {
+      if (!url) return null;
+      if (url.startsWith('http')) return url;
+      return `${resolveImageUrl(url)}`;
+    };
+
+    const logoUrl         = getImgUrl(configForm.logo_url);
+    const bannerTiendaUrl = getImgUrl(configForm.banner_url);
+
+    const handleLogoUpload = async (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('tipo', 'logo');
+      try {
+        const res = await api.post('/tiendas/upload-image', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+        if (res.data?.url) {
+          setConfigForm(prev => ({ ...prev, logo_url: res.data.url }));
+          setUserPhotoUrl(resolveImageUrl(res.data.url));
+          setPerfilMsg('? Logo actualizado');
+          setTimeout(() => setPerfilMsg(''), 3000);
+        }
+      } catch { setPerfilMsg('Error al subir el logo'); }
+    };
+
+    const handleBannerTiendaUpload = async (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('tipo', 'banner');
+      try {
+        const res = await api.post('/tiendas/upload-image', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+        if (res.data?.url) {
+          setConfigForm(prev => ({ ...prev, banner_url: res.data.url }));
+          setBannerUrl(resolveImageUrl(res.data.url));
+          setPerfilMsg('? Banner actualizado');
+          setTimeout(() => setPerfilMsg(''), 3000);
+        }
+      } catch { setPerfilMsg('Error al subir el banner'); }
+    };
+
+    const nivelColors = nivelFidelizacion ? getNivelColor(nivelFidelizacion.nivel) : null;
+    const nivelPct    = nivelFidelizacion?.siguiente_nivel
+      ? Math.min((nivelFidelizacion.puntos / (umbralesPuntos[nivelFidelizacion.nivel] || 1)) * 100, 100)
+      : 100;
 
     return (
-    <>
-      <div className="welcome-card">
-        <h1 style={{ fontSize: "1.55rem", marginBottom: "4px", display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <IconCreditCard width={24} height={24} strokeWidth={2} style={{ color: '#7A1E3A' }} />
-          Nómina y Pagos
-        </h1>
-        <p style={{ margin: 0 }}>Consulta tus pagos pendientes, historial de pagos procesados y estadísticas financieras.</p>
-        <div style={{ fontSize: '0.85rem', color: '#666', marginTop: '8px' }}>
-          ID de Vendedor: <strong>{userId}</strong>
-        </div>
-      </div>
-
-      <div className="pl-card" style={{ padding: "2rem", marginTop: "20px" }}>
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '16px' }}>
-          <button
-            onClick={() => {
-              setLoadingNomina(true);
-              Promise.all([cargarPagosPendientes(), cargarHistorialPagos()])
-                .finally(() => setLoadingNomina(false));
-            }}
-            style={{
-              padding: '8px 16px',
-              backgroundColor: '#7A1E3A',
-              color: 'white',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              fontSize: '14px',
-              fontWeight: '500'
-            }}
-          >
-            <IconRefresh width={16} height={16} strokeWidth={2} />
-            Recargar datos
-          </button>
+      <>
+        <div className="welcome-card welcome-card--small">
+          <h1 style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '1.55rem', margin: 0 }}>
+            <IconUser width={26} height={26} strokeWidth={2} style={{ color: PRIMARY }} />
+            Mi Perfil
+          </h1>
+          <p style={{ margin: '4px 0 0', color: MUTED, fontSize: '0.9rem' }}>
+            Actualiza tus datos, personaliza tu perfil y revisa tu actividad.
+          </p>
         </div>
 
-        {loadingNomina ? (
-          <p style={{ color: "#888" }}>Cargando información de pagos...</p>
+        {!perfilLoaded ? (
+          <div className="pl-card" style={{ padding: '3rem', textAlign: 'center', color: MUTED }}>Cargando perfil...</div>
         ) : (
-          <div style={{ display: 'grid', gap: '32px' }}>
-            {/* Resumen General - Similar al Admin */}
-            <div style={{ 
-              padding: '20px', 
-              background: 'linear-gradient(135deg, #7A1E3A 0%, #5e1629 100%)', 
-              borderRadius: '12px', 
-              color: 'white',
-              marginBottom: '24px'
-            }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                  <p style={{ margin: 0, fontSize: '14px', opacity: 0.9 }}>Total Pendiente</p>
-                  <p style={{ margin: '8px 0 0 0', fontSize: '32px', fontWeight: 'bold' }}>
-                    ${formatPrecio(pagosPendientes.reduce((acc, p) => acc + p.monto, 0))}
-                  </p>
-                </div>
-                <div style={{ textAlign: 'right' }}>
-                  <p style={{ margin: 0, fontSize: '14px', opacity: 0.9 }}>Pagos Pendientes</p>
-                  <p style={{ margin: '8px 0 0 0', fontSize: '24px', fontWeight: 'bold' }}>
-                    {pagosPendientes.length}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Estadísticas */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' }}>
-              <div style={{ 
-                padding: '16px', 
-                backgroundColor: '#F4EDE2', 
-                borderRadius: '8px',
-                border: '1px solid #E0DBD4'
-              }}>
-                <p style={{ margin: 0, fontSize: '14px', color: '#666' }}>Total Recibido</p>
-                <p style={{ margin: '8px 0 0 0', fontSize: '24px', fontWeight: 'bold', color: '#16a34a' }}>
-                  ${formatPrecio(historialPagos.reduce((acc, p) => acc + p.monto, 0))}
-                </p>
-              </div>
-              <div style={{ 
-                padding: '16px', 
-                backgroundColor: '#F4EDE2', 
-                borderRadius: '8px',
-                border: '1px solid #E0DBD4'
-              }}>
-                <p style={{ margin: 0, fontSize: '14px', color: '#666' }}>Pagos Procesados</p>
-                <p style={{ margin: '8px 0 0 0', fontSize: '24px', fontWeight: 'bold', color: '#7A1E3A' }}>
-                  {historialPagos.length}
-                </p>
-              </div>
-              <div style={{ 
-                padding: '16px', 
-                backgroundColor: '#F4EDE2', 
-                borderRadius: '8px',
-                border: '1px solid #E0DBD4'
-              }}>
-                <p style={{ margin: 0, fontSize: '14px', color: '#666' }}>Ventas Totales</p>
-                <p style={{ margin: '8px 0 0 0', fontSize: '24px', fontWeight: 'bold', color: '#2A2A2A' }}>
-                  {pagosPendientes.length + historialPagos.reduce((acc, p) => acc + p.num_pagos, 0)}
-                </p>
-              </div>
-            </div>
-
-            {/* Pagos Pendientes */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1.25rem', alignItems: 'start', marginTop: '1rem' }}>
             <div>
-              <h3 style={{ margin: '0 0 16px 0', color: '#7A1E3A', fontSize: '1.3rem', fontWeight: 700 }}>
-                Pagos Pendientes (Ventas individuales)
-              </h3>
-              {pagosPendientes.length === 0 ? (
-                <div style={{ padding: '32px', background: '#fafafa', borderRadius: '8px', textAlign: 'center', border: '1px solid #eee' }}>
-                  <IconCreditCard width={48} height={48} strokeWidth={1.5} style={{ color: '#ccc', marginBottom: '16px' }} />
-                  <p style={{ color: '#666', margin: 0 }}>No tienes pagos pendientes</p>
-                </div>
-              ) : (
-                <div style={{ display: 'grid', gap: '12px' }}>
-                  {pagosPendientes.map((pago) => (
-                    <div key={pago.id} style={{ padding: '16px', background: '#fff', border: '1px solid #ddd', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div>
-                        <div style={{ fontWeight: 600, color: '#333', marginBottom: '4px' }}>
-                          Orden #{pago.id_venta}
-                        </div>
-                        <div style={{ color: '#666', fontSize: '0.9rem' }}>
-                          Fecha: {new Date(pago.fecha_venta).toLocaleDateString('es-CO')}
-                        </div>
-                      </div>
-                      <div style={{ textAlign: 'right' }}>
-                        <div style={{ fontWeight: 700, color: '#7A1E3A', fontSize: '1.1rem' }}>
-                          ${formatPrecio(pago.monto)}
-                        </div>
-                        <div style={{ color: '#999', fontSize: '0.85rem' }}>
-                          Pendiente
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+              <div className="pl-card" style={{ padding: '2rem', marginBottom: '1.25rem' }}>
+                <h3 style={{ margin: '0 0 1rem 0', color: 'var(--vinotinto)', fontSize: '1.2rem' }}>Información Personal</h3>
 
-            {/* Historial de Pagos */}
-            <div>
-              <h3 style={{ margin: '0 0 16px 0', color: '#7A1E3A', fontSize: '1.3rem', fontWeight: 700 }}>
-                Historial de Pagos Procesados
-              </h3>
-              {historialPagos.length === 0 ? (
-                <div style={{ padding: '32px', background: '#fafafa', borderRadius: '8px', textAlign: 'center', border: '1px solid #eee' }}>
-                  <IconCreditCard width={48} height={48} strokeWidth={1.5} style={{ color: '#ccc', marginBottom: '16px' }} />
-                  <p style={{ color: '#666', margin: 0 }}>No hay historial de pagos</p>
-                </div>
-              ) : (
-                <div style={{ display: 'grid', gap: '12px' }}>
-                  {historialPagos.map((pago) => (
-                    <div key={pago.id} style={{ padding: '16px', background: '#fff', border: '1px solid #ddd', borderRadius: '8px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }} onClick={() => setExpandedPayment(expandedPayment === pago.id ? null : pago.id)}>
-                        <div>
-                          <div style={{ fontWeight: 600, color: '#333', marginBottom: '4px' }}>
-                            Lote de Pagos - Ref: {pago.referencia}
-                          </div>
-                          <div style={{ color: '#666', fontSize: '0.9rem' }}>
-                            {pago.num_pagos} ventas procesadas • {new Date(pago.fecha).toLocaleDateString('es-CO')}
-                          </div>
-                        </div>
-                        <div style={{ textAlign: 'right' }}>
-                          <div style={{ fontWeight: 700, color: '#16a34a', fontSize: '1.1rem' }}>
-                            ${formatPrecio(pago.monto)}
-                          </div>
-                          <div style={{ color: '#16a34a', fontSize: '0.85rem', fontWeight: 600 }}>
-                            Procesado
-                          </div>
-                        </div>
+                {/* Foto de Perfil */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '2rem', marginBottom: '2rem', paddingBottom: '2rem', borderBottom: '1px solid #e0dbd4' }}>
+                  <div style={{ flexShrink: 0 }}>
+                    {profilePhotoUrl ? (
+                      <img src={profilePhotoUrl} alt="Foto de perfil" style={{ width: 100, height: 100, borderRadius: '50%', objectFit: 'cover', border: `3px solid ${PRIMARY}` }} />
+                    ) : (
+                      <div style={{ width: 100, height: 100, borderRadius: '50%', background: '#e0dbd4', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem', color: PRIMARY, fontWeight: 'bold', border: `3px solid ${PRIMARY}` }}>
+                        {perfilName?.charAt(0).toUpperCase() || 'U'}
                       </div>
-                      
-                      {expandedPayment === pago.id && pago.pagos && (
-                        <div style={{ 
-                          marginTop: '12px', 
-                          paddingTop: '12px', 
-                          borderTop: '1px solid #eee',
-                          fontSize: '12px',
-                          color: '#666'
-                        }}>
-                          <div style={{ fontWeight: 600, marginBottom: '8px', color: '#7A1E3A' }}>
-                            Ventas incluidas en este lote:
-                          </div>
-                          {pago.pagos.map((pagoDetalle, idx) => (
-                            <div key={idx} style={{ 
-                              padding: '4px 0', 
-                              borderBottom: '1px solid #f5f5f5',
-                              display: 'flex',
-                              justifyContent: 'space-between'
-                            }}>
-                              <span>Orden #{pagoDetalle.id_venta}</span>
-                              <span>${formatPrecio(pagoDetalle.monto)}</span>
-                            </div>
+                    )}
+                  </div>
+                  <div>
+                    <h3 style={{ margin: '0 0 0.5rem 0' }}>Foto de Perfil</h3>
+                    <p style={{ margin: '0 0 1rem 0', color: '#666', fontSize: '0.9rem' }}>Sube una foto para personalizar tu perfil</p>
+                    <label style={{ background: PRIMARY, color: 'white', padding: '0.5rem 1rem', borderRadius: '6px', fontSize: '0.9rem', cursor: 'pointer', display: 'inline-block', opacity: perfilFotoUploading ? 0.7 : 1 }}>
+                      {perfilFotoUploading ? 'Subiendo...' : 'Cambiar Foto'}
+                      <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleFotoUpload} disabled={perfilFotoUploading} />
+                    </label>
+                  </div>
+                </div>
+
+                {/* Banner de Perfil */}
+                <div style={{ marginBottom: 0 }}>
+                  <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '1rem', fontWeight: 700 }}>Banner de Perfil</h3>
+                  <div style={{
+                    width: '100%', height: '80px', borderRadius: '10px', marginBottom: '12px',
+                    background: perfilBannerUrl ? `url(${perfilBannerUrl}) center/cover no-repeat` : (perfilBannerColor || PRIMARY),
+                    border: '2px solid #e0dbd4', position: 'relative', overflow: 'hidden',
+                  }}>
+                    {perfilBannerColor?.startsWith('linear-gradient') && !perfilBannerUrl && (
+                      <div style={{ position: 'absolute', inset: 0, backgroundImage: perfilBannerColor }} />
+                    )}
+                    <button onClick={() => setShowBannerEditor(v => !v)} style={{ position: 'absolute', bottom: 8, right: 8, background: 'rgba(0,0,0,0.55)', color: 'white', border: 'none', borderRadius: '6px', padding: '4px 12px', fontSize: '0.8rem', cursor: 'pointer', fontWeight: 600 }}>
+                      ✏️ Editar
+                    </button>
+                  </div>
+                  {showBannerEditor && (
+                    <div style={{ background: '#f9f7f4', borderRadius: '10px', padding: '1rem', border: '1px solid #e0dbd4' }}>
+                      <div style={{ marginBottom: '1rem' }}>
+                        <p style={{ margin: '0 0 8px 0', fontWeight: 600, fontSize: '0.9rem', color: '#444' }}>Subir imagen</p>
+                        <label style={{ background: PRIMARY, color: 'white', padding: '8px 16px', borderRadius: '6px', fontSize: '0.85rem', cursor: 'pointer', display: 'inline-block', opacity: perfilBannerUploading ? 0.7 : 1 }}>
+                          {perfilBannerUploading ? 'Subiendo...' : '📁 Elegir imagen'}
+                          <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleBannerUpload} disabled={perfilBannerUploading} />
+                        </label>
+                      </div>
+                      <div style={{ marginBottom: '0.75rem' }}>
+                        <p style={{ margin: '0 0 8px 0', fontWeight: 600, fontSize: '0.9rem', color: '#444' }}>Colores sólidos</p>
+                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                          {['#7A1E3A','#1E3A7A','#1E7A3A','#7A6A1E','#3A1E7A','#1E6A7A','#2A2A2A','#8B4513'].map(c => (
+                            <button key={c} onClick={() => handleBannerColor(c)} style={{ width: 32, height: 32, borderRadius: '50%', background: c, border: perfilBannerColor === c ? '3px solid #fff' : '2px solid #ccc', cursor: 'pointer', boxShadow: perfilBannerColor === c ? `0 0 0 2px ${c}` : 'none' }} title={c} />
                           ))}
                         </div>
-                      )}
+                      </div>
+                      <div style={{ marginBottom: '0.75rem' }}>
+                        <p style={{ margin: '0 0 8px 0', fontWeight: 600, fontSize: '0.9rem', color: '#444' }}>Gradientes</p>
+                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                          {BANNER_COLORS.filter(c => c.startsWith('linear')).map((g, i) => (
+                            <button key={i} onClick={() => handleBannerColor(g)} style={{ width: 32, height: 32, borderRadius: '8px', backgroundImage: g, border: perfilBannerColor === g ? '3px solid #fff' : '2px solid #ccc', cursor: 'pointer', boxShadow: perfilBannerColor === g ? '0 0 0 2px #7A1E3A' : 'none' }} title={`Gradiente ${i+1}`} />
+                          ))}
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <p style={{ margin: 0, fontWeight: 600, fontSize: '0.9rem', color: '#444' }}>Color personalizado</p>
+                        <input type="color" defaultValue="#7A1E3A" onChange={e => handleBannerColor(e.target.value)} style={{ width: 34, height: 34, borderRadius: '8px', border: '1px solid #ccc', cursor: 'pointer', padding: 2 }} />
+                      </div>
                     </div>
-                  ))}
+                  )}
                 </div>
+
+              </div>
+              <div style={card}>
+                <p style={cardTitle}>Datos de contacto</p>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '14px' }}>
+                  <div><label style={lbl}>Nombre</label><input style={inp} value={perfilName} onChange={e => setPerfilName(e.target.value)} placeholder="Nombre" /></div>
+                  <div><label style={lbl}>Apellidos</label><input style={inp} value={perfilSurname} onChange={e => setPerfilSurname(e.target.value)} placeholder="Apellidos" /></div>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '14px' }}>
+                  <div><label style={lbl}>Telefono</label><input style={inp} value={perfilPhone} onChange={e => setPerfilPhone(e.target.value)} placeholder="Telefono" /></div>
+                  <div><label style={lbl}>Ciudad</label><input style={inp} value={perfilCity} onChange={e => setPerfilCity(e.target.value)} placeholder="Ciudad" /></div>
+                </div>
+                <div><label style={lbl}>Direccion</label><input style={inp} value={perfilAddress} onChange={e => setPerfilAddress(e.target.value)} placeholder="Direccion" /></div>
+                <div style={{ marginTop: '14px' }}>
+                  <label style={lbl}>Correo electronico</label>
+                  <input style={{ ...inp, background: '#f0f0f0', color: '#888', cursor: 'not-allowed' }} value={perfilEmail} readOnly placeholder="Cargando..." />
+                </div>
+              </div>
+
+              <div style={card}>
+                <p style={cardTitle}>Preferencias de notificaciones</p>
+                {[['Promociones', notifPromociones, setNotifPromociones], ['Pedidos', notifPedidos, setNotifPedidos], ['Novedades', notifNovedades, setNotifNovedades]].map(([label, enabled, setEnabled]) => (
+                  <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderTop: `1px solid ${BORDER}` }}>
+                    <span style={{ fontWeight: 600, color: TEXT }}>{label}</span>
+                    <button onClick={() => setEnabled(!enabled)} style={{ minWidth: '110px', padding: '8px 16px', borderRadius: '999px', border: 'none', background: enabled ? PRIMARY : '#f0f0f0', color: enabled ? '#fff' : '#555', fontWeight: 700, fontSize: '0.84rem', cursor: 'pointer', fontFamily: 'Montserrat, sans-serif' }}>
+                      {enabled ? 'Activado' : 'Desactivado'}
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '1.25rem' }}>
+                <button onClick={handleSavePerfil} disabled={savingPerfil} style={{ ...btnPrimary, padding: '12px 32px', fontSize: '0.95rem', opacity: savingPerfil ? 0.7 : 1 }}>
+                  {savingPerfil ? 'Guardando...' : 'Guardar cambios'}
+                </button>
+                {perfilMsg && <span style={{ color: perfilMsg.startsWith('\u2713') ? '#2e7d32' : '#c62828', fontWeight: 600, fontSize: '0.88rem' }}>{perfilMsg}</span>}
+              </div>
+            </div>
+          </div>
+        )}
+      </>
+    );
+  };
+  const renderConfiguracion = () => {
+    const PRIMARY = '#7A1E3A';
+    const BORDER  = '#E0DBD4';
+    const TEXT    = '#2A2A2A';
+    const MUTED   = '#777';
+
+    const card = {
+      background: '#fff', borderRadius: '14px', padding: '1.5rem',
+      marginBottom: '1.25rem', border: `1px solid ${BORDER}`,
+      boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+    };
+    const cardTitle = {
+      fontSize: '1.1rem', fontWeight: 800, color: PRIMARY,
+      marginBottom: '1.1rem',
+    };
+    const inp = {
+      width: '100%', padding: '10px 14px', borderRadius: '8px',
+      border: `1px solid ${BORDER}`, fontSize: '0.92rem',
+      fontFamily: 'Montserrat, sans-serif', color: TEXT,
+      background: '#fafafa', boxSizing: 'border-box',
+    };
+    const inpTA = { ...inp, resize: 'vertical', minHeight: '80px' };
+    const lbl = { display: 'block', fontWeight: 600, color: '#444', marginBottom: '5px', fontSize: '0.88rem' };
+    const btnPrimary = {
+      background: PRIMARY, color: '#fff', border: 'none', borderRadius: '8px',
+      padding: '12px 28px', fontWeight: 700, fontSize: '0.95rem',
+      cursor: 'pointer', fontFamily: 'Montserrat, sans-serif',
+    };
+
+    const handleSaveConfig = () => {
+      if (!tiendaForm.nombre_tienda?.trim()) {
+        setTiendaMsg('El nombre de la tienda es obligatorio');
+        return;
+      }
+      if (tiendaForm.nombre_tienda.trim().length < 3) {
+        setTiendaMsg('El nombre debe tener al menos 3 caracteres');
+        return;
+      }
+      Promise.all([
+        api.put('/tiendas/mi-tienda', tiendaForm),
+        api.put('/configuracion', configForm),
+      ])
+        .then(() => {
+          setTiendaMsg('? Configuraci�n actualizada con �xito');
+          setTimeout(() => setTiendaMsg(''), 3500);
+          setTiendaInfo(prev => ({ ...prev, ...tiendaForm }));
+        })
+        .catch((err) => {
+          setTiendaMsg('Error: ' + (err.response?.data?.detail || err.message));
+          setTimeout(() => setTiendaMsg(''), 4000);
+        });
+    };
+
+    const getImgUrl = (url) => {
+      if (!url) return null;
+      if (url.startsWith('http')) return url;
+      return resolveImageUrl(url);
+    };
+
+    const logoUrl         = getImgUrl(configForm.logo_url);
+    const bannerTiendaUrl = getImgUrl(configForm.banner_url);
+
+    return (
+      <>
+        <div className="welcome-card welcome-card--small">
+          <h1 style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '1.55rem', margin: 0 }}>
+            <IconSettings width={24} height={24} strokeWidth={2} style={{ color: PRIMARY }} />
+            Configuración de tienda
+          </h1>
+          <p style={{ margin: '4px 0 0', color: MUTED, fontSize: '0.88rem' }}>
+            Actualiza los datos de tu tienda en BookyHome
+          </p>
+        </div>
+
+        {!tiendaInfo ? (
+          <div style={{ textAlign: 'center', padding: '3rem', color: MUTED }}>Cargando informacion de la tienda...</div>
+        ) : (
+          <div style={{ marginTop: '1rem' }}>
+            {/* -- Informaci�n b�sica -- */}
+            <div style={card}>
+              <p style={cardTitle}>Informaci�n b�sica</p>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '14px' }}>
+                <div>
+                  <label style={lbl}>Nombre de la tienda</label>
+                  <input style={inp} value={tiendaForm.nombre_tienda} onChange={e => setTiendaForm({ ...tiendaForm, nombre_tienda: e.target.value })} placeholder="Nombre de tu tienda" />
+                </div>
+                <div>
+                  <label style={lbl}>Tel�fono</label>
+                  <input style={inp} value={tiendaForm.telefono} onChange={e => setTiendaForm({ ...tiendaForm, telefono: e.target.value })} placeholder="Tel�fono de contacto" />
+                </div>
+              </div>
+              <div style={{ marginBottom: '14px' }}>
+                <label style={lbl}>Direcci�n</label>
+                <input style={inp} value={tiendaForm.direccion} onChange={e => setTiendaForm({ ...tiendaForm, direccion: e.target.value })} placeholder="Direcci�n de la tienda" />
+              </div>
+              {tiendaInfo.fecha_creacion && (
+                <div>
+                  <label style={lbl}>Miembro desde</label>
+                  <input style={{ ...inp, background: '#f0f0f0', color: '#888' }} value={tiendaInfo.fecha_creacion} readOnly />
+                </div>
+              )}
+            </div>
+
+            {/* -- Informaci�n p�blica -- */}
+            <div style={card}>
+              <p style={cardTitle}>Informaci�n p�blica</p>
+              <div style={{ marginBottom: '14px' }}>
+                <label style={lbl}>Descripci�n de la tienda</label>
+                <textarea style={inpTA} placeholder="Descripci�n breve de tu tienda..." value={configForm.descripcion || ''} onChange={e => setConfigForm({ ...configForm, descripcion: e.target.value })} />
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '14px' }}>
+                <div>
+                  <label style={lbl}>Ciudad de origen</label>
+                  <input style={inp} placeholder="Ciudad" value={configForm.ciudad_origen || ''} onChange={e => setConfigForm({ ...configForm, ciudad_origen: e.target.value })} />
+                </div>
+                <div>
+                  <label style={lbl}>Email p�blico (contacto)</label>
+                  <input style={inp} type="email" placeholder="email@tienda.com" value={configForm.email_publico || ''} onChange={e => setConfigForm({ ...configForm, email_publico: e.target.value })} />
+                </div>
+              </div>
+              <div>
+                <label style={lbl}>Horario de atenci�n</label>
+                <input style={inp} placeholder="Ej: Lunes a Viernes 9am � 6pm" value={configForm.horario_atencion} onChange={e => setConfigForm({ ...configForm, horario_atencion: e.target.value })} />
+              </div>
+            </div>
+
+            {/* -- Pol�ticas y log�stica -- */}
+            <div style={card}>
+              <p style={cardTitle}>Pol�ticas y log�stica</p>
+              <div style={{ marginBottom: '14px' }}>
+                <label style={lbl}>D�as promedio de despacho</label>
+                <input style={inp} type="number" min="1" max="30" value={configForm.tiempo_despacho_dias} onChange={e => setConfigForm({ ...configForm, tiempo_despacho_dias: parseInt(e.target.value) || 2 })} />
+              </div>
+              <div style={{ marginBottom: '14px' }}>
+                <label style={lbl}>Pol�tica de env�os</label>
+                <textarea style={inpTA} placeholder="Costos, transportadoras, tiempos estimados..." value={configForm.politica_envios} onChange={e => setConfigForm({ ...configForm, politica_envios: e.target.value })} />
+              </div>
+              <div>
+                <label style={lbl}>Pol�tica de devoluciones</label>
+                <textarea style={inpTA} placeholder="Condiciones para devoluciones y garant�as..." value={configForm.politica_devoluciones} onChange={e => setConfigForm({ ...configForm, politica_devoluciones: e.target.value })} />
+              </div>
+            </div>
+
+            {/* -- Guardar -- */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '1.5rem' }}>
+              <button onClick={handleSaveConfig} style={btnPrimary}>
+                Guardar cambios
+              </button>
+              {tiendaMsg && (
+                <span style={{ color: tiendaMsg.startsWith('?') ? '#2e7d32' : '#c62828', fontWeight: 600, fontSize: '0.88rem' }}>
+                  {tiendaMsg}
+                </span>
               )}
             </div>
           </div>
         )}
-      </div>
-    </>
+      </>
     );
   };
-
-  const renderConfiguracion = () => (
-    <>
-      <div className="welcome-card">
-        <h1 style={{ fontSize: "1.55rem", marginBottom: "4px", display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <IconSettings width={24} height={24} strokeWidth={2} style={{ color: '#7A1E3A' }} />
-          Configuración del negocio
-        </h1>
-        <p style={{ margin: 0 }}>Actualiza los datos de tu tienda en BookyHome</p>
-      </div>
-
-      <div className="pl-card" style={{ padding: "2rem", marginTop: "20px" }}>
-        {!tiendaInfo ? (
-          <p style={{ color: "#888" }}>Cargando información de la tienda...</p>
-        ) : (
-          <>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "40px" }}>
-            <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "16px", minWidth: "300px", maxWidth: "500px" }}>
-              <h3 style={{ fontSize: "1.1rem", margin: "10px 0 0 0", color: "var(--vinotinto)" }}>información Básica</h3>
-              <div>
-              <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>
-                Nombre de la tienda
-              </label>
-              <input
-                type="text"
-                value={tiendaForm.nombre_tienda}
-                onChange={(e) => setTiendaForm({ ...tiendaForm, nombre_tienda: e.target.value })}
-                style={{
-                  width: "100%", padding: "10px 14px", borderRadius: "8px",
-                  border: "1px solid #ddd", fontSize: "0.95rem", fontFamily: "Montserrat, sans-serif"
-                }}
-              />
-            </div>
-
-            <div>
-              <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>
-                Dirección
-              </label>
-              <input
-                type="text"
-                value={tiendaForm.direccion}
-                onChange={(e) => setTiendaForm({ ...tiendaForm, direccion: e.target.value })}
-                style={{
-                  width: "100%", padding: "10px 14px", borderRadius: "8px",
-                  border: "1px solid #ddd", fontSize: "0.95rem", fontFamily: "Montserrat, sans-serif"
-                }}
-              />
-            </div>
-
-            <div>
-              <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>
-                Teléfono
-              </label>
-              <input
-                type="text"
-                value={tiendaForm.telefono}
-                onChange={(e) => setTiendaForm({ ...tiendaForm, telefono: e.target.value })}
-                style={{
-                  width: "100%", padding: "10px 14px", borderRadius: "8px",
-                  border: "1px solid #ddd", fontSize: "0.95rem", fontFamily: "Montserrat, sans-serif"
-                }}
-              />
-            </div>
-
-            <div>
-              <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>
-                Miembro desde
-              </label>
-              <input
-                type="text"
-                value={tiendaInfo.fecha_creacion}
-                readOnly
-                style={{
-                  width: "100%", padding: "10px 14px", borderRadius: "8px",
-                  border: "1px solid #ddd", fontSize: "0.95rem", background: "#f5f5f5",
-                  fontFamily: "Montserrat, sans-serif", color: "#888"
-                }}
-              />
-            </div>
-          </div>
-
-          <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "16px", minWidth: "300px" }}>
-            <h3 style={{ fontSize: "1.1rem", margin: "10px 0 0 0", color: "var(--vinotinto)" }}>Ajustes Avanzados</h3>
-            
-            <div>
-              <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>
-                Horario de atención
-              </label>
-              <input
-                type="text"
-                placeholder="Ej: Lunes a Viernes 8am a 5pm"
-                value={configForm.horario_atencion}
-                onChange={(e) => setConfigForm({ ...configForm, horario_atencion: e.target.value })}
-                style={{
-                  width: "100%", padding: "10px 14px", borderRadius: "8px",
-                  border: "1px solid #ddd", fontSize: "0.95rem", fontFamily: "Montserrat, sans-serif"
-                }}
-              />
-            </div>
-
-            <div>
-              <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>
-                Días de despacho
-              </label>
-              <input
-                type="number"
-                min="1"
-                max="30"
-                value={configForm.tiempo_despacho_dias}
-                onChange={(e) => setConfigForm({ ...configForm, tiempo_despacho_dias: parseInt(e.target.value) || 2 })}
-                style={{
-                  width: "100%", padding: "10px 14px", borderRadius: "8px",
-                  border: "1px solid #ddd", fontSize: "0.95rem", fontFamily: "Montserrat, sans-serif"
-                }}
-              />
-            </div>
-
-            <div>
-              <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>
-                Política de envíos
-              </label>
-              <textarea
-                rows="3"
-                value={configForm.politica_envios}
-                onChange={(e) => setConfigForm({ ...configForm, politica_envios: e.target.value })}
-                style={{
-                  width: "100%", padding: "10px 14px", borderRadius: "8px",
-                  border: "1px solid #ddd", fontSize: "0.95rem", fontFamily: "Montserrat, sans-serif", resize: "vertical"
-                }}
-              />
-            </div>
-
-            <div>
-              <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>
-                Política de devoluciones
-              </label>
-              <textarea
-                rows="3"
-                value={configForm.politica_devoluciones}
-                onChange={(e) => setConfigForm({ ...configForm, politica_devoluciones: e.target.value })}
-                style={{
-                  width: "100%", padding: "10px 14px", borderRadius: "8px",
-                  border: "1px solid #ddd", fontSize: "0.95rem", fontFamily: "Montserrat, sans-serif", resize: "vertical"
-                }}
-              />
-            </div>
-          </div>
-        </div>
-
-        <div style={{ marginTop: "24px", display: "flex", alignItems: "center", gap: "16px" }}>
-          <button
-            style={{
-              background: "var(--vinotinto)", color: "white", border: "none",
-              padding: "12px 24px", borderRadius: "8px", fontWeight: 700,
-              fontSize: "0.95rem", cursor: "pointer", fontFamily: "Montserrat, sans-serif"
-            }}
-            onClick={() => {
-              if (!tiendaForm.nombre_tienda?.trim()) {
-                setTiendaMsg("El nombre de la tienda es obligatorio");
-                return;
-              }
-              if (tiendaForm.nombre_tienda.trim().length < 3) {
-                setTiendaMsg("El nombre debe tener al menos 3 caracteres");
-                return;
-              }
-              
-              Promise.all([
-                api.put("/tiendas/mi-tienda", tiendaForm),
-                api.put("/configuracion", configForm)
-              ])
-                .then(() => {
-                  setTiendaMsg("¡Configuración actualizada con éxito!");
-                  setTimeout(() => setTiendaMsg(""), 3000);
-                  setTiendaInfo(prev => ({ ...prev, ...tiendaForm }));
-                })
-                .catch((err) => {
-                  console.error("Error actualizando Configuración:", err);
-                  setTiendaMsg("Error: " + (err.response?.data?.detail || err.message));
-                  setTimeout(() => setTiendaMsg(""), 4000);
-                });
-            }}
-          >
-            Guardar cambios
-          </button>
-          
-          {tiendaMsg && <p style={{ color: "green", fontWeight: 600, margin: 0 }}>{tiendaMsg}</p>}
-        </div>
-          </>
-        )}
-      </div>
-    </>
-  );
 
   const RenderCuentasBancarias = () => (
     <>
@@ -3179,6 +2877,7 @@ export default function MiTienda() {
       <SellerSidebar
         userName={userName}
         userPhotoUrl={userPhotoUrl}
+        bannerUrl={bannerUrl}
         activeSide={activeSide}
         setActiveSide={cambiarSeccion}
         handleLogout={handleLogout}

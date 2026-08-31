@@ -11,6 +11,7 @@ from app.models.tiendas import (
 )
 from app.auth import verify_token
 from app.email import enviar_email_confirmacion_registro, is_smtp_configured
+from app.database import get_db
 import secrets
 
 router = APIRouter()
@@ -63,6 +64,36 @@ async def registrar_libreria(data: LibreriaRegistro):
 @router.get("/tiendas")
 def listar_tiendas():
     return obtener_tiendas()
+
+
+@router.get("/tiendas/destacadas")
+def tiendas_destacadas():
+    """Devuelve hasta 6 tiendas activas con logo, ciudad y conteo de libros para el Home público."""
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    try:
+        cursor.execute("""
+            SELECT
+                t.id_tienda,
+                t.nombre_tienda,
+                t.direccion,
+                tc.logo_url,
+                tc.descripcion,
+                tc.ciudad_origen,
+                COUNT(l.id_libro) AS total_libros
+            FROM tiendas t
+            LEFT JOIN tienda_configuracion tc ON tc.id_tienda = t.id_tienda
+            LEFT JOIN libros l ON l.id_tienda = t.id_tienda AND l.stock > 0 AND (l.oculto IS NULL OR l.oculto = 0)
+            WHERE t.estado_tienda = 'activa'
+            GROUP BY t.id_tienda, t.nombre_tienda, t.direccion, tc.logo_url, tc.descripcion, tc.ciudad_origen
+            HAVING total_libros > 0
+            ORDER BY total_libros DESC
+            LIMIT 6
+        """)
+        return cursor.fetchall()
+    finally:
+        cursor.close()
+        db.close()
 
 
 ESTADOS_TIENDA_VALIDOS = {'activa', 'pendiente', 'vacaciones', 'suspendida', 'inactiva'}

@@ -94,11 +94,14 @@ function SidebarIcon(props) {
   );
 }
 
-export default function VendedorSidebar({ userName = 'Vendedor', profileImage = null, userPhotoUrl = null, activeSide = 'Inicio', setActiveSide, handleLogout }) {
+export default function VendedorSidebar({ userName = 'Vendedor', profileImage = null, userPhotoUrl = null, bannerUrl = null, activeSide = 'Inicio', setActiveSide, handleLogout }) {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(() => {
     const saved = localStorage.getItem('vendedor_sidebar_open');
-    return saved !== null ? saved === 'true' : true;
+    const open = saved !== null ? saved === 'true' : true;
+    // Setear la variable CSS inmediatamente para que el header tenga el ancho correcto desde el inicio
+    document.documentElement.style.setProperty('--dashboard-sidebar-width', open ? '250px' : '76px');
+    return open;
   });
 
   const handleToggleSidebar = () => {
@@ -174,87 +177,89 @@ export default function VendedorSidebar({ userName = 'Vendedor', profileImage = 
   return (
     <aside className={`dashboard-sidebar ${sidebarOpen ? '' : 'collapsed'}`} style={{
       width: sidebarOpen ? '250px' : '76px',
-      position: 'fixed', top: '0px', left: 0, zIndex: 60,
+      position: 'fixed', top: 0, left: 0, zIndex: 60,
       height: '100vh',
       background: VINOTINTO, color: WHITE,
       padding: '16px 14px', display: 'flex', flexDirection: 'column', gap: '4px',
       transition: 'width 0.25s ease', flexShrink: 0, overflow: 'hidden',
     }}>
-      {/* Header */}
+      {/* Header con banner de fondo */}
       <div style={{
         position: 'relative',
-        marginBottom: sidebarOpen ? '10px' : '20px',
-        paddingTop: 0,
-        paddingRight: sidebarOpen ? '10px' : '0',
-        paddingBottom: 0,
-        paddingLeft: sidebarOpen ? '10px' : '0',
+        margin: '-16px -14px 0 -14px',
+        background: bannerUrl
+          ? `url(${bannerUrl}) center/cover no-repeat`
+          : VINOTINTO,
+        minHeight: sidebarOpen ? '100px' : '90px',
         display: 'flex',
-        justifyContent: sidebarOpen ? 'flex-start' : 'center',
-        alignItems: 'center',
-        minHeight: sidebarOpen ? undefined : '80px',
+        flexDirection: 'column',
+        justifyContent: 'flex-end',
+        padding: sidebarOpen ? '12px 14px 10px 14px' : '10px 0 10px 0',
+        marginBottom: '6px',
       }}>
-        <div style={{ display: 'flex', justifyContent: sidebarOpen ? 'flex-start' : 'center', width: '100%', marginTop: sidebarOpen ? '0' : '70px' }}>
+        {/* Overlay oscuro sobre el banner */}
+        {bannerUrl && (
+          <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.35)', borderRadius: 0 }} />
+        )}
+
+        {/* Botón toggle */}
+        <button
+          onClick={handleToggleSidebar}
+          style={{
+            position: 'absolute',
+            right: sidebarOpen ? '10px' : '50%',
+            top: '10px',
+            transform: sidebarOpen ? 'none' : 'translateX(50%)',
+            background: 'rgba(255,255,255,0.16)',
+            border: '1px solid rgba(255,255,255,0.2)',
+            color: WHITE,
+            width: '30px', height: '30px', borderRadius: '8px', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            zIndex: 2,
+          }}
+          title={sidebarOpen ? 'Contraer menú' : 'Expandir menú'}
+        >
+          {sidebarOpen
+            ? <SidebarIcon Icon={IconChevronLeft} size={18} />
+            : <SidebarIcon Icon={IconMenu} size={18} />}
+        </button>
+
+        {/* Avatar + info */}
+        <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: '10px', justifyContent: sidebarOpen ? 'flex-start' : 'center' }}>
           {avatarSrc ? (
             <img
               src={avatarSrc}
               alt={avatarAlt}
               style={{
-                width: sidebarOpen ? '64px' : `${avatarSize}px`,
-                height: sidebarOpen ? '64px' : `${avatarSize}px`,
+                width: sidebarOpen ? '52px' : `${avatarSize}px`,
+                height: sidebarOpen ? '52px' : `${avatarSize}px`,
                 borderRadius: '50%',
                 objectFit: 'cover',
-                border: '2px solid rgba(255,255,255,0.35)',
-                marginTop: sidebarOpen ? '0' : '0',
+                border: '2px solid rgba(255,255,255,0.6)',
+                flexShrink: 0,
               }}
             />
           ) : (
             <div style={{
-              width: sidebarOpen ? '64px' : `${avatarSize}px`,
-              height: sidebarOpen ? '64px' : `${avatarSize}px`,
+              width: sidebarOpen ? '52px' : `${avatarSize}px`,
+              height: sidebarOpen ? '52px' : `${avatarSize}px`,
               borderRadius: '50%',
               background: 'rgba(255,255,255,0.15)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
               border: '2px solid rgba(255,255,255,0.35)',
-              marginTop: sidebarOpen ? '0' : '0',
+              flexShrink: 0,
             }}>
-              <IconUser width={sidebarOpen ? 24 : iconSize} height={sidebarOpen ? 24 : iconSize} strokeWidth={2.2} style={{ color: WHITE }} />
+              <IconUser width={sidebarOpen ? 22 : iconSize} height={sidebarOpen ? 22 : iconSize} strokeWidth={2.2} style={{ color: WHITE }} />
+            </div>
+          )}
+          {sidebarOpen && (
+            <div style={{ overflow: 'hidden' }}>
+              <div style={{ fontSize: '0.92rem', fontWeight: 700, color: WHITE, textShadow: '0 1px 3px rgba(0,0,0,0.7)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{userName}</div>
+              <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.85)', textShadow: '0 1px 3px rgba(0,0,0,0.6)' }}>Panel de ventas</div>
             </div>
           )}
         </div>
-
-        <button
-          onClick={handleToggleSidebar}
-          style={{
-            position: 'absolute',
-            right: sidebarOpen ? '0' : '8px',
-            top: sidebarOpen ? 'auto' : '12px',
-            background: 'rgba(255,255,255,0.16)',
-            border: '1px solid rgba(255,255,255,0.2)',
-            color: WHITE,
-            width: '34px', height: '34px', borderRadius: '8px', cursor: 'pointer',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-            boxShadow: sidebarOpen ? 'none' : '0 4px 14px rgba(0,0,0,0.15)',
-          }}
-          title={sidebarOpen ? 'Contraer menú' : 'Expandir menú'}
-        >
-          {sidebarOpen
-            ? <SidebarIcon Icon={IconChevronLeft} size={20} />
-            : <SidebarIcon Icon={IconMenu} size={20} />}
-        </button>
       </div>
-
-      {/* User Info */}
-      {sidebarOpen && (
-        <div style={{
-          padding: '10px 12px', marginBottom: '10px', borderBottom: '1px solid rgba(255,255,255,0.15)',
-          display: 'flex', flexDirection: 'column', gap: '4px',
-        }}>
-          <div style={{ fontSize: '0.95rem', fontWeight: 700 }}>{userName}</div>
-          <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.7)' }}>Panel de ventas</div>
-        </div>
-      )}
 
       {/* Navigation */}
       <div className="sidebar-nav-scroll" style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>

@@ -9,6 +9,8 @@ import { ToastProvider } from './components/ToastProvider';
 
 import Home from './pages/Home';
 import Catalogo from './pages/Catalogo';
+import Librerias from './pages/Librerias';
+import PerfilTienda from './pages/PerfilTienda';
 import ResetPassword from './pages/ResetPassword';
 import MiTienda from './pages/MiTienda';
 import PrivateRoute from './components/PrivateRoute';
@@ -18,7 +20,7 @@ import Historial from './pages/Historial';
 import ListaDeseos from './pages/ListaDeseos';
 import Devoluciones from './pages/Devoluciones';
 import BookyPagoFinanzas from './pages/BookyPagoFinanzas';
-
+import LegalPage from './pages/LegalPage';
 
 import { getUserRole } from './hooks/useAuth';
 
@@ -78,10 +80,14 @@ function MainLayout() {
         {/* ── RUTAS PÚBLICAS ── */}
         <Route path="/" element={<Home />} />
         <Route path="/catalogo" element={<Catalogo />} />
+        <Route path="/librerias" element={<Librerias />} />
+        <Route path="/tienda/:id" element={<PerfilTienda />} />
         <Route path="/register" element={<Navigate to="/" replace />} />
         <Route path="/forgot-password" element={<Navigate to="/" replace />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/legal" element={<Navigate to="/" replace />} />
+        <Route path="/terminos" element={<LegalPage type="terminos" />} />
+        <Route path="/privacidad" element={<LegalPage type="privacidad" />} />
 
         {/* ── RUTAS PROTEGIDAS GENERALES (Cualquier usuario logueado) ── */}
         <Route element={<PrivateRoute />}>
