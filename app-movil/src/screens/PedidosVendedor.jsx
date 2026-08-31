@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useContext } from 'react';
 import {
   View, Text, FlatList, StyleSheet, ActivityIndicator,
   Alert, Modal, TextInput, TouchableOpacity, ScrollView,
-  RefreshControl,
+  RefreshControl, Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { getMisPedidos, actualizarEstadoOrden, registrarGuia, getEmpresasMensajeria } from '../services/api';
@@ -215,13 +215,24 @@ export default function PedidosVendedor({ navigation }) {
                 <Text style={s.sinGuia}>Sin guía registrada</Text>
               )}
             </View>
-            {puedeGuia && (
-              <TouchableOpacity style={s.guiaBtn} onPress={() => abrirModalGuia(item)}>
-                <Text style={s.guiaBtnText}>
-                  {tieneGuia ? '✏️ Editar' : '+ Guía'}
-                </Text>
-              </TouchableOpacity>
-            )}
+            <View style={s.guiaAcciones}>
+              {(item.envio?.url_rastreo || item.envio?.sitio_web) && (
+                <TouchableOpacity
+                  style={s.rastrearBtn}
+                  onPress={() => Linking.openURL(item.envio.url_rastreo || item.envio.sitio_web)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={s.rastrearBtnText}>🔍 Rastrear</Text>
+                </TouchableOpacity>
+              )}
+              {puedeGuia && (
+                <TouchableOpacity style={s.guiaBtn} onPress={() => abrirModalGuia(item)}>
+                  <Text style={s.guiaBtnText}>
+                    {tieneGuia ? '✏️ Editar' : '+ Guía'}
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
           </View>
         </View>
       </View>
@@ -403,6 +414,9 @@ const s = StyleSheet.create({
   guiaEmpresa:    { fontSize: 13, fontWeight: '700', color: TEXT },
   guiaNro:        { fontSize: 11, color: MUTED, marginTop: 2 },
   sinGuia:        { fontSize: 12, color: '#BBBBBB', fontStyle: 'italic' },
+  guiaAcciones:   { flexDirection: 'row', gap: 6, alignItems: 'center' },
+  rastrearBtn:    { backgroundColor: '#EAF3FF', paddingHorizontal: 12, paddingVertical: 7, borderRadius: 10, borderWidth: 1, borderColor: '#93C5FD' },
+  rastrearBtnText:{ fontSize: 12, color: '#1E40AF', fontWeight: '700' },
   guiaBtn:        { backgroundColor: '#F8E7EC', paddingHorizontal: 14, paddingVertical: 7, borderRadius: 10, borderWidth: 1, borderColor: '#EAC8D2' },
   guiaBtnText:    { fontSize: 12, color: PRIMARY, fontWeight: '700' },
 

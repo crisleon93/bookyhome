@@ -7,7 +7,7 @@ import {
   IconClose, IconChevronRight, IconLogout,
   IconStoreAlt, IconBookOpen, IconPlus, IconCartAlt, IconShoppingBag,
   IconNomina, IconStar, IconAlertTriangle, IconMail,
-  IconBell, IconUser, IconSettings, IconLayers, IconTag, IconTicket, IconBolt,
+  IconBell, IconUser, IconSettings, IconLayers, IconTag, IconTicket, IconBolt, IconTruck, IconTool,
 } from './Icons';
 import { useNotifications } from '../context/NotificationContext';
 import { getConfigLibreria, getApiBaseUrl } from '../services/api';
@@ -134,10 +134,12 @@ export default function SidebarVendedor({ visible, onClose, user, navigation, on
             <Sep />
             <MenuItem icon={<IconCartAlt      size={19} color={WHITE} />} label="Ventas"          onPress={() => go('VentasVendedor')} />
             <MenuItem icon={<IconShoppingBag  size={19} color={WHITE} />} label="Pedidos"         onPress={() => go('PedidosVendedor')} />
+            <MenuItem icon={<IconTruck        size={19} color={WHITE} />} label="Envíos"           onPress={() => go('EnviosVendedor')} />
             <Sep />
             <MenuItem icon={<IconNomina    size={19} color={WHITE} />} label="Nómina"             onPress={null} soon />
             <MenuItem icon={<IconStar      size={19} color={WHITE} />} label="Calificaciones"     onPress={() => go('CalificacionesVendedor')} />
-            <MenuItem icon={<IconAlertTriangle size={19} color={WHITE} />} label="Quejas y reclamos" onPress={() => go('QuejasReclamos')} />
+            <MenuItem icon={<IconAlertTriangle size={19} color={WHITE} />} label="Quejas y reclamos" onPress={() => go('QuejasVendedorScreen')} />
+            <MenuItem icon={<IconTool        size={19} color={WHITE} />} label="Soporte técnico"    onPress={() => go('SoporteTecnico')} />
             <Sep />
             <MenuItem icon={<IconBell      size={19} color={WHITE} />} label="Notificaciones"     onPress={() => go('Notifications')} badge={unreadNotifCount} />
             <MenuItem icon={<IconMail      size={19} color={WHITE} />} label="Mensajes"           onPress={() => go('Messages')} badge={unreadMsgCount} />

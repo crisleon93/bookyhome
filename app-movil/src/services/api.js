@@ -97,6 +97,7 @@ export const eliminarCupon         = (id)         => api.delete(`/cupones/${id}`
 
 // ===== Librería (Vendedor) =====
 export const getLibreria = () => api.get('/tiendas/mi-tienda');
+export const updateMiTienda = (data) => api.put('/tiendas/mi-tienda', data);
 export const registerLibrary = (data) => api.post('/libreria', data);
 export const updateLibreria = (data) => api.put('/libreria/actualizar', data);
 export const uploadLibreriaLogo = (formData) =>
@@ -162,6 +163,12 @@ export const getApiBaseUrl = () => api.defaults.baseURL;
 export const getOrdenes = () => api.get('/api/v1/orders');
 export const getQuejas = () => api.get('/quejas');
 export const crearQueja = (formData) => api.post('/quejas', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+export const cancelarQueja = (id) => api.delete(`/quejas/${id}`);
+export const getQuejasVendedor = () => api.get('/quejas/vendedor');
+export const getMensajesReclamo = (id) => api.get(`/quejas/${id}/mensajes`);
+export const enviarMensajeReclamo = (id, mensaje) => api.post(`/quejas/${id}/mensajes`, { mensaje });
+export const getSoporte = () => api.get('/quejas/soporte');
+export const crearSoporte = (payload) => api.post('/quejas/soporte', payload);
 
 // ===== Administración =====
 // El panel conserva las mismas fuentes de datos que el dashboard web.

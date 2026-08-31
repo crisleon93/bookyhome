@@ -149,6 +149,17 @@ export default function CalificacionesVendedor({ navigation }) {
           renderItem={opinion}
           ListHeaderComponent={cabecera}
           ListEmptyComponent={vacio}
+          ListFooterComponent={
+            calificaciones.length > 10 ? (
+              <View style={styles.masOpiniones}>
+                <IconMessage size={15} color={MUTED} />
+                <Text style={styles.masOpinionesText}>
+                  Las opiniones anteriores están disponibles en la sección de{' '}
+                  <Text style={styles.masOpinionesLink}>Notificaciones</Text>
+                </Text>
+              </View>
+            ) : null
+          }
           contentContainerStyle={styles.list}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refrescar} tintColor={PRIMARY} colors={[PRIMARY]} />}
         />
@@ -179,4 +190,7 @@ const styles = StyleSheet.create({
   stars: { flexDirection: 'row', gap: 2 }, distribution: { backgroundColor: WHITE, borderColor: BORDER, borderWidth: 1, borderRadius: 14, padding: 16, marginBottom: 20 }, sectionTitle: { color: TEXT, fontSize: 14, fontWeight: '800', marginBottom: 14 }, distributionRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 }, starNumber: { flexDirection: 'row', alignItems: 'center', gap: 2, width: 30 }, starNumberText: { color: TEXT, fontSize: 12, fontWeight: '700' }, barTrack: { flex: 1, height: 9, borderRadius: 99, backgroundColor: '#F1F0EE', overflow: 'hidden' }, barFill: { height: '100%', borderRadius: 99 }, distributionCount: { color: MUTED, fontSize: 11, width: 54, textAlign: 'right' },
   listTitle: { color: TEXT, fontSize: 16, fontWeight: '800', marginBottom: 10 }, reviewCard: { backgroundColor: WHITE, borderColor: BORDER, borderWidth: 1, borderTopWidth: 3, borderRadius: 14, padding: 14, marginBottom: 10 }, reviewHeader: { flexDirection: 'row', alignItems: 'center', gap: 10 }, avatar: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center', backgroundColor: PRIMARY }, avatarText: { color: WHITE, fontSize: 12, fontWeight: '800' }, reviewInfo: { flex: 1 }, userName: { color: TEXT, fontSize: 13, fontWeight: '800', marginBottom: 2 }, date: { color: '#A8A29E', fontSize: 10, maxWidth: 85, textAlign: 'right' }, comment: { color: '#5E5A57', fontSize: 13, lineHeight: 20, marginTop: 12, paddingTop: 10, borderTopColor: '#F1EDE8', borderTopWidth: 1, fontStyle: 'italic' },
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 28, paddingVertical: 70 }, emptyIcon: { fontSize: 42, marginBottom: 12 }, emptyTitle: { color: TEXT, fontWeight: '800', fontSize: 16, textAlign: 'center' }, emptyText: { color: MUTED, fontSize: 13, lineHeight: 20, textAlign: 'center', marginTop: 7 }, retry: { backgroundColor: PRIMARY, borderRadius: 8, paddingHorizontal: 16, paddingVertical: 10, marginTop: 18 }, retryText: { color: WHITE, fontSize: 13, fontWeight: '800' },
+  masOpiniones: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#F8FAFC', borderRadius: 12, borderWidth: 1, borderColor: BORDER, padding: 14, marginTop: 4, marginBottom: 16 },
+  masOpinionesText: { flex: 1, fontSize: 12, color: MUTED, lineHeight: 18 },
+  masOpinionesLink: { fontWeight: '700', color: PRIMARY },
 });

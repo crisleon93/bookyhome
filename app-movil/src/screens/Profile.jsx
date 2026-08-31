@@ -42,6 +42,7 @@ export default function Profile() {
   const [phone, setPhone] = useState('');
   const [city, setCity] = useState('');
   const [address, setAddress] = useState('');
+  const [email, setEmail] = useState('');
   const [notificationsPromotions, setNotificationsPromotions] = useState(true);
   const [notificationsOrders, setNotificationsOrders] = useState(true);
   const [notificationsNews, setNotificationsNews] = useState(false);
@@ -51,6 +52,7 @@ export default function Profile() {
   const [showBannerEditor, setShowBannerEditor] = useState(false);
   const [photoUploading, setPhotoUploading] = useState(false);
   const [bannerUploading, setBannerUploading] = useState(false);
+  const [perfilMsg, setPerfilMsg] = useState('');  // mensaje inline éxito/error
   const [estadisticas, setEstadisticas] = useState(null);
   const [categoriasFavoritas, setCategoriasFavoritas] = useState([]);
   const [nivelFidelizacion, setNivelFidelizacion] = useState(null);
@@ -112,6 +114,7 @@ export default function Profile() {
         setPhone(data.telefono || '');
         setCity(data.ciudad || '');
         setAddress(data.direccion || '');
+        setEmail(data.correo_usuario || data.email || '');
         setNotificationsPromotions(data.preferencias?.notificaciones_promociones ?? true);
         setNotificationsOrders(data.preferencias?.notificaciones_pedidos ?? true);
         setNotificationsNews(data.preferencias?.notificaciones_novedades ?? false);
@@ -120,7 +123,7 @@ export default function Profile() {
         setBannerColor(data.banner_perfil ? null : (data.banner_color || '#7A1E3A'));
       } catch (e) {
         console.log('Error loading profile', e.message);
-        Alert.alert('Error', 'No se pudo cargar tu perfil');
+        setPerfilMsg('Error al cargar el perfil.');
       } finally {
         setLoading(false);
       }
@@ -129,10 +132,15 @@ export default function Profile() {
     cargarEstadisticas();
   }, []);
 
+  const showMsg = (msg) => {
+    setPerfilMsg(msg);
+    setTimeout(() => setPerfilMsg(''), 3500);
+  };
+
   const seleccionarImagen = async (tipo) => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
-      Alert.alert('Permiso requerido', 'Se necesita acceso a la galería para seleccionar una imagen.');
+      showMsg('Se necesita acceso a la galería.');
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -161,17 +169,17 @@ export default function Profile() {
         setPhotoUploading(true);
         const response = await uploadProfilePhoto(formData);
         setProfilePhotoUrl(resolveImageUrl(response.data?.url));
-        Alert.alert('Listo', 'Foto de perfil actualizada.');
+        showMsg('✓ Foto de perfil actualizada.');
       } else {
         setBannerUploading(true);
         const response = await uploadBannerPhoto(formData);
         setBannerUrl(resolveImageUrl(response.data?.url));
         setBannerColor(null);
         setShowBannerEditor(false);
-        Alert.alert('Listo', 'Banner actualizado.');
+        showMsg('✓ Banner actualizado.');
       }
     } catch {
-      Alert.alert('Error', `No se pudo actualizar ${tipo === 'foto' ? 'la foto' : 'el banner'}.`);
+      showMsg(`Error al actualizar ${tipo === 'foto' ? 'la foto' : 'el banner'}.`);
     } finally {
       setPhotoUploading(false);
       setBannerUploading(false);
@@ -184,8 +192,9 @@ export default function Profile() {
       setBannerColor(color);
       setBannerUrl(null);
       setShowBannerEditor(false);
+      showMsg('✓ Color de banner guardado.');
     } catch {
-      Alert.alert('Error', 'No se pudo guardar el color del banner.');
+      showMsg('Error al guardar el color del banner.');
     }
   };
 
@@ -205,10 +214,10 @@ export default function Profile() {
         notificaciones_novedades: notificationsNews,
       });
       await cargarEstadisticas();
-      Alert.alert('Listo', 'Perfil actualizado correctamente');
+      showMsg('✓ Perfil actualizado correctamente.');
     } catch (e) {
       console.log('Error saving profile', e.message);
-      Alert.alert('Error', 'No se pudo actualizar tu perfil');
+      showMsg('Error al actualizar el perfil.');
     } finally {
       setSaving(false);
     }
@@ -277,13 +286,27 @@ export default function Profile() {
                   ].map((color) => (
                     <TouchableOpacity
                       key={color}
-                      style={[styles.swatch, !color.startsWith('linear-gradient') && { backgroundColor: color }]}
+                      style={[styles.swatch, !color.startsWith('linear-gradient') && { backgroundColor: color }, bannerColor === color && styles.swatchSelected]}
                       onPress={() => seleccionarColorBanner(color)}
                       accessibilityLabel="Seleccionar color de banner"
                     >
                       {color.startsWith('linear-gradient') && <LinearGradient colors={gradientColors(color)} style={styles.swatchGradient} />}
                     </TouchableOpacity>
                   ))}
+                </View>
+
+                {/* Color personalizado — igual que la web */}
+                <View style={styles.colorPickerRow}>
+                  <Text style={styles.editorLabelSmall}>Color personalizado</Text>
+                  <View style={styles.colorPickerSwatches}>
+                    {['#E91E63','#9C27B0','#3F51B5','#2196F3','#009688','#4CAF50','#FF9800','#607D8B'].map((c) => (
+                      <TouchableOpacity
+                        key={c}
+                        style={[styles.swatch, { backgroundColor: c }, bannerColor === c && styles.swatchSelected]}
+                        onPress={() => seleccionarColorBanner(c)}
+                      />
+                    ))}
+                  </View>
                 </View>
               </View>
             )}
@@ -315,6 +338,18 @@ export default function Profile() {
               <Text style={styles.label}>Dirección</Text>
               <TextInput style={styles.input} value={address} onChangeText={setAddress} />
             </View>
+
+            {/* Correo electrónico — solo lectura igual que la web */}
+            <View style={styles.field}>
+              <Text style={styles.label}>Correo electrónico</Text>
+              <TextInput
+                style={[styles.input, styles.inputReadOnly]}
+                value={email}
+                editable={false}
+                placeholder="Cargando…"
+                placeholderTextColor={MUTED}
+              />
+            </View>
           </View>
 
           <View style={styles.preferencesCard}>
@@ -345,6 +380,15 @@ export default function Profile() {
           >
             {saving ? <ActivityIndicator color={WHITE} /> : <Text style={styles.saveBtnText}>Guardar cambios</Text>}
           </TouchableOpacity>
+
+          {/* Mensaje inline (igual que la web, sin Alert) */}
+          {!!perfilMsg && (
+            <View style={[styles.msgInline, perfilMsg.startsWith('✓') ? styles.msgInlineOk : styles.msgInlineErr]}>
+              <Text style={[styles.msgInlineText, perfilMsg.startsWith('✓') ? { color: '#166534' } : { color: '#991B1B' }]}>
+                {perfilMsg}
+              </Text>
+            </View>
+          )}
 
           <View style={styles.loyaltyCard}>
             <View style={styles.cardTitleRow}>
@@ -503,4 +547,21 @@ const styles = StyleSheet.create({
   },
   saveBtnText: { color: WHITE, fontSize: 15, fontWeight: '700' },
   disabledBtn: { opacity: 0.7 },
+
+  // Campo solo lectura (correo)
+  inputReadOnly: { backgroundColor: '#F0F0F0', color: MUTED },
+
+  // Mensaje inline éxito/error (igual que la web)
+  msgInline:    { borderRadius: 10, padding: 12, marginTop: 10, borderWidth: 1 },
+  msgInlineOk:  { backgroundColor: '#F0FDF4', borderColor: '#86EFAC' },
+  msgInlineErr: { backgroundColor: '#FEF2F2', borderColor: '#FCA5A5' },
+  msgInlineText:{ fontSize: 14, fontWeight: '600' },
+
+  // Color picker swatch con selección
+  swatchSelected: { borderColor: WHITE, borderWidth: 3, transform: [{ scale: 1.15 }] },
+
+  // Fila de color personalizado
+  colorPickerRow:     { marginTop: 14 },
+  editorLabelSmall:   { fontSize: 13, fontWeight: '700', color: TEXT, marginBottom: 8 },
+  colorPickerSwatches:{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
 });
