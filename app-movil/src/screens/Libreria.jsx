@@ -17,9 +17,10 @@ const TEXT    = '#2A2A2A';
 const MUTED   = '#888';
 
 const ESTADO_COLORS = {
-  nuevo:             { label: 'Nuevo',         bg: '#D1FAE5', color: '#065F46' },
-  usado_buen_estado: { label: 'Buen estado',   bg: '#DBEAFE', color: '#1E40AF' },
-  usado_regular:     { label: 'Est. regular',  bg: '#FEF3C7', color: '#92400E' },
+  Nuevo:    { bg: '#D1FAE5', color: '#065F46' },
+  Visible:  { bg: '#DBEAFE', color: '#1E40AF' },
+  Oculto:   { bg: '#F3F4F6', color: '#6B7280' },
+  Agotado:  { bg: '#FEE2E2', color: '#991B1B' },
 };
 
 const fmt = (val) =>
@@ -85,11 +86,11 @@ export default function Libreria({ navigation }) {
   };
 
   const estadoBadge = (libro) => {
-    const key = libro.estado_libro || '';
-    const c = ESTADO_COLORS[key] || { label: key || 'Sin estado', bg: '#F3F4F6', color: '#6B7280' };
+    const e = libro.estado_libro || (libro.activo ? 'Visible' : 'Oculto');
+    const c = ESTADO_COLORS[e] || { bg: '#F3F4F6', color: '#6B7280' };
     return (
       <View style={[s.badge, { backgroundColor: c.bg }]}>
-        <Text style={[s.badgeText, { color: c.color }]}>{c.label}</Text>
+        <Text style={[s.badgeText, { color: c.color }]}>{e}</Text>
       </View>
     );
   };

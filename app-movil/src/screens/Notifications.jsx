@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useContext } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity,
-  StyleSheet, ActivityIndicator, Modal, ScrollView,
+  StyleSheet, ActivityIndicator, Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { getNotifications, markNotificationRead, markAllNotificationsRead, deleteNotification } from '../services/api';
@@ -9,10 +9,6 @@ import { useNotifications } from '../context/NotificationContext';
 import { AuthContext } from '../context/AuthContext';
 import SidebarMenu from '../components/SidebarMenu';
 import SidebarVendedor from '../components/SidebarVendedor';
-import {
-  IconBell, IconMail, IconPackage, IconAlertTriangle, IconStar, IconMessage,
-  IconTruck, IconCreditCard, IconShoppingBag,
-} from '../components/Icons';
 
 const PRIMARY = '#7A1E3A';
 const WHITE   = '#FFFFFF';
@@ -22,17 +18,11 @@ const TEXT    = '#1A1A1A';
 const MUTED   = '#8A8A8A';
 
 /* ── helpers ── */
-const TIPO_ICON = {
-  mensaje:  { Icon: IconMessage,       color: '#1e40af' },
-  resena:   { Icon: IconStar,          color: '#d97706' },
-  oferta:   { Icon: IconShoppingBag,   color: '#7A1E3A' },
-  pedido:   { Icon: IconPackage,       color: '#7A1E3A' },
-  entrega:  { Icon: IconTruck,         color: '#16a34a' },
-  pago:     { Icon: IconCreditCard,    color: '#7A1E3A' },
-  sistema:  { Icon: IconAlertTriangle, color: '#d97706' },
-  venta:    { Icon: IconShoppingBag,   color: '#7A1E3A' },
-};
-const getIconCfg = (tipo) => TIPO_ICON[tipo] || { Icon: IconBell, color: '#7A1E3A' };
+const getIcon = (tipo) => ({
+  mensaje:  '💬', resena:  '⭐', oferta: '🎉',
+  pedido:   '📦', entrega: '🚚', pago:   '💳',
+  sistema:  'ℹ️', venta:   '🛒',
+}[tipo] ?? '🔔');
 
 // Quita emojis/caracteres raros del título que vienen del backend
 const cleanTitle = (titulo = '') =>
@@ -112,34 +102,10 @@ export default function Notifications({ navigation }) {
 
   const noLeidas = notifications.filter(n => !n.leida).length;
 
-  // ── Filtros igual que la web ──────────────────────────────────────────────
-  const FILTROS = [
-    { key: 'todas',         label: 'Todas',           Icon: IconBell,          tipos: null,                  soloNoLeidas: false },
-    { key: 'no_leidas',     label: 'No leídas',       Icon: IconMail,          tipos: null,                  soloNoLeidas: true  },
-    { key: 'ventas_envios', label: 'Ventas y envíos', Icon: IconPackage,       tipos: ['pedido', 'entrega'], soloNoLeidas: false },
-    { key: 'reclamos',      label: 'Reclamos',        Icon: IconAlertTriangle, tipos: ['sistema'],           soloNoLeidas: false },
-    { key: 'resenas',       label: 'Reseñas',         Icon: IconStar,          tipos: ['resena'],            soloNoLeidas: false },
-    { key: 'mensajes',      label: 'Mensajes',        Icon: IconMessage,       tipos: ['mensaje'],           soloNoLeidas: false },
-  ];
-
-  const getCount = ({ tipos, soloNoLeidas }) => {
-    if (soloNoLeidas) return notifications.filter(n => !n.leida).length;
-    if (!tipos)       return notifications.length;
-    return notifications.filter(n => tipos.includes(n.tipo)).length;
-  };
-
-  const notifFiltradas = (() => {
-    const cfg = FILTROS.find(f => f.key === filter);
-    if (!cfg) return notifications;
-    if (cfg.soloNoLeidas) return notifications.filter(n => !n.leida);
-    if (!cfg.tipos)       return notifications;
-    return notifications.filter(n => cfg.tipos.includes(n.tipo));
-  })();
-
   const renderItem = ({ item, index }) => {
-    const unread  = !item.leida;
-    const { Icon: NotifIcon, color: iconColor } = getIconCfg(item.tipo);
-    const title   = cleanTitle(item.titulo);
+    const unread = !item.leida;
+    const icon   = getIcon(item.tipo);
+    const title  = cleanTitle(item.titulo);
 
     return (
       <TouchableOpacity
@@ -152,8 +118,8 @@ export default function Notifications({ navigation }) {
 
         <View style={s.cardInner}>
           {/* Icono */}
-          <View style={[s.iconBox, unread && s.iconBoxUnread, { backgroundColor: iconColor + '18' }]}>
-            <NotifIcon size={20} color={iconColor} />
+          <View style={[s.iconBox, unread && s.iconBoxUnread]}>
+            <Text style={s.iconText}>{icon}</Text>
           </View>
 
           {/* Contenido */}
@@ -199,11 +165,6 @@ export default function Notifications({ navigation }) {
                 <Text style={s.unreadBadgeText}>{noLeidas}</Text>
               </View>
             )}
-            {noLeidas > 0 && (
-              <TouchableOpacity style={s.markAllHeaderBtn} onPress={handleMarkAllRead} activeOpacity={0.8}>
-                <Text style={s.markAllHeaderText}>✓ Todas</Text>
-              </TouchableOpacity>
-            )}
           </View>
         </>
       )}
@@ -211,38 +172,23 @@ export default function Notifications({ navigation }) {
       {/* ── Body crema ── */}
       <View style={s.body}>
         {/* Filtros */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={s.filterScroll}
-          contentContainerStyle={s.filterRow}
-        >
-          {FILTROS.map(f => {
-            const activo  = filter === f.key;
-            const count   = getCount(f);
-            const FiltroIcon = f.Icon;
-            return (
-              <TouchableOpacity
-                key={f.key}
-                style={[s.filterBtn, activo && s.filterBtnActive]}
-                onPress={() => setFilter(f.key)}
-                activeOpacity={0.8}
-              >
-                <FiltroIcon size={14} color={activo ? PRIMARY : 'rgba(255,255,255,0.85)'} />
-                <Text style={[s.filterText, activo && s.filterTextActive]}>
-                  {f.label}
-                </Text>
-                {count > 0 && (
-                  <View style={[s.filterCount, activo && s.filterCountActive]}>
-                    <Text style={[s.filterCountText, activo && s.filterCountTextActive]}>
-                      {count > 99 ? '99+' : count}
-                    </Text>
-                  </View>
-                )}
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
+        <View style={s.filterRow}>
+          {['todas', 'no_leidas'].map(f => (
+            <TouchableOpacity
+              key={f}
+              style={[s.filterBtn, filter === f && s.filterBtnActive]}
+              onPress={() => setFilter(f)}
+              activeOpacity={0.8}
+            >
+              <Text style={[s.filterText, filter === f && s.filterTextActive]}>
+                {f === 'todas' ? 'Todas' : 'No leídas'}
+              </Text>
+            </TouchableOpacity>
+          ))}
+          <TouchableOpacity style={s.markAllBtn} onPress={handleMarkAllRead} activeOpacity={0.8}>
+            <Text style={s.markAllText}>Marcar todas</Text>
+          </TouchableOpacity>
+        </View>
 
         {loading ? (
           <View style={s.centered}><ActivityIndicator size="large" color={PRIMARY} /></View>
@@ -250,32 +196,17 @@ export default function Notifications({ navigation }) {
           <View style={s.centered}><Text style={s.errorText}>{error}</Text></View>
         ) : notifications.length === 0 ? (
           <View style={s.centered}>
-            <View style={s.emptyIconBox}>
-              <IconBell size={36} color={WHITE} />
-            </View>
+            <Text style={{ fontSize: 40, marginBottom: 12 }}>🔔</Text>
             <Text style={s.emptyTitle}>Sin notificaciones</Text>
             <Text style={s.emptySubtitle}>Cuando tengas actividad aparecerá aquí</Text>
           </View>
         ) : (
           <FlatList
-            data={notifFiltradas}
+            data={notifications}
             keyExtractor={(item) => String(item.id_notificacion)}
             renderItem={renderItem}
             contentContainerStyle={{ paddingHorizontal: 14, paddingBottom: 32 }}
             showsVerticalScrollIndicator={false}
-            ListEmptyComponent={
-              <View style={s.centered}>
-                <View style={s.emptyIconBox}>
-                  <IconBell size={36} color={WHITE} />
-                </View>
-                <Text style={s.emptyTitle}>Sin notificaciones</Text>
-                <Text style={s.emptySubtitle}>
-                  {filter === 'no_leidas'
-                    ? 'No tienes notificaciones sin leer'
-                    : 'No tienes notificaciones en esta categoría'}
-                </Text>
-              </View>
-            }
           />
         )}
       </View>
@@ -356,20 +287,13 @@ const s = StyleSheet.create({
   body:   { flex: 1, backgroundColor: PRIMARY, borderTopLeftRadius: 28, borderTopRightRadius: 28 },
 
   /* filtros */
-  filterScroll:         { maxHeight: 52, marginTop: 14 },
-  filterRow:            { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingBottom: 10, gap: 8 },
-  filterBtn:            { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 8, paddingHorizontal: 14, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.15)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)' },
-  filterBtnActive:      { backgroundColor: WHITE, borderColor: WHITE },
-  filterText:           { fontSize: 13, fontWeight: '600', color: 'rgba(255,255,255,0.85)' },
-  filterTextActive:     { color: PRIMARY, fontWeight: '800' },
-  filterCount:          { backgroundColor: 'rgba(255,255,255,0.25)', borderRadius: 10, minWidth: 20, height: 20, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 5 },
-  filterCountActive:    { backgroundColor: PRIMARY },
-  filterCountText:      { fontSize: 11, fontWeight: '800', color: WHITE },
-  filterCountTextActive:{ color: WHITE },
-  markAllRow:           { marginHorizontal: 14, marginBottom: 10, paddingVertical: 8, paddingHorizontal: 14, backgroundColor: 'rgba(255,255,255,0.12)', borderRadius: 10, borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)', alignItems: 'center' },
-  markAllText:          { color: WHITE, fontWeight: '700', fontSize: 13 },
-  markAllHeaderBtn:     { backgroundColor: 'rgba(255,255,255,0.18)', borderRadius: 18, paddingHorizontal: 12, paddingVertical: 6, borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)' },
-  markAllHeaderText:    { color: WHITE, fontWeight: '700', fontSize: 12 },
+  filterRow:       { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingTop: 16, paddingBottom: 10, gap: 8 },
+  filterBtn:       { paddingVertical: 7, paddingHorizontal: 16, borderRadius: 20, borderWidth: 1.5, borderColor: BORDER, backgroundColor: WHITE },
+  filterBtnActive: { backgroundColor: PRIMARY, borderColor: PRIMARY },
+  filterText:      { fontSize: 13, fontWeight: '600', color: MUTED },
+  filterTextActive:{ color: WHITE, fontWeight: '700' },
+  markAllBtn:      { marginLeft: 'auto', paddingVertical: 7, paddingHorizontal: 10 },
+  markAllText:     { color: WHITE, fontWeight: '700', fontSize: 13 },
 
   /* card */
   card:        { backgroundColor: WHITE, borderRadius: 16, marginBottom: 10, borderWidth: 1, borderColor: BORDER, overflow: 'hidden', elevation: 2, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 4, shadowOffset: { width: 0, height: 2 } },
@@ -380,6 +304,7 @@ const s = StyleSheet.create({
   /* icono */
   iconBox:       { width: 44, height: 44, borderRadius: 22, backgroundColor: BG, justifyContent: 'center', alignItems: 'center' },
   iconBoxUnread: { backgroundColor: '#FDF0F3' },
+  iconText:      { fontSize: 20 },
 
   /* texto */
   cardTopRow:          { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4, gap: 8 },
@@ -397,7 +322,6 @@ const s = StyleSheet.create({
 
   /* estados */
   centered:     { flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 60 },
-  emptyIconBox: { width: 72, height: 72, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.15)', alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
   emptyTitle:   { fontSize: 16, fontWeight: '700', color: WHITE, marginBottom: 6 },
   emptySubtitle:{ fontSize: 13, color: 'rgba(255,255,255,0.75)', textAlign: 'center' },
   errorText:    { color: '#FFD7DF', textAlign: 'center', fontSize: 13 },

@@ -116,13 +116,9 @@ function BadgeEstado({ estado }) {
 
 // ── Tarjeta de oferta ─────────────────────────────────────────────────────────
 function TarjetaOferta({ oferta, onEditar, onEliminar }) {
-  const estado    = oferta.estado || calcEstado(oferta.fecha_inicio, oferta.fecha_fin);
-  const cfg       = ESTADO_CONFIG[estado] || ESTADO_CONFIG.vencida;
+  const estado = oferta.estado || calcEstado(oferta.fecha_inicio, oferta.fecha_fin);
+  const cfg    = ESTADO_CONFIG[estado] || ESTADO_CONFIG.vencida;
   const esVencida = estado === 'vencida';
-  const [expandido, setExpandido] = useState(false);
-
-  const librosIncluidos = Array.isArray(oferta.libros) ? oferta.libros : [];
-  const totalLibros     = oferta.total_libros ?? librosIncluidos.length;
 
   return (
     <View style={[styles.card, { borderLeftColor: cfg.border, opacity: esVencida ? 0.75 : 1 }]}>
@@ -147,47 +143,10 @@ function TarjetaOferta({ oferta, onEditar, onEliminar }) {
         </Text>
       </View>
 
-      {/* Libros incluidos — expandible */}
-      {totalLibros > 0 && (
-        <TouchableOpacity
-          style={styles.cardLibrosBtn}
-          onPress={() => setExpandido((v) => !v)}
-          activeOpacity={0.7}
-        >
-          <IconBook size={13} color={PRIMARY} />
-          <Text style={styles.cardLibrosBtnText}>
-            {totalLibros} libro{totalLibros !== 1 ? 's' : ''} incluido{totalLibros !== 1 ? 's' : ''}
-          </Text>
-          <Text style={[styles.cardLibrosArrow, expandido && { transform: [{ rotate: '180deg' }] }]}>
-            ▾
-          </Text>
-        </TouchableOpacity>
-      )}
-
-      {expandido && librosIncluidos.length > 0 && (
-        <View style={styles.librosExpand}>
-          {librosIncluidos.map((libro, i) => {
-            const img = getLibroImg(libro);
-            return (
-              <View
-                key={libro.id_libro ?? i}
-                style={[styles.libroExpandRow, i < librosIncluidos.length - 1 && styles.libroExpandSep]}
-              >
-                {img
-                  ? <Image source={{ uri: img }} style={styles.libroExpandImg} />
-                  : <View style={[styles.libroExpandImg, styles.libroExpandImgPlaceholder]}>
-                      <Text style={{ fontSize: 14 }}>📖</Text>
-                    </View>
-                }
-                <View style={{ flex: 1, marginLeft: 10 }}>
-                  <Text style={styles.libroExpandTitulo} numberOfLines={1}>{libro.titulo}</Text>
-                  <Text style={styles.libroExpandAutor}  numberOfLines={1}>{libro.autor_libro}</Text>
-                </View>
-                <Text style={styles.libroExpandPrecio}>{formatPrecio(libro.precio_libro ?? libro.precio)}</Text>
-              </View>
-            );
-          })}
-        </View>
+      {oferta.total_libros != null && (
+        <Text style={styles.cardLibros}>
+          {oferta.total_libros} libro{oferta.total_libros !== 1 ? 's' : ''} incluido{oferta.total_libros !== 1 ? 's' : ''}
+        </Text>
       )}
 
       <View style={styles.cardActions}>
@@ -892,42 +851,7 @@ const styles = StyleSheet.create({
     marginTop: 8, marginBottom: 4,
   },
   cardDateText:  { fontSize: 12, color: MUTED },
-
-  // Botón expandir libros
-  cardLibrosBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: 5,
-    marginTop: 6, marginBottom: 4,
-    paddingVertical: 4,
-  },
-  cardLibrosBtnText: { flex: 1, fontSize: 12, color: PRIMARY, fontWeight: '700' },
-  cardLibrosArrow:   { fontSize: 11, color: PRIMARY, fontWeight: '800' },
-
-  // Lista expandida de libros
-  librosExpand: {
-    marginTop: 4, marginBottom: 8,
-    backgroundColor: '#fafafa',
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: BORDER,
-    overflow: 'hidden',
-  },
-  libroExpandRow: {
-    flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: 12, paddingVertical: 10,
-  },
-  libroExpandSep:         { borderBottomWidth: 1, borderBottomColor: BORDER },
-  libroExpandImg: {
-    width: 36, height: 50, borderRadius: 5,
-    backgroundColor: BORDER, resizeMode: 'cover',
-  },
-  libroExpandImgPlaceholder: {
-    alignItems: 'center', justifyContent: 'center',
-    backgroundColor: '#f0e8db',
-  },
-  libroExpandTitulo: { fontSize: 13, fontWeight: '700', color: TEXT, marginBottom: 2 },
-  libroExpandAutor:  { fontSize: 11, color: MUTED },
-  libroExpandPrecio: { fontSize: 12, fontWeight: '800', color: PRIMARY, marginLeft: 8 },
-
+  cardLibros:    { fontSize: 12, color: MUTED, marginBottom: 8 },
   cardActions:   { flexDirection: 'row', gap: 8, marginTop: 8 },
   btnAccion: {
     flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',

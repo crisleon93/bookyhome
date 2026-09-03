@@ -39,9 +39,6 @@ import ImpulsosVendedor from '../screens/ImpulsosVendedor';
 import MobileMenuButton from '../components/MobileMenuButton';
 import PromocionesVendedor from '../screens/PromocionesVendedor';
 import CuponesVendedor from '../screens/CuponesVendedor';
-import EnviosVendedor from '../screens/EnviosVendedor';
-import QuejasVendedorScreen from '../screens/QuejasVendedor';
-import SoporteTecnico from '../screens/SoporteTecnico';
 
 const Stack = createNativeStackNavigator();
 
@@ -84,7 +81,6 @@ export default function AppNavigator() {
           <Stack.Screen name="ImpulsosVendedor" component={ImpulsosVendedor} options={{ headerShown: false }} />
           <Stack.Screen name="PromocionesVendedor" component={PromocionesVendedor} options={{ headerShown: false }} />
           <Stack.Screen name="CuponesVendedor" component={CuponesVendedor} options={{ headerShown: false }} />
-          <Stack.Screen name="EnviosVendedor" component={EnviosVendedor} options={{ headerShown: false }} />
           <Stack.Screen name="Direcciones" component={Direcciones} options={{ title: 'Mis direcciones' }} />
           <Stack.Screen name="ConfiguracionTienda" component={ConfiguracionTienda} options={{ headerShown: false }} />
           <Stack.Screen name="PerfilTienda" component={PerfilTienda} options={{ headerShown: false }} />
@@ -92,8 +88,6 @@ export default function AppNavigator() {
           <Stack.Screen name="Messages" component={Messages} options={{ headerShown: false }} />
           <Stack.Screen name="Chat" component={Chat} options={{ title: 'Chat' }} />
           <Stack.Screen name="QuejasReclamos" component={QuejasReclamos} options={{ headerShown: false }} />
-          <Stack.Screen name="QuejasVendedorScreen" component={QuejasVendedorScreen} options={{ headerShown: false }} />
-          <Stack.Screen name="SoporteTecnico" component={SoporteTecnico} options={{ headerShown: false }} />
         </>
       ) : isAdmin ? (
         // ─── Rutas admin ─────────────────────────────────────────────────────
