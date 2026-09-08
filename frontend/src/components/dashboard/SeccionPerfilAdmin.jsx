@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { createElement, useState, useEffect, useCallback } from "react";
 import api, { uploadProfilePhoto, uploadBannerPhoto, saveBannerColor } from "../../services/api";
 import { notify } from "../ToastProvider";
 import {
@@ -112,7 +112,7 @@ export default function SeccionPerfilAdmin({ stats }) {
         notify('Banner actualizado', 'success');
         setShowBannerEditor(false);
       }
-    } catch (error) {
+    } catch {
       notify('No se pudo subir el banner', 'error');
     } finally {
       setBannerUploading(false);
@@ -127,7 +127,7 @@ export default function SeccionPerfilAdmin({ stats }) {
       window.dispatchEvent(new CustomEvent('profile-banner-updated', { detail: { bannerUrl: null, bannerColor: color } }));
       notify('Color de banner guardado', 'success');
       setShowBannerEditor(false);
-    } catch (error) {
+    } catch {
       notify('No se pudo guardar el color', 'error');
     }
   };
@@ -379,10 +379,10 @@ export default function SeccionPerfilAdmin({ stats }) {
           Estadísticas de la Plataforma
         </h3>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px" }}>
-          {plataformasStats.map(({ label, valor, Icon }) => (
+          {plataformasStats.map(({ label, valor, Icon: IconComponent }) => (
             <div key={label} style={{ background: "#faf8f6", padding: "1.5rem", borderRadius: "8px", border: "1px solid #e0dbd4", display: 'flex', alignItems: 'center', gap: 14 }}>
               <div style={{ width: 46, height: 46, borderRadius: 12, background: '#fdf2f6', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
-                <Icon width={22} height={22} strokeWidth={2} style={{ color: '#7A1E3A' }} />
+                {createElement(IconComponent, { width: 22, height: 22, strokeWidth: 2, style: { color: '#7A1E3A' } })}
               </div>
               <div>
                 <p style={{ margin: 0, color: "#666", fontSize: "0.85rem" }}>{label}</p>
@@ -404,10 +404,10 @@ export default function SeccionPerfilAdmin({ stats }) {
           Resumen de quejas, reclamos y tickets de soporte de la comunidad
         </p>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px" }}>
-          {gestionStats.map(({ label, valor, Icon, color }) => (
+          {gestionStats.map(({ label, valor, Icon: IconComponent, color }) => (
             <div key={label} style={{ background: "#faf8f6", padding: "1.5rem", borderRadius: "8px", border: "1px solid #e0dbd4", display: 'flex', alignItems: 'center', gap: 14 }}>
               <div style={{ width: 46, height: 46, borderRadius: 12, background: `${color}14`, display: 'grid', placeItems: 'center', flexShrink: 0 }}>
-                <Icon width={22} height={22} strokeWidth={2} style={{ color }} />
+                {createElement(IconComponent, { width: 22, height: 22, strokeWidth: 2, style: { color } })}
               </div>
               <div>
                 <p style={{ margin: 0, color: "#666", fontSize: "0.85rem" }}>{label}</p>

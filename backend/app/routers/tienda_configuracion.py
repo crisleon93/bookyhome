@@ -27,8 +27,12 @@ def get_configuracion(user: dict = Depends(get_current_user)):
             "ciudad_origen": "",
             "acepta_negociacion": False,
             "email_publico": "",
-            "redes_sociales": ""
+            "redes_sociales": "",
+            "tarifa_envio": 0
         }
+    # Asegurar que tarifa_envio esté presente aunque sea columna nueva
+    if "tarifa_envio" not in config:
+        config["tarifa_envio"] = 0
     return config
 
 @router.put("")

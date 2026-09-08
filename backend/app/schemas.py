@@ -85,6 +85,8 @@ class PagoRequest(BaseModel):
     amount: float
     payment_method: str
     coupon_code: Optional[str] = None
+    tipo_entrega: Optional[str] = None  # 'domicilio' | 'retiro_tienda'
+    id_direccion: Optional[int] = None  # dirección de envío si tipo_entrega == 'domicilio'
 
 class CancelacionOrdenRequest(BaseModel):
     motivo: str = Field(default="Cancelación solicitada por el comprador", min_length=5, max_length=500)

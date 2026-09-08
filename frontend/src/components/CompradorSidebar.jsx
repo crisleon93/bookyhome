@@ -70,13 +70,14 @@ export default function CompradorSidebar({ userName, userEmail, profilePhotoUrl,
       {sidebarOpen ? (
         /* ── Sidebar ABIERTO: banner como fondo, avatar + info encima ── */
         <div style={{
-          marginBottom: '10px', flexShrink: 0,
+          flexShrink: 0,
           margin: '-16px -14px 10px -14px',
+          width: 'calc(100% + 28px)',
           borderRadius: '0',
           background: bannerUrl
             ? `url(${bannerUrl}) center/cover no-repeat`
             : (bannerColor || '#5a1528'),
-          padding: '10px 14px 10px 28px',
+          padding: '10px 14px',
           position: 'relative',
         }}>
           {/* Contenido encima del overlay */}

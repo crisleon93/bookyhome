@@ -208,3 +208,51 @@ def eliminar_notificacion(id_notificacion: int, user_id: int = Depends(get_curre
     finally:
         cursor.close()
         db.close()
+
+
+# ── Eliminación masiva con filtro de tiempo / estado ─────────────────────────
+@router.delete("")
+def eliminar_notificaciones_masivo(
+    filtro: str = "leidas",   # "leidas" | "hoy" | "semana" | "mes" | "todas"
+    user_id: int = Depends(get_current_user),
+):
+    """
+    Elimina notificaciones del usuario según un filtro:
+    - leidas  → solo las ya leídas (DEFAULT)
+    - hoy     → creadas hoy (leídas y no leídas)
+    - semana  → creadas en los últimos 7 días
+    - mes     → creadas en los últimos 30 días
+    - todas   → absolutamente todas las del usuario
+    """
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    try:
+        filtros_validos = {"leidas", "hoy", "semana", "mes", "todas"}
+        if filtro not in filtros_validos:
+            raise HTTPException(status_code=400, detail=f"Filtro inválido. Use uno de: {', '.join(filtros_validos)}")
+
+        base = "DELETE FROM notificaciones WHERE id_usuario = %s"
+        params = [user_id]
+
+        if filtro == "leidas":
+            base += " AND leida = TRUE"
+        elif filtro == "hoy":
+            base += " AND DATE(fecha_creacion) = CURDATE()"
+        elif filtro == "semana":
+            base += " AND fecha_creacion >= DATE_SUB(NOW(), INTERVAL 7 DAY)"
+        elif filtro == "mes":
+            base += " AND fecha_creacion >= DATE_SUB(NOW(), INTERVAL 30 DAY)"
+        # "todas" → sin condición extra
+
+        cursor.execute(base, params)
+        db.commit()
+        eliminadas = cursor.rowcount
+        return {"ok": True, "eliminadas": eliminadas}
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        cursor.close()
+        db.close()

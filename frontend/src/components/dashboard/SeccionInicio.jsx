@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from "react";
 import { IconBookOpen, IconFavorites, IconBook, IconChevronLeft } from "../Icons";
 import CouponsList from "../CouponsList";
 import { getStoredLibros, getOrdenes, getCuponesDisponibles } from "../../services/api";
-import api from "../../services/api";
 
 const VINOTINTO = '#7A1E3A';
 const VINOTINTO2 = '#9B2648';
@@ -109,7 +108,7 @@ function CarruselLibros({ libros, onVerLibro }) {
   );
 }
 
-export default function SeccionInicio({ userName, onGoToCatalog, onSelectSeccion, onVerDetalleLibro }) {
+export default function SeccionInicio({ userName, onSelectSeccion, onVerDetalleLibro }) {
   const [novedades, setNovedades] = useState([]);
   const [ultimasCompras, setUltimasCompras] = useState([]);
   const [tieneCupones, setTieneCupones] = useState(false);

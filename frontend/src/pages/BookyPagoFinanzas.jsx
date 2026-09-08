@@ -22,8 +22,6 @@ export default function BookyPagoFinanzas({ defaultTab = 'balance' }) {
   const [balance, setBalance] = useState({});
   const [estadisticas, setEstadisticas] = useState({});
   const [historial, setHistorial] = useState({});
-  const [loading, setLoading] = useState(false);
-  const [token] = useState(localStorage.getItem('token'));
   
   // Estado para nómina
   const [nomina, setNomina] = useState({});

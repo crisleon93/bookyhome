@@ -411,7 +411,7 @@ function ReactionPickerModal({ idMensaje, onClose, onSelectEmoji }) {
     setRecentEmojis(updated);
     try {
       localStorage.setItem("bkh_recent_reactions", JSON.stringify(updated));
-    } catch (e) {}
+    } catch { /* Ignorar si localStorage no está disponible. */ }
     onSelectEmoji(idMensaje, emoji);
     onClose();
   };
@@ -807,7 +807,7 @@ function ChatSettingsModal({ config, setConfig, onClose }) {
       const updated = { ...prev, [key]: value };
       try {
         localStorage.setItem("bkh_chat_theme_settings", JSON.stringify(updated));
-      } catch {}
+      } catch { /* Ignorar si localStorage no está disponible. */ }
       return updated;
     });
   };
@@ -825,7 +825,7 @@ function ChatSettingsModal({ config, setConfig, onClose }) {
     setConfig(defaults);
     try {
       localStorage.setItem("bkh_chat_theme_settings", JSON.stringify(defaults));
-    } catch {}
+    } catch { /* Ignorar si localStorage no está disponible. */ }
   };
 
   return (
@@ -1145,7 +1145,7 @@ export default function Chat({
     try {
       const saved = localStorage.getItem("bkh_chat_theme_settings");
       if (saved) return JSON.parse(saved);
-    } catch {}
+    } catch { /* Ignorar si localStorage no está disponible. */ }
     return {
       fondo: "beige_dots",
       tamanoFuente: "mediana",
@@ -1242,15 +1242,17 @@ export default function Chat({
       }
     };
     window.addEventListener("click", handleCloseMenu);
-    window.addEventListener("contextmenu", (e) => {
+    const handleContextMenu = (e) => {
       if (!e.target.closest(".sala-item") && !e.target.closest(".mensaje")) {
         handleCloseMenu(e);
       }
-    });
+    };
+    window.addEventListener("contextmenu", handleContextMenu);
     return () => {
       window.removeEventListener("click", handleCloseMenu);
+      window.removeEventListener("contextmenu", handleContextMenu);
     };
-  }, [contextMenu.visible, msgMenu.visible]);
+  }, [contextMenu.visible, msgMenu.visible, mostrarMenuHeader]);
   const formatFechaSeparador = (fechaStr) => {
     if (!fechaStr) return '';
     const date = new Date(fechaStr.replace(' ', 'T'));
@@ -1333,7 +1335,7 @@ export default function Chat({
             const num = Number(saved);
             if (list.some((s) => s.id_sala === num)) return num;
           }
-        } catch {}
+        } catch { /* Ignorar si localStorage no está disponible. */ }
         return prev || null;
       });
     } catch {
@@ -1362,7 +1364,7 @@ export default function Chat({
       if (selectedSala) {
         localStorage.setItem("bkh_selected_sala", String(selectedSala));
       }
-    } catch {}
+    } catch { /* Ignorar si localStorage no está disponible. */ }
   }, [selectedSala]);
 
   // ==========================

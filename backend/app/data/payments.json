@@ -781,5 +781,23 @@
     "metodo_pago": "PayPal",
     "fecha_pago": "2026-08-27T20:41:34.301240Z",
     "estado": "aprobado"
+  },
+  {
+    "id_pago": 88,
+    "id_usuario": 16,
+    "id_orden": 59,
+    "monto": 34000.0,
+    "metodo_pago": "PSE",
+    "fecha_pago": "2026-09-07T23:07:33.887832Z",
+    "estado": "aprobado"
+  },
+  {
+    "id_pago": 89,
+    "id_usuario": 16,
+    "id_orden": 69,
+    "monto": 75000.0,
+    "metodo_pago": "Tarjeta de Crédito",
+    "fecha_pago": "2026-09-08T07:32:29.009106Z",
+    "estado": "aprobado"
   }
 ]

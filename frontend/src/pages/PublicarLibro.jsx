@@ -19,7 +19,7 @@ export default function PublicarLibro() {
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
 
-  const [userName, setUserName] = useState(() => {
+  const userName = (() => {
     const token = localStorage.getItem("token");
     if (token) {
       try {
@@ -30,7 +30,7 @@ export default function PublicarLibro() {
       }
     }
     return "Vendedor";
-  });
+  })();
   const [userPhotoUrl, setUserPhotoUrl] = useState(null);
   const [bannerUrl, setBannerUrl] = useState(null);
 
@@ -52,8 +52,6 @@ export default function PublicarLibro() {
     stock_variante: '',
     archivo_digital: null,
   });
-  const [idLibroCreaddo, setIdLibroCreado] = useState(null);
-
   const handleSidebarSelect = (name) => {
     // Si el usuario está en la página de publicar, mantener el highlight.
     // Para cualquier otra selección, navegamos de regreso al dashboard principal.

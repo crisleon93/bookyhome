@@ -67,7 +67,6 @@ function FiltrosHeader({ onApply, initialSearchTerm }) {
         
         setOpciones(response.data);
         
-        // Solo inicializar una vez
         if (!initialized) {
           setFiltros(prev => ({
             ...prev,
@@ -104,7 +103,7 @@ function FiltrosHeader({ onApply, initialSearchTerm }) {
       correo_vendedor: '',
       categoria_id: null,
       precio_min: 0,
-      precio_max: opciones.precio_max,
+      precio_max: opciones.precio_max || 1000000,
       calificacion_min: 0,
       disponible: true,
       ordenar_por: 'relevancia'
@@ -112,11 +111,19 @@ function FiltrosHeader({ onApply, initialSearchTerm }) {
     setFiltros(filtrosLimpios);
   };
 
+  const setRangoPreset = (min, max) => {
+    setFiltros(prev => ({
+      ...prev,
+      precio_min: min,
+      precio_max: max === null ? (opciones.precio_max || 1000000) : max
+    }));
+  };
+
   if (loading) {
     return (
-      <div style={{ textAlign: 'center', padding: '2rem', color: '#999' }}>
-        <div style={{ display: 'inline-block', width: '24px', height: '24px', border: '2px solid #e5e0d8', borderTopColor: '#7A1E3A', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
-        <p style={{ marginTop: '12px', fontSize: '0.9rem' }}>Cargando filtros...</p>
+      <div style={{ textAlign: 'center', padding: '3rem 1rem', color: '#888' }}>
+        <div style={{ display: 'inline-block', width: '28px', height: '28px', border: '3px solid #ede8e1', borderTopColor: 'var(--vinotinto)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }}></div>
+        <p style={{ marginTop: '14px', fontSize: '0.88rem', fontWeight: 600 }}>Cargando filtros disponibles...</p>
       </div>
     );
   }
@@ -131,169 +138,184 @@ function FiltrosHeader({ onApply, initialSearchTerm }) {
   }).length;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
-      {/* Tabs de navegación */}
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      {/* Tabs segmentados con diseño moderno */}
       <div style={{ 
         display: 'flex', 
-        gap: '4px', 
-        marginBottom: '1.5rem',
-        background: '#f8f6f4',
-        padding: '4px',
-        borderRadius: '10px'
+        gap: '6px', 
+        background: '#f2ece4', 
+        padding: '5px', 
+        borderRadius: '12px',
+        marginBottom: '1.25rem'
       }}>
         <button
+          type="button"
           onClick={() => setActiveTab('libros')}
           style={{
             flex: 1,
-            padding: '10px 16px',
+            padding: '9px 14px',
             border: 'none',
-            borderRadius: '8px',
-            background: activeTab === 'libros' ? '#7A1E3A' : 'transparent',
-            color: activeTab === 'libros' ? '#fff' : '#555',
-            fontSize: '14px',
-            fontWeight: 600,
+            borderRadius: '9px',
+            background: activeTab === 'libros' ? '#fff' : 'transparent',
+            color: activeTab === 'libros' ? 'var(--vinotinto)' : '#666',
+            fontSize: '0.85rem',
+            fontWeight: activeTab === 'libros' ? 750 : 550,
             cursor: 'pointer',
             fontFamily: 'inherit',
-            transition: 'all 0.2s',
+            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            gap: '8px'
+            gap: '6px',
+            boxShadow: activeTab === 'libros' ? '0 2px 8px rgba(0,0,0,0.08)' : 'none'
           }}
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
             <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z" />
           </svg>
           Por Libros
         </button>
+
         <button
+          type="button"
           onClick={() => setActiveTab('vendedores')}
           style={{
             flex: 1,
-            padding: '10px 16px',
+            padding: '9px 14px',
             border: 'none',
-            borderRadius: '8px',
-            background: activeTab === 'vendedores' ? '#7A1E3A' : 'transparent',
-            color: activeTab === 'vendedores' ? '#fff' : '#555',
-            fontSize: '14px',
-            fontWeight: 600,
+            borderRadius: '9px',
+            background: activeTab === 'vendedores' ? '#fff' : 'transparent',
+            color: activeTab === 'vendedores' ? 'var(--vinotinto)' : '#666',
+            fontSize: '0.85rem',
+            fontWeight: activeTab === 'vendedores' ? 750 : 550,
             cursor: 'pointer',
             fontFamily: 'inherit',
-            transition: 'all 0.2s',
+            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            gap: '8px'
+            gap: '6px',
+            boxShadow: activeTab === 'vendedores' ? '0 2px 8px rgba(0,0,0,0.08)' : 'none'
           }}
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M3 21h18" />
             <path d="M5 21V7l8-4 8 4v14" />
             <path d="M17 21v-8.5a1.5 1.5 0 0 0-3 0V21" />
           </svg>
-          Por Vendedores
+          Por Librerías
         </button>
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
+      {/* Contenido scrolleable de filtros */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', paddingBottom: '0.5rem' }}>
         {activeTab === 'libros' ? (
           <>
-            {/* BÚSQUEDA DE LIBROS */}
+            {/* Búsqueda por texto */}
             <div>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', fontWeight: 700, color: '#7A1E3A', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="11" cy="11" r="8"/>
-                  <path d="m21 21-4.3-4.3"/>
-                </svg>
-                Búsqueda de Libros
+              <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 750, color: '#555', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                Búsqueda
               </label>
               <div style={{ position: 'relative' }}>
+                <svg style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#999' }} width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+                </svg>
                 <input
                   type="text"
-                  placeholder="Título, autor, ISBN..."
+                  placeholder="Título, autor o ISBN..."
                   value={filtros.busqueda}
                   onChange={(e) => handleFiltroChange('busqueda', e.target.value)}
                   style={{
                     width: '100%',
-                    padding: '12px 16px 12px 40px',
-                    border: '2px solid #e8e4df',
+                    padding: '0.65rem 1rem 0.65rem 2.3rem',
+                    border: '1.5px solid #e2ded8',
                     borderRadius: '10px',
-                    fontSize: '14px',
+                    fontSize: '0.88rem',
                     fontFamily: 'inherit',
                     outline: 'none',
-                    transition: 'all 0.2s',
-                    background: '#faf8f6'
+                    background: '#faf8f5',
+                    color: '#2A2A2A',
+                    transition: 'all 0.18s ease',
+                    boxSizing: 'border-box'
                   }}
                   onFocus={(e) => {
-                    e.target.style.borderColor = '#7A1E3A';
+                    e.target.style.borderColor = 'var(--vinotinto)';
                     e.target.style.background = '#fff';
+                    e.target.style.boxShadow = '0 0 0 3px rgba(122, 30, 58, 0.1)';
                   }}
                   onBlur={(e) => {
-                    e.target.style.borderColor = '#e8e4df';
-                    e.target.style.background = '#faf8f6';
+                    e.target.style.borderColor = '#e2ded8';
+                    e.target.style.background = '#faf8f5';
+                    e.target.style.boxShadow = 'none';
                   }}
                 />
-                <svg style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#999' }} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="11" cy="11" r="8"/>
-                  <path d="m21 21-4.3-4.3"/>
+              </div>
+            </div>
+
+            {/* Categoría */}
+            <div>
+              <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 750, color: '#555', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                Categoría
+              </label>
+              <div style={{ position: 'relative' }}>
+                <select
+                  value={filtros.categoria_id || ''}
+                  onChange={(e) => handleFiltroChange('categoria_id', e.target.value ? parseInt(e.target.value) : null)}
+                  style={{
+                    width: '100%',
+                    padding: '0.68rem 2.2rem 0.68rem 0.95rem',
+                    border: '1.5px solid #e2ded8',
+                    borderRadius: '10px',
+                    fontSize: '0.86rem',
+                    fontFamily: 'inherit',
+                    outline: 'none',
+                    backgroundColor: '#faf8f5',
+                    color: '#2A2A2A',
+                    fontWeight: filtros.categoria_id ? 650 : 450,
+                    cursor: 'pointer',
+                    transition: 'all 0.18s ease',
+                    appearance: 'none',
+                    boxSizing: 'border-box'
+                  }}
+                  onFocus={(e) => {
+                    e.target.style.borderColor = 'var(--vinotinto)';
+                    e.target.style.background = '#fff';
+                    e.target.style.boxShadow = '0 0 0 3px rgba(122, 30, 58, 0.1)';
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.borderColor = '#e2ded8';
+                    e.target.style.background = '#faf8f5';
+                    e.target.style.boxShadow = 'none';
+                  }}
+                >
+                  <option value="">Todas las categorías</option>
+                  {opciones.categorias.map(cat => (
+                    <option key={cat.id_categoria} value={cat.id_categoria}>
+                      {cat.nombre_categoria} ({cat.cantidad_libros})
+                    </option>
+                  ))}
+                </select>
+                <svg style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', color: '#777', pointerEvents: 'none' }} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="6 9 12 15 18 9" />
                 </svg>
               </div>
             </div>
 
-            {/* CATEGORÍA */}
+            {/* Rango de precio */}
             <div>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', fontWeight: 700, color: '#7A1E3A', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-                  <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z" />
-                </svg>
-                Categoría
-              </label>
-              <select
-                value={filtros.categoria_id || ''}
-                onChange={(e) => handleFiltroChange('categoria_id', e.target.value ? parseInt(e.target.value) : null)}
-                style={{
-                  width: '100%',
-                  padding: '12px 16px',
-                  border: '2px solid #e8e4df',
-                  borderRadius: '10px',
-                  fontSize: '14px',
-                  fontFamily: 'inherit',
-                  outline: 'none',
-                  backgroundColor: '#faf8f6',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s'
-                }}
-                onFocus={(e) => {
-                  e.target.style.borderColor = '#7A1E3A';
-                  e.target.style.background = '#fff';
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = '#e8e4df';
-                  e.target.style.background = '#faf8f6';
-                }}
-              >
-                <option value="">Todas las categorías</option>
-                {opciones.categorias.map(cat => (
-                  <option key={cat.id_categoria} value={cat.id_categoria}>
-                    {cat.nombre_categoria} ({cat.cantidad_libros})
-                  </option>
-                ))}
-              </select>
-            </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                <label style={{ fontSize: '0.74rem', fontWeight: 750, color: '#555', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  Rango de Precio
+                </label>
+                <span style={{ fontSize: '0.76rem', fontWeight: 700, color: 'var(--vinotinto)' }}>
+                  ${(filtros.precio_min || 0).toLocaleString('es-CO')} - ${(filtros.precio_max || 0).toLocaleString('es-CO')}
+                </span>
+              </div>
 
-            {/* RANGO DE PRECIO */}
-            <div>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', fontWeight: 700, color: '#7A1E3A', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <line x1="12" y1="1" x2="12" y2="23"/>
-                  <path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
-                </svg>
-                Rango de Precio
-              </label>
-              <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                <div style={{ flex: 1 }}>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '8px' }}>
+                <div style={{ flex: 1, position: 'relative' }}>
+                  <span style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', fontSize: '0.78rem', color: '#999', fontWeight: 700 }}>$</span>
                   <input
                     type="number"
                     min={opciones.precio_min}
@@ -301,34 +323,25 @@ function FiltrosHeader({ onApply, initialSearchTerm }) {
                     value={filtros.precio_min}
                     onChange={(e) => {
                       const val = parseInt(e.target.value) || 0;
-                      if (val <= filtros.precio_max) {
-                        handleFiltroChange('precio_min', val);
-                      }
+                      if (val <= filtros.precio_max) handleFiltroChange('precio_min', val);
                     }}
-                    placeholder="Mínimo"
+                    placeholder="Mín"
                     style={{
                       width: '100%',
-                      padding: '12px 16px',
-                      border: '2px solid #e8e4df',
-                      borderRadius: '10px',
-                      fontSize: '14px',
+                      padding: '0.55rem 0.6rem 0.55rem 1.6rem',
+                      border: '1.5px solid #e2ded8',
+                      borderRadius: '8px',
+                      fontSize: '0.84rem',
                       fontFamily: 'inherit',
                       outline: 'none',
-                      background: '#faf8f6',
-                      transition: 'all 0.2s'
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = '#7A1E3A';
-                      e.target.style.background = '#fff';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#e8e4df';
-                      e.target.style.background = '#faf8f6';
+                      background: '#faf8f5',
+                      boxSizing: 'border-box'
                     }}
                   />
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', color: '#999', fontSize: '18px' }}>—</div>
-                <div style={{ flex: 1 }}>
+                <span style={{ color: '#aaa', fontWeight: 700 }}>—</span>
+                <div style={{ flex: 1, position: 'relative' }}>
+                  <span style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', fontSize: '0.78rem', color: '#999', fontWeight: 700 }}>$</span>
                   <input
                     type="number"
                     min={opciones.precio_min}
@@ -336,362 +349,328 @@ function FiltrosHeader({ onApply, initialSearchTerm }) {
                     value={filtros.precio_max}
                     onChange={(e) => {
                       const val = parseInt(e.target.value) || opciones.precio_max;
-                      if (val >= filtros.precio_min) {
-                        handleFiltroChange('precio_max', val);
-                      }
+                      if (val >= filtros.precio_min) handleFiltroChange('precio_max', val);
                     }}
-                    placeholder="Máximo"
+                    placeholder="Máx"
                     style={{
                       width: '100%',
-                      padding: '12px 16px',
-                      border: '2px solid #e8e4df',
-                      borderRadius: '10px',
-                      fontSize: '14px',
+                      padding: '0.55rem 0.6rem 0.55rem 1.6rem',
+                      border: '1.5px solid #e2ded8',
+                      borderRadius: '8px',
+                      fontSize: '0.84rem',
                       fontFamily: 'inherit',
                       outline: 'none',
-                      background: '#faf8f6',
-                      transition: 'all 0.2s'
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = '#7A1E3A';
-                      e.target.style.background = '#fff';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#e8e4df';
-                      e.target.style.background = '#faf8f6';
+                      background: '#faf8f5',
+                      boxSizing: 'border-box'
                     }}
                   />
                 </div>
               </div>
-              <div style={{ 
-                marginTop: '8px', 
-                padding: '8px 12px', 
-                background: '#f8f6f4', 
-                borderRadius: '6px',
-                fontSize: '0.85rem', 
-                color: '#666',
-                textAlign: 'center',
-                fontWeight: 500
-              }}>
-                Rango seleccionado: ${filtros.precio_min.toLocaleString('es-CO')} - ${filtros.precio_max.toLocaleString('es-CO')}
-              </div>
-            </div>
 
-            {/* CALIFICACIÓN MÍNIMA */}
-            <div>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', fontWeight: 700, color: '#7A1E3A', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-                </svg>
-                Calificación Mínima
-              </label>
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                {[0, 1, 2, 3, 4, 5].map(i => (
+              {/* Presets rápidos */}
+              <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
+                {[
+                  { label: '< $30k', min: 0, max: 30000 },
+                  { label: '$30k - $70k', min: 30000, max: 70000 },
+                  { label: '$70k - $120k', min: 70000, max: 120000 },
+                  { label: '> $120k', min: 120000, max: null }
+                ].map(preset => (
                   <button
-                    key={i}
-                    onClick={() => handleFiltroChange('calificacion_min', i)}
+                    key={preset.label}
+                    type="button"
+                    onClick={() => setRangoPreset(preset.min, preset.max)}
                     style={{
-                      padding: '10px 16px',
-                      border: filtros.calificacion_min >= i ? '2px solid #7A1E3A' : '2px solid #e8e4df',
-                      borderRadius: '8px',
-                      background: filtros.calificacion_min >= i ? '#7A1E3A' : '#fff',
-                      color: filtros.calificacion_min >= i ? '#fff' : '#555',
-                      fontSize: '13px',
+                      padding: '0.25rem 0.65rem',
+                      borderRadius: '14px',
+                      border: '1px solid #e5e0d8',
+                      background: '#fff',
+                      color: '#666',
+                      fontSize: '0.72rem',
                       fontWeight: 600,
                       cursor: 'pointer',
-                      transition: 'all 0.2s',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      fontFamily: 'inherit'
+                      transition: 'all 0.15s'
                     }}
-                    title={i === 0 ? 'Todas' : `${i}+ estrellas`}
+                    onMouseOver={(e) => { e.currentTarget.style.borderColor = 'var(--vinotinto)'; e.currentTarget.style.color = 'var(--vinotinto)'; }}
+                    onMouseOut={(e) => { e.currentTarget.style.borderColor = '#e5e0d8'; e.currentTarget.style.color = '#666'; }}
                   >
-                    {i === 0 ? (
-                      'Todas'
-                    ) : (
-                      <>
-                        {i}
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-                        </svg>
-                      </>
-                    )}
+                    {preset.label}
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* DISPONIBILIDAD */}
-            <div style={{ 
-              padding: '16px', 
-              background: '#f8f6f4', 
-              borderRadius: '10px',
-              border: '2px solid #e8e4df'
-            }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '0.95rem', color: '#2A2A2A', cursor: 'pointer', fontWeight: 500 }}>
-                <input
-                  type="checkbox"
-                  checked={filtros.disponible}
-                  onChange={(e) => handleFiltroChange('disponible', e.target.checked)}
-                  style={{ 
-                    width: '20px', 
-                    height: '20px', 
-                    cursor: 'pointer',
-                    accentColor: '#7A1E3A'
-                  }}
-                />
-                <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  Solo libros disponibles en stock
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7A1E3A" strokeWidth="2">
-                    <path d="M20 6L9 17l-5-5"/>
-                  </svg>
-                </span>
+            {/* Calificación mínima con estrellas corregidas */}
+            <div>
+              <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 750, color: '#555', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                Calificación mínima
               </label>
+              <div style={{ display: 'flex', gap: '6px' }}>
+                {[
+                  { val: 0, label: 'Todas' },
+                  { val: 3, label: '3★ +' },
+                  { val: 4, label: '4★ +' },
+                  { val: 5, label: '5★' }
+                ].map(item => {
+                  const isSelected = filtros.calificacion_min === item.val;
+                  return (
+                    <button
+                      key={item.val}
+                      type="button"
+                      onClick={() => handleFiltroChange('calificacion_min', item.val)}
+                      style={{
+                        flex: 1,
+                        padding: '0.45rem 0.5rem',
+                        border: isSelected ? '2px solid var(--vinotinto)' : '1.5px solid #e2ded8',
+                        borderRadius: '9px',
+                        background: isSelected ? 'var(--vinotinto)' : '#fff',
+                        color: isSelected ? '#fff' : '#555',
+                        fontSize: '0.78rem',
+                        fontWeight: isSelected ? 750 : 600,
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '3px',
+                        boxShadow: isSelected ? '0 2px 6px rgba(122,30,58,0.2)' : 'none'
+                      }}
+                    >
+                      <span>{item.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Switch de disponibilidad */}
+            <div 
+              onClick={() => handleFiltroChange('disponible', !filtros.disponible)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '0.75rem 0.95rem',
+                background: filtros.disponible ? '#fcf8f5' : '#faf8f5',
+                borderRadius: '10px',
+                border: filtros.disponible ? '1.5px solid #e8dbcf' : '1.5px solid #e8e4df',
+                cursor: 'pointer',
+                transition: 'all 0.18s'
+              }}
+            >
+              <div>
+                <span style={{ fontSize: '0.84rem', fontWeight: 650, color: '#2A2A2A', display: 'block' }}>
+                  Solo libros en stock
+                </span>
+                <span style={{ fontSize: '0.72rem', color: '#888' }}>
+                  Ocultar ejemplares agotados
+                </span>
+              </div>
+              <div style={{
+                width: '38px',
+                height: '22px',
+                borderRadius: '11px',
+                background: filtros.disponible ? 'var(--vinotinto)' : '#d1cbbf',
+                position: 'relative',
+                transition: 'background 0.2s',
+                flexShrink: 0
+              }}>
+                <div style={{
+                  width: '16px',
+                  height: '16px',
+                  borderRadius: '50%',
+                  background: '#fff',
+                  position: 'absolute',
+                  top: '3px',
+                  left: filtros.disponible ? '19px' : '3px',
+                  transition: 'left 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
+                }} />
+              </div>
             </div>
           </>
         ) : (
           <>
-            {/* BÚSQUEDA POR TIENDA */}
+            {/* Vendedores tab */}
             <div>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', fontWeight: 700, color: '#7A1E3A', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M3 21h18" />
-                  <path d="M5 21V7l8-4 8 4v14" />
-                  <path d="M17 21v-8.5a1.5 1.5 0 0 0-3 0V21" />
-                </svg>
-                Nombre de la Tienda
+              <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 750, color: '#555', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                Nombre de la Librería
               </label>
-              <div style={{ position: 'relative' }}>
-                <input
-                  type="text"
-                  placeholder="Buscar por nombre de librería..."
-                  value={filtros.nombre_tienda}
-                  onChange={(e) => handleFiltroChange('nombre_tienda', e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '12px 16px 12px 40px',
-                    border: '2px solid #e8e4df',
-                    borderRadius: '10px',
-                    fontSize: '14px',
-                    fontFamily: 'inherit',
-                    outline: 'none',
-                    transition: 'all 0.2s',
-                    background: '#faf8f6'
-                  }}
-                  onFocus={(e) => {
-                    e.target.style.borderColor = '#7A1E3A';
-                    e.target.style.background = '#fff';
-                  }}
-                  onBlur={(e) => {
-                    e.target.style.borderColor = '#e8e4df';
-                    e.target.style.background = '#faf8f6';
-                  }}
-                />
-                <svg style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#999' }} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M3 21h18" />
-                  <path d="M5 21V7l8-4 8 4v14" />
-                  <path d="M17 21v-8.5a1.5 1.5 0 0 0-3 0V21" />
-                </svg>
-              </div>
+              <input
+                type="text"
+                placeholder="Buscar por nombre de tienda..."
+                value={filtros.nombre_tienda}
+                onChange={(e) => handleFiltroChange('nombre_tienda', e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '0.65rem 0.95rem',
+                  border: '1.5px solid #e2ded8',
+                  borderRadius: '10px',
+                  fontSize: '0.88rem',
+                  fontFamily: 'inherit',
+                  outline: 'none',
+                  background: '#faf8f5',
+                  boxSizing: 'border-box'
+                }}
+              />
             </div>
 
-            {/* BÚSQUEDA POR CORREO */}
             <div>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', fontWeight: 700, color: '#7A1E3A', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-                  <polyline points="22,6 12,13 2,6" />
-                </svg>
+              <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 750, color: '#555', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 Correo del Vendedor
               </label>
-              <div style={{ position: 'relative' }}>
-                <input
-                  type="email"
-                  placeholder="correo@ejemplo.com"
-                  value={filtros.correo_vendedor}
-                  onChange={(e) => handleFiltroChange('correo_vendedor', e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '12px 16px 12px 40px',
-                    border: '2px solid #e8e4df',
-                    borderRadius: '10px',
-                    fontSize: '14px',
-                    fontFamily: 'inherit',
-                    outline: 'none',
-                    transition: 'all 0.2s',
-                    background: '#faf8f6'
-                  }}
-                  onFocus={(e) => {
-                    e.target.style.borderColor = '#7A1E3A';
-                    e.target.style.background = '#fff';
-                  }}
-                  onBlur={(e) => {
-                    e.target.style.borderColor = '#e8e4df';
-                    e.target.style.background = '#faf8f6';
-                  }}
-                />
-                <svg style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#999' }} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-                  <polyline points="22,6 12,13 2,6" />
-                </svg>
-              </div>
+              <input
+                type="email"
+                placeholder="contacto@libreria.com"
+                value={filtros.correo_vendedor}
+                onChange={(e) => handleFiltroChange('correo_vendedor', e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '0.65rem 0.95rem',
+                  border: '1.5px solid #e2ded8',
+                  borderRadius: '10px',
+                  fontSize: '0.88rem',
+                  fontFamily: 'inherit',
+                  outline: 'none',
+                  background: '#faf8f5',
+                  boxSizing: 'border-box'
+                }}
+              />
             </div>
 
-            {/* INFO */}
             <div style={{ 
-              padding: '12px 16px', 
-              background: '#fef9e7', 
-              borderRadius: '8px',
-              border: '1px solid #f5e6c8',
-              fontSize: '0.85rem', 
-              color: '#8a6d3b',
+              padding: '0.75rem 0.9rem', 
+              background: '#fcf8f0', 
+              borderRadius: '9px',
+              border: '1px solid #fae8c8',
+              fontSize: '0.78rem', 
+              color: '#8f6520',
               display: 'flex',
               alignItems: 'center',
-              gap: '10px'
+              gap: '8px'
             }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="12" cy="12" r="10" />
-                <line x1="12" y1="16" x2="12" y2="12" />
-                <line x1="12" y1="8" x2="12.01" y2="8" />
-              </svg>
-              <span>Busca vendedores específicos por su nombre de tienda o correo electrónico</span>
+              <span>💡</span>
+              <span>Encuentra vendedores específicos por su razón social o email oficial.</span>
             </div>
           </>
         )}
 
-        {/* ORDENAMIENTO (común para ambas tabs) */}
+        {/* Ordenamiento */}
         <div>
-          <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', fontWeight: 700, color: '#7A1E3A', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="12" y1="5" x2="12" y2="19" />
-              <polyline points="19 12 12 19 5 12" />
-            </svg>
-            Ordenar Por
+          <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 750, color: '#555', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            Ordenar resultados por
           </label>
-          <select
-            value={filtros.ordenar_por}
-            onChange={(e) => handleFiltroChange('ordenar_por', e.target.value)}
-            style={{
-              width: '100%',
-              padding: '12px 16px',
-              border: '2px solid #e8e4df',
-              borderRadius: '10px',
-              fontSize: '14px',
-              fontFamily: 'inherit',
-              outline: 'none',
-              backgroundColor: '#faf8f6',
-              cursor: 'pointer',
-              transition: 'all 0.2s'
-            }}
-            onFocus={(e) => {
-              e.target.style.borderColor = '#7A1E3A';
-              e.target.style.background = '#fff';
-            }}
-            onBlur={(e) => {
-              e.target.style.borderColor = '#e8e4df';
-              e.target.style.background = '#faf8f6';
-            }}
-          >
-            {opciones.opciones_ordenamiento.map(opcion => (
-              <option key={opcion.value} value={opcion.value}>
-                {opcion.label}
-              </option>
-            ))}
-          </select>
+          <div style={{ position: 'relative' }}>
+            <select
+              value={filtros.ordenar_por}
+              onChange={(e) => handleFiltroChange('ordenar_por', e.target.value)}
+              style={{
+                width: '100%',
+                padding: '0.68rem 2.2rem 0.68rem 0.95rem',
+                border: '1.5px solid #e2ded8',
+                borderRadius: '10px',
+                fontSize: '0.86rem',
+                fontFamily: 'inherit',
+                outline: 'none',
+                backgroundColor: '#faf8f5',
+                color: '#2A2A2A',
+                fontWeight: 600,
+                cursor: 'pointer',
+                appearance: 'none',
+                boxSizing: 'border-box'
+              }}
+            >
+              {opciones.opciones_ordenamiento.map(opcion => (
+                <option key={opcion.value} value={opcion.value}>
+                  {opcion.label}
+                </option>
+              ))}
+            </select>
+            <svg style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', color: '#777', pointerEvents: 'none' }} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+          </div>
         </div>
+      </div>
 
-        {/* INDICADOR DE FILTROS ACTIVOS */}
+      {/* Footer fijo con acciones */}
+      <div style={{ 
+        marginTop: 'auto', 
+        paddingTop: '1rem', 
+        borderTop: '1px solid #f0ebe4',
+        display: 'flex', 
+        flexDirection: 'column',
+        gap: '0.65rem'
+      }}>
         {filtrosAplicados > 0 && (
           <div style={{ 
             display: 'flex', 
             alignItems: 'center', 
             justifyContent: 'center',
-            gap: '8px',
-            padding: '10px 16px',
-            background: '#e8f5e9',
-            borderRadius: '8px',
-            border: '1px solid #c8e6c9',
-            fontSize: '0.85rem',
+            gap: '6px',
+            fontSize: '0.76rem',
             color: '#2e7d32',
-            fontWeight: 600
+            fontWeight: 700
           }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <polyline points="20 6 9 17 4 12" />
-            </svg>
-            {filtrosAplicados} filtro{filtrosAplicados !== 1 ? 's' : ''} aplicado{filtrosAplicados !== 1 ? 's' : ''}
+            <span>✨</span> {filtrosAplicados} {filtrosAplicados === 1 ? 'filtro activo' : 'filtros activos'}
           </div>
         )}
 
-        {/* BOTONES */}
-        <div style={{ display: 'flex', gap: '12px', marginTop: '0.5rem' }}>
+        <div style={{ display: 'flex', gap: '8px' }}>
           <button
+            type="button"
             onClick={handleLimpiar}
             style={{
-              flex: 1,
-              padding: '14px 20px',
-              border: '2px solid #e8e4df',
+              padding: '0.75rem 1.1rem',
+              border: '1.5px solid #e0dbd4',
               borderRadius: '10px',
               background: '#fff',
-              color: '#555',
-              fontSize: '14px',
-              fontWeight: 600,
+              color: '#666',
+              fontSize: '0.84rem',
+              fontWeight: 650,
               cursor: 'pointer',
               fontFamily: 'inherit',
-              transition: 'all 0.2s',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px'
+              transition: 'all 0.15s'
             }}
-            onMouseOver={(e) => {
-              e.target.style.borderColor = '#7A1E3A';
-              e.target.style.color = '#7A1E3A';
-            }}
-            onMouseOut={(e) => {
-              e.target.style.borderColor = '#e8e4df';
-              e.target.style.color = '#555';
-            }}
+            onMouseOver={(e) => { e.currentTarget.style.borderColor = 'var(--vinotinto)'; e.currentTarget.style.color = 'var(--vinotinto)'; }}
+            onMouseOut={(e) => { e.currentTarget.style.borderColor = '#e0dbd4'; e.currentTarget.style.color = '#666'; }}
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M3 6h18" />
-              <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
-            </svg>
-            Limpiar Todo
+            Limpiar
           </button>
+
           <button
+            type="button"
             onClick={handleAplicar}
             style={{
               flex: 1,
-              padding: '14px 20px',
+              padding: '0.75rem 1.25rem',
               border: 'none',
               borderRadius: '10px',
-              background: 'linear-gradient(135deg, #7A1E3A 0%, #9a2a4a 100%)',
+              background: 'linear-gradient(135deg, var(--vinotinto) 0%, #9a2a4a 100%)',
               color: '#fff',
-              fontSize: '14px',
-              fontWeight: 600,
+              fontSize: '0.88rem',
+              fontWeight: 750,
               cursor: 'pointer',
               fontFamily: 'inherit',
-              transition: 'all 0.2s',
+              transition: 'all 0.18s ease',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: '8px',
-              boxShadow: '0 4px 12px rgba(122, 30, 58, 0.3)'
+              gap: '6px',
+              boxShadow: '0 4px 12px rgba(122, 30, 58, 0.28)'
             }}
             onMouseOver={(e) => {
-              e.target.style.transform = 'translateY(-2px)';
-              e.target.style.boxShadow = '0 6px 16px rgba(122, 30, 58, 0.4)';
+              e.currentTarget.style.transform = 'translateY(-1px)';
+              e.currentTarget.style.boxShadow = '0 6px 16px rgba(122, 30, 58, 0.38)';
             }}
             onMouseOut={(e) => {
-              e.target.style.transform = 'translateY(0)';
-              e.target.style.boxShadow = '0 4px 12px rgba(122, 30, 58, 0.3)';
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(122, 30, 58, 0.28)';
             }}
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <polyline points="20 6 9 17 4 12" />
+            <span>Aplicar Filtros</span>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M5 12h14" /><path d="m12 5 7 7-7 7" />
             </svg>
-            Aplicar Filtros
           </button>
         </div>
       </div>
@@ -1023,11 +1002,11 @@ function Header({ variant, hasSidebar }) {
       // Disparar evento para que App.jsx detecte el cambio
       window.dispatchEvent(new CustomEvent('auth-change', { detail: { authenticated: true } }));
       if (decoded.rol === 'vendedor') {
-        navigate('/mi-tienda');
+        navigate('/mi-tienda', { replace: true });
       } else if (decoded.rol === 'admin' || decoded.rol === 'administrador') {
-        navigate('/admin');
+        navigate('/admin', { replace: true });
       } else {
-        navigate('/'); // Comprador va al Home con sidebar
+        navigate('/', { replace: true }); // Comprador va al Home con sidebar
       }
     } catch (err) {
       const message = err.response?.data?.detail || 'Email o contraseña incorrectos';
@@ -1085,7 +1064,7 @@ function Header({ variant, hasSidebar }) {
         id="main-header"
         onMouseEnter={handleHeaderMouseEnter}
         onMouseLeave={handleHeaderMouseLeave}
-        className={`${isSimple ? "header-center" : ""} ${isHome ? "header-vinotinto" : isWhite ? "header-white" : "header-vinotinto"} ${mobileMenuOpen ? "header-menu-open" : ""} ${isDashboardPage ? (headerHovered ? "header-curtain-open" : "header-curtain-closed") : ""}`}
+        className={`${isSimple ? "header-center header-simple" : ""} ${isHome ? "header-vinotinto" : isWhite ? "header-white" : "header-vinotinto"} ${mobileMenuOpen ? "header-menu-open" : ""} ${isDashboardPage ? (headerHovered ? "header-curtain-open" : "header-curtain-closed") : ""}`}
         style={{
           position: isDashboardPage ? 'fixed' : undefined,
           left: isDashboardPage ? 'var(--dashboard-sidebar-width, 250px)' : undefined,
@@ -1597,7 +1576,9 @@ function Header({ variant, hasSidebar }) {
             style={{
               position: 'fixed',
               inset: 0,
-              background: 'rgba(0,0,0,0.5)',
+              background: 'rgba(18, 12, 14, 0.55)',
+              backdropFilter: 'blur(8px)',
+              WebkitBackdropFilter: 'blur(8px)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -1609,52 +1590,73 @@ function Header({ variant, hasSidebar }) {
             <div
               style={{
                 background: '#fff',
-                borderRadius: '12px',
+                borderRadius: '20px',
                 padding: '0',
                 width: '100%',
-                maxWidth: '500px',
+                maxWidth: '480px',
                 position: 'relative',
-                boxShadow: '0 20px 60px rgba(0,0,0,0.25)',
-                maxHeight: '85vh',
+                boxShadow: '0 25px 70px -10px rgba(0,0,0,0.35), 0 0 0 1px rgba(0,0,0,0.05)',
+                maxHeight: '88vh',
                 display: 'flex',
-                flexDirection: 'column'
+                flexDirection: 'column',
+                overflow: 'hidden'
               }}
               onMouseDown={e => e.stopPropagation()}
             >
               <div style={{
-                padding: '1.5rem',
-                borderBottom: '1px solid #e8e4df',
+                padding: '1.25rem 1.5rem',
+                borderBottom: '1px solid #f0ebe4',
+                background: '#faf8f5',
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center'
               }}>
-                <div>
-                  <h2 style={{ margin: '0 0 0.2rem', fontSize: '1.2rem', fontWeight: 800, color: '#2A2A2A' }}>Filtros avanzados</h2>
-                  <p style={{ margin: 0, color: '#888', fontSize: '0.8rem' }}>Refina tu búsqueda de libros</p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div style={{
+                    width: '36px',
+                    height: '36px',
+                    borderRadius: '10px',
+                    background: 'rgba(122, 30, 58, 0.1)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'var(--vinotinto)',
+                    fontSize: '1.1rem'
+                  }}>
+                    🌪️
+                  </div>
+                  <div>
+                    <h2 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800, color: '#2A2A2A', letterSpacing: '-0.01em' }}>Filtros avanzados</h2>
+                    <p style={{ margin: 0, color: '#888', fontSize: '0.78rem', fontWeight: 500 }}>Personaliza tu búsqueda de libros y librerías</p>
+                  </div>
                 </div>
                 <button
                   onMouseDown={() => setFiltrosOpen(false)}
                   style={{
                     position: 'static',
-                    background: 'none',
+                    background: '#f0ebe4',
                     border: 'none',
                     cursor: 'pointer',
-                    fontSize: '1.5rem',
-                    color: '#aaa',
-                    lineHeight: 1,
-                    padding: '8px',
+                    fontSize: '0.9rem',
+                    color: '#666',
+                    width: '32px',
+                    height: '32px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
                     borderRadius: '50%',
-                    transition: 'all 0.2s'
+                    transition: 'all 0.2s',
+                    fontWeight: 'bold'
                   }}
-                  onMouseOver={e => e.currentTarget.style.color = '#666'}
-                  onMouseOut={e => e.currentTarget.style.color = '#aaa'}
+                  onMouseOver={e => { e.currentTarget.style.background = '#e2ded8'; e.currentTarget.style.color = '#2A2A2A'; }}
+                  onMouseOut={e => { e.currentTarget.style.background = '#f0ebe4'; e.currentTarget.style.color = '#666'; }}
                 >✕</button>
               </div>
 
               <div style={{
                 flex: 1,
                 overflowY: 'auto',
-                padding: '1.5rem',
+                padding: '1.25rem 1.5rem 1.5rem',
                 overflowX: 'hidden'
               }}>
                 <FiltrosHeader onApply={handleFiltrosApply} initialSearchTerm={searchTerm} />

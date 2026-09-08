@@ -50,6 +50,7 @@ def actualizar_configuracion_tienda(id_tienda: int, data: dict):
                     acepta_negociacion = %s,
                     email_publico = %s,
                     redes_sociales = %s,
+                    tarifa_envio = %s,
                     fecha_actualizacion = CURRENT_TIMESTAMP
                 WHERE id_tienda = %s
             """
@@ -65,6 +66,7 @@ def actualizar_configuracion_tienda(id_tienda: int, data: dict):
                 data.get('acepta_negociacion', 0),
                 data.get('email_publico'),
                 data.get('redes_sociales'),
+                float(data.get('tarifa_envio', 0) or 0),
                 id_tienda
             )
             cursor.execute(query, params)
@@ -74,8 +76,9 @@ def actualizar_configuracion_tienda(id_tienda: int, data: dict):
                 INSERT INTO tienda_configuracion (
                     id_tienda, descripcion, logo_url, banner_url, horario_atencion,
                     politica_devoluciones, politica_envios, tiempo_despacho_dias,
-                    ciudad_origen, acepta_negociacion, email_publico, redes_sociales
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    ciudad_origen, acepta_negociacion, email_publico, redes_sociales,
+                    tarifa_envio
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """
             params = (
                 id_tienda,
@@ -89,7 +92,8 @@ def actualizar_configuracion_tienda(id_tienda: int, data: dict):
                 data.get('ciudad_origen'),
                 data.get('acepta_negociacion', 0),
                 data.get('email_publico'),
-                data.get('redes_sociales')
+                data.get('redes_sociales'),
+                float(data.get('tarifa_envio', 0) or 0),
             )
             cursor.execute(query, params)
             
@@ -100,6 +104,41 @@ def actualizar_configuracion_tienda(id_tienda: int, data: dict):
         logging.error(f"Error al actualizar configuración de tienda {id_tienda}: {e}")
         return {"ok": False, "error": str(e)}
         return {"ok": False, "error": str(e)}
+    finally:
+        cursor.close()
+        db.close()
+
+
+def obtener_tarifa_envio(id_tienda: int) -> float:
+    """Devuelve la tarifa fija de envío a domicilio de la tienda. 0 si no existe o retiro."""
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    try:
+        cursor.execute(
+            "SELECT tarifa_envio FROM tienda_configuracion WHERE id_tienda = %s",
+            (id_tienda,)
+        )
+        row = cursor.fetchone()
+        if row and row.get("tarifa_envio") is not None:
+            return float(row["tarifa_envio"])
+        return 0.0
+    except Exception:
+        return 0.0
+    finally:
+        cursor.close()
+        db.close()
+
+
+def obtener_id_tienda_de_libro(id_libro: int) -> int | None:
+    """Devuelve el id_tienda del libro dado, o None si no se encuentra."""
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    try:
+        cursor.execute("SELECT id_tienda FROM libros WHERE id_libro = %s", (id_libro,))
+        row = cursor.fetchone()
+        return row["id_tienda"] if row else None
+    except Exception:
+        return None
     finally:
         cursor.close()
         db.close()
