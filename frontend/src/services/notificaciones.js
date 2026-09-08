@@ -60,4 +60,11 @@ export const notificacionesService = {
     );
     return response.data;
   },
+
+  // Eliminación masiva por filtro de tiempo / estado
+  // filtro: "leidas" | "hoy" | "semana" | "mes" | "todas"
+  eliminarVarias: async (filtro = "leidas") => {
+    const response = await api.delete("/notificaciones", { params: { filtro } });
+    return response.data;
+  },
 };

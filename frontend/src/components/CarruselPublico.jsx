@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 
@@ -224,7 +224,7 @@ export default function CarruselPublico({ onVerDetalles }) {
     economicos:  { libros: [], loading: true },
   });
 
-  const fetchSeccion = async (key, params) => {
+  const fetchSeccion = useCallback(async (key, params) => {
     try {
       const res = await api.get('/catalogo/busqueda-avanzada', { params: { limite: 12, ...params } });
       const libros = res.data?.libros || res.data || [];
@@ -232,14 +232,16 @@ export default function CarruselPublico({ onVerDetalles }) {
     } catch {
       setSecciones(prev => ({ ...prev, [key]: { libros: [], loading: false } }));
     }
-  };
+  }, []);
 
   useEffect(() => {
-    fetchSeccion('recientes',   { ordenar_por: 'recientes',   pagina: 1 });
-    fetchSeccion('populares',   { ordenar_por: 'relevancia',  pagina: 1 });
-    fetchSeccion('calificados', { ordenar_por: 'calificacion',pagina: 1 });
-    fetchSeccion('economicos',  { ordenar_por: 'precio_asc',  pagina: 1 });
-  }, []);
+    queueMicrotask(() => {
+      fetchSeccion('recientes',   { ordenar_por: 'recientes',   pagina: 1 });
+      fetchSeccion('populares',   { ordenar_por: 'relevancia',  pagina: 1 });
+      fetchSeccion('calificados', { ordenar_por: 'calificacion',pagina: 1 });
+      fetchSeccion('economicos',  { ordenar_por: 'precio_asc',  pagina: 1 });
+    });
+  }, [fetchSeccion]);
 
   const irACatalogo = (params) => navigate(`/catalogo?${new URLSearchParams(params).toString()}`);
 

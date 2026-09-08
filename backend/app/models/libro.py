@@ -111,12 +111,21 @@ def obtener_libro_por_id(id_libro: int):
     cursor = db.cursor(dictionary=True)
     try:
         cursor.execute("""
-            SELECT * FROM libros WHERE id_libro = %s
+            SELECT l.*,
+                   (SELECT url_imagen FROM imagenes_libro WHERE id_libro = l.id_libro LIMIT 1) AS imagen_url
+            FROM libros l
+            WHERE l.id_libro = %s
         """, (id_libro,))
-        return cursor.fetchone()
+        libro = cursor.fetchone()
+        if libro:
+            cursor.execute("SELECT url_imagen FROM imagenes_libro WHERE id_libro = %s", (id_libro,))
+            rows = cursor.fetchall()
+            libro["imagenes"] = [r["url_imagen"] for r in rows if r.get("url_imagen")]
+        return libro
     finally:
         cursor.close()
         db.close()
+
 
 
 # ──────────────────────────────────────────────
@@ -519,8 +528,14 @@ def obtener_pedidos_tienda(id_tienda: int):
                 oc.estado_orden           AS estado,
                 oc.total                  AS total_orden,
                 oc.id_usuario             AS id_comprador,
+                oc.tipo_entrega,
+                oc.estado_retiro,
+                oc.pin_retiro,
+                oc.fecha_limite_retiro,
+                oc.metodo_pago,
                 u.nombre_usuario          AS cliente,
                 u.correo_usuario          AS correo_cliente,
+                u.telefono                AS telefono_cliente,
                 u.foto_perfil             AS foto_perfil_cliente,
                 do.id_libro,
                 do.cantidad,
@@ -569,8 +584,14 @@ def obtener_pedidos_tienda(id_tienda: int):
                 "id_comprador":   fila["id_comprador"],
                 "fecha":          fila["fecha"].isoformat() if hasattr(fila["fecha"], "isoformat") else fila["fecha"],
                 "estado":         fila["estado"],
+                "tipo_entrega":   fila.get("tipo_entrega") or "domicilio",
+                "estado_retiro":  fila.get("estado_retiro"),
+                "pin_retiro":     fila.get("pin_retiro"),
+                "fecha_limite_retiro": fila["fecha_limite_retiro"].isoformat() if fila.get("fecha_limite_retiro") and hasattr(fila["fecha_limite_retiro"], "isoformat") else fila.get("fecha_limite_retiro"),
+                "metodo_pago":    fila.get("metodo_pago"),
                 "cliente":        fila["cliente"],
                 "correo_cliente": fila["correo_cliente"],
+                "telefono_cliente": fila.get("telefono_cliente"),
                 "foto_perfil_cliente": fila["foto_perfil_cliente"],
                 "items":          [],
                 "total_tienda":   0.0,

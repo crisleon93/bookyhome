@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { getDevoluciones, getOrdenes, crearQueja, getQuejas } from '../services/api';
+import { getDevoluciones, getOrdenes, crearQueja, getQuejas, getApiBaseUrl } from '../services/api';
 import { IconPackage, IconCheck, IconInfo } from '../components/Icons';
 
 const MOTIVOS = [
@@ -40,6 +40,8 @@ export default function Devoluciones({ embedded = false }) {
   const navigate = useNavigate();
   const [elegibles, setElegibles] = useState([]);
   const [devoluciones, setDevoluciones] = useState([]);
+  const [quejas, setQuejas] = useState([]);
+  const [evidenciaPreview, setEvidenciaPreview] = useState(null);
   const [loading, setLoading] = useState(true);
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState('');
@@ -59,6 +61,7 @@ export default function Devoluciones({ embedded = false }) {
       ]);
       const ordenes = ordenesRes.data || [];
       const reclamos = quejasRes.data || [];
+      setQuejas(reclamos);
       const reclamosActivos = new Set(reclamos
         .filter((reclamo) => ['Abierto', 'En revisión'].includes(reclamo.estado))
         .map((reclamo) => Number(reclamo.id_orden)));

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import api, { addToCart, removeFromCart, usuarioPuedeCalificarTienda, crearCalificacionTienda, getCalificacionesTienda, actualizarCalificacionTienda } from '../services/api';
+import api, { addToCart, removeFromCart, getCarrito, usuarioPuedeCalificarTienda, crearCalificacionTienda, getCalificacionesTienda, actualizarCalificacionTienda } from '../services/api';
 import { notify } from '../components/ToastProvider';
 import LibroCard from '../components/LibroCard';
 import { chatService } from '../services/chat';
@@ -97,6 +97,20 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
     cargarLibros();
   }, [cargarLibros]);
 
+  // Sincronizar addedToCartIds con el carrito del backend al montar
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    getCarrito()
+      .then(res => {
+        const items = res.data || [];
+        if (items.length > 0) {
+          setAddedToCartIds(new Set(items.map(i => i.id_libro)));
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   const handleAddToCart = async (libro) => {
     const token = localStorage.getItem('token');
     if (!token) {
@@ -112,6 +126,8 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
         autor_libro: libro.autor_libro,
         precio_libro: libro.precio_libro,
         imagen: libro.imagen_url || null,
+        id_tienda: libro.id_tienda || null,
+        nombre_tienda: libro.nombre_tienda || '',
       });
       notify('AGREGADO AL CARRITO', 'success');
       window.dispatchEvent(new Event('cart-updated'));
@@ -146,6 +162,35 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
     } finally {
       setAddingId(null);
     }
+  };
+
+  const handleComprarAhora = (libro) => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      notify('Debes iniciar sesión para comprar', 'error');
+      navigate('/login');
+      return;
+    }
+    if (libro.stock === 0) {
+      notify('Este libro se encuentra agotado', 'error');
+      return;
+    }
+
+    // NO creamos orden aquí. Solo navegamos al carrito con los datos del libro
+    // en el state. La orden se crea únicamente cuando el usuario confirme el pago.
+    navigate('/?seccion=Carrito', {
+      state: {
+        buyNow: {
+          id_libro: libro.id_libro,
+          cantidad: 1,
+          precio_libro: Number(libro.precio_libro ?? libro.precio ?? 0),
+          titulo: libro.titulo,
+          autor_libro: libro.autor_libro || libro.autor || '',
+          imagen: libro.imagen_url || libro.imagen_principal || null,
+          tipo_entrega: 'domicilio'
+        }
+      }
+    });
   };
   const handleVerDetalles = (libro) => {
     setLibroSeleccionado(libro);
@@ -329,17 +374,44 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
             Volver al catálogo
           </button>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: '32px', marginBottom: '32px' }}>
-            <div>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'minmax(280px, 320px) 1fr',
+            gap: '36px',
+            marginBottom: '32px',
+            alignItems: 'stretch'
+          }}>
+            <div style={{
+              width: '100%',
+              height: '100%',
+              minHeight: '380px',
+              maxHeight: '440px',
+              borderRadius: '16px',
+              overflow: 'hidden',
+              boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
+              background: '#f8f5f2',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              position: 'relative'
+            }}>
               <img
-                src={libroSeleccionado.imagen_url || libroSeleccionado.imagen_principal || 'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=400&q=80'}
+                src={libroSeleccionado.imagen_url || libroSeleccionado.imagen_principal || libroSeleccionado.imagen || 'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=400&q=80'}
                 alt={libroSeleccionado.titulo}
-                style={{ width: '100%', height: 'auto', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  display: 'block'
+                }}
+                onError={(e) => {
+                  e.target.src = 'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=400&q=80';
+                }}
               />
             </div>
-            <div>
+            <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
               {libroSeleccionado.nombre_categoria && (
-                <span style={{ display: 'inline-block', padding: '6px 14px', borderRadius: '20px', background: '#fce4ec', color: '#8b0000', fontSize: '0.8rem', fontWeight: '700', marginBottom: '12px' }}>
+                <span style={{ display: 'inline-block', alignSelf: 'flex-start', padding: '6px 14px', borderRadius: '20px', background: '#fce4ec', color: '#8b0000', fontSize: '0.8rem', fontWeight: '700', marginBottom: '12px' }}>
                   {libroSeleccionado.nombre_categoria}
                 </span>
               )}
@@ -372,27 +444,82 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
               <p style={{ fontSize: '2rem', fontWeight: '800', color: '#8b0000', margin: '16px 0' }}>${Number(libroSeleccionado.precio_libro || libroSeleccionado.precio || 0).toLocaleString('es-CO')}</p>
 
               <div style={{ display: 'flex', gap: '12px', marginTop: '24px', flexWrap: 'wrap' }}>
+                {/* Botón Comprar ahora */}
+                <button
+                  onClick={() => handleComprarAhora(libroSeleccionado)}
+                  disabled={libroSeleccionado.stock === 0}
+                  style={{
+                    flex: '1 1 170px',
+                    minWidth: '160px',
+                    background: 'linear-gradient(135deg, var(--vinotinto, #7A1E3A) 0%, #9B2449 100%)',
+                    color: 'white',
+                    border: 'none',
+                    padding: '16px 22px',
+                    borderRadius: '8px',
+                    cursor: libroSeleccionado.stock === 0 ? 'not-allowed' : 'pointer',
+                    opacity: libroSeleccionado.stock === 0 ? 0.65 : 1,
+                    fontSize: '1.05rem',
+                    fontWeight: '700',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    boxShadow: '0 4px 14px rgba(122, 30, 58, 0.28)',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (libroSeleccionado.stock !== 0) {
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                      e.currentTarget.style.boxShadow = '0 6px 18px rgba(122, 30, 58, 0.38)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = '0 4px 14px rgba(122, 30, 58, 0.28)';
+                  }}
+                >
+                  <>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                    </svg>
+                    {libroSeleccionado.stock === 0 ? 'Sin stock' : 'Comprar ahora'}
+                  </>
+                </button>
+
+                {/* Botón Agregar al carrito */}
                 <button
                   onClick={() => addedToCartIds.has(libroSeleccionado.id_libro) ? handleRemoveFromCart(libroSeleccionado) : handleAddToCart(libroSeleccionado)}
                   disabled={addingId === libroSeleccionado.id_libro || libroSeleccionado.stock === 0}
                   style={{
-                    flex: 1,
-                    minWidth: '180px',
-                    background: addedToCartIds.has(libroSeleccionado.id_libro) ? '#e53935' : 'var(--vinotinto, #8b0000)',
-                    color: 'white',
-                    border: 'none',
-                    padding: '16px 32px',
+                    flex: '1 1 170px',
+                    minWidth: '160px',
+                    background: addedToCartIds.has(libroSeleccionado.id_libro) ? '#fee2e2' : '#fdf2f4',
+                    color: addedToCartIds.has(libroSeleccionado.id_libro) ? '#dc2626' : 'var(--vinotinto, #7A1E3A)',
+                    border: `2px solid ${addedToCartIds.has(libroSeleccionado.id_libro) ? '#dc2626' : 'var(--vinotinto, #7A1E3A)'}`,
+                    padding: '16px 22px',
                     borderRadius: '8px',
                     cursor: addingId === libroSeleccionado.id_libro || libroSeleccionado.stock === 0 ? 'not-allowed' : 'pointer',
                     opacity: addingId === libroSeleccionado.id_libro || libroSeleccionado.stock === 0 ? 0.65 : 1,
-                    fontSize: '1.1rem',
-                    fontWeight: '600',
+                    fontSize: '1.05rem',
+                    fontWeight: '700',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
                     transition: 'all 0.2s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (addingId !== libroSeleccionado.id_libro && libroSeleccionado.stock !== 0) {
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0)';
                   }}
                 >
                   {libroSeleccionado.stock === 0 ? 'Sin stock' : addingId === libroSeleccionado.id_libro ? 'Procesando…' : addedToCartIds.has(libroSeleccionado.id_libro) ? (
                     <>
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '8px' }}>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <polyline points="3 6 5 6 21 6"></polyline>
                         <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
                       </svg>
@@ -400,7 +527,7 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
                     </>
                   ) : (
                     <>
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '8px' }}>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <circle cx="9" cy="21" r="1"></circle>
                         <circle cx="20" cy="21" r="1"></circle>
                         <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
@@ -409,19 +536,21 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
                     </>
                   )}
                 </button>
+
+                {/* Botón Contactar librería */}
                 <button
                   onClick={handleContactar}
                   disabled={contactando}
                   style={{
-                    flex: 1,
-                    minWidth: '180px',
+                    flex: '1 1 170px',
+                    minWidth: '160px',
                     background: 'white',
-                    color: 'var(--vinotinto, #8b0000)',
-                    border: '2px solid var(--vinotinto, #8b0000)',
-                    padding: '16px 32px',
+                    color: '#4b5563',
+                    border: '2px solid #d1d5db',
+                    padding: '16px 22px',
                     borderRadius: '8px',
                     cursor: contactando ? 'not-allowed' : 'pointer',
-                    fontSize: '1.1rem',
+                    fontSize: '1.05rem',
                     fontWeight: '600',
                     transition: 'all 0.2s ease',
                     display: 'flex',
@@ -429,6 +558,18 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
                     justifyContent: 'center',
                     gap: '8px',
                     opacity: contactando ? 0.65 : 1
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!contactando) {
+                      e.currentTarget.style.borderColor = 'var(--vinotinto, #7A1E3A)';
+                      e.currentTarget.style.color = 'var(--vinotinto, #7A1E3A)';
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = '#d1d5db';
+                    e.currentTarget.style.color = '#4b5563';
+                    e.currentTarget.style.transform = 'translateY(0)';
                   }}
                 >
                   {contactando ? (
@@ -450,6 +591,7 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
               </div>
             </div>
           </div>
+
 
           {/* Descripción del producto */}
           <div style={{ marginBottom: '32px', padding: '24px', background: '#faf8f6', borderRadius: '12px' }}>

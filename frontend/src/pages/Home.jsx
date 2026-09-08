@@ -1,11 +1,11 @@
 import { useState, useEffect, startTransition } from 'react'
-import { Link, useNavigate, useLocation } from 'react-router-dom'
+import { Link, useNavigate, useLocation, Navigate } from 'react-router-dom'
 import { jwtDecode } from 'jwt-decode'
+import { getUserRole } from '../hooks/useAuth'
 import Header from '../components/Header'
 import { IconUsers } from '../components/Icons'
 import SeccionInicio from '../components/dashboard/SeccionInicio'
 import CompradorSidebar from '../components/CompradorSidebar'
-import { getUsuarios } from '../services/api'
 import api from '../services/api'
 import SeccionCarrito from '../components/dashboard/SeccionCarrito'
 import SeccionMisCompras from '../components/dashboard/SeccionMisCompras'
@@ -310,7 +310,9 @@ function Home() {
       })
     }
     if (salaParam) {
-      setSelectedSalaInChat(Number(salaParam))
+      startTransition(() => {
+        setSelectedSalaInChat(Number(salaParam))
+      })
     }
   }, [location.search, isAuthenticated])
   
@@ -321,8 +323,16 @@ function Home() {
     return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>Cargando...</div>
   }
   
-  // If authenticated, show public home with sidebar
+  // If authenticated, check role: if seller/admin redirect to their dedicated dashboard
   if (isAuthenticated) {
+    const role = getUserRole()
+    if (role === 'vendedor') {
+      return <Navigate to="/mi-tienda" replace />
+    }
+    if (role === 'admin' || role === 'administrador') {
+      return <Navigate to="/admin" replace />
+    }
+
     return (
       <div className={`dashboard-container ${activeSide === 'Inicio' ? 'home-view' : ''}`}>
         <CompradorSidebar

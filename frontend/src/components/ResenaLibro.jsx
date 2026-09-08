@@ -96,7 +96,7 @@ function ResenaLibro({ idLibro, idUsuario }) {
       await api.delete(`/resenas/${idResena}`);
       notify('Reseña eliminada', 'success');
       cargarResenas();
-    } catch (error) {
+    } catch {
       notify('Error al eliminar reseña', 'error');
     }
   };

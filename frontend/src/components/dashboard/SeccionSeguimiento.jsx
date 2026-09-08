@@ -65,7 +65,7 @@ function EventoEntrega({ color, titulo, detalle, fecha }) {
 
 export default function SeccionSeguimiento({ userId }) {
   const [ordenes, setOrdenes] = useState([]);
-  const [ordenesLoading, setOrdenesLoading] = useState(false);
+  const [ordenesLoading, setOrdenesLoading] = useState(true); // true desde el inicio para evitar flash
   const [vista, setVista] = useState("esperando");
   const [detalleAbierto, setDetalleAbierto] = useState(null);
   const [confirmacionPendiente, setConfirmacionPendiente] = useState(null);
@@ -76,16 +76,19 @@ export default function SeccionSeguimiento({ userId }) {
   const [aviso, setAviso] = useState(null);
   const posicionScroll = useRef(0);
 
-  const cargarOrdenes = useCallback(async () => {
+  const cargarOrdenes = useCallback(async (mostrarSpinner = true) => {
     if (!userId) return;
-    setOrdenesLoading(true);
+    if (mostrarSpinner) setOrdenesLoading(true);
     try {
       const res = await getOrdenes();
+      // Una sola actualización de estado para evitar renders intermedios
+      // donde los datos ya llegaron pero el spinner aún no se apagó
       setOrdenes(res.data || []);
     } catch (error) {
       console.error("Error cargando órdenes:", error);
+      if (mostrarSpinner) setOrdenes([]);
     } finally {
-      setOrdenesLoading(false);
+      if (mostrarSpinner) setOrdenesLoading(false);
     }
   }, [userId]);
 
@@ -93,9 +96,11 @@ export default function SeccionSeguimiento({ userId }) {
   useEffect(() => {
     // Refresca los cambios hechos por el vendedor sin exigir que el comprador
     // cierre y vuelva a abrir la sección.
-    const intervalo = window.setInterval(cargarOrdenes, 20000);
+    // Se pasa false para no mostrar spinner en actualizaciones silenciosas
+    // y evitar el flash de "todos los pedidos sin filtrar".
+    const intervalo = window.setInterval(() => cargarOrdenes(false), 20000);
     const alVolver = () => {
-      if (document.visibilityState === "visible") cargarOrdenes();
+      if (document.visibilityState === "visible") cargarOrdenes(false);
     };
     document.addEventListener("visibilitychange", alVolver);
     return () => {
@@ -107,9 +112,31 @@ export default function SeccionSeguimiento({ userId }) {
     if (detalleAbierto) window.scrollTo(0, posicionScroll.current);
   }, [detalleAbierto]);
 
-  const esperando = ordenarPorFecha(ordenes.filter((orden) => /^pagad/.test(String(orden.estado || "").toLowerCase()) && !orden.envio));
-  const camino = ordenarPorFecha(ordenes.filter((orden) => /^enviad/.test(String(orden.estado || "").toLowerCase())));
-  const entregado = ordenarPorFecha(ordenes.filter((orden) => /^entregad/.test(String(orden.estado || "").toLowerCase())));
+  const esperando = ordenarPorFecha(ordenes.filter((orden) => {
+    const est = String(orden.estado || "").toLowerCase().trim();
+    // Estado explícito de envío/entregado toma prioridad sobre cualquier otra condición
+    if (/^enviad/.test(est) || /^entregad/.test(est)) return false;
+    if (/^cancelad/.test(est)) return false;
+    if (/^pend/.test(est)) return false;
+    // "pagado/pagada" SIN envío con guía → esperando
+    if (/^pagad/.test(est)) {
+      const tieneGuia = orden.envio && orden.envio.numero_guia;
+      return !tieneGuia;
+    }
+    return false;
+  }));
+
+  const camino = ordenarPorFecha(ordenes.filter((orden) => {
+    const est = String(orden.estado || "").toLowerCase().trim();
+    if (/^enviad/.test(est)) return true;
+    // pagado CON guía de envío registrada también va a "En camino"
+    if (/^pagad/.test(est) && orden.envio && orden.envio.numero_guia) return true;
+    return false;
+  }));
+
+  const entregado = ordenarPorFecha(ordenes.filter((orden) =>
+    /^entregad/.test(String(orden.estado || "").toLowerCase().trim())
+  ));
   const pedidosPorVista = { esperando, camino, entregado };
   const pedidosActuales = pedidosPorVista[vista];
 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { getCuponesTienda, crearCupon, editarCupon, eliminarCupon } from "../services/api";
 import { notify } from "./ToastProvider";
 
@@ -18,7 +18,8 @@ export default function SeccionCuponesVendedor({ tiendaId }) {
     fecha_fin: "",
   });
 
-  const cargarCupones = () => {
+  const cargarCupones = useCallback(() => {
+    if (!tiendaId) return;
     setLoading(true);
     getCuponesTienda(tiendaId)
       .then((res) => {
@@ -31,12 +32,23 @@ export default function SeccionCuponesVendedor({ tiendaId }) {
       .finally(() => {
         setLoading(false);
       });
-  };
+  }, [tiendaId]);
 
   useEffect(() => {
-    if (tiendaId) {
-      cargarCupones();
-    }
+    if (!tiendaId) return;
+    let activo = true;
+    queueMicrotask(() => {
+      if (activo) setLoading(true);
+    });
+    getCuponesTienda(tiendaId)
+      .then((res) => { if (activo) setCoupons(res.data || []); })
+      .catch((err) => {
+        if (!activo) return;
+        console.error("Error cargando cupones:", err);
+        notify("Error al cargar cupones de tienda", "error");
+      })
+      .finally(() => { if (activo) setLoading(false); });
+    return () => { activo = false; };
   }, [tiendaId]);
 
   const handleOpenCreate = () => {
@@ -132,7 +144,7 @@ export default function SeccionCuponesVendedor({ tiendaId }) {
         notify(`Cupón ${coupon.activo ? "desactivado" : "activado"} correctamente`, "success");
         cargarCupones();
       })
-      .catch((err) => {
+      .catch(() => {
         notify("Error al cambiar estado del cupón", "error");
       });
   };

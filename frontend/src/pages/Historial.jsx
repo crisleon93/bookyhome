@@ -1,5 +1,5 @@
 // src/pages/Historial.jsx
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { getToken } from "../hooks/useAuth";
 import { historialService } from "../services/historial";
@@ -16,7 +16,7 @@ export default function Historial() {
   const [error, setError] = useState(null);
 
   // ============= CARGAR DATOS =============
-  const cargarHistorial = async () => {
+  const cargarHistorial = useCallback(async () => {
     try {
       setLoading(true);
       const tipo = filter === "todas" ? null : filter;
@@ -28,7 +28,7 @@ export default function Historial() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filter]);
 
   const cargarEstadisticas = async () => {
     try {
@@ -46,7 +46,7 @@ export default function Historial() {
     }
     cargarHistorial();
     cargarEstadisticas();
-  }, [token, filter, navigate]);
+  }, [token, filter, navigate, cargarHistorial]);
 
   // ============= ELIMINAR =============
   const handleEliminar = async (id_interaccion) => {
@@ -54,7 +54,7 @@ export default function Historial() {
       try {
         await historialService.eliminar(id_interaccion);
         await cargarHistorial();
-      } catch (err) {
+      } catch {
         setError("Error eliminando del historial");
       }
     }

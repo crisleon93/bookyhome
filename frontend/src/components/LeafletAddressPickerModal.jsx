@@ -276,7 +276,7 @@ export default function LeafletAddressPickerModal({ isOpen, onClose, onSelect, o
         <div style={{ display: 'grid', gap: '10px', marginBottom: '12px' }}>
           <label style={{ display: 'grid', gap: '6px' }}>
             <span style={{ fontSize: '0.9rem', color: '#444', fontWeight: 600 }}>Dirección</span>
-            <input value={addressText} onChange={(e) => setAddressText(e.target.value)} placeholder="Ej. Carrera 7 # 45-67, Bogotá" style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #d7d2c7' }} />
+            <input value={addressText} onChange={(e) => setAddressText(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleUseManualAddress(); } }} placeholder="Ej. Carrera 7 # 45-67, Bogotá" style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #d7d2c7' }} />
           </label>
           <div style={{ display: 'grid', gap: '10px', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}>
             <label style={{ display: 'grid', gap: '6px' }}>

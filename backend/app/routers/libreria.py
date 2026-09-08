@@ -1,4 +1,5 @@
-from fastapi import APIRouter, HTTPException, Depends
+from typing import Optional
+from fastapi import APIRouter, HTTPException, Depends, Query
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
 from app.schemas import LibreriaRegistro
@@ -67,12 +68,16 @@ def listar_tiendas():
 
 
 @router.get("/tiendas/destacadas")
-def tiendas_destacadas():
-    """Devuelve hasta 6 tiendas activas con logo, ciudad y conteo de libros para el Home público."""
+def tiendas_destacadas(
+    limit: Optional[int] = Query(None, description="Límite de librerías"),
+    solo_con_stock: Optional[bool] = Query(None, description="Filtrar solo librerías con libros disponibles"),
+    todas: bool = Query(False, description="Obtener todas las librerías activas")
+):
+    """Devuelve librerías activas con logo, ciudad y conteo de libros."""
     db = get_db()
     cursor = db.cursor(dictionary=True)
     try:
-        cursor.execute("""
+        query = """
             SELECT
                 t.id_tienda,
                 t.nombre_tienda,
@@ -80,16 +85,32 @@ def tiendas_destacadas():
                 tc.logo_url,
                 tc.descripcion,
                 tc.ciudad_origen,
-                COUNT(l.id_libro) AS total_libros
+                COUNT(DISTINCT CASE WHEN l.stock > 0 AND (l.oculto IS NULL OR l.oculto = 0) THEN l.id_libro ELSE NULL END) AS total_libros,
+                COALESCE(ROUND(AVG(ct.calificacion), 1), 0.0) AS calificacion_promedio,
+                COUNT(DISTINCT ct.id_calificacion) AS total_calificaciones
             FROM tiendas t
             LEFT JOIN tienda_configuracion tc ON tc.id_tienda = t.id_tienda
-            LEFT JOIN libros l ON l.id_tienda = t.id_tienda AND l.stock > 0 AND (l.oculto IS NULL OR l.oculto = 0)
+            LEFT JOIN libros l ON l.id_tienda = t.id_tienda
+            LEFT JOIN calificaciones_tiendas ct ON ct.id_tienda = t.id_tienda
             WHERE t.estado_tienda = 'activa'
             GROUP BY t.id_tienda, t.nombre_tienda, t.direccion, tc.logo_url, tc.descripcion, tc.ciudad_origen
-            HAVING total_libros > 0
-            ORDER BY total_libros DESC
-            LIMIT 6
-        """)
+        """
+
+        debe_tener_stock = solo_con_stock is True or (solo_con_stock is None and not todas and limit is None)
+        if debe_tener_stock:
+            query += " HAVING total_libros > 0"
+
+        query += " ORDER BY total_libros DESC, calificacion_promedio DESC, t.nombre_tienda ASC"
+
+        if todas:
+            cursor.execute(query)
+        elif limit is not None and limit > 0:
+            query += f" LIMIT {int(limit)}"
+            cursor.execute(query)
+        else:
+            query += " LIMIT 12"
+            cursor.execute(query)
+
         return cursor.fetchall()
     finally:
         cursor.close()

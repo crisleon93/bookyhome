@@ -2128,6 +2128,28 @@
       "monto": 4200.0,
       "fecha": "2026-08-27T20:41:34.394214Z",
       "estado": "procesado"
+    },
+    {
+      "id": 181,
+      "tipo": "venta",
+      "id_venta": 59,
+      "id_vendedor": 26,
+      "monto_venta": 34000.0,
+      "comision": 5100.0,
+      "monto": 5100.0,
+      "fecha": "2026-09-07T23:07:34.000337Z",
+      "estado": "procesado"
+    },
+    {
+      "id": 182,
+      "tipo": "venta",
+      "id_venta": 69,
+      "id_vendedor": 34,
+      "monto_venta": 75000.0,
+      "comision": 11250.0,
+      "monto": 11250.0,
+      "fecha": "2026-09-08T07:32:29.128897Z",
+      "estado": "procesado"
     }
   ],
   "pagos": [

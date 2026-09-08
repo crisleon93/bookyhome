@@ -3,6 +3,21 @@ import { IconUser, IconStar, IconChartBar, IconBookOpen, IconBook } from "../Ico
 import { notify } from "../ToastProvider";
 import api, { getEstadisticasUsuario, uploadProfilePhoto, uploadBannerPhoto, saveBannerColor } from "../../services/api";
 
+const getSiguienteNivel = (nivelActual) => {
+  const niveles = ['Bronce', 'Plata', 'Oro', 'Platino'];
+  const index = niveles.indexOf(nivelActual);
+  return index < niveles.length - 1 ? niveles[index + 1] : null;
+};
+
+const getPuntosParaSiguiente = (nivelActual, puntosActuales) => {
+  const umbrales = { 'Bronce': 50000, 'Plata': 150000, 'Oro': 300000 };
+  const siguiente = getSiguienteNivel(nivelActual);
+  if (siguiente && umbrales[nivelActual]) {
+    return umbrales[nivelActual] - puntosActuales;
+  }
+  return 0;
+};
+
 export default function SeccionMiPerfil({ userId }) {
   const [userName, setUserName] = useState("");
   const [userSurname, setUserSurname] = useState("");
@@ -22,21 +37,6 @@ export default function SeccionMiPerfil({ userId }) {
     const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
     if (!path) return null;
     return `${baseUrl}/${path.replace(/^\//, '')}`;
-  };
-
-  const getSiguienteNivel = (nivelActual) => {
-    const niveles = ['Bronce', 'Plata', 'Oro', 'Platino'];
-    const index = niveles.indexOf(nivelActual);
-    return index < niveles.length - 1 ? niveles[index + 1] : null;
-  };
-
-  const getPuntosParaSiguiente = (nivelActual, puntosActuales) => {
-    const umbrales = { 'Bronce': 50000, 'Plata': 150000, 'Oro': 300000 };
-    const siguiente = getSiguienteNivel(nivelActual);
-    if (siguiente && umbrales[nivelActual]) {
-      return umbrales[nivelActual] - puntosActuales;
-    }
-    return 0;
   };
 
   const cargarDatosPerfil = useCallback(async () => {
@@ -137,7 +137,7 @@ export default function SeccionMiPerfil({ userId }) {
         notify('Banner actualizado', 'success');
         setShowBannerEditor(false);
       }
-    } catch (error) {
+    } catch {
       notify('No se pudo subir el banner', 'error');
     } finally {
       setBannerUploading(false);
@@ -152,7 +152,7 @@ export default function SeccionMiPerfil({ userId }) {
       window.dispatchEvent(new CustomEvent('profile-banner-updated', { detail: { bannerUrl: null, bannerColor: color } }));
       notify('Color de banner guardado', 'success');
       setShowBannerEditor(false);
-    } catch (error) {
+    } catch {
       notify('No se pudo guardar el color', 'error');
     }
   };

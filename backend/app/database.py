@@ -142,6 +142,69 @@ def ensure_banner_perfil_schema():
             db.close()
 
 
+def ensure_retiro_schema():
+    """Agrega columnas para retiro en tienda / click & collect a ordenes_compra si no existen."""
+    db = None
+    cursor = None
+    try:
+        db = get_db()
+        cursor = db.cursor()
+
+        def column_exists(table, name):
+            cursor.execute(f"SHOW COLUMNS FROM `{table}` LIKE %s", (name,))
+            return cursor.fetchone() is not None
+
+        if not column_exists("ordenes_compra", "tipo_entrega"):
+            cursor.execute("ALTER TABLE ordenes_compra ADD COLUMN tipo_entrega VARCHAR(30) DEFAULT 'domicilio'")
+        if not column_exists("ordenes_compra", "estado_retiro"):
+            cursor.execute("ALTER TABLE ordenes_compra ADD COLUMN estado_retiro VARCHAR(30) NULL")
+        if not column_exists("ordenes_compra", "pin_retiro"):
+            cursor.execute("ALTER TABLE ordenes_compra ADD COLUMN pin_retiro VARCHAR(10) NULL")
+        if not column_exists("ordenes_compra", "fecha_limite_retiro"):
+            cursor.execute("ALTER TABLE ordenes_compra ADD COLUMN fecha_limite_retiro DATETIME NULL")
+        if not column_exists("ordenes_compra", "metodo_pago"):
+            cursor.execute("ALTER TABLE ordenes_compra ADD COLUMN metodo_pago VARCHAR(50) NULL")
+        # Costo de envío fijo por tienda (0 si es retiro en tienda)
+        if not column_exists("ordenes_compra", "costo_envio"):
+            cursor.execute("ALTER TABLE ordenes_compra ADD COLUMN costo_envio DECIMAL(10,2) NOT NULL DEFAULT 0")
+        db.commit()
+    except Exception as exc:
+        if db is not None:
+            db.rollback()
+        print(f"[DATABASE] No se pudo asegurar esquema de retiro en tienda: {exc}", file=sys.stderr, flush=True)
+    finally:
+        if cursor is not None:
+            cursor.close()
+        if db is not None:
+            db.close()
+
+
+def ensure_tarifa_envio_schema():
+    """Agrega columna tarifa_envio a tienda_configuracion si no existe."""
+    db = None
+    cursor = None
+    try:
+        db = get_db()
+        cursor = db.cursor()
+
+        cursor.execute("SHOW COLUMNS FROM `tienda_configuracion` LIKE 'tarifa_envio'")
+        if not cursor.fetchone():
+            cursor.execute(
+                "ALTER TABLE tienda_configuracion ADD COLUMN tarifa_envio DECIMAL(10,2) NOT NULL DEFAULT 0 "
+                "COMMENT 'Tarifa fija de envío a domicilio en COP. 0 = envío gratuito.'"
+            )
+        db.commit()
+    except Exception as exc:
+        if db is not None:
+            db.rollback()
+        print(f"[DATABASE] No se pudo asegurar esquema de tarifa_envio: {exc}", file=sys.stderr, flush=True)
+    finally:
+        if cursor is not None:
+            cursor.close()
+        if db is not None:
+            db.close()
+
+
 def get_db():
     # ========================
     # Configuración de conexión

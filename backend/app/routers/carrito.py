@@ -8,6 +8,7 @@ from app.models.carrito import (
     eliminar_item_carrito,
     vaciar_carrito,
     checkout_carrito,
+    crear_orden_directa,
 )
 
 router = APIRouter()
@@ -60,7 +61,27 @@ def remove_from_cart(id_libro: int, user=Depends(get_current_user)):
 @router.post("/checkout")
 def checkout(data: dict | None = None, user=Depends(get_current_user)):
     id_usuario = int(user["sub"])
-    resultado = checkout_carrito(id_usuario, (data or {}).get("id_direccion"))
+    payload = data or {}
+    resultado = checkout_carrito(
+        id_usuario,
+        payload.get("id_direccion"),
+        payload.get("tipo_entrega", "domicilio")
+    )
+    if not resultado["ok"]:
+        raise HTTPException(status_code=400, detail=resultado["error"])
+    return resultado
+
+
+@router.post("/checkout-directo")
+def checkout_directo(data: dict, user=Depends(get_current_user)):
+    id_usuario = int(user["sub"])
+    payload = data or {}
+    resultado = crear_orden_directa(
+        id_usuario,
+        payload,
+        payload.get("id_direccion"),
+        payload.get("tipo_entrega", "domicilio")
+    )
     if not resultado["ok"]:
         raise HTTPException(status_code=400, detail=resultado["error"])
     return resultado
