@@ -527,6 +527,7 @@ def obtener_pedidos_tienda(id_tienda: int):
                 oc.fecha_orden            AS fecha,
                 oc.estado_orden           AS estado,
                 oc.total                  AS total_orden,
+                oc.costo_envio,
                 oc.id_usuario             AS id_comprador,
                 oc.tipo_entrega,
                 oc.estado_retiro,
@@ -547,11 +548,17 @@ def obtener_pedidos_tienda(id_tienda: int):
                 (SELECT url_imagen
                  FROM imagenes_libro
                  WHERE id_libro = l.id_libro AND es_principal = 1
-                 LIMIT 1)                 AS imagen
+                 LIMIT 1)                 AS imagen,
+                de.alias_direccion        AS alias_direccion,
+                de.direccion_completa     AS direccion_completa,
+                de.ciudad                 AS ciudad_entrega,
+                de.departamento           AS departamento_entrega,
+                de.codigo_postal          AS codigo_postal_entrega
             FROM ordenes_compra oc
             JOIN detalle_orden   do ON do.id_orden  = oc.id_orden
             JOIN libros          l  ON l.id_libro   = do.id_libro
             JOIN usuarios        u  ON u.id_usuario = oc.id_usuario
+            LEFT JOIN direcciones_envio de ON de.id_direccion = oc.id_direccion_envio
             WHERE l.id_tienda = %s
             ORDER BY oc.fecha_orden DESC
         """, (id_tienda,))
@@ -596,24 +603,43 @@ def obtener_pedidos_tienda(id_tienda: int):
                 "items":          [],
                 "total_tienda":   0.0,
                 "total_orden":    float(fila["total_orden"] or 0),
+                "costo_envio":    float(fila.get("costo_envio") or 0),
+                "direccion_entrega": {
+                    "alias":        fila.get("alias_direccion"),
+                    "direccion":    fila.get("direccion_completa"),
+                    "ciudad":       fila.get("ciudad_entrega"),
+                    "departamento": fila.get("departamento_entrega"),
+                    "codigo_postal": fila.get("codigo_postal_entrega"),
+                },
                 "envio":          None,
             }
 
         precio = float(fila["precio_libro"] or 0)
         cant   = int(fila["cantidad"] or 1)
+        # Total por línea: se prefiere precio_final (ya guardado con descuento
+        # cuando existen cupones). Si no está, se calcula del precio unitario.
+        precio_final_linea = float(fila["precio_final"] or 0)
+        if precio_final_linea > 0:
+            total_linea = precio_final_linea
+        else:
+            pct = float(fila["porcentaje_descuento"] or 0)
+            total_linea = precio * cant * (1 - pct / 100) if pct > 0 else precio * cant
+
         ordenes[id_orden]["items"].append({
             "id_libro":   fila["id_libro"],
             "titulo":     fila["titulo"],
             "autor_libro": fila["autor_libro"],
             "precio_libro": precio,
             "cantidad":   cant,
+            "porcentaje_descuento": float(fila["porcentaje_descuento"] or 0),
+            "total_linea": round(total_linea, 2),
             "imagen":     fila["imagen"],
         })
-        ordenes[id_orden]["total_tienda"] += precio * cant
+        ordenes[id_orden]["total_tienda"] = round(ordenes[id_orden]["total_tienda"] + total_linea, 2)
 
     # Mantener visible la guía durante todo el ciclo posterior al pago.
     for id_orden, pedido in ordenes.items():
-        if str(pedido["estado"]).lower() in ("pagado", "enviado", "entregada") and id_orden in envios_map:
+        if str(pedido["estado"]).lower() in ("pagado", "pagada", "enviado", "enviada", "entregada", "entregado") and id_orden in envios_map:
             e = envios_map[id_orden]
             empresa = next(
                 (empresa for empresa in EMPRESAS_MENSAJERIA if empresa["id_empresa"] == e["id_empresa"]),
@@ -635,11 +661,21 @@ def obtener_pedidos_tienda(id_tienda: int):
 def obtener_ventas_tienda(id_tienda: int):
     pedidos = obtener_pedidos_tienda(id_tienda)
     ventas = []
+    # Estados que representan una venta confirmada. Se comparan en minúsculas
+    # para tolerar variaciones de capitalización en la base de datos.
+    # Se incluye 'entregado' (retiro en tienda) además de 'entregada' (envío),
+    # 'completado'/'completada' y 'en preparacion' para cubrir todos los flujos.
+    ESTADOS_VENTA = {
+        "pagado", "pagada",
+        "enviado", "enviada",
+        "entregada", "entregado",
+        "completado", "completada",
+        "en preparacion",
+    }
     for p in pedidos:
-        # El registro de ventas solo incluye órdenes pagadas, enviadas o
-        # entregadas. Las pendientes y canceladas se gestionan desde Pedidos,
-        # no desde Ventas.
-        if str(p.get("estado", "")).lower() not in ("pagado", "enviado", "entregada"):
+        # El registro de ventas solo incluye órdenes en estado de venta
+        # confirmada. Las pendientes y canceladas se gestionan desde Pedidos.
+        if str(p.get("estado", "")).lower() not in ESTADOS_VENTA:
             continue
         for item in p["items"]:
             ventas.append({
@@ -655,7 +691,7 @@ def obtener_ventas_tienda(id_tienda: int):
                 "foto_perfil_cliente": p.get("foto_perfil_cliente"),
                 "precio_libro": item["precio_libro"],
                 "cantidad": item["cantidad"],
-                "total": item["precio_libro"] * item["cantidad"]
+                "total": item.get("total_linea") or item["precio_libro"] * item["cantidad"]
             })
     return ventas
 

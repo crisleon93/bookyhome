@@ -799,5 +799,23 @@
     "metodo_pago": "Tarjeta de Crédito",
     "fecha_pago": "2026-09-08T07:32:29.009106Z",
     "estado": "aprobado"
+  },
+  {
+    "id_pago": 90,
+    "id_usuario": 16,
+    "id_orden": 3,
+    "monto": 130278.0,
+    "metodo_pago": "Transferencia Bancaria",
+    "fecha_pago": "2026-09-09T18:11:36.798840Z",
+    "estado": "aprobado"
+  },
+  {
+    "id_pago": 91,
+    "id_usuario": 16,
+    "id_orden": 72,
+    "monto": 34000.0,
+    "metodo_pago": "Efectivo en Tienda",
+    "fecha_pago": "2026-09-09T20:07:04.786002Z",
+    "estado": "aprobado"
   }
 ]

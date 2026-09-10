@@ -68,6 +68,113 @@
       "fecha_limite_retiro": null,
       "id_orden_db": 70,
       "motivo_cancelacion": "Cancelación de orden pendiente"
+    },
+    {
+      "id_orden": 3,
+      "codigo_compra": "BH-D5451F3F97",
+      "fecha": "2026-09-09T18:11:31.086191Z",
+      "items": [
+        {
+          "id_libro": 50,
+          "titulo": "caminos elevados",
+          "autor_libro": "jose jose",
+          "precio_libro": 34000.0,
+          "cantidad": 1,
+          "imagen": null,
+          "id_variante": null,
+          "variante_label": null,
+          "id_tienda": 8,
+          "nombre_tienda": ""
+        },
+        {
+          "id_libro": 436,
+          "titulo": "Libro 386 - Romance",
+          "autor_libro": "Camilo Restrepo",
+          "precio_libro": 84278.0,
+          "cantidad": 1,
+          "imagen": null,
+          "id_variante": null,
+          "variante_label": null,
+          "id_tienda": 8,
+          "nombre_tienda": ""
+        }
+      ],
+      "subtotal": 118278.0,
+      "costo_envio": 12000.0,
+      "total": 130278.0,
+      "estado": "enviado",
+      "tipo_entrega": "domicilio",
+      "pin_retiro": null,
+      "estado_retiro": null,
+      "fecha_limite_retiro": null,
+      "id_orden_db": 71,
+      "estado_orden": "pagado",
+      "metodo_pago": "Transferencia Bancaria",
+      "id_direccion": 16,
+      "envio": {
+        "id_empresa": 2,
+        "empresa_mensajeria": "Interrapidisimo",
+        "sitio_web": "https://www.interrapidisimo.com",
+        "url_rastreo": "https://www.interrapidisimo.com",
+        "numero_guia": "38724982374329",
+        "estado_envio": "Guía registrada",
+        "fecha_despacho_con_hora": "2026-09-09T18:14:05.660092+00:00",
+        "actualizado_en": "2026-09-09T18:14:05.660092+00:00",
+        "origen": "Librería El Sótano · Calle 45 # 13-22, Bogotá"
+      }
+    },
+    {
+      "id_orden": 72,
+      "codigo_compra": "BH-60C49B7E8E",
+      "fecha": "2026-09-09T20:06:04.300845Z",
+      "items": [
+        {
+          "id_libro": 50,
+          "cantidad": 1,
+          "precio_libro": 34000.0,
+          "titulo": "caminos elevados",
+          "autor_libro": "jose jose",
+          "imagen": null,
+          "id_variante": null
+        }
+      ],
+      "subtotal": 34000.0,
+      "costo_envio": 0.0,
+      "total": 34000.0,
+      "estado": "entregada",
+      "tipo_entrega": "retiro_tienda",
+      "pin_retiro": "1696",
+      "estado_retiro": "entregada",
+      "fecha_limite_retiro": "2026-09-11T20:06:04.470087Z",
+      "id_orden_db": 72,
+      "metodo_pago": "Efectivo en Tienda",
+      "estado_orden": "pagado"
+    },
+    {
+      "id_orden": 73,
+      "codigo_compra": "BH-100A528658",
+      "fecha": "2026-09-09T23:13:05.677924Z",
+      "items": [
+        {
+          "id_libro": 49,
+          "cantidad": 1,
+          "precio_libro": 121231.0,
+          "titulo": "erwerwe",
+          "autor_libro": "werwerwer",
+          "imagen": null,
+          "id_variante": null
+        }
+      ],
+      "subtotal": 121231.0,
+      "costo_envio": 0.0,
+      "total": 121231.0,
+      "estado": "entregada",
+      "tipo_entrega": "retiro_tienda",
+      "pin_retiro": "8999",
+      "estado_retiro": "entregada",
+      "fecha_limite_retiro": "2026-09-11T23:13:05.861479Z",
+      "id_orden_db": 73,
+      "metodo_pago": "Efectivo en Tienda"
     }
   ]
 }
