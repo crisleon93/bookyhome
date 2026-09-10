@@ -617,9 +617,14 @@ export default function SeccionCarrito({ userId }) {
     // Recalcular costo de envío con el tipo_entrega real que eligió el usuario.
     // El checkout del paso 1 siempre crea la orden con 'domicilio' por defecto,
     // pero aquí ya sabemos la elección real (domicilio vs retiro).
+    // totalFresco guarda el total que devuelve el backend (ya con el envío
+    // correcto) para cobrar SIEMPRE ese monto y no el del objeto order
+    // desactualizado (p.ej. en "Comprar Ahora" que aún no tiene envío).
+    let totalFresco = null;
     try {
       const resEnvio = await actualizarCostoEnvio(activeOrderId, metodoEntrega);
       if (resEnvio.data?.ok) {
+        totalFresco = Number(resEnvio.data.total);
         setOrder(prev => ({
           ...(prev || {}),
           costo_envio: resEnvio.data.costo_envio,
@@ -661,7 +666,7 @@ export default function SeccionCarrito({ userId }) {
     }
 
     try {
-      const baseTotal = Number(order?.total || 0) || totalCarrito;
+      const baseTotal = totalFresco ?? (Number(order?.total || 0) || totalCarrito);
       const amountToCharge = Math.max(0, baseTotal - discountAmount);
       const payload = {
         order_id: parseInt(activeOrderId),

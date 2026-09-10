@@ -10,22 +10,22 @@ os.makedirs(STORAGE_DIR, exist_ok=True)
 
 
 def _normalizar_estado(estado):
-    """Normaliza variantes de estado (pagada→pagado, enviada→enviado, entregada→entregado)."""
+    """Normaliza variantes de estado al estándar del sistema (masculino para pagado/enviado, entregada para entrega)."""
     if not estado:
         return estado
     mapa = {
         'pagada': 'pagado',
         'enviada': 'enviado',
-        'entregada': 'entregado',
+        'entregado': 'entregada',   # retiro en tienda también usa 'entregada'
         'cancelado': 'cancelada',
         'Pagada': 'pagado',
+        'Pagado': 'pagado',
         'Enviada': 'enviado',
-        'Entregada': 'entregado',
-        'Entregado': 'entregado',
         'Enviado': 'enviado',
+        'Entregada': 'entregada',
+        'Entregado': 'entregada',
         'Cancelado': 'cancelada',
         'Cancelada': 'cancelada',
-        'Pagado': 'pagado',
         'Procesando': 'pagado',
     }
     return mapa.get(estado, estado.lower() if estado else estado)
@@ -738,8 +738,8 @@ def confirmar_entrega_retiro(id_usuario_vendedor, id_orden, es_efectivo=False):
     total_orden = float(target.get("total", 0) if target else 0)
 
     if target:
-        target["estado"] = "entregado"
-        target["estado_retiro"] = "entregado"
+        target["estado"] = "entregada"
+        target["estado_retiro"] = "entregada"
         if es_efectivo:
             target["metodo_pago"] = "Efectivo en Tienda"
         orders[target_uid] = orders.get(target_uid, [])
@@ -751,8 +751,8 @@ def confirmar_entrega_retiro(id_usuario_vendedor, id_orden, es_efectivo=False):
         cursor = db.cursor(dictionary=True)
         cursor.execute("""
             UPDATE ordenes_compra
-            SET estado_orden = 'entregado',
-                estado_retiro = 'entregado'
+            SET estado_orden = 'entregada',
+                estado_retiro = 'entregada'
             WHERE id_orden = %s
         """, (int(id_orden),))
 

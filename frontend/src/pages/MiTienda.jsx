@@ -32,7 +32,12 @@ import {
   IconCalendar,
   IconSearch,
   IconPlus,
-  IconTrash
+  IconTrash,
+  IconDollar,
+  IconEye,
+  IconClose,
+  IconMapPin,
+  IconAlertTriangle
 } from "../components/Icons";
 import "../styles/Notificaciones.css";
 
@@ -43,6 +48,59 @@ import "../styles/Notificaciones.css";
 const formatPrecio = (valor) => {
   if (!valor && valor !== 0) return "$0 COP";
   return "$" + String(Math.floor(valor)).replace(/\B(?=(\d{3})+(?!\d))/g, ".") + " COP";
+};
+
+const normalizarEstado = (estado) => {
+  const raw = String(estado || "").toLowerCase().trim();
+  if (["pagado", "pagada", "aprobado", "aprobada"].includes(raw)) return "pagado";
+  if (["enviado", "enviada", "en_camino"].includes(raw)) return "enviado";
+  if (["entregado", "entregada", "completado", "completada"].includes(raw)) return "entregada";
+  if (["cancelado", "cancelada", "anulado", "anulada"].includes(raw)) return "cancelada";
+  return "pendiente";
+};
+
+const FILTROS_ENVIOS = [
+  { id: "todos", label: "Todos", clases: null },
+  { id: "transito", label: "En tránsito", clases: ["camino", "procesando"] },
+  { id: "entregados", label: "Entregados", clases: ["entregado"] },
+  { id: "sin_guia", label: "Sin guía", clases: ["alerta"] },
+];
+
+const RANGOS_ENVIOS = [
+  { id: "todos", label: "Todos los tiempos", dias: null },
+  { id: "hoy", label: "Hoy", dias: 0 },
+  { id: "7d", label: "Últimos 7 días", dias: 6 },
+  { id: "30d", label: "Últimos 30 días", dias: 29 },
+  { id: "90d", label: "Últimos 90 días", dias: 89 },
+];
+
+const parseFechaPedido = (d) => {
+  if (!d) return new Date();
+  if (typeof d === "string" && /^\d{4}-\d{2}-\d{2}/.test(d)) {
+    const [y, m, dd] = d.slice(0, 10).split("-").map(Number);
+    return new Date(y, m - 1, dd);
+  }
+  const dt = new Date(d);
+  return isNaN(dt.getTime()) ? new Date() : dt;
+};
+
+const infoEstadoEnvio = (pedido) => {
+  const estNorm = normalizarEstado(pedido.estado);
+  const envio = pedido.envio;
+  if (!envio) {
+    if (estNorm === "entregada") return { clase: "entregado", texto: "Entregado" };
+    if (estNorm === "pagado" || estNorm === "enviado") return { clase: "alerta", texto: "Sin guía" };
+    return { clase: "pendiente", texto: "Pendiente" };
+  }
+  const raw = String(envio.estado_envio || "").toLowerCase().trim();
+  if (!raw) {
+    if (estNorm === "entregada") return { clase: "entregado", texto: "Entregado" };
+    return { clase: "camino", texto: "En tránsito" };
+  }
+  if (/entregad|complet|recibid|finaliz|exitoso|despachad/.test(raw)) return { clase: "entregado", texto: "Entregado" };
+  if (/transito|en viaje|en ruta|camino|enviad|traslado|adelanto|forzado|registrad|cread|generad|emitid/.test(raw)) return { clase: "camino", texto: "En tránsito" };
+  if (/devolu|rechaz|no entregad|excepci|nov/.test(raw)) return { clase: "devolucion", texto: "Devolución" };
+  return { clase: "procesando", texto: raw.charAt(0).toUpperCase() + raw.slice(1) };
 };
 
 const resolveImageUrl = (value) => {
@@ -1289,9 +1347,18 @@ export default function MiTienda() {
   const [detalleVenta,  setDetalleVenta]  = useState(null);
   const [pedidos,       setPedidos]       = useState([]);
   const [loadingPedidos, setLoadingPedidos] = useState(false);
-  const [filtroTipoPedidos, setFiltroTipoPedidos] = useState("todos"); // "todos" | "domicilio" | "retiro_tienda"
+  const [filtroEstadoPedidos, setFiltroEstadoPedidos] = useState("todos"); // "todos" | "retiro_tienda" | estado
+  const [busquedaPedidos, setBusquedaPedidos] = useState("");
+  const [paginaPedidos, setPaginaPedidos] = useState(1);
+  const [detallePedido, setDetallePedido] = useState(null);
+  const [fotoCliente, setFotoCliente] = useState(null);
+  const [pedidosPorPagina, setPedidosPorPagina] = useState(5);
   const [actualizandoRetiro, setActualizandoRetiro] = useState(null);
   const [filtroEnvios, setFiltroEnvios] = useState("");
+  const [filtroEstadoEnvios, setFiltroEstadoEnvios] = useState("todos");
+  const [enviosPage, setEnviosPage] = useState(1);
+  const [enviosPerPage, setEnviosPerPage] = useState(8);
+  const [rangoEnvios, setRangoEnvios] = useState("todos");
   const [empresasMensajeria, setEmpresasMensajeria] = useState([]);
   const [pedidoEnvio, setPedidoEnvio] = useState(null);
   const [envioForm, setEnvioForm] = useState({ id_empresa: "", numero_guia: "" });
@@ -4311,16 +4378,35 @@ export default function MiTienda() {
   };
 
   const renderPedidos = () => {
-    const totalPedidos = pedidos.length;
-    const pedidosDomicilio = pedidos.filter(p => p.tipo_entrega !== 'retiro_tienda');
     const pedidosRetiro = pedidos.filter(p => p.tipo_entrega === 'retiro_tienda');
     const clientesEnTienda = pedidosRetiro.filter(p => p.estado_retiro === 'en_tienda').length;
 
+    const conteoEstado = {
+      todos: pedidos.length,
+      retiro_tienda: pedidosRetiro.length,
+      pendiente: 0, pagado: 0, enviado: 0, entregada: 0, cancelada: 0,
+    };
+    pedidos.forEach((p) => {
+      const e = normalizarEstado(p.estado);
+      if (conteoEstado[e] !== undefined) conteoEstado[e] += 1;
+    });
+
     const pedidosAMostrar = pedidos.filter(p => {
-      if (filtroTipoPedidos === 'retiro_tienda') return p.tipo_entrega === 'retiro_tienda';
-      if (filtroTipoPedidos === 'domicilio') return p.tipo_entrega !== 'retiro_tienda';
+      if (filtroEstadoPedidos === 'retiro_tienda' && p.tipo_entrega !== 'retiro_tienda') return false;
+      if (filtroEstadoPedidos !== 'todos' && normalizarEstado(p.estado) !== filtroEstadoPedidos) return false;
+      const term = busquedaPedidos.trim().toLowerCase();
+      if (term) {
+        const en = [p.id_orden, p.id_orden_unico, p.codigo_compra, p.cliente, p.correo_cliente, p.telefono_cliente]
+          .filter(v => v !== null && v !== undefined)
+          .join(" ")
+          .toLowerCase();
+        if (!en.includes(term)) return false;
+      }
       return true;
     });
+
+    const totalPagsPed = Math.max(1, Math.ceil(pedidosAMostrar.length / pedidosPorPagina));
+    const paginaActual = Math.min(paginaPedidos, totalPagsPed);
 
     return (
       <>
@@ -4355,213 +4441,260 @@ export default function MiTienda() {
         </div>
 
         <div className="seller-books" style={{ marginTop: "20px" }}>
-          {/* TABS DE FILTRO DE TIPO DE ENTREGA */}
-          <div style={{ display: 'flex', gap: '10px', marginBottom: '18px', flexWrap: 'wrap' }}>
+          {/* BARRA DE FILTROS POR ESTADO */}
+          <div className="pedidos-filtros">
+            <span className="pedidos-filtros__label">Estado</span>
             <button
-              onClick={() => setFiltroTipoPedidos('todos')}
-              style={{
-                padding: '8px 16px',
-                borderRadius: '20px',
-                border: filtroTipoPedidos === 'todos' ? '1.5px solid #7A1E3A' : '1.5px solid #E5E7EB',
-                background: filtroTipoPedidos === 'todos' ? '#7A1E3A' : '#FFFFFF',
-                color: filtroTipoPedidos === 'todos' ? '#FFFFFF' : '#4B5563',
-                fontWeight: 700,
-                fontSize: '0.84rem',
-                cursor: 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px'
-              }}
+              className={`pedidos-filtros__tab${filtroEstadoPedidos === "todos" ? " is-active" : ""}`}
+              onClick={() => { setFiltroEstadoPedidos("todos"); setPaginaPedidos(1); }}
             >
-              <span>📦</span> Todos ({totalPedidos})
+              <span>📦</span> Todos
+              <span className="pedidos-filtros__count">{conteoEstado.todos}</span>
             </button>
             <button
-              onClick={() => setFiltroTipoPedidos('domicilio')}
-              style={{
-                padding: '8px 16px',
-                borderRadius: '20px',
-                border: filtroTipoPedidos === 'domicilio' ? '1.5px solid #2563EB' : '1.5px solid #E5E7EB',
-                background: filtroTipoPedidos === 'domicilio' ? '#2563EB' : '#FFFFFF',
-                color: filtroTipoPedidos === 'domicilio' ? '#FFFFFF' : '#4B5563',
-                fontWeight: 700,
-                fontSize: '0.84rem',
-                cursor: 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px'
-              }}
+              className={`pedidos-filtros__tab${filtroEstadoPedidos === "retiro_tienda" ? " is-active" : ""}`}
+              onClick={() => { setFiltroEstadoPedidos("retiro_tienda"); setPaginaPedidos(1); }}
             >
-              <span>🚚</span> Envíos ({pedidosDomicilio.length})
-            </button>
-            <button
-              onClick={() => setFiltroTipoPedidos('retiro_tienda')}
-              style={{
-                padding: '8px 16px',
-                borderRadius: '20px',
-                border: filtroTipoPedidos === 'retiro_tienda' ? '1.5px solid #16A34A' : '1.5px solid #E5E7EB',
-                background: filtroTipoPedidos === 'retiro_tienda' ? '#16A34A' : '#FFFFFF',
-                color: filtroTipoPedidos === 'retiro_tienda' ? '#FFFFFF' : '#4B5563',
-                fontWeight: 700,
-                fontSize: '0.84rem',
-                cursor: 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px'
-              }}
-            >
-              <span>🏪</span> Retiros en Tienda ({pedidosRetiro.length})
+              <span>🏪</span> Retiros en Tienda
+              <span className="pedidos-filtros__count">{conteoEstado.retiro_tienda}</span>
               {clientesEnTienda > 0 && (
-                <span style={{
-                  background: '#DC2626',
-                  color: '#FFFFFF',
-                  borderRadius: '999px',
-                  padding: '2px 8px',
-                  fontSize: '0.72rem',
-                  fontWeight: 800
-                }}>
-                  {clientesEnTienda} ¡En tienda!
+                <span className="pedidos-filtros__urgente">
+                  <span>⏰</span> {clientesEnTienda} ¡En tienda!
                 </span>
               )}
             </button>
+            <button
+              className={`pedidos-filtros__tab${filtroEstadoPedidos === "pendiente" ? " is-active" : ""}`}
+              onClick={() => { setFiltroEstadoPedidos("pendiente"); setPaginaPedidos(1); }}
+            >
+              <span>⏳</span> Pendientes
+              <span className="pedidos-filtros__count">{conteoEstado.pendiente}</span>
+            </button>
+            <button
+              className={`pedidos-filtros__tab${filtroEstadoPedidos === "pagado" ? " is-active" : ""}`}
+              onClick={() => { setFiltroEstadoPedidos("pagado"); setPaginaPedidos(1); }}
+            >
+              <span>💳</span> Pagadas
+              <span className="pedidos-filtros__count">{conteoEstado.pagado}</span>
+            </button>
+            <button
+              className={`pedidos-filtros__tab${filtroEstadoPedidos === "enviado" ? " is-active" : ""}`}
+              onClick={() => { setFiltroEstadoPedidos("enviado"); setPaginaPedidos(1); }}
+            >
+              <span>🚚</span> Enviadas
+              <span className="pedidos-filtros__count">{conteoEstado.enviado}</span>
+            </button>
+            <button
+              className={`pedidos-filtros__tab${filtroEstadoPedidos === "entregada" ? " is-active" : ""}`}
+              onClick={() => { setFiltroEstadoPedidos("entregada"); setPaginaPedidos(1); }}
+            >
+              <span>✅</span> Entregadas
+              <span className="pedidos-filtros__count">{conteoEstado.entregada}</span>
+            </button>
+            <button
+              className={`pedidos-filtros__tab${filtroEstadoPedidos === "cancelada" ? " is-active" : ""}`}
+              onClick={() => { setFiltroEstadoPedidos("cancelada"); setPaginaPedidos(1); }}
+            >
+              <span>❌</span> Canceladas
+              <span className="pedidos-filtros__count">{conteoEstado.cancelada}</span>
+            </button>
+            <span className="pedidos-filtros__spacer" />
+            <div className="pedidos-busqueda-box">
+              <IconSearch width={17} height={17} strokeWidth={2} className="search-icon" />
+              <input
+                type="text"
+                className="pedidos-busqueda"
+                placeholder="Buscar por #orden, código o cliente..."
+                value={busquedaPedidos}
+                onChange={(e) => { setBusquedaPedidos(e.target.value); setPaginaPedidos(1); }}
+              />
+              {busquedaPedidos && (
+                <button type="button" className="search-clear-btn" onClick={() => setBusquedaPedidos("")} aria-label="Limpiar búsqueda">✕</button>
+              )}
+            </div>
           </div>
 
           {loadingPedidos && <p style={{ color: "#999", padding: "20px 0" }}>Cargando pedidos...</p>}
           {!loadingPedidos && pedidosAMostrar.length === 0 && (
             <div className="empty-state">
-              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: "12px" }}>
-                <IconPackage width={48} height={48} strokeWidth={2} style={{ color: '#7A1E3A' }} />
+              <div className="pedidos-empty-icon">
+                <IconPackage width={30} height={30} strokeWidth={2} style={{ color: '#7A1E3A' }} />
               </div>
               <p style={{ fontWeight: 700, color: "#444", marginBottom: "8px" }}>
-                {filtroTipoPedidos === 'retiro_tienda' ? 'No hay retiros en tienda registrados' : 'Aún no has recibido pedidos'}
+                {busquedaPedidos.trim()
+                  ? 'No se encontraron pedidos con esa búsqueda'
+                  : filtroEstadoPedidos === 'retiro_tienda'
+                    ? 'No hay retiros en tienda registrados'
+                    : 'Aún no has recibido pedidos'}
               </p>
               <p style={{ fontSize: "0.85rem", color: "#888" }}>
-                {filtroTipoPedidos === 'retiro_tienda' ? 'Las reservas para recoger en tu librería aparecerán aquí' : 'Cuando un comprador adquiera tus libros, aparecerán aquí'}
+                {busquedaPedidos.trim()
+                  ? 'Revisa el número de orden, el código de compra o el nombre del cliente'
+                  : filtroEstadoPedidos === 'retiro_tienda'
+                    ? 'Las reservas para recoger en tu librería aparecerán aquí'
+                    : 'Cuando un comprador adquiera tus libros, aparecerán aquí'}
               </p>
+              {busquedaPedidos.trim() && pedidos.length > 0 && (
+                <p className="pedidos-empty-sugerencia">
+                  Tus pedidos actualmente: {pedidos.map(p => `#${p.id_orden}`).join(", ")} — prueba con uno de estos
+                </p>
+              )}
             </div>
           )}
           {!loadingPedidos && pedidosAMostrar.length > 0 && (
+            <>
+            <div className="pedidos-tabla-encabezado">
+              <span>{busquedaPedidos.trim() ? <>Resultados para <strong>"{busquedaPedidos.trim()}"</strong></> : "Listado de pedidos"}</span>
+              <span className="pedidos-tabla-encabezado__info">
+                Mostrando {Math.min(pedidosAMostrar.length, pedidosPorPagina)} de {pedidosAMostrar.length} pedido{pedidosAMostrar.length === 1 ? "" : "s"}
+              </span>
+            </div>
             <div style={{ overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
+              <table className="ventas-table ventas-table--pedidos" style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
                 <thead>
                   <tr style={{ borderBottom: "2px solid #e0dbd4", color: "var(--vinotinto)" }}>
-                    <th style={{ padding: "12px", fontWeight: 700 }}>ID Orden</th>
-                    <th style={{ padding: "12px", fontWeight: 700 }}>Fecha</th>
-                    <th style={{ padding: "12px", fontWeight: 700 }}>Cliente</th>
-                    <th style={{ padding: "12px", fontWeight: 700 }}>Productos</th>
-                    <th style={{ padding: "12px", fontWeight: 700 }}>Estado</th>
-                    <th style={{ padding: "12px", fontWeight: 700 }}>Guía / Retiro</th>
-                    <th style={{ padding: "12px", fontWeight: 700, textAlign: "right" }}>Total Tienda</th>
+                    <th style={{ width: "96px" }}>ID Orden</th>
+                    <th style={{ width: "118px" }}>Fecha</th>
+                    <th style={{ width: "180px" }}>Cliente</th>
+                    <th style={{ width: "280px" }}>Libros</th>
+                    <th style={{ width: "126px" }}>Estado</th>
+                    <th style={{ width: "185px" }}>Guía / Retiro</th>
+                    <th style={{ width: "115px" }}>Total Tienda</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {pedidosAMostrar.map((pedido, idx) => (
-                    <tr key={`${pedido.id_orden}-${idx}`} style={{ borderBottom: "1px solid #f0ebe4" }}>
-                      <td style={{ padding: "12px", fontWeight: 600 }}>
-                        #{pedido.id_orden}
-                        <br />
-                        <span style={{ color: "#777", fontWeight: 500, fontSize: "0.72rem" }}>{pedido.codigo_compra}</span>
-                        {pedido.tipo_entrega === 'retiro_tienda' && (
-                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', background: '#EFF6FF', color: '#1E40AF', padding: '2px 7px', borderRadius: '4px', fontSize: '0.68rem', fontWeight: 800, marginTop: '3px' }}>
-                            <span>🏪</span> Retiro en tienda
-                          </div>
-                        )}
-                      </td>
-                      <td style={{ padding: "12px", fontSize: "0.9rem" }}>
-                        {pedido.fecha ? new Date(pedido.fecha).toLocaleDateString("es-CO") : "Reciente"}
-                      </td>
-                      <td style={{ padding: "12px" }}>
-                        <div style={{ fontWeight: 600 }}>{pedido.cliente}</div>
-                        <div style={{ fontSize: "0.8rem", color: "#777" }}>{pedido.correo_cliente}</div>
-                        {pedido.telefono_cliente && (
-                          <div style={{ fontSize: "0.78rem", color: "#166534", fontWeight: 700, marginTop: '3px', display: 'flex', alignItems: 'center', gap: '3px' }}>
-                            <span>📞</span> {pedido.telefono_cliente}
-                          </div>
-                        )}
-                      </td>
-                      <td style={{ padding: "12px" }}>
-                        {pedido.items.map((item, index) => (
-                          <div key={index} style={{ fontSize: "0.88rem", marginBottom: "4px", display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            <IconBook width={16} height={16} strokeWidth={2} style={{ color: '#7A1E3A' }} /> <strong>{item.titulo}</strong> x {item.cantidad}
-                          </div>
-                        ))}
-                      </td>
-                      <td style={{ padding: "12px" }}>
-                        {(() => {
-                          const rawEstado = (pedido.estado || "").toLowerCase().trim();
-                          let estadoNorm = "pendiente";
-                          if (["pagado", "pagada", "aprobado", "aprobada"].includes(rawEstado)) estadoNorm = "pagado";
-                          else if (["enviado", "enviada", "en_camino"].includes(rawEstado)) estadoNorm = "enviado";
-                          else if (["entregado", "entregada", "completado", "completada"].includes(rawEstado)) estadoNorm = "entregada";
-                          else if (["cancelado", "cancelada", "anulado", "anulada"].includes(rawEstado)) estadoNorm = "cancelada";
+                  {pedidosAMostrar.slice((paginaActual - 1) * pedidosPorPagina, paginaActual * pedidosPorPagina).map((pedido, idx) => {
+                    const estadoNorm = normalizarEstado(pedido.estado);
+                    const esRetiro = pedido.tipo_entrega === 'retiro_tienda';
+                    const pendienteGuia = !esRetiro && !pedido.envio && ["pagado", "enviado"].includes(estadoNorm);
+                    const totalUds = (pedido.items || []).reduce((sum, it) => sum + Number(it.cantidad || 1), 0);
+                    const primerItem = (pedido.items && pedido.items[0]) || {};
+                    const primerTitulo = primerItem.titulo || "Libro";
+                    const primerImagen = primerItem.imagen;
+                    const primerAutor = primerItem.autor_libro || null;
+                    const inicialesCliente = String(pedido.cliente || "?").trim().split(/\s+/).filter(Boolean).slice(0, 2).map(p => p[0]).join("").toUpperCase() || "?";
+                    const fotoClienteUrl = resolveImageUrl(pedido.foto_perfil_cliente);
+                    // Retiro en tienda: la tienda recibe el valor completo de la orden.
+                    // Domicilio: recibe lo de sus libros + el costo de envío (de ahí paga la transportadora).
+                    const montoTienda = pedido.tipo_entrega === 'retiro_tienda'
+                      ? (pedido.total_orden ?? pedido.total_tienda)
+                      : ((pedido.total_tienda ?? 0) + (pedido.costo_envio ?? pedido.envio?.costo_envio ?? 0));
 
-                          const estilos = {
-                            pagado:   { border: "#1e8a45", bg: "#eafaf1", color: "#145c2e", label: "Pagada" },
-                            enviado:  { border: "#2979c7", bg: "#eaf3ff", color: "#1a4f8a", label: "Enviada" },
-                            entregada:{ border: "#7A1E3A", bg: "#f8e9ee", color: "#7A1E3A", label: "Entregada" },
-                            cancelada:{ border: "#c0392b", bg: "#fdecea", color: "#7b1e1e", label: "Cancelada" },
-                            pendiente:{ border: "#e67e22", bg: "#fef5e7", color: "#b95c00", label: "Pendiente" },
-                          };
-                          const c = estilos[estadoNorm] || estilos.pendiente;
-                          return (
-                            <div style={{
-                              padding: "8px 12px",
-                              borderRadius: "8px",
-                              border: `2px solid ${c.border}`,
-                              backgroundColor: c.bg,
-                              color: c.color,
-                              fontSize: "0.85rem",
-                              fontWeight: "700",
-                              minWidth: "110px",
-                              textAlign: "center"
-                            }}>
-                              {c.label}
-                            </div>
-                          );
-                        })()}
-                      </td>
-                      <td style={{ padding: "12px", minWidth: "155px" }}>
-                        {(() => {
-                          const rawEstado = (pedido.estado || "").toLowerCase().trim();
-                          let estadoNorm = "pendiente";
-                          if (["pagado", "pagada", "aprobado", "aprobada"].includes(rawEstado)) estadoNorm = "pagado";
-                          else if (["enviado", "enviada", "en_camino"].includes(rawEstado)) estadoNorm = "enviado";
-                          else if (["entregado", "entregada", "completado", "completada"].includes(rawEstado)) estadoNorm = "entregada";
-                          else if (["cancelado", "cancelada", "anulado", "anulada"].includes(rawEstado)) estadoNorm = "cancelada";
+                    const estilos = {
+                      pagado:    { border: "#1e8a45", bg: "#eafaf1", color: "#145c2e", label: "Pagada",    emoji: "💳" },
+                      enviado:   { border: "#2979c7", bg: "#eaf3ff", color: "#1a4f8a", label: "Enviada",   emoji: "🚚" },
+                      entregada: { border: "#7A1E3A", bg: "#f8e9ee", color: "#7A1E3A", label: "Entregada", emoji: "✅" },
+                      cancelada: { border: "#dc2626", bg: "#fee2e2", color: "#b91c1c", label: "Cancelada", emoji: "❌" },
+                      pendiente: { border: "#e67e22", bg: "#fef5e7", color: "#b95c00", label: "Pendiente", emoji: "⏳" },
+                    };
+                    const c = estilos[estadoNorm] || estilos.pendiente;
 
+                    return (
+                    <tr key={`${pedido.id_orden}-${idx}`} className={`ventas-table__row${pendienteGuia ? " ventas-table__row--alerta" : ""}`} style={{ borderBottom: "1px solid #f0ebe4" }}>
+                      <td className="ventas-table__center">
+                        <div className="pedidos-id">
+                          <div className="pedidos-id__chip">#{pedido.id_orden}</div>
+                          <div className="pedidos-id__code">{pedido.codigo_compra}</div>
+                        </div>
+                      </td>
+                      <td className="ventas-table__center">
+                        <div className={`pedidos-fecha${pedido.fecha ? "" : " pedidos-fecha--reciente"}`}>
+                          {pedido.fecha ? <>📅 {new Date(pedido.fecha).toLocaleDateString("es-CO")}</> : "Reciente"}
+                        </div>
+                      </td>
+                      <td style={{ padding: "12px", textAlign: "center" }}>
+                        <div className="pedidos-cliente">
+                          <div
+                            className={`pedidos-cliente__avatar${fotoClienteUrl ? " pedidos-cliente__avatar--foto" : ""}`}
+                            onClick={() => fotoClienteUrl && setFotoCliente({ url: fotoClienteUrl, nombre: pedido.cliente, correo: pedido.correo_cliente })}
+                            role={fotoClienteUrl ? "button" : undefined}
+                            title={fotoClienteUrl ? "Ver foto de perfil" : undefined}
+                          >
+                            {fotoClienteUrl ? (
+                              <img className="pedidos-cliente__avatar-img" src={fotoClienteUrl} alt="" />
+                            ) : inicialesCliente}
+                          </div>
+                          <div className="pedidos-cliente__info">
+                            <span className="pedidos-cliente__name">{pedido.cliente}</span>
+                            <span className="pedidos-cliente__mail">
+                              <span className="pedidos-cliente__mail-icon">✉️</span>
+                              <span className="pedidos-cliente__mail-text">{pedido.correo_cliente}</span>
+                            </span>
+                            {pedido.telefono_cliente && (
+                              <span className="pedidos-cliente__phone">
+                                <span>📞</span> {pedido.telefono_cliente}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+                      <td style={{ padding: "12px", textAlign: "center" }}>
+                        <div className="pedidos-libro">
+                          <div className="pedidos-libro__thumb">
+                            {resolveImageUrl(primerImagen) ? (
+                              <img className="ventas-book-thumb__img" src={resolveImageUrl(primerImagen)} alt="" />
+                            ) : (
+                              <div className="ventas-book-placeholder">
+                                <div className="ventas-book-placeholder__spine" />
+                                <IconBook className="ventas-book-placeholder__icon" width={17} height={17} strokeWidth={2} />
+                                <div className="ventas-book-placeholder__lines">
+                                  <div /><div /><div />
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                          <div className="pedidos-libro__info">
+                            <span className="pedidos-libro__title">{primerTitulo}</span>
+                            {primerAutor && <span className="pedidos-libro__author">{primerAutor}</span>}
+                            <span className="pedidos-uds">
+                              <span>📚</span> {totalUds} unidad{totalUds === 1 ? "" : "es"}
+                            </span>
+                            {(pedido.items && pedido.items.length > 0) && (
+                              <button type="button" className="pedidos-ver-detalle" onClick={() => setDetallePedido(pedido)}>
+                                Ver detalle {pedido.items.length > 1 ? `(${pedido.items.length})` : ""}
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="ventas-table__center">
+                        <div className={`pedidos-estado pedidos-estado--${estadoNorm}`}>
+                          <span className="pedidos-estado__dot" />
+                          {c.label}
+                        </div>
+                      </td>
+                      <td className="ventas-table__center" style={{ padding: "12px", minWidth: "155px" }}>
+                        {(() => {
                           // SI ES RETIRO EN TIENDA
-                          if (pedido.tipo_entrega === 'retiro_tienda') {
+                          if (esRetiro) {
                             return (
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                  <span style={{ fontSize: '0.74rem', color: '#64748B', fontWeight: 600 }}>PIN:</span>
-                                  <span style={{ background: '#1E293B', color: '#FDE047', padding: '2px 8px', borderRadius: '5px', fontWeight: 900, fontSize: '0.88rem', letterSpacing: '1px' }}>
-                                    {pedido.pin_retiro || '----'}
-                                  </span>
+                              <div className="pedidos-guia">
+                                <div className="pedidos-retiro-card">
+                                  <div className="pedidos-retiro-card__head">
+                                    <span className="pedidos-retiro-card__icon">🏪</span>
+                                    <span className="pedidos-retiro-card__title">Retiro en tienda</span>
+                                  </div>
+                                  <div className="pedidos-retiro-card__pin">
+                                    <span className="pedidos-retiro-card__pin-label">PIN</span>
+                                    <span className="pedidos-retiro-card__pin-value">{pedido.pin_retiro || '----'}</span>
+                                  </div>
+                                  {pedido.fecha_limite_retiro && (
+                                    <div className="pedidos-retiro-card__limite">
+                                      <span>⏳</span> Retira antes del {new Date(pedido.fecha_limite_retiro).toLocaleDateString("es-CO")}
+                                    </div>
+                                  )}
                                 </div>
 
                                 {pedido.estado_retiro === 'en_tienda' && (
-                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                                    <div style={{ background: '#DBEAFE', color: '#1E40AF', border: '1.5px solid #93C5FD', borderRadius: '6px', padding: '4px 8px', fontSize: '0.74rem', fontWeight: 800 }}>
-                                      📍 ¡Cliente en tienda!
-                                    </div>
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', alignItems: 'center', width: '100%', boxSizing: 'border-box' }}>
+                                    <div className="pedidos-guia__nota">📍 ¡Cliente en tienda!</div>
                                     {estadoNorm === 'pagado' ? (
                                       <>
-                                        <div style={{ background: '#DCFCE7', color: '#166534', border: '1.5px solid #86EFAC', borderRadius: '6px', padding: '4px 8px', fontSize: '0.74rem', fontWeight: 800, textAlign: 'center' }}>
-                                          💳 Pagado ({pedido.metodo_pago || 'En línea'})
-                                        </div>
+                                        <div className="pedidos-guia__aplica">💳 Pagado ({pedido.metodo_pago || 'En línea'})</div>
                                         <button
                                           onClick={() => setModalConfirmarEntrega({ pedido, esEfectivo: false, exito: false, error: "" })}
                                           disabled={actualizandoRetiro === pedido.id_orden}
-                                          style={{
-                                            background: '#16A34A',
-                                            color: '#fff',
-                                            border: 'none',
-                                            borderRadius: '6px',
-                                            padding: '6px 10px',
-                                            fontWeight: 800,
-                                            fontSize: '0.74rem',
-                                            cursor: 'pointer'
-                                          }}
+                                          className="pedidos-guia__btn pedidos-guia__btn--block"
                                         >
                                           <span>✅</span> Entregar Libro
                                         </button>
@@ -4570,20 +4703,7 @@ export default function MiTienda() {
                                       <button
                                         onClick={() => setModalHabilitarPago({ pedido, exito: false, error: "" })}
                                         disabled={actualizandoRetiro === pedido.id_orden}
-                                        style={{
-                                          background: 'linear-gradient(135deg, #16A34A 0%, #15803D 100%)',
-                                          color: '#fff',
-                                          border: 'none',
-                                          borderRadius: '6px',
-                                          padding: '6px 10px',
-                                          fontWeight: 800,
-                                          fontSize: '0.74rem',
-                                          cursor: 'pointer',
-                                          display: 'inline-flex',
-                                          alignItems: 'center',
-                                          justifyContent: 'center',
-                                          gap: '4px'
-                                        }}
+                                        className="pedidos-guia__btn pedidos-guia__btn--block"
                                       >
                                         <span>🔔</span> Habilitar Pago
                                       </button>
@@ -4592,73 +4712,41 @@ export default function MiTienda() {
                                 )}
 
                                 {pedido.estado_retiro === 'reservado' && (
-                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                                  <div className="pedidos-guia" style={{ width: '100%' }}>
                                     {estadoNorm === 'pagado' ? (
-                                      <div style={{ background: '#DCFCE7', color: '#166534', border: '1.5px solid #86EFAC', borderRadius: '6px', padding: '4px 8px', fontSize: '0.74rem', fontWeight: 800, textAlign: 'center' }}>
-                                        💳 Pagado ({pedido.metodo_pago || 'En línea'})
-                                      </div>
+                                      <div className="pedidos-guia__aplica">💳 Pagado ({pedido.metodo_pago || 'En línea'})</div>
                                     ) : (
-                                      <div style={{ background: '#FEF9C3', color: '#854D0E', border: '1px solid #FDE047', borderRadius: '6px', padding: '4px 8px', fontSize: '0.72rem', fontWeight: 700, textAlign: 'center' }}>
-                                        🟡 Esperando llegada
-                                      </div>
+                                      <div className="pedidos-guia__aviso pedidos-guia__aviso--wait">🟡 Esperando llegada</div>
                                     )}
                                   </div>
                                 )}
 
                                 {pedido.estado_retiro === 'habilitado_pago' && (
-                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                                  <div className="pedidos-guia" style={{ width: '100%' }}>
                                     {estadoNorm === 'pagado' ? (
-                                      <div style={{ background: '#DCFCE7', color: '#166534', border: '1.5px solid #86EFAC', borderRadius: '6px', padding: '4px 8px', fontSize: '0.74rem', fontWeight: 800, textAlign: 'center' }}>
-                                        💳 Pagado ({pedido.metodo_pago || 'En línea'})
-                                      </div>
+                                      <div className="pedidos-guia__aplica">💳 Pagado ({pedido.metodo_pago || 'En línea'})</div>
                                     ) : (
-                                      <div style={{ background: '#FEF3C7', color: '#92400E', border: '1px solid #FCD34D', borderRadius: '6px', padding: '4px 8px', fontSize: '0.72rem', fontWeight: 700, textAlign: 'center' }}>
-                                        ⏳ Esperando pago en tienda
-                                      </div>
+                                      <div className="pedidos-guia__aviso pedidos-guia__aviso--ready">⏳ Esperando pago en tienda</div>
                                     )}
                                     <button
                                       onClick={() => setModalConfirmarEntrega({ pedido, esEfectivo: estadoNorm !== 'pagado', exito: false, error: "" })}
                                       disabled={actualizandoRetiro === pedido.id_orden}
-                                      style={{
-                                        background: estadoNorm === 'pagado' ? '#16A34A' : '#7A1E3A',
-                                        color: '#fff',
-                                        border: 'none',
-                                        borderRadius: '6px',
-                                        padding: '6px 10px',
-                                        fontWeight: 800,
-                                        fontSize: '0.74rem',
-                                        cursor: 'pointer',
-                                        display: 'inline-flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        gap: '4px'
-                                      }}
+                                      className="pedidos-guia__btn pedidos-guia__btn--block"
                                     >
                                       <span>✅</span> {estadoNorm === 'pagado' ? 'Entregar Libro (Ya Pagado)' : 'Cobrar Efectivo y Entregar'}
                                     </button>
                                   </div>
                                 )}
 
-                                {pedido.estado_retiro === 'entregado' && (
-                                  <div style={{ background: '#F3F4F6', color: '#374151', borderRadius: '6px', padding: '4px 8px', fontSize: '0.74rem', fontWeight: 700 }}>
-                                    ✅ Entregado en tienda
-                                  </div>
+                                {["entregado", "entregada"].includes(pedido.estado_retiro) && (
+                                  <div className="pedidos-guia__piloto pedidos-guia__piloto--done pedidos-guia__piloto--block">✅ Entregado en tienda</div>
                                 )}
 
                                 {(!pedido.estado_retiro && estadoNorm === 'pagado') && (
                                   <button
                                     onClick={() => setModalConfirmarEntrega({ pedido, esEfectivo: false, exito: false, error: "" })}
                                     disabled={actualizandoRetiro === pedido.id_orden}
-                                    style={{
-                                      background: '#16A34A',
-                                      color: '#fff',
-                                      border: 'none',
-                                      borderRadius: '6px',
-                                      padding: '6px 10px',
-                                      fontWeight: 800,
-                                      fontSize: '0.74rem',
-                                      cursor: 'pointer'
-                                    }}
+                                    className="pedidos-guia__btn pedidos-guia__btn--block"
                                   >
                                     <span>✅</span> Confirmar Entrega
                                   </button>
@@ -4667,48 +4755,42 @@ export default function MiTienda() {
                             );
                           }
 
-                          // 1. Orden cancelada
+                          // 1. Orden cancelada (estado ya visible en la columna Estado)
                           if (estadoNorm === "cancelada") {
                             return (
-                              <div style={{
-                                padding: "7px 11px",
-                                borderRadius: "999px",
-                                background: "#fdecea",
-                                color: "#c0392b",
-                                fontWeight: 700,
-                                fontSize: "0.75rem",
-                                textAlign: "center",
-                                border: "1px solid #e9b4b0"
-                              }}>
-                                Pedido cancelado
-                              </div>
+                              <span className="pedidos-guia__empty">—</span>
                             );
                           }
 
                           // 2. Guía ya registrada
                           if (pedido.envio) {
                             return (
-                              <div style={{ fontSize: "0.78rem", lineHeight: 1.5 }}>
-                                <strong style={{ display: "block", color: "#4b2733" }}>
-                                  {pedido.envio.empresa_mensajeria}
-                                </strong>
-                                <span style={{ color: "#6d6265" }}>Guía {pedido.envio.numero_guia}</span>
+                              <div className="pedidos-guia">
+                                <div className="pedidos-envio-card">
+                                  <div className="pedidos-envio-card__head">
+                                    <span className="pedidos-envio-card__icon">🚚</span>
+                                    <span className="pedidos-envio-card__empresa">{pedido.envio.empresa_mensajeria || "Mensajería"}</span>
+                                  </div>
+                                  <div className="pedidos-envio-card__nro">
+                                    <span className="pedidos-envio-card__nro-label">No. guía</span>
+                                    <span className="pedidos-envio-card__nro-value">{pedido.envio.numero_guia}</span>
+                                  </div>
+                                  {(() => {
+                                    const dir = pedido.direccion_entrega || {};
+                                    const texto = [dir.alias, dir.direccion, dir.ciudad, dir.departamento].filter(Boolean).join(" · ");
+                                    if (!texto) return null;
+                                    return (
+                                      <div className="pedidos-envio-card__dir">
+                                        <span>📍</span>
+                                        <span>{texto}</span>
+                                      </div>
+                                    );
+                                  })()}
+                                </div>
                                 {["pagado", "enviado"].includes(estadoNorm) && (
                                   <button
                                     onClick={() => abrirRegistroEnvio(pedido)}
-                                    style={{
-                                      display: "block",
-                                      marginTop: "5px",
-                                      border: "1px solid #9b4d65",
-                                      borderRadius: "999px",
-                                      padding: "4px 9px",
-                                      cursor: "pointer",
-                                      background: "#fff",
-                                      color: "#7A1E3A",
-                                      fontWeight: 700,
-                                      fontSize: "0.7rem",
-                                      whiteSpace: "nowrap"
-                                    }}
+                                    className="pedidos-guia__btn pedidos-guia__btn--block"
                                   >
                                     ✏️ Editar Guía
                                   </button>
@@ -4720,38 +4802,35 @@ export default function MiTienda() {
                           // 3. Pagada o enviada pero sin guía: botón para registrarla
                           if (["pagado", "enviado"].includes(estadoNorm)) {
                             return (
-                              <button
-                                onClick={() => abrirRegistroEnvio(pedido)}
-                                style={{
-                                  border: "1px solid #9b4d65",
-                                  borderRadius: "999px",
-                                  padding: "7px 11px",
-                                  cursor: "pointer",
-                                  background: "#fff",
-                                  color: "#7A1E3A",
-                                  fontWeight: 700,
-                                  fontSize: "0.75rem",
-                                  whiteSpace: "nowrap"
-                                }}
-                              >
-                                + Registrar Guía
-                              </button>
+                              <div className="pedidos-guia">
+                                {pendienteGuia && (
+                                  <div className="pedidos-guia__nota">⚠ Falta guía</div>
+                                )}
+                                {(() => {
+                                  const dir = pedido.direccion_entrega || {};
+                                  const texto = [dir.alias, dir.direccion, dir.ciudad, dir.departamento].filter(Boolean).join(" · ");
+                                  if (!texto) return null;
+                                  return (
+                                    <div className="pedidos-envio-card__dir">
+                                      <span>📍</span>
+                                      <span>{texto}</span>
+                                    </div>
+                                  );
+                                })()}
+                                <button
+                                  onClick={() => abrirRegistroEnvio(pedido)}
+                                  className="pedidos-guia__btn"
+                                >
+                                  + Registrar Guía
+                                </button>
+                              </div>
                             );
                           }
 
                           // 4. Entregada sin guía
                           if (estadoNorm === "entregada") {
                             return (
-                              <div style={{
-                                padding: "7px 11px",
-                                borderRadius: "999px",
-                                background: "#eafaf1",
-                                color: "#1e8a45",
-                                fontWeight: 700,
-                                fontSize: "0.75rem",
-                                textAlign: "center",
-                                border: "1px solid #a8d5b5"
-                              }}>
+                              <div className="pedidos-guia__piloto pedidos-guia__piloto--done">
                                 Entregado
                               </div>
                             );
@@ -4759,46 +4838,175 @@ export default function MiTienda() {
 
                           // 5. Pendiente de pago real
                           return (
-                            <div style={{
-                              padding: "7px 11px",
-                              borderRadius: "999px",
-                              background: "#e7e1e2",
-                              color: "#7b7073",
-                              fontWeight: 700,
-                              fontSize: "0.75rem",
-                              textAlign: "center"
-                            }}>
+                            <div className="pedidos-guia__piloto pedidos-guia__piloto--wait">
                               Pendiente de pago
                             </div>
                           );
                         })()}
                       </td>
-                      <td style={{ padding: "12px", textAlign: "right", fontWeight: 700, color: "var(--gris-carbon)" }}>
-                        {formatPrecio(pedido.total_tienda)}
+                      <td style={{ padding: "12px", textAlign: "right" }}>
+                        <div className="pedidos-total">
+                          <div className="pedidos-total__value">{formatPrecio(montoTienda)}</div>
+                        </div>
                       </td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
+              {totalPagsPed > 1 && (
+                <div className="mis-libros-pagination-bar" style={{ marginTop: "16px" }}>
+                  <div className="pagination-info">
+                    Mostrando <strong>{(paginaActual - 1) * pedidosPorPagina + 1} - {Math.min(paginaActual * pedidosPorPagina, pedidosAMostrar.length)}</strong> de <strong>{pedidosAMostrar.length}</strong> pedidos
+                  </div>
+
+                  <div className="pagination-controls">
+                    <button type="button" className="pagination-btn-nav" disabled={paginaActual <= 1} onClick={() => setPaginaPedidos(prev => Math.max(1, prev - 1))}>
+                      ‹ Anterior
+                    </button>
+                    <div className="pagination-numbers">
+                      {Array.from({ length: totalPagsPed }, (_, idx) => idx + 1).map((pageNum) => {
+                        if (pageNum === 1 || pageNum === totalPagsPed || Math.abs(pageNum - paginaActual) <= 1) {
+                          return (
+                            <button key={pageNum} type="button" className={`pagination-num-btn ${pageNum === paginaActual ? 'active' : ''}`} onClick={() => setPaginaPedidos(pageNum)}>
+                              {pageNum}
+                            </button>
+                          );
+                        } else if (
+                          (pageNum === 2 && paginaActual > 3) ||
+                          (pageNum === totalPagsPed - 1 && paginaActual < totalPagsPed - 2)
+                        ) {
+                          return <span key={pageNum} className="pagination-ellipsis">…</span>;
+                        }
+                        return null;
+                      })}
+                    </div>
+                    <button type="button" className="pagination-btn-nav" disabled={paginaActual >= totalPagsPed} onClick={() => setPaginaPedidos(prev => Math.min(totalPagsPed, prev + 1))}>
+                      Siguiente ›
+                    </button>
+                  </div>
+
+                  <div className="pagination-per-page">
+                    <label htmlFor="select-per-page-pedidos">Ver:</label>
+                    <select id="select-per-page-pedidos" value={pedidosPorPagina} onChange={(e) => { setPedidosPorPagina(Number(e.target.value)); setPaginaPedidos(1); }} className="select-per-page">
+                      <option value={5}>5 por pág.</option>
+                      <option value={10}>10 por pág.</option>
+                      <option value={20}>20 por pág.</option>
+                    </select>
+                  </div>
+                </div>
+              )}
             </div>
+            </>
           )}
         </div>
+        {detallePedido && (
+          <div className="modal-overlay open" onClick={() => setDetallePedido(null)}>
+            <div className="modal-box ventas-modal" onClick={(e) => e.stopPropagation()}>
+              <div className="ventas-modal__header">
+                <div>
+                  <h2 className="ventas-modal__title">Detalle de la orden #{detallePedido.id_orden}</h2>
+                  <p className="ventas-modal__sub">
+                    {detallePedido.cliente}
+                    {detallePedido.fecha ? ` · ${new Date(detallePedido.fecha).toLocaleDateString("es-CO")}` : " · Reciente"}
+                    {detallePedido.codigo_compra ? ` · ${detallePedido.codigo_compra}` : ""}
+                  </p>
+                </div>
+                <button type="button" onClick={() => setDetallePedido(null)} aria-label="Cerrar detalle" className="ventas-modal__close">×</button>
+              </div>
+              <div className="ventas-modal__list">
+                {(detallePedido.items || []).map((item, idx) => (
+                  <div key={`${item.id_libro}-${idx}`} className="ventas-modal__item">
+                    <div className="ventas-modal__item-thumb">
+                      {resolveImageUrl(item.imagen) ? (
+                        <img src={resolveImageUrl(item.imagen)} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      ) : (
+                        <IconBook width={18} height={18} strokeWidth={2} style={{ color: "var(--vinotinto)", opacity: 0.7 }} />
+                      )}
+                    </div>
+                    <div className="ventas-modal__item-info">
+                      <span className="ventas-modal__item-title">{item.titulo}</span>
+                      <span className="ventas-modal__item-author">{item.autor_libro || "Autor no disponible"}</span>
+                      <span className="ventas-modal__item-meta">
+                        Cantidad: {item.cantidad} · Unitario: {formatPrecio(item.precio_libro)}
+                      </span>
+                    </div>
+                    <span className="ventas-modal__item-total">
+                      {formatPrecio(Number(item.total_linea ?? item.total ?? (item.precio_libro || 0) * Number(item.cantidad || 1)))}
+                    </span>
+                  </div>
+                ))}
+              </div>
+              <div className="ventas-modal__footer">
+                <div className="ventas-modal__footer-sum">
+                  {(() => {
+                    const esRetiro = detallePedido.tipo_entrega === 'retiro_tienda';
+                    const costoEnvio = Number(detallePedido.costo_envio ?? detallePedido.envio?.costo_envio ?? 0);
+                    const pagoTienda = esRetiro
+                      ? (detallePedido.total_orden ?? detallePedido.total_tienda)
+                      : ((detallePedido.total_tienda ?? 0) + costoEnvio);
+                    return (
+                      <>
+                        <div className="ventas-modal__footer-row">
+                          <span>Total de la orden</span>
+                          <span className="ventas-modal__footer-fila-total">
+                            {formatPrecio(detallePedido.total_orden ?? detallePedido.total_tienda)}
+                          </span>
+                        </div>
+                        {!esRetiro && costoEnvio > 0 && (
+                          <div className="ventas-modal__footer-row">
+                            <span>🚚 Envío</span>
+                            <span>+ {formatPrecio(costoEnvio)}</span>
+                          </div>
+                        )}
+                        <div className="ventas-modal__footer-row ventas-modal__footer-row--destacada">
+                          <span>👛 {esRetiro ? 'Cobras en la tienda' : 'Pago a tu tienda'}</span>
+                          <span>{formatPrecio(pagoTienda)}</span>
+                        </div>
+                      </>
+                    );
+                  })()}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        {fotoCliente && (
+          <div className="modal-overlay open pedidos-foto-cerrar" onClick={() => setFotoCliente(null)}>
+            <div className="pedidos-foto-card" onClick={(e) => e.stopPropagation()}>
+              <button type="button" onClick={() => setFotoCliente(null)} aria-label="Cerrar foto de perfil" className="ventas-modal__close">×</button>
+              <img className="pedidos-foto-card__img" src={fotoCliente.url} alt="Foto de perfil" />
+              {fotoCliente.nombre && <span className="pedidos-foto-card__nombre">{fotoCliente.nombre}</span>}
+              {fotoCliente.correo && <span className="pedidos-foto-card__correo">{fotoCliente.correo}</span>}
+            </div>
+          </div>
+        )}
         {pedidoEnvio && (
           <div className="modal-overlay open" onClick={() => !guardandoEnvio && setPedidoEnvio(null)}>
-            <div className="modal-box" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "460px", padding: "28px" }}>
-              <h2 style={{ marginTop: 0 }}>Registrar Guía de envío · Orden #{pedidoEnvio.id_orden}</h2>
-              <p style={{ color: "#666", fontSize: "0.9rem" }}>Elige la transportadora acordada e ingresa el número de Guía que ella te entregó. BookyHome no realiza ni controla el transporte.</p>
-              <label style={{ display: "block", fontWeight: 600, marginTop: "18px" }}>Empresa de mensajería</label>
-              <select value={envioForm.id_empresa} onChange={(e) => setEnvioForm({ ...envioForm, id_empresa: e.target.value })} style={{ width: "100%", marginTop: "6px", padding: "10px", borderRadius: "6px" }}>
-                <option value="">Selecciona una empresa</option>
-                {empresasMensajeria.map((empresa) => <option key={empresa.id_empresa} value={empresa.id_empresa}>{empresa.nombre_empresa}</option>)}
-              </select>
-              <label style={{ display: "block", fontWeight: 600, marginTop: "14px" }}>Número de Guía</label>
-              <input value={envioForm.numero_guia} onChange={(e) => setEnvioForm({ ...envioForm, numero_guia: e.target.value })} maxLength={80} placeholder="Ej. 123456789" style={{ width: "100%", marginTop: "6px", padding: "10px", borderRadius: "6px", boxSizing: "border-box" }} />
-              {envioError && <p style={{ color: "#b42318", fontSize: "0.85rem" }}>{envioError}</p>}
-              <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "22px" }}>
-                <button onClick={() => setPedidoEnvio(null)} disabled={guardandoEnvio}>Cancelar</button>
-                <button className="btn btn-vinotinto" onClick={guardarEnvio} disabled={guardandoEnvio}>{guardandoEnvio ? "Guardando..." : "Guardar Guía"}</button>
+            <div className="modal-box" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "500px", padding: "0", overflow: "hidden" }}>
+              <div className="envios-modal__header">
+                <span className="envios-modal__icon">
+                  <IconTruck width={22} height={22} strokeWidth={2} style={{ color: "white" }} />
+                </span>
+                <div>
+                  <h3>{pedidoEnvio.envio ? "Editar" : "Registrar"} Guía de envío</h3>
+                  <span>Orden #{pedidoEnvio.id_orden} · Compra {pedidoEnvio.codigo_compra} · {pedidoEnvio.cliente}</span>
+                </div>
+              </div>
+              <div style={{ padding: "24px 26px" }}>
+                <p className="envios-modal__nota">Elige la transportadora acordada e ingresa el número de Guía que ella te entregó. BookyHome no realiza ni controla el transporte.</p>
+                <label style={{ display: "block", fontWeight: 700, color: "#4b2733", fontSize: "0.88rem" }}>Empresa de mensajería</label>
+                <select value={envioForm.id_empresa} onChange={(e) => setEnvioForm({ ...envioForm, id_empresa: e.target.value })} style={{ width: "100%", marginTop: "6px", padding: "11px 12px", borderRadius: "8px", border: "1.5px solid #d9cfd1", outline: "none", boxSizing: "border-box", fontFamily: "inherit", fontSize: "0.9rem" }}>
+                  <option value="">Selecciona una empresa</option>
+                  {empresasMensajeria.map((empresa) => <option key={empresa.id_empresa} value={empresa.id_empresa}>{empresa.nombre_empresa}</option>)}
+                </select>
+                <label style={{ display: "block", fontWeight: 700, color: "#4b2733", fontSize: "0.88rem", marginTop: "16px" }}>Número de Guía</label>
+                <input value={envioForm.numero_guia} onChange={(e) => setEnvioForm({ ...envioForm, numero_guia: e.target.value })} maxLength={80} placeholder="Ej. 123456789" style={{ width: "100%", marginTop: "6px", padding: "11px 12px", borderRadius: "8px", border: "1.5px solid #d9cfd1", outline: "none", boxSizing: "border-box", fontFamily: "inherit", fontSize: "0.9rem", textTransform: "uppercase" }} />
+                {envioError && <p className="envios-modal__error">⚠ {envioError}</p>}
+                <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "22px" }}>
+                  <button onClick={() => setPedidoEnvio(null)} disabled={guardandoEnvio} style={{ fontFamily: "inherit", padding: "9px 16px", borderRadius: "8px", cursor: "pointer" }}>Cancelar</button>
+                  <button className="btn btn-vinotinto" onClick={guardarEnvio} disabled={guardandoEnvio} style={{ padding: "9px 18px", borderRadius: "8px" }}>{guardandoEnvio ? "Guardando..." : "Guardar Guía"}</button>
+                </div>
               </div>
             </div>
           </div>
@@ -5139,62 +5347,237 @@ export default function MiTienda() {
 
   const renderEnvios = () => {
     const texto = filtroEnvios.trim().toLowerCase();
-    const envios = pedidos.filter((pedido) => {
-      if (!pedido.envio || pedido.estado === "cancelada") return false;
+
+    const rango = RANGOS_ENVIOS.find((r) => r.id === rangoEnvios) || RANGOS_ENVIOS[0];
+    const inicio = new Date();
+    inicio.setHours(0, 0, 0, 0);
+    if (rango.dias !== null) inicio.setDate(inicio.getDate() - rango.dias);
+
+    const baseEnvios = pedidos.filter((pedido) => {
+      if (pedido.tipo_entrega === "retiro_tienda") return false;
+      const est = normalizarEstado(pedido.estado);
+      if (["cancelada", "pendiente"].includes(est)) return false;
+      if (rango.dias !== null && parseFechaPedido(pedido.fecha) < inicio) return false;
+      return true;
+    });
+
+    const conteo = {
+      todos: baseEnvios.length,
+      transito: baseEnvios.filter((p) => ["camino", "procesando"].includes(infoEstadoEnvio(p).clase)).length,
+      entregados: baseEnvios.filter((p) => infoEstadoEnvio(p).clase === "entregado").length,
+      sin_guia: baseEnvios.filter((p) => infoEstadoEnvio(p).clase === "alerta").length,
+    };
+
+    const envios = baseEnvios.filter((pedido) => {
+      const clase = infoEstadoEnvio(pedido).clase;
+      const activo = FILTROS_ENVIOS.find((f) => f.id === filtroEstadoEnvios) || FILTROS_ENVIOS[0];
+      if (activo.clases && !activo.clases.includes(clase)) return false;
       if (!texto) return true;
-      return [pedido.codigo_compra, pedido.id_orden, pedido.cliente, pedido.correo_cliente, pedido.envio.empresa_mensajeria, pedido.envio.numero_guia]
+      return [pedido.codigo_compra, pedido.id_orden, pedido.cliente, pedido.correo_cliente, pedido.envio?.empresa_mensajeria, pedido.envio?.numero_guia]
         .some((valor) => String(valor || "").toLowerCase().includes(texto));
     });
+
+    const totalEnviosFiltrados = envios.length;
+    const totalPagesEnvios = Math.max(1, Math.ceil(totalEnviosFiltrados / enviosPerPage));
+    const currentPageEnvios = Math.min(enviosPage, totalPagesEnvios);
+    const paginatedEnvios = envios.slice((currentPageEnvios - 1) * enviosPerPage, currentPageEnvios * enviosPerPage);
 
     return (
       <>
         <div className="welcome-card">
-          <h1 style={{ fontSize: "1.55rem", marginBottom: "4px", display: "flex", alignItems: "center", gap: "10px" }}>
-            <IconTruck width={28} height={28} strokeWidth={2} style={{ color: "#7A1E3A" }} />
+          <h1 style={{ fontSize: "1.5rem", margin: 0, display: "flex", alignItems: "center", gap: "12px" }}>
+            <span className="envios-title-icon">
+              <IconTruck width={22} height={22} strokeWidth={2} style={{ color: "white" }} />
+            </span>
             Envíos y seguimiento
           </h1>
-          <p style={{ margin: 0 }}>Consulta las Guías registradas y abre el rastreo oficial de cada transportadora.</p>
+          <p style={{ margin: "3px 0 0", color: "#666" }}>Registra las guías de tus pedidos pagados y sigue el rastreo oficial de cada transportadora.</p>
         </div>
 
-        <div className="seller-books" style={{ marginTop: "20px", padding: "20px" }}>
-          <label style={{ display: "block", fontWeight: 700, color: "#4b2733", marginBottom: "8px" }}>Buscar envío</label>
-          <input
-            value={filtroEnvios}
-            onChange={(e) => setFiltroEnvios(e.target.value)}
-            placeholder="Compra, Guía, comprador o transportadora"
-            style={{ width: "100%", maxWidth: "520px", padding: "11px 13px", border: "1px solid #d9cfd1", borderRadius: "8px", boxSizing: "border-box" }}
-          />
+        <div className="envios-stats">
+          {FILTROS_ENVIOS.map((f) => (
+            <button
+              key={f.id}
+              type="button"
+              className={`envios-stat ${filtroEstadoEnvios === f.id ? "envios-stat--active" : ""}`}
+              onClick={() => { setFiltroEstadoEnvios(f.id); setEnviosPage(1); }}
+            >
+              <span className="envios-stat__label">{f.label}</span>
+              <span className="envios-stat__count">{conteo[f.id]}</span>
+            </button>
+          ))}
         </div>
 
-        {loadingPedidos ? <p style={{ color: "#777", padding: "20px 0" }}>Cargando envíos...</p> : envios.length === 0 ? (
-          <div className="empty-state"><p>No hay envíos que coincidan con la búsqueda.</p></div>
-        ) : (
-          <div style={{ display: "grid", gap: "14px", marginTop: "18px" }}>
-            {envios.map((pedido) => (
-              <article key={`${pedido.id_comprador}-${pedido.id_orden}`} className="seller-books" style={{ padding: "20px", borderLeft: "4px solid #7A1E3A" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "14px", flexWrap: "wrap" }}>
-                  <div>
-                    <strong style={{ display: "block", color: "#4b2733" }}>Compra {pedido.codigo_compra}</strong>
-                    <span style={{ color: "#666", fontSize: "0.86rem" }}>Pedido #{pedido.id_orden} · {pedido.cliente}</span>
-                  </div>
-                  <span className="pl-badge pl-badge--entregado">{pedido.envio.estado_envio || "Guía registrada"}</span>
-                </div>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "end", gap: "16px", flexWrap: "wrap", borderTop: "1px solid #eee", marginTop: "16px", paddingTop: "14px" }}>
-                  <div>
-                    <strong style={{ display: "block" }}>{pedido.envio.empresa_mensajeria}</strong>
-                    <span style={{ color: "#666", fontSize: "0.86rem" }}>Guía: {pedido.envio.numero_guia}</span>
-                  </div>
-                  {(pedido.envio.url_rastreo || pedido.envio.sitio_web) ? (
-                    <a href={pedido.envio.url_rastreo || pedido.envio.sitio_web} target="_blank" rel="noreferrer" className="btn btn-vinotinto" style={{ width: "auto", padding: "9px 14px", fontSize: "0.82rem" }}>
-                      Rastrear con la transportadora
-                    </a>
-                  ) : (
-                    <span style={{ color: "#777", fontSize: "0.82rem" }}>Rastreo no disponible</span>
-                  )}
-                </div>
-              </article>
-            ))}
+        <div className="seller-books envios-search-wrap">
+          <div className="envios-tools">
+            <div className="envios-search">
+              <IconSearch width={17} height={17} strokeWidth={2.2} className="envios-search__icon" />
+              <input
+                value={filtroEnvios}
+                onChange={(e) => { setFiltroEnvios(e.target.value); setEnviosPage(1); }}
+                placeholder="Buscar por compra, pedido, guía, comprador o transportadora..."
+              />
+              {filtroEnvios && (
+                <button type="button" className="envios-search__clear" onClick={() => { setFiltroEnvios(""); setEnviosPage(1); }} aria-label="Limpiar búsqueda">
+                  <IconClose width={13} height={13} strokeWidth={2.5} />
+                </button>
+              )}
+            </div>
+            <div className="envios-rango">
+              <IconCalendar width={16} height={16} strokeWidth={2} className="envios-rango__icon" />
+              <select
+                value={rangoEnvios}
+                onChange={(e) => { setRangoEnvios(e.target.value); setEnviosPage(1); }}
+                aria-label="Filtrar por fecha"
+              >
+                {RANGOS_ENVIOS.map((r) => (
+                  <option key={r.id} value={r.id}>{r.label}</option>
+                ))}
+              </select>
+            </div>
           </div>
+        </div>
+
+        {loadingPedidos ? (
+          <p style={{ color: "#777", padding: "30px 0", textAlign: "center" }}>Cargando envíos...</p>
+        ) : envios.length === 0 ? (
+          <div className="empty-state envios-empty">
+            <div className="envios-empty__icon"><IconTruck width={34} height={34} strokeWidth={1.5} /></div>
+            <p><strong>No hay envíos que coincidan</strong></p>
+            <span>{texto ? "Prueba con otra búsqueda o cambia el filtro." : "Aún no tienes envíos en esta categoría."}</span>
+          </div>
+        ) : (
+          <>
+          <div className="envios-list">
+            {paginatedEnvios.map((pedido) => {
+              const info = infoEstadoEnvio(pedido);
+              const sinGuia = !pedido.envio;
+              const dir = pedido.direccion_entrega || {};
+              const dirTexto = [dir.alias, dir.direccion, dir.ciudad, dir.departamento].filter(Boolean).join(" · ");
+              return (
+                <article key={`${pedido.id_comprador}-${pedido.id_orden}`} className={`envios-card envios-card--${info.clase}`}>
+                  <div className="envios-card__head">
+                    <div className="envios-card__ident">
+                      <span className={`envios-card__type-icon envios-card__type-icon--${info.clase}`}>
+                        {sinGuia ? <IconAlertTriangle width={16} height={16} strokeWidth={2} /> : <IconTruck width={16} height={16} strokeWidth={2} />}
+                      </span>
+                      <div>
+                        <strong>Compra {pedido.codigo_compra}</strong>
+                        <span>Pedido #{pedido.id_orden} · {pedido.cliente}</span>
+                      </div>
+                    </div>
+                    <span className={`envios-badge envios-badge--${info.clase}`}>{info.texto}</span>
+                  </div>
+
+                  {!sinGuia ? (
+                    <div className="envios-card__body">
+                      <div className="envios-card__courier">
+                        <span className="envios-card__courier-name">{pedido.envio.empresa_mensajeria || "Mensajería"}</span>
+                      </div>
+                      <div className="envios-card__guia">
+                        <span className="envios-card__guia-label">No. guía</span>
+                        <span className="envios-card__guia-value">{pedido.envio.numero_guia}</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="envios-card__sin-guia">
+                      <span>Este pedido ya está pago, registra la guía para iniciar el envío.</span>
+                      <button type="button" className="btn btn-vinotinto envios-card__register" onClick={() => abrirRegistroEnvio(pedido)}>
+                        + Registrar Guía
+                      </button>
+                    </div>
+                  )}
+
+                  <div className="envios-card__foot">
+                    {dirTexto && (
+                      <span className="envios-card__address"><IconMapPin width={13} height={13} strokeWidth={2} /> {dirTexto}</span>
+                    )}
+                    {!sinGuia ? (
+                      (pedido.envio.url_rastreo || pedido.envio.sitio_web) ? (
+                        <a href={pedido.envio.url_rastreo || pedido.envio.sitio_web} target="_blank" rel="noreferrer" className="envios-card__track">
+                          <IconTruck width={19} height={19} strokeWidth={2} /> Rastrear envío con la transportadora
+                        </a>
+                      ) : (
+                        <span className="envios-card__no-track">Rastreo no disponible</span>
+                      )
+                    ) : null}
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+
+          <div className="mis-libros-pagination-bar" style={{ marginTop: "16px" }}>
+            <div className="pagination-info">
+              Mostrando <strong>{(currentPageEnvios - 1) * enviosPerPage + 1} - {Math.min(currentPageEnvios * enviosPerPage, totalEnviosFiltrados)}</strong> de <strong>{totalEnviosFiltrados}</strong> envíos
+            </div>
+
+            <div className="pagination-controls">
+              <button
+                type="button"
+                className="pagination-btn-nav"
+                disabled={currentPageEnvios <= 1}
+                onClick={() => setEnviosPage((prev) => Math.max(1, prev - 1))}
+              >
+                ‹ Anterior
+              </button>
+
+              <div className="pagination-numbers">
+                {Array.from({ length: totalPagesEnvios }, (_, idx) => idx + 1).map((pageNum) => {
+                  if (
+                    pageNum === 1 ||
+                    pageNum === totalPagesEnvios ||
+                    Math.abs(pageNum - currentPageEnvios) <= 1
+                  ) {
+                    return (
+                      <button
+                        key={pageNum}
+                        type="button"
+                        className={`pagination-num-btn ${pageNum === currentPageEnvios ? "active" : ""}`}
+                        onClick={() => setEnviosPage(pageNum)}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  } else if (
+                    (pageNum === 2 && currentPageEnvios > 3) ||
+                    (pageNum === totalPagesEnvios - 1 && currentPageEnvios < totalPagesEnvios - 2)
+                  ) {
+                    return <span key={pageNum} className="pagination-ellipsis">…</span>;
+                  }
+                  return null;
+                })}
+              </div>
+
+              <button
+                type="button"
+                className="pagination-btn-nav"
+                disabled={currentPageEnvios >= totalPagesEnvios}
+                onClick={() => setEnviosPage((prev) => Math.min(totalPagesEnvios, prev + 1))}
+              >
+                Siguiente ›
+              </button>
+            </div>
+
+            <div className="pagination-per-page">
+              <label htmlFor="select-per-page-envios">Ver:</label>
+              <select
+                id="select-per-page-envios"
+                value={enviosPerPage}
+                onChange={(e) => {
+                  setEnviosPerPage(Number(e.target.value));
+                  setEnviosPage(1);
+                }}
+                className="select-per-page"
+              >
+                <option value={8}>8 por pág.</option>
+                <option value={10}>10 por pág.</option>
+                <option value={20}>20 por pág.</option>
+                <option value={50}>50 por pág.</option>
+              </select>
+            </div>
+          </div>
+          </>
         )}
       </>
     );
@@ -5214,100 +5597,379 @@ export default function MiTienda() {
       venta.cantidadOrden = venta.items.reduce((total, item) => total + Number(item.cantidad || 0), 0);
     });
 
+    const ESTADO_VENTA_CFG = {
+      pagado:           { label: "Pagado",    color: "#145c2e", bg: "#eafaf1", border: "#1e8a45" },
+      enviado:          { label: "Enviado",   color: "#1a4f8a", bg: "#eaf3ff", border: "#2979c7" },
+      entregada:        { label: "Entregado", color: "#7A1E3A", bg: "#f8e9ee", border: "#7A1E3A" },
+      pendiente:        { label: "Pendiente", color: "#b95c00", bg: "#fef5e7", border: "#e67e22" },
+    };
+    const getEstCfg = (estado) => ESTADO_VENTA_CFG[String(estado || "").toLowerCase().trim()] || ESTADO_VENTA_CFG.pendiente;
+
+    const formatearFecha = (f) => {
+      if (!f) return { corta: "Reciente", detalle: "" };
+      const d = new Date(f);
+      if (isNaN(d.getTime())) return { corta: "Reciente", detalle: "" };
+      const hoy = new Date();
+      const inicioHoy = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
+      const inicioDia = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+      const diffDias = Math.round((inicioHoy - inicioDia) / 86400000);
+      const corta = diffDias === 0 ? "Hoy" : diffDias === 1 ? "Ayer" : d.toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" });
+      const hora = d.toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" });
+      return { corta, detalle: `${corta === "Hoy" || corta === "Ayer" ? d.toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" }) : ""}${hora ? " · " + hora : ""}` };
+    };
+
+    const iniciales = (nombre) =>
+      String(nombre || "V").split(" ").filter(Boolean).slice(0, 2).map((p) => p[0]).join("").toUpperCase();
+
+    const totalIngresos  = ventasAgrupadas.reduce((s, v) => s + v.totalOrden, 0);
+    const totalLibros    = ventasAgrupadas.reduce((s, v) => s + v.cantidadOrden, 0);
+    const clientesUnicos = new Set(ventasAgrupadas.map((v) => v.cliente).filter(Boolean)).size;
+
+    const kpis = [
+      { label: "Ingresos totales", value: formatPrecio(totalIngresos), icon: <IconDollar width={20} height={20} strokeWidth={2} style={{ color: "#7A1E3A" }} />, bg: "#fbe8ee" },
+      { label: "Órdenes", value: ventasAgrupadas.length, icon: <IconShoppingBag width={20} height={20} strokeWidth={2} style={{ color: "#3b82f6" }} />, bg: "#dbeafe" },
+      { label: "Libros vendidos", value: totalLibros, icon: <IconBook width={20} height={20} strokeWidth={2} style={{ color: "#6d28d9" }} />, bg: "#ede9fe" },
+      { label: "Clientes", value: clientesUnicos, icon: <IconUser width={20} height={20} strokeWidth={2} style={{ color: "#10b981" }} />, bg: "#d1fae5" },
+    ];
+
     return (
     <>
-      <div className="welcome-card">
-        <h1 style={{ fontSize: "1.55rem", marginBottom: "4px", display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <IconChartBar width={28} height={28} strokeWidth={2} style={{ color: '#7A1E3A' }} />
-          Registro de Ventas
-        </h1>
-        <p style={{ margin: 0 }}>Historial detallado de libros vendidos</p>
+      {/* Header */}
+      <div style={{
+        background: "white", borderRadius: "16px",
+        border: "1.5px solid #e5e7eb", boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
+        padding: "24px 28px", marginBottom: "20px",
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        gap: "16px", flexWrap: "wrap"
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+          <div style={{
+            width: "50px", height: "50px", borderRadius: "14px",
+            background: "linear-gradient(135deg, #7A1E3A 0%, #C5425A 100%)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            boxShadow: "0 4px 14px rgba(122,30,58,0.25)", flexShrink: 0
+          }}>
+            <IconShoppingBag width={24} height={24} strokeWidth={2.2} style={{ color: "white" }} />
+          </div>
+          <div>
+            <h1 style={{ margin: 0, fontSize: "1.45rem", fontWeight: 900, color: "#1f2937" }}>
+              Registro de Ventas
+            </h1>
+            <p style={{ margin: 0, fontSize: "0.85rem", color: "#6b7280", marginTop: "2px" }}>
+              Historial de órdenes confirmadas · {ventasAgrupadas.length} orden{ventasAgrupadas.length !== 1 ? "es" : ""}
+            </p>
+          </div>
+        </div>
       </div>
 
-      <div className="seller-books" style={{ marginTop: "20px" }}>
-        {loadingVentas && <p style={{ color: "#999", padding: "20px 0" }}>Cargando ventas...</p>}
-        {!loadingVentas && ventas.length === 0 && (
-          <div className="empty-state">
-            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: "12px" }}>
-              <IconChartBar width={48} height={48} strokeWidth={2} style={{ color: '#7A1E3A' }} />
+      {/* KPIs */}
+      <div style={{
+        display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+        gap: "14px", marginBottom: "20px"
+      }}>
+        {kpis.map((kpi) => (
+          <div key={kpi.label} style={{
+            background: "white", borderRadius: "14px",
+            border: "1.5px solid #e5e7eb", boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+            padding: "16px 18px", display: "flex", alignItems: "center", gap: "12px"
+          }}>
+            <div style={{
+              width: "42px", height: "42px", borderRadius: "12px", flexShrink: 0,
+              background: kpi.bg, display: "flex", alignItems: "center", justifyContent: "center"
+            }}>
+              {kpi.icon}
             </div>
-            <p style={{ fontWeight: 700, color: "#444", marginBottom: "8px" }}>No hay ventas registradas aún</p>
-            <p style={{ fontSize: "0.85rem", color: "#888" }}>Aquí aparecerá el desglose por libro vendido</p>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: "0.7rem", fontWeight: 800, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "3px" }}>
+                {kpi.label}
+              </div>
+              <div style={{ fontSize: "1.25rem", fontWeight: 900, color: "#1f2937", lineHeight: 1.1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                {kpi.value}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Tabla */}
+      <div style={{
+        background: "white", borderRadius: "16px",
+        border: "1.5px solid #e5e7eb", boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
+        padding: "24px 28px"
+      }}>
+        {loadingVentas && (
+          <div style={{ padding: "48px", textAlign: "center", color: "#9ca3af" }}>Cargando ventas…</div>
+        )}
+        {!loadingVentas && ventas.length === 0 && (
+          <div style={{ border: "2px dashed #e5e7eb", borderRadius: "14px", padding: "56px 20px", textAlign: "center" }}>
+            <div style={{ width: "64px", height: "64px", borderRadius: "18px", background: "#fdf7f8", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
+              <IconChartBar width={30} height={30} strokeWidth={1.8} style={{ color: "#C5425A" }} />
+            </div>
+            <h3 style={{ margin: "0 0 8px", color: "#1f2937", fontSize: "1.05rem" }}>No hay ventas registradas aún</h3>
+            <p style={{ margin: 0, color: "#6b7280", fontSize: "0.88rem" }}>Aquí aparecerá el desglose por libro vendido</p>
           </div>
         )}
         {!loadingVentas && ventas.length > 0 && (
           <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", minWidth: "860px" }}>
               <thead>
-                <tr style={{ borderBottom: "2px solid #e0dbd4", color: "var(--vinotinto)" }}>
-                  <th style={{ padding: "12px", fontWeight: 700 }}>Orden</th>
-                  <th style={{ padding: "12px", fontWeight: 700 }}>Fecha</th>
-                  <th style={{ padding: "12px", fontWeight: 700 }}>Libro</th>
-                  <th style={{ padding: "12px", fontWeight: 700, textAlign: "center" }}>Cant</th>
-                  <th style={{ padding: "12px", fontWeight: 700, textAlign: "right" }}>Precio Unit.</th>
-                  <th style={{ padding: "12px", fontWeight: 700, textAlign: "right" }}>Total</th>
-                  <th style={{ padding: "12px", fontWeight: 700 }}>Comprador</th>
+                <tr style={{ background: "#f8f6f4", borderBottom: "1.5px solid #e0dbd4" }}>
+                  {["Orden", "Fecha", "Libros", "Cant.", "Precio", "Total", "Cliente", "Estado"].map((h) => (
+                    <th key={h} style={{
+                      padding: "12px 14px", fontWeight: 800, fontSize: "0.72rem",
+                      textTransform: "uppercase", letterSpacing: "0.05em", color: "#6b7280",
+                      whiteSpace: "nowrap", textAlign: "center"
+                    }}>{h}</th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
-                {ventasAgrupadas.map((v) => (
-                  <tr key={v.id_orden} style={{ borderBottom: "1px solid #f0ebe4" }}>
-                    <td style={{ padding: "12px", fontWeight: 600 }}>#{v.id_orden}</td>
-                    <td style={{ padding: "12px", fontSize: "0.9rem" }}>
-                      {v.fecha ? new Date(v.fecha).toLocaleDateString("es-CO") : "Reciente"}
-                    </td>
-                    <td style={{ padding: "12px", fontWeight: 600, color: "var(--vinotinto)" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                        <div style={{ width: "38px", height: "48px", borderRadius: "6px", overflow: "hidden", background: "#fdf0f3", flexShrink: 0, display: "grid", placeItems: "center" }}>
-                          {resolveImageUrl(v.imagen) ? (
-                            <img src={resolveImageUrl(v.imagen)} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                          ) : <IconBook width={17} height={17} strokeWidth={2} />}
+                {ventasAgrupadas.map((v) => {
+                  const fec = formatearFecha(v.fecha);
+                  const est = getEstCfg(v.estado);
+                  const multi = v.items.length > 1;
+                  const cliente = v.cliente || "Cliente";
+                  return (
+                    <tr
+                      key={v.id_orden}
+                      style={{ borderBottom: "1px solid #f0ebe4", transition: "background 0.15s" }}
+                      onMouseEnter={(e) => { e.currentTarget.style.background = "#fdf9fa"; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+                    >
+                      {/* Orden */}
+                      <td style={{ padding: "14px", textAlign: "center" }}>
+                        <span style={{
+                          display: "inline-flex", alignItems: "center",
+                          background: "#fbe8ee", color: "#7A1E3A",
+                          borderRadius: "8px", padding: "3px 10px",
+                          fontFamily: "'Courier New', monospace",
+                          fontWeight: 800, fontSize: "0.84rem", letterSpacing: "0.5px"
+                        }}>
+                          #{v.id_orden}
+                        </span>
+                      </td>
+
+                      {/* Fecha */}
+                      <td style={{ padding: "14px", whiteSpace: "nowrap", textAlign: "center" }}>
+                        <div style={{ fontWeight: 700, fontSize: "0.85rem", color: "#1f2937" }}>{fec.corta}</div>
+                        <div style={{ fontSize: "0.72rem", color: "#9ca3af" }}>{fec.detalle}</div>
+                      </td>
+
+                      {/* Producto(s) */}
+                      <td style={{ padding: "14px", minWidth: "200px", textAlign: "center" }}>
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "10px" }}>
+                          <div style={{
+                            width: "40px", height: "52px", borderRadius: "8px", flexShrink: 0,
+                            overflow: "hidden", background: "#fdf0f3", border: "1px solid #f0e4e8",
+                            display: "grid", placeItems: "center"
+                          }}>
+                            {resolveImageUrl(v.imagen) ? (
+                              <img src={resolveImageUrl(v.imagen)} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                            ) : <IconBook width={17} height={17} strokeWidth={2} style={{ color: "#C5425A" }} />}
+                          </div>
+                          <div style={{ width: "190px", textAlign: "center" }}>
+                            <div style={{ fontWeight: 700, fontSize: "0.86rem", color: "#1f2937", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "190px" }}>
+                              {multi ? "Varios libros" : (v.titulo || "Libro")}
+                            </div>
+                            {multi ? (
+                              <button
+                                type="button"
+                                onClick={() => setDetalleVenta(v)}
+                                style={{
+                                  marginTop: "5px", display: "inline-flex", alignItems: "center", gap: "4px",
+                                  border: "1px solid #e8d5dc", borderRadius: "999px",
+                                  padding: "3px 9px", background: "#fdf7f8", color: "#7A1E3A",
+                                  fontWeight: 700, fontSize: "0.7rem", cursor: "pointer", fontFamily: "inherit"
+                                }}
+                              >
+                                <IconEye width={11} height={11} strokeWidth={2.2} /> Ver detalle
+                              </button>
+                            ) : (
+                              <div style={{ fontSize: "0.72rem", color: "#9ca3af", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "190px" }}>
+                                {v.autor_libro || ""}
+                              </div>
+                            )}
+                          </div>
                         </div>
-                        <span>{v.items.length > 1 ? "Varios libros" : v.titulo}</span>
-                      </div>
-                      {v.items.length > 1 && (
-                        <button type="button" onClick={() => setDetalleVenta(v)} style={{ marginTop: "7px", border: "1px solid #9b4d65", borderRadius: "999px", padding: "5px 9px", background: "#fff", color: "#7A1E3A", fontWeight: 700, fontSize: "0.72rem", cursor: "pointer" }}>
-                          Ver detalle
-                        </button>
-                      )}
-                    </td>
-                    <td style={{ padding: "12px", textAlign: "center" }}>{v.cantidadOrden}</td>
-                    <td style={{ padding: "12px", textAlign: "right" }}>{v.items.length > 1 ? "Varios" : formatPrecio(v.precio_libro)}</td>
-                    <td style={{ padding: "12px", textAlign: "right", fontWeight: 700, color: "var(--rojo-suave)" }}>
-                      {formatPrecio(v.totalOrden)}
-                    </td>
-                    <td style={{ padding: "12px" }}>
-                      <div style={{ fontWeight: 600 }}>{v.cliente}</div>
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+
+                      {/* Cantidad */}
+                      <td style={{ padding: "14px", textAlign: "center" }}>
+                        <span style={{
+                          display: "inline-flex", alignItems: "center", justifyContent: "center",
+                          minWidth: "34px", background: "#f3f4f6", color: "#374151",
+                          borderRadius: "9px", padding: "4px 10px", fontWeight: 800, fontSize: "0.82rem"
+                        }}>
+                          {v.cantidadOrden}
+                        </span>
+                      </td>
+
+                      {/* Precio unitario */}
+                      <td style={{ padding: "14px", fontSize: "0.82rem", color: "#6b7280", whiteSpace: "nowrap", textAlign: "center" }}>
+                        {multi ? "Varios" : formatPrecio(v.precio_libro)}
+                      </td>
+
+                      {/* Total */}
+                      <td style={{ padding: "14px", textAlign: "center" }}>
+                        <div style={{
+                          width: "120px", margin: "0 auto", textAlign: "right",
+                          fontSize: "1.02rem", fontWeight: 900, color: "#7A1E3A",
+                          fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap"
+                        }}>
+                          {formatPrecio(v.totalOrden)}
+                        </div>
+                      </td>
+
+                      {/* Comprador */}
+                      <td style={{ padding: "14px", textAlign: "center" }}>
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "9px" }}>
+                          <div style={{
+                            width: "32px", height: "32px", borderRadius: "50%", flexShrink: 0,
+                            overflow: "hidden", background: "linear-gradient(135deg, #C5425A, #7A1E3A)",
+                            color: "white", display: "flex", alignItems: "center", justifyContent: "center",
+                            fontSize: "0.72rem", fontWeight: 800
+                          }}>
+                            {resolveImageUrl(v.foto_perfil_cliente) ? (
+                              <img src={resolveImageUrl(v.foto_perfil_cliente)} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                            ) : iniciales(cliente)}
+                          </div>
+                          <div style={{ minWidth: 0, textAlign: "center" }}>
+                            <div style={{ fontWeight: 700, fontSize: "0.84rem", color: "#1f2937", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "140px" }}>
+                              {cliente}
+                            </div>
+                            <div style={{ fontSize: "0.7rem", color: "#9ca3af", maxWidth: "150px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                              {v.correo_cliente || ""}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* Estado */}
+                      <td style={{ padding: "14px", textAlign: "center" }}>
+                        <span style={{
+                          display: "inline-flex", alignItems: "center", justifyContent: "center",
+                          background: est.bg, color: est.color, border: `1px solid ${est.border}`,
+                          borderRadius: "20px", padding: "4px 11px", fontSize: "0.72rem",
+                          fontWeight: 800, whiteSpace: "nowrap",
+                          minWidth: "130px", textAlign: "center"
+                        }}>
+                          {est.label}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
         )}
       </div>
+
+      {/* Modal detalle de orden */}
       {detalleVenta && (
-        <div className="modal-overlay open" onClick={() => setDetalleVenta(null)}>
-          <div className="modal-box" onClick={(event) => event.stopPropagation()} style={{ maxWidth: "650px", padding: "26px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "16px" }}>
-              <div>
-                <h2 style={{ margin: 0 }}>Detalle de la orden #{detalleVenta.id_orden}</h2>
-                <p style={{ margin: "5px 0 0", color: "#777" }}>{detalleVenta.cliente} · {detalleVenta.fecha ? new Date(detalleVenta.fecha).toLocaleDateString("es-CO") : "Reciente"}</p>
-              </div>
-              <button type="button" onClick={() => setDetalleVenta(null)} aria-label="Cerrar detalle" style={{ border: "none", background: "#f5f1ed", borderRadius: "50%", width: "32px", height: "32px", fontSize: "20px", cursor: "pointer" }}>×</button>
-            </div>
-            <div style={{ display: "grid", gap: "10px", marginTop: "20px" }}>
-              {detalleVenta.items.map((item, index) => (
-                <div key={`${item.id_libro}-${index}`} style={{ display: "flex", alignItems: "center", gap: "12px", padding: "10px 0", borderBottom: "1px solid #eee" }}>
-                  <div style={{ width: "42px", height: "52px", borderRadius: "6px", overflow: "hidden", background: "#fdf0f3", display: "grid", placeItems: "center", flexShrink: 0 }}>
-                    {resolveImageUrl(item.imagen) ? <img src={resolveImageUrl(item.imagen)} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <IconBook width={18} height={18} />}
-                  </div>
-                  <div style={{ flex: 1 }}><strong style={{ display: "block" }}>{item.titulo}</strong><span style={{ color: "#777", fontSize: "0.82rem" }}>Cantidad: {item.cantidad} · Unitario: {formatPrecio(item.precio_libro)}</span></div>
-                  <strong style={{ color: "var(--vinotinto)" }}>{formatPrecio(item.total)}</strong>
+        <div
+          onClick={() => setDetalleVenta(null)}
+          style={{
+            position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            zIndex: 1000, backdropFilter: "blur(4px)", padding: "20px"
+          }}
+        >
+          <div
+            onClick={(event) => event.stopPropagation()}
+            style={{
+              background: "white", borderRadius: "16px",
+              width: "min(600px, 100%)", maxHeight: "90vh",
+              overflow: "hidden", boxShadow: "0 24px 70px rgba(36,20,27,0.3)",
+              display: "flex", flexDirection: "column"
+            }}
+          >
+            {/* Header */}
+            <div style={{
+              background: "linear-gradient(135deg, #7A1E3A 0%, #C5425A 100%)",
+              padding: "20px 24px", display: "flex", alignItems: "center",
+              justifyContent: "space-between", gap: "12px", flexShrink: 0
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "12px", minWidth: 0 }}>
+                <div style={{
+                  width: "40px", height: "40px", borderRadius: "11px",
+                  background: "rgba(255,255,255,0.2)", display: "flex",
+                  alignItems: "center", justifyContent: "center", flexShrink: 0
+                }}>
+                  <IconShoppingBag width={21} height={21} strokeWidth={2.2} style={{ color: "white" }} />
                 </div>
-              ))}
+                <div style={{ minWidth: 0 }}>
+                  <h2 style={{ margin: 0, color: "white", fontSize: "1.05rem", fontWeight: 800 }}>
+                    Detalle de la orden #{detalleVenta.id_orden}
+                  </h2>
+                  <p style={{ margin: "2px 0 0", color: "rgba(255,255,255,0.8)", fontSize: "0.78rem", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                    {detalleVenta.cliente}{detalleVenta.fecha ? ` · ${new Date(detalleVenta.fecha).toLocaleDateString("es-CO")}` : ""}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setDetalleVenta(null)}
+                style={{
+                  width: "32px", height: "32px", borderRadius: "8px", flexShrink: 0,
+                  background: "rgba(255,255,255,0.2)", border: "1px solid rgba(255,255,255,0.3)",
+                  color: "white", cursor: "pointer", fontSize: "1.1rem",
+                  display: "flex", alignItems: "center", justifyContent: "center"
+                }}
+              >
+                ×
+              </button>
             </div>
-            <div style={{ display: "flex", justifyContent: "space-between", borderTop: "2px solid #e0dbd4", marginTop: "16px", paddingTop: "14px", fontWeight: 800 }}><span>Total de la orden</span><span style={{ color: "var(--vinotinto)" }}>{formatPrecio(detalleVenta.totalOrden)}</span></div>
+
+            {/* Cuerpo */}
+            <div style={{ padding: "22px 24px", overflowY: "auto", flex: 1 }}>
+              <div style={{ display: "grid", gap: "10px", marginBottom: "18px" }}>
+                {detalleVenta.items.map((item, index) => (
+                  <div
+                    key={`${item.id_libro}-${index}`}
+                    style={{
+                      display: "flex", alignItems: "center", gap: "12px",
+                      padding: "12px", borderRadius: "12px",
+                      border: "1.5px solid #e5e7eb", background: "#fafafa"
+                    }}
+                  >
+                    <div style={{
+                      width: "44px", height: "56px", borderRadius: "8px", flexShrink: 0,
+                      overflow: "hidden", background: "#fdf0f3", border: "1px solid #f0e4e8",
+                      display: "grid", placeItems: "center"
+                    }}>
+                      {resolveImageUrl(item.imagen) ? (
+                        <img src={resolveImageUrl(item.imagen)} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      ) : <IconBook width={18} height={18} style={{ color: "#C5425A" }} />}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: 800, fontSize: "0.88rem", color: "#1f2937" }}>{item.titulo}</div>
+                      <div style={{ fontSize: "0.76rem", color: "#6b7280", marginTop: "3px" }}>
+                        Cantidad: {item.cantidad} · Unitario: {formatPrecio(item.precio_libro)}
+                      </div>
+                    </div>
+                    <div style={{ fontWeight: 800, fontSize: "0.9rem", color: "#7A1E3A", whiteSpace: "nowrap", flexShrink: 0 }}>
+                      {formatPrecio(item.total)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Resumen */}
+              <div style={{
+                background: "#fdf7f8", borderRadius: "12px",
+                border: "1px solid #f0e4e8", padding: "16px 18px"
+              }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.82rem", color: "#6b7280", marginBottom: "8px" }}>
+                  <span>Total de la orden</span>
+                  <span style={{ color: "#1f2937", fontWeight: 700 }}>{formatPrecio(detalleVenta.totalOrden)}</span>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.82rem", color: "#6b7280" }}>
+                  <span>Comprador</span>
+                  <span style={{ color: "#1f2937", fontWeight: 700 }}>{detalleVenta.cliente}</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}
