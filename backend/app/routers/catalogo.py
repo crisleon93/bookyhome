@@ -128,6 +128,7 @@ def busqueda_avanzada(
                 l.id_libro,
                 l.titulo,
                 l.autor_libro,
+                l.isbn,
                 l.descripcion_libro,
                 l.precio_libro,
                 l.stock,
@@ -150,7 +151,7 @@ def busqueda_avanzada(
             LEFT JOIN tiendas t ON l.id_tienda = t.id_tienda
             LEFT JOIN resenas_libros r ON l.id_libro = r.id_libro
             WHERE {where_clause}
-            GROUP BY l.id_libro, l.titulo, l.autor_libro, l.precio_libro, l.stock, l.descripcion_libro, l.fecha_listado, c.nombre_categoria, t.nombre_tienda, t.id_tienda
+            GROUP BY l.id_libro, l.titulo, l.autor_libro, l.isbn, l.precio_libro, l.stock, l.descripcion_libro, l.fecha_listado, c.nombre_categoria, t.nombre_tienda, t.id_tienda
             ORDER BY {order_clause}
             LIMIT %s OFFSET %s
         """
@@ -261,6 +262,7 @@ def autocompletado(
                 l.id_libro,
                 l.titulo,
                 l.autor_libro,
+                l.isbn,
                 l.precio_libro,
                 (SELECT url_imagen FROM imagenes_libro WHERE id_libro = l.id_libro LIMIT 1) as imagen_url,
                 t.nombre_tienda

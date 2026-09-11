@@ -9,6 +9,7 @@ from app.models.libro import (
     eliminar_libro_por_admin,
     ocultar_libro,
     crear_libro,
+    validar_y_normalizar_isbn,
     agregar_imagen_libro,
     obtener_libros_por_tienda,
     obtener_tienda_por_usuario,
@@ -182,7 +183,7 @@ async def publicar_libro(
         precio=precio_libro,
         stock=stock,
         estado=estado_libro,
-        isbn=isbn,
+        isbn=validar_y_normalizar_isbn(isbn) if isbn else None,
     )
     if not resultado["ok"]:
         raise HTTPException(status_code=500, detail="Error al crear el libro: " + resultado["error"])
@@ -247,7 +248,7 @@ def editar(
         precio=precio_libro,
         stock=stock,
         estado=estado_libro,
-        isbn=isbn,
+        isbn=validar_y_normalizar_isbn(isbn) if isbn else None,
     )
     if not resultado["ok"]:
         raise HTTPException(
