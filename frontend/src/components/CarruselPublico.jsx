@@ -75,13 +75,26 @@ function SkeletonCard() {
 
 /* ── Card individual ───────────────────────────────────────────────── */
 function BookCard({ libro, onVerDetalles }) {
-  const [imgError, setImgError] = useState(false);
-  const imgSrc = getImgSrc(libro);
+  const [imgSrcState, setImgSrcState] = useState(() => getImgSrc(libro));
+  const [imgFailed, setImgFailed] = useState(false);
+  const isbn = libro.isbn || '';
+  const googleBooksUrl = isbn
+    ? `https://books.google.com/books/content?vid=ISBN${isbn}&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api`
+    : null;
   const price   = Number(libro.precio_libro ?? libro.precio ?? 0);
   const cat     = libro.nombre_categoria || '';
   const catColors = categoriaColor(cat);
   const rating  = libro.calificacion_tienda || 0;
   const outOfStock = Number(libro.stock ?? 1) <= 0;
+
+  const handleImgError = () => {
+    const catFallback = IMAGENES_CAT[cat] || IMG_DEFAULT;
+    if (imgSrcState !== catFallback && imgSrcState !== IMG_DEFAULT) {
+      setImgSrcState(catFallback);
+    } else {
+      setImgFailed(true);
+    }
+  };
 
   return (
     <div
@@ -93,12 +106,12 @@ function BookCard({ libro, onVerDetalles }) {
     >
       {/* Portada */}
       <div className="bkh-pubcard__img">
-        {!imgError ? (
+        {!imgFailed ? (
           <img
-            src={imgSrc}
+            src={imgSrcState}
             alt={libro.titulo}
             loading="lazy"
-            onError={() => setImgError(true)}
+            onError={handleImgError}
           />
         ) : (
           <div className="bkh-pubcard__img-fallback">

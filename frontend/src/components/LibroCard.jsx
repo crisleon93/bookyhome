@@ -88,6 +88,40 @@ const LibroCard = ({ libro, onVerDetalles }) => {
   const [enFavoritos, setEnFavoritos] = useState(false);
   const [wishlistLoading, setWishlistLoading] = useState(false);
 
+  // ── Lógica de imagen con fallback en cascada ──────────────────────
+  // Fuente 1: URL almacenada en BD (Google Books por ISBN)
+  // Fuente 2: Google Books construida desde isbn del objeto (si BD no lo tiene)
+  // Fuente 3: Imagen genérica por categoría
+  // Fuente 4: Imagen por defecto
+  const isbn = libro.isbn || '';
+  const googleBooksUrl = isbn
+    ? `https://books.google.com/books/content?vid=ISBN${isbn}&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api`
+    : null;
+
+  const initialImgSrc =
+    resolveLibroCandidate(libro.imagen_url) ||
+    resolveLibroCandidate(libro.imagen_principal) ||
+    resolveLibroCandidate(libro.imagenes) ||
+    resolveLibroCandidate(libro.imagen) ||
+    googleBooksUrl ||
+    IMAGENES_CATEGORIA[libro.nombre_categoria] ||
+    IMG_DEFAULT;
+
+  const [imgSrc, setImgSrc] = useState(initialImgSrc);
+  const [imgFailed, setImgFailed] = useState(false);
+
+  const handleImgError = () => {
+    const cat = libro.nombre_categoria || '';
+    const catFallback = IMAGENES_CATEGORIA[cat] || IMG_DEFAULT;
+    // Si la URL actual no es ya el fallback de categoría, intentar con él
+    if (imgSrc !== catFallback && imgSrc !== IMG_DEFAULT) {
+      setImgSrc(catFallback);
+    } else {
+      setImgFailed(true);
+    }
+  };
+  // ─────────────────────────────────────────────────────────────────
+
   const calificacionTienda = libro?.calificacion_tienda || 0;
   const totalOpinionesTienda = libro?.total_opiniones_tienda || 0;
 
@@ -155,14 +189,6 @@ const LibroCard = ({ libro, onVerDetalles }) => {
 
   if (!libro) return null;
 
-  const imageUrl =
-    resolveLibroCandidate(libro.imagen_url) ||
-    resolveLibroCandidate(libro.imagen_principal) ||
-    resolveLibroCandidate(libro.imagenes) ||
-    resolveLibroCandidate(libro.imagen) ||
-    IMAGENES_CATEGORIA[libro.nombre_categoria] ||
-    IMG_DEFAULT;
-
   const author    = libro.autor_libro || libro.autor || 'Autor no disponible';
   const price     = Number(libro.precio_libro ?? libro.precio ?? 0);
   const outOfStock = Number(libro.stock ?? 0) <= 0;
@@ -187,13 +213,27 @@ const LibroCard = ({ libro, onVerDetalles }) => {
     >
       {/* Portada */}
       <div style={{ height: 180, background: `linear-gradient(135deg, ${VINOTINTO} 0%, ${VINOTINTO2} 100%)`, position: 'relative', overflow: 'hidden', flexShrink: 0 }}>
-        <img
-          src={imageUrl}
-          alt={libro.titulo}
-          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-          loading="lazy"
-          onError={e => { e.target.style.display = 'none'; }}
-        />
+        {!imgFailed ? (
+          <img
+            src={imgSrc}
+            alt={libro.titulo}
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            loading="lazy"
+            onError={handleImgError}
+          />
+        ) : (
+          <div style={{
+            width: '100%', height: '100%',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            opacity: 0.4,
+          }}>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+              stroke="white" strokeWidth="1.2" width="48" height="48">
+              <path strokeLinecap="round" strokeLinejoin="round"
+                d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
+            </svg>
+          </div>
+        )}
         
         {/* Badge estado */}
         {outOfStock && (

@@ -396,7 +396,7 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
               position: 'relative'
             }}>
               <img
-                src={libroSeleccionado.imagen_url || libroSeleccionado.imagen_principal || libroSeleccionado.imagen || 'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=400&q=80'}
+                src={libroSeleccionado.imagen_url || libroSeleccionado.imagen_principal || libroSeleccionado.imagen || (libroSeleccionado.isbn ? `https://books.google.com/books/content?vid=ISBN${libroSeleccionado.isbn}&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api` : 'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=400&q=80')}
                 alt={libroSeleccionado.titulo}
                 style={{
                   width: '100%',
@@ -405,7 +405,11 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
                   display: 'block'
                 }}
                 onError={(e) => {
-                  e.target.src = 'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=400&q=80';
+                  const t = e.target;
+                  const isbn = libroSeleccionado.isbn || '';
+                  const gbUrl = isbn ? `https://books.google.com/books/content?vid=ISBN${isbn}&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api` : null;
+                  if (gbUrl && t.src !== gbUrl) { t.src = gbUrl; return; }
+                  t.src = 'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=400&q=80';
                 }}
               />
             </div>
