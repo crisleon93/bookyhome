@@ -51,17 +51,26 @@ const formatPrecio = (v) =>
 
 const formatFecha = (f) => {
   if (!f) return '—';
-  return new Date(f).toLocaleDateString('es-CO', {
+  const iso = String(f).replace(' ', 'T');
+  return new Date(iso).toLocaleDateString('es-CO', {
     day: '2-digit', month: 'short', year: 'numeric',
   });
 };
 
 // Estado del cupón calculado desde fechas y activo
+const parseDate = (f) => {
+  if (!f) return null;
+  // Normaliza "YYYY-MM-DD HH:MM:SS" → "YYYY-MM-DDTHH:MM:SS" para mayor compatibilidad
+  const iso = String(f).replace(' ', 'T');
+  const d = new Date(iso);
+  return isNaN(d.getTime()) ? null : d;
+};
+
 const calcEstado = (c) => {
   if (!c.activo) return 'inactivo';
   const ahora = new Date();
-  const ini   = c.fecha_inicio ? new Date(c.fecha_inicio) : null;
-  const fin   = c.fecha_fin    ? new Date(c.fecha_fin)    : null;
+  const ini   = parseDate(c.fecha_inicio);
+  const fin   = parseDate(c.fecha_fin);
   if (fin  && ahora > fin)  return 'vencido';
   if (ini  && ahora < ini)  return 'proximo';
   return 'activo';
@@ -113,7 +122,7 @@ function TarjetaCupon({ cupon, onEditar, onEliminar }) {
               : `${formatPrecio(cupon.valor_descuento)} dto.`}
           </Text>
         </View>
-        {cupon.minimo_compra > 0 && (
+        {Number(cupon.minimo_compra) > 0 && (
           <Text style={styles.minimoText}>
             Mín. {formatPrecio(cupon.minimo_compra)}
           </Text>
@@ -479,9 +488,10 @@ export default function CuponesVendedor({ navigation }) {
   };
 
   // ── Stats ─────────────────────────────────────────────────────────────────
-  const activos  = cupones.filter((c) => calcEstado(c) === 'activo');
-  const proximos = cupones.filter((c) => calcEstado(c) === 'proximo');
-  const vencidos = cupones.filter((c) => calcEstado(c) === 'vencido' || calcEstado(c) === 'inactivo');
+  const activos   = cupones.filter((c) => calcEstado(c) === 'activo');
+  const proximos  = cupones.filter((c) => calcEstado(c) === 'proximo');
+  const vencidos  = cupones.filter((c) => calcEstado(c) === 'vencido');
+  const inactivos = cupones.filter((c) => calcEstado(c) === 'inactivo');
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
@@ -529,9 +539,10 @@ export default function CuponesVendedor({ navigation }) {
       {!mostrarForm && !loading && cupones.length > 0 && (
         <View style={styles.statsBar}>
           {[
-            { label: 'Activos',   value: activos.length,  color: '#10b981', bg: '#d1fae5' },
-            { label: 'Próximos',  value: proximos.length, color: '#3b82f6', bg: '#dbeafe' },
-            { label: 'Inactivos', value: vencidos.length, color: '#6b7280', bg: '#f3f4f6' },
+            { label: 'Activos',   value: activos.length,   color: '#065f46', bg: '#d1fae5' },
+            { label: 'Próximos',  value: proximos.length,  color: '#1e40af', bg: '#dbeafe' },
+            { label: 'Vencidos',  value: vencidos.length,  color: '#6b7280', bg: '#f3f4f6' },
+            { label: 'Inactivos', value: inactivos.length, color: '#92400e', bg: '#fef3c7' },
           ].map((s) => (
             <View key={s.label} style={[styles.statItem, { backgroundColor: s.bg }]}>
               <Text style={[styles.statValue, { color: s.color }]}>{s.value}</Text>
@@ -697,14 +708,14 @@ const styles = StyleSheet.create({
 
   // Stats bar
   statsBar: {
-    flexDirection: 'row', gap: 10,
-    paddingHorizontal: 16, paddingVertical: 12,
+    flexDirection: 'row', gap: 6,
+    paddingHorizontal: 12, paddingVertical: 10,
     backgroundColor: WHITE,
     borderBottomWidth: 1, borderBottomColor: BORDER,
   },
-  statItem:  { flex: 1, alignItems: 'center', borderRadius: 10, paddingVertical: 8 },
-  statValue: { fontSize: 20, fontWeight: '900', lineHeight: 22 },
-  statLabel: { fontSize: 11, fontWeight: '700', marginTop: 2 },
+  statItem:  { flex: 1, alignItems: 'center', borderRadius: 10, paddingVertical: 7 },
+  statValue: { fontSize: 18, fontWeight: '900', lineHeight: 20 },
+  statLabel: { fontSize: 10, fontWeight: '700', marginTop: 2 },
 
   // Estados vacío / carga
   centered:     { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },

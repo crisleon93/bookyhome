@@ -272,12 +272,16 @@ function SelectorLibros({ libros, idsSeleccionados, onToggle, onSelAll, onClearA
 function FormOferta({ libros, ofertaEditar, onGuardado, onCancelar }) {
   const esEdicion = !!ofertaEditar;
 
+  // Normaliza fechas al formato "YYYY-MM-DDTHH:MM" que espera CalendarioPicker.
+  // MySQL puede devolver "2026-04-23 14:00:00" (con espacio) o "2026-04-23T14:00:00".
+  const normFecha = (f) => f ? String(f).replace(' ', 'T').slice(0, 16) : '';
+
   const [form, setForm] = useState({
     nombre_oferta:   ofertaEditar?.nombre_oferta   || '',
     tipo_descuento:  ofertaEditar?.tipo_descuento  || 'porcentaje',
     valor_descuento: ofertaEditar?.valor_descuento != null ? String(ofertaEditar.valor_descuento) : '',
-    fecha_inicio:    ofertaEditar?.fecha_inicio    ? String(ofertaEditar.fecha_inicio).slice(0, 16) : '',
-    fecha_fin:       ofertaEditar?.fecha_fin       ? String(ofertaEditar.fecha_fin).slice(0, 16)    : '',
+    fecha_inicio:    normFecha(ofertaEditar?.fecha_inicio),
+    fecha_fin:       normFecha(ofertaEditar?.fecha_fin),
     ids_libros:      ofertaEditar?.libros?.map((l) => l.id_libro) || [],
   });
   const [cargando, setCargando] = useState(false);
@@ -527,11 +531,23 @@ export default function PromocionesVendedor({ navigation }) {
 
   // ── Abrir editar (carga detalle con libros asignados) ───────────────────────
   const abrirEditar = async (oferta) => {
+    // Primero activamos el spinner ANTES de mostrar el formulario,
+    // para evitar que FormOferta se monte con ofertaEditar = null
+    setOfertaEditar(null);
     setCargandoForm(true);
     setMostrarForm(true);
     try {
       const res = await getOfertaById(oferta.id_oferta);
-      setOfertaEditar(res.data);
+      // Normalizar fechas: MySQL puede devolverlas con espacio ("2026-04-23 14:00:00")
+      // o con T ("2026-04-23T14:00:00"). El input datetime-local necesita "YYYY-MM-DDTHH:MM".
+      const datos = { ...res.data };
+      if (datos.fecha_inicio) {
+        datos.fecha_inicio = String(datos.fecha_inicio).replace(' ', 'T').slice(0, 16);
+      }
+      if (datos.fecha_fin) {
+        datos.fecha_fin = String(datos.fecha_fin).replace(' ', 'T').slice(0, 16);
+      }
+      setOfertaEditar(datos);
     } catch {
       Alert.alert('Error', 'No se pudo cargar el detalle de la oferta');
       setMostrarForm(false);

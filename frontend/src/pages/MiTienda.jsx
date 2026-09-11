@@ -1342,7 +1342,9 @@ export default function MiTienda() {
   const [tiendaForm,    setTiendaForm]    = useState({ nombre_tienda: "", direccion: "", telefono: "" });
   const [tiendaMsg,     setTiendaMsg]     = useState("");
 
-  const [ventas,        setVentas]        = useState([]);
+  const [ventas,           setVentas]           = useState([]);
+  const [paginaVentas,     setPaginaVentas]     = useState(1);
+  const [ventasPorPagina,  setVentasPorPagina]  = useState(8);
   const [loadingVentas, setLoadingVentas] = useState(false);
   const [detalleVenta,  setDetalleVenta]  = useState(null);
   const [pedidos,       setPedidos]       = useState([]);
@@ -1867,6 +1869,7 @@ export default function MiTienda() {
       .then((res) => {
         if (Array.isArray(res.data)) {
           setVentas(res.data);
+          setPaginaVentas(1);
         } else {
           console.error("Respuesta inesperada de mis-ventas:", res.data);
           setVentas([]);
@@ -5625,6 +5628,18 @@ export default function MiTienda() {
     const totalLibros    = ventasAgrupadas.reduce((s, v) => s + v.cantidadOrden, 0);
     const clientesUnicos = new Set(ventasAgrupadas.map((v) => v.cliente).filter(Boolean)).size;
 
+    // paginación
+    const totalPags     = Math.max(1, Math.ceil(ventasAgrupadas.length / ventasPorPagina));
+    const paginaActual  = Math.min(paginaVentas, totalPags);
+    const ventasPag     = ventasAgrupadas.slice((paginaActual - 1) * ventasPorPagina, paginaActual * ventasPorPagina);
+    const irPag = (n) => setPaginaVentas(Math.min(Math.max(1, n), totalPags));
+
+    // botones de página: máx 5 números visibles
+    const delta = 2;
+    const rangoIzq  = Math.max(1, paginaActual - delta);
+    const rangoDer  = Math.min(totalPags, paginaActual + delta);
+    const numeros   = Array.from({ length: rangoDer - rangoIzq + 1 }, (_, i) => rangoIzq + i);
+
     const kpis = [
       { label: "Ingresos totales", value: formatPrecio(totalIngresos), icon: <IconDollar width={20} height={20} strokeWidth={2} style={{ color: "#7A1E3A" }} />, bg: "#fbe8ee" },
       { label: "Órdenes", value: ventasAgrupadas.length, icon: <IconShoppingBag width={20} height={20} strokeWidth={2} style={{ color: "#3b82f6" }} />, bg: "#dbeafe" },
@@ -5724,7 +5739,7 @@ export default function MiTienda() {
                 </tr>
               </thead>
               <tbody>
-                {ventasAgrupadas.map((v) => {
+                {ventasPag.map((v) => {
                   const fec = formatearFecha(v.fecha);
                   const est = getEstCfg(v.estado);
                   const multi = v.items.length > 1;
@@ -5861,6 +5876,50 @@ export default function MiTienda() {
                 })}
               </tbody>
             </table>
+          </div>
+        )}
+        {/* ── Paginación ── */}
+        {!loadingVentas && totalPags > 1 && (
+          <div className="mis-libros-pagination-bar" style={{ marginTop: "16px" }}>
+            <div className="pagination-info">
+              Mostrando <strong>{(paginaActual - 1) * ventasPorPagina + 1} - {Math.min(paginaActual * ventasPorPagina, ventasAgrupadas.length)}</strong> de <strong>{ventasAgrupadas.length}</strong> órdenes
+            </div>
+
+            <div className="pagination-controls">
+              <button type="button" className="pagination-btn-nav" disabled={paginaActual <= 1} onClick={() => irPag(paginaActual - 1)}>
+                ‹ Anterior
+              </button>
+              <div className="pagination-numbers">
+                {Array.from({ length: totalPags }, (_, idx) => idx + 1).map((pageNum) => {
+                  if (pageNum === 1 || pageNum === totalPags || Math.abs(pageNum - paginaActual) <= 1) {
+                    return (
+                      <button key={pageNum} type="button" className={`pagination-num-btn ${pageNum === paginaActual ? 'active' : ''}`} onClick={() => irPag(pageNum)}>
+                        {pageNum}
+                      </button>
+                    );
+                  } else if (
+                    (pageNum === 2 && paginaActual > 3) ||
+                    (pageNum === totalPags - 1 && paginaActual < totalPags - 2)
+                  ) {
+                    return <span key={pageNum} className="pagination-ellipsis">…</span>;
+                  }
+                  return null;
+                })}
+              </div>
+              <button type="button" className="pagination-btn-nav" disabled={paginaActual >= totalPags} onClick={() => irPag(paginaActual + 1)}>
+                Siguiente ›
+              </button>
+            </div>
+
+            <div className="pagination-per-page">
+              <label htmlFor="select-per-page-ventas">Ver:</label>
+              <select id="select-per-page-ventas" value={ventasPorPagina} onChange={(e) => { setVentasPorPagina(Number(e.target.value)); setPaginaVentas(1); }} className="select-per-page">
+                <option value={5}>5 por pág.</option>
+                <option value={8}>8 por pág.</option>
+                <option value={10}>10 por pág.</option>
+                <option value={20}>20 por pág.</option>
+              </select>
+            </div>
           </div>
         )}
       </div>
