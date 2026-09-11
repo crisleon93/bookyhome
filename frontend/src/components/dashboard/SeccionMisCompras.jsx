@@ -6,6 +6,23 @@ import { notify } from "../ToastProvider";
 
 const idVisible = (orden) => orden?.id_orden_db || orden?.id_orden;
 
+const estiloEstadoOrden = (estado) => {
+  const estadoNormalizado = String(estado || '').toLowerCase();
+  if (estadoNormalizado.includes('entreg')) {
+    return { etiqueta: '✓ Entregada', fondo: '#ECFDF5', color: '#047857', borde: '#A7F3D0' };
+  }
+  if (estadoNormalizado.includes('enviad') || estadoNormalizado.includes('transit')) {
+    return { etiqueta: '🚚 En tránsito', fondo: '#EFF6FF', color: '#1D4ED8', borde: '#BFDBFE' };
+  }
+  if (estadoNormalizado.includes('pagad') || estadoNormalizado.includes('aprob')) {
+    return { etiqueta: '✓ Pagado', fondo: '#DCFCE7', color: '#166534', borde: '#86EFAC' };
+  }
+  if (estadoNormalizado.includes('cancel')) {
+    return { etiqueta: '✕ Cancelada', fondo: '#FEF2F2', color: '#B91C1C', borde: '#FECACA' };
+  }
+  return { etiqueta: 'Pendiente de pago', fondo: '#FEF3C7', color: '#92400E', borde: '#FDE68A' };
+};
+
 export default function SeccionMisCompras({ userId }) {
   const navigate = useNavigate();
   const [ordenes, setOrdenes] = useState([]);
@@ -1004,11 +1021,11 @@ export default function SeccionMisCompras({ userId }) {
                     fontWeight: 800,
                     padding: "3px 12px",
                     borderRadius: "999px",
-                    background: (modalDetalleOrden.estado === "pagado" || modalDetalleOrden.estado_orden === "pagado") ? "#DCFCE7" : "#FEF3C7",
-                    color: (modalDetalleOrden.estado === "pagado" || modalDetalleOrden.estado_orden === "pagado") ? "#166534" : "#92400E",
-                    border: (modalDetalleOrden.estado === "pagado" || modalDetalleOrden.estado_orden === "pagado") ? "1px solid #86EFAC" : "1px solid #FDE68A"
+                    background: estiloEstadoOrden(modalDetalleOrden.estado || modalDetalleOrden.estado_orden).fondo,
+                    color: estiloEstadoOrden(modalDetalleOrden.estado || modalDetalleOrden.estado_orden).color,
+                    border: `1px solid ${estiloEstadoOrden(modalDetalleOrden.estado || modalDetalleOrden.estado_orden).borde}`
                   }}>
-                    {(modalDetalleOrden.estado === "pagado" || modalDetalleOrden.estado_orden === "pagado") ? "✓ Pagado" : (modalDetalleOrden.estado || "Pendiente de pago")}
+                    {estiloEstadoOrden(modalDetalleOrden.estado || modalDetalleOrden.estado_orden).etiqueta}
                   </span>
                 </div>
                 <p style={{ margin: "4px 0 0", fontSize: "0.84rem", color: "#64748B" }}>
@@ -1180,7 +1197,14 @@ export default function SeccionMisCompras({ userId }) {
                   </div>
                 ) : (
                   <div style={{ fontSize: "0.85rem", color: "#64748B" }}>
-                    Tu pedido será despachado por la librería a tu dirección registrada.
+                    {['entregada', 'entregado'].includes(String(modalDetalleOrden.estado || modalDetalleOrden.estado_orden || '').toLowerCase())
+                      ? `Tu pedido fue entregado${modalDetalleOrden.envio?.empresa_mensajeria ? ` por ${modalDetalleOrden.envio.empresa_mensajeria}` : ''}.`
+                      : 'Tu pedido será despachado por la librería a tu dirección registrada.'}
+                  </div>
+                )}
+                {modalDetalleOrden.tipo_entrega !== 'retiro_tienda' && Number(modalDetalleOrden.costo_envio || 0) > 0 && (
+                  <div style={{ marginTop: "8px", fontSize: "0.85rem", color: "#475569" }}>
+                    Costo de domicilio: <strong>{formatCurrency(modalDetalleOrden.costo_envio)}</strong>
                   </div>
                 )}
               </div>
@@ -1290,10 +1314,10 @@ export default function SeccionMisCompras({ userId }) {
             className="baucher-modal"
             style={{
               background: "var(--blanco, #fff)",
-              maxWidth: "600px", width: "100%",
-              borderRadius: "16px", padding: "40px",
+              maxWidth: "680px", width: "100%",
+              borderRadius: "16px", padding: "24px 28px",
               boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
-              maxHeight: "90vh", overflowY: "auto",
+              maxHeight: "calc(100vh - 24px)", overflowY: "auto",
               scrollbarWidth: "none", msOverflowStyle: "none"
             }}
             onClick={(e) => e.stopPropagation()}
@@ -1312,7 +1336,7 @@ export default function SeccionMisCompras({ userId }) {
             ) : ordenSeleccionada ? (
               <>
                 {/* Header */}
-                <div style={{ borderBottom: "2px solid #e0dbd4", paddingBottom: "20px", marginBottom: "20px", textAlign: "center" }}>
+                <div style={{ borderBottom: "2px solid #e0dbd4", paddingBottom: "12px", marginBottom: "14px", textAlign: "center" }}>
                   <div style={{
                     width: "70px", height: "70px", borderRadius: "50%",
                     background: "#fdf0f2", display: "flex",
@@ -1332,8 +1356,8 @@ export default function SeccionMisCompras({ userId }) {
                 </div>
 
                 {/* Info de la orden */}
-                <div style={{ background: "#fcfaf7", padding: "20px", borderRadius: "12px", marginBottom: "20px", border: "1px solid #e0dbd4" }}>
-                  <div style={{ display: "grid", gap: "12px", marginBottom: "16px" }}>
+                <div style={{ background: "#fcfaf7", padding: "14px 16px", borderRadius: "12px", marginBottom: "14px", border: "1px solid #e0dbd4" }}>
+                  <div style={{ display: "grid", gap: "8px", marginBottom: "10px" }}>
                     <div style={{ display: "flex", justifyContent: "space-between" }}>
                       <span style={{ color: "#666", fontSize: "0.9rem" }}>Número de Orden</span>
                       <span style={{ fontWeight: 700 }}>#{idVisible(ordenSeleccionada)}</span>
@@ -1375,8 +1399,8 @@ export default function SeccionMisCompras({ userId }) {
                 </div>
 
                 {/* Productos */}
-                <div style={{ marginBottom: "20px" }}>
-                  <h3 style={{ fontWeight: 700, color: "#2a2a2a", margin: "0 0 15px", fontSize: "1.1rem" }}>
+                <div style={{ marginBottom: "14px" }}>
+                  <h3 style={{ fontWeight: 700, color: "#2a2a2a", margin: "0 0 10px", fontSize: "1.1rem" }}>
                     Productos Comprados
                   </h3>
                   <div style={{ display: "grid", gap: "12px" }}>
@@ -1384,7 +1408,7 @@ export default function SeccionMisCompras({ userId }) {
                       ordenSeleccionada.items.map((item) => (
                         <div key={item.id_libro} style={{
                           display: "flex", justifyContent: "space-between", alignItems: "center",
-                          padding: "12px", background: "#faf8f6",
+                          padding: "9px 12px", background: "#faf8f6",
                           borderRadius: "8px", border: "1px solid #e0dbd4"
                         }}>
                           <div style={{ flex: 1 }}>
@@ -1405,11 +1429,17 @@ export default function SeccionMisCompras({ userId }) {
                 </div>
 
                 {/* Totales */}
-                <div style={{ borderTop: "2px solid #e0dbd4", paddingTop: "20px", marginTop: "20px", display: "grid", gap: "10px" }}>
+                <div style={{ borderTop: "2px solid #e0dbd4", paddingTop: "12px", marginTop: "12px", display: "grid", gap: "7px" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.95rem" }}>
                     <span style={{ color: "#666" }}>Subtotal</span>
-                    <span style={{ fontWeight: 600 }}>{formatCurrency(ordenSeleccionada.total)}</span>
+                    <span style={{ fontWeight: 600 }}>{formatCurrency((ordenSeleccionada.items || []).reduce((sum, item) => sum + Number(item.precio_libro || 0) * Number(item.cantidad || 1), 0))}</span>
                   </div>
+                  {ordenSeleccionada.tipo_entrega !== 'retiro_tienda' && Number(ordenSeleccionada.costo_envio || 0) > 0 && (
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.95rem" }}>
+                      <span style={{ color: "#666" }}>Domicilio</span>
+                      <span style={{ fontWeight: 600 }}>{formatCurrency(ordenSeleccionada.costo_envio)}</span>
+                    </div>
+                  )}
                   {ordenSeleccionada.cupon_aplicado && ordenSeleccionada.total_con_descuento != null && (
                     <div style={{
                       display: "flex", justifyContent: "space-between", fontSize: "0.95rem",
@@ -1433,7 +1463,7 @@ export default function SeccionMisCompras({ userId }) {
                 </div>
 
                 {/* Botones */}
-                <div className="baucher-actions" style={{ display: "flex", gap: "12px", marginTop: "30px", flexWrap: "wrap" }}>
+                <div className="baucher-actions" style={{ display: "flex", gap: "10px", marginTop: "18px", flexWrap: "wrap" }}>
                   <button
                     onClick={handleCerrarBaucher}
                     style={{

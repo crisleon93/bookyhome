@@ -527,6 +527,7 @@ def obtener_pedidos_tienda(id_tienda: int):
                 oc.estado_orden           AS estado,
                 oc.total                  AS total_orden,
                 oc.costo_envio,
+                COALESCE(tc.tarifa_envio, 0) AS costo_envio_tienda,
                 oc.id_usuario             AS id_comprador,
                 oc.tipo_entrega,
                 oc.estado_retiro,
@@ -558,6 +559,7 @@ def obtener_pedidos_tienda(id_tienda: int):
             JOIN libros          l  ON l.id_libro   = do.id_libro
             JOIN usuarios        u  ON u.id_usuario = oc.id_usuario
             LEFT JOIN direcciones_envio de ON de.id_direccion = oc.id_direccion_envio
+            LEFT JOIN tienda_configuracion tc ON tc.id_tienda = l.id_tienda
             WHERE l.id_tienda = %s
             ORDER BY oc.fecha_orden DESC
         """, (id_tienda,))
@@ -603,6 +605,7 @@ def obtener_pedidos_tienda(id_tienda: int):
                 "total_tienda":   0.0,
                 "total_orden":    float(fila["total_orden"] or 0),
                 "costo_envio":    float(fila.get("costo_envio") or 0),
+                "costo_envio_tienda": float(fila.get("costo_envio_tienda") or 0),
                 "direccion_entrega": {
                     "alias":        fila.get("alias_direccion"),
                     "direccion":    fila.get("direccion_completa"),

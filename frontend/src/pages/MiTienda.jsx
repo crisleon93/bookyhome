@@ -1,4 +1,4 @@
-// src/pages/MiTienda.jsx
+﻿// src/pages/MiTienda.jsx
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
@@ -1301,8 +1301,8 @@ export default function MiTienda() {
     }
     return "Vendedor";
   });
-  const [userPhotoUrl,  setUserPhotoUrl]  = useState(null);
-  const [bannerUrl,     setBannerUrl]     = useState(null);
+  const [userPhotoUrl,  setUserPhotoUrl]  = useState(() => localStorage.getItem('vendedor_user_photo_url') || null);
+  const [bannerUrl,     setBannerUrl]     = useState(() => localStorage.getItem('vendedor_banner_url') || null);
   const [loading]                 = useState(false);
   const location = useLocation();
   const [activeSide, setActiveSide] = useState(() => {
@@ -1468,7 +1468,7 @@ export default function MiTienda() {
   const [_cuentaAEliminar, setCuentaAEliminar] = useState(null);
   const [_mostrarExitoCuenta, setMostrarExitoCuenta] = useState(false);
   
-  // Estados para Nómina
+  // Datos del método de cobro del vendedor
   const [_pagosPendientes, setPagosPendientes] = useState([]);
   const [_historialPagos, setHistorialPagos] = useState([]);
   const [_loadingNomina, setLoadingNomina] = useState(false);
@@ -1608,7 +1608,7 @@ export default function MiTienda() {
   }, []);
 
   useEffect(() => {
-    if (activeSide === 'Nómina') {
+    if (activeSide === 'Métodos de cobro') {
       setLoadingNomina(true);
       Promise.all([cargarPagosPendientes(), cargarHistorialPagos()])
         .finally(() => setLoadingNomina(false));
@@ -1892,7 +1892,7 @@ export default function MiTienda() {
   }, [cargarLibros]);
 
   useEffect(() => {
-    if (activeSide === "Pedidos" || activeSide === "Envios") {
+    if (activeSide === "Pedidos" || activeSide === "Envios" || activeSide === "Envíos") {
       cargarPedidos();
       const intervalId = setInterval(() => {
         api.get("/libros/mis-pedidos")
@@ -2017,7 +2017,9 @@ export default function MiTienda() {
             setProfilePhotoUrl(prev => prev || resolveImageUrl(r.data.logo_url));
           }
           if (r.data.banner_url) {
-            setBannerUrl(resolveImageUrl(r.data.banner_url));
+            const nextBannerUrl = resolveImageUrl(r.data.banner_url);
+            setBannerUrl(nextBannerUrl);
+            localStorage.setItem('vendedor_banner_url', nextBannerUrl);
             // Fallback: si no hay banner personal, usar el banner de la tienda
             setPerfilBannerUrl(prev => {
               if (prev) return prev;
@@ -3404,6 +3406,7 @@ export default function MiTienda() {
         const url = resolveImageUrl(res.data?.url || res.data?.foto_perfil);
         setProfilePhotoUrl(url);
         setUserPhotoUrl(url);
+        localStorage.setItem('vendedor_user_photo_url', url);
         window.dispatchEvent(new CustomEvent('profile-photo-updated', { detail: { url } }));
         setPerfilMsg('Foto actualizada');
         setTimeout(() => setPerfilMsg(''), 3000);
@@ -3423,6 +3426,7 @@ export default function MiTienda() {
         setPerfilBannerUrl(url);
         setPerfilBannerColor(null);
         setBannerUrl(url);
+        localStorage.setItem('vendedor_banner_url', url);
         setShowBannerEditor(false);
         window.dispatchEvent(new CustomEvent('profile-banner-updated', { detail: { bannerUrl: url, bannerColor: null } }));
         setPerfilMsg('Banner actualizado');
@@ -3437,6 +3441,7 @@ export default function MiTienda() {
         setPerfilBannerColor(color);
         setPerfilBannerUrl(null);
         setBannerUrl(null);
+        localStorage.removeItem('vendedor_banner_url');
         setShowBannerEditor(false);
         window.dispatchEvent(new CustomEvent('profile-banner-updated', { detail: { bannerUrl: null, bannerColor: color } }));
         setPerfilMsg('Color de banner guardado');
@@ -3571,41 +3576,38 @@ export default function MiTienda() {
               <div className="pl-card" style={{ padding: '2rem', marginBottom: '1.25rem' }}>
                 <h3 style={{ margin: '0 0 1rem 0', color: 'var(--vinotinto)', fontSize: '1.2rem' }}>Información Personal</h3>
 
-                {/* Foto de Perfil */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '2rem', marginBottom: '2rem', paddingBottom: '2rem', borderBottom: '1px solid #e0dbd4' }}>
-                  <div style={{ flexShrink: 0 }}>
-                    {profilePhotoUrl ? (
-                      <img src={profilePhotoUrl} alt="Foto de perfil" style={{ width: 100, height: 100, borderRadius: '50%', objectFit: 'cover', border: `3px solid ${PRIMARY}` }} />
-                    ) : (
-                      <div style={{ width: 100, height: 100, borderRadius: '50%', background: '#e0dbd4', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem', color: PRIMARY, fontWeight: 'bold', border: `3px solid ${PRIMARY}` }}>
-                        {perfilName?.charAt(0).toUpperCase() || 'U'}
-                      </div>
-                    )}
-                  </div>
-                  <div>
-                    <h3 style={{ margin: '0 0 0.5rem 0' }}>Foto de Perfil</h3>
-                    <p style={{ margin: '0 0 1rem 0', color: '#666', fontSize: '0.9rem' }}>Sube una foto para personalizar tu perfil</p>
-                    <label style={{ background: PRIMARY, color: 'white', padding: '0.5rem 1rem', borderRadius: '6px', fontSize: '0.9rem', cursor: 'pointer', display: 'inline-block', opacity: perfilFotoUploading ? 0.7 : 1 }}>
-                      {perfilFotoUploading ? 'Subiendo...' : 'Cambiar Foto'}
-                      <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleFotoUpload} disabled={perfilFotoUploading} />
-                    </label>
-                  </div>
-                </div>
-
-                {/* Banner de Perfil */}
-                <div style={{ marginBottom: 0 }}>
-                  <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '1rem', fontWeight: 700 }}>Banner de Perfil</h3>
+                {/* Cabecera visual del perfil */}
+                <div style={{ marginBottom: '1.5rem', paddingBottom: '1.5rem' }}>
                   <div style={{
-                    width: '100%', height: '80px', borderRadius: '10px', marginBottom: '12px',
-                    background: perfilBannerUrl ? `url(${perfilBannerUrl}) center/cover no-repeat` : (perfilBannerColor || PRIMARY),
-                    border: '2px solid #e0dbd4', position: 'relative', overflow: 'hidden',
+                    width: '100%', height: '180px', borderRadius: '14px',
+                      background: (perfilBannerUrl || bannerUrl) ? `url(${perfilBannerUrl || bannerUrl}) center/cover no-repeat` : (perfilBannerColor || PRIMARY),
+                    border: '2px solid #e0dbd4', position: 'relative', overflow: 'visible',
                   }}>
                     {perfilBannerColor?.startsWith('linear-gradient') && !perfilBannerUrl && (
-                      <div style={{ position: 'absolute', inset: 0, backgroundImage: perfilBannerColor }} />
+                      <div style={{ position: 'absolute', inset: 0, backgroundImage: perfilBannerColor, borderRadius: '12px' }} />
                     )}
-                    <button onClick={() => setShowBannerEditor(v => !v)} style={{ position: 'absolute', bottom: 8, right: 8, background: 'rgba(0,0,0,0.55)', color: 'white', border: 'none', borderRadius: '6px', padding: '4px 12px', fontSize: '0.8rem', cursor: 'pointer', fontWeight: 600 }}>
-                      ✏️ Editar
+                    <button onClick={() => setShowBannerEditor(v => !v)} style={{ position: 'absolute', bottom: 12, right: 12, zIndex: 2, background: 'rgba(0,0,0,0.62)', color: 'white', border: 'none', borderRadius: '7px', padding: '6px 12px', fontSize: '0.8rem', cursor: 'pointer', fontWeight: 600 }}>
+                      ✏️ Editar banner
                     </button>
+                    <div style={{ position: 'absolute', left: 24, bottom: -48, zIndex: 3 }}>
+                      <label className="perfil-avatar-editable" title="Cambiar foto de perfil">
+                        {(profilePhotoUrl || userPhotoUrl) ? (
+                          <img src={profilePhotoUrl || userPhotoUrl} alt="Foto de perfil" />
+                        ) : (
+                          <span className="perfil-avatar-editable__fallback">
+                            {perfilName?.charAt(0).toUpperCase() || 'U'}
+                          </span>
+                        )}
+                        <span className="perfil-avatar-editable__overlay">✎</span>
+                        <input type="file" accept="image/*" onChange={handleFotoUpload} disabled={perfilFotoUploading} />
+                      </label>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '58px 24px 0 0', minHeight: '58px', boxSizing: 'border-box', flexWrap: 'wrap' }}>
+                    <div style={{ minWidth: 0 }}>
+                      <h3 style={{ margin: 0, color: '#1f2937', fontSize: '1.08rem', fontWeight: 800 }}>{`${perfilName || ''} ${perfilSurname || ''}`.trim() || 'Tu perfil'}</h3>
+                      <p style={{ margin: '3px 0 0', color: '#777', fontSize: '0.82rem' }}>Perfil de vendedor</p>
+                    </div>
                   </div>
                   {showBannerEditor && (
                     <div style={{ background: '#f9f7f4', borderRadius: '10px', padding: '1rem', border: '1px solid #e0dbd4' }}>
@@ -4109,7 +4111,7 @@ export default function MiTienda() {
           <IconCreditCard width={24} height={24} strokeWidth={2} style={{ color: '#7A1E3A' }} />
           Cuentas Bancarias
         </h1>
-        <p style={{ margin: 0 }}>Gestiona tus cuentas bancarias para recibir pagos de Nómina.</p>
+        <p style={{ margin: 0 }}>Gestiona las cuentas donde recibirás directamente los pagos de tus ventas.</p>
       </div>
 
       <div className="pl-card" style={{ padding: "2rem", marginTop: "20px" }}>
@@ -4206,7 +4208,7 @@ export default function MiTienda() {
                   checked={cuentaForm.es_principal}
                   onChange={(e) => setCuentaForm({...cuentaForm, es_principal: e.target.checked})}
                 />
-                Marcar como cuenta principal para Nómina
+                Marcar como cuenta principal para recibir pagos
               </label>
               <div style={{ display: 'flex', gap: '10px' }}>
                 <button
@@ -4395,7 +4397,7 @@ export default function MiTienda() {
     });
 
     const pedidosAMostrar = pedidos.filter(p => {
-      if (filtroEstadoPedidos === 'retiro_tienda' && p.tipo_entrega !== 'retiro_tienda') return false;
+      if (filtroEstadoPedidos === 'retiro_tienda') return p.tipo_entrega === 'retiro_tienda';
       if (filtroEstadoPedidos !== 'todos' && normalizarEstado(p.estado) !== filtroEstadoPedidos) return false;
       const term = busquedaPedidos.trim().toLowerCase();
       if (term) {
@@ -4581,7 +4583,7 @@ export default function MiTienda() {
                     // Domicilio: recibe lo de sus libros + el costo de envío (de ahí paga la transportadora).
                     const montoTienda = pedido.tipo_entrega === 'retiro_tienda'
                       ? (pedido.total_orden ?? pedido.total_tienda)
-                      : ((pedido.total_tienda ?? 0) + (pedido.costo_envio ?? pedido.envio?.costo_envio ?? 0));
+                      : ((pedido.total_tienda ?? 0) + (pedido.costo_envio_tienda ?? 0));
 
                     const estilos = {
                       pagado:    { border: "#1e8a45", bg: "#eafaf1", color: "#145c2e", label: "Pagada",    emoji: "💳" },
@@ -4670,6 +4672,8 @@ export default function MiTienda() {
                         {(() => {
                           // SI ES RETIRO EN TIENDA
                           if (esRetiro) {
+                            const metodoPagoNormalizado = String(pedido.metodo_pago || '').toLowerCase().replace(/\s+/g, '_');
+                            const esPagoEfectivo = !pedido.metodo_pago || metodoPagoNormalizado.includes('efectivo');
                             return (
                               <div className="pedidos-guia">
                                 <div className="pedidos-retiro-card">
@@ -4702,6 +4706,14 @@ export default function MiTienda() {
                                           <span>✅</span> Entregar Libro
                                         </button>
                                       </>
+                                    ) : esPagoEfectivo ? (
+                                      <button
+                                        onClick={() => setModalConfirmarEntrega({ pedido, esEfectivo: true, exito: false, error: "" })}
+                                        disabled={actualizandoRetiro === pedido.id_orden}
+                                        className="pedidos-guia__btn pedidos-guia__btn--block"
+                                      >
+                                        <span>💵</span> Cobrar Efectivo y Entregar
+                                      </button>
                                     ) : (
                                       <button
                                         onClick={() => setModalHabilitarPago({ pedido, exito: false, error: "" })}
@@ -5634,12 +5646,6 @@ export default function MiTienda() {
     const ventasPag     = ventasAgrupadas.slice((paginaActual - 1) * ventasPorPagina, paginaActual * ventasPorPagina);
     const irPag = (n) => setPaginaVentas(Math.min(Math.max(1, n), totalPags));
 
-    // botones de página: máx 5 números visibles
-    const delta = 2;
-    const rangoIzq  = Math.max(1, paginaActual - delta);
-    const rangoDer  = Math.min(totalPags, paginaActual + delta);
-    const numeros   = Array.from({ length: rangoDer - rangoIzq + 1 }, (_, i) => rangoIzq + i);
-
     const kpis = [
       { label: "Ingresos totales", value: formatPrecio(totalIngresos), icon: <IconDollar width={20} height={20} strokeWidth={2} style={{ color: "#7A1E3A" }} />, bg: "#fbe8ee" },
       { label: "Órdenes", value: ventasAgrupadas.length, icon: <IconShoppingBag width={20} height={20} strokeWidth={2} style={{ color: "#3b82f6" }} />, bg: "#dbeafe" },
@@ -6360,12 +6366,11 @@ export default function MiTienda() {
       case "Calificaciones": return renderCalificaciones();
       case "Quejas y reclamos": return <QuejasVendedor />;
       case "Soporte técnico": return <Soporte />;
-      case "Envios":
       case "Envíos":        return renderEnvios();
       case "Clientes":      return renderProximamente("Clientes");
       case "Configuración": return renderConfiguracion();
       case "Perfil":        return renderPerfil();
-      case "Nómina":        return RenderCuentasBancarias();
+      case "Métodos de cobro": return RenderCuentasBancarias();
       case "Promociones":   return <SeccionOfertas />;
       case "Cupones":       return <SeccionCuponesVendedor tiendaId={tiendaInfo?.id_tienda} />;
       case "Suscripciones": return <SeccionSuscripciones tiendaId={tiendaInfo?.id_tienda} onNavegar={cambiarSeccion} />;

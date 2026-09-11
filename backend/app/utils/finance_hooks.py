@@ -89,6 +89,7 @@ def registrar_ingreso_venta(
     id_venta: int,
     monto_venta: float,
     id_vendedor: int,
+    tipo_entrega: str = "domicilio",
 ) -> None:
     """
     Registra automáticamente la comisión de BookyHome por una venta.
@@ -101,6 +102,13 @@ def registrar_ingreso_venta(
 
     Comisión aplicada: BOOKYPAGO_COMISION_VENTA (default 15 %)
     """
+    if tipo_entrega == "retiro_tienda":
+        logger.info(
+            "finance_hooks: venta #%d con retiro en tienda, sin comisión.",
+            id_venta,
+        )
+        return
+
     try:
         if _ya_registrado("venta", id_venta):
             logger.debug(

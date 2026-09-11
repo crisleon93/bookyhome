@@ -65,7 +65,7 @@ BEGIN
     VALUES (
         v_id_vendedor,
         'orden',
-        '¡Nueva venta!',
+        CONCAT(_utf8mb4 0xC2A1, 'Nueva venta!'),
         CONCAT('Vendiste "', v_titulo, '" x', NEW.cantidad,
                ' en la orden #', NEW.id_orden, '.'),
         NEW.id_orden

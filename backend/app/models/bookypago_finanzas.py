@@ -1,6 +1,6 @@
 """
 Sistema de Finanzas BookyPago
-Gestiona los ingresos y pagos de BookyHome como empresa
+    Gestiona los ingresos y comisiones de BookyHome como empresa
 """
 
 import json
@@ -36,7 +36,7 @@ def _save_store(path, data):
 class BookyPagoFinanzas:
     """
     Sistema de finanzas de BookyHome
-    Gestiona ingresos, pagos a vendedores, planes e impulsos
+    Gestiona ingresos, comisiones, planes e impulsos
     """
     
     def __init__(self, config: Dict = None):
@@ -124,7 +124,7 @@ class BookyPagoFinanzas:
             if 'ingresos' not in finanzas:
                 finanzas['ingresos'] = []
             
-            # Calcular comisión de BookyHome
+            # Calcular la comisión de BookyHome; el saldo del vendedor se paga directamente.
             comision = monto_venta * self.config['comision_venta']
             monto_vendedor = monto_venta - comision
             
@@ -136,6 +136,8 @@ class BookyPagoFinanzas:
                 'id_vendedor': id_vendedor,
                 'monto_venta': monto_venta,
                 'comision': comision,
+                'monto_vendedor': monto_vendedor,
+                'tipo_entrega': 'domicilio',
                 'monto': comision,  # BookyHome gana la comisión
                 'fecha': datetime.utcnow().isoformat() + 'Z',
                 'estado': 'procesado'
@@ -144,13 +146,10 @@ class BookyPagoFinanzas:
             finanzas['ingresos'].append(ingreso)
             _save_store(FINANZAS_FILE, finanzas)
             
-            # Registrar pago pendiente al vendedor
-            self._registrar_pago_pendiente_vendedor(id_vendedor, monto_vendedor, id_venta)
-            
             return {
                 'ok': True,
                 'ingreso': ingreso,
-                'pago_vendedor': monto_vendedor,
+                'pago_directo_vendedor': monto_vendedor,
                 'comision_bookyhome': comision
             }
             

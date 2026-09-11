@@ -77,10 +77,6 @@ function SkeletonCard() {
 function BookCard({ libro, onVerDetalles }) {
   const [imgSrcState, setImgSrcState] = useState(() => getImgSrc(libro));
   const [imgFailed, setImgFailed] = useState(false);
-  const isbn = libro.isbn || '';
-  const googleBooksUrl = isbn
-    ? `https://books.google.com/books/content?vid=ISBN${isbn}&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api`
-    : null;
   const price   = Number(libro.precio_libro ?? libro.precio ?? 0);
   const cat     = libro.nombre_categoria || '';
   const catColors = categoriaColor(cat);
@@ -157,10 +153,40 @@ function BookCard({ libro, onVerDetalles }) {
 /* ── Carrusel con flechas ──────────────────────────────────────────── */
 function Carrusel({ libros, loading, onVerDetalles }) {
   const ref = useRef(null);
+  const trackRef = useRef(null);
+  const offsetRef = useRef(0);
 
   const scroll = (dir) => {
-    if (ref.current) ref.current.scrollBy({ left: dir * 880, behavior: 'smooth' });
+    const track = trackRef.current;
+    if (!track) return;
+    const card = track.firstElementChild;
+    const step = card ? card.getBoundingClientRect().width + 14 : 182;
+    const loopWidth = track.scrollWidth / 2;
+    offsetRef.current += dir * step;
+    if (offsetRef.current < 0) offsetRef.current += loopWidth;
+    if (offsetRef.current >= loopWidth) offsetRef.current -= loopWidth;
+    track.style.transform = `translate3d(${-offsetRef.current}px, 0, 0)`;
   };
+
+  useEffect(() => {
+    if (loading || libros.length <= 1) return undefined;
+    let frameId;
+    let previousTime;
+    const animate = (time) => {
+      const track = trackRef.current;
+      if (track) {
+        const elapsed = previousTime ? time - previousTime : 0;
+        const loopWidth = track.scrollWidth / 2;
+        offsetRef.current += (elapsed / 1000) * 28;
+        if (loopWidth > 0 && offsetRef.current >= loopWidth) offsetRef.current -= loopWidth;
+        track.style.transform = `translate3d(${-offsetRef.current}px, 0, 0)`;
+      }
+      previousTime = time;
+      frameId = window.requestAnimationFrame(animate);
+    };
+    frameId = window.requestAnimationFrame(animate);
+    return () => window.cancelAnimationFrame(frameId);
+  }, [loading, libros.length]);
 
   if (loading) {
     return (
@@ -186,9 +212,11 @@ function Carrusel({ libros, loading, onVerDetalles }) {
       </button>
 
       <div ref={ref} className="bkh-carrusel__track">
-        {libros.map(l => (
-          <BookCard key={l.id_libro} libro={l} onVerDetalles={onVerDetalles} />
-        ))}
+        <div ref={trackRef} className="bkh-carrusel__inner">
+          {[...libros, ...libros].map((l, index) => (
+            <BookCard key={`${l.id_libro}-${index}`} libro={l} onVerDetalles={onVerDetalles} />
+          ))}
+        </div>
       </div>
 
       <button

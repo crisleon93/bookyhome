@@ -32,7 +32,7 @@ const MENU_LINKS = [
   { name: 'Ventas' },
   { name: 'Pedidos' },
   { name: 'Envíos' },
-  { name: 'Nómina' },
+  { name: 'Métodos de cobro' },
   { name: 'Calificaciones' },
   { name: 'Quejas y reclamos' },
   { name: 'Soporte técnico' },
@@ -60,7 +60,7 @@ const ICONS = {
   Ventas: <IconCart width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
   Pedidos: <IconShoppingBag width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
   'Envíos': <IconTruck width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
-  Nómina: (
+  'Métodos de cobro': (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={WHITE} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
       <rect x="2" y="5" width="20" height="14" rx="2"></rect>
       <line x1="2" y1="10" x2="22" y2="10"></line>
@@ -132,6 +132,7 @@ export default function VendedorSidebar({ userName = 'Vendedor', profileImage = 
       width: sidebarOpen ? '250px' : '76px',
       position: 'fixed', top: 0, left: 0, zIndex: 60,
       height: '100vh',
+      boxSizing: 'border-box',
       background: VINOTINTO, color: WHITE,
       padding: '16px 14px', display: 'flex', flexDirection: 'column', gap: '4px',
       transition: 'width 0.25s ease', flexShrink: 0, overflow: 'hidden',

@@ -707,6 +707,7 @@ export default function AdminDashboard() {
         width: sidebarOpen ? '250px' : '76px',
         background: VINOTINTO, color: WHITE,
         padding: '24px 14px', display: 'flex', flexDirection: 'column', gap: '6px',
+        boxSizing: 'border-box',
         transition: 'width 0.25s ease', flexShrink: 0,
         position: 'sticky', top: 0, height: '100vh', overflow: 'hidden',
       }}>
@@ -748,10 +749,6 @@ export default function AdminDashboard() {
                 >
                   <SidebarIcon Icon={IconChevronLeft} size={15} />
                 </button>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
-                <SidebarIcon Icon={IconSettings} size={12} />
-                <span style={{ fontSize: '0.66rem', fontWeight: 800, letterSpacing: '1.2px', color: 'rgba(255,255,255,0.9)', textTransform: 'uppercase', textShadow: '0 1px 3px rgba(0,0,0,0.6)' }}>Admin Panel</span>
               </div>
               <div style={{ fontSize: '0.88rem', fontWeight: 700, color: WHITE, textShadow: '0 1px 3px rgba(0,0,0,0.6)' }}>{perfilSidebar.nombre || 'Administrador'}</div>
               <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.9)', textShadow: '0 1px 3px rgba(0,0,0,0.6)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{perfilSidebar.correo}</div>

@@ -313,9 +313,16 @@ const LibroCard = ({ libro, onVerDetalles }) => {
           minHeight: '2.6em',
         }}>{libro.titulo}</p>
         
-        <p style={{ margin: '0 0 8px 0', fontSize: '0.75rem', color: '#888', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {author}
-        </p>
+        {/* Autor con icono */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', margin: '0 0 8px 0', overflow: 'hidden' }}>
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#9b8ea0" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+          <p style={{ margin: 0, fontSize: '0.74rem', color: '#777', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontStyle: 'italic' }}>
+            {author}
+          </p>
+        </div>
 
         {/* Calificación y disponibilidad */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', flexWrap: 'wrap' }}>
@@ -358,9 +365,15 @@ const LibroCard = ({ libro, onVerDetalles }) => {
         </p>
         
         {libro.nombre_tienda && (
-          <p style={{ margin: '0 0 8px 0', fontSize: '0.7rem', color: '#aaa', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {libro.nombre_tienda}
-          </p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', margin: '0 0 8px 0', overflow: 'hidden' }}>
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#7A1E3A" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, opacity: 0.7 }}>
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+              <polyline points="9 22 9 12 15 12 15 22"/>
+            </svg>
+            <p style={{ margin: 0, fontSize: '0.7rem', color: '#7A1E3A', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 600, opacity: 0.8 }}>
+              {libro.nombre_tienda}
+            </p>
+          </div>
         )}
 
         {/* Botón Ver detalles - siempre al fondo */}

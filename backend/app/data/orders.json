@@ -175,6 +175,196 @@
       "fecha_limite_retiro": "2026-09-11T23:13:05.861479Z",
       "id_orden_db": 73,
       "metodo_pago": "Efectivo en Tienda"
+    },
+    {
+      "id_orden": 749,
+      "codigo_compra": "BH-B1787BDA68",
+      "fecha": "2026-09-11T19:04:43.213036Z",
+      "items": [
+        {
+          "id_libro": 50,
+          "cantidad": 1,
+          "precio_libro": 41000.0,
+          "titulo": "El tiempo entre costuras",
+          "autor_libro": "Maria Duenas",
+          "imagen": "https://covers.openlibrary.org/b/id/6665280-L.jpg",
+          "id_variante": null
+        }
+      ],
+      "subtotal": 41000.0,
+      "costo_envio": 0.0,
+      "total": 41000.0,
+      "estado": "entregada",
+      "tipo_entrega": "retiro_tienda",
+      "pin_retiro": "3643",
+      "estado_retiro": "entregada",
+      "fecha_limite_retiro": "2026-09-13T19:04:43.443289Z",
+      "id_orden_db": 749,
+      "metodo_pago": "Efectivo en Tienda"
+    },
+    {
+      "id_orden": 750,
+      "codigo_compra": "BH-1DD425AC30",
+      "fecha": "2026-09-11T19:08:34.529244Z",
+      "items": [
+        {
+          "id_libro": 50,
+          "cantidad": 1,
+          "precio_libro": 41000.0,
+          "titulo": "El tiempo entre costuras",
+          "autor_libro": "Maria Duenas",
+          "imagen": "https://covers.openlibrary.org/b/id/6665280-L.jpg",
+          "id_variante": null
+        }
+      ],
+      "subtotal": 41000.0,
+      "costo_envio": 0.0,
+      "total": 41000.0,
+      "estado": "entregada",
+      "tipo_entrega": "retiro_tienda",
+      "pin_retiro": "8855",
+      "estado_retiro": "entregada",
+      "fecha_limite_retiro": "2026-09-13T19:08:34.666717Z",
+      "id_orden_db": 750,
+      "metodo_pago": "Efectivo en Tienda"
+    },
+    {
+      "id_orden": 751,
+      "codigo_compra": "BH-B475B1C2DB",
+      "fecha": "2026-09-11T19:10:38.038827Z",
+      "items": [
+        {
+          "id_libro": 45,
+          "cantidad": 1,
+          "precio_libro": 38000.0,
+          "titulo": "Las reglas del juego",
+          "autor_libro": "Neil Strauss",
+          "imagen": "https://covers.openlibrary.org/b/id/15175028-L.jpg",
+          "id_variante": null
+        }
+      ],
+      "subtotal": 38000.0,
+      "costo_envio": 0.0,
+      "total": 38000.0,
+      "estado": "entregada",
+      "tipo_entrega": "retiro_tienda",
+      "pin_retiro": "8878",
+      "estado_retiro": "entregada",
+      "fecha_limite_retiro": "2026-09-13T19:10:38.167826Z",
+      "id_orden_db": 751,
+      "metodo_pago": "Efectivo en Tienda"
+    },
+    {
+      "id_orden": 752,
+      "codigo_compra": "BH-F90E104824",
+      "fecha": "2026-09-11T19:17:42.493546Z",
+      "items": [
+        {
+          "id_libro": 450,
+          "cantidad": 1,
+          "precio_libro": 86700.0,
+          "titulo": "Libro 400 - Ficción Científica",
+          "autor_libro": "Felipe Navas",
+          "imagen": "https://images.unsplash.com/photo-1512820790803-83ca734da794?w=400&q=80",
+          "id_variante": null
+        }
+      ],
+      "subtotal": 86700.0,
+      "costo_envio": 0.0,
+      "total": 86700.0,
+      "estado": "entregada",
+      "tipo_entrega": "retiro_tienda",
+      "pin_retiro": "6600",
+      "estado_retiro": "entregada",
+      "fecha_limite_retiro": "2026-09-13T19:17:42.663810Z",
+      "id_orden_db": 752,
+      "metodo_pago": "Efectivo en Tienda"
+    },
+    {
+      "id_orden": 10,
+      "codigo_compra": "BH-D52D371DF3",
+      "fecha": "2026-09-11T21:57:40.331186Z",
+      "items": [
+        {
+          "id_libro": 801,
+          "titulo": "El corredor del laberinto",
+          "autor_libro": "James Dashner",
+          "precio_libro": 66000.0,
+          "cantidad": 1,
+          "imagen": "https://images.unsplash.com/photo-1512820790803-83ca734da794?w=400&q=80",
+          "id_variante": null,
+          "variante_label": null,
+          "id_tienda": 5,
+          "nombre_tienda": ""
+        },
+        {
+          "id_libro": 50,
+          "titulo": "El tiempo entre costuras",
+          "autor_libro": "Maria Duenas",
+          "precio_libro": 41000.0,
+          "cantidad": 1,
+          "imagen": "https://covers.openlibrary.org/b/id/6665280-L.jpg",
+          "id_variante": null,
+          "variante_label": null,
+          "id_tienda": 8,
+          "nombre_tienda": ""
+        }
+      ],
+      "subtotal": 107000.0,
+      "costo_envio": 12000.0,
+      "total": 119000.0,
+      "estado": "pagado",
+      "tipo_entrega": "domicilio",
+      "pin_retiro": null,
+      "estado_retiro": null,
+      "fecha_limite_retiro": null,
+      "id_orden_db": 753,
+      "estado_orden": "pagado",
+      "metodo_pago": "Transferencia Bancaria",
+      "id_direccion": 16
+    },
+    {
+      "id_orden": 11,
+      "codigo_compra": "BH-CCCBB9273E",
+      "fecha": "2026-09-11T22:25:48.899699Z",
+      "items": [
+        {
+          "id_libro": 801,
+          "titulo": "El corredor del laberinto",
+          "autor_libro": "James Dashner",
+          "precio_libro": 66000.0,
+          "cantidad": 1,
+          "imagen": "https://images.unsplash.com/photo-1512820790803-83ca734da794?w=400&q=80",
+          "id_variante": null,
+          "variante_label": null,
+          "id_tienda": 5,
+          "nombre_tienda": ""
+        },
+        {
+          "id_libro": 50,
+          "titulo": "El tiempo entre costuras",
+          "autor_libro": "Maria Duenas",
+          "precio_libro": 41000.0,
+          "cantidad": 1,
+          "imagen": "https://covers.openlibrary.org/b/id/6665280-L.jpg",
+          "id_variante": null,
+          "variante_label": null,
+          "id_tienda": 8,
+          "nombre_tienda": ""
+        }
+      ],
+      "subtotal": 107000.0,
+      "costo_envio": 12000.0,
+      "total": 119000.0,
+      "estado": "pagado",
+      "tipo_entrega": "domicilio",
+      "pin_retiro": null,
+      "estado_retiro": null,
+      "fecha_limite_retiro": null,
+      "id_orden_db": 754,
+      "estado_orden": "pagado",
+      "metodo_pago": "Tarjeta de Crédito",
+      "id_direccion": 16
     }
   ]
 }

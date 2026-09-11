@@ -31,8 +31,8 @@ export default function PublicarLibro() {
     }
     return "Vendedor";
   })();
-  const [userPhotoUrl, setUserPhotoUrl] = useState(null);
-  const [bannerUrl, setBannerUrl] = useState(null);
+  const [userPhotoUrl, setUserPhotoUrl] = useState(() => localStorage.getItem('vendedor_user_photo_url') || null);
+  const [bannerUrl, setBannerUrl] = useState(() => localStorage.getItem('vendedor_banner_url') || null);
 
   const [categorias, setCategorias] = useState([]);
   const [previews, setPreviews] = useState([]);
@@ -84,8 +84,16 @@ export default function PublicarLibro() {
           if (url.startsWith('http')) return url;
           return `${base}${url}`;
         };
-        if (r.data?.logo_url) setUserPhotoUrl(resolve(r.data.logo_url));
-        if (r.data?.banner_url) setBannerUrl(resolve(r.data.banner_url));
+        if (r.data?.logo_url) {
+          const nextPhotoUrl = resolve(r.data.logo_url);
+          setUserPhotoUrl(nextPhotoUrl);
+          localStorage.setItem('vendedor_user_photo_url', nextPhotoUrl);
+        }
+        if (r.data?.banner_url) {
+          const nextBannerUrl = resolve(r.data.banner_url);
+          setBannerUrl(nextBannerUrl);
+          localStorage.setItem('vendedor_banner_url', nextBannerUrl);
+        }
       })
       .catch(() => {});
   }, []);

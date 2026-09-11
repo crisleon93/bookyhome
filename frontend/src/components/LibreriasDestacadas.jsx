@@ -102,10 +102,17 @@ export default function LibreriasDestacadas() {
   const [tiendas, setTiendas] = useState([]);
   const [loading, setLoading] = useState(true);
   const trackRef = useRef(null);
+  const innerRef = useRef(null);
   const navigate = useNavigate();
 
   const scroll = (dir) => {
-    if (trackRef.current) trackRef.current.scrollBy({ left: dir * 880, behavior: 'smooth' });
+    const track = innerRef.current;
+    if (!track) return;
+    const card = track.firstElementChild;
+    const step = card ? card.getBoundingClientRect().width + 14 : 194;
+    const loopWidth = track.scrollWidth / 2;
+    track.dataset.offset = String((Number(track.dataset.offset || 0) + dir * step + loopWidth) % loopWidth);
+    track.style.transform = `translate3d(${-Number(track.dataset.offset)}px, 0, 0)`;
   };
 
   useEffect(() => {
@@ -114,6 +121,27 @@ export default function LibreriasDestacadas() {
       .catch(() => setTiendas([]))
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    if (loading || tiendas.length <= 1) return undefined;
+    let frameId;
+    let previousTime;
+    const animate = (time) => {
+      const track = innerRef.current;
+      if (track) {
+        const elapsed = previousTime ? time - previousTime : 0;
+        const loopWidth = track.scrollWidth / 2;
+        let offset = Number(track.dataset.offset || 0) + (elapsed / 1000) * 28;
+        if (loopWidth > 0 && offset >= loopWidth) offset -= loopWidth;
+        track.dataset.offset = String(offset);
+        track.style.transform = `translate3d(${-offset}px, 0, 0)`;
+      }
+      previousTime = time;
+      frameId = window.requestAnimationFrame(animate);
+    };
+    frameId = window.requestAnimationFrame(animate);
+    return () => window.cancelAnimationFrame(frameId);
+  }, [loading, tiendas.length]);
 
   if (!loading && tiendas.length === 0) return null;
 
@@ -159,12 +187,13 @@ export default function LibreriasDestacadas() {
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
             </button>
             <div ref={trackRef} className="bkh-carrusel__track">
-              {tiendas.map((tienda) => {
+              <div ref={innerRef} className="bkh-carrusel__inner">
+              {[...tiendas, ...tiendas].map((tienda, index) => {
                 const logoUrl = getLogoUrl(tienda.logo_url);
                 const { ciudad, direccion, descripcion, nombre } = parseTiendaInfo(tienda);
                 return (
                   <button
-                    key={tienda.id_tienda}
+                    key={`${tienda.id_tienda}-${index}`}
                     type="button"
                     className="lib-card"
                     onClick={() => handleVerTienda(tienda)}
@@ -202,6 +231,7 @@ export default function LibreriasDestacadas() {
                   </button>
                 );
               })}
+              </div>
             </div>
             <button className="bkh-carrusel__arrow bkh-carrusel__arrow--right" onClick={() => scroll(1)} aria-label="Siguiente">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6"/></svg>

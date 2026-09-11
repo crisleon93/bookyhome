@@ -45,6 +45,19 @@ def _save_store(path, data):
     with open(path, 'w', encoding='utf-8') as file:
         json.dump(data, file, indent=2, ensure_ascii=False)
 
+def _agregar_desglose_financiero(order):
+    """Añade el desglose visible sin convertirlo en un cobro adicional."""
+    total = float(order.get('total_con_descuento', order.get('total', 0)) or 0)
+    es_domicilio = order.get('tipo_entrega', 'domicilio') != 'retiro_tienda'
+    comision = round(total * 0.15, 2) if es_domicilio else 0
+    order['desglose_financiero'] = {
+        'total_pagado_comprador': total,
+        'comision_bookyhome': comision,
+        'neto_vendedor': round(total - comision, 2),
+        'aplica_comision': es_domicilio,
+    }
+    return order
+
 
 def obtener_orden(id_usuario, id_orden):
     orders = _load_store(ORDER_FILE)
@@ -61,13 +74,16 @@ def obtener_orden(id_usuario, id_orden):
         db = get_db()
         cursor = db.cursor(dictionary=True)
         cursor.execute("""
-            SELECT oc.id_orden, oc.estado_orden, oc.total, oc.tipo_entrega,
+                 SELECT oc.id_orden, oc.estado_orden, oc.total, oc.tipo_entrega,
+                     oc.costo_envio,
                    oc.estado_retiro, oc.pin_retiro, oc.fecha_limite_retiro, oc.metodo_pago,
+                     e.empresa_mensajeria, e.numero_guia, e.estado_envio,
                    t.nombre_tienda, t.direccion AS direccion_tienda, t.telefono AS telefono_tienda
             FROM ordenes_compra oc
             LEFT JOIN detalle_orden do ON do.id_orden = oc.id_orden
             LEFT JOIN libros l ON l.id_libro = do.id_libro
             LEFT JOIN tiendas t ON t.id_tienda = l.id_tienda
+                 LEFT JOIN envios e ON e.id_orden = oc.id_orden
             WHERE (oc.id_orden = %s OR oc.id_orden = %s) AND oc.id_usuario = %s
             LIMIT 1
         """, (int(id_orden), int(target.get('id_orden_db', id_orden) if target else id_orden), int(id_usuario)))
@@ -80,10 +96,13 @@ def obtener_orden(id_usuario, id_orden):
                     "estado": row["estado_orden"],
                     "estado_orden": row["estado_orden"],
                     "total": float(row["total"] or 0),
+                    "costo_envio": float(row["costo_envio"] or 0),
                     "items": []
                 }
             target["estado"] = row["estado_orden"]
             target["estado_orden"] = row["estado_orden"]
+            target["total"] = float(row["total"] or 0)
+            target["costo_envio"] = float(row["costo_envio"] or 0)
             if row.get("metodo_pago"): target["metodo_pago"] = row["metodo_pago"]
             if row.get("tipo_entrega"): target["tipo_entrega"] = row["tipo_entrega"]
             if row.get("estado_retiro"): target["estado_retiro"] = row["estado_retiro"]
@@ -96,12 +115,59 @@ def obtener_orden(id_usuario, id_orden):
                     "direccion": row.get("direccion_tienda") or "Punto principal de la librería",
                     "telefono": row.get("telefono_tienda") or ""
                 }
+            if row.get("numero_guia"):
+                target["envio"] = {
+                    "empresa_mensajeria": row.get("empresa_mensajeria"),
+                    "numero_guia": row.get("numero_guia"),
+                    "estado_envio": row.get("estado_envio"),
+                }
+            if not target.get("items"):
+                cursor.execute("""
+                    SELECT do.id_libro, do.cantidad, do.precio_unitario,
+                           do.precio_final, l.titulo, l.autor_libro,
+                           (SELECT url_imagen FROM imagenes_libro
+                            WHERE id_libro = l.id_libro
+                            ORDER BY es_principal DESC, id_imagen ASC
+                            LIMIT 1) AS imagen_url
+                    FROM detalle_orden do
+                    JOIN libros l ON l.id_libro = do.id_libro
+                    WHERE do.id_orden = %s
+                    ORDER BY do.id_detalle
+                """, (int(row["id_orden"]),))
+                target["items"] = [
+                    {
+                        "id_libro": item["id_libro"],
+                        "titulo": item["titulo"],
+                        "autor_libro": item["autor_libro"],
+                        "cantidad": int(item["cantidad"] or 1),
+                        "precio_libro": float(item["precio_unitario"] or 0),
+                        "precio_final": float(item["precio_final"] or 0),
+                        "imagen_url": item["imagen_url"],
+                    }
+                    for item in cursor.fetchall()
+                ]
+            cursor.execute("""
+                SELECT DISTINCT l.id_tienda, t.nombre_tienda, tc.tarifa_envio
+                FROM detalle_orden do
+                JOIN libros l ON l.id_libro = do.id_libro
+                JOIN tiendas t ON t.id_tienda = l.id_tienda
+                LEFT JOIN tienda_configuracion tc ON tc.id_tienda = l.id_tienda
+                WHERE do.id_orden = %s
+            """, (int(row["id_orden"]),))
+            target["desglose_envio"] = [
+                {
+                    "id_tienda": tienda["id_tienda"],
+                    "tienda": tienda["nombre_tienda"],
+                    "costo": float(tienda.get("tarifa_envio") or 0) if target.get("tipo_entrega") != "retiro_tienda" else 0,
+                }
+                for tienda in cursor.fetchall()
+            ]
         cursor.close()
         db.close()
     except Exception as e:
         print("Error sincronizando orden individual desde BD:", e)
 
-    return target
+    return _agregar_desglose_financiero(target) if target else target
 
 def obtener_ordenes_usuario(id_usuario):
     from app.models.envios import EMPRESAS_MENSAJERIA, limpiar_envios_no_pagados
@@ -211,6 +277,20 @@ def obtener_ordenes_usuario(id_usuario):
                         "sitio_web": empresa.get("sitio_web"),
                         "url_rastreo": empresa.get("url_rastreo", empresa.get("sitio_web")),
                     }
+
+            for item in order.get('items', []):
+                if item.get('id_libro') and not item.get('imagen_url') and not item.get('imagen'):
+                    cursor.execute("""
+                        SELECT url_imagen
+                        FROM imagenes_libro
+                        WHERE id_libro = %s
+                        ORDER BY es_principal DESC, id_imagen ASC
+                        LIMIT 1
+                    """, (item['id_libro'],))
+                    imagen = cursor.fetchone()
+                    if imagen:
+                        item['imagen_url'] = imagen['url_imagen']
+
             for item in order.get('items', []):
                 if 'id_libro' in item and not item.get('nombre_tienda'):
                     cursor.execute("""
@@ -232,7 +312,11 @@ def obtener_ordenes_usuario(id_usuario):
             cursor.execute("""
                 SELECT do.id_libro, do.cantidad, do.precio_unitario,
                        do.precio_final, l.titulo, l.autor_libro,
-                       t.nombre_tienda
+                       t.nombre_tienda,
+                       (SELECT url_imagen FROM imagenes_libro
+                        WHERE id_libro = l.id_libro
+                        ORDER BY es_principal DESC, id_imagen ASC
+                        LIMIT 1) AS imagen_url
                 FROM detalle_orden do
                 JOIN libros l ON l.id_libro = do.id_libro
                 LEFT JOIN tiendas t ON t.id_tienda = l.id_tienda
@@ -248,6 +332,7 @@ def obtener_ordenes_usuario(id_usuario):
                     "precio_libro": float(item["precio_unitario"] or 0),
                     "total": float(item["precio_final"] or 0),
                     "nombre_tienda": item["nombre_tienda"],
+                    "imagen_url": item["imagen_url"],
                 }
                 for item in cursor.fetchall()
             ]
@@ -308,7 +393,7 @@ def obtener_ordenes_usuario(id_usuario):
         visto.add(key)
         user_orders_unicos.append(o)
 
-    return sorted(user_orders_unicos, key=lambda o: o.get('fecha', ''), reverse=True)
+    return sorted((_agregar_desglose_financiero(order) for order in user_orders_unicos), key=lambda o: o.get('fecha', ''), reverse=True)
 
 
 def registrar_pago(id_usuario, id_orden, amount, payment_method, coupon_code=None, tipo_entrega=None, id_direccion=None):
@@ -721,8 +806,6 @@ def confirmar_entrega_retiro(id_usuario_vendedor, id_orden, es_efectivo=False):
     """
     El vendedor entrega el libro físico y finaliza la orden (como pagada y entregada).
     """
-    from app.utils.finance_hooks import registrar_ingreso_venta
-
     orders = _load_store(ORDER_FILE)
     target = None
     target_uid = None
@@ -776,16 +859,5 @@ def confirmar_entrega_retiro(id_usuario_vendedor, id_orden, es_efectivo=False):
         db.close()
     except Exception as e:
         print("Error al confirmar entrega de retiro:", e)
-
-    # Si fue en efectivo, registrar ingreso
-    try:
-        if es_efectivo and total_orden > 0:
-            registrar_ingreso_venta(
-                id_venta=int(id_orden),
-                monto_venta=total_orden,
-                id_vendedor=int(id_usuario_vendedor),
-            )
-    except Exception as exc:
-        print("Error registrando venta en efectivo:", exc)
 
     return {"ok": True, "estado_orden": "entregado", "estado_retiro": "entregado", "message": "Libro entregado exitosamente"}

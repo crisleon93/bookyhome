@@ -33,6 +33,12 @@ import arte from '../assets/arte.png'
 import biografia from '../assets/biografia.png'
 import infantil from '../assets/infantil.png'
 import tecnologia from '../assets/tecnologia.png'
+import fantasia from '../assets/fantasia.jpg'
+import terror from '../assets/terror.jpg'
+import juvenil from '../assets/Juvenil.jpg'
+import aventura from '../assets/aventura.jpg'
+import educacion from '../assets/educacion.jpg'
+import comedia from '../assets/comedia.jpg'
 
 const HERO_IMAGES = [
   { src: 'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=1000&q=85', alt: 'Personas explorando libros en una librería' },
@@ -104,7 +110,12 @@ const CATEGORIES = [
   { name: 'Biografía',  img: biografia },  // personas
   { name: 'Infantil',   img: infantil },  // colorido
   { name: 'Tecnología', img: tecnologia },  // tech/
- 
+  { name: 'Fantasía',   img: fantasia },
+  { name: 'Terror',     img: terror },
+  { name: 'Juvenil',    img: juvenil },
+  { name: 'Aventura',   img: aventura },
+  { name: 'Educación',  img: educacion },
+  { name: 'Comedia',    img: comedia },
 ]
 
 const STEPS = [

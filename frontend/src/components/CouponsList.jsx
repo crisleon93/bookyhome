@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { getCuponesDisponibles } from "../services/api";
 import { notify } from "./ToastProvider";
 
@@ -6,6 +6,13 @@ export default function CouponsList() {
   const [coupons, setCoupons] = useState([]);
   const [loading, setLoading] = useState(true);
   const [copiedCode, setCopiedCode] = useState(null);
+  const [showAll, setShowAll] = useState(false);
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState("todos");
+  const [expirationFilter, setExpirationFilter] = useState("todos");
+  const carouselRef = useRef(null);
+  const trackRef = useRef(null);
+  const offsetRef = useRef(0);
 
   useEffect(() => {
     getCuponesDisponibles()
@@ -20,6 +27,44 @@ export default function CouponsList() {
       });
   }, []);
 
+  useEffect(() => {
+    if (loading || coupons.length <= 1) return undefined;
+
+    let frameId;
+    let previousTime;
+    const animate = (time) => {
+      const carousel = carouselRef.current;
+      const track = trackRef.current;
+      if (carousel && track) {
+        const elapsed = previousTime ? time - previousTime : 0;
+        const loopWidth = track.scrollWidth / 2;
+        offsetRef.current += (elapsed / 1000) * 32;
+        if (loopWidth > 0 && offsetRef.current >= loopWidth) {
+          offsetRef.current -= loopWidth;
+        }
+        track.style.transform = `translate3d(${-offsetRef.current}px, 0, 0)`;
+      }
+      previousTime = time;
+      frameId = window.requestAnimationFrame(animate);
+    };
+
+    frameId = window.requestAnimationFrame(animate);
+    return () => window.cancelAnimationFrame(frameId);
+  }, [loading, coupons.length]);
+
+  const moveCarousel = (direction) => {
+    const carousel = carouselRef.current;
+    const track = trackRef.current;
+    if (!carousel || !track) return;
+    const card = track.firstElementChild;
+    const step = card ? card.getBoundingClientRect().width + 20 : carousel.clientWidth;
+    const loopWidth = track.scrollWidth / 2;
+    offsetRef.current += direction * step;
+    if (offsetRef.current < 0) offsetRef.current += loopWidth;
+    if (offsetRef.current >= loopWidth) offsetRef.current -= loopWidth;
+    track.style.transform = `translate3d(${-offsetRef.current}px, 0, 0)`;
+  };
+
   const handleCopy = (code) => {
     navigator.clipboard.writeText(code)
       .then(() => {
@@ -33,6 +78,27 @@ export default function CouponsList() {
       });
   };
 
+  const filteredCoupons = coupons.filter((coupon) => {
+    const matchesSearch = `${coupon.codigo_cupon} ${coupon.nombre_tienda || ""}`
+      .toLowerCase().includes(search.toLowerCase());
+    const matchesFilter = filter === "todos"
+      || (filter === "globales" && !coupon.nombre_tienda)
+      || (filter === "tienda" && coupon.nombre_tienda)
+      || (filter === "fijo" && coupon.tipo_descuento === "fijo")
+      || (filter === "porcentaje" && coupon.tipo_descuento !== "fijo");
+    const expiration = coupon.fecha_fin ? new Date(coupon.fecha_fin) : null;
+    const today = new Date();
+    const daysUntilExpiration = expiration ? (expiration - today) / 86400000 : Infinity;
+    const matchesExpiration = expirationFilter === "todos"
+      || (expirationFilter === "vigentes" && daysUntilExpiration >= 0)
+      || (expirationFilter === "proximos" && daysUntilExpiration >= 0 && daysUntilExpiration <= 7);
+    return matchesSearch && matchesFilter && matchesExpiration;
+  }).sort((a, b) => {
+    if (!a.fecha_fin) return 1;
+    if (!b.fecha_fin) return -1;
+    return new Date(a.fecha_fin) - new Date(b.fecha_fin);
+  });
+
   if (loading) {
     return (
       <div style={{ padding: "20px", textAlign: "center" }}>
@@ -42,27 +108,32 @@ export default function CouponsList() {
   }
 
   return (
-    <div className="pl-card" style={{ padding: "2rem", marginTop: "2rem" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "20px" }}>
+    <div className="pl-card" style={{ padding: "1.25rem", marginTop: "1rem" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "14px" }}>
         <div style={{
-          width: "48px",
-          height: "48px",
-          borderRadius: "12px",
+          width: "40px", height: "40px", borderRadius: "10px",
           background: "linear-gradient(135deg, #7A1E3A 0%, #9C2F4A 100%)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center"
+          display: "flex", alignItems: "center", justifyContent: "center"
         }}>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M15 5v2"></path>
             <path d="M15 11v2"></path>
             <path d="M15 17v2"></path>
             <path d="M5 5h14a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-3a2 2 0 0 0 0-4V7a2 2 0 0 1 2-2z"></path>
           </svg>
         </div>
-        <div>
-          <h2 style={{ margin: 0, color: "var(--gris-carbon)" }}>Cupones de Descuento</h2>
-          <p style={{ margin: 0, color: "#888", fontSize: "0.85rem" }}>
+        <div style={{ flex: 1 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px" }}>
+            <h2 style={{ margin: 0, color: "var(--gris-carbon)", fontSize: "1.35rem" }}>Cupones de Descuento</h2>
+            <button
+              type="button"
+              onClick={() => setShowAll(true)}
+              style={{ border: "1px solid #7A1E3A", background: "white", color: "#7A1E3A", borderRadius: "7px", padding: "6px 12px", fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}
+            >
+              Ver todos
+            </button>
+          </div>
+          <p style={{ margin: 0, color: "#888", fontSize: "0.78rem" }}>
             Aprovecha estos códigos especiales en tu próxima compra
           </p>
         </div>
@@ -73,8 +144,35 @@ export default function CouponsList() {
           <p>No hay cupones disponibles en este momento. ¡Vuelve pronto!</p>
         </div>
       ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "20px" }}>
-          {coupons.map((coupon) => {
+        <div
+          style={{ position: "relative", padding: "0 42px" }}
+        >
+          <button
+            type="button"
+            aria-label="Cupones anteriores"
+            onClick={() => moveCarousel(-1)}
+            style={{
+              position: "absolute", left: 0, top: "50%", transform: "translateY(-50%)",
+              zIndex: 2, width: 34, height: 34, borderRadius: "50%", border: "1px solid #D2C7BC",
+              background: "white", color: "var(--vinotinto)", fontSize: "1.3rem", cursor: "pointer",
+              boxShadow: "0 3px 10px rgba(0,0,0,0.12)",
+            }}
+          >
+            ‹
+          </button>
+
+          <div
+            ref={carouselRef}
+            aria-label="Carrusel de cupones disponibles"
+            style={{
+              overflow: "hidden", padding: "2px 0 8px",
+            }}
+          >
+            <div
+              ref={trackRef}
+              style={{ display: "flex", gap: "20px", width: "max-content", willChange: "transform" }}
+            >
+          {[...coupons, ...coupons].map((coupon, index) => {
             const isFijo = coupon.tipo_descuento === "fijo";
             const valFormato = isFijo
               ? `$${Number(coupon.valor_descuento).toLocaleString("es-CO")}`
@@ -82,26 +180,19 @@ export default function CouponsList() {
 
             return (
               <div
-                key={coupon.id_cupon}
+                key={`${coupon.id_cupon}-${index}`}
                 style={{
+                  flex: "0 0 min(245px, calc(100vw - 100px))",
                   background: "linear-gradient(135deg, #fff 0%, #FAF8F6 100%)",
                   border: "2px dashed #D2C7BC",
                   borderRadius: "16px",
-                  padding: "20px",
+                  padding: "14px",
                   position: "relative",
                   boxShadow: "0 4px 12px rgba(0, 0, 0, 0.03)",
                   display: "flex",
                   flexDirection: "column",
                   justifyContent: "space-between",
                   transition: "transform 0.2s, box-shadow 0.2s"
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = "translateY(-4px)";
-                  e.currentTarget.style.boxShadow = "0 8px 20px rgba(122, 30, 58, 0.08)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = "none";
-                  e.currentTarget.style.boxShadow = "0 4px 12px rgba(0, 0, 0, 0.03)";
                 }}
               >
                 {/* Badge de Tienda o Global */}
@@ -176,6 +267,77 @@ export default function CouponsList() {
               </div>
             );
           })}
+            </div>
+          </div>
+
+          <button
+            type="button"
+            aria-label="Siguientes cupones"
+            onClick={() => moveCarousel(1)}
+            style={{
+              position: "absolute", right: 0, top: "50%", transform: "translateY(-50%)",
+              zIndex: 2, width: 34, height: 34, borderRadius: "50%", border: "1px solid #D2C7BC",
+              background: "white", color: "var(--vinotinto)", fontSize: "1.3rem", cursor: "pointer",
+              boxShadow: "0 3px 10px rgba(0,0,0,0.12)",
+            }}
+          >
+            ›
+          </button>
+        </div>
+      )}
+
+      {showAll && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Todos los cupones"
+          onClick={(event) => { if (event.target === event.currentTarget) setShowAll(false); }}
+          style={{ position: "fixed", inset: 0, zIndex: 2000, background: "rgba(30, 15, 20, 0.55)", display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}
+        >
+          <div style={{ background: "#fff", width: "min(960px, 100%)", maxHeight: "90vh", overflowY: "auto", borderRadius: "14px", padding: "24px", boxShadow: "0 20px 60px rgba(0,0,0,0.25)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px", marginBottom: "18px" }}>
+              <h2 style={{ margin: 0, color: "#2A2A2A" }}>Todos los cupones</h2>
+              <button type="button" aria-label="Cerrar" onClick={() => setShowAll(false)} style={{ border: 0, background: "#f5eeee", color: "#7A1E3A", borderRadius: "50%", width: 34, height: 34, fontSize: "1.2rem", cursor: "pointer" }}>×</button>
+            </div>
+
+            <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", marginBottom: "18px" }}>
+              <input
+                type="search"
+                placeholder="Buscar por código o tienda"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                style={{ flex: "1 1 240px", minWidth: 0, padding: "10px 12px", border: "1px solid #D2C7BC", borderRadius: "8px", fontFamily: "inherit" }}
+              />
+              <select value={filter} onChange={(event) => setFilter(event.target.value)} style={{ padding: "10px 12px", border: "1px solid #D2C7BC", borderRadius: "8px", background: "white", fontFamily: "inherit" }}>
+                <option value="todos">Todos</option>
+                <option value="globales">Globales</option>
+                <option value="tienda">Por tienda</option>
+                <option value="fijo">Valor fijo</option>
+                <option value="porcentaje">Porcentaje</option>
+              </select>
+              <select value={expirationFilter} onChange={(event) => setExpirationFilter(event.target.value)} style={{ padding: "10px 12px", border: "1px solid #D2C7BC", borderRadius: "8px", background: "white", fontFamily: "inherit" }}>
+                <option value="todos">Cualquier vencimiento</option>
+                <option value="vigentes">Vigentes</option>
+                <option value="proximos">Vencen en 7 días</option>
+              </select>
+            </div>
+
+            {filteredCoupons.length === 0 ? (
+              <p style={{ textAlign: "center", color: "#888", padding: "30px" }}>No hay cupones que coincidan.</p>
+            ) : (
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: "14px" }}>
+                {filteredCoupons.map((coupon) => (
+                  <div key={`modal-${coupon.id_cupon}`} style={{ border: "1px dashed #D2C7BC", borderRadius: "10px", padding: "14px", background: "#FAF8F6" }}>
+                    <span style={{ display: "inline-block", color: "white", background: coupon.nombre_tienda ? "#E37A24" : "#7A1E3A", padding: "3px 8px", borderRadius: "15px", fontSize: "0.7rem", fontWeight: 700 }}>{coupon.nombre_tienda ? `Tienda: ${coupon.nombre_tienda}` : "Global BookyHome"}</span>
+                    <h3 style={{ margin: "14px 0 4px", color: "#7A1E3A", fontSize: "1.35rem" }}>{coupon.tipo_descuento === "fijo" ? `$${Number(coupon.valor_descuento).toLocaleString("es-CO")}` : `${Number(coupon.valor_descuento)}%`} <small style={{ color: "#666", fontWeight: 500 }}>Dcto.</small></h3>
+                    <p style={{ margin: "0 0 12px", color: "#666", fontSize: "0.8rem" }}>Compra mínima: <strong>${Number(coupon.minimo_compra || 0).toLocaleString("es-CO")}</strong></p>
+                    {coupon.fecha_fin && <p style={{ margin: "0 0 12px", color: "#888", fontSize: "0.75rem" }}>Válido hasta: {new Date(coupon.fecha_fin).toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" })}</p>}
+                    <button type="button" onClick={() => handleCopy(coupon.codigo_cupon)} style={{ width: "100%", padding: "9px", border: "1px solid #D2C7BC", borderRadius: "7px", background: "#F4EDE6", fontWeight: 700, cursor: "pointer" }}>{copiedCode === coupon.codigo_cupon ? "Copiado" : coupon.codigo_cupon}</button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>
