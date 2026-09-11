@@ -456,13 +456,12 @@ def obtener_alertas_stock(id_tienda: int, umbral: int = 3):
     cursor = db.cursor(dictionary=True)
     try:
         cursor.execute("""
-            SELECT v.titulo, v.nombre_tienda, v.stock
-            FROM vista_alerta_stock v
-            JOIN libros l ON l.titulo = v.titulo
-            JOIN tiendas t ON t.nombre_tienda = v.nombre_tienda
-            WHERE t.id_tienda = %s
-              AND v.stock <= %s
-            ORDER BY v.stock ASC
+            SELECT l.id_libro, l.titulo, l.stock, t.nombre_tienda
+            FROM libros l
+            JOIN tiendas t ON t.id_tienda = l.id_tienda
+            WHERE l.id_tienda = %s
+              AND l.stock <= %s
+            ORDER BY l.stock ASC
         """, (id_tienda, umbral))
         return cursor.fetchall()
     finally:
