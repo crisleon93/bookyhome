@@ -79,10 +79,14 @@ def process_payment(data: PagoRequest, user=Depends(get_current_user)):
     # No duplicar el ingreso financiero cuando el cliente repite la solicitud.
     if not resultado.get("already_paid"):
         id_vendedor = _resolver_vendedor(id_usuario, data.order_id)
+        monto_comisionable = float(data.amount)
+        if (tipo_entrega or "domicilio") != "retiro_tienda":
+            monto_comisionable = max(0.0, monto_comisionable - float(resultado.get("order", {}).get("costo_envio", 0) or 0))
         registrar_ingreso_venta(
             id_venta=data.order_id,
-            monto_venta=data.amount,
+            monto_venta=monto_comisionable,
             id_vendedor=id_vendedor,
+            tipo_entrega=tipo_entrega or "domicilio",
         )
     
     return resultado
@@ -349,20 +353,20 @@ def actualizar_costo_envio(id_orden: int, data: dict | None = None, user=Depends
         try:
             # Obtener items de la orden para saber la tienda
             cursor.execute("""
-                SELECT do.id_libro, l.id_tienda
+                SELECT DISTINCT l.id_tienda, t.nombre_tienda, tc.tarifa_envio
                 FROM detalle_orden do
                 JOIN libros l ON l.id_libro = do.id_libro
+                JOIN tiendas t ON t.id_tienda = l.id_tienda
+                LEFT JOIN tienda_configuracion tc ON tc.id_tienda = l.id_tienda
                 WHERE do.id_orden = %s
-                LIMIT 1
             """, (id_orden,))
-            item = cursor.fetchone()
-            if not item:
+            tiendas = cursor.fetchall()
+            if not tiendas:
                 return {"ok": False, "error": "Orden no encontrada"}
 
-            id_tienda = item["id_tienda"] or obtener_id_tienda_de_libro(item["id_libro"])
             costo_envio = 0.0
-            if tipo_entrega != "retiro_tienda" and id_tienda:
-                costo_envio = obtener_tarifa_envio(int(id_tienda))
+            if tipo_entrega != "retiro_tienda":
+                costo_envio = sum(float(tienda.get("tarifa_envio") or 0) for tienda in tiendas)
 
             # Obtener subtotal actual
             cursor.execute("SELECT total, costo_envio FROM ordenes_compra WHERE id_orden = %s AND id_usuario = %s", (id_orden, id_usuario))
@@ -392,7 +396,19 @@ def actualizar_costo_envio(id_orden: int, data: dict | None = None, user=Depends
             orders[str(id_usuario)] = user_orders
             _save_store(ORDER_FILE, orders)
 
-            return {"ok": True, "costo_envio": costo_envio, "total": nuevo_total}
+            return {
+                "ok": True,
+                "costo_envio": costo_envio,
+                "total": nuevo_total,
+                "desglose_envio": [
+                    {
+                        "id_tienda": tienda["id_tienda"],
+                        "tienda": tienda["nombre_tienda"],
+                        "costo": float(tienda.get("tarifa_envio") or 0) if tipo_entrega != "retiro_tienda" else 0,
+                    }
+                    for tienda in tiendas
+                ],
+            }
         finally:
             cursor.close()
             db.close()

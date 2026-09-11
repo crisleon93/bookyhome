@@ -134,6 +134,23 @@ def vaciar_carrito(id_usuario):
     return []
 
 
+def _calcular_costo_envio(items, tipo_entrega):
+    if tipo_entrega == 'retiro_tienda':
+        return 0.0
+
+    try:
+        from app.models.tienda_configuracion import obtener_tarifa_envio, obtener_id_tienda_de_libro
+        tiendas = set()
+        for item in items:
+            id_tienda = item.get('id_tienda') or obtener_id_tienda_de_libro(int(item['id_libro']))
+            if id_tienda:
+                tiendas.add(int(id_tienda))
+        return sum(obtener_tarifa_envio(id_tienda) for id_tienda in tiendas)
+    except Exception as e:
+        print(f"[checkout] No se pudo calcular tarifa_envio: {e}")
+        return 0.0
+
+
 def checkout_carrito(id_usuario, id_direccion=None, tipo_entrega='domicilio'):
     cart = obtener_carrito(id_usuario)
     if not cart:
@@ -144,20 +161,7 @@ def checkout_carrito(id_usuario, id_direccion=None, tipo_entrega='domicilio'):
     # Calcular subtotal de libros
     subtotal = sum(item['precio_libro'] * item['cantidad'] for item in cart)
 
-    # Calcular costo de envío: tarifa fija de la tienda del primer libro del carrito.
-    # Si es retiro en tienda, el envío es siempre $0.
-    costo_envio = 0.0
-    if tipo_entrega != 'retiro_tienda':
-        try:
-            from app.models.tienda_configuracion import obtener_tarifa_envio, obtener_id_tienda_de_libro
-            primer_id_libro = cart[0].get('id_libro') if cart else None
-            if primer_id_libro:
-                # Si el item ya trae id_tienda, usarlo directamente
-                id_tienda = cart[0].get('id_tienda') or obtener_id_tienda_de_libro(int(primer_id_libro))
-                if id_tienda:
-                    costo_envio = obtener_tarifa_envio(int(id_tienda))
-        except Exception as e:
-            print(f"[checkout_carrito] No se pudo obtener tarifa_envio: {e}")
+    costo_envio = _calcular_costo_envio(cart, tipo_entrega)
 
     total = subtotal + costo_envio
 
@@ -263,16 +267,7 @@ def crear_orden_directa(id_usuario, item_libro, id_direccion=None, tipo_entrega=
     precio = float(item_libro.get('precio_libro', 0) or item_libro.get('precio', 0))
     subtotal = precio * cantidad
 
-    # Calcular costo de envío fijo de la tienda (0 si es retiro)
-    costo_envio = 0.0
-    if tipo_entrega != 'retiro_tienda':
-        try:
-            from app.models.tienda_configuracion import obtener_tarifa_envio, obtener_id_tienda_de_libro
-            id_tienda = item_libro.get('id_tienda') or obtener_id_tienda_de_libro(int(item_libro['id_libro']))
-            if id_tienda:
-                costo_envio = obtener_tarifa_envio(int(id_tienda))
-        except Exception as e:
-            print(f"[crear_orden_directa] No se pudo obtener tarifa_envio: {e}")
+    costo_envio = _calcular_costo_envio([item_libro], tipo_entrega)
 
     total = subtotal + costo_envio
 

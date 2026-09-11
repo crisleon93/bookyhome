@@ -80,7 +80,7 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
       if (filtros.disponible) params.append('disponible', 'true');
       params.append('ordenar_por', filtros.ordenar_por);
       params.append('pagina', pagina);
-      params.append('limite', 20);
+      params.append('limite', 24);
 
       const response = await api.get(`/catalogo/busqueda-avanzada?${params}`);
       setLibros(response.data.libros || []);

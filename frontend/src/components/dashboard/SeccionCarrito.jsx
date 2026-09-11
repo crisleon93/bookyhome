@@ -145,7 +145,6 @@ export default function SeccionCarrito({ userId }) {
   const [reservaConfirmada, setReservaConfirmada] = useState(false);
   const [datosReserva, setDatosReserva] = useState(null);
   const [notificandoLlegada, setNotificandoLlegada] = useState(false);
-  const [verificandoEstadoRetiro, setVerificandoEstadoRetiro] = useState(false);
   const [order, setOrder] = useState(null);
   const [orderId, setOrderId] = useState(null);
   // Datos del libro cuando se viene de "Comprar Ahora" (sin orden creada aún)
@@ -256,6 +255,39 @@ export default function SeccionCarrito({ userId }) {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  useEffect(() => {
+    const currentOrderId = orderId || order?.id_orden_db || order?.id_orden || datosReserva?.idOrden;
+    const isStorePickup = order?.tipo_entrega === 'retiro_tienda' || datosReserva?.idOrden;
+    if (!paymentSuccess || !currentOrderId || !isStorePickup) return undefined;
+
+    let mounted = true;
+    let intervalId = null;
+    const refreshOrder = async () => {
+      try {
+        const res = await getOrden(currentOrderId);
+        if (!mounted || !res.data) return;
+        setOrder((previous) => ({ ...(previous || {}), ...res.data }));
+        setDatosReserva((previous) => previous ? ({
+          ...previous,
+          estadoRetiro: res.data.estado_retiro || previous.estadoRetiro,
+          metodoPago: res.data.metodo_pago || previous.metodoPago,
+        }) : previous);
+        if (['entregado', 'entregada'].includes(res.data.estado_retiro) || res.data.estado === 'entregada') {
+          window.clearInterval(intervalId);
+        }
+      } catch (error) {
+        console.error("Error actualizando el estado del retiro:", error);
+      }
+    };
+
+    refreshOrder();
+    intervalId = window.setInterval(refreshOrder, 3000);
+    return () => {
+      mounted = false;
+      window.clearInterval(intervalId);
+    };
+  }, [paymentSuccess, orderId, order?.id_orden_db, order?.id_orden, order?.tipo_entrega, datosReserva?.idOrden]);
 
   // Auto-abrir checkout si venimos de "Pagar Ahora" en Mis Compras o link directo
   useEffect(() => {
@@ -629,6 +661,7 @@ export default function SeccionCarrito({ userId }) {
           ...(prev || {}),
           costo_envio: resEnvio.data.costo_envio,
           total: resEnvio.data.total,
+          desglose_envio: resEnvio.data.desglose_envio || prev?.desglose_envio,
         }));
       }
     } catch (e) {
@@ -723,38 +756,6 @@ export default function SeccionCarrito({ userId }) {
       notify(err.response?.data?.detail || "No se pudo notificar tu llegada. Intenta de nuevo.", "error");
     } finally {
       setNotificandoLlegada(false);
-    }
-  };
-
-  const handleVerificarEstadoRetiro = async () => {
-    const idOrdenActual = orderId || order?.id_orden_db || order?.id_orden;
-    if (!idOrdenActual) return;
-    setVerificandoEstadoRetiro(true);
-    try {
-      const res = await getOrden(idOrdenActual);
-      const ord = res.data;
-      if (ord) {
-        setOrder(ord);
-        if (ord.estado_retiro) {
-          setDatosReserva(prev => ({
-            ...(prev || {}),
-            estadoRetiro: ord.estado_retiro,
-            pin: ord.pin_retiro || prev?.pin,
-            tienda: ord.tienda_retiro || prev?.tienda
-          }));
-          if (ord.estado_retiro === 'habilitado_pago') {
-            notify("¡El encargado de la librería ha habilitado tu pago!", "success");
-          } else if (ord.estado_retiro === 'en_tienda') {
-            notify("Tu estado actual: Notificado en tienda.", "info");
-          } else {
-            notify(`Estado actual: ${ord.estado_retiro}`, "info");
-          }
-        }
-      }
-    } catch {
-      notify("No se pudo actualizar el estado de la reserva", "error");
-    } finally {
-      setVerificandoEstadoRetiro(false);
     }
   };
 
@@ -992,7 +993,25 @@ export default function SeccionCarrito({ userId }) {
             </button>
             <div style={{ background: "var(--blanco)", padding: "36px 32px", borderRadius: "16px", boxShadow: "var(--sombra-suave)", border: "1px solid #e0dbd4", textAlign: "center" }}>
               {/* Si la orden ya fue pagada, mostrar pantalla de éxito de pago (NO la reserva) */}
-              {(order?.estado === 'pagado' || order?.estado_orden === 'pagado') ? (
+              {(order?.estado_retiro === 'entregado' || order?.estado_retiro === 'entregada' || order?.estado === 'entregada') ? (
+                <>
+                  <div style={{ width: 80, height: 80, borderRadius: "50%", background: "linear-gradient(135deg, #DCFCE7 0%, #BBF7D0 100%)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px", border: "3px solid #86EFAC" }}>
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#16A34A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                      <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                    </svg>
+                  </div>
+                  <div style={{ display: 'inline-block', background: '#DCFCE7', color: '#166534', padding: '4px 14px', borderRadius: '999px', fontSize: '0.78rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>
+                    ✓ RETIRO COMPLETADO
+                  </div>
+                  <h1 style={{ fontWeight: 900, color: "#166534", margin: "0 0 6px", fontSize: "1.75rem" }}>
+                    ¡Pedido entregado con éxito!
+                  </h1>
+                  <p style={{ color: "#4B5563", fontSize: "0.92rem", maxWidth: "560px", margin: "0 auto 20px", lineHeight: 1.45 }}>
+                    La librería confirmó el cobro y la entrega de tus libros.
+                  </p>
+                </>
+              ) : (order?.estado === 'pagado' || order?.estado_orden === 'pagado') ? (
                 <>
                   <div style={{ width: 80, height: 80, borderRadius: "50%", background: "linear-gradient(135deg, #DCFCE7 0%, #BBF7D0 100%)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px", border: "3px solid #86EFAC" }}>
                     <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#16A34A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -1164,26 +1183,6 @@ export default function SeccionCarrito({ userId }) {
                         <p style={{ margin: "0 0 16px", fontSize: "0.84rem", color: "#1E3A8A", lineHeight: 1.4 }}>
                           El encargado de la tienda está verificando tu PIN. Una vez verificado, habilitará tu botón de pago.
                         </p>
-                        <button
-                          onClick={handleVerificarEstadoRetiro}
-                          disabled={verificandoEstadoRetiro}
-                          style={{
-                            background: "#FFFFFF",
-                            color: "#1E40AF",
-                            border: "1.5px solid #93C5FD",
-                            padding: "10px 18px",
-                            borderRadius: "8px",
-                            fontWeight: 700,
-                            fontSize: "0.84rem",
-                            cursor: verificandoEstadoRetiro ? "not-allowed" : "pointer",
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: "8px"
-                          }}
-                        >
-                          <span>🔄</span>
-                          {verificandoEstadoRetiro ? "Consultando..." : "Comprobar si ya habilitó el pago"}
-                        </button>
                       </div>
                     )}
 
@@ -1263,6 +1262,16 @@ export default function SeccionCarrito({ userId }) {
                       <span style={{ color: "#666" }}>ID Orden</span>
                       <span style={{ fontWeight: 600 }}>#{idVisible(order)}</span>
                     </div>
+                    {order.tipo_entrega !== 'retiro_tienda' && order.desglose_envio?.length > 0 && (
+                      <div style={{ display: "grid", gap: "4px" }}>
+                        {order.desglose_envio.map((envio) => (
+                          <div key={envio.id_tienda} style={{ display: "flex", justifyContent: "space-between", color: "#666" }}>
+                            <span>🚚 Domicilio · {envio.tienda}</span>
+                            <span style={{ fontWeight: 600 }}>{formatCurrency(envio.costo)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                     {discountAmount > 0 && (
                       <>
                         <div style={{ display: "flex", justifyContent: "space-between" }}>

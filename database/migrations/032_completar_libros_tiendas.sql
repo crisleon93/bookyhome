@@ -26,16 +26,15 @@ BEGIN
   DECLARE v_stock    INT;
   DECLARE v_fecha    DATE;
   DECLARE v_existing INT;
+  DECLARE v_ultima_tienda INT;
 
   -- Catalogo: 35 entradas (una por slot), cada slot define titulo/autor/cat/precio/fecha
   -- El catalogo se aplica igual a cada tienda; como libros pueden repetirse entre tiendas, no hay duplicado
 
-  -- Iterar sobre tiendas que necesitan libros
-  -- Rango 1: tiendas 15-75 (necesitan 35 libros)
-  -- Rango 2: tiendas 76-150 (necesitan 32 libros mas; ya tienen 3)
-
-  SET v_tienda = 15;
-  WHILE v_tienda <= 150 DO
+  -- Iterar sobre los IDs reales; AUTO_INCREMENT puede tener huecos.
+  SET v_tienda = 0;
+  SELECT MIN(id_tienda) INTO v_tienda FROM tiendas WHERE id_tienda > v_tienda;
+  WHILE v_tienda IS NOT NULL DO
 
     -- Determinar cuantos libros necesita esta tienda
     SELECT COUNT(*) INTO v_existing FROM libros WHERE id_tienda = v_tienda;
@@ -408,7 +407,9 @@ BEGIN
       SET v_slot = v_slot + 1;
     END WHILE;
 
-    SET v_tienda = v_tienda + 1;
+    SET v_ultima_tienda = v_tienda;
+    SET v_tienda = NULL;
+    SELECT MIN(id_tienda) INTO v_tienda FROM tiendas WHERE id_tienda > v_ultima_tienda;
   END WHILE;
 
 END$$

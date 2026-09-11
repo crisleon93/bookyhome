@@ -47,7 +47,9 @@ def busqueda_avanzada(
     ordenar_por: Optional[str] = Query("relevancia", pattern="^(relevancia|precio_asc|precio_desc|calificacion|recientes)$"),
     pagina: int = Query(1, ge=1),
     limite: int = Query(20, ge=1, le=100),
-    categoria: Optional[str] = Query(None, description="Nombre de la categoría")
+    categoria: Optional[str] = Query(None, description="Nombre de la categoría"),
+    nombre_tienda: Optional[str] = Query(None, description="Nombre de la librería/tienda"),
+    correo_vendedor: Optional[str] = Query(None, description="Correo del vendedor")
 ):
     """
     Búsqueda avanzada con filtros
@@ -96,6 +98,21 @@ def busqueda_avanzada(
         if disponible:
             where_conditions.append("l.stock > 0")
         
+        if nombre_tienda:
+            where_conditions.append("t.nombre_tienda LIKE %s")
+            params.append(f"%{nombre_tienda}%")
+        
+        if correo_vendedor:
+            where_conditions.append("u.correo_usuario = %s")
+            params.append(correo_vendedor)
+
+        # HAVING para calificacion_min (valor agregado, no puede ir en WHERE)
+        having_clause = ""
+        having_params = []
+        if calificacion_min:
+            having_clause = "HAVING COALESCE(AVG(r.calificacion), 0) >= %s"
+            having_params.append(calificacion_min)
+        
         # Construir ORDER BY
         orden_map = {
             "relevancia": "l.fecha_listado DESC",
@@ -114,6 +131,8 @@ def busqueda_avanzada(
             SELECT COUNT(*) as total 
             FROM libros l
             LEFT JOIN categorias c ON l.id_categoria = c.id_categoria
+            LEFT JOIN tiendas t ON l.id_tienda = t.id_tienda
+            LEFT JOIN usuarios u ON t.id_usuario = u.id_usuario
             WHERE {where_clause}
         """
         cursor.execute(count_query, params)
@@ -149,14 +168,16 @@ def busqueda_avanzada(
             FROM libros l
             LEFT JOIN categorias c ON l.id_categoria = c.id_categoria
             LEFT JOIN tiendas t ON l.id_tienda = t.id_tienda
+            LEFT JOIN usuarios u ON t.id_usuario = u.id_usuario
             LEFT JOIN resenas_libros r ON l.id_libro = r.id_libro
             WHERE {where_clause}
             GROUP BY l.id_libro, l.titulo, l.autor_libro, l.isbn, l.precio_libro, l.stock, l.descripcion_libro, l.fecha_listado, c.nombre_categoria, t.nombre_tienda, t.id_tienda
+            {having_clause}
             ORDER BY {order_clause}
             LIMIT %s OFFSET %s
         """
         
-        params.extend([limite, offset])
+        params.extend(having_params + [limite, offset])
         cursor.execute(main_query, params)
         libros = cursor.fetchall()
         

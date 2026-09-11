@@ -23,7 +23,7 @@ export default function BookyPagoFinanzas({ defaultTab = 'balance' }) {
   const [estadisticas, setEstadisticas] = useState({});
   const [historial, setHistorial] = useState({});
   
-  // Estado para nómina
+  // Resumen histórico de pagos heredados; las ventas nuevas se liquidan directamente.
   const [nomina, setNomina] = useState({});
   const [cuentasBancarias, setCuentasBancarias] = useState({});
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -37,7 +37,6 @@ export default function BookyPagoFinanzas({ defaultTab = 'balance' }) {
     cargarBalance();
     cargarEstadisticas();
     cargarHistorial();
-    cargarNomina();
   }, []);
 
   const cargarBalance = async () => {
@@ -240,7 +239,7 @@ export default function BookyPagoFinanzas({ defaultTab = 'balance' }) {
             { id: 'balance', label: 'Balance', icon: IconWallet },
             { id: 'estadisticas', label: 'Estadísticas', icon: IconChartBar },
             { id: 'historial', label: 'Historial', icon: IconTrendingUp },
-            { id: 'nomina', label: 'Nómina', icon: IconStore }
+            { id: 'comisiones', label: 'Comisiones', icon: IconStore }
           ].map(tab => (
             <button
               key={tab.id}
@@ -412,7 +411,7 @@ export default function BookyPagoFinanzas({ defaultTab = 'balance' }) {
                       <tr style={{ borderBottom: `2px solid ${BORDER}` }}>
                         <th style={{ padding: '12px', textAlign: 'left', color: CARBON }}>Fecha</th>
                         <th style={{ padding: '12px', textAlign: 'left', color: CARBON }}>Tipo</th>
-                        <th style={{ padding: '12px', textAlign: 'right', color: CARBON }}>Monto</th>
+                        <th style={{ padding: '12px', textAlign: 'right', color: CARBON }}>Comisión BookyHome</th>
                         <th style={{ padding: '12px', textAlign: 'center', color: CARBON }}>Estado</th>
                       </tr>
                     </thead>
@@ -431,7 +430,9 @@ export default function BookyPagoFinanzas({ defaultTab = 'balance' }) {
                             </div>
                           </td>
                           <td style={{ padding: '12px', textAlign: 'right', color: CARBON, fontWeight: 'bold' }}>
-                            {formatearMoneda(ing.monto)}
+                            <div>{formatearMoneda(ing.monto)}</div>
+                            {ing.monto_venta != null && <small style={{ display: 'block', color: GRAY, fontWeight: 400 }}>Venta: {formatearMoneda(ing.monto_venta)}</small>}
+                            {ing.monto_vendedor != null && <small style={{ display: 'block', color: GRAY, fontWeight: 400 }}>Vendedor: {formatearMoneda(ing.monto_vendedor)}</small>}
                           </td>
                           <td style={{ padding: '12px', textAlign: 'center' }}>
                             <span style={{
@@ -501,10 +502,10 @@ export default function BookyPagoFinanzas({ defaultTab = 'balance' }) {
             </div>
           )}
 
-          {/* Tab: Nómina */}
-          {activeTab === 'nomina' && (
+          {/* Tab: Comisiones */}
+          {activeTab === 'comisiones' && (
             <div>
-              <h3 style={{ margin: '0 0 16px 0', color: CARBON }}>Nómina de Pagos a Vendedores</h3>
+              <h3 style={{ margin: '0 0 16px 0', color: CARBON }}>Comisiones de BookyHome</h3>
               
               <div style={{ 
                 padding: '16px', 
@@ -515,88 +516,35 @@ export default function BookyPagoFinanzas({ defaultTab = 'balance' }) {
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div>
-                    <p style={{ margin: 0, fontSize: '14px', color: GRAY }}>Total General Pendiente</p>
+                    <p style={{ margin: 0, fontSize: '14px', color: GRAY }}>Comisiones registradas</p>
                     <p style={{ margin: '8px 0 0 0', fontSize: '24px', fontWeight: 'bold', color: VINOTINTO }}>
-                      {formatearMoneda(nomina.total_general || 0)}
+                      {formatearMoneda(balance.ingresos_totales || 0)}
                     </p>
                   </div>
                   <div style={{ textAlign: 'right' }}>
-                    <p style={{ margin: 0, fontSize: '14px', color: GRAY }}>Vendedores con Pagos Pendientes</p>
+                    <p style={{ margin: 0, fontSize: '14px', color: GRAY }}>Ventas registradas</p>
                     <p style={{ margin: '8px 0 0 0', fontSize: '24px', fontWeight: 'bold', color: CARBON }}>
-                      {nomina.total_vendedores || 0}
+                      {estadisticas.ventas_totales || 0}
                     </p>
                   </div>
                 </div>
               </div>
 
-              {nomina.vendedores && nomina.vendedores.length > 0 ? (
-                <div style={{ display: 'grid', gap: '16px' }}>
-                  {nomina.vendedores.map((vendedor) => (
-                    <div key={vendedor.id_vendedor} style={{ 
-                      padding: '16px', 
-                      backgroundColor: WHITE, 
-                      borderRadius: '8px',
-                      border: `1px solid ${BORDER}`,
-                      boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
-                    }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                        <div>
-                          <h4 style={{ margin: 0, color: CARBON }}>Vendedor ID: {vendedor.id_vendedor}</h4>
-                          <p style={{ margin: '4px 0 0 0', fontSize: '14px', color: GRAY }}>
-                            {vendedor.pagos.length} pagos pendientes
-                          </p>
-                        </div>
-                        <div style={{ textAlign: 'right' }}>
-                          <p style={{ margin: 0, fontSize: '18px', fontWeight: 'bold', color: GREEN }}>
-                            {formatearMoneda(vendedor.total_pendiente)}
-                          </p>
-                        </div>
-                      </div>
-                      
-                      <div style={{ 
-                        maxHeight: '120px', 
-                        overflowY: 'auto', 
-                        marginBottom: '12px',
-                        fontSize: '12px',
-                        color: GRAY
-                      }}>
-                        {vendedor.pagos.map((pago, idx) => (
-                          <div key={idx} style={{ 
-                            padding: '4px 0', 
-                            borderBottom: '1px solid #eee',
-                            display: 'flex',
-                            justifyContent: 'space-between'
-                          }}>
-                            <span>Orden #{pago.id_venta}</span>
-                            <span>{formatearMoneda(pago.monto)}</span>
-                          </div>
-                        ))}
-                      </div>
-                      
-                      <button
-                        onClick={() => handleProcesarNomina(vendedor.id_vendedor)}
-                        style={{
-                          padding: '8px 16px',
-                          backgroundColor: VINOTINTO,
-                          color: WHITE,
-                          border: 'none',
-                          borderRadius: '6px',
-                          cursor: 'pointer',
-                          fontWeight: '500',
-                          fontSize: '14px',
-                          width: '100%'
-                        }}
-                      >
-                        Procesar Pago a Vendedor
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p style={{ color: GRAY, textAlign: 'center', padding: '20px' }}>
-                  No hay pagos pendientes en nómina
-                </p>
-              )}
+              <p style={{ color: GRAY, lineHeight: 1.6, margin: 0 }}>
+                El comprador paga directamente al vendedor. BookyHome registra aquí únicamente su comisión por ventas, planes e impulsos; no hay transferencias pendientes a vendedores.
+              </p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', marginTop: '18px' }}>
+                {[
+                  ['Ventas', balance.ingresos_por_tipo?.venta || 0],
+                  ['Planes', balance.ingresos_por_tipo?.plan || 0],
+                  ['Impulsos', balance.ingresos_por_tipo?.impulso || 0],
+                ].map(([label, amount]) => (
+                  <div key={label} style={{ padding: '14px', backgroundColor: '#FAF7F2', border: `1px solid ${BORDER}`, borderRadius: '8px' }}>
+                    <div style={{ color: GRAY, fontSize: '13px' }}>{label}</div>
+                    <strong style={{ display: 'block', color: VINOTINTO, fontSize: '18px', marginTop: '6px' }}>{formatearMoneda(amount)}</strong>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>

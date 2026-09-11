@@ -2170,7 +2170,7 @@ BEGIN
     FROM libros l INNER JOIN tiendas t ON l.id_tienda = t.id_tienda
     WHERE l.id_libro = NEW.id_libro;
     INSERT INTO notificaciones (id_usuario, tipo, titulo, cuerpo, id_referencia)
-    VALUES (v_id_vendedor, 'orden', '¡Nueva venta!',
+    VALUES (v_id_vendedor, 'orden', CONCAT(_utf8mb4 0xC2A1, 'Nueva venta!'),
         CONCAT('Vendiste "', v_titulo, '" x', NEW.cantidad,
                ' en la orden #', NEW.id_orden, '.'), NEW.id_orden);
 END //

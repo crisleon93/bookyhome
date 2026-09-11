@@ -22,10 +22,9 @@ function LibroCard({ libro, onClick }) {
       style={{
         width: 160, flexShrink: 0, background: 'white', borderRadius: '10px',
         overflow: 'hidden', border: '1px solid #e8e2d9', cursor: 'pointer',
+        height: 300, display: 'flex', flexDirection: 'column',
         transition: 'all 0.15s ease', boxShadow: '0 2px 6px rgba(0,0,0,0.05)',
       }}
-      onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 8px 20px rgba(0,0,0,0.12)'; }}
-      onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 2px 6px rgba(0,0,0,0.05)'; }}
     >
       {/* Portada */}
       <div style={{ height: 170, background: `linear-gradient(135deg, ${VINOTINTO} 0%, ${VINOTINTO2} 100%)`, position: 'relative', overflow: 'hidden' }}>
@@ -37,8 +36,8 @@ function LibroCard({ libro, onClick }) {
             <IconBook width={44} height={44} strokeWidth={1.2} style={{ color: 'rgba(255,255,255,0.5)' }} />
           </div>
         )}
-        {/* Badge estado */}
-        {libro.estado && libro.estado !== 'nuevo' && (
+        {/* Badge estado — solo para estados negativos */}
+        {libro.estado && ['agotado', 'suspendido', 'pausado', 'oculto'].includes(libro.estado.toLowerCase()) && (
           <span style={{
             position: 'absolute', top: 8, left: 8,
             background: 'rgba(0,0,0,0.6)', color: 'white',
@@ -47,21 +46,38 @@ function LibroCard({ libro, onClick }) {
         )}
       </div>
       {/* Info */}
-      <div style={{ padding: '10px 10px 12px' }}>
+      <div style={{ padding: '10px 10px 12px', flex: 1, minHeight: 0 }}>
         <p style={{
-          margin: '0 0 3px 0', fontSize: '0.8rem', fontWeight: 700, color: '#1a1a1a',
+          margin: '0 0 4px 0', height: 34, fontSize: '0.8rem', fontWeight: 700, color: '#1a1a1a',
           display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', lineHeight: 1.3,
         }}>{libro.titulo}</p>
-        <p style={{ margin: '0 0 6px 0', fontSize: '0.7rem', color: '#888', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {libro.autor_libro || '—'}
-        </p>
-        <p style={{ margin: 0, fontSize: '0.9rem', fontWeight: 800, color: VINOTINTO }}>
+
+        {/* Autor */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', margin: '0 0 5px 0', overflow: 'hidden' }}>
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#9b8ea0" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+          <p style={{ margin: 0, fontSize: '0.69rem', color: '#777', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontStyle: 'italic' }}>
+            {libro.autor_libro || '—'}
+          </p>
+        </div>
+
+        <p style={{ margin: '0 0 4px 0', fontSize: '0.9rem', fontWeight: 800, color: VINOTINTO }}>
           ${Number(libro.precio_libro ?? 0).toLocaleString('es-CO')}
         </p>
+
+        {/* Librería */}
         {libro.nombre_tienda && (
-          <p style={{ margin: '3px 0 0', fontSize: '0.65rem', color: '#aaa', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {libro.nombre_tienda}
-          </p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', overflow: 'hidden' }}>
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#7A1E3A" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, opacity: 0.7 }}>
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+              <polyline points="9 22 9 12 15 12 15 22"/>
+            </svg>
+            <p style={{ margin: 0, fontSize: '0.65rem', color: '#7A1E3A', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 600, opacity: 0.8 }}>
+              {libro.nombre_tienda}
+            </p>
+          </div>
         )}
       </div>
     </div>
@@ -70,14 +86,43 @@ function LibroCard({ libro, onClick }) {
 
 function CarruselLibros({ libros, onVerLibro }) {
   const ref = useRef(null);
+  const trackRef = useRef(null);
+  const offsetRef = useRef(0);
   const scroll = (dir) => {
-    if (ref.current) ref.current.scrollBy({ left: dir * 340, behavior: 'smooth' });
+    const track = trackRef.current;
+    if (!track) return;
+    const card = track.firstElementChild;
+    const step = card ? card.getBoundingClientRect().width + 12 : 172;
+    const loopWidth = track.scrollWidth / 2;
+    offsetRef.current += dir * step;
+    if (offsetRef.current < 0) offsetRef.current += loopWidth;
+    if (offsetRef.current >= loopWidth) offsetRef.current -= loopWidth;
+    track.style.transform = `translate3d(${-offsetRef.current}px, 0, 0)`;
   };
+  useEffect(() => {
+    if (libros.length <= 1) return undefined;
+    let frameId;
+    let previousTime;
+    const animate = (time) => {
+      const track = trackRef.current;
+      if (track) {
+        const elapsed = previousTime ? time - previousTime : 0;
+        const loopWidth = track.scrollWidth / 2;
+        offsetRef.current += (elapsed / 1000) * 28;
+        if (loopWidth > 0 && offsetRef.current >= loopWidth) offsetRef.current -= loopWidth;
+        track.style.transform = `translate3d(${-offsetRef.current}px, 0, 0)`;
+      }
+      previousTime = time;
+      frameId = window.requestAnimationFrame(animate);
+    };
+    frameId = window.requestAnimationFrame(animate);
+    return () => window.cancelAnimationFrame(frameId);
+  }, [libros.length]);
   return (
     <div style={{ position: 'relative', overflow: 'hidden', paddingBottom: '4px' }}>
       {/* Flecha izquierda */}
       <button onClick={() => scroll(-1)} style={{
-        position: 'absolute', left: -16, top: '50%', transform: 'translateY(-50%)',
+        position: 'absolute', left: 4, top: '50%', transform: 'translateY(-50%)',
         zIndex: 2, background: 'white', border: '1px solid #ddd', borderRadius: '50%',
         width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center',
         cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
@@ -85,19 +130,16 @@ function CarruselLibros({ libros, onVerLibro }) {
         <IconChevronLeft width={16} height={16} strokeWidth={2.5} style={{ color: '#444' }} />
       </button>
       {/* Carrusel */}
-      <div ref={ref} style={{
-        display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '0',
-        scrollbarWidth: 'none', msOverflowStyle: 'none',
-      }}
-        className="carrusel-scroll"
-      >
-        {libros.map(libro => (
-          <LibroCard key={libro.id_libro} libro={libro} onClick={onVerLibro} />
-        ))}
+      <div ref={ref} style={{ overflow: 'hidden', paddingBottom: '0' }}>
+        <div ref={trackRef} style={{ display: 'flex', gap: '12px', width: 'max-content', willChange: 'transform' }}>
+          {[...libros, ...libros].map((libro, index) => (
+            <LibroCard key={`${libro.id_libro}-${index}`} libro={libro} onClick={onVerLibro} />
+          ))}
+        </div>
       </div>
       {/* Flecha derecha */}
       <button onClick={() => scroll(1)} style={{
-        position: 'absolute', right: -16, top: '50%', transform: 'translateY(-50%) rotate(180deg)',
+        position: 'absolute', right: 4, top: '50%', transform: 'translateY(-50%) rotate(180deg)',
         zIndex: 2, background: 'white', border: '1px solid #ddd', borderRadius: '50%',
         width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center',
         cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
@@ -162,13 +204,6 @@ export default function SeccionInicio({ userName, onSelectSeccion, onVerDetalleL
               background: 'white', color: VINOTINTO, border: 'none',
               padding: '9px 20px', borderRadius: '8px', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer',
             }}>Explorar catálogo</button>
-            {tieneCupones && (
-              <button onClick={() => onSelectSeccion('Notificaciones')} style={{
-                background: 'rgba(255,255,255,0.12)', color: 'white',
-                border: '1px solid rgba(255,255,255,0.3)',
-                padding: '9px 20px', borderRadius: '8px', fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer',
-              }}>🎟️ Ver cupones</button>
-            )}
           </div>
         </div>
         <div style={{ position: 'relative', zIndex: 1, flexShrink: 0 }}>
@@ -181,17 +216,21 @@ export default function SeccionInicio({ userName, onSelectSeccion, onVerDetalleL
       {/* ── CUPONES ── */}
       {tieneCupones && (
         <section>
-          <h2 style={{ margin: '0 0 12px', fontSize: '1rem', fontWeight: 700, color: '#1a1a1a' }}>🎟️ Cupones disponibles</h2>
           <CouponsList />
         </section>
       )}
 
       {/* ── NOVEDADES ── */}
-      <section>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
-          <h2 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#1a1a1a' }}>📚 Recién llegados</h2>
-          <button onClick={() => onSelectSeccion('Catálogo')} style={{ background: 'none', border: 'none', color: VINOTINTO, fontWeight: 600, fontSize: '0.82rem', cursor: 'pointer' }}>
-            Ver todos →
+      <section style={{ background: 'white', borderRadius: '14px', padding: '1.25rem', border: '1px solid #eee6df', boxShadow: '0 4px 16px rgba(0,0,0,0.05)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', gap: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: `linear-gradient(135deg, ${VINOTINTO} 0%, ${VINOTINTO2} 100%)`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', flexShrink: 0 }}>
+              <IconBookOpen width={20} height={20} strokeWidth={1.8} />
+            </div>
+            <h2 style={{ margin: 0, fontSize: '1.35rem', fontWeight: 700, color: '#1a1a1a' }}>Recién llegados</h2>
+          </div>
+          <button onClick={() => onSelectSeccion('Catálogo')} style={{ background: 'white', border: `1px solid ${VINOTINTO}`, borderRadius: '7px', padding: '6px 12px', color: VINOTINTO, fontWeight: 700, fontSize: '0.78rem', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+            Ver todos
           </button>
         </div>
         {loading ? (
@@ -211,11 +250,16 @@ export default function SeccionInicio({ userName, onSelectSeccion, onVerDetalleL
 
       {/* ── ÚLTIMAS COMPRAS ── */}
       {ultimasCompras.length > 0 && (
-        <section>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-            <h2 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#1a1a1a' }}>🛍️ Tus últimas compras</h2>
-            <button onClick={() => onSelectSeccion('Mis Compras')} style={{ background: 'none', border: 'none', color: VINOTINTO, fontWeight: 600, fontSize: '0.82rem', cursor: 'pointer' }}>
-              Ver todas →
+        <section style={{ background: 'white', borderRadius: '14px', padding: '1.25rem', border: '1px solid #eee6df', boxShadow: '0 4px 16px rgba(0,0,0,0.05)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', gap: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: `linear-gradient(135deg, ${VINOTINTO} 0%, ${VINOTINTO2} 100%)`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', flexShrink: 0 }}>
+                <IconBook width={20} height={20} strokeWidth={1.8} />
+              </div>
+              <h2 style={{ margin: 0, fontSize: '1.35rem', fontWeight: 700, color: '#1a1a1a' }}>Tus últimas compras</h2>
+            </div>
+            <button onClick={() => onSelectSeccion('Mis Compras')} style={{ background: 'white', border: `1px solid ${VINOTINTO}`, borderRadius: '7px', padding: '6px 12px', color: VINOTINTO, fontWeight: 700, fontSize: '0.78rem', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+              Ver todas
             </button>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
