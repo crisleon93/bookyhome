@@ -2,9 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import { getCuponesDisponibles } from "../services/api";
 import { notify } from "./ToastProvider";
 
-export default function CouponsList() {
-  const [coupons, setCoupons] = useState([]);
-  const [loading, setLoading] = useState(true);
+export default function CouponsList({ initialCoupons, darkMode = false }) {
+  const [coupons, setCoupons] = useState(initialCoupons ?? []);
+  const [loading, setLoading] = useState(initialCoupons === undefined);
   const [copiedCode, setCopiedCode] = useState(null);
   const [showAll, setShowAll] = useState(false);
   const [search, setSearch] = useState("");
@@ -13,8 +13,13 @@ export default function CouponsList() {
   const carouselRef = useRef(null);
   const trackRef = useRef(null);
   const offsetRef = useRef(0);
+  const loopWidthRef = useRef(0);
 
   useEffect(() => {
+    if (initialCoupons !== undefined) {
+      return undefined;
+    }
+
     getCuponesDisponibles()
       .then((res) => {
         setCoupons(res.data || []);
@@ -25,19 +30,24 @@ export default function CouponsList() {
       .finally(() => {
         setLoading(false);
       });
-  }, []);
+  }, [initialCoupons]);
 
   useEffect(() => {
     if (loading || coupons.length <= 1) return undefined;
 
+    const measure = () => {
+      if (trackRef.current) loopWidthRef.current = trackRef.current.scrollWidth / 2;
+    };
+    measure();
+    window.addEventListener("resize", measure);
     let frameId;
     let previousTime;
     const animate = (time) => {
       const carousel = carouselRef.current;
       const track = trackRef.current;
       if (carousel && track) {
+        const loopWidth = loopWidthRef.current;
         const elapsed = previousTime ? time - previousTime : 0;
-        const loopWidth = track.scrollWidth / 2;
         offsetRef.current += (elapsed / 1000) * 32;
         if (loopWidth > 0 && offsetRef.current >= loopWidth) {
           offsetRef.current -= loopWidth;
@@ -49,7 +59,10 @@ export default function CouponsList() {
     };
 
     frameId = window.requestAnimationFrame(animate);
-    return () => window.cancelAnimationFrame(frameId);
+    return () => {
+      window.cancelAnimationFrame(frameId);
+      window.removeEventListener("resize", measure);
+    };
   }, [loading, coupons.length]);
 
   const moveCarousel = (direction) => {
@@ -108,7 +121,7 @@ export default function CouponsList() {
   }
 
   return (
-    <div className="pl-card" style={{ padding: "1.25rem", marginTop: "1rem" }}>
+    <div className="pl-card" style={{ padding: "1.25rem", marginTop: "1rem", background: darkMode ? "#1e1e1e" : "white", borderColor: darkMode ? "#454545" : undefined }}>
       <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "14px" }}>
         <div style={{
           width: "40px", height: "40px", borderRadius: "10px",
@@ -124,16 +137,16 @@ export default function CouponsList() {
         </div>
         <div style={{ flex: 1 }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px" }}>
-            <h2 style={{ margin: 0, color: "var(--gris-carbon)", fontSize: "1.35rem" }}>Cupones de Descuento</h2>
+            <h2 style={{ margin: 0, color: darkMode ? "#ececec" : "var(--gris-carbon)", fontSize: "1.35rem" }}>Cupones de Descuento</h2>
             <button
               type="button"
               onClick={() => setShowAll(true)}
-              style={{ border: "1px solid #7A1E3A", background: "white", color: "#7A1E3A", borderRadius: "7px", padding: "6px 12px", fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}
+              style={{ border: `1px solid ${darkMode ? "#ff4f83" : "#7A1E3A"}`, background: darkMode ? "#252525" : "white", color: darkMode ? "#ff6b97" : "#7A1E3A", borderRadius: "7px", padding: "6px 12px", fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}
             >
               Ver todos
             </button>
           </div>
-          <p style={{ margin: 0, color: "#888", fontSize: "0.78rem" }}>
+          <p style={{ margin: 0, color: darkMode ? "#aaa" : "#888", fontSize: "0.78rem" }}>
             Aprovecha estos códigos especiales en tu próxima compra
           </p>
         </div>
@@ -153,9 +166,9 @@ export default function CouponsList() {
             onClick={() => moveCarousel(-1)}
             style={{
               position: "absolute", left: 0, top: "50%", transform: "translateY(-50%)",
-              zIndex: 2, width: 34, height: 34, borderRadius: "50%", border: "1px solid #D2C7BC",
-              background: "white", color: "var(--vinotinto)", fontSize: "1.3rem", cursor: "pointer",
-              boxShadow: "0 3px 10px rgba(0,0,0,0.12)",
+              zIndex: 2, width: 34, height: 34, borderRadius: "50%", border: `1px solid ${darkMode ? "#ff4f83" : "#D2C7BC"}`,
+              background: darkMode ? "#3a3a3a" : "white", color: darkMode ? "#ff6b97" : "var(--vinotinto)", fontSize: "1.3rem", cursor: "pointer",
+              boxShadow: darkMode ? "0 3px 12px rgba(0,0,0,0.55)" : "0 3px 10px rgba(0,0,0,0.12)",
             }}
           >
             ‹
@@ -183,12 +196,12 @@ export default function CouponsList() {
                 key={`${coupon.id_cupon}-${index}`}
                 style={{
                   flex: "0 0 min(245px, calc(100vw - 100px))",
-                  background: "linear-gradient(135deg, #fff 0%, #FAF8F6 100%)",
-                  border: "2px dashed #D2C7BC",
+                  background: darkMode ? "linear-gradient(135deg, #252525 0%, #303030 100%)" : "linear-gradient(135deg, #fff 0%, #FAF8F6 100%)",
+                  border: `2px dashed ${darkMode ? "#606060" : "#D2C7BC"}`,
                   borderRadius: "16px",
                   padding: "14px",
                   position: "relative",
-                  boxShadow: "0 4px 12px rgba(0, 0, 0, 0.03)",
+                  boxShadow: darkMode ? "0 4px 14px rgba(0,0,0,0.28)" : "0 4px 12px rgba(0, 0, 0, 0.03)",
                   display: "flex",
                   flexDirection: "column",
                   justifyContent: "space-between",
@@ -210,18 +223,18 @@ export default function CouponsList() {
                 </div>
 
                 <div>
-                  <h3 style={{ margin: "0 0 5px", fontSize: "1.6rem", fontWeight: 800, color: "var(--vinotinto)" }}>
-                    {valFormato} <span style={{ fontSize: "0.95rem", fontWeight: 500, color: "#666" }}>Dcto.</span>
+                  <h3 style={{ margin: "0 0 5px", fontSize: "1.6rem", fontWeight: 800, color: darkMode ? "#ff4f83" : "var(--vinotinto)" }}>
+                    {valFormato} <span style={{ fontSize: "0.95rem", fontWeight: 500, color: darkMode ? "#c8c8c8" : "#666" }}>Dcto.</span>
                   </h3>
 
                   {coupon.minimo_compra > 0 && (
-                    <p style={{ margin: "0 0 10px", fontSize: "0.8", color: "#666" }}>
+                    <p style={{ margin: "0 0 10px", fontSize: "0.8", color: darkMode ? "#c8c8c8" : "#666" }}>
                       Compra mínima: <strong>${Number(coupon.minimo_compra).toLocaleString("es-CO")}</strong>
                     </p>
                   )}
 
                   {coupon.fecha_fin && (
-                    <p style={{ margin: "0 0 15px", fontSize: "0.75rem", color: "#999" }}>
+                    <p style={{ margin: "0 0 15px", fontSize: "0.75rem", color: darkMode ? "#aaa" : "#999" }}>
                       Válido hasta: {new Date(coupon.fecha_fin).toLocaleDateString("es-CO", {
                         day: '2-digit', month: 'short', year: 'numeric'
                       })}
@@ -233,14 +246,14 @@ export default function CouponsList() {
                 <div
                   onClick={() => handleCopy(coupon.codigo_cupon)}
                   style={{
-                    background: "#F4EDE6",
-                    border: "1px solid #D2C7BC",
+                    background: darkMode ? "#303030" : "#F4EDE6",
+                    border: `1px solid ${darkMode ? "#606060" : "#D2C7BC"}`,
                     borderRadius: "8px",
                     padding: "10px",
                     textAlign: "center",
                     fontWeight: 700,
                     fontSize: "1.05rem",
-                    color: "var(--gris-carbon)",
+                    color: darkMode ? "#ececec" : "var(--gris-carbon)",
                     letterSpacing: "1.5px",
                     cursor: "pointer",
                     display: "flex",
@@ -249,8 +262,8 @@ export default function CouponsList() {
                     gap: "8px",
                     transition: "background 0.2s"
                   }}
-                  onMouseEnter={(e) => e.currentTarget.style.background = "#EADFD3"}
-                  onMouseLeave={(e) => e.currentTarget.style.background = "#F4EDE6"}
+                  onMouseEnter={(e) => e.currentTarget.style.background = darkMode ? "#3b3b3b" : "#EADFD3"}
+                  onMouseLeave={(e) => e.currentTarget.style.background = darkMode ? "#303030" : "#F4EDE6"}
                 >
                   <span>{coupon.codigo_cupon}</span>
                   {copiedCode === coupon.codigo_cupon ? (
@@ -276,9 +289,9 @@ export default function CouponsList() {
             onClick={() => moveCarousel(1)}
             style={{
               position: "absolute", right: 0, top: "50%", transform: "translateY(-50%)",
-              zIndex: 2, width: 34, height: 34, borderRadius: "50%", border: "1px solid #D2C7BC",
-              background: "white", color: "var(--vinotinto)", fontSize: "1.3rem", cursor: "pointer",
-              boxShadow: "0 3px 10px rgba(0,0,0,0.12)",
+              zIndex: 2, width: 34, height: 34, borderRadius: "50%", border: `1px solid ${darkMode ? "#ff4f83" : "#D2C7BC"}`,
+              background: darkMode ? "#3a3a3a" : "white", color: darkMode ? "#ff6b97" : "var(--vinotinto)", fontSize: "1.3rem", cursor: "pointer",
+              boxShadow: darkMode ? "0 3px 12px rgba(0,0,0,0.55)" : "0 3px 10px rgba(0,0,0,0.12)",
             }}
           >
             ›

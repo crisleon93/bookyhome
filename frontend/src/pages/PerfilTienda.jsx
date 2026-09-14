@@ -26,14 +26,14 @@ function Logo({ url, nombre }) {
   return <img src={url} alt={nombre} onError={() => setErr(true)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />;
 }
 
-function InfoRow({ icon, label, value }) {
+function InfoRow({ icon, label, value, darkMode }) {
   if (!value) return null;
   return (
     <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
-      <span style={{ color: 'var(--vinotinto)', flexShrink: 0, marginTop: '2px' }}>{icon}</span>
+      <span style={{ color: darkMode ? '#e05a7a' : 'var(--vinotinto)', flexShrink: 0, marginTop: '2px' }}>{icon}</span>
       <div>
-        <p style={{ margin: 0, fontSize: '0.72rem', color: '#999', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{label}</p>
-        <p style={{ margin: 0, fontSize: '0.88rem', color: '#333' }}>{value}</p>
+        <p style={{ margin: 0, fontSize: '0.72rem', color: darkMode ? '#c8c8c8' : '#999', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{label}</p>
+        <p style={{ margin: 0, fontSize: '0.88rem', color: darkMode ? '#ececec' : '#333' }}>{value}</p>
       </div>
     </div>
   );
@@ -45,6 +45,40 @@ export default function PerfilTienda() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+
+  // Dark mode
+  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('darkMode') === 'true');
+  useEffect(() => {
+    const handler = () => setDarkMode(localStorage.getItem('darkMode') === 'true');
+    window.addEventListener('darkModeChange', handler);
+    window.addEventListener('storage', handler);
+    return () => { window.removeEventListener('darkModeChange', handler); window.removeEventListener('storage', handler); };
+  }, []);
+
+  // Paleta de colores según modo
+  const t = {
+    mainBg:        darkMode ? '#1a1a1a' : 'var(--beige)',
+    cardBg:        darkMode ? '#2a2a2a' : '#fff',
+    cardBorder:    darkMode ? '1px solid #3a3a3a' : '1px solid #ede8e1',
+    textPrimary:   darkMode ? '#ececec' : 'var(--gris-carbon)',
+    textSecondary: darkMode ? '#c8c8c8' : '#888',
+    textMuted:     darkMode ? '#999' : '#999',
+    vino:          darkMode ? '#e05a7a' : 'var(--vinotinto)',
+    vinoGradient:  darkMode ? 'linear-gradient(135deg, #e05a7a 0%, #c5425a 100%)' : 'linear-gradient(135deg, var(--vinotinto) 0%, #a32d52 100%)',
+    icon:          darkMode ? '#e05a7a' : 'var(--vinotinto)',
+    divider:       darkMode ? '#333' : '#f0ebe4',
+    inputBg:       darkMode ? '#353535' : '#fff',
+    inputBorder:   darkMode ? '#4a4a4a' : '#ede8e1',
+    bookBg:        darkMode ? 'linear-gradient(135deg, #e05a7a 0%, #c5425a 100%)' : 'linear-gradient(135deg, #7A1E3A 0%, #a32d52 100%)',
+    bookCardBg:    darkMode ? '#2a2a2a' : '#fff',
+    bookCardBorder: darkMode ? '1px solid #3a3a3a' : '1px solid #ede8e1',
+    bookTitle:     darkMode ? '#ececec' : '#222',
+    bookAuthor:    darkMode ? '#c8c8c8' : '#888',
+    logoBg:        darkMode ? 'linear-gradient(135deg, #e05a7a 0%, #c5425a 100%)' : 'linear-gradient(135deg, var(--vinotinto) 0%, #a32d52 100%)',
+    infoLabel:     darkMode ? '#c8c8c8' : '#999',
+    infoValue:     darkMode ? '#ececec' : '#333',
+    description:   darkMode ? '#c8c8c8' : '#555',
+  };
 
   useEffect(() => {
     api.get(`/configuracion/${id}`)
@@ -70,18 +104,18 @@ export default function PerfilTienda() {
 
   if (loading) {
     return (
-      <main style={{ background: 'var(--beige)', minHeight: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <p style={{ color: '#999' }}>Cargando perfil...</p>
+      <main style={{ background: t.mainBg, minHeight: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <p style={{ color: t.textMuted }}>Cargando perfil...</p>
       </main>
     );
   }
 
   if (notFound) {
     return (
-      <main style={{ background: 'var(--beige)', minHeight: '80vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1rem' }}>
+      <main style={{ background: t.mainBg, minHeight: '80vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1rem' }}>
         <p style={{ fontSize: '2.5rem' }}>🔍</p>
-        <p style={{ fontWeight: 700, color: '#555' }}>Esta librería no existe o no está disponible</p>
-        <button type="button" onClick={() => navigate('/librerias')} style={{ background: 'var(--vinotinto)', color: '#fff', border: 'none', borderRadius: '8px', padding: '0.6rem 1.4rem', fontFamily: 'inherit', fontWeight: 700, cursor: 'pointer' }}>
+        <p style={{ fontWeight: 700, color: t.textSecondary }}>Esta librería no existe o no está disponible</p>
+        <button type="button" onClick={() => navigate('/librerias')} style={{ background: t.vino, color: '#fff', border: 'none', borderRadius: '8px', padding: '0.6rem 1.4rem', fontFamily: 'inherit', fontWeight: 700, cursor: 'pointer' }}>
           Ver todas las librerías
         </button>
       </main>
@@ -98,12 +132,12 @@ export default function PerfilTienda() {
   );
 
   return (
-    <main style={{ background: 'var(--beige)', minHeight: '80vh', paddingBottom: '4rem' }}>
+    <main style={{ background: t.mainBg, minHeight: '80vh', paddingBottom: '4rem' }}>
 
       {/* Banner */}
       <div style={{
         height: '180px',
-        background: bannerUrl ? `url(${bannerUrl}) center/cover no-repeat` : 'linear-gradient(135deg, var(--vinotinto) 0%, #a32d52 100%)',
+        background: bannerUrl ? `url(${bannerUrl}) center/cover no-repeat` : t.vinoGradient,
         position: 'relative',
       }}>
         <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.25)' }} />
@@ -115,18 +149,18 @@ export default function PerfilTienda() {
         <div style={{ display: 'flex', alignItems: 'flex-end', gap: '1.25rem', marginTop: '-40px', marginBottom: '2rem', flexWrap: 'wrap' }}>
           <div style={{
             width: '80px', height: '80px', borderRadius: '14px', overflow: 'hidden', flexShrink: 0,
-            background: 'linear-gradient(135deg, var(--vinotinto) 0%, #a32d52 100%)',
+            background: t.logoBg,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            border: '3px solid #fff', boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
+            border: darkMode ? '3px solid #2a2a2a' : '3px solid #fff', boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
           }}>
             <Logo url={logoUrl} nombre={tienda.nombre_tienda} />
           </div>
           <div style={{ paddingBottom: '4px' }}>
-            <h1 style={{ margin: '0 0 2px', fontSize: '1.35rem', fontWeight: 800, color: 'var(--gris-carbon)' }}>
+            <h1 style={{ margin: '0 0 2px', fontSize: '1.35rem', fontWeight: 800, color: t.textPrimary }}>
               {tienda.nombre_tienda}
             </h1>
             {configuracion?.ciudad_origen && (
-              <p style={{ margin: 0, fontSize: '0.82rem', color: '#888', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <p style={{ margin: 0, fontSize: '0.82rem', color: t.textSecondary, display: 'flex', alignItems: 'center', gap: '4px' }}>
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
                 </svg>
@@ -138,7 +172,7 @@ export default function PerfilTienda() {
             <button
               type="button"
               onClick={() => navigate(`/catalogo?tienda=${tienda.id_tienda}`)}
-              style={{ background: 'var(--vinotinto)', color: '#fff', border: 'none', borderRadius: '8px', padding: '0.55rem 1.2rem', fontFamily: 'inherit', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer' }}
+              style={{ background: t.vino, color: '#fff', border: 'none', borderRadius: '8px', padding: '0.55rem 1.2rem', fontFamily: 'inherit', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer' }}
             >
               Ver catálogo →
             </button>
@@ -149,12 +183,12 @@ export default function PerfilTienda() {
 
           {/* Libros recientes */}
           <div>
-            <h2 style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--gris-carbon)', margin: '0 0 1rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <h2 style={{ fontSize: '1rem', fontWeight: 800, color: t.textPrimary, margin: '0 0 1rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
               📚 Libros disponibles
-              <span style={{ fontSize: '0.75rem', fontWeight: 500, color: '#999' }}>({libros.length})</span>
+              <span style={{ fontSize: '0.75rem', fontWeight: 500, color: t.textMuted }}>({libros.length})</span>
             </h2>
             {libros.length === 0 ? (
-              <p style={{ color: '#aaa', fontSize: '0.88rem' }}>Esta librería aún no tiene libros publicados.</p>
+              <p style={{ color: t.textSecondary, fontSize: '0.88rem' }}>Esta librería aún no tiene libros publicados.</p>
             ) : (
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
                 {libros.slice(0, 12).map(libro => (
@@ -162,20 +196,20 @@ export default function PerfilTienda() {
                     key={libro.id_libro}
                     type="button"
                     onClick={() => navigate(`/catalogo?q=${encodeURIComponent(libro.titulo)}`)}
-                    style={{ background: '#fff', border: '1px solid #ede8e1', borderRadius: '10px', overflow: 'hidden', cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit', padding: 0, transition: 'transform 0.15s, box-shadow 0.15s', width: '140px', flexShrink: 0 }}
+                    style={{ background: t.bookCardBg, border: t.bookCardBorder, borderRadius: '10px', overflow: 'hidden', cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit', padding: 0, transition: 'transform 0.15s, box-shadow 0.15s', width: '140px', flexShrink: 0 }}
                     onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 8px 20px rgba(0,0,0,0.1)'; }}
                     onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = 'none'; }}
                   >
-                    <div style={{ height: '120px', background: 'linear-gradient(135deg, #7A1E3A 0%, #a32d52 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', position: 'relative', flexShrink: 0 }}>
+                    <div style={{ height: '120px', background: t.bookBg, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', position: 'relative', flexShrink: 0 }}>
                       {libro.imagenes?.[0]
                         ? <img src={libro.imagenes[0]} alt={libro.titulo} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
                         : <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="1.5"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
                       }
                     </div>
                     <div style={{ padding: '0.5rem 0.6rem' }}>
-                      <p style={{ margin: '0 0 2px', fontSize: '0.78rem', fontWeight: 700, color: '#222', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', lineClamp: 2 }}>{libro.titulo}</p>
-                      <p style={{ margin: 0, fontSize: '0.72rem', color: '#888' }}>{libro.autor_libro}</p>
-                      <p style={{ margin: '4px 0 0', fontSize: '0.82rem', fontWeight: 800, color: 'var(--vinotinto)' }}>
+                      <p style={{ margin: '0 0 2px', fontSize: '0.78rem', fontWeight: 700, color: t.bookTitle, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', lineClamp: 2 }}>{libro.titulo}</p>
+                      <p style={{ margin: 0, fontSize: '0.72rem', color: t.bookAuthor }}>{libro.autor_libro}</p>
+                      <p style={{ margin: '4px 0 0', fontSize: '0.82rem', fontWeight: 800, color: t.vino }}>
                         ${Number(libro.precio_libro).toLocaleString('es-CO')}
                       </p>
                     </div>
@@ -187,21 +221,21 @@ export default function PerfilTienda() {
 
           {/* Panel info — solo si tiene perfil */}
           {tienePerfil && (
-            <div style={{ background: '#fff', borderRadius: '14px', padding: '1.25rem', border: '1px solid #ede8e1', position: 'sticky', top: '90px' }}>
-              <h3 style={{ margin: '0 0 1rem', fontSize: '0.9rem', fontWeight: 800, color: 'var(--gris-carbon)' }}>Información de la tienda</h3>
+            <div style={{ background: t.cardBg, borderRadius: '14px', padding: '1.25rem', border: t.cardBorder, position: 'sticky', top: '90px' }}>
+              <h3 style={{ margin: '0 0 1rem', fontSize: '0.9rem', fontWeight: 800, color: t.textPrimary }}>Información de la tienda</h3>
 
               {configuracion.descripcion && (
-                <p style={{ fontSize: '0.84rem', color: '#555', lineHeight: 1.6, marginBottom: '1rem', borderBottom: '1px solid #f0ebe4', paddingBottom: '1rem' }}>
+                <p style={{ fontSize: '0.84rem', color: t.description, lineHeight: 1.6, marginBottom: '1rem', borderBottom: t.divider, paddingBottom: '1rem' }}>
                   {configuracion.descripcion}
                 </p>
               )}
 
-              <InfoRow icon="🕐" label="Horario" value={configuracion.horario_atencion} />
-              <InfoRow icon="📦" label="Política de envíos" value={configuracion.politica_envios} />
-              <InfoRow icon="↩️" label="Devoluciones" value={configuracion.politica_devoluciones} />
-              <InfoRow icon="✉️" label="Email de contacto" value={configuracion.email_publico} />
+              <InfoRow icon="🕐" label="Horario" value={configuracion.horario_atencion} darkMode={darkMode} />
+              <InfoRow icon="📦" label="Política de envíos" value={configuracion.politica_envios} darkMode={darkMode} />
+              <InfoRow icon="↩️" label="Devoluciones" value={configuracion.politica_devoluciones} darkMode={darkMode} />
+              <InfoRow icon="✉️" label="Email de contacto" value={configuracion.email_publico} darkMode={darkMode} />
               {configuracion.tiempo_despacho_dias > 0 && (
-                <InfoRow icon="🚚" label="Tiempo de despacho" value={`${configuracion.tiempo_despacho_dias} días hábiles`} />
+                <InfoRow icon="🚚" label="Tiempo de despacho" value={`${configuracion.tiempo_despacho_dias} días hábiles`} darkMode={darkMode} />
               )}
             </div>
           )}

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Terminos,
@@ -24,6 +24,21 @@ function Footer() {
     location.startsWith('/publicar');
 
   const [activeLegal, setActiveLegal] = useState(null);
+  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('darkMode') === 'true');
+
+  useEffect(() => {
+    const handleDarkModeChange = () => {
+      setDarkMode(localStorage.getItem('darkMode') === 'true');
+    };
+    
+    window.addEventListener('storage', handleDarkModeChange);
+    window.addEventListener('darkModeChange', handleDarkModeChange);
+    
+    return () => {
+      window.removeEventListener('storage', handleDarkModeChange);
+      window.removeEventListener('darkModeChange', handleDarkModeChange);
+    };
+  }, []);
 
   const openAuthModal = (type = 'join') => {
     const eventMap = {
@@ -80,7 +95,12 @@ function Footer() {
 
   return (
     <>
-      <footer style={{ marginLeft: isDashboardPage ? 'var(--dashboard-sidebar-width, 250px)' : undefined, width: isDashboardPage ? 'calc(100% - var(--dashboard-sidebar-width, 250px))' : undefined }}>
+      <footer style={{ 
+        marginLeft: isDashboardPage ? 'var(--dashboard-sidebar-width, 250px)' : undefined, 
+        width: isDashboardPage ? 'calc(100% - var(--dashboard-sidebar-width, 250px))' : undefined,
+        backgroundColor: darkMode ? '#1a1a1a' : 'var(--gris-carbon)',
+        color: darkMode ? '#b0b0b0' : '#b0b0b0'
+      }}>
 
         <div className="footer-container">
 

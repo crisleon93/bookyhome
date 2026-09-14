@@ -19,6 +19,7 @@ export default function SeccionPerfilAdmin({ stats }) {
   const [bannerUploading, setBannerUploading] = useState(false);
   const [showBannerEditor, setShowBannerEditor] = useState(false);
   const [gestion, setGestion] = useState({ reclamos: 0, soporte: 0, resueltos: 0, pendientes: 0 });
+  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('darkMode') === 'true');
 
   const resolveImageUrl = (path) => {
     const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
@@ -69,6 +70,16 @@ export default function SeccionPerfilAdmin({ stats }) {
     cargarPerfil();
     cargarGestion();
   }, [cargarPerfil, cargarGestion]);
+
+  useEffect(() => {
+    const handleDarkModeChange = () => setDarkMode(localStorage.getItem('darkMode') === 'true');
+    window.addEventListener('darkModeChange', handleDarkModeChange);
+    window.addEventListener('storage', handleDarkModeChange);
+    return () => {
+      window.removeEventListener('darkModeChange', handleDarkModeChange);
+      window.removeEventListener('storage', handleDarkModeChange);
+    };
+  }, []);
 
   const onUserNameChange = (e) => setUserName(e.target.value);
   const onUserSurnameChange = (e) => setUserSurname(e.target.value);
@@ -417,6 +428,57 @@ export default function SeccionPerfilAdmin({ stats }) {
               </div>
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* Preferencias Visuales */}
+      <div className="pl-card" style={{ padding: "2rem", marginBottom: 20 }}>
+        <h3 style={{ margin: "0 0 1rem 0", color: "var(--vinotinto)", fontSize: "1.2rem" }}>
+          Preferencias Visuales
+        </h3>
+        <div style={{ 
+          display: "flex", 
+          justifyContent: "space-between", 
+          alignItems: "center", 
+          padding: "1.2rem", 
+          background: "#faf8f6", 
+          borderRadius: "8px", 
+          borderLeft: "4px solid var(--vinotinto)" 
+        }}>
+          <div>
+            <h4 style={{ margin: "0 0 0.3rem 0", color: "#2a2a2a", fontSize: "1rem" }}>Modo Oscuro</h4>
+            <p style={{ margin: 0, color: "#666", fontSize: "0.85rem" }}>Cambia el tema de la aplicación a modo oscuro</p>
+          </div>
+          <label style={{ position: 'relative', display: 'inline-block', width: '48px', height: '26px', cursor: 'pointer' }}>
+            <input 
+              type="checkbox" 
+              checked={darkMode}
+              onChange={() => {
+                const newMode = !darkMode;
+                setDarkMode(newMode);
+                localStorage.setItem('darkMode', newMode);
+                if (newMode) {
+                  document.documentElement.classList.add('dark');
+                } else {
+                  document.documentElement.classList.remove('dark');
+                }
+                window.dispatchEvent(new CustomEvent('darkModeChange', { detail: { darkMode: newMode } }));
+              }}
+              style={{ opacity: 0, width: 0, height: 0 }} 
+            />
+            <span style={{ 
+              position: 'absolute', cursor: 'pointer', 
+              top: 0, left: 0, right: 0, bottom: 0, 
+              backgroundColor: darkMode ? 'var(--vinotinto)' : '#ccc', 
+              transition: '0.3s', borderRadius: '26px' 
+            }}></span>
+            <span style={{ 
+              position: 'absolute', content: '', height: '20px', width: '20px', 
+              left: '3px', bottom: '3px', backgroundColor: 'white', 
+              transition: '0.3s', borderRadius: '50%', 
+              transform: darkMode ? 'translateX(22px)' : 'translateX(0)' 
+            }}></span>
+          </label>
         </div>
       </div>
     </>

@@ -751,6 +751,21 @@ function ChatEmojiPickerTray({ onSelectEmoji, onClose, config }) {
 // Modal de Configuración y Personalización del Chat
 function ChatSettingsModal({ config, setConfig, onClose }) {
   const [activeTab, setActiveTab] = useState("apariencia"); // "apariencia" | "salas" | "burbujas" | "texto" | "general"
+  const [modoOscuroGlobal, setModoOscuroGlobal] = useState(() => (
+    typeof document !== "undefined" && document.documentElement.classList.contains("dark")
+  ));
+
+  useEffect(() => {
+    const actualizarModo = () => setModoOscuroGlobal(
+      document.documentElement.classList.contains("dark")
+    );
+    window.addEventListener("darkModeChange", actualizarModo);
+    window.addEventListener("storage", actualizarModo);
+    return () => {
+      window.removeEventListener("darkModeChange", actualizarModo);
+      window.removeEventListener("storage", actualizarModo);
+    };
+  }, []);
 
   const fondos = [
     { id: "beige_dots", nombre: "Clásico BookyHome", color: "#EFEAE2", desc: "Beige con textura punteada" },
@@ -803,6 +818,7 @@ function ChatSettingsModal({ config, setConfig, onClose }) {
   ];
 
   const handleUpdate = (key, value) => {
+    if (modoOscuroGlobal && key === "fondo") return;
     setConfig((prev) => {
       const updated = { ...prev, [key]: value };
       try {
@@ -901,11 +917,17 @@ function ChatSettingsModal({ config, setConfig, onClose }) {
           {activeTab === "apariencia" && (
             <div className="bkh-config-section">
               <h4 className="bkh-config-subtitle">Elige el color y estilo de fondo del chat</h4>
+              {modoOscuroGlobal && (
+                <div className="bkh-dark-mode-notice" role="status">
+                  🌙 El modo oscuro global está activo. El fondo del chat se controla desde Configuración general.
+                </div>
+              )}
               <div className="bkh-config-wallpapers-grid">
                 {fondos.map((f) => (
                   <div
                     key={f.id}
-                    className={`bkh-wallpaper-card ${config.fondo === f.id ? "selected" : ""}`}
+                    className={`bkh-wallpaper-card ${config.fondo === f.id ? "selected" : ""} ${modoOscuroGlobal ? "disabled" : ""}`}
+                    aria-disabled={modoOscuroGlobal}
                     onClick={() => handleUpdate("fondo", f.id)}
                   >
                     <div className="bkh-wallpaper-preview" style={{ backgroundColor: f.color }}>
@@ -920,7 +942,7 @@ function ChatSettingsModal({ config, setConfig, onClose }) {
                 ))}
               </div>
 
-              <div className="bkh-config-toggle-row">
+              <div className={`bkh-config-toggle-row ${modoOscuroGlobal ? "disabled" : ""}`}>
                 <div>
                   <strong>Textura de fondo (Patrón punteado)</strong>
                   <p>Muestra u oculta la sutil textura de fondo en el área de mensajes.</p>
@@ -929,6 +951,7 @@ function ChatSettingsModal({ config, setConfig, onClose }) {
                   <input
                     type="checkbox"
                     checked={config.patronVisible}
+                    disabled={modoOscuroGlobal}
                     onChange={(e) => handleUpdate("patronVisible", e.target.checked)}
                   />
                   <span className="bkh-slider"></span>
@@ -1306,6 +1329,21 @@ export default function Chat({
       return (partes[0][0] + partes[1][0]).toUpperCase();
     }
     return nombre[0].toUpperCase();
+  };
+
+  const getFotoSalaUrl = (sala) => {
+    const rol = (
+      usuarioActual?.rol ||
+      usuarioActual?.rol_nombre ||
+      usuarioActual?.tipo_usuario ||
+      ""
+    ).toString().toLowerCase();
+    const esVendedor = rol === "vendedor" || usuarioActual?.id_rol === 2;
+    const foto = esVendedor ? sala?.foto_comprador : sala?.foto_tienda;
+    if (!foto) return null;
+    if (foto.startsWith("http://") || foto.startsWith("https://") || foto.startsWith("data:")) return foto;
+    const apiBase = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000";
+    return `${apiBase}/${foto.replace(/^\//, "")}`;
   };
 
   // Obtener ID del usuario desde el token JWT
@@ -2114,6 +2152,7 @@ export default function Chat({
 
   const salaActiva = salas.find((s) => s.id_sala === selectedSala);
   const nombreSalaActiva = nombreMostrar(salaActiva);
+  const fotoSalaActiva = getFotoSalaUrl(salaActiva);
 
   // ==========================
   // UI
@@ -2269,7 +2308,12 @@ export default function Chat({
                     onTouchEnd={handleTouchEnd}
                   >
                     <div className="sala-avatar">
-                      {getIniciales(nombre)}
+                      {getFotoSalaUrl(sala) ? (
+                        <>
+                          <img className="sala-avatar-img" src={getFotoSalaUrl(sala)} alt="" onError={(e) => { e.currentTarget.style.display = "none"; e.currentTarget.nextElementSibling.style.display = "inline-flex"; }} />
+                          <span className="sala-avatar-fallback">{getIniciales(nombre)}</span>
+                        </>
+                      ) : getIniciales(nombre)}
                     </div>
 
                     <div className="sala-content">
@@ -2460,7 +2504,12 @@ export default function Chat({
                   title="Ver información del contacto"
                 >
                   <div className="chat-header-avatar">
-                    {getIniciales(nombreSalaActiva)}
+                    {fotoSalaActiva ? (
+                      <>
+                        <img className="chat-header-avatar-img" src={fotoSalaActiva} alt="" onError={(e) => { e.currentTarget.style.display = "none"; e.currentTarget.nextElementSibling.style.display = "inline-flex"; }} />
+                        <span className="chat-header-avatar-fallback">{getIniciales(nombreSalaActiva)}</span>
+                      </>
+                    ) : getIniciales(nombreSalaActiva)}
                   </div>
                   <div className="chat-header-info">
                     <h2>{nombreSalaActiva}</h2>
@@ -3413,7 +3462,12 @@ export default function Chat({
               {/* Tarjeta de perfil principal */}
               <div className="drawer-profile-card">
                 <div className="drawer-avatar-lg">
-                  {getIniciales(nombreSalaActiva)}
+                  {fotoSalaActiva ? (
+                    <>
+                      <img className="drawer-avatar-img" src={fotoSalaActiva} alt={nombreSalaActiva} onError={(e) => { e.currentTarget.style.display = "none"; e.currentTarget.nextElementSibling.style.display = "inline-flex"; }} />
+                      <span className="drawer-avatar-fallback">{getIniciales(nombreSalaActiva)}</span>
+                    </>
+                  ) : getIniciales(nombreSalaActiva)}
                 </div>
                 <h2 className="drawer-user-name">{nombreSalaActiva}</h2>
                 <span className="drawer-user-handle">

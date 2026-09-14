@@ -131,6 +131,7 @@ const BookCoverThumbnail = ({ imgUrl, titulo, autor }) => {
 export default function SeccionCarrito({ userId }) {
   const navigate = useNavigate();
   const location = useLocation();
+  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('darkMode') === 'true');
   const [carrito, setCarrito] = useState([]);
   const [ordenes, setOrdenes] = useState([]);
   const [direcciones, setDirecciones] = useState([]);
@@ -213,6 +214,16 @@ export default function SeccionCarrito({ userId }) {
   const idVisible = (orden) => orden?.id_orden_db || orden?.id_orden;
 
   const [eliminandoId, setEliminandoId] = useState(null);
+
+  useEffect(() => {
+    const handleDarkModeChange = () => setDarkMode(localStorage.getItem('darkMode') === 'true');
+    window.addEventListener('darkModeChange', handleDarkModeChange);
+    window.addEventListener('storage', handleDarkModeChange);
+    return () => {
+      window.removeEventListener('darkModeChange', handleDarkModeChange);
+      window.removeEventListener('storage', handleDarkModeChange);
+    };
+  }, []);
 
   const getCartImageUrl = (item) => {
     const raw = item?.imagen || item?.imagen_portada || item?.portada || item?.foto || item?.imagen_url || (Array.isArray(item?.imagenes) ? item.imagenes[0] : null);
@@ -821,9 +832,9 @@ export default function SeccionCarrito({ userId }) {
         alignItems: "center",
         flexWrap: "wrap",
         gap: "16px",
-        background: "#FFFFFF",
+        background: darkMode ? "#1e1e1e" : "#FFFFFF",
         borderRadius: "16px",
-        border: "1px solid #E5E7EB",
+        border: `1px solid ${darkMode ? '#454545' : '#E5E7EB'}`,
         boxShadow: "0 2px 12px -2px rgba(0,0,0,0.04)"
       }}>
         {/* Cabecera izquierda */}
@@ -850,11 +861,11 @@ export default function SeccionCarrito({ userId }) {
           </div>
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-              <h2 style={{ margin: 0, fontSize: "1.32rem", fontWeight: 800, color: "#111827", letterSpacing: "-0.01em" }}>
+              <h2 style={{ margin: 0, fontSize: "1.32rem", fontWeight: 800, color: darkMode ? "#ececec" : "#111827", letterSpacing: "-0.01em" }}>
                 {mostrarCheckout ? "Entrega y Pago" : "Mi Carrito"}
               </h2>
               {carrito.length > 0 && !mostrarCheckout && (
-                <span style={{
+                <span className="delivery-shipping-badge" style={{
                   background: "linear-gradient(135deg, #7A1E3A 0%, #5E1629 100%)",
                   color: "#FFFFFF",
                   fontSize: "0.75rem",
@@ -867,7 +878,7 @@ export default function SeccionCarrito({ userId }) {
                 </span>
               )}
             </div>
-            <p style={{ margin: "4px 0 0", color: "#6B7280", fontSize: "0.83rem", fontWeight: 500 }}>
+            <p style={{ margin: "4px 0 0", color: darkMode ? "#aaa" : "#6B7280", fontSize: "0.83rem", fontWeight: 500 }}>
               {mostrarCheckout
                 ? "Selecciona tu método de entrega y completa el pago seguro"
                 : "Revisa tus lecturas seleccionadas antes de proceder al pago seguro"}
@@ -876,7 +887,7 @@ export default function SeccionCarrito({ userId }) {
         </div>
 
         {/* Stepper visual unificado y pulido */}
-        <div style={{
+        <div className="checkout-stepper" style={{
           display: "inline-flex",
           alignItems: "center",
           gap: "6px",
@@ -888,6 +899,7 @@ export default function SeccionCarrito({ userId }) {
         }}>
           {/* Paso 1: Carrito */}
           <div
+            className={mostrarCheckout ? "checkout-step-inactive" : ""}
             onClick={mostrarCheckout ? () => onVolverCarrito() : undefined}
             style={{
               display: "flex",
@@ -931,7 +943,7 @@ export default function SeccionCarrito({ userId }) {
           </div>
 
           {/* Flecha conectora elegante */}
-          <div style={{
+          <div className={!mostrarCheckout ? "checkout-step-inactive" : ""} style={{
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -991,7 +1003,7 @@ export default function SeccionCarrito({ userId }) {
               </svg>
               Volver al carrito
             </button>
-            <div style={{ background: "var(--blanco)", padding: "36px 32px", borderRadius: "16px", boxShadow: "var(--sombra-suave)", border: "1px solid #e0dbd4", textAlign: "center" }}>
+            <div className="payment-success-card" style={{ background: "var(--blanco)", padding: "36px 32px", borderRadius: "16px", boxShadow: "var(--sombra-suave)", border: "1px solid #e0dbd4", textAlign: "center" }}>
               {/* Si la orden ya fue pagada, mostrar pantalla de éxito de pago (NO la reserva) */}
               {(order?.estado_retiro === 'entregado' || order?.estado_retiro === 'entregada' || order?.estado === 'entregada') ? (
                 <>
@@ -1243,7 +1255,7 @@ export default function SeccionCarrito({ userId }) {
               )}
 
               {order && (
-                <div style={{ background: "#fcfaf7", padding: "20px", borderRadius: "10px", border: "1px solid #e0dbd4", textAlign: "left", marginBottom: "24px" }}>
+                <div className="payment-success-order-summary" style={{ background: "#fcfaf7", padding: "20px", borderRadius: "10px", border: "1px solid #e0dbd4", textAlign: "left", marginBottom: "24px" }}>
                   <p style={{ margin: "0 0 12px", fontSize: "11px", fontWeight: 700, color: "#aaa", textTransform: "uppercase", letterSpacing: "0.05em" }}>
                     Resumen de tu orden
                   </p>
@@ -1314,7 +1326,7 @@ export default function SeccionCarrito({ userId }) {
         <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: "24px" }}>
           <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
           {/* Paso 2 — Tarjeta 1: Forma de Entrega */}
-          <div className="pl-card" style={{ padding: "24px" }}>
+          <div className="pl-card checkout-card" style={{ padding: "24px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "18px", borderBottom: "1.5px solid #F3F4F6", paddingBottom: "14px", flexWrap: "wrap", gap: "10px" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
                 <div style={{
@@ -1334,7 +1346,7 @@ export default function SeccionCarrito({ userId }) {
                   1
                 </div>
                 <div>
-                  <h3 style={{ margin: 0, fontSize: "1.08rem", fontWeight: 800, color: "#111827" }}>
+                  <h3 className="checkout-heading" style={{ margin: 0, fontSize: "1.08rem", fontWeight: 800, color: "#111827" }}>
                     Forma de Entrega
                   </h3>
                   <span style={{ fontSize: "0.76rem", color: "#6B7280", fontWeight: 500 }}>
@@ -1343,7 +1355,7 @@ export default function SeccionCarrito({ userId }) {
                 </div>
               </div>
 
-              <span style={{
+              <span className="checkout-delivery-badge" style={{
                 fontSize: "0.76rem",
                 fontWeight: 700,
                 color: metodoEntrega === 'domicilio' ? '#1E40AF' : '#15803D',
@@ -1356,7 +1368,7 @@ export default function SeccionCarrito({ userId }) {
                 gap: "6px"
               }}>
                 <span>{metodoEntrega === 'domicilio' ? '🚚' : '🏪'}</span>
-                <span>{metodoEntrega === 'domicilio' ? 'Envío a Domicilio' : 'Retiro en Tienda'}</span>
+                <span className="checkout-delivery-badge-text">{metodoEntrega === 'domicilio' ? 'Envío a Domicilio' : 'Retiro en Tienda'}</span>
               </span>
             </div>
 
@@ -1364,6 +1376,7 @@ export default function SeccionCarrito({ userId }) {
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "14px", marginBottom: "18px" }}>
               {/* Tarjeta Envío a Domicilio */}
               <button
+                className="checkout-option"
                 type="button"
                 onClick={() => {
                   setMetodoEntrega('domicilio');
@@ -1413,14 +1426,14 @@ export default function SeccionCarrito({ userId }) {
                   </div>
                 </div>
 
-                <span style={{ fontWeight: 800, fontSize: "0.95rem", color: metodoEntrega === 'domicilio' ? 'var(--vinotinto)' : '#1F2937', marginBottom: "4px" }}>
+                <span className="checkout-option-title" style={{ fontWeight: 800, fontSize: "0.95rem", color: metodoEntrega === 'domicilio' ? 'var(--vinotinto)' : '#1F2937', marginBottom: "4px" }}>
                   Envío a Domicilio
                 </span>
                 <span style={{ fontSize: "0.78rem", color: "#6B7280", lineHeight: 1.35, marginBottom: "12px" }}>
                   Recibe tus libros en tu casa u oficina por transportadora certificada.
                 </span>
 
-                <span style={{
+                <span className="delivery-shipping-badge" style={{
                   fontSize: "0.7rem",
                   fontWeight: 700,
                   padding: "3px 8px",
@@ -1474,6 +1487,7 @@ export default function SeccionCarrito({ userId }) {
                 </div>
               ) : (
               <button
+                className="checkout-option"
                 type="button"
                 onClick={() => {
                   setMetodoEntrega('retiro_tienda');
@@ -1523,14 +1537,14 @@ export default function SeccionCarrito({ userId }) {
                   </div>
                 </div>
 
-                <span style={{ fontWeight: 800, fontSize: "0.95rem", color: metodoEntrega === 'retiro_tienda' ? 'var(--vinotinto)' : '#1F2937', marginBottom: "4px" }}>
+                <span className="checkout-option-title" style={{ fontWeight: 800, fontSize: "0.95rem", color: metodoEntrega === 'retiro_tienda' ? 'var(--vinotinto)' : '#1F2937', marginBottom: "4px" }}>
                   Retiro en Tienda
                 </span>
                 <span style={{ fontSize: "0.78rem", color: "#6B7280", lineHeight: 1.35, marginBottom: "12px" }}>
                   Recoge directamente en el local de la librería vendedora sin esperas.
                 </span>
 
-                <span style={{
+                <span className="delivery-pickup-badge" style={{
                   fontSize: "0.7rem",
                   fontWeight: 700,
                   padding: "3px 8px",
@@ -1547,13 +1561,14 @@ export default function SeccionCarrito({ userId }) {
 
             {/* Detalle complementario según el modo seleccionado */}
             {metodoEntrega === 'domicilio' ? (
-              <div style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: "14px", padding: "16px 18px" }}>
+              <div className="checkout-detail" style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: "14px", padding: "16px 18px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px", flexWrap: "wrap", gap: "8px" }}>
                   <label style={{ fontWeight: 800, fontSize: "0.85rem", color: "#334155", display: "flex", alignItems: "center", gap: "6px" }}>
                     <span>📍</span>
                     <span>Dirección de entrega de tu pedido:</span>
                   </label>
                   <button
+                    className="checkout-manage-addresses"
                     type="button"
                     onClick={() => navigate('/?seccion=Direcciones')}
                     style={{
@@ -1579,6 +1594,7 @@ export default function SeccionCarrito({ userId }) {
 
                 <div style={{ position: "relative", marginBottom: direccionSeleccionadaId ? "12px" : "0" }}>
                   <select
+                    className="checkout-input"
                     value={direccionSeleccionadaId}
                     onChange={(event) => setDireccionSeleccionadaId(event.target.value)}
                     style={{
@@ -1608,7 +1624,7 @@ export default function SeccionCarrito({ userId }) {
                   const selectedDir = direcciones.find(d => String(d.id_direccion) === String(direccionSeleccionadaId));
                   if (!selectedDir) return null;
                   return (
-                    <div style={{
+                    <div className="checkout-address-preview" style={{
                       background: "#FFFFFF",
                       border: "1px solid #E2E8F0",
                       borderRadius: "10px",
@@ -1621,7 +1637,7 @@ export default function SeccionCarrito({ userId }) {
                     }}>
                       <div>
                         <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "3px" }}>
-                          <span style={{ fontWeight: 800, fontSize: "0.85rem", color: "#0F172A" }}>
+                          <span className="checkout-address-title" style={{ fontWeight: 800, fontSize: "0.85rem", color: "#0F172A" }}>
                             {selectedDir.alias_direccion || "Dirección de destino"}
                           </span>
                           {selectedDir.es_principal && (
@@ -1630,7 +1646,7 @@ export default function SeccionCarrito({ userId }) {
                             </span>
                           )}
                         </div>
-                        <p style={{ margin: 0, fontSize: "0.8rem", color: "#475569" }}>
+                        <p className="checkout-address-text" style={{ margin: 0, fontSize: "0.8rem", color: "#475569" }}>
                           {selectedDir.direccion_completa || selectedDir.direccion} • {selectedDir.ciudad}{selectedDir.departamento ? `, ${selectedDir.departamento}` : ''}
                           {selectedDir.telefono_contacto && ` • 📞 ${selectedDir.telefono_contacto}`}
                         </p>
@@ -1678,7 +1694,7 @@ export default function SeccionCarrito({ userId }) {
                 )}
               </div>
             ) : (
-              <div style={{
+              <div className="pickup-detail-panel" style={{
                 background: "linear-gradient(135deg, #F0FDF4 0%, #FFFFFF 100%)",
                 border: "1.5px solid #86EFAC",
                 borderRadius: "14px",
@@ -1687,11 +1703,11 @@ export default function SeccionCarrito({ userId }) {
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px", flexWrap: "wrap", gap: "8px" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                     <span style={{ fontSize: "1.2rem" }}>🏪</span>
-                    <span style={{ fontWeight: 800, fontSize: "0.92rem", color: "#166534" }}>
+                    <span className="pickup-detail-title" style={{ fontWeight: 800, fontSize: "0.92rem", color: "#166534" }}>
                       Retiro en punto físico habilitado
                     </span>
                   </div>
-                  <span style={{
+                  <span className="pickup-detail-cost" style={{
                     background: "#DCFCE7",
                     color: "#15803D",
                     fontSize: "0.72rem",
@@ -1708,8 +1724,8 @@ export default function SeccionCarrito({ userId }) {
                   <div style={{ display: "flex", alignItems: "flex-start", gap: "8px" }}>
                     <span style={{ fontSize: "1rem" }}>📍</span>
                     <div>
-                      <span style={{ display: "block", fontSize: "0.8rem", fontWeight: 700, color: "#1F2937" }}>Lugar de entrega:</span>
-                      <span style={{ display: "block", fontSize: "0.76rem", color: "#4B5563", lineHeight: 1.35 }}>
+                      <span className="pickup-detail-label" style={{ display: "block", fontSize: "0.8rem", fontWeight: 700, color: "#1F2937" }}>Lugar de entrega:</span>
+                      <span className="pickup-detail-text" style={{ display: "block", fontSize: "0.76rem", color: "#4B5563", lineHeight: 1.35 }}>
                         Sede de la librería vendedora. Recibirás la dirección exacta y horario en tu confirmación.
                       </span>
                     </div>
@@ -1718,8 +1734,8 @@ export default function SeccionCarrito({ userId }) {
                   <div style={{ display: "flex", alignItems: "flex-start", gap: "8px" }}>
                     <span style={{ fontSize: "1rem" }}>💵</span>
                     <div>
-                      <span style={{ display: "block", fontSize: "0.8rem", fontWeight: 700, color: "#1F2937" }}>Opciones de pago:</span>
-                      <span style={{ display: "block", fontSize: "0.76rem", color: "#4B5563", lineHeight: 1.35 }}>
+                      <span className="pickup-detail-label" style={{ display: "block", fontSize: "0.8rem", fontWeight: 700, color: "#1F2937" }}>Opciones de pago:</span>
+                      <span className="pickup-detail-text" style={{ display: "block", fontSize: "0.76rem", color: "#4B5563", lineHeight: 1.35 }}>
                         Puedes pagar en <strong>efectivo al recoger</strong> en caja o pagar por adelantado (Nequi, Tarjeta, PSE, Transferencia).
                       </span>
                     </div>
@@ -1730,7 +1746,7 @@ export default function SeccionCarrito({ userId }) {
           </div>
 
           {/* Paso 2 — Tarjeta 2: Método de pago */}
-          <div className="pl-card" style={{ padding: "24px" }}>
+          <div className="pl-card checkout-card" style={{ padding: "24px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "18px", borderBottom: "1.5px solid #F3F4F6", paddingBottom: "14px", flexWrap: "wrap", gap: "10px" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
                 <div style={{
@@ -1750,7 +1766,7 @@ export default function SeccionCarrito({ userId }) {
                   2
                 </div>
                 <div>
-                  <h3 style={{ margin: 0, fontSize: "1.08rem", fontWeight: 800, color: "#111827" }}>
+                  <h3 className="checkout-heading" style={{ margin: 0, fontSize: "1.08rem", fontWeight: 800, color: "#111827" }}>
                     Selecciona tu método de pago
                   </h3>
                   <span style={{ fontSize: "0.76rem", color: "#6B7280", fontWeight: 500 }}>
@@ -1759,7 +1775,7 @@ export default function SeccionCarrito({ userId }) {
                 </div>
               </div>
 
-              <span style={{
+              <span className="checkout-delivery-badge" style={{
                 fontSize: "0.76rem",
                 fontWeight: 700,
                 color: metodoEntrega === 'retiro_tienda' ? '#15803D' : '#1E40AF',
@@ -1772,7 +1788,7 @@ export default function SeccionCarrito({ userId }) {
                 gap: "5px"
               }}>
                 <span>{metodoEntrega === 'retiro_tienda' ? '🏪' : '🚚'}</span>
-                <span>{metodoEntrega === 'retiro_tienda' ? 'Modalidad Retiro en Tienda' : 'Modalidad Entrega a Domicilio'}</span>
+                <span className="checkout-delivery-badge-text">{metodoEntrega === 'retiro_tienda' ? 'Modalidad Retiro en Tienda' : 'Modalidad Entrega a Domicilio'}</span>
               </span>
             </div>
 
@@ -1800,6 +1816,7 @@ export default function SeccionCarrito({ userId }) {
                 const isSelected = paymentMethod === method.id;
                 return (
                   <button
+                    className="checkout-method"
                     key={method.id}
                     type="button"
                     onClick={() => setPaymentMethod(method.id)}
@@ -1831,9 +1848,9 @@ export default function SeccionCarrito({ userId }) {
 
             {/* SECCIÓN PAGO EN EFECTIVO EN TIENDA */}
             {paymentMethod === "efectivo_tienda" && (
-              <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+              <div className="checkout-payment-method-panel" style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
                 {/* Banner Cabecera Efectivo en Tienda */}
-                <div style={{
+                <div className="cash-pickup-header" style={{
                   background: "linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%)",
                   border: "1.5px solid #86EFAC",
                   borderRadius: "16px",
@@ -1894,8 +1911,8 @@ export default function SeccionCarrito({ userId }) {
                 </div>
 
                 {/* 3 Tarjetas de Ventajas */}
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "12px" }}>
-                  <div style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "12px", padding: "14px 16px", display: "flex", alignItems: "flex-start", gap: "12px" }}>
+                  <div className="cash-pickup-benefits" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "12px" }}>
+                  <div className="cash-pickup-benefit" style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "12px", padding: "14px 16px", display: "flex", alignItems: "flex-start", gap: "12px" }}>
                     <div style={{ width: 36, height: 36, borderRadius: "10px", background: "#F0FDF4", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.2rem", flexShrink: 0 }}>
                       🔖
                     </div>
@@ -1909,7 +1926,7 @@ export default function SeccionCarrito({ userId }) {
                     </div>
                   </div>
 
-                  <div style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "12px", padding: "14px 16px", display: "flex", alignItems: "flex-start", gap: "12px" }}>
+                  <div className="cash-pickup-benefit" style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "12px", padding: "14px 16px", display: "flex", alignItems: "flex-start", gap: "12px" }}>
                     <div style={{ width: 36, height: 36, borderRadius: "10px", background: "#EFF6FF", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.2rem", flexShrink: 0 }}>
                       👀
                     </div>
@@ -1923,7 +1940,7 @@ export default function SeccionCarrito({ userId }) {
                     </div>
                   </div>
 
-                  <div style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "12px", padding: "14px 16px", display: "flex", alignItems: "flex-start", gap: "12px" }}>
+                  <div className="cash-pickup-benefit" style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "12px", padding: "14px 16px", display: "flex", alignItems: "flex-start", gap: "12px" }}>
                     <div style={{ width: 36, height: 36, borderRadius: "10px", background: "#FEF3C7", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.2rem", flexShrink: 0 }}>
                       ⚡
                     </div>
@@ -1939,7 +1956,7 @@ export default function SeccionCarrito({ userId }) {
                 </div>
 
                 {/* Guía en 3 Pasos */}
-                <div style={{
+                <div className="cash-pickup-instructions" style={{
                   background: "#F8FAFC",
                   border: "1px solid #E2E8F0",
                   borderRadius: "14px",
@@ -2066,7 +2083,7 @@ export default function SeccionCarrito({ userId }) {
               const isAmex = /^3[47]/.test(cleanNum);
 
               return (
-                <div style={{ display: "flex", flexDirection: "column", gap: "22px" }}>
+                <div className="checkout-payment-method-panel" style={{ display: "flex", flexDirection: "column", gap: "22px" }}>
                   {/* Vista previa 3D de la tarjeta interactiva */}
                   <div style={{
                     width: "100%",
@@ -2146,7 +2163,7 @@ export default function SeccionCarrito({ userId }) {
 
                     {/* Centro: Número de tarjeta */}
                     <div style={{ position: "relative", zIndex: 1, margin: "14px 0" }}>
-                      <div style={{
+                      <div className="efecty-receipt" style={{
                         fontSize: "1.22rem",
                         fontWeight: 700,
                         letterSpacing: "3.5px",
@@ -2181,7 +2198,7 @@ export default function SeccionCarrito({ userId }) {
                   </div>
 
                   {/* Formulario con campos estilizados e iconos */}
-                  <form onSubmit={handleCardSubmit} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                  <form className="checkout-payment-form" onSubmit={handleCardSubmit} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
                     {/* Campo Número de Tarjeta */}
                     <div>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
@@ -2373,7 +2390,7 @@ export default function SeccionCarrito({ userId }) {
                     </div>
 
                     {/* Insignia de seguridad y cifrado */}
-                    <div style={{
+                    <div className="card-security-panel" style={{
                       background: "#F0FDF4",
                       border: "1px solid #BBF7D0",
                       borderRadius: "10px",
@@ -2383,7 +2400,7 @@ export default function SeccionCarrito({ userId }) {
                       gap: "10px"
                     }}>
                       <span style={{ fontSize: "1.2rem", flexShrink: 0 }}>🛡️</span>
-                      <p style={{ margin: 0, fontSize: "0.78rem", color: "#166534", lineHeight: 1.35, fontWeight: 500 }}>
+                      <p className="card-security-text" style={{ margin: 0, fontSize: "0.78rem", color: "#166534", lineHeight: 1.35, fontWeight: 500 }}>
                         Tus datos viajan 100% protegidos bajo cifrado SSL de 256 bits y estrictos estándares PCI-DSS.
                       </p>
                     </div>
@@ -2448,11 +2465,11 @@ export default function SeccionCarrito({ userId }) {
 
             {paymentMethod === "paypal" && (() => {
               return (
-                <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+                <div className="checkout-payment-method-panel" style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
                   {/* Banner Cabecera PayPal */}
-                  <div style={{
-                    background: "linear-gradient(135deg, #F0F7FF 0%, #E6F2FE 100%)",
-                    border: "1.5px solid #BAE6FD",
+                  <div className="paypal-header" style={{
+                    background: darkMode ? "linear-gradient(135deg, #202d42 0%, #1d3954 100%)" : "linear-gradient(135deg, #F0F7FF 0%, #E6F2FE 100%)",
+                    border: `1.5px solid ${darkMode ? '#4d9bd1' : '#BAE6FD'}`,
                     borderRadius: "16px",
                     padding: "20px 22px",
                     display: "flex",
@@ -2518,7 +2535,7 @@ export default function SeccionCarrito({ userId }) {
 
                   {/* 3 Tarjetas de Ventajas / Garantías */}
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "12px" }}>
-                    <div style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "12px", padding: "14px 16px", display: "flex", alignItems: "flex-start", gap: "12px" }}>
+                    <div className="paypal-benefit" style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "12px", padding: "14px 16px", display: "flex", alignItems: "flex-start", gap: "12px" }}>
                       <div style={{ width: 36, height: 36, borderRadius: "10px", background: "#EFF6FF", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.2rem", flexShrink: 0 }}>
                         🛡️
                       </div>
@@ -2532,7 +2549,7 @@ export default function SeccionCarrito({ userId }) {
                       </div>
                     </div>
 
-                    <div style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "12px", padding: "14px 16px", display: "flex", alignItems: "flex-start", gap: "12px" }}>
+                    <div className="paypal-benefit" style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "12px", padding: "14px 16px", display: "flex", alignItems: "flex-start", gap: "12px" }}>
                       <div style={{ width: 36, height: 36, borderRadius: "10px", background: "#F0FDF4", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.2rem", flexShrink: 0 }}>
                         🔒
                       </div>
@@ -2546,7 +2563,7 @@ export default function SeccionCarrito({ userId }) {
                       </div>
                     </div>
 
-                    <div style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "12px", padding: "14px 16px", display: "flex", alignItems: "flex-start", gap: "12px" }}>
+                    <div className="paypal-benefit" style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "12px", padding: "14px 16px", display: "flex", alignItems: "flex-start", gap: "12px" }}>
                       <div style={{ width: 36, height: 36, borderRadius: "10px", background: "#FEF3C7", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.2rem", flexShrink: 0 }}>
                         💳
                       </div>
@@ -2562,7 +2579,7 @@ export default function SeccionCarrito({ userId }) {
                   </div>
 
                   {/* Guía en 3 Pasos */}
-                  <div style={{
+                  <div className="paypal-instructions" style={{
                     background: "#F8FAFC",
                     border: "1px solid #E2E8F0",
                     borderRadius: "14px",
@@ -2602,7 +2619,7 @@ export default function SeccionCarrito({ userId }) {
                   </div>
 
                   {/* Sección Botón de Pago PayPal Oficial */}
-                  <div style={{
+                  <div className="paypal-action" style={{
                     background: "#FFFFFF",
                     border: "1.5px dashed #CBD5E1",
                     borderRadius: "16px",
@@ -2679,9 +2696,9 @@ export default function SeccionCarrito({ userId }) {
             
             {paymentMethod === "sucursal" && (() => {
               return (
-                <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+                <div className="checkout-payment-method-panel" style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
                   {/* Banner Cabecera Efecty */}
-                  <div style={{
+                  <div className="efecty-header" style={{
                     background: "linear-gradient(135deg, #FFFDF0 0%, #FEF9C3 100%)",
                     border: "1.5px solid #FDE047",
                     borderRadius: "16px",
@@ -2733,7 +2750,7 @@ export default function SeccionCarrito({ userId }) {
                     <>
                       {/* Ventajas y Cobertura de Efecty */}
                       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "12px" }}>
-                        <div style={{ background: "#FFFFFF", border: "1px solid #E5E7EB", borderRadius: "12px", padding: "14px 16px", display: "flex", alignItems: "center", gap: "12px" }}>
+                        <div className="efecty-benefit" style={{ background: "#FFFFFF", border: "1px solid #E5E7EB", borderRadius: "12px", padding: "14px 16px", display: "flex", alignItems: "center", gap: "12px" }}>
                           <span style={{ fontSize: "1.4rem" }}>📍</span>
                           <div>
                             <p style={{ margin: 0, fontWeight: 700, fontSize: "0.86rem", color: "#1F2937" }}>+10.000 Puntos</p>
@@ -2741,7 +2758,7 @@ export default function SeccionCarrito({ userId }) {
                           </div>
                         </div>
 
-                        <div style={{ background: "#FFFFFF", border: "1px solid #E5E7EB", borderRadius: "12px", padding: "14px 16px", display: "flex", alignItems: "center", gap: "12px" }}>
+                        <div className="efecty-benefit" style={{ background: "#FFFFFF", border: "1px solid #E5E7EB", borderRadius: "12px", padding: "14px 16px", display: "flex", alignItems: "center", gap: "12px" }}>
                           <span style={{ fontSize: "1.4rem" }}>⏳</span>
                           <div>
                             <p style={{ margin: 0, fontWeight: 700, fontSize: "0.86rem", color: "#1F2937" }}>48 Horas de Plazo</p>
@@ -2749,7 +2766,7 @@ export default function SeccionCarrito({ userId }) {
                           </div>
                         </div>
 
-                        <div style={{ background: "#FFFFFF", border: "1px solid #E5E7EB", borderRadius: "12px", padding: "14px 16px", display: "flex", alignItems: "center", gap: "12px" }}>
+                        <div className="efecty-benefit" style={{ background: "#FFFFFF", border: "1px solid #E5E7EB", borderRadius: "12px", padding: "14px 16px", display: "flex", alignItems: "center", gap: "12px" }}>
                           <span style={{ fontSize: "1.4rem" }}>💵</span>
                           <div>
                             <p style={{ margin: 0, fontWeight: 700, fontSize: "0.86rem", color: "#1F2937" }}>Pago en Efectivo</p>
@@ -2759,13 +2776,13 @@ export default function SeccionCarrito({ userId }) {
                       </div>
 
                       {/* Guía en 3 pasos */}
-                      <div style={{
+                      <div className="efecty-instructions" style={{
                         background: "#F9FAFB",
                         border: "1px solid #E5E7EB",
                         borderRadius: "14px",
                         padding: "16px 20px"
                       }}>
-                        <p style={{ margin: "0 0 10px", fontSize: "0.84rem", fontWeight: 700, color: "#374151" }}>
+                        <p className="efecty-instructions-title" style={{ margin: "0 0 10px", fontSize: "0.84rem", fontWeight: 700, color: "#374151" }}>
                           ¿Cómo funciona el pago en Efecty?
                         </p>
                         <ol style={{ margin: 0, paddingLeft: "20px", fontSize: "0.8rem", color: "#4B5563", lineHeight: 1.5, display: "flex", flexDirection: "column", gap: "6px" }}>
@@ -2823,7 +2840,7 @@ export default function SeccionCarrito({ userId }) {
                         position: "relative"
                       }}>
                         {/* Cabecera del Recibo */}
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1.5px dashed #E5E7EB", paddingBottom: "14px", marginBottom: "16px" }}>
+                        <div className="efecty-receipt-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1.5px dashed #E5E7EB", paddingBottom: "14px", marginBottom: "16px" }}>
                           <div>
                             <span style={{ fontSize: "0.68rem", fontWeight: 800, letterSpacing: "1px", color: "#CA8A04", textTransform: "uppercase" }}>
                               CUPÓN DE PAGO OFICIAL
@@ -2845,7 +2862,7 @@ export default function SeccionCarrito({ userId }) {
                         </div>
 
                         {/* Datos del Recibo en Grid */}
-                        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "16px", marginBottom: "20px" }}>
+                        <div className="efecty-receipt-data" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "16px", marginBottom: "20px" }}>
                           <div style={{ background: "#F9FAFB", padding: "12px", borderRadius: "10px", border: "1px solid #F3F4F6" }}>
                             <span style={{ display: "block", fontSize: "0.72rem", color: "#6B7280", fontWeight: 600, textTransform: "uppercase" }}>Convenio Efecty</span>
                             <span style={{ display: "block", fontSize: "1.05rem", fontWeight: 800, color: "#1F2937", marginTop: "2px" }}>110954</span>
@@ -2863,7 +2880,7 @@ export default function SeccionCarrito({ userId }) {
                         </div>
 
                         {/* PIN / Código Destacado */}
-                        <div style={{
+                        <div className="efecty-payment-pin" style={{
                           background: "linear-gradient(135deg, #FFFBEB 0%, #FEF08A 100%)",
                           border: "1.5px solid #FACC15",
                           borderRadius: "14px",
@@ -2889,7 +2906,7 @@ export default function SeccionCarrito({ userId }) {
                         </div>
 
                         {/* Código de barras decorativo */}
-                        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "4px", opacity: 0.5 }}>
+                        <div className="efecty-receipt-barcode" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "4px", opacity: 0.5 }}>
                           <svg width="240" height="36" viewBox="0 0 240 36" fill="none">
                             {[4, 10, 16, 20, 26, 34, 40, 48, 52, 60, 68, 74, 82, 90, 96, 104, 112, 118, 126, 134, 140, 148, 156, 162, 170, 178, 184, 192, 200, 208, 214, 222, 230].map((x, i) => (
                               <rect key={x} x={x} y={0} width={i % 2 === 0 ? 3 : 2} height={36} fill="#111827" />
@@ -2900,16 +2917,17 @@ export default function SeccionCarrito({ userId }) {
 
                       {/* Estado del pago */}
                       {sucursalPagoConfirmado ? (
-                        <div style={{ background: "#DCFCE7", border: "1.5px solid #86EFAC", borderRadius: "12px", padding: "14px 16px", display: "flex", alignItems: "center", gap: "12px", color: "#14532D" }}>
+                        <div className="efecty-payment-confirmed" style={{ background: "#DCFCE7", border: "1.5px solid #86EFAC", borderRadius: "12px", padding: "14px 16px", display: "flex", alignItems: "center", gap: "12px", color: "#14532D" }}>
                           <span style={{ fontSize: "1.4rem" }}>🎉</span>
                           <div>
-                            <p style={{ margin: 0, fontWeight: 800, fontSize: "0.95rem" }}>¡Pago Confirmado en Efecty!</p>
-                            <p style={{ margin: 0, fontSize: "0.82rem" }}>Hemos recibido la confirmación de la sucursal. Tu orden está en preparación.</p>
+                            <p className="efecty-payment-confirmed-title" style={{ margin: 0, fontWeight: 800, fontSize: "0.95rem" }}>¡Pago Confirmado en Efecty!</p>
+                            <p className="efecty-payment-confirmed-description" style={{ margin: 0, fontSize: "0.82rem" }}>Hemos recibido la confirmación de la sucursal. Tu orden está en preparación.</p>
                           </div>
                         </div>
                       ) : (
                         <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                           <button
+                            className="efecty-change-method"
                             type="button"
                             onClick={verificarPagoEfecty}
                             style={{
@@ -2945,6 +2963,7 @@ export default function SeccionCarrito({ userId }) {
                           </button>
 
                           <button
+                            className="efecty-payment-confirm"
                             type="button"
                             onClick={() => { setSucursalCodigo(""); setSucursalEsperandoConfirmacion(false); }}
                             style={{
@@ -2981,11 +3000,11 @@ export default function SeccionCarrito({ userId }) {
               const selectedBankObj = bancosPSE.find(b => b.codigo === pseBanco);
 
               return (
-                <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+                <div className="checkout-payment-method-panel" style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
                   {/* Tarjeta Informativa PSE con Branding */}
-                  <div style={{
-                    background: "linear-gradient(135deg, #F8FAFC 0%, #EFF6FF 100%)",
-                    border: "1.5px solid #BFDBFE",
+                  <div className="pse-panel pse-header" style={{
+                    background: darkMode ? "linear-gradient(135deg, #252a35 0%, #202b42 100%)" : "linear-gradient(135deg, #F8FAFC 0%, #EFF6FF 100%)",
+                    border: `1.5px solid ${darkMode ? '#4b6da8' : '#BFDBFE'}`,
                     borderRadius: "16px",
                     padding: "20px 22px",
                     display: "flex",
@@ -3014,10 +3033,10 @@ export default function SeccionCarrito({ userId }) {
                         <span style={{ fontSize: "0.5rem", fontWeight: 700, letterSpacing: "0.5px", opacity: 0.9 }}>EN LÍNEA</span>
                       </div>
                       <div>
-                        <h4 style={{ margin: "0 0 4px", fontSize: "1.05rem", fontWeight: 800, color: "#1E3A8A", display: "flex", alignItems: "center", gap: "8px" }}>
+                        <h4 className="pse-title" style={{ margin: "0 0 4px", fontSize: "1.05rem", fontWeight: 800, color: darkMode ? "#ff4f83" : "#1E3A8A", display: "flex", alignItems: "center", gap: "8px" }}>
                           Pago Seguro en Línea (PSE)
                         </h4>
-                        <p style={{ margin: 0, fontSize: "0.8rem", color: "#475569", fontWeight: 500 }}>
+                        <p className="pse-subtitle" style={{ margin: 0, fontSize: "0.8rem", color: darkMode ? "#c8c8c8" : "#475569", fontWeight: 500 }}>
                           Débito directo sin costos adicionales desde tu cuenta bancaria.
                         </p>
                       </div>
@@ -3046,6 +3065,7 @@ export default function SeccionCarrito({ userId }) {
                         const isSelected = pseBanco === b.codigo;
                         return (
                           <button
+                            className="pse-bank-option"
                             key={b.codigo}
                             type="button"
                             onClick={() => setPseBanco(b.codigo)}
@@ -3101,7 +3121,7 @@ export default function SeccionCarrito({ userId }) {
                           <path d="M3 21h18"/><path d="M3 10h18"/><path d="M5 6l7-3 7 3"/><path d="M4 10v11"/><path d="M20 10v11"/><path d="M8 14v4"/><path d="M12 14v4"/><path d="M16 14v4"/>
                         </svg>
                       </span>
-                      <select
+                      <select className="pse-bank-select"
                         value={pseBanco}
                         onChange={(e) => setPseBanco(e.target.value)}
                         style={{
@@ -3128,7 +3148,7 @@ export default function SeccionCarrito({ userId }) {
                   </div>
 
                   {/* Banner de Información y Pasos PSE */}
-                  <div style={{
+                  <div className="pse-info-panel" style={{
                     background: "#F8FAFC",
                     border: "1px solid #E2E8F0",
                     borderRadius: "12px",
@@ -3148,7 +3168,7 @@ export default function SeccionCarrito({ userId }) {
                   </div>
 
                   {/* Insignia de Seguridad ACH Colombia */}
-                  <div style={{
+                  <div className="pse-security-panel" style={{
                     background: "#F0FDF4",
                     border: "1px solid #BBF7D0",
                     borderRadius: "10px",
@@ -3216,9 +3236,9 @@ export default function SeccionCarrito({ userId }) {
             
             {paymentMethod === "nequi" && (() => {
               return (
-                <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+                <div className="checkout-payment-method-panel" style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
                   {/* Banner Cabecera Billeteras Digitales */}
-                  <div style={{
+                  <div className="wallet-header" style={{
                     background: "linear-gradient(135deg, #FDF4FF 0%, #FFF1F2 100%)",
                     border: "1.5px solid #F0ABFC",
                     borderRadius: "16px",
@@ -3268,7 +3288,7 @@ export default function SeccionCarrito({ userId }) {
                   {/* 2 Tarjetas Especializadas: Nequi vs Daviplata */}
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "18px" }}>
                     {/* Opción 1: Nequi */}
-                    <div style={{
+                    <div className="wallet-card wallet-nequi" style={{
                       background: "#FFFFFF",
                       border: "2px solid #E879F9",
                       borderRadius: "16px",
@@ -3313,13 +3333,13 @@ export default function SeccionCarrito({ userId }) {
                             N
                           </div>
                           <div>
-                            <h4 style={{ margin: 0, fontSize: "1.05rem", fontWeight: 800, color: "#200020" }}>Nequi</h4>
+                            <h4 className="wallet-title" style={{ margin: 0, fontSize: "1.05rem", fontWeight: 800, color: "#200020" }}>Nequi</h4>
                             <span style={{ fontSize: "0.74rem", color: "#86198F", fontWeight: 600 }}>By Bancolombia</span>
                           </div>
                         </div>
 
                         {/* Pasos Nequi */}
-                        <div style={{ background: "#FDF4FF", borderRadius: "10px", padding: "12px 14px", marginBottom: "16px" }}>
+                        <div className="wallet-instructions wallet-nequi-instructions" style={{ background: "#FDF4FF", borderRadius: "10px", padding: "12px 14px", marginBottom: "16px" }}>
                           <p style={{ margin: "0 0 8px", fontSize: "0.76rem", fontWeight: 700, color: "#701A75", textTransform: "uppercase", letterSpacing: "0.4px" }}>
                             Instrucciones rápidas:
                           </p>
@@ -3398,7 +3418,7 @@ export default function SeccionCarrito({ userId }) {
                     </div>
 
                     {/* Opción 2: Daviplata */}
-                    <div style={{
+                    <div className="wallet-card wallet-daviplata" style={{
                       background: "#FFFFFF",
                       border: "2px solid #FCA5A5",
                       borderRadius: "16px",
@@ -3443,13 +3463,13 @@ export default function SeccionCarrito({ userId }) {
                             D
                           </div>
                           <div>
-                            <h4 style={{ margin: 0, fontSize: "1.05rem", fontWeight: 800, color: "#111827" }}>Daviplata</h4>
+                            <h4 className="wallet-title" style={{ margin: 0, fontSize: "1.05rem", fontWeight: 800, color: "#111827" }}>Daviplata</h4>
                             <span style={{ fontSize: "0.74rem", color: "#DC2626", fontWeight: 600 }}>By Davivienda</span>
                           </div>
                         </div>
 
                         {/* Pasos Daviplata */}
-                        <div style={{ background: "#FEF2F2", borderRadius: "10px", padding: "12px 14px", marginBottom: "16px" }}>
+                        <div className="wallet-instructions wallet-daviplata-instructions" style={{ background: "#FEF2F2", borderRadius: "10px", padding: "12px 14px", marginBottom: "16px" }}>
                           <p style={{ margin: "0 0 8px", fontSize: "0.76rem", fontWeight: 700, color: "#991B1B", textTransform: "uppercase", letterSpacing: "0.4px" }}>
                             Instrucciones rápidas:
                           </p>
@@ -3529,7 +3549,7 @@ export default function SeccionCarrito({ userId }) {
                   </div>
 
                   {/* Insignia de Seguridad Billeteras Móviles */}
-                  <div style={{
+                  <div className="wallet-security" style={{
                     background: "#F0FDF4",
                     border: "1px solid #BBF7D0",
                     borderRadius: "10px",
@@ -3551,9 +3571,9 @@ export default function SeccionCarrito({ userId }) {
               const hayDatosVendedor = (datosTransferencia || []).length > 0;
 
               return (
-                <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+                <div className="checkout-payment-method-panel transfer-panel" style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
                   {/* Banner Cabecera de Transferencia */}
-                  <div style={{
+                  <div className="transfer-header" style={{
                     background: "linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 100%)",
                     border: "1.5px solid #CBD5E1",
                     borderRadius: "16px",
@@ -3636,6 +3656,7 @@ export default function SeccionCarrito({ userId }) {
 
                         return (
                           <div
+                            className="transfer-vendor-card"
                             key={vendedor.id_tienda || index}
                             style={{
                               background: "#FFFFFF",
@@ -3660,7 +3681,7 @@ export default function SeccionCarrito({ userId }) {
                               <div>
                                 <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                                   <span style={{ fontSize: "1.1rem" }}>🏪</span>
-                                  <span style={{ fontSize: "0.98rem", fontWeight: 800, color: "#0F172A" }}>
+                                  <span className="transfer-vendor-name" style={{ fontSize: "0.98rem", fontWeight: 800, color: "#0F172A" }}>
                                     {vendedor.nombre_tienda}
                                   </span>
                                   <span style={{
@@ -3883,7 +3904,7 @@ export default function SeccionCarrito({ userId }) {
                               </>
                             ) : (
                               /* Si la tienda aún no registra cuenta en la BD */
-                              <div style={{
+                              <div className="transfer-account-warning" style={{
                                 background: "#FFFBEB",
                                 border: "1px solid #FCD34D",
                                 borderRadius: "12px",
@@ -3951,7 +3972,7 @@ export default function SeccionCarrito({ userId }) {
                   )}
 
                   {/* Guía en 3 Pasos para el Comprador */}
-                  <div style={{
+                  <div className="transfer-instructions" style={{
                     background: "#F8FAFC",
                     border: "1px solid #E2E8F0",
                     borderRadius: "14px",
@@ -3968,7 +3989,7 @@ export default function SeccionCarrito({ userId }) {
                   </div>
 
                   {/* Insignia de Protección al Comprador */}
-                  <div style={{
+                  <div className="transfer-security" style={{
                     background: "#F0FDF4",
                     border: "1px solid #BBF7D0",
                     borderRadius: "10px",
@@ -4040,6 +4061,7 @@ export default function SeccionCarrito({ userId }) {
             })()}
             
             <button
+              className="checkout-back-cart"
               type="button"
               onClick={onVolverCarrito}
               style={{
@@ -4077,7 +4099,7 @@ export default function SeccionCarrito({ userId }) {
               alignItems: "center",
               padding: "16px"
             }}>
-              <div style={{
+              <div className="paypal-modal" style={{
                 background: "#FFFFFF",
                 maxWidth: "460px",
                 width: "100%",
@@ -4087,7 +4109,7 @@ export default function SeccionCarrito({ userId }) {
                 animation: "fadeIn 0.2s ease-out"
               }}>
                 {/* Cabecera Modal PayPal */}
-                <div style={{
+                <div className="paypal-modal-header" style={{
                   padding: "20px 24px 16px",
                   borderBottom: "1px solid #F1F5F9",
                   display: "flex",
@@ -4143,9 +4165,9 @@ export default function SeccionCarrito({ userId }) {
                   </button>
                 </div>
 
-                <div style={{ padding: "22px 24px" }}>
+                <div className="paypal-modal-body" style={{ padding: "22px 24px" }}>
                   {/* Resumen del Pago */}
-                  <div style={{
+                  <div className="paypal-modal-summary" style={{
                     background: "#F8FAFC",
                     border: "1px solid #E2E8F0",
                     borderRadius: "14px",
@@ -4166,7 +4188,7 @@ export default function SeccionCarrito({ userId }) {
                   </div>
 
                   {/* Banner de ayuda Sandbox con botón de autocompletado */}
-                  <div style={{
+                  <div className="paypal-modal-sandbox" style={{
                     background: "#EFF6FF",
                     border: "1px solid #DBEAFE",
                     borderRadius: "12px",
@@ -4188,6 +4210,7 @@ export default function SeccionCarrito({ userId }) {
                         setPaypalPassword("SandboxPass123*");
                         if (paypalError) setPaypalError("");
                       }}
+                      className="paypal-modal-demo-button"
                       style={{
                         background: "#FFFFFF",
                         border: "1px solid #93C5FD",
@@ -4210,7 +4233,7 @@ export default function SeccionCarrito({ userId }) {
                   </div>
 
                   {paypalError && (
-                    <div style={{
+                    <div className="paypal-modal-error" style={{
                       background: "#FEF2F2",
                       border: "1px solid #FCA5A5",
                       borderRadius: "10px",
@@ -4242,6 +4265,7 @@ export default function SeccionCarrito({ userId }) {
                           if (paypalError) setPaypalError("");
                         }}
                         placeholder="tu-cuenta@ejemplo.com"
+                        className="paypal-modal-input"
                         style={{
                           width: "100%",
                           padding: "11px 14px",
@@ -4276,6 +4300,7 @@ export default function SeccionCarrito({ userId }) {
                           if (paypalError) setPaypalError("");
                         }}
                         placeholder="••••••••••••"
+                        className="paypal-modal-input"
                         style={{
                           width: "100%",
                           padding: "11px 14px",
@@ -4299,6 +4324,7 @@ export default function SeccionCarrito({ userId }) {
 
                     <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginTop: "8px" }}>
                       <button
+                        className="paypal-modal-submit"
                         type="submit"
                         disabled={paypalProcessing}
                         style={{
@@ -4353,6 +4379,7 @@ export default function SeccionCarrito({ userId }) {
                       </button>
 
                       <button
+                        className="paypal-modal-cancel"
                         type="button"
                         onClick={() => setShowPaypalModal(false)}
                         style={{
@@ -4375,7 +4402,7 @@ export default function SeccionCarrito({ userId }) {
                   </form>
 
                   {/* Microcopy de Seguridad */}
-                  <div style={{
+                  <div className="paypal-modal-security" style={{
                     marginTop: "16px",
                     paddingTop: "14px",
                     borderTop: "1px solid #F1F5F9",
@@ -4419,7 +4446,7 @@ export default function SeccionCarrito({ userId }) {
                 alignItems: "center",
                 padding: "16px"
               }}>
-                <div style={{
+                <div className="pse-simulator-modal" style={{
                   background: "#FFFFFF",
                   maxWidth: "500px",
                   width: "100%",
@@ -4504,7 +4531,7 @@ export default function SeccionCarrito({ userId }) {
                   </div>
 
                   {/* Resumen de la Orden a pagar */}
-                  <div style={{
+                  <div className="pse-modal-order-summary" style={{
                     padding: "16px 24px 14px",
                     background: "#F8FAFC",
                     borderBottom: "1px solid #E2E8F0",
@@ -4533,7 +4560,7 @@ export default function SeccionCarrito({ userId }) {
                   </div>
 
                   {/* Indicador de pasos 1 y 2 */}
-                  <div style={{
+                  <div className="pse-modal-steps" style={{
                     display: "flex",
                     borderBottom: "1px solid #E2E8F0",
                     background: "#FFFFFF"
@@ -4565,7 +4592,7 @@ export default function SeccionCarrito({ userId }) {
                   </div>
 
                   {/* Contenido según el paso */}
-                  <div style={{ padding: "20px 24px" }}>
+                  <div className="pse-modal-content" style={{ padding: "20px 24px" }}>
                     {pseError && (
                       <div style={{
                         background: "#FEF2F2",
@@ -4599,6 +4626,7 @@ export default function SeccionCarrito({ userId }) {
                             ].map((tipo) => (
                               <button
                                 key={tipo.id}
+                                className="pse-client-type-button"
                                 type="button"
                                 onClick={() => setPseTipoCliente(tipo.id)}
                                 style={{
@@ -4624,6 +4652,7 @@ export default function SeccionCarrito({ userId }) {
                             Entidad Financiera (Banco)
                           </label>
                           <select
+                            className="pse-bank-select"
                             value={pseBanco}
                             onChange={(e) => setPseBanco(e.target.value)}
                             style={{
@@ -4690,7 +4719,7 @@ export default function SeccionCarrito({ userId }) {
                         </div>
 
                         {/* Botón rápido para demo */}
-                        <div style={{
+                        <div className="pse-demo-data" style={{
                           background: "#F0F9FF",
                           border: "1px dashed #7DD3FC",
                           borderRadius: "10px",
@@ -4703,6 +4732,7 @@ export default function SeccionCarrito({ userId }) {
                             ¿Simulación con datos de prueba?
                           </span>
                           <button
+                            className="pse-demo-autocomplete"
                             type="button"
                             onClick={() => {
                               setPseEmail("comprador.demo@pse.com.co");
@@ -4779,7 +4809,7 @@ export default function SeccionCarrito({ userId }) {
                         </div>
 
                         {/* Detalle de cuenta a debitar */}
-                        <div style={{
+                        <div className="pse-account-summary" style={{
                           background: "#F8FAFC",
                           border: "1.5px solid #E2E8F0",
                           borderRadius: "12px",
@@ -4899,10 +4929,10 @@ export default function SeccionCarrito({ userId }) {
           })()}
           </div>{/* Fin columna izquierda Paso 2 */}
           
-          <div className="pl-card" style={{ padding: "24px", height: "fit-content" }}>
-            <h3 style={{ margin: "0 0 20px 0" }}>Resumen de Compra</h3>
+          <div className="pl-card checkout-summary" style={{ padding: "24px", height: "100%", alignSelf: "stretch", boxSizing: "border-box" }}>
+            <h3 className="checkout-heading" style={{ margin: "0 0 20px 0" }}>Resumen de Compra</h3>
             {order?.items?.map(item => (
-              <div key={item.id_libro} style={{ display: "flex", justifyContent: "space-between", marginBottom: 10, fontSize: "0.9rem" }}>
+              <div key={item.id_libro} className="checkout-summary-row" style={{ display: "flex", justifyContent: "space-between", marginBottom: 10, fontSize: "0.9rem" }}>
                 <span>{item.titulo} x{item.cantidad}</span>
                 <span>{formatCurrency(item.precio_libro * item.cantidad)}</span>
               </div>
@@ -4910,20 +4940,20 @@ export default function SeccionCarrito({ userId }) {
             <hr style={{ border: "none", borderTop: "1px solid #ddd", margin: "20px 0" }} />
             
             <div style={{ display: "flex", gap: "10px", marginBottom: "20px" }}>
-              <input type="text" value={couponCode} onChange={e => setCouponCode(e.target.value)} placeholder="Código de cupón" style={{ flex: 1, padding: "10px", borderRadius: "8px", border: "1px solid #ddd" }} />
-              <button onClick={handleValidateCoupon} disabled={couponLoading} style={{ background: "#444", color: "white", padding: "10px 15px", borderRadius: "8px", border: "none", cursor: "pointer" }}>Aplicar</button>
+              <input className="checkout-input" type="text" value={couponCode} onChange={e => setCouponCode(e.target.value)} placeholder="Código de cupón" style={{ flex: 1, padding: "10px", borderRadius: "8px", border: "1px solid #ddd" }} />
+              <button className="checkout-coupon-button" onClick={handleValidateCoupon} disabled={couponLoading} style={{ background: "#444", color: "white", padding: "10px 15px", borderRadius: "8px", border: "none", cursor: "pointer" }}>Aplicar</button>
             </div>
             {couponError && <p style={{ color: "red", fontSize: 13, margin: "-10px 0 10px" }}>{couponError}</p>}
             {couponSuccess && <p style={{ color: "green", fontSize: 13, margin: "-10px 0 10px" }}>{couponSuccess}</p>}
             
-            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
-              <span style={{ color: "#666" }}>Subtotal</span>
+            <div className="checkout-summary-metric" style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
+              <span className="checkout-summary-label" style={{ color: "#666" }}>Subtotal</span>
               <span style={{ fontWeight: 600 }}>{formatCurrency(subtotalOrden || baseTotal)}</span>
             </div>
 
             {/* Costo de envío */}
-            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
-              <span style={{ color: "#666" }}>Envío {metodoEntrega === 'retiro_tienda' ? '(Retiro en tienda)' : '(Domicilio)'}</span>
+            <div className="checkout-summary-metric" style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
+              <span className="checkout-summary-label" style={{ color: "#666" }}>Envío {metodoEntrega === 'retiro_tienda' ? '(Retiro en tienda)' : '(Domicilio)'}</span>
               {costoEnvioOrden > 0 ? (
                 <span style={{ fontWeight: 600 }}>{formatCurrency(costoEnvioOrden)}</span>
               ) : (
@@ -4932,15 +4962,15 @@ export default function SeccionCarrito({ userId }) {
             </div>
 
             {/* IVA: libros exentos por ley colombiana Art. 424 E.T. */}
-            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
-              <span style={{ color: "#666" }}>
+            <div className="checkout-summary-metric" style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
+              <span className="checkout-summary-label" style={{ color: "#666" }}>
                 IVA
                 <span style={{ marginLeft: 6, fontSize: "0.74rem", color: "#9CA3AF", fontWeight: 400 }}>Art. 424 E.T.</span>
               </span>
               <span style={{ fontWeight: 700, color: "#059669" }}>$0 — Exento</span>
             </div>
 
-            <div style={{ height: 1, background: "#E5E7EB", margin: "12px 0" }} />
+            <div className="checkout-summary-divider" style={{ height: 1, background: "#E5E7EB", margin: "12px 0" }} />
 
             {discountAmount > 0 && (
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10, color: "green" }}>
@@ -4948,7 +4978,7 @@ export default function SeccionCarrito({ userId }) {
                 <span style={{ fontWeight: 700 }}>-{formatCurrency(discountAmount)}</span>
               </div>
             )}
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "1.2rem", fontWeight: 800, marginTop: 10 }}>
+            <div className="checkout-summary-total" style={{ display: "flex", justifyContent: "space-between", fontSize: "1.2rem", fontWeight: 800, marginTop: 10 }}>
               <span>Total</span>
               <span style={{ color: "var(--vinotinto)" }}>{formatCurrency(totalToPay)}</span>
             </div>
@@ -4956,11 +4986,11 @@ export default function SeccionCarrito({ userId }) {
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-          {/* Mostrar únicamente la orden pendiente más reciente para no saturar la vista */}
-          {ordenes.filter(esOrdenPendiente).slice(0, 1).map((orden) => (
+          {/* Mostrar todas las órdenes pendientes para que el comprador pueda gestionarlas */}
+          {ordenes.filter(esOrdenPendiente).map((orden) => (
             <div key={orden.id_orden}>
               {/* Banner orden pendiente compacto y elegante */}
-              <div style={{
+              <div className="pending-order-banner" style={{
                 background: "linear-gradient(135deg, #FFFDF8 0%, #FEF9EE 50%, #FEF3C7 100%)",
                 borderRadius: "16px",
                 border: "1.5px solid #FDE68A",
@@ -4988,12 +5018,12 @@ export default function SeccionCarrito({ userId }) {
                   </div>
                   <div style={{ minWidth: 0 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap", marginBottom: "4px" }}>
-                      <span style={{ fontWeight: 800, color: "#78350F", fontSize: "0.98rem" }}>
+                      <span className="pending-order-title" style={{ fontWeight: 800, color: "#78350F", fontSize: "0.98rem" }}>
                         Tienes una orden pendiente de pago
                       </span>
                     </div>
                     <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", alignItems: "center" }}>
-                      <span style={{
+                      <span className="pending-order-id" style={{
                         background: "#FFFFFF", border: "1px solid #FCD34D", color: "#B45309",
                         fontSize: "0.76rem", fontWeight: 800, padding: "2px 10px", borderRadius: "12px",
                         boxShadow: "0 1px 3px rgba(0,0,0,0.03)"
@@ -5024,6 +5054,7 @@ export default function SeccionCarrito({ userId }) {
                 }}>
                   {/* Ver detalles */}
                   <button
+                    className="pending-order-details"
                     onClick={() => setOrdenDetalleModal(orden)}
                     style={{
                       height: "38px", padding: "0 16px", fontSize: "0.84rem", fontWeight: 700,
@@ -5050,6 +5081,7 @@ export default function SeccionCarrito({ userId }) {
 
                   {/* Continuar al Pago (Sólido Vinotinto) */}
                   <button
+                    className="pending-order-pay"
                     onClick={() => {
                       setOrderId(idVisible(orden));
                       setOrder(orden);
@@ -5087,6 +5119,7 @@ export default function SeccionCarrito({ userId }) {
 
                   {/* Cancelar (Outline Rojo) */}
                   <button
+                    className="pending-order-cancel"
                     onClick={() => onSetOrdenACancelar(orden)}
                     style={{
                       height: "38px", padding: "0 14px", fontSize: "0.84rem", fontWeight: 700,
@@ -5130,29 +5163,29 @@ export default function SeccionCarrito({ userId }) {
                 {/* 1. Tarjeta Lista de Libros */}
                 <div className="pl-card" style={{
                   padding: "24px",
-                  background: "#FFFFFF",
+                  background: darkMode ? "#1e1e1e" : "#FFFFFF",
                   borderRadius: "16px",
-                  border: "1px solid #E5E7EB",
+                  border: `1px solid ${darkMode ? '#454545' : '#E5E7EB'}`,
                   boxShadow: "0 4px 20px -2px rgba(0,0,0,0.04)",
                   display: "flex",
                   flexDirection: "column",
                   flex: 1
                 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px", borderBottom: "1.5px solid #F3F4F6", paddingBottom: "14px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px", borderBottom: `1.5px solid ${darkMode ? '#3a3a3a' : '#F3F4F6'}`, paddingBottom: "14px" }}>
                     <div>
-                      <h3 style={{ margin: 0, fontSize: "1.15rem", fontWeight: 800, color: "#111827", display: "flex", alignItems: "center", gap: "10px" }}>
+                      <h3 style={{ margin: 0, fontSize: "1.15rem", fontWeight: 800, color: darkMode ? "#ececec" : "#111827", display: "flex", alignItems: "center", gap: "10px" }}>
                         <span>📚</span> Libros en tu Carrito
                       </h3>
-                      <p style={{ margin: "3px 0 0", color: "#6B7280", fontSize: "0.82rem" }}>
+                      <p style={{ margin: "3px 0 0", color: darkMode ? "#aaa" : "#6B7280", fontSize: "0.82rem" }}>
                         Verifica tus ejemplares antes de continuar
                       </p>
                     </div>
                     <button
                       onClick={onGoToCatalog}
                       style={{
-                        background: "#FDF2F4",
-                        border: "1px solid #FBCFE8",
-                        color: "var(--vinotinto)",
+                        background: darkMode ? "#2a1a24" : "#FDF2F4",
+                        border: `1px solid ${darkMode ? '#5a2a3a' : '#FBCFE8'}`,
+                        color: darkMode ? "#ff4f83" : "var(--vinotinto)",
                         padding: "6px 14px",
                         borderRadius: "8px",
                         fontSize: "0.82rem",
@@ -5181,9 +5214,9 @@ export default function SeccionCarrito({ userId }) {
                             gap: "20px",
                             alignItems: "center",
                             padding: "18px 20px",
-                            background: "#FAFAF9",
+                            background: darkMode ? "#252525" : "#FAFAF9",
                             borderRadius: "14px",
-                            border: "1px solid #E5E7EB",
+                            border: `1px solid ${darkMode ? '#3a3a3a' : '#E5E7EB'}`,
                             transition: "all 0.2s ease"
                           }}
                         >
@@ -5207,17 +5240,17 @@ export default function SeccionCarrito({ userId }) {
                                 <span>🟢</span> En stock · Entrega disponible
                               </span>
                             </div>
-                            <h4 style={{ margin: "0 0 4px 0", fontSize: "1.05rem", fontWeight: 800, color: "#111827", overflowWrap: "anywhere", lineHeight: 1.3 }}>
+                            <h4 style={{ margin: "0 0 4px 0", fontSize: "1.05rem", fontWeight: 800, color: darkMode ? "#ececec" : "#111827", overflowWrap: "anywhere", lineHeight: 1.3 }}>
                               {item.titulo}
                             </h4>
-                            <p style={{ margin: "0 0 10px 0", fontSize: "0.86rem", color: "#6B7280", fontWeight: 600 }}>
+                            <p style={{ margin: "0 0 10px 0", fontSize: "0.86rem", color: darkMode ? "#c8c8c8" : "#6B7280", fontWeight: 600 }}>
                               {item.autor_libro ? `✍️ ${item.autor_libro}` : "Segunda mano / Editorial"}
                             </p>
                             <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
-                              <span style={{ fontSize: "0.8rem", fontWeight: 700, background: "#FFFFFF", color: "#374151", padding: "4px 10px", borderRadius: "6px", border: "1px solid #D1D5DB" }}>
+                              <span style={{ fontSize: "0.8rem", fontWeight: 700, background: darkMode ? "#303030" : "#FFFFFF", color: darkMode ? "#c8c8c8" : "#374151", padding: "4px 10px", borderRadius: "6px", border: `1px solid ${darkMode ? '#4a4a4a' : '#D1D5DB'}` }}>
                                 Cantidad: <strong>{item.cantidad}</strong>
                               </span>
-                              <span style={{ fontSize: "0.84rem", color: "#6B7280" }}>
+                              <span style={{ fontSize: "0.84rem", color: darkMode ? "#aaa" : "#6B7280" }}>
                                 Unitario: <strong>{formatCurrency(item.precio_libro)}</strong>
                               </span>
                             </div>
@@ -5225,14 +5258,15 @@ export default function SeccionCarrito({ userId }) {
 
                           {/* Precio y Acción Eliminar */}
                           <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "12px" }}>
-                            <span style={{ fontSize: "1.2rem", fontWeight: 900, color: "var(--vinotinto)", whiteSpace: "nowrap" }}>
+                            <span style={{ fontSize: "1.2rem", fontWeight: 900, color: darkMode ? "#ff4f83" : "var(--vinotinto)", whiteSpace: "nowrap" }}>
                               {formatCurrency(item.precio_libro * item.cantidad)}
                             </span>
                             <button
+                              className="cart-remove-button"
                               onClick={() => handleEliminarItem(item.id_libro)}
                               disabled={isDeleting}
                               style={{
-                                background: "#FFFFFF",
+                                background: darkMode ? "#252525" : "#FFFFFF",
                                 border: "1.5px solid #FCA5A5",
                                 color: "#DC2626",
                                 borderRadius: "8px",
@@ -5263,41 +5297,41 @@ export default function SeccionCarrito({ userId }) {
                 {/* 2. Tarjeta Beneficios y Garantías BookyHome (equilibrio visual y confianza) */}
                 <div className="pl-card" style={{
                   padding: "20px 24px",
-                  background: "#FFFFFF",
+                  background: darkMode ? "#1e1e1e" : "#FFFFFF",
                   borderRadius: "16px",
-                  border: "1px solid #E5E7EB",
+                  border: `1px solid ${darkMode ? '#454545' : '#E5E7EB'}`,
                   boxShadow: "0 4px 20px -2px rgba(0,0,0,0.03)",
                   marginTop: "auto"
                 }}>
-                  <h4 style={{ margin: "0 0 16px 0", fontSize: "0.98rem", fontWeight: 800, color: "#1F2937", display: "flex", alignItems: "center", gap: "8px" }}>
+                  <h4 style={{ margin: "0 0 16px 0", fontSize: "0.98rem", fontWeight: 800, color: darkMode ? "#ff4f83" : "#1F2937", display: "flex", alignItems: "center", gap: "8px" }}>
                     <span>🛡️</span> Beneficios y Garantía de tu Compra
                   </h4>
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))", gap: "14px" }}>
-                    <div style={{ display: "flex", gap: "12px", alignItems: "flex-start", background: "#F9FAFB", padding: "14px", borderRadius: "10px", border: "1px solid #F3F4F6" }}>
+                    <div style={{ display: "flex", gap: "12px", alignItems: "flex-start", background: darkMode ? "#252525" : "#F9FAFB", padding: "14px", borderRadius: "10px", border: `1px solid ${darkMode ? '#3a3a3a' : '#F3F4F6'}` }}>
                       <div style={{ width: 36, height: 36, borderRadius: "8px", background: "#EFF6FF", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.2rem", flexShrink: 0 }}>
                         🚚
                       </div>
                       <div>
-                        <p style={{ margin: "0 0 2px", fontWeight: 700, fontSize: "0.86rem", color: "#111827" }}>Envío o Retiro</p>
-                        <p style={{ margin: 0, fontSize: "0.78rem", color: "#6B7280", lineHeight: 1.35 }}>A domicilio por transportadora o gratis en el punto del vendedor.</p>
+                        <p style={{ margin: "0 0 2px", fontWeight: 700, fontSize: "0.86rem", color: darkMode ? "#ececec" : "#111827" }}>Envío o Retiro</p>
+                        <p style={{ margin: 0, fontSize: "0.78rem", color: darkMode ? "#aaa" : "#6B7280", lineHeight: 1.35 }}>A domicilio por transportadora o gratis en el punto del vendedor.</p>
                       </div>
                     </div>
-                    <div style={{ display: "flex", gap: "12px", alignItems: "flex-start", background: "#F9FAFB", padding: "14px", borderRadius: "10px", border: "1px solid #F3F4F6" }}>
+                    <div style={{ display: "flex", gap: "12px", alignItems: "flex-start", background: darkMode ? "#252525" : "#F9FAFB", padding: "14px", borderRadius: "10px", border: `1px solid ${darkMode ? '#3a3a3a' : '#F3F4F6'}` }}>
                       <div style={{ width: 36, height: 36, borderRadius: "8px", background: "#ECFDF5", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.2rem", flexShrink: 0 }}>
                         🔒
                       </div>
                       <div>
-                        <p style={{ margin: "0 0 2px", fontWeight: 700, fontSize: "0.86rem", color: "#111827" }}>Pago 100% Seguro</p>
-                        <p style={{ margin: 0, fontSize: "0.78rem", color: "#6B7280", lineHeight: 1.35 }}>Cifrado SSL de 256 bits con Tarjetas, PSE, Nequi o Efecty.</p>
+                        <p style={{ margin: "0 0 2px", fontWeight: 700, fontSize: "0.86rem", color: darkMode ? "#ececec" : "#111827" }}>Pago 100% Seguro</p>
+                        <p style={{ margin: 0, fontSize: "0.78rem", color: darkMode ? "#aaa" : "#6B7280", lineHeight: 1.35 }}>Cifrado SSL de 256 bits con Tarjetas, PSE, Nequi o Efecty.</p>
                       </div>
                     </div>
-                    <div style={{ display: "flex", gap: "12px", alignItems: "flex-start", background: "#F9FAFB", padding: "14px", borderRadius: "10px", border: "1px solid #F3F4F6" }}>
+                    <div style={{ display: "flex", gap: "12px", alignItems: "flex-start", background: darkMode ? "#252525" : "#F9FAFB", padding: "14px", borderRadius: "10px", border: `1px solid ${darkMode ? '#3a3a3a' : '#F3F4F6'}` }}>
                       <div style={{ width: 36, height: 36, borderRadius: "8px", background: "#FEF3C7", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.2rem", flexShrink: 0 }}>
                         ✨
                       </div>
                       <div>
-                        <p style={{ margin: "0 0 2px", fontWeight: 700, fontSize: "0.86rem", color: "#111827" }}>Compra Protegida</p>
-                        <p style={{ margin: 0, fontSize: "0.78rem", color: "#6B7280", lineHeight: 1.35 }}>Garantía directa de entrega y mediación ante inconvenientes.</p>
+                        <p style={{ margin: "0 0 2px", fontWeight: 700, fontSize: "0.86rem", color: darkMode ? "#ececec" : "#111827" }}>Compra Protegida</p>
+                        <p style={{ margin: 0, fontSize: "0.78rem", color: darkMode ? "#aaa" : "#6B7280", lineHeight: 1.35 }}>Garantía directa de entrega y mediación ante inconvenientes.</p>
                       </div>
                     </div>
                   </div>
@@ -5310,31 +5344,31 @@ export default function SeccionCarrito({ userId }) {
                 <div className="pl-card" style={{
                   padding: "26px",
                   borderRadius: "16px",
-                  background: "#FFFFFF",
-                  border: "1.5px solid #E5E7EB",
+                  background: darkMode ? "#1e1e1e" : "#FFFFFF",
+                  border: `1.5px solid ${darkMode ? '#454545' : '#E5E7EB'}`,
                   boxShadow: "0 4px 20px -2px rgba(0,0,0,0.06)",
                   height: "100%",
                   display: "flex",
                   flexDirection: "column",
                   boxSizing: "border-box"
                 }}>
-                  <h3 style={{ margin: "0 0 16px 0", fontSize: "1.2rem", fontWeight: 800, color: "#111827", borderBottom: "1.5px solid #F3F4F6", paddingBottom: "14px" }}>
+                  <h3 style={{ margin: "0 0 16px 0", fontSize: "1.2rem", fontWeight: 800, color: darkMode ? "#ff4f83" : "#111827", borderBottom: `1.5px solid ${darkMode ? '#3a3a3a' : '#F3F4F6'}`, paddingBottom: "14px" }}>
                     Resumen del Pedido
                   </h3>
 
                   <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginBottom: "20px", fontSize: "0.92rem" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", color: "#4B5563" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", color: darkMode ? "#aaa" : "#4B5563" }}>
                       <span>Subtotal ({carrito.length} {carrito.length === 1 ? 'libro' : 'libros'})</span>
-                      <span style={{ fontWeight: 700, color: "#111827" }}>{formatCurrency(totalCarrito)}</span>
+                      <span style={{ fontWeight: 700, color: darkMode ? "#ececec" : "#111827" }}>{formatCurrency(totalCarrito)}</span>
                     </div>
-                    <div style={{ display: "flex", justifyContent: "space-between", color: "#4B5563", alignItems: "center" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", color: darkMode ? "#aaa" : "#4B5563", alignItems: "center" }}>
                       <span>Envío</span>
                       {costoEnvioCarrito === 0 ? (
                         <span style={{ fontWeight: 700, color: "#059669", fontSize: "0.78rem", background: "#ECFDF5", padding: "2px 8px", borderRadius: "6px" }}>
                           🏪 Gratis (Retiro)
                         </span>
                       ) : (
-                        <span style={{ fontWeight: 700, color: "#6B7280", fontSize: "0.78rem", background: "#F3F4F6", padding: "2px 8px", borderRadius: "6px" }}>
+                        <span className="cart-summary-shipping-badge" style={{ fontWeight: 700, color: "#6B7280", fontSize: "0.78rem", background: "#F3F4F6", padding: "2px 8px", borderRadius: "6px" }}>
                           Se calcula al confirmar
                         </span>
                       )}
@@ -5347,7 +5381,7 @@ export default function SeccionCarrito({ userId }) {
                   </div>
 
                   {/* Total destacado */}
-                  <div style={{
+                  <div className="cart-summary-total-box" style={{
                     background: "linear-gradient(135deg, #FDF2F4 0%, #FCE7EB 100%)",
                     border: "1.5px solid #FBCFE8",
                     borderRadius: "12px",
@@ -5358,15 +5392,15 @@ export default function SeccionCarrito({ userId }) {
                     alignItems: "center"
                   }}>
                     <div>
-                      <span style={{ fontSize: "0.8rem", fontWeight: 700, color: "#9CA3AF", textTransform: "uppercase", letterSpacing: "0.04em", display: "block", marginBottom: "2px" }}>Total estimado</span>
+                      <span className="cart-summary-total-label" style={{ fontSize: "0.8rem", fontWeight: 700, color: "#9CA3AF", textTransform: "uppercase", letterSpacing: "0.04em", display: "block", marginBottom: "2px" }}>Total estimado</span>
                       <span style={{ fontSize: "0.72rem", color: "#059669", fontWeight: 600 }}>IVA $0 · Libros exentos (Art. 424 E.T.)</span>
                     </div>
-                    <span style={{ fontSize: "1.6rem", fontWeight: 900, color: "var(--vinotinto)", lineHeight: 1 }}>
+                    <span className="cart-summary-total-value" style={{ fontSize: "1.6rem", fontWeight: 900, color: "var(--vinotinto)", lineHeight: 1 }}>
                       {formatCurrency(totalCarrito)}
                     </span>
                   </div>
 
-                  <div style={{ background: "#F0FDF4", border: "1px solid #BBF7D0", borderRadius: "10px", padding: "12px 14px", marginBottom: "18px", fontSize: "0.82rem", color: "#166534", display: "flex", alignItems: "flex-start", gap: "8px" }}>
+                  <div className="cart-summary-info" style={{ background: "#F0FDF4", border: "1px solid #BBF7D0", borderRadius: "10px", padding: "12px 14px", marginBottom: "18px", fontSize: "0.82rem", color: "#166534", display: "flex", alignItems: "flex-start", gap: "8px" }}>
                     <span style={{ fontSize: "1.1rem", lineHeight: 1 }}>💡</span>
                     <span style={{ lineHeight: 1.4 }}>En el siguiente paso podrás elegir entre <strong>Envío a domicilio</strong> o <strong>Retiro en Tienda gratis</strong> y tu medio de pago.</span>
                   </div>
@@ -5408,6 +5442,7 @@ export default function SeccionCarrito({ userId }) {
                   </button>
 
                   <button
+                    className="cart-summary-continue-shopping"
                     onClick={onGoToCatalog}
                     style={{
                       width: "100%",
@@ -5431,7 +5466,7 @@ export default function SeccionCarrito({ userId }) {
                   </button>
 
                   {/* Métodos de pago aceptados — alineados al fondo */}
-                  <div style={{ marginTop: "auto", paddingTop: "18px", borderTop: "1px solid #F3F4F6" }}>
+                  <div className="cart-summary-payment-methods" style={{ marginTop: "auto", paddingTop: "18px", borderTop: "1px solid #F3F4F6" }}>
                     <p style={{ margin: "0 0 10px", fontSize: "0.72rem", color: "#9CA3AF", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", textAlign: "center" }}>
                       Métodos aceptados
                     </p>
@@ -5442,7 +5477,7 @@ export default function SeccionCarrito({ userId }) {
                         { label: "Nequi", icon: "📱" },
                         { label: "Efecty", icon: "🏪" },
                       ].map(m => (
-                        <span key={m.label} style={{
+                        <span key={m.label} className="cart-summary-payment-chip" style={{
                           display: "inline-flex", alignItems: "center", gap: "4px",
                           background: "#F9FAFB", border: "1px solid #E5E7EB",
                           borderRadius: "8px", padding: "4px 10px",
@@ -5592,6 +5627,7 @@ export default function SeccionCarrito({ userId }) {
           style={{ zIndex: 1100 }}
         >
           <div
+            className="pending-order-modal"
             style={{
               width: "min(560px, 94vw)",
               maxHeight: "88vh",
@@ -5605,7 +5641,7 @@ export default function SeccionCarrito({ userId }) {
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header del modal */}
-            <div style={{
+            <div className="pending-order-modal-header" style={{
               padding: "20px 24px 16px",
               borderBottom: "1.5px solid #F3F4F6",
               display: "flex", alignItems: "center", gap: "12px"
@@ -5621,7 +5657,7 @@ export default function SeccionCarrito({ userId }) {
                 </svg>
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <h3 style={{ margin: 0, fontSize: "1.05rem", fontWeight: 800, color: "#111827" }}>
+                <h3 className="pending-order-modal-title" style={{ margin: 0, fontSize: "1.05rem", fontWeight: 800, color: "#111827" }}>
                   Orden #{idVisible(ordenDetalleModal)}
                 </h3>
                 <p style={{ margin: 0, fontSize: "0.78rem", color: "#9CA3AF", fontWeight: 500 }}>
@@ -5636,6 +5672,7 @@ export default function SeccionCarrito({ userId }) {
                 {formatCurrency(ordenDetalleModal.total)}
               </span>
               <button
+                className="pending-order-modal-close"
                 onClick={() => setOrdenDetalleModal(null)}
                 style={{
                   background: "#F3F4F6", border: "none", borderRadius: "8px",
@@ -5654,6 +5691,7 @@ export default function SeccionCarrito({ userId }) {
             <div style={{ padding: "20px 24px", display: "flex", flexDirection: "column", gap: "14px" }}>
               {(ordenDetalleModal.items || []).map((item) => (
                 <div
+                  className="pending-order-modal-item"
                   key={item.id_libro}
                   style={{
                     display: "grid",
@@ -5672,7 +5710,7 @@ export default function SeccionCarrito({ userId }) {
                     autor={item.autor_libro}
                   />
                   <div style={{ minWidth: 0 }}>
-                    <p style={{ margin: "0 0 4px", fontWeight: 800, color: "#111827", fontSize: "0.95rem", overflowWrap: "anywhere", lineHeight: 1.3 }}>
+                    <p className="pending-order-modal-item-title" style={{ margin: "0 0 4px", fontWeight: 800, color: "#111827", fontSize: "0.95rem", overflowWrap: "anywhere", lineHeight: 1.3 }}>
                       {item.titulo}
                     </p>
                     <p style={{ margin: "0 0 8px", color: "#9CA3AF", fontSize: "0.82rem" }}>
@@ -5691,7 +5729,7 @@ export default function SeccionCarrito({ userId }) {
                     <span style={{ fontSize: "0.76rem", color: "#9CA3AF", display: "block", marginBottom: "2px" }}>
                       c/u {formatCurrency(item.precio_libro)}
                     </span>
-                    <span style={{ fontWeight: 900, color: "var(--vinotinto)", fontSize: "1.02rem", whiteSpace: "nowrap" }}>
+                    <span className="pending-order-modal-item-price" style={{ fontWeight: 900, color: "var(--vinotinto)", fontSize: "1.02rem", whiteSpace: "nowrap" }}>
                       {formatCurrency(item.precio_libro * item.cantidad)}
                     </span>
                   </div>
@@ -5700,7 +5738,7 @@ export default function SeccionCarrito({ userId }) {
             </div>
 
             {/* Footer del modal */}
-            <div style={{
+            <div className="pending-order-modal-footer" style={{
               padding: "16px 24px 22px",
               borderTop: "1px solid #F3F4F6",
               display: "flex", gap: "10px", justifyContent: "flex-end"
@@ -5717,6 +5755,7 @@ export default function SeccionCarrito({ userId }) {
                 Cerrar
               </button>
               <button
+                className="pending-order-modal-pay"
                 onClick={() => {
                   setOrderId(idVisible(ordenDetalleModal));
                   setOrder(ordenDetalleModal);

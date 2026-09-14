@@ -18,23 +18,6 @@ const IMAGENES_CATEGORIA = {
 };
 const IMG_DEFAULT = 'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=400&q=80';
 
-const categoriaClase = (categoria = '') => {
-  const texto = categoria.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-  if (texto.includes('terror')) return 'categoria--terror';
-  if (texto.includes('ciencia') || texto.includes('cientifica')) return 'categoria--ciencia';
-  if (texto.includes('romance')) return 'categoria--romance';
-  if (texto.includes('fantasia')) return 'categoria--fantasia';
-  if (texto.includes('historia')) return 'categoria--historia';
-  if (texto.includes('tecnologia')) return 'categoria--tecnologia';
-  if (texto.includes('juvenil')) return 'categoria--juvenil';
-  if (texto.includes('infantil')) return 'categoria--infantil';
-  if (texto.includes('aventura')) return 'categoria--aventura';
-  if (texto.includes('arte')) return 'categoria--arte';
-  if (texto.includes('biografia')) return 'categoria--biografia';
-  if (texto.includes('educacion')) return 'categoria--educacion';
-  return 'categoria--general';
-};
-
 const resolveImageUrl = (value) => {
   if (!value || typeof value !== "string") return null;
   const trimmed = value.trim();
@@ -66,8 +49,24 @@ const resolveLibroCandidate = (candidate) => {
 const VINOTINTO = '#7A1E3A';
 const VINOTINTO2 = '#9B2648';
 
-const categoriaColor = (categoria = '') => {
+const categoriaColor = (categoria = '', dark = false) => {
   const texto = categoria.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  if (dark) {
+    if (texto.includes('terror')) return { bg: '#1e1530', color: '#b48ce8' };
+    if (texto.includes('ciencia') || texto.includes('cientifica')) return { bg: '#0f2e1a', color: '#4ade80' };
+    if (texto.includes('romance')) return { bg: '#2e0d1e', color: '#f472b6' };
+    if (texto.includes('fantasia')) return { bg: '#0d1a3c', color: '#818cf8' };
+    if (texto.includes('historia')) return { bg: '#2a1a08', color: '#fbbf24' };
+    if (texto.includes('tecnologia')) return { bg: '#0a2a2e', color: '#22d3ee' };
+    if (texto.includes('juvenil')) return { bg: '#2a1e00', color: '#fcd34d' };
+    if (texto.includes('infantil')) return { bg: '#0a1e30', color: '#60a5fa' };
+    if (texto.includes('aventura')) return { bg: '#2a1500', color: '#fb923c' };
+    if (texto.includes('arte')) return { bg: '#1e0a24', color: '#d8b4fe' };
+    if (texto.includes('biografia')) return { bg: '#0d1f3c', color: '#7dd3fc' };
+    if (texto.includes('educacion')) return { bg: '#0f2e18', color: '#6ee7b7' };
+    if (texto.includes('ficcion')) return { bg: '#2e0d0d', color: '#f87171' };
+    return { bg: '#2a1a24', color: '#e05a7a' };
+  }
   if (texto.includes('terror')) return { bg: '#eee8f7', color: '#603a92' };
   if (texto.includes('ciencia') || texto.includes('cientifica')) return { bg: '#e4f5e9', color: '#1f7a45' };
   if (texto.includes('romance')) return { bg: '#fde8ef', color: '#b4235d' };
@@ -87,6 +86,15 @@ const categoriaColor = (categoria = '') => {
 const LibroCard = ({ libro, onVerDetalles }) => {
   const [enFavoritos, setEnFavoritos] = useState(false);
   const [wishlistLoading, setWishlistLoading] = useState(false);
+
+  // Dark mode
+  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('darkMode') === 'true');
+  useEffect(() => {
+    const handler = () => setDarkMode(localStorage.getItem('darkMode') === 'true');
+    window.addEventListener('darkModeChange', handler);
+    window.addEventListener('storage', handler);
+    return () => { window.removeEventListener('darkModeChange', handler); window.removeEventListener('storage', handler); };
+  }, []);
 
   // ── Lógica de imagen con fallback en cascada ──────────────────────
   // Fuente 1: URL almacenada en BD (Google Books por ISBN)
@@ -199,17 +207,17 @@ const LibroCard = ({ libro, onVerDetalles }) => {
       style={{
         display: 'flex',
         flexDirection: 'column',
-        background: 'white',
+        background: darkMode ? '#252525' : 'white',
         borderRadius: '10px',
         overflow: 'hidden',
-        border: '1px solid #e8e2d9',
+        border: `1px solid ${darkMode ? '#606060' : '#d8cec6'}`,
         cursor: 'pointer',
         transition: 'all 0.15s ease',
-        boxShadow: '0 2px 6px rgba(0,0,0,0.05)',
+        boxShadow: darkMode ? '0 4px 14px rgba(0,0,0,0.38)' : '0 3px 10px rgba(36,27,31,0.1)',
         height: '100%',
       }}
-      onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 8px 20px rgba(0,0,0,0.12)'; }}
-      onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 2px 6px rgba(0,0,0,0.05)'; }}
+      onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = darkMode ? '0 8px 20px rgba(0,0,0,0.4)' : '0 8px 20px rgba(0,0,0,0.12)'; }}
+      onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = darkMode ? '0 4px 14px rgba(0,0,0,0.38)' : '0 3px 10px rgba(36,27,31,0.1)'; }}
     >
       {/* Portada */}
       <div style={{ height: 180, background: `linear-gradient(135deg, ${VINOTINTO} 0%, ${VINOTINTO2} 100%)`, position: 'relative', overflow: 'hidden', flexShrink: 0 }}>
@@ -283,84 +291,53 @@ const LibroCard = ({ libro, onVerDetalles }) => {
 
       {/* Info */}
       <div style={{ padding: '12px', display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
-        {/* Categoría */}
         {categoria && (
           <span style={{
-            display: 'inline-block',
-            padding: '2px 8px',
-            borderRadius: '12px',
-            background: categoriaColor(categoria).bg,
-            color: categoriaColor(categoria).color,
-            fontSize: '0.65rem',
-            fontWeight: '700',
-            marginBottom: '6px',
-            alignSelf: 'flex-start',
-          }}>
-            {categoria}
-          </span>
+            display: 'inline-block', padding: '2px 8px', borderRadius: '12px',
+            background: categoriaColor(categoria, darkMode).bg,
+            color: categoriaColor(categoria, darkMode).color,
+            fontSize: '0.65rem', fontWeight: '700', marginBottom: '6px', alignSelf: 'flex-start',
+          }}>{categoria}</span>
         )}
 
         <p style={{
-          margin: '0 0 4px 0',
-          fontSize: '0.85rem',
-          fontWeight: 700,
-          color: '#1a1a1a',
-          display: '-webkit-box',
-          WebkitLineClamp: 2,
-          WebkitBoxOrient: 'vertical',
-          overflow: 'hidden',
-          lineHeight: 1.3,
-          minHeight: '2.6em',
+          margin: '0 0 4px 0', fontSize: '0.85rem', fontWeight: 700,
+          color: darkMode ? '#ececec' : '#1a1a1a',
+          display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
+          overflow: 'hidden', lineHeight: 1.3, minHeight: '2.6em',
         }}>{libro.titulo}</p>
-        
-        {/* Autor con icono */}
+
         <div style={{ display: 'flex', alignItems: 'center', gap: '4px', margin: '0 0 8px 0', overflow: 'hidden' }}>
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#9b8ea0" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke={darkMode ? '#888' : '#9b8ea0'} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
             <circle cx="12" cy="7" r="4"/>
           </svg>
-          <p style={{ margin: 0, fontSize: '0.74rem', color: '#777', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontStyle: 'italic' }}>
+          <p style={{ margin: 0, fontSize: '0.74rem', color: darkMode ? '#c8c8c8' : '#777', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontStyle: 'italic' }}>
             {author}
           </p>
         </div>
 
-        {/* Calificación y disponibilidad */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', flexWrap: 'wrap' }}>
           {calificacionTienda > 0 && (
-            <span style={{ display: 'flex', alignItems: 'center', gap: '2px', fontSize: '0.7rem', color: '#666' }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '2px', fontSize: '0.7rem', color: darkMode ? '#c8c8c8' : '#666' }}>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="#f59e0b" stroke="#f59e0b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
               </svg>
               {calificacionTienda.toFixed(1)}
-              {totalOpinionesTienda > 0 && <span style={{ fontSize: '0.65rem', color: '#999' }}>({totalOpinionesTienda})</span>}
+              {totalOpinionesTienda > 0 && <span style={{ fontSize: '0.65rem', color: darkMode ? '#999' : '#999' }}>({totalOpinionesTienda})</span>}
             </span>
           )}
-          
-          <span style={{ 
-            display: 'flex',
-            alignItems: 'center',
-            gap: '2px', 
-            fontSize: '0.65rem',
-            fontWeight: 600,
-            color: outOfStock ? '#dc2626' : '#16a34a',
-          }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: '2px', fontSize: '0.65rem', fontWeight: 600, color: outOfStock ? '#f87171' : (darkMode ? '#4ade80' : '#16a34a') }}>
             {outOfStock ? (
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10"></circle>
-                <line x1="15" y1="9" x2="9" y2="15"></line>
-                <line x1="9" y1="9" x2="15" y2="15"></line>
-              </svg>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
             ) : (
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                <polyline points="22 4 12 14.01 9 11.01"></polyline>
-              </svg>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
             )}
             {outOfStock ? 'Sin stock' : 'Disponible'}
           </span>
         </div>
 
-        <p style={{ margin: '0 0 4px 0', fontSize: '0.95rem', fontWeight: 800, color: VINOTINTO }}>
+        <p style={{ margin: '0 0 4px 0', fontSize: '0.95rem', fontWeight: 800, color: darkMode ? '#ff4f83' : VINOTINTO }}>
           ${price.toLocaleString('es-CO')}
         </p>
         
@@ -370,7 +347,7 @@ const LibroCard = ({ libro, onVerDetalles }) => {
               <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
               <polyline points="9 22 9 12 15 12 15 22"/>
             </svg>
-            <p style={{ margin: 0, fontSize: '0.7rem', color: '#7A1E3A', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 600, opacity: 0.8 }}>
+            <p style={{ margin: 0, fontSize: '0.7rem', color: darkMode ? '#e05a7a' : '#7A1E3A', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 600, opacity: 0.9 }}>
               {libro.nombre_tienda}
             </p>
           </div>

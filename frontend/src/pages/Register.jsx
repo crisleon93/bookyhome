@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 
 import { register, checkEmailVerification } from '../services/api'
 
@@ -36,7 +36,7 @@ function Register({ isModal = false, onSuccess }) {
 
 
 
-  const [error, setError] = useState('')
+  const [, setError] = useState('')
 
   const [exito, setExito] = useState(false)
 
@@ -49,10 +49,6 @@ function Register({ isModal = false, onSuccess }) {
   const [showTerminos, setShowTerminos] = useState(false)
 
   const [showPrivacidad, setShowPrivacidad] = useState(false)
-
-
-
-  const navigate = useNavigate()
 
 
 

@@ -124,6 +124,7 @@ export default function VendedorSidebar({ userName = 'Vendedor', profileImage = 
 
   const onLogout = handleLogout || (() => {
     localStorage.removeItem('token');
+    document.documentElement.classList.remove('dark');
     navigate('/');
   });
 

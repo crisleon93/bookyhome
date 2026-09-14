@@ -12,6 +12,43 @@ import SellerSidebar from "../components/VendedorSidebar";
 import Chat from './Chat';
 import QuejasVendedor from './QuejasVendedor';
 import Soporte from './Soporte';
+
+// Función para colores de categorías
+const categoriaColor = (categoria = '', dark = false) => {
+  const texto = categoria.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  if (dark) {
+    if (texto.includes('terror')) return { bg: '#1e1530', color: '#b48ce8' };
+    if (texto.includes('ciencia') || texto.includes('cientifica')) return { bg: '#0f2e1a', color: '#4ade80' };
+    if (texto.includes('romance')) return { bg: '#2e0d1e', color: '#f472b6' };
+    if (texto.includes('fantasia')) return { bg: '#0d1a3c', color: '#818cf8' };
+    if (texto.includes('historia')) return { bg: '#2a1a08', color: '#fbbf24' };
+    if (texto.includes('tecnologia')) return { bg: '#0a2a2e', color: '#22d3ee' };
+    if (texto.includes('juvenil')) return { bg: '#2a1e00', color: '#fcd34d' };
+    if (texto.includes('infantil')) return { bg: '#0a1e30', color: '#60a5fa' };
+    if (texto.includes('aventura')) return { bg: '#2a1500', color: '#fb923c' };
+    if (texto.includes('arte')) return { bg: '#1e0a24', color: '#d8b4fe' };
+    if (texto.includes('biografia')) return { bg: '#0d1f3c', color: '#7dd3fc' };
+    if (texto.includes('educacion')) return { bg: '#0f2e18', color: '#6ee7b7' };
+    if (texto.includes('ficcion')) return { bg: '#2e0d0d', color: '#f87171' };
+    if (texto.includes('comedia')) return { bg: '#2a2008', color: '#fcd34d' };
+    return { bg: '#2a1a24', color: '#e05a7a' };
+  }
+  if (texto.includes('terror')) return { bg: '#eee8f7', color: '#603a92' };
+  if (texto.includes('ciencia') || texto.includes('cientifica')) return { bg: '#e4f5e9', color: '#1f7a45' };
+  if (texto.includes('romance')) return { bg: '#fde8ef', color: '#b4235d' };
+  if (texto.includes('fantasia')) return { bg: '#e9edff', color: '#4156a6' };
+  if (texto.includes('historia')) return { bg: '#f8eddb', color: '#8c5a1d' };
+  if (texto.includes('tecnologia')) return { bg: '#e2f4f6', color: '#137783' };
+  if (texto.includes('juvenil')) return { bg: '#fff2d7', color: '#a25d00' };
+  if (texto.includes('infantil')) return { bg: '#e4f4ff', color: '#2775a7' };
+  if (texto.includes('aventura')) return { bg: '#fff0df', color: '#b85f11' };
+  if (texto.includes('arte')) return { bg: '#f4e6f6', color: '#86418f' };
+  if (texto.includes('biografia')) return { bg: '#e8eef8', color: '#365d96' };
+  if (texto.includes('educacion')) return { bg: '#e8f3e9', color: '#397542' };
+  if (texto.includes('ficcion')) return { bg: '#fce4ec', color: '#8b0000' };
+  if (texto.includes('comedia')) return { bg: '#fff8db', color: '#a25d00' };
+  return { bg: '#f4eef0', color: '#7a1e3a' };
+};
 import {
   IconBook,
   IconBookOpen,
@@ -154,16 +191,25 @@ const ESTADOS = [
   { value: "usado_regular",     label: "Usado — estado regular" },
 ];
 
-const BadgeEstado = ({ estado }) => {
+const BadgeEstado = ({ estado, darkMode = false }) => {
   const map = {
-    nuevo:             { label: "Nuevo",        color: "#d1fae5", text: "#065f46" },
-    usado_buen_estado: { label: "Buen estado",  color: "#dbeafe", text: "#1e40af" },
-    usado_regular:     { label: "Est. regular", color: "#fef3c7", text: "#92400e" },
+    nuevo:             { label: "Nuevo",        color: "#d1fae5", text: "#065f46", darkBg: "#0d2e23", darkText: "#a7f3d0", darkBorder: "#1f7a5d" },
+    usado_buen_estado: { label: "Buen estado",  color: "#dbeafe", text: "#1e40af", darkBg: "#0e1d39", darkText: "#bfdbfe", darkBorder: "#3b82f6" },
+    usado_regular:     { label: "Est. regular", color: "#fef3c7", text: "#92400e", darkBg: "#2a1a00", darkText: "#fbbf24", darkBorder: "#b45309" },
   };
-  const s = map[estado] || { label: estado, color: "#f3f4f6", text: "#374151" };
+  const s = map[estado] || { label: estado, color: "#f3f4f6", text: "#374151", darkBg: "#1f2937", darkText: "#e5e7eb", darkBorder: "#374151" };
   return (
-    <span style={{ background: s.color, color: s.text, padding: "3px 10px",
-      borderRadius: "20px", fontSize: "0.72rem", fontWeight: 700 }}>
+    <span style={{
+      background: darkMode ? s.darkBg : s.color,
+      color: darkMode ? s.darkText : s.text,
+      border: `1px solid ${darkMode ? s.darkBorder : 'transparent'}`,
+      padding: "3px 10px",
+      borderRadius: "20px",
+      fontSize: "0.72rem",
+      fontWeight: 700,
+      display: "inline-block",
+      whiteSpace: "nowrap"
+    }}>
       {s.label}
     </span>
   );
@@ -190,14 +236,14 @@ const getCategoriaBadgeStyle = (cat = '') => {
   return { bg: '#f4eef0', color: '#7A1E3A', border: '#fbcfe8' };
 };
 
-const BadgeCategoriaLibro = ({ categoria }) => {
+const BadgeCategoriaLibro = ({ categoria, darkMode = false }) => {
   if (!categoria) return <span style={{ color: '#a8a29e', fontSize: '0.8rem' }}>—</span>;
   const s = getCategoriaBadgeStyle(categoria);
   return (
     <span
       className="libro-category-pill"
       style={{
-        backgroundColor: s.bg,
+        backgroundColor: darkMode ? `${s.bg}cc` : s.bg,
         color: s.color,
         border: `1px solid ${s.border}`,
         padding: '3px 10px',
@@ -205,7 +251,8 @@ const BadgeCategoriaLibro = ({ categoria }) => {
         fontSize: '0.74rem',
         fontWeight: 700,
         display: 'inline-block',
-        whiteSpace: 'nowrap'
+        whiteSpace: 'nowrap',
+        boxShadow: darkMode ? 'inset 0 0 0 1px rgba(255,255,255,0.02)' : 'none'
       }}
     >
       {categoria}
@@ -217,31 +264,68 @@ const BadgeCategoriaLibro = ({ categoria }) => {
 // Componentes auxiliares
 // ========================
 function AlertaStock({ alertas, umbral }) {
+  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('darkMode') === 'true');
+  
+  useEffect(() => {
+    const handleDarkModeChange = () => setDarkMode(localStorage.getItem('darkMode') === 'true');
+    window.addEventListener('darkModeChange', handleDarkModeChange);
+    window.addEventListener('storage', handleDarkModeChange);
+    return () => { 
+      window.removeEventListener('darkModeChange', handleDarkModeChange); 
+      window.removeEventListener('storage', handleDarkModeChange); 
+    };
+  }, []);
+
   if (!alertas || alertas.length === 0) return null;
+  
+  const containerStyle = darkMode ? {
+    background: "#2a1a00",
+    border: "1.5px solid #4a3a00",
+    color: "#fbbf24"
+  } : {
+    background: "#fefce8",
+    border: "1.5px solid #fde68a",
+    color: "#92400e"
+  };
+
+  const iconColor = darkMode ? "#fbbf24" : "#92400e";
+  const titleColor = darkMode ? "#fbbf24" : "#92400e";
+  const subtitleColor = darkMode ? "#d4a517" : "#854d0e";
+
   return (
     <div style={{
-      background: "#fefce8", border: "1.5px solid #fde68a", borderRadius: "10px",
+      ...containerStyle,
+      borderRadius: "10px",
       padding: "14px 18px", marginBottom: "20px", display: "flex", alignItems: "flex-start", gap: "12px",
     }}>
-      <span style={{ display: 'flex', alignItems: 'center', flexShrink: 0, marginTop: '2px' }}><IconLock width={20} height={20} strokeWidth={2} style={{ color: '#92400e' }} /></span>
+      <span style={{ display: 'flex', alignItems: 'center', flexShrink: 0, marginTop: '2px' }}><IconLock width={20} height={20} strokeWidth={2} style={{ color: iconColor }} /></span>
       <div style={{ flex: 1 }}>
-        <p style={{ margin: "0 0 8px", fontWeight: 700, fontSize: "0.92rem", color: "#92400e" }}>
+        <p style={{ margin: "0 0 8px", fontWeight: 700, fontSize: "0.92rem", color: titleColor }}>
           {alertas.length === 1 ? "1 libro con stock bajo" : `${alertas.length} libros con stock bajo`}
         </p>
-        <p style={{ margin: "0 0 8px", fontSize: "0.78rem", color: "#854d0e" }}>
+        <p style={{ margin: "0 0 8px", fontSize: "0.78rem", color: subtitleColor }}>
           Alerta configurada para {umbral} unidad{Number(umbral) === 1 ? "" : "es"} o menos.
         </p>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
-          {alertas.map((libro, i) => (
-            <span key={i} style={{
-              background: libro.stock === 0 ? "#fef2f2" : "#fef9c3",
-              color: libro.stock === 0 ? "#b91c1c" : "#854d0e",
-              border: `1px solid ${libro.stock === 0 ? "#fca5a5" : "#fde047"}`,
-              borderRadius: "20px", padding: "3px 10px", fontSize: "0.78rem", fontWeight: 700,
-            }}>
-              {libro.titulo} — {libro.stock === 0 ? "Sin stock" : `${libro.stock} uds`}
-            </span>
-          ))}
+          {alertas.map((libro, i) => {
+            const isOutOfStock = libro.stock === 0;
+            const tagStyle = darkMode 
+              ? (isOutOfStock 
+                  ? { background: "#2a1a18", color: "#f87171", border: "1px solid #4a2a3a" }
+                  : { background: "#2a1a00", color: "#fbbf24", border: "1px solid #4a3a00" })
+              : (isOutOfStock
+                  ? { background: "#fef2f2", color: "#b91c1c", border: "1px solid #fca5a5" }
+                  : { background: "#fef9c3", color: "#854d0e", border: "1px solid #fde047" });
+            
+            return (
+              <span key={i} style={{
+                ...tagStyle,
+                borderRadius: "20px", padding: "3px 10px", fontSize: "0.78rem", fontWeight: 700,
+              }}>
+                {libro.titulo} — {isOutOfStock ? "Sin stock" : `${libro.stock} uds`}
+              </span>
+            );
+          })}
         </div>
       </div>
     </div>
@@ -1009,7 +1093,7 @@ const initials = (name = '') => name.trim().split(' ').map(w => w[0]).slice(0, 2
 const AVATAR_COLORS = ['#7A1E3A','#1e4d8a','#1e7a45','#7a5c00','#5a1e7a','#1e6a7a'];
 const avatarColor = (name = '') => AVATAR_COLORS[name.charCodeAt(0) % AVATAR_COLORS.length] || '#7A1E3A';
 
-function SeccionCalificacionesVendedor({ tiendaId }) {
+function SeccionCalificacionesVendedor({ tiendaId, darkMode = false }) {
   const [data, setData]       = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -1038,9 +1122,15 @@ function SeccionCalificacionesVendedor({ tiendaId }) {
 
   const barColor = (s) => s >= 4 ? '#22c55e' : s === 3 ? '#f59e0b' : '#ef4444';
   const topBorder = (s) => s >= 4 ? '#22c55e' : s === 3 ? '#f59e0b' : '#ef4444';
-  const promedioColor = promedio >= 4.5 ? '#065f46' : promedio >= 3.5 ? '#854d0e' : '#991b1b';
-  const promedioBg    = promedio >= 4.5 ? '#d1fae5' : promedio >= 3.5 ? '#fef9c3' : '#fee2e2';
-  const promedioBorder= promedio >= 4.5 ? '#6ee7b7' : promedio >= 3.5 ? '#fde047' : '#fca5a5';
+  const promedioColor = darkMode
+    ? '#f4b266'
+    : (promedio >= 4.5 ? '#065f46' : promedio >= 3.5 ? '#854d0e' : '#991b1b');
+  const promedioBg    = darkMode
+    ? '#1a1a1a'
+    : (promedio >= 4.5 ? '#d1fae5' : promedio >= 3.5 ? '#fef9c3' : '#fee2e2');
+  const promedioBorder= darkMode
+    ? '#3a3a3a'
+    : (promedio >= 4.5 ? '#6ee7b7' : promedio >= 3.5 ? '#fde047' : '#fca5a5');
 
   const estesMes = lista.filter(c => {
     const d = new Date(c.fecha_calificacion), n = new Date();
@@ -1050,40 +1140,40 @@ function SeccionCalificacionesVendedor({ tiendaId }) {
   return (
     <>
       {/* Header igual al de todas las secciones */}
-      <div className="welcome-card">
-        <h1 style={{ fontSize: "1.55rem", marginBottom: "4px", display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <IconStar width={28} height={28} strokeWidth={2} style={{ color: '#7A1E3A' }} />
+      <div className="welcome-card" style={{ background: darkMode ? '#1f1f1f' : undefined, borderColor: darkMode ? '#3a3a3a' : undefined }}>
+        <h1 style={{ fontSize: "1.55rem", marginBottom: "4px", display: 'flex', alignItems: 'center', gap: '10px', color: darkMode ? '#f3f4f6' : undefined }}>
+          <IconStar width={28} height={28} strokeWidth={2} style={{ color: darkMode ? '#ff9f43' : '#7A1E3A' }} />
           Calificaciones de tu tienda
         </h1>
-        <p style={{ margin: 0 }}>Lo que tus clientes opinan sobre tu servicio</p>
+        <p style={{ margin: 0, color: darkMode ? '#c8c8c8' : undefined }}>Lo que tus clientes opinan sobre tu servicio</p>
       </div>
 
       {loading ? (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '260px', flexDirection: 'column', gap: '12px' }}>
-          <div style={{ width: '36px', height: '36px', border: '3px solid #f0e8ea', borderTopColor: '#7A1E3A', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-          <span style={{ color: '#aaa', fontSize: '0.9rem' }}>Cargando calificaciones...</span>
+          <div style={{ width: '36px', height: '36px', border: `3px solid ${darkMode ? '#2a2a2a' : '#f0e8ea'}`, borderTopColor: darkMode ? '#ff9f43' : '#7A1E3A', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+          <span style={{ color: darkMode ? '#b8b8b8' : '#aaa', fontSize: '0.9rem' }}>Cargando calificaciones...</span>
         </div>
       ) : total === 0 ? (
         /* ── Estado vacío ── */
         <div style={{ padding: '20px' }}>
-          <div style={{ background: 'white', borderRadius: '16px', padding: '70px 20px', textAlign: 'center', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
+          <div style={{ background: darkMode ? '#1f1f1f' : 'white', border: darkMode ? '1px solid #3a3a3a' : 'none', borderRadius: '16px', padding: '70px 20px', textAlign: 'center', boxShadow: darkMode ? 'none' : '0 2px 12px rgba(0,0,0,0.06)' }}>
             <div style={{ fontSize: '4rem', marginBottom: '16px' }}>⭐</div>
-            <h3 style={{ margin: '0 0 8px 0', color: '#333', fontWeight: '700', fontSize: '1.2rem' }}>Aún no tienes calificaciones</h3>
-            <p style={{ margin: '0 auto', color: '#999', fontSize: '0.95rem', maxWidth: '340px' }}>
+            <h3 style={{ margin: '0 0 8px 0', color: darkMode ? '#f3f4f6' : '#333', fontWeight: '700', fontSize: '1.2rem' }}>Aún no tienes calificaciones</h3>
+            <p style={{ margin: '0 auto', color: darkMode ? '#b8b8b8' : '#999', fontSize: '0.95rem', maxWidth: '340px' }}>
               Cuando un cliente reciba su pedido y te evalúe, sus opiniones aparecerán aquí.
             </p>
           </div>
         </div>
       ) : (
-        <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        <div className="calificaciones-panel" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
 
           {/* ── Fila superior: promedio destacado + 3 métricas ── */}
           <div style={{ display: 'grid', gridTemplateColumns: '260px 1fr', gap: '16px', alignItems: 'stretch' }}>
 
             {/* Promedio grande */}
-            <div style={{
-              background: promedioBg,
-              border: `2px solid ${promedioBorder}`,
+            <div className="calificaciones-promedio-card" style={{
+              background: darkMode ? '#1f1f1f' : promedioBg,
+              border: `2px solid ${darkMode ? '#f4b266' : promedioBorder}`,
               borderRadius: '16px',
               padding: '28px 20px',
               display: 'flex',
@@ -1091,7 +1181,7 @@ function SeccionCalificacionesVendedor({ tiendaId }) {
               alignItems: 'center',
               justifyContent: 'center',
               gap: '8px',
-              boxShadow: '0 4px 16px rgba(0,0,0,0.07)'
+              boxShadow: darkMode ? `0 0 0 1px rgba(244, 178, 102, 0.18)` : '0 4px 16px rgba(0,0,0,0.07)'
             }}>
               <span style={{ fontSize: '0.78rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.06em', color: promedioColor, opacity: 0.75 }}>
                 Promedio general
@@ -1119,10 +1209,10 @@ function SeccionCalificacionesVendedor({ tiendaId }) {
                 { 
                   label: '5 estrellas',        
                   value: dist[5]??0, 
-                  icon: <IconStar width={32} height={32} strokeWidth={1.5} style={{ color: '#065f46' }} />, 
+                  icon: <IconStar width={32} height={32} strokeWidth={1.5} style={{ color: '#34d399' }} />, 
                   bg: '#d1fae5', 
-                  color: '#065f46', 
-                  border: '#6ee7b7' 
+                  color: '#34d399', 
+                  border: '#86efac' 
                 },
                 { 
                   label: 'Este mes',            
@@ -1133,9 +1223,10 @@ function SeccionCalificacionesVendedor({ tiendaId }) {
                   border: '#d8b4fe' 
                 },
               ].map(m => (
-                <div key={m.label} className="metric-card" style={{
-                  background: m.bg,
-                  border: `1px solid ${m.border}`,
+                <div key={m.label} className="calificaciones-metric-card metric-card" style={{
+                  background: darkMode ? '#1b1b1b' : m.bg,
+                  border: darkMode ? `1px solid ${m.color}55` : `1px solid ${m.border}`,
+                  boxShadow: darkMode ? `inset 0 0 0 1px ${m.color}33, 0 0 0 1px ${m.color}10` : '0 2px 8px rgba(0,0,0,0.05)',
                   borderRadius: '14px',
                   padding: '20px 16px',
                   display: 'flex',
@@ -1144,13 +1235,12 @@ function SeccionCalificacionesVendedor({ tiendaId }) {
                   justifyContent: 'center',
                   gap: '8px',
                   textAlign: 'center',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
                 }}>
                   <div className="metric-icon">
                     {m.icon}
                   </div>
-                  <div style={{ fontSize: '2rem', fontWeight: '900', color: m.color, lineHeight: 1 }}>{m.value}</div>
-                  <div style={{ fontSize: '0.78rem', color: m.color, opacity: 0.8, fontWeight: '600' }}>{m.label}</div>
+                  <div style={{ fontSize: '2rem', fontWeight: '900', color: darkMode ? '#f3f4f6' : m.color, lineHeight: 1 }}>{m.value}</div>
+                  <div style={{ fontSize: '0.78rem', color: darkMode ? '#d1d5db' : m.color, opacity: darkMode ? 1 : 0.8, fontWeight: '600' }}>{m.label}</div>
                 </div>
               ))}
             </div>
@@ -1160,8 +1250,8 @@ function SeccionCalificacionesVendedor({ tiendaId }) {
           <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: '16px', alignItems: 'start' }}>
 
             {/* Distribución */}
-            <div style={{ background: 'white', borderRadius: '14px', padding: '22px', boxShadow: '0 2px 10px rgba(0,0,0,0.06)' }}>
-              <h3 style={{ margin: '0 0 18px 0', fontSize: '0.85rem', fontWeight: '700', color: '#888', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+            <div className="calificaciones-distribution" style={{ background: darkMode ? '#1f1f1f' : 'white', border: darkMode ? '1px solid #3a3a3a' : 'none', borderRadius: '14px', padding: '22px', boxShadow: darkMode ? 'none' : '0 2px 10px rgba(0,0,0,0.06)' }}>
+              <h3 style={{ margin: '0 0 18px 0', fontSize: '0.85rem', fontWeight: '700', color: darkMode ? '#d1d5db' : '#888', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                 Distribución
               </h3>
               {[5,4,3,2,1].map(stars => {
@@ -1169,12 +1259,12 @@ function SeccionCalificacionesVendedor({ tiendaId }) {
                 const pct   = total > 0 ? Math.round((count / total) * 100) : 0;
                 return (
                   <div key={stars} style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
-                    <span style={{ minWidth: '10px', fontSize: '0.85rem', fontWeight: '700', color: '#555' }}>{stars}</span>
+                    <span style={{ minWidth: '10px', fontSize: '0.85rem', fontWeight: '700', color: darkMode ? '#e5e7eb' : '#555' }}>{stars}</span>
                     <StarIcon filled size={13} />
-                    <div style={{ flex: 1, background: '#f3f4f6', borderRadius: '99px', height: '10px', overflow: 'hidden' }}>
+                    <div style={{ flex: 1, background: darkMode ? '#2a2a2a' : '#f3f4f6', borderRadius: '99px', height: '10px', overflow: 'hidden' }}>
                       <div style={{ background: barColor(stars), height: '100%', width: `${pct}%`, borderRadius: '99px', transition: 'width 0.6s ease' }} />
                     </div>
-                    <span style={{ minWidth: '52px', fontSize: '0.8rem', color: '#888', textAlign: 'right' }}>
+                    <span style={{ minWidth: '52px', fontSize: '0.8rem', color: darkMode ? '#d1d5db' : '#888', textAlign: 'right' }}>
                       {count} <span style={{ color: '#ccc' }}>({pct}%)</span>
                     </span>
                   </div>
@@ -1185,21 +1275,22 @@ function SeccionCalificacionesVendedor({ tiendaId }) {
             {/* Lista de opiniones */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h3 style={{ margin: '0 0 4px 0', fontSize: '0.85rem', fontWeight: '700', color: '#888', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                <h3 style={{ margin: '0 0 4px 0', fontSize: '0.85rem', fontWeight: '700', color: darkMode ? '#d1d5db' : '#888', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                   Últimas opiniones
                 </h3>
                 {lista.length > 10 && (
-                  <span style={{ fontSize: '0.75rem', color: '#999', fontStyle: 'italic' }}>
+                  <span style={{ fontSize: '0.75rem', color: darkMode ? '#b8b8b8' : '#999', fontStyle: 'italic' }}>
                     Mostrando 10 de {lista.length}
                   </span>
                 )}
               </div>
               {lista.slice(0, 10).map(cal => (
-                <div key={cal.id_calificacion} style={{
-                  background: 'white',
+                <div key={cal.id_calificacion} className="calificaciones-review-card" style={{
+                  background: darkMode ? '#1f1f1f' : 'white',
                   borderRadius: '14px',
                   padding: '14px 18px',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+                  boxShadow: darkMode ? 'none' : '0 2px 8px rgba(0,0,0,0.05)',
+                  border: darkMode ? '1px solid #3a3a3a' : 'none',
                   borderTop: `3px solid ${topBorder(cal.calificacion)}`
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: cal.comentario ? '10px' : 0 }}>
@@ -1213,8 +1304,8 @@ function SeccionCalificacionesVendedor({ tiendaId }) {
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <strong style={{ color: '#222', fontSize: '0.9rem' }}>{cal.nombre_usuario}</strong>
-                        <span style={{ fontSize: '0.78rem', color: '#bbb', flexShrink: 0, marginLeft: '8px' }}>
+                        <strong style={{ color: darkMode ? '#f3f4f6' : '#222', fontSize: '0.9rem' }}>{cal.nombre_usuario}</strong>
+                        <span style={{ fontSize: '0.78rem', color: darkMode ? '#b8b8b8' : '#bbb', flexShrink: 0, marginLeft: '8px' }}>
                           {new Date(cal.fecha_calificacion).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' })}
                         </span>
                       </div>
@@ -1223,9 +1314,9 @@ function SeccionCalificacionesVendedor({ tiendaId }) {
                   </div>
                   {cal.comentario && (
                     <p style={{
-                      margin: 0, color: '#666', fontSize: '0.88rem', lineHeight: '1.55',
+                      margin: 0, color: darkMode ? '#d1d5db' : '#666', fontSize: '0.88rem', lineHeight: '1.55',
                       paddingLeft: '48px', fontStyle: 'italic',
-                      borderTop: '1px solid #f3f4f6', paddingTop: '10px'
+                      borderTop: darkMode ? '1px solid #3a3a3a' : '1px solid #f3f4f6', paddingTop: '10px'
                     }}>
                       "{cal.comentario}"
                     </p>
@@ -1235,18 +1326,19 @@ function SeccionCalificacionesVendedor({ tiendaId }) {
               
               {/* Estado vacío cuando no hay opiniones */}
               {lista.length === 0 && (
-                <div style={{
-                  background: 'white',
+                <div className="calificaciones-empty-state" style={{
+                  background: darkMode ? '#1f1f1f' : 'white',
+                  border: darkMode ? '1px solid #3a3a3a' : 'none',
                   borderRadius: '14px',
                   padding: '40px 20px',
                   textAlign: 'center',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+                  boxShadow: darkMode ? 'none' : '0 2px 8px rgba(0,0,0,0.05)'
                 }}>
                   <div style={{ fontSize: '3rem', opacity: 0.3, marginBottom: '12px' }}>💭</div>
-                  <p style={{ margin: '0 0 8px 0', fontWeight: '600', color: '#666' }}>
+                  <p style={{ margin: '0 0 8px 0', fontWeight: '600', color: darkMode ? '#f3f4f6' : '#666' }}>
                     Aún no hay opiniones
                   </p>
-                  <p style={{ margin: 0, fontSize: '0.85rem', color: '#888' }}>
+                  <p style={{ margin: 0, fontSize: '0.85rem', color: darkMode ? '#b8b8b8' : '#888' }}>
                     Las opiniones de tus clientes aparecerán aquí cuando recibas calificaciones
                   </p>
                 </div>
@@ -1255,12 +1347,12 @@ function SeccionCalificacionesVendedor({ tiendaId }) {
               {/* Nota sobre notificaciones */}
               {lista.length > 10 && (
                 <div style={{
-                  background: '#f8fafc',
-                  border: '1px solid #e2e8f0',
+                  background: darkMode ? '#171717' : '#f8fafc',
+                  border: darkMode ? '1px solid #3a3a3a' : '1px solid #e2e8f0',
                   borderRadius: '12px',
                   padding: '12px 16px',
                   fontSize: '0.82rem',
-                  color: '#64748b',
+                  color: darkMode ? '#d1d5db' : '#64748b',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '8px'
@@ -1286,6 +1378,7 @@ export default function MiTienda() {
   const navigate = useNavigate();
   const handleLogout = () => {
     localStorage.removeItem("token");
+    document.documentElement.classList.remove('dark');
     window.dispatchEvent(new CustomEvent('auth-change', { detail: { authenticated: false } }));
     navigate("/");
   };
@@ -1327,6 +1420,7 @@ export default function MiTienda() {
   const [alertasStock,  setAlertasStock]  = useState([]);
   const [stockUmbral,   setStockUmbral]   = useState(() => Number(localStorage.getItem('stockUmbral')) || 3);
   const [tiendaInfo,    setTiendaInfo]    = useState(null);
+  const [darkMode,      setDarkMode]      = useState(() => localStorage.getItem('darkMode') === 'true');
   const [configForm,    setConfigForm]    = useState({
     horario_atencion: "",
     politica_devoluciones: "",
@@ -1615,6 +1709,16 @@ export default function MiTienda() {
     }
   }, [activeSide]);
 
+  useEffect(() => {
+    const handleDarkModeChange = () => setDarkMode(localStorage.getItem('darkMode') === 'true');
+    window.addEventListener('darkModeChange', handleDarkModeChange);
+    window.addEventListener('storage', handleDarkModeChange);
+    return () => {
+      window.removeEventListener('darkModeChange', handleDarkModeChange);
+      window.removeEventListener('storage', handleDarkModeChange);
+    };
+  }, []);
+
   const cargarNotificaciones = useCallback(async (silent = false) => {
     try {
       if (!silent) setNotificacionesLoading(true);
@@ -1752,8 +1856,21 @@ export default function MiTienda() {
         const data = res.data || {};
         const puntos = Number(data.total_gastado || 0);
         const nivel = data.nivel_fidelizacion || 'Bronce';
-        const umbrales = { Bronce: 50000, Plata: 150000, Oro: 300000 };
-        const niveles = ['Bronce', 'Plata', 'Oro', 'Platino'];
+        const umbrales = {
+          Bronce: 0,
+          Plata: 50000,
+          Oro: 150000,
+          Zafiro: 300000,
+          Rubi: 500000,
+          Esmeralda: 800000,
+          Amatista: 1200000,
+          Perla: 1700000,
+          Obsidiana: 2300000,
+          Diamante: 3200000,
+          Onix: 4500000,
+          Platino: 6500000,
+        };
+        const niveles = ['Bronce', 'Plata', 'Oro', 'Zafiro', 'Rubi', 'Esmeralda', 'Amatista', 'Perla', 'Obsidiana', 'Diamante', 'Onix', 'Platino'];
         const idx = niveles.indexOf(nivel);
         const siguiente = idx >= 0 && idx < niveles.length - 1 ? niveles[idx + 1] : null;
         setEstadisticas({
@@ -1764,7 +1881,7 @@ export default function MiTienda() {
         setCategoriasFav(data.categorias_favoritas || []);
         setNivelFidelizacion({
           nivel, puntos, siguiente_nivel: siguiente,
-          puntos_para_siguiente: siguiente ? Math.max((umbrales[nivel] || 0) - puntos, 0) : 0,
+          puntos_para_siguiente: siguiente ? Math.max((umbrales[siguiente] || 0) - puntos, 0) : 0,
         });
       })
       .catch(() => {
@@ -2421,16 +2538,25 @@ export default function MiTienda() {
               return (
                 <>
                   {/* Barra de navegación de fechas (Anterior / Siguiente) */}
-                  <div className="chart-period-navigator">
+                  <div className="chart-period-navigator" style={{
+                    background: darkMode ? '#2a2a2a' : '#f8f6f4',
+                    border: darkMode ? '1px solid #3a3a3a' : '1px solid #e8e4e0'
+                  }}>
                     <button 
                       type="button" 
                       className="btn-nav-period"
                       onClick={() => { setChartOffset(prev => prev - 1); setHoveredDay(null); }}
                       title={`Ver ${chartTimeframe === 'semana' ? 'semana anterior' : chartTimeframe === 'mes' ? 'mes anterior' : 'año anterior'}`}
+                      style={{
+                        color: darkMode ? '#c8c8c8' : '#2a2a2a',
+                        border: darkMode ? '1px solid #3a3a3a' : '1px solid #d1cec9'
+                      }}
                     >
                       ‹ Anterior
                     </button>
-                    <span className="current-period-label">{periodoTitulo}</span>
+                    <span className="current-period-label" style={{
+                      color: darkMode ? '#ececec' : '#2a2a2a'
+                    }}>{periodoTitulo}</span>
                     <div className="period-nav-right">
                       {chartOffset !== 0 && (
                         <button 
@@ -2438,6 +2564,10 @@ export default function MiTienda() {
                           className="btn-reset-period"
                           onClick={() => { setChartOffset(0); setHoveredDay(null); }}
                           title="Volver al período actual"
+                          style={{
+                            color: darkMode ? '#e05a7a' : '#7A1E3A',
+                            border: darkMode ? '1px solid #3a3a3a' : '1px solid #d1cec9'
+                          }}
                         >
                           Actual
                         </button>
@@ -2448,6 +2578,10 @@ export default function MiTienda() {
                         disabled={chartOffset >= 0}
                         onClick={() => { setChartOffset(prev => Math.min(0, prev + 1)); setHoveredDay(null); }}
                         title={`Ver ${chartTimeframe === 'semana' ? 'semana siguiente' : chartTimeframe === 'mes' ? 'mes siguiente' : 'año siguiente'}`}
+                        style={{
+                          color: darkMode ? '#c8c8c8' : '#2a2a2a',
+                          border: darkMode ? '1px solid #3a3a3a' : '1px solid #d1cec9'
+                        }}
                       >
                         Siguiente ›
                       </button>
@@ -2477,14 +2611,27 @@ export default function MiTienda() {
                   <div className="seller-modern-chart-wrapper">
                     <div className="chart-interactive-container">
                       {/* Tooltip flotante informativo */}
-                      <div className="chart-floating-indicator">
-                        <div className="indicator-day-badge">
-                          <span className="dot-indicator"></span>
-                          <span>{activeItem?.fechaTexto || "—"}</span>
+                      <div className="chart-floating-indicator" style={{
+                        background: darkMode ? '#1e1e1e' : '#fff',
+                        border: darkMode ? '1px solid #3a3a3a' : '1px solid #ede8e3',
+                        boxShadow: darkMode ? '0 4px 16px rgba(0,0,0,0.3)' : '0 4px 16px rgba(0,0,0,0.08)'
+                      }}>
+                        <div className="indicator-day-badge" style={{
+                          background: darkMode ? '#2a1a24' : '#fdf2f4',
+                          color: darkMode ? '#e05a7a' : '#7A1E3A'
+                        }}>
+                          <span className="dot-indicator" style={{
+                            background: darkMode ? '#e05a7a' : '#7A1E3A'
+                          }}></span>
+                          <span style={{ color: darkMode ? '#ececec' : '#2a2a2a' }}>{activeItem?.fechaTexto || "—"}</span>
                         </div>
                         <div className="indicator-data-group">
-                          <strong className="indicator-value">{formatPrecio(activeItem?.total || 0)}</strong>
-                          <span className="indicator-orders">
+                          <strong className="indicator-value" style={{
+                            color: darkMode ? '#ececec' : '#2a2a2a'
+                          }}>{formatPrecio(activeItem?.total || 0)}</strong>
+                          <span className="indicator-orders" style={{
+                            color: darkMode ? '#b8b8b8' : '#666'
+                          }}>
                             {activeItem?.ordenes > 0 
                               ? `${activeItem.ordenes} orden(es)` 
                               : activeItem?.esHoy 
@@ -2520,7 +2667,7 @@ export default function MiTienda() {
                                     y1={yPos}
                                     x2={svgW - padRight}
                                     y2={yPos}
-                                    stroke="#ede8e3"
+                                    stroke={darkMode ? "#3a3a3a" : "#ede8e3"}
                                     strokeDasharray={r === 0 ? "none" : "4 4"}
                                     strokeWidth={r === 0 ? "1.2" : "1"}
                                   />
@@ -2529,7 +2676,7 @@ export default function MiTienda() {
                                     x={padLeft - 48}
                                     y={yPos + 4}
                                     fontSize="11"
-                                    fill="#a8a29e"
+                                    fill={darkMode ? "#888" : "#a8a29e"}
                                     fontWeight="600"
                                     fontFamily="Montserrat, sans-serif"
                                   >
@@ -2541,7 +2688,7 @@ export default function MiTienda() {
                                     y={yPos + 4}
                                     textAnchor="end"
                                     fontSize="11"
-                                    fill="#78716c"
+                                    fill={darkMode ? "#888" : "#78716c"}
                                     fontWeight="700"
                                     fontFamily="Montserrat, sans-serif"
                                   >
@@ -2552,7 +2699,7 @@ export default function MiTienda() {
                                     x={padLeft - 17}
                                     y={yPos + 4}
                                     fontSize="11"
-                                    fill="#a8a29e"
+                                    fill={darkMode ? "#888" : "#a8a29e"}
                                     fontWeight="600"
                                     fontFamily="Montserrat, sans-serif"
                                   >
@@ -2569,7 +2716,7 @@ export default function MiTienda() {
                             <path
                               d={linePath}
                               fill="none"
-                              stroke="#7A1E3A"
+                              stroke={darkMode ? "#e05a7a" : "#7A1E3A"}
                               strokeWidth="3.2"
                               strokeLinecap="round"
                               strokeLinejoin="round"
@@ -2594,7 +2741,7 @@ export default function MiTienda() {
                                       y1={padTop}
                                       x2={p.x}
                                       y2={padTop + plotH}
-                                      stroke="#7A1E3A"
+                                      stroke={darkMode ? "#e05a7a" : "#7A1E3A"}
                                       strokeOpacity="0.25"
                                       strokeDasharray="3 3"
                                       strokeWidth="1.2"
@@ -2608,7 +2755,7 @@ export default function MiTienda() {
                                       cx={p.x}
                                       cy={p.y}
                                       r={isHovered ? "9" : "7"}
-                                      fill={p.esHoy ? "#D4AF37" : "#7A1E3A"}
+                                      fill={p.esHoy ? "#D4AF37" : (darkMode ? "#e05a7a" : "#7A1E3A")}
                                       opacity="0.28"
                                     />
                                   )}
@@ -2617,8 +2764,8 @@ export default function MiTienda() {
                                     cx={p.x}
                                     cy={p.y}
                                     r={isHovered ? "5.5" : nPoints > 15 ? "3" : "4.2"}
-                                    fill={p.esHoy ? "#D4AF37" : "#7A1E3A"}
-                                    stroke="#ffffff"
+                                    fill={p.esHoy ? "#D4AF37" : (darkMode ? "#e05a7a" : "#7A1E3A")}
+                                    stroke={darkMode ? "#1e1e1e" : "#ffffff"}
                                     strokeWidth={nPoints > 15 ? "1.5" : "2"}
                                     style={{ transition: "all 0.15s ease" }}
                                   />
@@ -2644,7 +2791,7 @@ export default function MiTienda() {
                                     y1={padTop + plotH}
                                     x2={p.x}
                                     y2={padTop + plotH + 4}
-                                    stroke={isHovered ? "#7A1E3A" : "#e5dfd7"}
+                                    stroke={isHovered ? (darkMode ? "#e05a7a" : "#7A1E3A") : (darkMode ? "#3a3a3a" : "#e5dfd7")}
                                     strokeWidth="1"
                                   />
 
@@ -2655,7 +2802,7 @@ export default function MiTienda() {
                                     textAnchor="middle"
                                     fontSize={shouldShowLabel ? (nPoints > 15 ? "9.5" : "11") : "8"}
                                     fontWeight={p.esHoy || isHovered ? "800" : "600"}
-                                    fill={p.esHoy ? "#7A1E3A" : isHovered ? "#7A1E3A" : shouldShowLabel ? "#8c857b" : "#d1cbbf"}
+                                    fill={p.esHoy ? (darkMode ? "#e05a7a" : "#7A1E3A") : isHovered ? (darkMode ? "#e05a7a" : "#7A1E3A") : shouldShowLabel ? (darkMode ? "#888" : "#8c857b") : (darkMode ? "#555" : "#d1cbbf")}
                                     fontFamily="Montserrat, sans-serif"
                                   >
                                     {shouldShowLabel ? p.label : "·"}
@@ -2711,9 +2858,13 @@ export default function MiTienda() {
                       )}
                     </div>
 
-                    <div className="seller-chart-footer-info">
+                    <div className="seller-chart-footer-info" style={{
+                      color: darkMode ? '#888' : '#666'
+                    }}>
                       <span>* Mostrando órdenes de tu tienda en {periodoTitulo}</span>
-                      <button className="btn-inline-link" onClick={() => cambiarSeccion("Ventas")}>
+                      <button className="btn-inline-link" onClick={() => cambiarSeccion("Ventas")} style={{
+                        color: darkMode ? '#e05a7a' : '#7A1E3A'
+                      }}>
                         Ver historial detallado →
                       </button>
                     </div>
@@ -2725,17 +2876,25 @@ export default function MiTienda() {
 
           {/* Card 2: Top Libros Más Vendidos */}
           <div className="seller-card-box">
-            <div className="seller-card-box-header">
+            <div className="seller-card-box-header" style={{
+              borderBottom: darkMode ? '1px solid #3a3a3a' : '1px solid #f0eae2'
+            }}>
               <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                 <div className="header-icon-circle">
                   <IconStar width={20} height={20} strokeWidth={2} style={{ color: "#D4AF37" }} />
                 </div>
                 <div>
-                  <h3 className="seller-card-box-title">Libros Más Vendidos</h3>
-                  <p className="seller-card-box-desc">Los títulos con mayor demanda en tu catálogo</p>
+                  <h3 className="seller-card-box-title" style={{
+                    color: darkMode ? '#ececec' : '#1a1a1a'
+                  }}>Libros Más Vendidos</h3>
+                  <p className="seller-card-box-desc" style={{
+                    color: darkMode ? '#b8b8b8' : '#6b7280'
+                  }}>Los títulos con mayor demanda en tu catálogo</p>
                 </div>
               </div>
-              <button className="btn-ver-todos-link" onClick={() => cambiarSeccion("Mis Libros")}>
+              <button className="btn-ver-todos-link" onClick={() => cambiarSeccion("Mis Libros")} style={{
+                color: darkMode ? '#e05a7a' : '#7A1E3A'
+              }}>
                 Ver catálogo completo →
               </button>
             </div>
@@ -2771,7 +2930,7 @@ export default function MiTienda() {
                         <h4 className="top-book-title">{libro.titulo}</h4>
                         <p className="top-book-author">{libro.autor_libro} {libro.nombre_categoria ? `· ${libro.nombre_categoria}` : ""}</p>
                         <div className="top-book-tags">
-                          <BadgeEstado estado={libro.estado_libro} />
+                          <BadgeEstado estado={libro.estado_libro} darkMode={darkMode} />
                         </div>
                       </div>
                       <div className="top-book-financials">
@@ -2837,7 +2996,15 @@ export default function MiTienda() {
                         )}
                       </div>
                       <div className="recent-book-card-body">
-                        <span className="book-category-pill">{libro.nombre_categoria || "General"}</span>
+                        <span 
+                          className="book-category-pill"
+                          style={{
+                            background: categoriaColor(libro.nombre_categoria, darkMode).bg,
+                            color: categoriaColor(libro.nombre_categoria, darkMode).color
+                          }}
+                        >
+                          {libro.nombre_categoria || "General"}
+                        </span>
                         <h4 className="book-item-title" title={libro.titulo}>{libro.titulo}</h4>
                         <p className="book-item-author">{libro.autor_libro}</p>
                         <div className="book-item-bottom">
@@ -3023,7 +3190,11 @@ export default function MiTienda() {
     );
   };
 
-  const renderMisLibros = () => (
+  const renderMisLibros = () => {
+    const emptyStateText = darkMode ? '#f3f4f6' : '#444';
+    const emptyStateMuted = darkMode ? '#b8b8b8' : '#777';
+
+    return (
     <div className="mis-libros-container">
       {/* Cabecera Principal */}
       <div className="mis-libros-header-card">
@@ -3157,10 +3328,10 @@ export default function MiTienda() {
         ) : libros.length === 0 ? (
           <div className="empty-state">
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: "12px" }}>
-              <IconBookOpen width={48} height={48} strokeWidth={2} style={{ color: '#7A1E3A' }} />
+              <IconBookOpen width={48} height={48} strokeWidth={2} style={{ color: darkMode ? '#ff4f83' : '#7A1E3A' }} />
             </div>
-            <p style={{ fontWeight: 700, color: "#444", marginBottom: "8px", fontSize: "1.1rem" }}>No tienes libros publicados</p>
-            <p style={{ color: "#777", marginBottom: "16px", fontSize: "0.88rem" }}>Comienza a vender agregando tu primer título al catálogo.</p>
+            <p style={{ fontWeight: 700, color: emptyStateText, marginBottom: "8px", fontSize: "1.1rem" }}>No tienes libros publicados</p>
+            <p style={{ color: emptyStateMuted, marginBottom: "16px", fontSize: "0.88rem" }}>Comienza a vender agregando tu primer título al catálogo.</p>
             <button className="btn btn-vinotinto" onClick={() => navigate("/vendedor/publicar")}>
               + Publicar primer libro
             </button>
@@ -3168,8 +3339,8 @@ export default function MiTienda() {
         ) : filteredLibros.length === 0 ? (
           <div className="mis-libros-no-results">
             <div style={{ fontSize: "2rem", marginBottom: "8px" }}>🔍</div>
-            <h4>No se encontraron libros</h4>
-            <p>No hay coincidencias con los filtros o el término de búsqueda actual.</p>
+            <h4 style={{ color: emptyStateText }}>No se encontraron libros</h4>
+            <p style={{ color: emptyStateMuted }}>No hay coincidencias con los filtros o el término de búsqueda actual.</p>
             <button 
               type="button" 
               className="btn-clear-filters"
@@ -3213,7 +3384,7 @@ export default function MiTienda() {
                         <img src={libroImageUrl} alt={libro.titulo} className="libro-cover-img" />
                       ) : (
                         <div className="libro-cover-placeholder">
-                          <IconBook width={22} height={22} strokeWidth={1.8} style={{ color: '#7A1E3A' }} />
+                          <IconBook width={22} height={22} strokeWidth={1.8} style={{ color: darkMode ? '#e05a7a' : '#7A1E3A' }} />
                         </div>
                       )}
                     </div>
@@ -3228,12 +3399,12 @@ export default function MiTienda() {
 
                     {/* Categoría en columna dedicada y alineada en hilera */}
                     <div className="libro-category-cell">
-                      <BadgeCategoriaLibro categoria={libro.nombre_categoria} />
+                      <BadgeCategoriaLibro categoria={libro.nombre_categoria} darkMode={darkMode} />
                     </div>
 
                     {/* Badge Estado */}
                     <div className="libro-condition-cell">
-                      <BadgeEstado estado={libro.estado_libro} />
+                      <BadgeEstado estado={libro.estado_libro} darkMode={darkMode} />
                     </div>
 
                     {/* Estado de Stock con Badge Informativo */}
@@ -3381,6 +3552,7 @@ export default function MiTienda() {
       </div>
     </div>
   );
+  };
 
   const renderPerfil = () => {
     const PRIMARY = '#7A1E3A';
@@ -3472,24 +3644,37 @@ export default function MiTienda() {
       finally { setSavingPerfil(false); }
     };
 
-    const umbralesPuntos = { Bronce: 50000, Plata: 150000, Oro: 300000 };
+    const umbralesPuntos = {
+      Bronce: 0,
+      Plata: 50000,
+      Oro: 150000,
+      Zafiro: 300000,
+      Rubi: 500000,
+      Esmeralda: 800000,
+      Amatista: 1200000,
+      Perla: 1700000,
+      Obsidiana: 2300000,
+      Diamante: 3200000,
+      Onix: 4500000,
+      Platino: 6500000,
+    };
 
     const card = {
-      background: '#fff', borderRadius: '14px', padding: '1.5rem',
-      marginBottom: '1.25rem', border: `1px solid ${BORDER}`,
-      boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+      background: darkMode ? '#2a2a2a' : '#fff', borderRadius: '14px', padding: '1.5rem',
+      marginBottom: '1.25rem', border: darkMode ? '1px solid #3a3a3a' : `1px solid ${BORDER}`,
+      boxShadow: darkMode ? 'none' : '0 1px 4px rgba(0,0,0,0.04)',
     };
     const cardTitle = {
-      fontSize: '1.1rem', fontWeight: 800, color: PRIMARY,
+      fontSize: '1.1rem', fontWeight: 800, color: darkMode ? '#e05a7a' : PRIMARY,
       marginBottom: '1.1rem', display: 'flex', alignItems: 'center', gap: '8px',
     };
     const inp = {
       width: '100%', padding: '10px 14px', borderRadius: '8px',
-      border: `1px solid ${BORDER}`, fontSize: '0.92rem',
-      fontFamily: 'Montserrat, sans-serif', color: TEXT, background: '#fafafa',
+      border: darkMode ? '1px solid #4a4a4a' : `1px solid ${BORDER}`, fontSize: '0.92rem',
+      fontFamily: 'Montserrat, sans-serif', color: darkMode ? '#ececec' : TEXT, background: darkMode ? '#353535' : '#fafafa',
       boxSizing: 'border-box',
     };
-    const lbl = { display: 'block', fontWeight: 600, color: '#444', marginBottom: '5px', fontSize: '0.88rem' };
+    const lbl = { display: 'block', fontWeight: 600, color: darkMode ? '#c8c8c8' : '#444', marginBottom: '5px', fontSize: '0.88rem' };
     const btnPrimary = {
       background: PRIMARY, color: '#fff', border: 'none', borderRadius: '8px',
       padding: '10px 20px', fontWeight: 700, fontSize: '0.88rem',
@@ -3560,7 +3745,7 @@ export default function MiTienda() {
       <>
         <div className="welcome-card welcome-card--small">
           <h1 style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '1.55rem', margin: 0 }}>
-            <IconUser width={26} height={26} strokeWidth={2} style={{ color: PRIMARY }} />
+            <IconUser width={26} height={26} strokeWidth={2} style={{ color: darkMode ? '#e05a7a' : PRIMARY }} />
             Mi Perfil
           </h1>
           <p style={{ margin: '4px 0 0', color: MUTED, fontSize: '0.9rem' }}>
@@ -3573,15 +3758,15 @@ export default function MiTienda() {
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1.25rem', alignItems: 'start', marginTop: '1rem' }}>
             <div>
-              <div className="pl-card" style={{ padding: '2rem', marginBottom: '1.25rem' }}>
-                <h3 style={{ margin: '0 0 1rem 0', color: 'var(--vinotinto)', fontSize: '1.2rem' }}>Información Personal</h3>
+              <div className="pl-card" style={{ padding: '2rem', marginBottom: '1.25rem', background: darkMode ? '#2a2a2a' : '#fff', border: darkMode ? '1px solid #3a3a3a' : 'none' }}>
+                <h3 style={{ margin: '0 0 1rem 0', color: darkMode ? '#e05a7a' : 'var(--vinotinto)', fontSize: '1.2rem' }}>Información Personal</h3>
 
                 {/* Cabecera visual del perfil */}
                 <div style={{ marginBottom: '1.5rem', paddingBottom: '1.5rem' }}>
                   <div style={{
                     width: '100%', height: '180px', borderRadius: '14px',
-                      background: (perfilBannerUrl || bannerUrl) ? `url(${perfilBannerUrl || bannerUrl}) center/cover no-repeat` : (perfilBannerColor || PRIMARY),
-                    border: '2px solid #e0dbd4', position: 'relative', overflow: 'visible',
+                      background: (perfilBannerUrl || bannerUrl) ? `url(${perfilBannerUrl || bannerUrl}) center/cover no-repeat` : (perfilBannerColor || (darkMode ? '#e05a7a' : PRIMARY)),
+                    border: darkMode ? '2px solid #3a3a3a' : '2px solid #e0dbd4', position: 'relative', overflow: 'visible',
                   }}>
                     {perfilBannerColor?.startsWith('linear-gradient') && !perfilBannerUrl && (
                       <div style={{ position: 'absolute', inset: 0, backgroundImage: perfilBannerColor, borderRadius: '12px' }} />
@@ -3605,21 +3790,21 @@ export default function MiTienda() {
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '58px 24px 0 0', minHeight: '58px', boxSizing: 'border-box', flexWrap: 'wrap' }}>
                     <div style={{ minWidth: 0 }}>
-                      <h3 style={{ margin: 0, color: '#1f2937', fontSize: '1.08rem', fontWeight: 800 }}>{`${perfilName || ''} ${perfilSurname || ''}`.trim() || 'Tu perfil'}</h3>
-                      <p style={{ margin: '3px 0 0', color: '#777', fontSize: '0.82rem' }}>Perfil de vendedor</p>
+                      <h3 style={{ margin: 0, color: darkMode ? '#ececec' : '#1f2937', fontSize: '1.08rem', fontWeight: 800 }}>{`${perfilName || ''} ${perfilSurname || ''}`.trim() || 'Tu perfil'}</h3>
+                      <p style={{ margin: '3px 0 0', color: darkMode ? '#c8c8c8' : '#777', fontSize: '0.82rem' }}>Perfil de vendedor</p>
                     </div>
                   </div>
                   {showBannerEditor && (
-                    <div style={{ background: '#f9f7f4', borderRadius: '10px', padding: '1rem', border: '1px solid #e0dbd4' }}>
+                    <div style={{ background: darkMode ? '#2a2a2a' : '#f9f7f4', borderRadius: '10px', padding: '1rem', border: darkMode ? '1px solid #3a3a3a' : '1px solid #e0dbd4' }}>
                       <div style={{ marginBottom: '1rem' }}>
-                        <p style={{ margin: '0 0 8px 0', fontWeight: 600, fontSize: '0.9rem', color: '#444' }}>Subir imagen</p>
-                        <label style={{ background: PRIMARY, color: 'white', padding: '8px 16px', borderRadius: '6px', fontSize: '0.85rem', cursor: 'pointer', display: 'inline-block', opacity: perfilBannerUploading ? 0.7 : 1 }}>
+                        <p style={{ margin: '0 0 8px 0', fontWeight: 600, fontSize: '0.9rem', color: darkMode ? '#c8c8c8' : '#444' }}>Subir imagen</p>
+                        <label style={{ background: darkMode ? '#e05a7a' : PRIMARY, color: 'white', padding: '8px 16px', borderRadius: '6px', fontSize: '0.85rem', cursor: 'pointer', display: 'inline-block', opacity: perfilBannerUploading ? 0.7 : 1 }}>
                           {perfilBannerUploading ? 'Subiendo...' : '📁 Elegir imagen'}
                           <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleBannerUpload} disabled={perfilBannerUploading} />
                         </label>
                       </div>
                       <div style={{ marginBottom: '0.75rem' }}>
-                        <p style={{ margin: '0 0 8px 0', fontWeight: 600, fontSize: '0.9rem', color: '#444' }}>Colores sólidos</p>
+                        <p style={{ margin: '0 0 8px 0', fontWeight: 600, fontSize: '0.9rem', color: darkMode ? '#c8c8c8' : '#444' }}>Colores sólidos</p>
                         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                           {['#7A1E3A','#1E3A7A','#1E7A3A','#7A6A1E','#3A1E7A','#1E6A7A','#2A2A2A','#8B4513'].map(c => (
                             <button key={c} onClick={() => handleBannerColor(c)} style={{ width: 32, height: 32, borderRadius: '50%', background: c, border: perfilBannerColor === c ? '3px solid #fff' : '2px solid #ccc', cursor: 'pointer', boxShadow: perfilBannerColor === c ? `0 0 0 2px ${c}` : 'none' }} title={c} />
@@ -3627,7 +3812,7 @@ export default function MiTienda() {
                         </div>
                       </div>
                       <div style={{ marginBottom: '0.75rem' }}>
-                        <p style={{ margin: '0 0 8px 0', fontWeight: 600, fontSize: '0.9rem', color: '#444' }}>Gradientes</p>
+                        <p style={{ margin: '0 0 8px 0', fontWeight: 600, fontSize: '0.9rem', color: darkMode ? '#c8c8c8' : '#444' }}>Gradientes</p>
                         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                           {BANNER_COLORS.filter(c => c.startsWith('linear')).map((g, i) => (
                             <button key={i} onClick={() => handleBannerColor(g)} style={{ width: 32, height: 32, borderRadius: '8px', backgroundImage: g, border: perfilBannerColor === g ? '3px solid #fff' : '2px solid #ccc', cursor: 'pointer', boxShadow: perfilBannerColor === g ? '0 0 0 2px #7A1E3A' : 'none' }} title={`Gradiente ${i+1}`} />
@@ -3635,8 +3820,8 @@ export default function MiTienda() {
                         </div>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <p style={{ margin: 0, fontWeight: 600, fontSize: '0.9rem', color: '#444' }}>Color personalizado</p>
-                        <input type="color" defaultValue="#7A1E3A" onChange={e => handleBannerColor(e.target.value)} style={{ width: 34, height: 34, borderRadius: '8px', border: '1px solid #ccc', cursor: 'pointer', padding: 2 }} />
+                        <p style={{ margin: 0, fontWeight: 600, fontSize: '0.9rem', color: darkMode ? '#c8c8c8' : '#444' }}>Color personalizado</p>
+                        <input type="color" defaultValue="#7A1E3A" onChange={e => handleBannerColor(e.target.value)} style={{ width: 34, height: 34, borderRadius: '8px', border: darkMode ? '1px solid #4a4a4a' : '1px solid #ccc', cursor: 'pointer', padding: 2 }} />
                       </div>
                     </div>
                   )}
@@ -3656,16 +3841,16 @@ export default function MiTienda() {
                 <div><label style={lbl}>Direccion</label><input style={inp} value={perfilAddress} onChange={e => setPerfilAddress(e.target.value)} placeholder="Direccion" /></div>
                 <div style={{ marginTop: '14px' }}>
                   <label style={lbl}>Correo electronico</label>
-                  <input style={{ ...inp, background: '#f0f0f0', color: '#888', cursor: 'not-allowed' }} value={perfilEmail} readOnly placeholder="Cargando..." />
+                  <input style={{ ...inp, background: darkMode ? '#2a2a2a' : '#f0f0f0', color: darkMode ? '#888' : '#888', cursor: 'not-allowed' }} value={perfilEmail} readOnly placeholder="Cargando..." />
                 </div>
               </div>
 
               <div style={card}>
                 <p style={cardTitle}>Preferencias de notificaciones</p>
                 {[['Promociones', notifPromociones, setNotifPromociones], ['Pedidos', notifPedidos, setNotifPedidos], ['Novedades', notifNovedades, setNotifNovedades]].map(([label, enabled, setEnabled]) => (
-                  <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderTop: `1px solid ${BORDER}` }}>
-                    <span style={{ fontWeight: 600, color: TEXT }}>{label}</span>
-                    <button onClick={() => setEnabled(!enabled)} style={{ minWidth: '110px', padding: '8px 16px', borderRadius: '999px', border: 'none', background: enabled ? PRIMARY : '#f0f0f0', color: enabled ? '#fff' : '#555', fontWeight: 700, fontSize: '0.84rem', cursor: 'pointer', fontFamily: 'Montserrat, sans-serif' }}>
+                  <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderTop: darkMode ? '1px solid #3a3a3a' : `1px solid ${BORDER}` }}>
+                    <span style={{ fontWeight: 600, color: darkMode ? '#c8c8c8' : TEXT }}>{label}</span>
+                    <button onClick={() => setEnabled(!enabled)} style={{ minWidth: '110px', padding: '8px 16px', borderRadius: '999px', border: 'none', background: enabled ? (darkMode ? '#e05a7a' : PRIMARY) : (darkMode ? '#3a3a3a' : '#f0f0f0'), color: enabled ? '#fff' : (darkMode ? '#c8c8c8' : '#555'), fontWeight: 700, fontSize: '0.84rem', cursor: 'pointer', fontFamily: 'Montserrat, sans-serif' }}>
                       {enabled ? 'Activado' : 'Desactivado'}
                     </button>
                   </div>
@@ -3691,6 +3876,26 @@ export default function MiTienda() {
     const TEXT      = '#111827';
     const MUTED     = '#6B7280';
     const BG        = '#FAFAFA';
+
+    // Paleta de colores según modo
+    const t = {
+      sectionBg:       darkMode ? '#2a2a2a' : '#fff',
+      sectionBorder:   darkMode ? '1px solid #3a3a3a' : `1px solid ${BORDER}`,
+      sectionHeaderBg: darkMode ? '#353535' : PRIMARY_L,
+      sectionHeaderBorder: darkMode ? '1px solid #3a3a3a' : `1px solid ${BORDER}`,
+      textPrimary:     darkMode ? '#ececec' : TEXT,
+      textSecondary:   darkMode ? '#c8c8c8' : MUTED,
+      textMuted:       darkMode ? '#999' : MUTED,
+      inputBg:         darkMode ? '#353535' : BG,
+      inputBorder:     darkMode ? '#4a4a4a' : BORDER,
+      inputColor:      darkMode ? '#ececec' : TEXT,
+      hintColor:       darkMode ? '#999' : MUTED,
+      cardBg:          darkMode ? '#2a2a2a' : '#fff',
+      cardBorder:      darkMode ? '1px solid #3a3a3a' : `1px solid ${BORDER}`,
+      iconColor:       darkMode ? '#e05a7a' : PRIMARY,
+      divider:         darkMode ? '#333' : BORDER,
+      vino:            darkMode ? '#e05a7a' : PRIMARY,
+    };
 
     const handleSaveConfig = () => {
       if (!tiendaForm.nombre_tienda?.trim()) {
@@ -3718,40 +3923,40 @@ export default function MiTienda() {
 
     // Estilos reutilizables
     const section = {
-      background: '#fff',
+      background: t.sectionBg,
       borderRadius: '16px',
-      border: `1px solid ${BORDER}`,
-      boxShadow: '0 1px 6px rgba(0,0,0,0.05)',
+      border: t.sectionBorder,
+      boxShadow: darkMode ? 'none' : '0 1px 6px rgba(0,0,0,0.05)',
       marginBottom: '20px',
       overflow: 'hidden',
     };
-    const sectionHeader = (color = PRIMARY_L) => ({
+    const sectionHeader = (color = t.sectionHeaderBg) => ({
       background: color,
       padding: '14px 22px',
-      borderBottom: `1px solid ${BORDER}`,
+      borderBottom: t.sectionHeaderBorder,
       display: 'flex',
       alignItems: 'center',
       gap: '10px',
     });
     const sectionTitle = {
-      fontSize: '0.95rem', fontWeight: 800, color: PRIMARY, margin: 0,
+      fontSize: '0.95rem', fontWeight: 800, color: t.iconColor, margin: 0,
     };
     const sectionBody = { padding: '22px' };
     const row = { display: 'grid', gap: '16px', marginBottom: '16px' };
     const field = { display: 'flex', flexDirection: 'column', gap: '6px' };
     const lbl = {
-      fontSize: '0.8rem', fontWeight: 700, color: '#374151',
+      fontSize: '0.8rem', fontWeight: 700, color: darkMode ? '#c8c8c8' : '#374151',
       textTransform: 'uppercase', letterSpacing: '0.04em',
     };
     const inp = {
       padding: '10px 14px', borderRadius: '10px',
-      border: `1.5px solid ${BORDER}`, fontSize: '0.9rem',
-      fontFamily: 'inherit', color: TEXT, background: BG,
+      border: `1.5px solid ${t.inputBorder}`, fontSize: '0.9rem',
+      fontFamily: 'inherit', color: t.inputColor, background: t.inputBg,
       boxSizing: 'border-box', width: '100%',
       outline: 'none', transition: 'border-color 0.15s',
     };
     const inpTA = { ...inp, resize: 'vertical', minHeight: '90px', lineHeight: 1.5 };
-    const hint = { fontSize: '0.74rem', color: MUTED, marginTop: 2 };
+    const hint = { fontSize: '0.74rem', color: t.hintColor, marginTop: 2 };
     const badge = (txt, bg, col) => (
       <span style={{
         display: 'inline-flex', alignItems: 'center',
@@ -3766,7 +3971,7 @@ export default function MiTienda() {
       <>
         {/* ── HEADER ── */}
         <div style={{
-          background: `linear-gradient(135deg, ${PRIMARY} 0%, #9B2449 100%)`,
+          background: darkMode ? 'linear-gradient(135deg, #e05a7a 0%, #c5425a 100%)' : `linear-gradient(135deg, ${PRIMARY} 0%, #9B2449 100%)`,
           borderRadius: '16px',
           padding: '24px 28px',
           marginBottom: '24px',
@@ -3819,9 +4024,9 @@ export default function MiTienda() {
 
             {/* ── SECCIÓN 1: Identidad de la tienda ── */}
             <div style={section}>
-              <div style={sectionHeader()}>
+              <div style={sectionHeader(darkMode ? '#1a2a3a' : '#F0F9FF')}>
                 <span style={{ fontSize: '1.1rem' }}>🏪</span>
-                <p style={sectionTitle}>Identidad de la tienda</p>
+                <p style={{ ...sectionTitle, color: darkMode ? '#60a5fa' : '#0369A1' }}>Identidad de la tienda</p>
               </div>
               <div style={sectionBody}>
                 <div style={{ ...row, gridTemplateColumns: '1fr 1fr' }}>
@@ -3832,8 +4037,8 @@ export default function MiTienda() {
                       value={tiendaForm.nombre_tienda}
                       onChange={e => setTiendaForm({ ...tiendaForm, nombre_tienda: e.target.value })}
                       placeholder="Ej: Librería El Quijote"
-                      onFocus={e => e.target.style.borderColor = PRIMARY}
-                      onBlur={e => e.target.style.borderColor = BORDER}
+                      onFocus={e => e.target.style.borderColor = t.vino}
+                      onBlur={e => e.target.style.borderColor = t.inputBorder}
                     />
                   </div>
                   <div style={field}>
@@ -3843,8 +4048,8 @@ export default function MiTienda() {
                       value={tiendaForm.telefono}
                       onChange={e => setTiendaForm({ ...tiendaForm, telefono: e.target.value })}
                       placeholder="Ej: 3001234567"
-                      onFocus={e => e.target.style.borderColor = PRIMARY}
-                      onBlur={e => e.target.style.borderColor = BORDER}
+                      onFocus={e => e.target.style.borderColor = t.vino}
+                      onBlur={e => e.target.style.borderColor = t.inputBorder}
                     />
                   </div>
                 </div>
@@ -3856,8 +4061,8 @@ export default function MiTienda() {
                       value={tiendaForm.direccion}
                       onChange={e => setTiendaForm({ ...tiendaForm, direccion: e.target.value })}
                       placeholder="Calle 123 # 45-67"
-                      onFocus={e => e.target.style.borderColor = PRIMARY}
-                      onBlur={e => e.target.style.borderColor = BORDER}
+                      onFocus={e => e.target.style.borderColor = t.vino}
+                      onBlur={e => e.target.style.borderColor = t.inputBorder}
                     />
                   </div>
                   <div style={field}>
@@ -3867,8 +4072,8 @@ export default function MiTienda() {
                       value={configForm.ciudad_origen || ''}
                       onChange={e => setConfigForm({ ...configForm, ciudad_origen: e.target.value })}
                       placeholder="Ej: Bogotá, Medellín..."
-                      onFocus={e => e.target.style.borderColor = PRIMARY}
-                      onBlur={e => e.target.style.borderColor = BORDER}
+                      onFocus={e => e.target.style.borderColor = t.vino}
+                      onBlur={e => e.target.style.borderColor = t.inputBorder}
                     />
                   </div>
                 </div>
@@ -3881,8 +4086,8 @@ export default function MiTienda() {
                       value={configForm.email_publico || ''}
                       onChange={e => setConfigForm({ ...configForm, email_publico: e.target.value })}
                       placeholder="contacto@milibreria.com"
-                      onFocus={e => e.target.style.borderColor = PRIMARY}
-                      onBlur={e => e.target.style.borderColor = BORDER}
+                      onFocus={e => e.target.style.borderColor = t.vino}
+                      onBlur={e => e.target.style.borderColor = t.inputBorder}
                     />
                   </div>
                   <div style={field}>
@@ -3892,8 +4097,8 @@ export default function MiTienda() {
                       value={configForm.horario_atencion}
                       onChange={e => setConfigForm({ ...configForm, horario_atencion: e.target.value })}
                       placeholder="Lun–Vie 9am–6pm"
-                      onFocus={e => e.target.style.borderColor = PRIMARY}
-                      onBlur={e => e.target.style.borderColor = BORDER}
+                      onFocus={e => e.target.style.borderColor = t.vino}
+                      onBlur={e => e.target.style.borderColor = t.inputBorder}
                     />
                   </div>
                 </div>
@@ -3919,8 +4124,8 @@ export default function MiTienda() {
                     placeholder="Cuéntales a tus compradores qué hace especial a tu librería: géneros, servicios, historia..."
                     value={configForm.descripcion || ''}
                     onChange={e => setConfigForm({ ...configForm, descripcion: e.target.value })}
-                    onFocus={e => e.target.style.borderColor = PRIMARY}
-                    onBlur={e => e.target.style.borderColor = BORDER}
+                    onFocus={e => e.target.style.borderColor = t.vino}
+                    onBlur={e => e.target.style.borderColor = t.inputBorder}
                   />
                   <span style={hint}>{(configForm.descripcion || '').length}/500 caracteres recomendados</span>
                 </div>
@@ -3949,8 +4154,8 @@ export default function MiTienda() {
                           max="30"
                           value={configForm.tiempo_despacho_dias}
                           onChange={e => setConfigForm({ ...configForm, tiempo_despacho_dias: parseInt(e.target.value) || 2 })}
-                          onFocus={e => e.target.style.borderColor = PRIMARY}
-                          onBlur={e => e.target.style.borderColor = BORDER}
+                          onFocus={e => e.target.style.borderColor = t.vino}
+                          onBlur={e => e.target.style.borderColor = t.inputBorder}
                         />
                         <span style={{
                           position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
@@ -3960,7 +4165,7 @@ export default function MiTienda() {
                       <span style={hint}>Tiempo estimado desde que recibes el pedido hasta despachar.</span>
                     </div>
 
-                    <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 10, padding: '12px 14px', fontSize: '0.8rem', color: '#166534', display: 'flex', gap: 8 }}>
+                    <div style={{ background: darkMode ? '#1a3a2a' : '#F0FDF4', border: darkMode ? '1px solid #2a5a3a' : '1px solid #BBF7D0', borderRadius: 10, padding: '12px 14px', fontSize: '0.8rem', color: darkMode ? '#6ae07a' : '#166534', display: 'flex', gap: 8 }}>
                       <span>📦</span>
                       <span>El retiro en tienda (Click &amp; Collect) es <strong>siempre gratuito</strong> para el comprador.</span>
                     </div>
@@ -3972,8 +4177,8 @@ export default function MiTienda() {
                         placeholder="Describe tus condiciones de envío: transportadoras, zonas de cobertura, tiempos estimados..."
                         value={configForm.politica_envios}
                         onChange={e => setConfigForm({ ...configForm, politica_envios: e.target.value })}
-                        onFocus={e => e.target.style.borderColor = PRIMARY}
-                        onBlur={e => e.target.style.borderColor = BORDER}
+                        onFocus={e => e.target.style.borderColor = t.vino}
+                        onBlur={e => e.target.style.borderColor = t.inputBorder}
                       />
                     </div>
                   </div>
@@ -4008,14 +4213,14 @@ export default function MiTienda() {
                             const val = parseFloat(e.target.value);
                             setConfigForm(prev => ({ ...prev, tarifa_envio: isNaN(val) ? 0 : Math.max(0, val) }));
                           }}
-                          onFocus={e => e.target.style.borderColor = PRIMARY}
+                          onFocus={e => e.target.style.borderColor = t.vino}
                           placeholder="0"
                         />
                       </div>
                       <span style={hint}>Retiro en tienda siempre es gratis. Pon 0 para ofrecer domicilio gratis.</span>
                     </div>
 
-                    <div style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 10, padding: '12px 14px', fontSize: '0.8rem', color: '#1D4ED8', display: 'flex', gap: 8 }}>
+                    <div style={{ background: darkMode ? '#1a2a3a' : '#EFF6FF', border: darkMode ? '1px solid #2a4a5a' : '1px solid #BFDBFE', borderRadius: 10, padding: '12px 14px', fontSize: '0.8rem', color: darkMode ? '#60a5fa' : '#1D4ED8', display: 'flex', gap: 8 }}>
                       <span>📚</span>
                       <span>Los libros tienen <strong>IVA $0</strong> — exentos por el Art. 424 del E.T. colombiano.</span>
                     </div>
@@ -4027,8 +4232,8 @@ export default function MiTienda() {
                         placeholder="Condiciones para devoluciones, cambios y garantías de tus libros..."
                         value={configForm.politica_devoluciones}
                         onChange={e => setConfigForm({ ...configForm, politica_devoluciones: e.target.value })}
-                        onFocus={e => e.target.style.borderColor = PRIMARY}
-                        onBlur={e => e.target.style.borderColor = BORDER}
+                        onFocus={e => e.target.style.borderColor = t.vino}
+                        onBlur={e => e.target.style.borderColor = t.inputBorder}
                       />
                     </div>
                   </div>
@@ -4039,29 +4244,29 @@ export default function MiTienda() {
 
             {/* ── BOTÓN GUARDAR ── */}
             <div style={{
-              background: '#fff',
+              background: t.cardBg,
               borderRadius: '16px',
-              border: `1px solid ${BORDER}`,
+              border: t.cardBorder,
               padding: '20px 24px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
               flexWrap: 'wrap',
               gap: 14,
-              boxShadow: '0 1px 6px rgba(0,0,0,0.05)',
+              boxShadow: darkMode ? 'none' : '0 1px 6px rgba(0,0,0,0.05)',
               marginBottom: '1.5rem',
             }}>
               <div>
-                <p style={{ margin: 0, fontWeight: 700, color: TEXT, fontSize: '0.92rem' }}>¿Listo para actualizar?</p>
-                <p style={{ margin: '2px 0 0', color: MUTED, fontSize: '0.8rem' }}>Los cambios se verán reflejados de inmediato en tu perfil público.</p>
+                <p style={{ margin: 0, fontWeight: 700, color: t.textPrimary, fontSize: '0.92rem' }}>¿Listo para actualizar?</p>
+                <p style={{ margin: '2px 0 0', color: t.textSecondary, fontSize: '0.8rem' }}>Los cambios se verán reflejados de inmediato en tu perfil público.</p>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
                 {tiendaMsg === 'ok' && (
                   <span style={{
                     display: 'flex', alignItems: 'center', gap: 6,
-                    color: '#15803D', fontWeight: 700, fontSize: '0.88rem',
-                    background: '#DCFCE7', padding: '6px 14px', borderRadius: 8,
-                    border: '1px solid #BBF7D0',
+                    color: darkMode ? '#6ae07a' : '#15803D', fontWeight: 700, fontSize: '0.88rem',
+                    background: darkMode ? '#1a3a2a' : '#DCFCE7', padding: '6px 14px', borderRadius: 8,
+                    border: darkMode ? '1px solid #2a5a3a' : '1px solid #BBF7D0',
                   }}>
                     ✓ Cambios guardados
                   </span>
@@ -4079,7 +4284,7 @@ export default function MiTienda() {
                 <button
                   onClick={handleSaveConfig}
                   style={{
-                    background: `linear-gradient(135deg, ${PRIMARY} 0%, #9B2449 100%)`,
+                    background: darkMode ? 'linear-gradient(135deg, #e05a7a 0%, #c5425a 100%)' : `linear-gradient(135deg, ${PRIMARY} 0%, #9B2449 100%)`,
                     color: '#fff', border: 'none', borderRadius: '10px',
                     padding: '11px 28px', fontWeight: 800, fontSize: '0.92rem',
                     cursor: 'pointer', fontFamily: 'inherit',
@@ -4098,6 +4303,60 @@ export default function MiTienda() {
               </div>
             </div>
 
+            {/* ── SECCIÓN: Preferencias Visuales ── */}
+            <div style={section}>
+              <div style={sectionHeader(darkMode ? '#353535' : PRIMARY_L)}>
+                <span style={{ fontSize: '1.1rem' }}>🎨</span>
+                <p style={sectionTitle}>Preferencias Visuales</p>
+              </div>
+              <div style={sectionBody}>
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  padding: '1.2rem',
+                  background: darkMode ? '#2a2a2a' : '#faf8f6',
+                  borderRadius: '8px',
+                  borderLeft: darkMode ? '4px solid #e05a7a' : '4px solid var(--vinotinto)'
+                }}>
+                  <div>
+                    <h4 style={{ margin: '0 0 0.3rem 0', color: darkMode ? '#ececec' : '#2a2a2a', fontSize: '1rem' }}>Modo Oscuro</h4>
+                    <p style={{ margin: 0, color: darkMode ? '#c8c8c8' : '#666', fontSize: '0.85rem' }}>Cambia el tema de la aplicación a modo oscuro</p>
+                  </div>
+                  <label style={{ position: 'relative', display: 'inline-block', width: '48px', height: '26px', cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={darkMode}
+                      onChange={() => {
+                        const newMode = !darkMode;
+                        setDarkMode(newMode);
+                        localStorage.setItem('darkMode', newMode);
+                        if (newMode) {
+                          document.documentElement.classList.add('dark');
+                        } else {
+                          document.documentElement.classList.remove('dark');
+                        }
+                        window.dispatchEvent(new CustomEvent('darkModeChange', { detail: { darkMode: newMode } }));
+                      }}
+                      style={{ opacity: 0, width: 0, height: 0 }}
+                    />
+                    <span style={{
+                      position: 'absolute', cursor: 'pointer',
+                      top: 0, left: 0, right: 0, bottom: 0,
+                      backgroundColor: darkMode ? '#e05a7a' : '#ccc',
+                      transition: '0.3s', borderRadius: '26px'
+                    }}></span>
+                    <span style={{
+                      position: 'absolute', content: '', height: '20px', width: '20px',
+                      left: '3px', bottom: '3px', backgroundColor: 'white',
+                      transition: '0.3s', borderRadius: '50%',
+                      transform: darkMode ? 'translateX(22px)' : 'translateX(0)'
+                    }}></span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
           </div>
         )}
       </>
@@ -4111,12 +4370,12 @@ export default function MiTienda() {
           <IconCreditCard width={24} height={24} strokeWidth={2} style={{ color: '#7A1E3A' }} />
           Cuentas Bancarias
         </h1>
-        <p style={{ margin: 0 }}>Gestiona las cuentas donde recibirás directamente los pagos de tus ventas.</p>
+        <p style={{ margin: 0, color: darkMode ? '#c8c8c8' : '#666' }}>Gestiona las cuentas donde recibirás directamente los pagos de tus ventas.</p>
       </div>
 
-      <div className="pl-card" style={{ padding: "2rem", marginTop: "20px" }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-          <h3 style={{ margin: 0, color: '#2A2A2A' }}>Mis Cuentas Bancarias</h3>
+      <div className="pl-card" style={{ padding: "2rem", marginTop: "20px", background: darkMode ? '#1e1e1e' : '#fff', borderColor: darkMode ? '#3a3a3a' : '#e8e8e8' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', gap: '12px', flexWrap: 'wrap' }}>
+          <h3 style={{ margin: 0, color: darkMode ? '#f3f4f6' : '#2A2A2A' }}>Mis Cuentas Bancarias</h3>
           <button
             onClick={() => setMostrarFormCuenta(true)}
             style={{
@@ -4130,13 +4389,13 @@ export default function MiTienda() {
         </div>
 
         {mostrarFormCuenta && (
-          <div style={{ padding: '20px', background: '#f4f4f4', borderRadius: '8px', marginBottom: '20px' }}>
-            <h4 style={{ margin: '0 0 16px 0', color: '#2A2A2A' }}>Agregar Nueva Cuenta</h4>
+          <div style={{ padding: '20px', background: darkMode ? '#2a2a2a' : '#f4f4f4', border: `1px solid ${darkMode ? '#3a3a3a' : '#ddd'}`, borderRadius: '8px', marginBottom: '20px' }}>
+            <h4 style={{ margin: '0 0 16px 0', color: darkMode ? '#f3f4f6' : '#2A2A2A' }}>Agregar Nueva Cuenta</h4>
             <div style={{ display: 'grid', gap: '12px' }}>
               <select
                 value={cuentaForm.tipo_cuenta}
                 onChange={(e) => setCuentaForm({...cuentaForm, tipo_cuenta: e.target.value})}
-                style={{ padding: '10px', border: '1px solid #ddd', borderRadius: '6px' }}
+                style={{ padding: '10px', border: `1px solid ${darkMode ? '#4a4a4a' : '#ddd'}`, borderRadius: '6px', background: darkMode ? '#1f1f1f' : '#fff', color: darkMode ? '#f3f4f6' : '#2A2A2A' }}
               >
                 <option value="">Tipo de cuenta</option>
                 <option value="Ahorros">Ahorros</option>
@@ -4147,7 +4406,7 @@ export default function MiTienda() {
               <select
                 value={cuentaForm.banco}
                 onChange={(e) => setCuentaForm({...cuentaForm, banco: e.target.value})}
-                style={{ padding: '10px', border: '1px solid #ddd', borderRadius: '6px' }}
+                style={{ padding: '10px', border: `1px solid ${darkMode ? '#4a4a4a' : '#ddd'}`, borderRadius: '6px', background: darkMode ? '#1f1f1f' : '#fff', color: darkMode ? '#f3f4f6' : '#2A2A2A' }}
               >
                 <option value="">Selecciona el banco</option>
                 <option value="Bancolombia">Bancolombia</option>
@@ -4186,23 +4445,23 @@ export default function MiTienda() {
                 placeholder="Número de cuenta"
                 value={cuentaForm.numero_cuenta}
                 onChange={(e) => setCuentaForm({...cuentaForm, numero_cuenta: e.target.value})}
-                style={{ padding: '10px', border: '1px solid #ddd', borderRadius: '6px' }}
+                style={{ padding: '10px', border: `1px solid ${darkMode ? '#4a4a4a' : '#ddd'}`, borderRadius: '6px', background: darkMode ? '#1f1f1f' : '#fff', color: darkMode ? '#f3f4f6' : '#2A2A2A' }}
               />
               <input
                 type="text"
                 placeholder="Nombre del titular"
                 value={cuentaForm.nombre_titular}
                 onChange={(e) => setCuentaForm({...cuentaForm, nombre_titular: e.target.value})}
-                style={{ padding: '10px', border: '1px solid #ddd', borderRadius: '6px' }}
+                style={{ padding: '10px', border: `1px solid ${darkMode ? '#4a4a4a' : '#ddd'}`, borderRadius: '6px', background: darkMode ? '#1f1f1f' : '#fff', color: darkMode ? '#f3f4f6' : '#2A2A2A' }}
               />
               <input
                 type="text"
                 placeholder="Cédula del titular"
                 value={cuentaForm.cedula_titular}
                 onChange={(e) => setCuentaForm({...cuentaForm, cedula_titular: e.target.value})}
-                style={{ padding: '10px', border: '1px solid #ddd', borderRadius: '6px' }}
+                style={{ padding: '10px', border: `1px solid ${darkMode ? '#4a4a4a' : '#ddd'}`, borderRadius: '6px', background: darkMode ? '#1f1f1f' : '#fff', color: darkMode ? '#f3f4f6' : '#2A2A2A' }}
               />
-              <label style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', color: darkMode ? '#d1d5db' : '#2A2A2A' }}>
                 <input
                   type="checkbox"
                   checked={cuentaForm.es_principal}
@@ -4247,7 +4506,7 @@ export default function MiTienda() {
         )}
 
         {cuentasBancarias.length === 0 ? (
-          <p style={{ color: '#666', textAlign: 'center', padding: '40px' }}>
+          <p style={{ color: darkMode ? '#d1d5db' : '#666', textAlign: 'center', padding: '40px' }}>
             No tienes cuentas bancarias registradas. Agrega tu primera cuenta para empezar a recibir pagos.
           </p>
         ) : (
@@ -4255,16 +4514,18 @@ export default function MiTienda() {
             {cuentasBancarias.map((cuenta) => (
               <div key={cuenta.id_metodo} style={{
                 padding: '16px',
-                border: '1px solid #ddd',
+                border: `1px solid ${darkMode ? '#3a3a3a' : '#ddd'}`,
                 borderRadius: '8px',
-                background: cuenta.es_principal ? '#f0f0f0' : 'white',
+                background: darkMode ? (cuenta.es_principal ? '#2a2a2a' : '#1f1f1f') : (cuenta.es_principal ? '#f0f0f0' : '#fff'),
                 display: 'flex',
                 justifyContent: 'space-between',
-                alignItems: 'center'
+                alignItems: 'center',
+                gap: '12px',
+                flexWrap: 'wrap'
               }}>
                 <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                    <h4 style={{ margin: 0, color: '#2A2A2A' }}>{cuenta.banco}</h4>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', flexWrap: 'wrap' }}>
+                    <h4 style={{ margin: 0, color: darkMode ? '#f3f4f6' : '#2A2A2A' }}>{cuenta.banco}</h4>
                     {cuenta.es_principal && (
                       <span style={{
                         padding: '4px 8px',
@@ -4278,14 +4539,14 @@ export default function MiTienda() {
                       </span>
                     )}
                   </div>
-                  <p style={{ margin: '4px 0', color: '#666', fontSize: '0.9rem' }}>
+                  <p style={{ margin: '4px 0', color: darkMode ? '#d1d5db' : '#666', fontSize: '0.9rem' }}>
                     {cuenta.tipo_cuenta} - {cuenta.numero_cuenta}
                   </p>
-                  <p style={{ margin: '4px 0', color: '#666', fontSize: '0.9rem' }}>
+                  <p style={{ margin: '4px 0', color: darkMode ? '#d1d5db' : '#666', fontSize: '0.9rem' }}>
                     Titular: {cuenta.nombre_titular}
                   </p>
                 </div>
-                <div style={{ display: 'flex', gap: '8px' }}>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                   {!cuenta.es_principal && (
                     <button
                       onClick={() => handleMarcarPrincipal(cuenta.id_metodo)}
@@ -4427,18 +4688,18 @@ export default function MiTienda() {
             onClick={cargarPedidos}
             disabled={loadingPedidos}
             style={{
-              background: '#FFFFFF',
-              border: '1.5px solid #CBD5E1',
+              background: darkMode ? '#1f1f1f' : '#FFFFFF',
+              border: darkMode ? '1.5px solid #3a3a3a' : '1.5px solid #CBD5E1',
               borderRadius: '8px',
               padding: '8px 16px',
               fontSize: '0.84rem',
               fontWeight: 700,
-              color: '#1E293B',
+              color: darkMode ? '#f3f4f6' : '#1E293B',
               cursor: 'pointer',
               display: 'inline-flex',
               alignItems: 'center',
               gap: '6px',
-              boxShadow: '0 1px 4px rgba(0,0,0,0.06)'
+              boxShadow: darkMode ? '0 1px 4px rgba(0,0,0,0.28)' : '0 1px 4px rgba(0,0,0,0.06)'
             }}
           >
             <span>🔄</span> {loadingPedidos ? 'Actualizando...' : 'Actualizar Pedidos'}
@@ -4523,16 +4784,16 @@ export default function MiTienda() {
           {!loadingPedidos && pedidosAMostrar.length === 0 && (
             <div className="empty-state">
               <div className="pedidos-empty-icon">
-                <IconPackage width={30} height={30} strokeWidth={2} style={{ color: '#7A1E3A' }} />
+                <IconPackage width={30} height={30} strokeWidth={2} style={{ color: darkMode ? '#ff8eac' : '#7A1E3A' }} />
               </div>
-              <p style={{ fontWeight: 700, color: "#444", marginBottom: "8px" }}>
+              <p style={{ fontWeight: 700, color: darkMode ? '#f3f4f6' : '#444', marginBottom: '8px' }}>
                 {busquedaPedidos.trim()
                   ? 'No se encontraron pedidos con esa búsqueda'
                   : filtroEstadoPedidos === 'retiro_tienda'
                     ? 'No hay retiros en tienda registrados'
                     : 'Aún no has recibido pedidos'}
               </p>
-              <p style={{ fontSize: "0.85rem", color: "#888" }}>
+              <p style={{ fontSize: '0.85rem', color: darkMode ? '#c8c8c8' : '#888' }}>
                 {busquedaPedidos.trim()
                   ? 'Revisa el número de orden, el código de compra o el nombre del cliente'
                   : filtroEstadoPedidos === 'retiro_tienda'
@@ -4998,7 +5259,18 @@ export default function MiTienda() {
         )}
         {pedidoEnvio && (
           <div className="modal-overlay open" onClick={() => !guardandoEnvio && setPedidoEnvio(null)}>
-            <div className="modal-box" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "500px", padding: "0", overflow: "hidden" }}>
+            <div
+              className="modal-box"
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                maxWidth: "500px",
+                padding: "0",
+                overflow: "hidden",
+                background: darkMode ? '#171717' : '#ffffff',
+                border: darkMode ? '1px solid #3a3a3a' : '1px solid #e5dfe3',
+                boxShadow: darkMode ? '0 24px 60px rgba(0,0,0,0.48)' : '0 24px 60px rgba(0,0,0,0.12)'
+              }}
+            >
               <div className="envios-modal__header">
                 <span className="envios-modal__icon">
                   <IconTruck width={22} height={22} strokeWidth={2} style={{ color: "white" }} />
@@ -5008,18 +5280,67 @@ export default function MiTienda() {
                   <span>Orden #{pedidoEnvio.id_orden} · Compra {pedidoEnvio.codigo_compra} · {pedidoEnvio.cliente}</span>
                 </div>
               </div>
-              <div style={{ padding: "24px 26px" }}>
-                <p className="envios-modal__nota">Elige la transportadora acordada e ingresa el número de Guía que ella te entregó. BookyHome no realiza ni controla el transporte.</p>
-                <label style={{ display: "block", fontWeight: 700, color: "#4b2733", fontSize: "0.88rem" }}>Empresa de mensajería</label>
-                <select value={envioForm.id_empresa} onChange={(e) => setEnvioForm({ ...envioForm, id_empresa: e.target.value })} style={{ width: "100%", marginTop: "6px", padding: "11px 12px", borderRadius: "8px", border: "1.5px solid #d9cfd1", outline: "none", boxSizing: "border-box", fontFamily: "inherit", fontSize: "0.9rem" }}>
-                  <option value="">Selecciona una empresa</option>
-                  {empresasMensajeria.map((empresa) => <option key={empresa.id_empresa} value={empresa.id_empresa}>{empresa.nombre_empresa}</option>)}
+              <div style={{ padding: "24px 26px", background: darkMode ? '#171717' : '#ffffff' }}>
+                <p className="envios-modal__nota" style={{ background: darkMode ? '#201b1e' : '#f8f6f2', borderColor: darkMode ? '#3a3a3a' : '#ddd2c7', color: darkMode ? '#f3f4f6' : '#5b5650' }}>Elige la transportadora acordada e ingresa el número de Guía que ella te entregó. BookyHome no realiza ni controla el transporte.</p>
+                <label style={{ display: "block", fontWeight: 700, color: darkMode ? "#ffbfd2" : "#4b2733", fontSize: "0.88rem" }}>Empresa de mensajería</label>
+                <select
+                  value={envioForm.id_empresa}
+                  onChange={(e) => setEnvioForm({ ...envioForm, id_empresa: e.target.value })}
+                  style={{
+                    width: "100%",
+                    marginTop: "6px",
+                    padding: "11px 12px",
+                    borderRadius: "8px",
+                    border: darkMode ? "1.5px solid #3a3a3a" : "1.5px solid #d9cfd1",
+                    outline: "none",
+                    boxSizing: "border-box",
+                    fontFamily: "inherit",
+                    fontSize: "0.9rem",
+                    background: darkMode ? '#1f1f1f' : '#ffffff',
+                    color: darkMode ? '#f3f4f6' : '#1f2937'
+                  }}
+                >
+                  <option value="" style={{ background: darkMode ? '#1f1f1f' : '#ffffff', color: darkMode ? '#f3f4f6' : '#1f2937' }}>Selecciona una empresa</option>
+                  {empresasMensajeria.map((empresa) => <option key={empresa.id_empresa} value={empresa.id_empresa} style={{ background: darkMode ? '#1f1f1f' : '#ffffff', color: darkMode ? '#f3f4f6' : '#1f2937' }}>{empresa.nombre_empresa}</option>)}
                 </select>
-                <label style={{ display: "block", fontWeight: 700, color: "#4b2733", fontSize: "0.88rem", marginTop: "16px" }}>Número de Guía</label>
-                <input value={envioForm.numero_guia} onChange={(e) => setEnvioForm({ ...envioForm, numero_guia: e.target.value })} maxLength={80} placeholder="Ej. 123456789" style={{ width: "100%", marginTop: "6px", padding: "11px 12px", borderRadius: "8px", border: "1.5px solid #d9cfd1", outline: "none", boxSizing: "border-box", fontFamily: "inherit", fontSize: "0.9rem", textTransform: "uppercase" }} />
+                <label style={{ display: "block", fontWeight: 700, color: darkMode ? "#ffbfd2" : "#4b2733", fontSize: "0.88rem", marginTop: "16px" }}>Número de Guía</label>
+                <input
+                  value={envioForm.numero_guia}
+                  onChange={(e) => setEnvioForm({ ...envioForm, numero_guia: e.target.value })}
+                  maxLength={80}
+                  placeholder="Ej. 123456789"
+                  style={{
+                    width: "100%",
+                    marginTop: "6px",
+                    padding: "11px 12px",
+                    borderRadius: "8px",
+                    border: darkMode ? "1.5px solid #3a3a3a" : "1.5px solid #d9cfd1",
+                    outline: "none",
+                    boxSizing: "border-box",
+                    fontFamily: "inherit",
+                    fontSize: "0.9rem",
+                    textTransform: "uppercase",
+                    background: darkMode ? '#1f1f1f' : '#ffffff',
+                    color: darkMode ? '#f3f4f6' : '#1f2937'
+                  }}
+                />
                 {envioError && <p className="envios-modal__error">⚠ {envioError}</p>}
                 <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "22px" }}>
-                  <button onClick={() => setPedidoEnvio(null)} disabled={guardandoEnvio} style={{ fontFamily: "inherit", padding: "9px 16px", borderRadius: "8px", cursor: "pointer" }}>Cancelar</button>
+                  <button
+                    onClick={() => setPedidoEnvio(null)}
+                    disabled={guardandoEnvio}
+                    style={{
+                      fontFamily: "inherit",
+                      padding: "9px 16px",
+                      borderRadius: "8px",
+                      cursor: "pointer",
+                      background: darkMode ? '#1f1f1f' : '#ffffff',
+                      color: darkMode ? '#f3f4f6' : '#1f2937',
+                      border: darkMode ? '1.5px solid #3a3a3a' : '1.5px solid #d9cfd1'
+                    }}
+                  >
+                    Cancelar
+                  </button>
                   <button className="btn btn-vinotinto" onClick={guardarEnvio} disabled={guardandoEnvio} style={{ padding: "9px 18px", borderRadius: "8px" }}>{guardandoEnvio ? "Guardando..." : "Guardar Guía"}</button>
                 </div>
               </div>
@@ -5406,7 +5727,7 @@ export default function MiTienda() {
             </span>
             Envíos y seguimiento
           </h1>
-          <p style={{ margin: "3px 0 0", color: "#666" }}>Registra las guías de tus pedidos pagados y sigue el rastreo oficial de cada transportadora.</p>
+          <p style={{ margin: "3px 0 0", color: darkMode ? "#b8b8b8" : "#666" }}>Registra las guías de tus pedidos pagados y sigue el rastreo oficial de cada transportadora.</p>
         </div>
 
         <div className="envios-stats">
@@ -5414,7 +5735,7 @@ export default function MiTienda() {
             <button
               key={f.id}
               type="button"
-              className={`envios-stat ${filtroEstadoEnvios === f.id ? "envios-stat--active" : ""}`}
+              className={`envios-stat ${filtroEstadoEnvios === f.id ? "envios-stat--active" : ""} envios-stat--${f.id}`}
               onClick={() => { setFiltroEstadoEnvios(f.id); setEnviosPage(1); }}
             >
               <span className="envios-stat__label">{f.label}</span>
@@ -5454,7 +5775,7 @@ export default function MiTienda() {
         </div>
 
         {loadingPedidos ? (
-          <p style={{ color: "#777", padding: "30px 0", textAlign: "center" }}>Cargando envíos...</p>
+          <p style={{ color: darkMode ? "#c8c8c8" : "#777", padding: "30px 0", textAlign: "center" }}>Cargando envíos...</p>
         ) : envios.length === 0 ? (
           <div className="empty-state envios-empty">
             <div className="envios-empty__icon"><IconTruck width={34} height={34} strokeWidth={1.5} /></div>
@@ -5647,18 +5968,24 @@ export default function MiTienda() {
     const irPag = (n) => setPaginaVentas(Math.min(Math.max(1, n), totalPags));
 
     const kpis = [
-      { label: "Ingresos totales", value: formatPrecio(totalIngresos), icon: <IconDollar width={20} height={20} strokeWidth={2} style={{ color: "#7A1E3A" }} />, bg: "#fbe8ee" },
-      { label: "Órdenes", value: ventasAgrupadas.length, icon: <IconShoppingBag width={20} height={20} strokeWidth={2} style={{ color: "#3b82f6" }} />, bg: "#dbeafe" },
-      { label: "Libros vendidos", value: totalLibros, icon: <IconBook width={20} height={20} strokeWidth={2} style={{ color: "#6d28d9" }} />, bg: "#ede9fe" },
-      { label: "Clientes", value: clientesUnicos, icon: <IconUser width={20} height={20} strokeWidth={2} style={{ color: "#10b981" }} />, bg: "#d1fae5" },
+      { label: "Ingresos totales", value: formatPrecio(totalIngresos), icon: <IconDollar width={20} height={20} strokeWidth={2} style={{ color: darkMode ? "#ff8eac" : "#7A1E3A" }} />, bg: darkMode ? "rgba(255,79,131,0.12)" : "#fbe8ee" },
+      { label: "Órdenes", value: ventasAgrupadas.length, icon: <IconShoppingBag width={20} height={20} strokeWidth={2} style={{ color: darkMode ? "#7ab8ff" : "#3b82f6" }} />, bg: darkMode ? "rgba(59,130,246,0.12)" : "#dbeafe" },
+      { label: "Libros vendidos", value: totalLibros, icon: <IconBook width={20} height={20} strokeWidth={2} style={{ color: darkMode ? "#b99cff" : "#6d28d9" }} />, bg: darkMode ? "rgba(109,40,217,0.12)" : "#ede9fe" },
+      { label: "Clientes", value: clientesUnicos, icon: <IconUser width={20} height={20} strokeWidth={2} style={{ color: darkMode ? "#6ee7b7" : "#10b981" }} />, bg: darkMode ? "rgba(16,185,129,0.12)" : "#d1fae5" },
     ];
+
+    const panelBg = darkMode ? "#1f1f1f" : "#ffffff";
+    const panelSoft = darkMode ? "#181818" : "#f8f6f4";
+    const panelBorder = darkMode ? "#3a3a3a" : "#e5e7eb";
+    const panelText = darkMode ? "#f3f4f6" : "#1f2937";
+    const panelMuted = darkMode ? "#b8b8b8" : "#6b7280";
 
     return (
     <>
       {/* Header */}
       <div style={{
-        background: "white", borderRadius: "16px",
-        border: "1.5px solid #e5e7eb", boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
+        background: panelBg, borderRadius: "16px",
+        border: `1.5px solid ${panelBorder}`, boxShadow: darkMode ? "0 2px 8px rgba(0,0,0,0.25)" : "0 2px 8px rgba(0,0,0,0.05)",
         padding: "24px 28px", marginBottom: "20px",
         display: "flex", alignItems: "center", justifyContent: "space-between",
         gap: "16px", flexWrap: "wrap"
@@ -5673,10 +6000,10 @@ export default function MiTienda() {
             <IconShoppingBag width={24} height={24} strokeWidth={2.2} style={{ color: "white" }} />
           </div>
           <div>
-            <h1 style={{ margin: 0, fontSize: "1.45rem", fontWeight: 900, color: "#1f2937" }}>
+            <h1 style={{ margin: 0, fontSize: "1.45rem", fontWeight: 900, color: panelText }}>
               Registro de Ventas
             </h1>
-            <p style={{ margin: 0, fontSize: "0.85rem", color: "#6b7280", marginTop: "2px" }}>
+            <p style={{ margin: 0, fontSize: "0.85rem", color: panelMuted, marginTop: "2px" }}>
               Historial de órdenes confirmadas · {ventasAgrupadas.length} orden{ventasAgrupadas.length !== 1 ? "es" : ""}
             </p>
           </div>
@@ -5690,8 +6017,8 @@ export default function MiTienda() {
       }}>
         {kpis.map((kpi) => (
           <div key={kpi.label} style={{
-            background: "white", borderRadius: "14px",
-            border: "1.5px solid #e5e7eb", boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+            background: panelBg, borderRadius: "14px",
+            border: `1.5px solid ${panelBorder}`, boxShadow: darkMode ? "0 2px 8px rgba(0,0,0,0.18)" : "0 2px 8px rgba(0,0,0,0.04)",
             padding: "16px 18px", display: "flex", alignItems: "center", gap: "12px"
           }}>
             <div style={{
@@ -5701,10 +6028,10 @@ export default function MiTienda() {
               {kpi.icon}
             </div>
             <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: "0.7rem", fontWeight: 800, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "3px" }}>
+              <div style={{ fontSize: "0.7rem", fontWeight: 800, color: darkMode ? "#d1d5db" : "#9ca3af", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "3px" }}>
                 {kpi.label}
               </div>
-              <div style={{ fontSize: "1.25rem", fontWeight: 900, color: "#1f2937", lineHeight: 1.1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+              <div style={{ fontSize: "1.25rem", fontWeight: 900, color: panelText, lineHeight: 1.1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                 {kpi.value}
               </div>
             </div>
@@ -5714,31 +6041,31 @@ export default function MiTienda() {
 
       {/* Tabla */}
       <div style={{
-        background: "white", borderRadius: "16px",
-        border: "1.5px solid #e5e7eb", boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
+        background: panelBg, borderRadius: "16px",
+        border: `1.5px solid ${panelBorder}`, boxShadow: darkMode ? "0 2px 8px rgba(0,0,0,0.22)" : "0 2px 8px rgba(0,0,0,0.05)",
         padding: "24px 28px"
       }}>
         {loadingVentas && (
           <div style={{ padding: "48px", textAlign: "center", color: "#9ca3af" }}>Cargando ventas…</div>
         )}
         {!loadingVentas && ventas.length === 0 && (
-          <div style={{ border: "2px dashed #e5e7eb", borderRadius: "14px", padding: "56px 20px", textAlign: "center" }}>
-            <div style={{ width: "64px", height: "64px", borderRadius: "18px", background: "#fdf7f8", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
-              <IconChartBar width={30} height={30} strokeWidth={1.8} style={{ color: "#C5425A" }} />
+          <div style={{ border: `2px dashed ${panelBorder}`, borderRadius: "14px", padding: "56px 20px", textAlign: "center", background: darkMode ? "#171717" : "transparent" }}>
+            <div style={{ width: "64px", height: "64px", borderRadius: "18px", background: darkMode ? "rgba(255,79,131,0.12)" : "#fdf7f8", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
+              <IconChartBar width={30} height={30} strokeWidth={1.8} style={{ color: darkMode ? "#ff4f83" : "#C5425A" }} />
             </div>
-            <h3 style={{ margin: "0 0 8px", color: "#1f2937", fontSize: "1.05rem" }}>No hay ventas registradas aún</h3>
-            <p style={{ margin: 0, color: "#6b7280", fontSize: "0.88rem" }}>Aquí aparecerá el desglose por libro vendido</p>
+            <h3 style={{ margin: "0 0 8px", color: panelText, fontSize: "1.05rem" }}>No hay ventas registradas aún</h3>
+            <p style={{ margin: 0, color: panelMuted, fontSize: "0.88rem" }}>Aquí aparecerá el desglose por libro vendido</p>
           </div>
         )}
         {!loadingVentas && ventas.length > 0 && (
           <div style={{ overflowX: "auto" }}>
             <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", minWidth: "860px" }}>
               <thead>
-                <tr style={{ background: "#f8f6f4", borderBottom: "1.5px solid #e0dbd4" }}>
+                <tr style={{ background: panelSoft, borderBottom: `1.5px solid ${darkMode ? "#3a3a3a" : "#e0dbd4"}` }}>
                   {["Orden", "Fecha", "Libros", "Cant.", "Precio", "Total", "Cliente", "Estado"].map((h) => (
                     <th key={h} style={{
                       padding: "12px 14px", fontWeight: 800, fontSize: "0.72rem",
-                      textTransform: "uppercase", letterSpacing: "0.05em", color: "#6b7280",
+                      textTransform: "uppercase", letterSpacing: "0.05em", color: panelMuted,
                       whiteSpace: "nowrap", textAlign: "center"
                     }}>{h}</th>
                   ))}
@@ -5753,8 +6080,8 @@ export default function MiTienda() {
                   return (
                     <tr
                       key={v.id_orden}
-                      style={{ borderBottom: "1px solid #f0ebe4", transition: "background 0.15s" }}
-                      onMouseEnter={(e) => { e.currentTarget.style.background = "#fdf9fa"; }}
+                      style={{ borderBottom: `1px solid ${darkMode ? "#2f2f2f" : "#f0ebe4"}`, transition: "background 0.15s" }}
+                      onMouseEnter={(e) => { e.currentTarget.style.background = darkMode ? "#242424" : "#fdf9fa"; }}
                       onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
                     >
                       {/* Orden */}
@@ -5772,8 +6099,8 @@ export default function MiTienda() {
 
                       {/* Fecha */}
                       <td style={{ padding: "14px", whiteSpace: "nowrap", textAlign: "center" }}>
-                        <div style={{ fontWeight: 700, fontSize: "0.85rem", color: "#1f2937" }}>{fec.corta}</div>
-                        <div style={{ fontSize: "0.72rem", color: "#9ca3af" }}>{fec.detalle}</div>
+                        <div style={{ fontWeight: 700, fontSize: "0.85rem", color: panelText }}>{fec.corta}</div>
+                        <div style={{ fontSize: "0.72rem", color: darkMode ? "#b8b8b8" : "#9ca3af" }}>{fec.detalle}</div>
                       </td>
 
                       {/* Producto(s) */}
@@ -5789,7 +6116,7 @@ export default function MiTienda() {
                             ) : <IconBook width={17} height={17} strokeWidth={2} style={{ color: "#C5425A" }} />}
                           </div>
                           <div style={{ width: "190px", textAlign: "center" }}>
-                            <div style={{ fontWeight: 700, fontSize: "0.86rem", color: "#1f2937", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "190px" }}>
+                            <div style={{ fontWeight: 700, fontSize: "0.86rem", color: panelText, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "190px" }}>
                               {multi ? "Varios libros" : (v.titulo || "Libro")}
                             </div>
                             {multi ? (
@@ -5798,15 +6125,15 @@ export default function MiTienda() {
                                 onClick={() => setDetalleVenta(v)}
                                 style={{
                                   marginTop: "5px", display: "inline-flex", alignItems: "center", gap: "4px",
-                                  border: "1px solid #e8d5dc", borderRadius: "999px",
-                                  padding: "3px 9px", background: "#fdf7f8", color: "#7A1E3A",
+                                  border: `1px solid ${darkMode ? "rgba(255,79,131,0.35)" : "#e8d5dc"}`, borderRadius: "999px",
+                                  padding: "3px 9px", background: darkMode ? "rgba(255,79,131,0.08)" : "#fdf7f8", color: darkMode ? "#ff8eac" : "#7A1E3A",
                                   fontWeight: 700, fontSize: "0.7rem", cursor: "pointer", fontFamily: "inherit"
                                 }}
                               >
                                 <IconEye width={11} height={11} strokeWidth={2.2} /> Ver detalle
                               </button>
                             ) : (
-                              <div style={{ fontSize: "0.72rem", color: "#9ca3af", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "190px" }}>
+                              <div style={{ fontSize: "0.72rem", color: darkMode ? "#b8b8b8" : "#9ca3af", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "190px" }}>
                                 {v.autor_libro || ""}
                               </div>
                             )}
@@ -5818,7 +6145,7 @@ export default function MiTienda() {
                       <td style={{ padding: "14px", textAlign: "center" }}>
                         <span style={{
                           display: "inline-flex", alignItems: "center", justifyContent: "center",
-                          minWidth: "34px", background: "#f3f4f6", color: "#374151",
+                          minWidth: "34px", background: darkMode ? "#2a2a2a" : "#f3f4f6", color: darkMode ? "#f3f4f6" : "#374151",
                           borderRadius: "9px", padding: "4px 10px", fontWeight: 800, fontSize: "0.82rem"
                         }}>
                           {v.cantidadOrden}
@@ -5826,7 +6153,7 @@ export default function MiTienda() {
                       </td>
 
                       {/* Precio unitario */}
-                      <td style={{ padding: "14px", fontSize: "0.82rem", color: "#6b7280", whiteSpace: "nowrap", textAlign: "center" }}>
+                      <td style={{ padding: "14px", fontSize: "0.82rem", color: panelMuted, whiteSpace: "nowrap", textAlign: "center" }}>
                         {multi ? "Varios" : formatPrecio(v.precio_libro)}
                       </td>
 
@@ -5834,7 +6161,7 @@ export default function MiTienda() {
                       <td style={{ padding: "14px", textAlign: "center" }}>
                         <div style={{
                           width: "120px", margin: "0 auto", textAlign: "right",
-                          fontSize: "1.02rem", fontWeight: 900, color: "#7A1E3A",
+                          fontSize: "1.02rem", fontWeight: 900, color: darkMode ? "#ff4f83" : "#7A1E3A",
                           fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap"
                         }}>
                           {formatPrecio(v.totalOrden)}
@@ -5855,10 +6182,10 @@ export default function MiTienda() {
                             ) : iniciales(cliente)}
                           </div>
                           <div style={{ minWidth: 0, textAlign: "center" }}>
-                            <div style={{ fontWeight: 700, fontSize: "0.84rem", color: "#1f2937", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "140px" }}>
+                            <div style={{ fontWeight: 700, fontSize: "0.84rem", color: panelText, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "140px" }}>
                               {cliente}
                             </div>
-                            <div style={{ fontSize: "0.7rem", color: "#9ca3af", maxWidth: "150px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            <div style={{ fontSize: "0.7rem", color: darkMode ? "#b8b8b8" : "#9ca3af", maxWidth: "150px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                               {v.correo_cliente || ""}
                             </div>
                           </div>
@@ -5995,7 +6322,7 @@ export default function MiTienda() {
                     style={{
                       display: "flex", alignItems: "center", gap: "12px",
                       padding: "12px", borderRadius: "12px",
-                      border: "1.5px solid #e5e7eb", background: "#fafafa"
+                      border: `1.5px solid ${darkMode ? "#3a3a3a" : "#e5e7eb"}`, background: darkMode ? "#181818" : "#fafafa"
                     }}
                   >
                     <div style={{
@@ -6008,12 +6335,12 @@ export default function MiTienda() {
                       ) : <IconBook width={18} height={18} style={{ color: "#C5425A" }} />}
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontWeight: 800, fontSize: "0.88rem", color: "#1f2937" }}>{item.titulo}</div>
-                      <div style={{ fontSize: "0.76rem", color: "#6b7280", marginTop: "3px" }}>
+                      <div style={{ fontWeight: 800, fontSize: "0.88rem", color: panelText }}>{item.titulo}</div>
+                      <div style={{ fontSize: "0.76rem", color: panelMuted, marginTop: "3px" }}>
                         Cantidad: {item.cantidad} · Unitario: {formatPrecio(item.precio_libro)}
                       </div>
                     </div>
-                    <div style={{ fontWeight: 800, fontSize: "0.9rem", color: "#7A1E3A", whiteSpace: "nowrap", flexShrink: 0 }}>
+                    <div style={{ fontWeight: 800, fontSize: "0.9rem", color: darkMode ? "#ff8eac" : "#7A1E3A", whiteSpace: "nowrap", flexShrink: 0 }}>
                       {formatPrecio(item.total)}
                     </div>
                   </div>
@@ -6022,16 +6349,16 @@ export default function MiTienda() {
 
               {/* Resumen */}
               <div style={{
-                background: "#fdf7f8", borderRadius: "12px",
-                border: "1px solid #f0e4e8", padding: "16px 18px"
+                background: darkMode ? "rgba(255,79,131,0.08)" : "#fdf7f8", borderRadius: "12px",
+                border: `1px solid ${darkMode ? "rgba(255,79,131,0.25)" : "#f0e4e8"}`, padding: "16px 18px"
               }}>
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.82rem", color: "#6b7280", marginBottom: "8px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.82rem", color: panelMuted, marginBottom: "8px" }}>
                   <span>Total de la orden</span>
-                  <span style={{ color: "#1f2937", fontWeight: 700 }}>{formatPrecio(detalleVenta.totalOrden)}</span>
+                  <span style={{ color: panelText, fontWeight: 700 }}>{formatPrecio(detalleVenta.totalOrden)}</span>
                 </div>
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.82rem", color: "#6b7280" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.82rem", color: panelMuted }}>
                   <span>Comprador</span>
-                  <span style={{ color: "#1f2937", fontWeight: 700 }}>{detalleVenta.cliente}</span>
+                  <span style={{ color: panelText, fontWeight: 700 }}>{detalleVenta.cliente}</span>
                 </div>
               </div>
             </div>
@@ -6350,7 +6677,7 @@ export default function MiTienda() {
             transform: scale(1.1) rotate(5deg);
           }
         `}</style>
-        <SeccionCalificacionesVendedor tiendaId={tiendaInfo?.id_tienda} />
+        <SeccionCalificacionesVendedor tiendaId={tiendaInfo?.id_tienda} darkMode={darkMode} />
       </>
     );
   };
@@ -6372,9 +6699,9 @@ export default function MiTienda() {
       case "Perfil":        return renderPerfil();
       case "Métodos de cobro": return RenderCuentasBancarias();
       case "Promociones":   return <SeccionOfertas />;
-      case "Cupones":       return <SeccionCuponesVendedor tiendaId={tiendaInfo?.id_tienda} />;
-      case "Suscripciones": return <SeccionSuscripciones tiendaId={tiendaInfo?.id_tienda} onNavegar={cambiarSeccion} />;
-      case "Impulsos":      return <SeccionImpulsos tiendaId={tiendaInfo?.id_tienda} onNavegar={cambiarSeccion} />;
+      case "Cupones":       return <SeccionCuponesVendedor tiendaId={tiendaInfo?.id_tienda} darkMode={darkMode} />;
+      case "Suscripciones": return <SeccionSuscripciones tiendaId={tiendaInfo?.id_tienda} onNavegar={cambiarSeccion} darkMode={darkMode} />;
+      case "Impulsos":      return <SeccionImpulsos tiendaId={tiendaInfo?.id_tienda} onNavegar={cambiarSeccion} darkMode={darkMode} />;
       default:              return renderInicio();
     }
   };

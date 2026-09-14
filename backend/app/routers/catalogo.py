@@ -156,9 +156,14 @@ def busqueda_avanzada(
                 c.nombre_categoria,
                 t.nombre_tienda,
                 t.id_tienda,
+                COALESCE(tc.tarifa_envio, 0) AS costo_envio_tienda,
+                COALESCE(tc.tiempo_despacho_dias, 2) AS tiempo_despacho_dias,
+                tc.politica_devoluciones,
+                tc.politica_envios,
                 (SELECT url_imagen FROM imagenes_libro WHERE id_libro = l.id_libro LIMIT 1) as imagen_url,
+                GROUP_CONCAT(DISTINCT i.url_imagen ORDER BY i.es_principal DESC, i.id_imagen ASC) AS imagenes,
                 COALESCE(AVG(r.calificacion), 0) as promedio_calificacion,
-                COUNT(r.id_resena) as total_resenas,
+                COUNT(DISTINCT r.id_resena) as total_resenas,
                 (SELECT ROUND(AVG(ct.calificacion), 1) 
                  FROM calificaciones_tiendas ct 
                  WHERE ct.id_tienda = t.id_tienda) as calificacion_tienda,
@@ -169,9 +174,11 @@ def busqueda_avanzada(
             LEFT JOIN categorias c ON l.id_categoria = c.id_categoria
             LEFT JOIN tiendas t ON l.id_tienda = t.id_tienda
             LEFT JOIN usuarios u ON t.id_usuario = u.id_usuario
+            LEFT JOIN tienda_configuracion tc ON t.id_tienda = tc.id_tienda
+            LEFT JOIN imagenes_libro i ON l.id_libro = i.id_libro
             LEFT JOIN resenas_libros r ON l.id_libro = r.id_libro
             WHERE {where_clause}
-            GROUP BY l.id_libro, l.titulo, l.autor_libro, l.isbn, l.precio_libro, l.stock, l.descripcion_libro, l.fecha_listado, c.nombre_categoria, t.nombre_tienda, t.id_tienda
+            GROUP BY l.id_libro, l.titulo, l.autor_libro, l.isbn, l.precio_libro, l.stock, l.descripcion_libro, l.fecha_listado, c.nombre_categoria, t.nombre_tienda, t.id_tienda, tc.tarifa_envio, tc.tiempo_despacho_dias, tc.politica_devoluciones, tc.politica_envios
             {having_clause}
             ORDER BY {order_clause}
             LIMIT %s OFFSET %s
@@ -180,6 +187,8 @@ def busqueda_avanzada(
         params.extend(having_params + [limite, offset])
         cursor.execute(main_query, params)
         libros = cursor.fetchall()
+        for libro in libros:
+            libro["imagenes"] = libro["imagenes"].split(",") if libro.get("imagenes") else []
         
         # Calcular páginas
         total_paginas = (total + limite - 1) // limite
@@ -198,6 +207,66 @@ def busqueda_avanzada(
     finally:
         cursor.close()
         db.close()
+
+@router.get("/libro/{id_libro}")
+def obtener_libro_catalogo(id_libro: int):
+    """Obtiene un libro del catálogo por su ID (incluye datos de tienda, imágenes y calificaciones)"""
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    try:
+        cursor.execute("""
+            SELECT 
+                l.id_libro,
+                l.titulo,
+                l.autor_libro,
+                l.isbn,
+                l.descripcion_libro,
+                l.precio_libro,
+                l.stock,
+                l.estado_libro,
+                l.fecha_listado,
+                c.nombre_categoria,
+                t.nombre_tienda,
+                t.id_tienda,
+                COALESCE(tc.tarifa_envio, 0) AS costo_envio_tienda,
+                COALESCE(tc.tiempo_despacho_dias, 2) AS tiempo_despacho_dias,
+                tc.politica_devoluciones,
+                tc.politica_envios,
+                (SELECT url_imagen FROM imagenes_libro WHERE id_libro = l.id_libro LIMIT 1) as imagen_url,
+                GROUP_CONCAT(DISTINCT i.url_imagen ORDER BY i.es_principal DESC, i.id_imagen ASC) AS imagenes,
+                COALESCE(AVG(r.calificacion), 0) as promedio_calificacion,
+                COUNT(DISTINCT r.id_resena) as total_resenas,
+                (SELECT ROUND(AVG(ct.calificacion), 1)
+                 FROM calificaciones_tiendas ct
+                 WHERE ct.id_tienda = t.id_tienda) as calificacion_tienda,
+                (SELECT COUNT(ct.id_calificacion)
+                 FROM calificaciones_tiendas ct
+                 WHERE ct.id_tienda = t.id_tienda) as total_opiniones_tienda
+            FROM libros l
+            LEFT JOIN categorias c ON l.id_categoria = c.id_categoria
+            LEFT JOIN tiendas t ON l.id_tienda = t.id_tienda
+            LEFT JOIN tienda_configuracion tc ON t.id_tienda = tc.id_tienda
+            LEFT JOIN imagenes_libro i ON l.id_libro = i.id_libro
+            LEFT JOIN resenas_libros r ON l.id_libro = r.id_libro
+            WHERE l.id_libro = %s AND l.oculto = 0
+            GROUP BY l.id_libro, l.titulo, l.autor_libro, l.isbn, l.precio_libro, l.stock,
+                     l.descripcion_libro, l.fecha_listado, c.nombre_categoria, t.nombre_tienda,
+                     t.id_tienda, tc.tarifa_envio, tc.tiempo_despacho_dias,
+                     tc.politica_devoluciones, tc.politica_envios
+        """, (id_libro,))
+        libro = cursor.fetchone()
+        if not libro:
+            raise HTTPException(status_code=404, detail="Libro no encontrado")
+        libro["imagenes"] = libro["imagenes"].split(",") if libro.get("imagenes") else []
+        return libro
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        cursor.close()
+        db.close()
+
 
 @router.get("/filtros-disponibles")
 def obtener_filtros_disponibles():

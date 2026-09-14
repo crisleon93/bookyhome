@@ -365,6 +365,142 @@
       "estado_orden": "pagado",
       "metodo_pago": "Tarjeta de Crédito",
       "id_direccion": 16
+    },
+    {
+      "id_orden": 12,
+      "codigo_compra": "BH-AB9E21E7AC",
+      "fecha": "2026-09-13T23:19:56.385539Z",
+      "items": [
+        {
+          "id_libro": 5247,
+          "titulo": "Ingenieria de software",
+          "autor_libro": "Ian Sommerville",
+          "precio_libro": 156000.0,
+          "cantidad": 1,
+          "imagen": "https://images.unsplash.com/photo-1512820790803-83ca734da794?w=400&q=80",
+          "id_variante": null,
+          "variante_label": null,
+          "id_tienda": 148,
+          "nombre_tienda": ""
+        }
+      ],
+      "subtotal": 156000.0,
+      "costo_envio": 0.0,
+      "total": 156000.0,
+      "estado": "pagado",
+      "tipo_entrega": "domicilio",
+      "pin_retiro": null,
+      "estado_retiro": null,
+      "fecha_limite_retiro": null,
+      "id_orden_db": 755,
+      "estado_orden": "pagado",
+      "metodo_pago": "PayPal",
+      "id_direccion": 16
+    },
+    {
+      "id_orden": 13,
+      "codigo_compra": "BH-C35D3D6442",
+      "fecha": "2026-09-13T23:48:19.761438Z",
+      "items": [
+        {
+          "id_libro": 5248,
+          "titulo": "Peter Pan",
+          "autor_libro": "J.M. Barrie",
+          "precio_libro": 46000.0,
+          "cantidad": 1,
+          "imagen": "https://images.unsplash.com/photo-1512820790803-83ca734da794?w=400&q=80",
+          "id_variante": null,
+          "variante_label": null,
+          "id_tienda": 148,
+          "nombre_tienda": ""
+        },
+        {
+          "id_libro": 5255,
+          "titulo": "Neuromante",
+          "autor_libro": "William Gibson",
+          "precio_libro": 52000.0,
+          "cantidad": 1,
+          "imagen": "https://images.unsplash.com/photo-1512820790803-83ca734da794?w=400&q=80",
+          "id_variante": null,
+          "variante_label": null,
+          "id_tienda": 149,
+          "nombre_tienda": ""
+        }
+      ],
+      "subtotal": 98000.0,
+      "costo_envio": 0.0,
+      "total": 98000.0,
+      "estado": "pagado",
+      "tipo_entrega": "domicilio",
+      "pin_retiro": null,
+      "estado_retiro": null,
+      "fecha_limite_retiro": null,
+      "id_orden_db": 756,
+      "estado_orden": "pagado",
+      "metodo_pago": "Pago en Efecty",
+      "id_direccion": 16
+    },
+    {
+      "id_orden": 14,
+      "codigo_compra": "BH-A52858C858",
+      "fecha": "2026-09-13T23:50:47.084700Z",
+      "items": [
+        {
+          "id_libro": 5247,
+          "titulo": "Ingenieria de software",
+          "autor_libro": "Ian Sommerville",
+          "precio_libro": 156000.0,
+          "cantidad": 1,
+          "imagen": "https://images.unsplash.com/photo-1512820790803-83ca734da794?w=400&q=80",
+          "id_variante": null,
+          "variante_label": null,
+          "id_tienda": 148,
+          "nombre_tienda": ""
+        }
+      ],
+      "subtotal": 156000.0,
+      "costo_envio": 0.0,
+      "total": 156000.0,
+      "estado": "pagado",
+      "tipo_entrega": "domicilio",
+      "pin_retiro": null,
+      "estado_retiro": null,
+      "fecha_limite_retiro": null,
+      "id_orden_db": 757,
+      "estado_orden": "pagado",
+      "metodo_pago": "PSE",
+      "id_direccion": 16
+    },
+    {
+      "id_orden": 15,
+      "codigo_compra": "BH-31060198D4",
+      "fecha": "2026-09-14T00:13:23.940076Z",
+      "items": [
+        {
+          "id_libro": 5345,
+          "titulo": "hola soy pablo",
+          "autor_libro": "quesada",
+          "precio_libro": 234443.0,
+          "cantidad": 1,
+          "imagen": "/uploads/libros/ded5ef9a2e73457e952cf785e663715c.png",
+          "id_variante": null,
+          "variante_label": null,
+          "id_tienda": 8,
+          "nombre_tienda": ""
+        }
+      ],
+      "subtotal": 234443.0,
+      "costo_envio": 12000.0,
+      "total": 246443.0,
+      "estado": "pagado",
+      "tipo_entrega": "domicilio",
+      "pin_retiro": null,
+      "estado_retiro": null,
+      "fecha_limite_retiro": null,
+      "id_orden_db": 758,
+      "estado_orden": "pagado",
+      "metodo_pago": "Pago en Efecty",
+      "id_direccion": 16
     }
   ]
 }

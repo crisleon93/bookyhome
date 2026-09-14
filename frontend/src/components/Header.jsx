@@ -956,6 +956,11 @@ function Header({ variant, hasSidebar }) {
       const decoded = jwtDecode(token);
       notify('Inicio de sesión correcto', 'success');
       setLoginOpen(false);
+      // Restaurar modo oscuro si estaba activo
+      const savedDarkMode = localStorage.getItem('darkMode') === 'true';
+      if (savedDarkMode) {
+        document.documentElement.classList.add('dark');
+      }
       // Disparar evento para que App.jsx detecte el cambio
       window.dispatchEvent(new CustomEvent('auth-change', { detail: { authenticated: true } }));
       if (decoded.rol === 'vendedor') {

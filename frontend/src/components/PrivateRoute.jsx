@@ -39,6 +39,7 @@ function PrivateRoute({ allowedRoles }) {
   // ========================
   if (!isTokenValid) {
     localStorage.removeItem('token');
+    document.documentElement.classList.remove('dark');
     return <Navigate to="/" replace />;
   }
 

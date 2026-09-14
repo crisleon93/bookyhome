@@ -8,7 +8,7 @@ import json
 from datetime import datetime
 
 router = APIRouter(prefix="/perfil", tags=["Perfil Usuario"])
-security = HTTPBearer()
+security = HTTPBearer(auto_error=False)
 
 class ActualizarEstadoOrden(BaseModel):
     estado: str = Field(..., description="Nuevo estado de la orden (pagado, enviado, entregada, cancelada)")
@@ -34,10 +34,18 @@ class DireccionCrear(DireccionBase):
     direccion: str
     es_principal: bool = False
 
+class CanalNotificacion(BaseModel):
+    email: bool = True
+    web: bool = True
+
 class PreferenciasUsuario(BaseModel):
-    notificaciones_promociones: bool = True
-    notificaciones_pedidos: bool = True
-    notificaciones_novedades: bool = False
+    notificaciones_mensajes: CanalNotificacion = None
+    notificaciones_resenas: CanalNotificacion = None
+    notificaciones_ofertas: CanalNotificacion = None
+    notificaciones_pedidos: CanalNotificacion = None
+    notificaciones_entregas: CanalNotificacion = None
+    notificaciones_pagos: CanalNotificacion = None
+    notificaciones_sistema: CanalNotificacion = None
 
 class PerfilRespuesta(BaseModel):
     id_usuario: int
@@ -57,10 +65,12 @@ class EstadisticasRespuesta(BaseModel):
 # ============= HELPERS =============
 
 def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    if not credentials:
+        raise HTTPException(status_code=401, detail="Token requerido")
     token = credentials.credentials
     payload = verify_token(token)
     if not payload:
-        raise HTTPException(status_code=401, detail="Token invÃ¡lido")
+        raise HTTPException(status_code=401, detail="Token inválido")
     return int(payload.get("sub"))
 
 # ============= ENDPOINTS =============
@@ -282,9 +292,13 @@ def obtener_perfil(user_id: int = Depends(get_current_user)):
             usuario['preferencias'] = json.loads(usuario['preferencias'])
         else:
             usuario['preferencias'] = {
-                'notificaciones_promociones': True,
-                'notificaciones_pedidos': True,
-                'notificaciones_novedades': False
+                'notificaciones_mensajes': {'email': True, 'web': True},
+                'notificaciones_resenas': {'email': True, 'web': True},
+                'notificaciones_ofertas': {'email': True, 'web': False},
+                'notificaciones_pedidos': {'email': True, 'web': True},
+                'notificaciones_entregas': {'email': True, 'web': True},
+                'notificaciones_pagos': {'email': True, 'web': True},
+                'notificaciones_sistema': {'email': True, 'web': True}
             }
         
         return usuario
@@ -483,17 +497,92 @@ def actualizar_preferencias(data: PreferenciasUsuario, user_id: int = Depends(ge
     db = get_db()
     cursor = db.cursor()
     try:
-        preferencias_json = json.dumps({
-            'notificaciones_promociones': data.notificaciones_promociones,
-            'notificaciones_pedidos': data.notificaciones_pedidos,
-            'notificaciones_novedades': data.notificaciones_novedades
-        })
+        preferencias_dict = {}
+        
+        # Procesar cada tipo de notificación si está presente
+        if data.notificaciones_mensajes:
+            preferencias_dict['notificaciones_mensajes'] = {
+                'email': data.notificaciones_mensajes.email,
+                'web': data.notificaciones_mensajes.web
+            }
+        if data.notificaciones_resenas:
+            preferencias_dict['notificaciones_resenas'] = {
+                'email': data.notificaciones_resenas.email,
+                'web': data.notificaciones_resenas.web
+            }
+        if data.notificaciones_ofertas:
+            preferencias_dict['notificaciones_ofertas'] = {
+                'email': data.notificaciones_ofertas.email,
+                'web': data.notificaciones_ofertas.web
+            }
+        if data.notificaciones_pedidos:
+            preferencias_dict['notificaciones_pedidos'] = {
+                'email': data.notificaciones_pedidos.email,
+                'web': data.notificaciones_pedidos.web
+            }
+        if data.notificaciones_entregas:
+            preferencias_dict['notificaciones_entregas'] = {
+                'email': data.notificaciones_entregas.email,
+                'web': data.notificaciones_entregas.web
+            }
+        if data.notificaciones_pagos:
+            preferencias_dict['notificaciones_pagos'] = {
+                'email': data.notificaciones_pagos.email,
+                'web': data.notificaciones_pagos.web
+            }
+        if data.notificaciones_sistema:
+            preferencias_dict['notificaciones_sistema'] = {
+                'email': data.notificaciones_sistema.email,
+                'web': data.notificaciones_sistema.web
+            }
+
+        preferencias_json = json.dumps(preferencias_dict)
         
         query = "UPDATE usuarios SET preferencias = %s WHERE id_usuario = %s"
         cursor.execute(query, (preferencias_json, user_id))
         db.commit()
         
         return {"ok": True, "mensaje": "Preferencias actualizadas correctamente"}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        cursor.close()
+        db.close()
+
+class CambiarPassword(BaseModel):
+    password_actual: str = Field(..., description="Contraseña actual del usuario")
+    password_nueva: str = Field(..., description="Nueva contraseña del usuario")
+
+@router.put("/cambiar-password")
+def cambiar_password(data: CambiarPassword, user_id: int = Depends(get_current_user)):
+    """Cambia la contraseña del usuario verificando la contraseña actual"""
+    from app.models.usuarios import obtener_usuario_por_id, verificar_password_usuario
+    
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    try:
+        # Obtener usuario actual
+        cursor.execute("SELECT * FROM usuarios WHERE id_usuario = %s", (user_id,))
+        usuario = cursor.fetchone()
+        
+        if not usuario:
+            raise HTTPException(status_code=404, detail="Usuario no encontrado")
+        
+        # Verificar contraseña actual
+        if not verificar_password_usuario(usuario['correo_usuario'], data.password_actual):
+            raise HTTPException(status_code=400, detail="La contraseña actual es incorrecta")
+        
+        # Actualizar contraseña
+        from app.models.usuarios import actualizar_password
+        resultado = actualizar_password(user_id, data.password_nueva)
+        
+        if not resultado["ok"]:
+            raise HTTPException(status_code=500, detail="Error al actualizar la contraseña")
+        
+        return {"ok": True, "mensaje": "Contraseña actualizada correctamente"}
+    except HTTPException:
+        raise
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
@@ -526,15 +615,25 @@ def obtener_estadisticas_reales(user_id: int = Depends(get_current_user)):
         total_gastado = float(estadisticas['total_gastado']) if estadisticas and estadisticas['total_gastado'] else 0
         ticket_promedio = float(estadisticas['ticket_promedio']) if estadisticas and estadisticas['ticket_promedio'] else 0
         
-        # Calcular nivel de fidelizaciÃ³n
-        if total_gastado >= 300000:
-            nivel_fidelizacion = 'Platino'
-        elif total_gastado >= 150000:
-            nivel_fidelizacion = 'Oro'
-        elif total_gastado >= 50000:
-            nivel_fidelizacion = 'Plata'
-        else:
-            nivel_fidelizacion = 'Bronce'
+        # Calcular nivel de fidelizacion con 12 niveles y umbrales escalados para reflejar valor real de cada piedra
+        niveles_fidelizacion = [
+            (6500000, 'Platino'),
+            (4500000, 'Onix'),
+            (3200000, 'Diamante'),
+            (2300000, 'Obsidiana'),
+            (1700000, 'Perla'),
+            (1200000, 'Amatista'),
+            (800000, 'Esmeralda'),
+            (500000, 'Rubi'),
+            (300000, 'Zafiro'),
+            (150000, 'Oro'),
+            (50000, 'Plata'),
+        ]
+        nivel_fidelizacion = 'Bronce'
+        for umbral, nivel in niveles_fidelizacion:
+            if total_gastado >= umbral:
+                nivel_fidelizacion = nivel
+                break
         
         # Obtener categorÃ­as favoritas
         query_categorias = """
@@ -902,7 +1001,7 @@ def usuario_puede_calificar_tienda(id_tienda: int, user_id: int = Depends(get_cu
             SELECT id_calificacion FROM calificaciones_tiendas 
             WHERE id_usuario = %s AND id_tienda = %s
         """, (user_id, id_tienda))
-        ya_califico = cursor.fetchone() is not None
+        ya_califico = bool(cursor.fetchall())
 
         # 2. Verificar que haya comprado en esta tienda con estado entregada
         cursor.execute("""

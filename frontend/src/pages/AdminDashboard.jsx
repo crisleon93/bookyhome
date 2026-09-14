@@ -829,6 +829,8 @@ export default function AdminDashboard() {
         <button
           onClick={() => {
             localStorage.removeItem('token');
+            localStorage.removeItem('darkMode');
+            document.documentElement.classList.remove('dark');
             navigate('/');
           }}
           title={!sidebarOpen ? 'Cerrar sesión' : undefined}
