@@ -43,7 +43,7 @@ export const reservarRetiroEnTienda = (orderId, metodoPago) => api.post(`/api/v1
 export const notificarLlegadaTienda = (orderId) => api.post(`/api/v1/orders/${orderId}/llegada-tienda`)
 export const habilitarPagoRetiro = (orderId) => api.post(`/api/v1/orders/${orderId}/habilitar-pago-retiro`)
 export const confirmarEntregaRetiro = (orderId, esEfectivo = false) => api.post(`/api/v1/orders/${orderId}/confirmar-entrega-retiro`, { es_efectivo: esEfectivo })
-export const getStoredLibros = () => api.get('/api/stored/libros')
+export const getStoredLibros = (params = {}) => api.get('/api/stored/libros', { params })
 export const getLibroById = (id) => api.get(`/api/stored/libros/${id}`)
 export const getUsuarios = () => api.get('/usuarios')
 export const uploadProfilePhoto = (formData) => api.post('/perfil/foto-perfil', formData, {

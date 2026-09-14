@@ -101,6 +101,13 @@ def login_usuario(email: str, password: str):
         return None
     return user
 
+def verificar_password_usuario(email: str, password: str):
+    """Verifica si la contraseña proporcionada es correcta para el usuario."""
+    user = obtener_usuario_por_email(email)
+    if not user:
+        return False
+    return verify_password(password, user["contrasena_usuario"])
+
 def obtener_todos_usuarios():
     """Recupera todos los usuarios registrados en el sistema."""
     db = get_db()

@@ -1338,8 +1338,15 @@ BEGIN
     DECLARE total_compras DECIMAL(12,2);
     SELECT IFNULL(SUM(total), 0) INTO total_compras FROM ordenes_compra
     WHERE id_usuario = p_id_usuario AND estado_orden NOT IN ('Cancelada','Pendiente');
-    IF total_compras >= 300000 THEN RETURN 'Platino';
-    ELSEIF total_compras >= 150000 THEN RETURN 'Oro';
+    IF total_compras >= 600000 THEN RETURN 'Onix';
+    ELSEIF total_compras >= 500000 THEN RETURN 'Diamante';
+    ELSEIF total_compras >= 400000 THEN RETURN 'Obsidiana';
+    ELSEIF total_compras >= 350000 THEN RETURN 'Perla';
+    ELSEIF total_compras >= 300000 THEN RETURN 'Amatista';
+    ELSEIF total_compras >= 250000 THEN RETURN 'Esmeralda';
+    ELSEIF total_compras >= 200000 THEN RETURN 'Rubi';
+    ELSEIF total_compras >= 150000 THEN RETURN 'Zafiro';
+    ELSEIF total_compras >= 100000 THEN RETURN 'Oro';
     ELSEIF total_compras >= 50000 THEN RETURN 'Plata';
     ELSE RETURN 'Bronce'; END IF;
 END //

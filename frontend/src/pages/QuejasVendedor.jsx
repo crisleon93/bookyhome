@@ -27,6 +27,15 @@ const ESTADO_CONFIG = {
   'Cerrado': { bg: '#f8fafc', text: '#64748b', border: '#e2e8f0', label: 'Cerrado', dot: '#94a3b8' },
 };
 
+const ESTADO_CONFIG_DARK = {
+  'Abierto': { bg: '#2e0d0d', text: '#f87171', border: '#7f2020', label: 'Abierto', dot: '#f87171' },
+  'En revisión': { bg: '#2e1a08', text: '#fb923c', border: '#7a3518', label: 'En revisión', dot: '#fb923c' },
+  'En revision': { bg: '#2e1a08', text: '#fb923c', border: '#7a3518', label: 'En revisión', dot: '#fb923c' },
+  'Resuelto': { bg: '#0f2e1a', text: '#4ade80', border: '#1f7a5d', label: 'Resuelto', dot: '#4ade80' },
+  'Rechazado': { bg: '#2e0d0d', text: '#f87171', border: '#7f2020', label: 'Rechazado', dot: '#f87171' },
+  'Cerrado': { bg: '#1e1e1e', text: '#9ca3af', border: '#4b5563', label: 'Cerrado', dot: '#9ca3af' },
+};
+
 // ==================== ICONOS AUXILIARES ====================
 function IconBookSvg({ width = 16, height = 16, style = {} }) {
   return (
@@ -133,6 +142,55 @@ export default function QuejasVendedor() {
   const [evidenciaModalUrl, setEvidenciaModalUrl] = useState(null);
   const [panelContraido, setPanelContraido] = useState(false);
 
+  // Dark mode
+  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('darkMode') === 'true');
+  useEffect(() => {
+    const handler = () => setDarkMode(localStorage.getItem('darkMode') === 'true');
+    window.addEventListener('darkModeChange', handler);
+    window.addEventListener('storage', handler);
+    return () => { window.removeEventListener('darkModeChange', handler); window.removeEventListener('storage', handler); };
+  }, []);
+
+  // Paleta de colores según modo
+  const t = {
+    cardBg:            darkMode ? '#2a2a2a' : '#fff',
+    subCardBg:         darkMode ? '#333333' : '#fafafa',
+    subCardBorder:     darkMode ? '1px solid #4a4a4a' : '1px solid #e2e8f0',
+    inputBg:           darkMode ? '#353535' : '#fff',
+    inputBorder:       darkMode ? '#4a4a4a' : '#e2e8f0',
+    inputColor:        darkMode ? '#ececec' : '#1a1a1a',
+    textPrimary:       darkMode ? '#ececec' : '#1e1e1e',
+    textSecondary:     darkMode ? '#c8c8c8' : '#64748b',
+    textMuted:         darkMode ? '#999' : '#94a3b8',
+    divider:           darkMode ? '#444' : '#e2e8f0',
+    vinoLight:         darkMode ? '#2a1f2a' : '#fbf0f4',
+    vinoLightBorder:   darkMode ? '#3a2a3a' : '#f3d1dc',
+    chatBg:            darkMode ? '#252525' : '#fcfcfc',
+    chatInputBg:       darkMode ? '#353535' : '#fafafa',
+    chatInputBorder:   darkMode ? '#4a4a4a' : '#e2e8f0',
+    chatMsgVendorBg:   darkMode ? '#2a1f2a' : '#fbf0f4',
+    chatMsgVendorBorder: darkMode ? '#5a2a3a' : '#7A1E3A',
+    chatMsgVendorColor: darkMode ? '#e090a0' : '#7A1E3A',
+    chatMsgUserBg:     darkMode ? '#333333' : '#f1f5f9',
+    chatMsgUserBorder: darkMode ? '#4a4a4a' : '#e2e8f0',
+    chatMsgUserColor:  darkMode ? '#c8c8c8' : '#1e1e1e',
+    chatMsgAdminBg:    darkMode ? '#1a2a3a' : '#e0f2fe',
+    chatMsgAdminBorder: darkMode ? '#2a3a5a' : '#bae6fd',
+    chatMsgAdminColor: darkMode ? '#60a5fa' : '#1a1a1a',
+    modalBg:           darkMode ? '#2a2a2a' : '#fff',
+    modalOverlay:      darkMode ? 'rgba(0,0,0,0.85)' : 'rgba(0,0,0,0.5)',
+    errorBg:           darkMode ? '#3a1a1a' : '#fef2f2',
+    errorBorder:       darkMode ? '#8a2a2a' : '#fecaca',
+    errorColor:        darkMode ? '#f87171' : '#991b1b',
+    motivoBg:          darkMode ? '#2a1515' : '#fef2f2',
+    motivoBorder:      darkMode ? '#6a1a1a' : '#fee2e2',
+    motivoColor:       darkMode ? '#e07070' : '#991b1b',
+    descBg:            darkMode ? '#1a0a0a' : 'rgba(255,255,255,0.75)',
+    descColor:         darkMode ? '#e07070' : '#450a0a',
+  };
+
+  const EC = darkMode ? ESTADO_CONFIG_DARK : ESTADO_CONFIG;
+
   const chatEndRef = useRef(null);
 
   // Helper para tiempo transcurrido
@@ -186,17 +244,19 @@ export default function QuejasVendedor() {
   }, [cargar]);
 
   // Cargar mensajes del chat al seleccionar
+  const seleccionadaId = seleccionada?.id_solicitud;
+
   useEffect(() => {
-    if (!seleccionada) {
+    if (!seleccionadaId) {
       setMensajes([]);
       return;
     }
     setCargandoChat(true);
-    getMensajesReclamo(seleccionada.id_solicitud)
+    getMensajesReclamo(seleccionadaId)
       .then((res) => setMensajes(res.data || []))
       .catch(() => setMensajes([]))
       .finally(() => setCargandoChat(false));
-  }, [seleccionada?.id_solicitud]);
+  }, [seleccionadaId]);
 
   // Auto-scroll
   useEffect(() => {
@@ -276,43 +336,43 @@ export default function QuejasVendedor() {
           marginBottom: 20,
         }}
       >
-        <div style={{ background: WHITE, borderRadius: 14, padding: '14px 18px', border: `1px solid ${BORDER}`, boxShadow: '0 2px 8px rgba(0,0,0,0.02)', display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ width: 38, height: 38, borderRadius: 10, background: VINOTINTO_LIGHT, color: VINOTINTO, display: 'grid', placeItems: 'center' }}>
+        <div style={{ background: t.cardBg, borderRadius: 14, padding: '14px 18px', border: t.subCardBorder, boxShadow: '0 2px 8px rgba(0,0,0,0.02)', display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ width: 38, height: 38, borderRadius: 10, background: t.vinoLight, color: darkMode ? '#e090a0' : VINOTINTO, display: 'grid', placeItems: 'center' }}>
             <IconAlertTriangle width={18} height={18} />
           </div>
           <div>
-            <div style={{ fontSize: '0.72rem', color: GRAY, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Total Reclamos</div>
-            <div style={{ fontSize: '1.35rem', fontWeight: 800, color: CARBON, marginTop: 1 }}>{conteos.total}</div>
+            <div style={{ fontSize: '0.72rem', color: t.textSecondary, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Total Reclamos</div>
+            <div style={{ fontSize: '1.35rem', fontWeight: 800, color: t.textPrimary, marginTop: 1 }}>{conteos.total}</div>
           </div>
         </div>
 
-        <div style={{ background: WHITE, borderRadius: 14, padding: '14px 18px', border: `1px solid ${BORDER}`, boxShadow: '0 2px 8px rgba(0,0,0,0.02)', display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ width: 38, height: 38, borderRadius: 10, background: '#fef2f2', color: '#dc2626', display: 'grid', placeItems: 'center' }}>
+        <div style={{ background: t.cardBg, borderRadius: 14, padding: '14px 18px', border: t.subCardBorder, boxShadow: '0 2px 8px rgba(0,0,0,0.02)', display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ width: 38, height: 38, borderRadius: 10, background: darkMode ? '#3a1a1a' : '#fef2f2', color: darkMode ? '#ff8a8a' : '#dc2626', display: 'grid', placeItems: 'center' }}>
             <IconAlertTriangle width={18} height={18} />
           </div>
           <div>
-            <div style={{ fontSize: '0.72rem', color: GRAY, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Abiertos / Nuevos</div>
-            <div style={{ fontSize: '1.35rem', fontWeight: 800, color: '#dc2626', marginTop: 1 }}>{conteos.abiertos}</div>
+            <div style={{ fontSize: '0.72rem', color: t.textSecondary, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Abiertos / Nuevos</div>
+            <div style={{ fontSize: '1.35rem', fontWeight: 800, color: darkMode ? '#ff8a8a' : '#dc2626', marginTop: 1 }}>{conteos.abiertos}</div>
           </div>
         </div>
 
-        <div style={{ background: WHITE, borderRadius: 14, padding: '14px 18px', border: `1px solid ${BORDER}`, boxShadow: '0 2px 8px rgba(0,0,0,0.02)', display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ width: 38, height: 38, borderRadius: 10, background: '#fff7ed', color: '#ea580c', display: 'grid', placeItems: 'center' }}>
+        <div style={{ background: t.cardBg, borderRadius: 14, padding: '14px 18px', border: t.subCardBorder, boxShadow: '0 2px 8px rgba(0,0,0,0.02)', display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ width: 38, height: 38, borderRadius: 10, background: darkMode ? '#3a2a1a' : '#fff7ed', color: darkMode ? '#ffb347' : '#ea580c', display: 'grid', placeItems: 'center' }}>
             <IconEye width={18} height={18} />
           </div>
           <div>
-            <div style={{ fontSize: '0.72rem', color: GRAY, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>En Revisión</div>
-            <div style={{ fontSize: '1.35rem', fontWeight: 800, color: '#ea580c', marginTop: 1 }}>{conteos.enRevision}</div>
+            <div style={{ fontSize: '0.72rem', color: t.textSecondary, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>En Revisión</div>
+            <div style={{ fontSize: '1.35rem', fontWeight: 800, color: darkMode ? '#ffb347' : '#ea580c', marginTop: 1 }}>{conteos.enRevision}</div>
           </div>
         </div>
 
-        <div style={{ background: WHITE, borderRadius: 14, padding: '14px 18px', border: `1px solid ${BORDER}`, boxShadow: '0 2px 8px rgba(0,0,0,0.02)', display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ width: 38, height: 38, borderRadius: 10, background: '#f0fdf4', color: '#16a34a', display: 'grid', placeItems: 'center' }}>
+        <div style={{ background: t.cardBg, borderRadius: 14, padding: '14px 18px', border: t.subCardBorder, boxShadow: '0 2px 8px rgba(0,0,0,0.02)', display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ width: 38, height: 38, borderRadius: 10, background: darkMode ? '#1a3a2a' : '#f0fdf4', color: darkMode ? '#6ae07a' : '#16a34a', display: 'grid', placeItems: 'center' }}>
             <IconCheckCircleSvg width={18} height={18} />
           </div>
           <div>
-            <div style={{ fontSize: '0.72rem', color: GRAY, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Resueltos</div>
-            <div style={{ fontSize: '1.35rem', fontWeight: 800, color: '#16a34a', marginTop: 1 }}>{conteos.resueltos}</div>
+            <div style={{ fontSize: '0.72rem', color: t.textSecondary, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Resueltos</div>
+            <div style={{ fontSize: '1.35rem', fontWeight: 800, color: darkMode ? '#6ae07a' : '#16a34a', marginTop: 1 }}>{conteos.resueltos}</div>
           </div>
         </div>
       </div>
@@ -320,10 +380,10 @@ export default function QuejasVendedor() {
       {/* ==================== FILTROS Y BUSCADOR ==================== */}
       <div
         style={{
-          background: WHITE,
+          background: t.cardBg,
           borderRadius: 14,
           padding: '12px 18px',
-          border: `1px solid ${BORDER}`,
+          border: t.subCardBorder,
           marginBottom: 20,
           display: 'flex',
           flexWrap: 'wrap',
@@ -350,9 +410,9 @@ export default function QuejasVendedor() {
                   fontSize: '0.82rem',
                   fontWeight: 700,
                   cursor: 'pointer',
-                  border: activo ? `1.5px solid ${pill.color}` : `1px solid ${BORDER}`,
-                  background: activo ? (pill.id === 'todos' ? VINOTINTO : pill.color) : '#f8fafc',
-                  color: activo ? WHITE : CARBON,
+                  border: activo ? `1.5px solid ${pill.color}` : `1px solid ${t.inputBorder}`,
+                  background: activo ? (pill.id === 'todos' ? VINOTINTO : pill.color) : (darkMode ? '#2a2a2a' : '#f8fafc'),
+                  color: activo ? WHITE : t.textPrimary,
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: 6,
@@ -362,8 +422,8 @@ export default function QuejasVendedor() {
                 <span>{pill.label}</span>
                 <span
                   style={{
-                    background: activo ? 'rgba(255,255,255,0.25)' : '#e2e8f0',
-                    color: activo ? WHITE : GRAY,
+                    background: activo ? 'rgba(255,255,255,0.25)' : (darkMode ? '#3a3a3a' : '#e2e8f0'),
+                    color: activo ? WHITE : t.textSecondary,
                     fontSize: '0.7rem',
                     padding: '1px 6px',
                     borderRadius: 10,
@@ -386,7 +446,7 @@ export default function QuejasVendedor() {
               left: 12,
               top: '50%',
               transform: 'translateY(-50%)',
-              color: GRAY,
+              color: t.textSecondary,
             }}
           />
           <input
@@ -398,15 +458,17 @@ export default function QuejasVendedor() {
               width: '100%',
               padding: '8px 12px 8px 34px',
               borderRadius: 10,
-              border: `1.5px solid ${BORDER}`,
+              border: `1.5px solid ${t.inputBorder}`,
               fontSize: '0.84rem',
               outline: 'none',
               transition: 'border-color 0.2s',
               boxSizing: 'border-box',
               fontFamily: 'inherit',
+              background: t.inputBg,
+              color: t.inputColor,
             }}
             onFocus={(e) => (e.target.style.borderColor = VINOTINTO)}
-            onBlur={(e) => (e.target.style.borderColor = BORDER)}
+            onBlur={(e) => (e.target.style.borderColor = t.inputBorder)}
           />
         </div>
       </div>
@@ -415,12 +477,12 @@ export default function QuejasVendedor() {
       {error && (
         <div
           style={{
-            background: '#fef2f2',
-            color: '#991b1b',
+            background: t.errorBg,
+            color: t.errorColor,
             padding: '12px 16px',
             borderRadius: 12,
             marginBottom: 20,
-            border: '1px solid #fecaca',
+            border: t.errorBorder,
             display: 'flex',
             alignItems: 'center',
             gap: 10,
@@ -428,7 +490,7 @@ export default function QuejasVendedor() {
             fontWeight: 600,
           }}
         >
-          <IconAlertTriangle width={18} height={18} style={{ color: '#dc2626' }} />
+          <IconAlertTriangle width={18} height={18} style={{ color: darkMode ? '#f87171' : '#dc2626' }} />
           <span>{error}</span>
         </div>
       )}
@@ -446,9 +508,9 @@ export default function QuejasVendedor() {
         {/* ==================== COLUMNA IZQUIERDA: LISTA DE RECLAMOS ==================== */}
         <div
           style={{
-            background: WHITE,
+            background: t.cardBg,
             borderRadius: 16,
-            border: `1px solid ${BORDER}`,
+            border: t.subCardBorder,
             boxShadow: '0 2px 12px rgba(0,0,0,0.03)',
             padding: panelContraido ? '14px 8px' : 16,
             maxHeight: 'calc(100vh - 180px)',
@@ -465,16 +527,16 @@ export default function QuejasVendedor() {
               justifyContent: panelContraido ? 'center' : 'space-between',
               alignItems: 'center',
               paddingBottom: 12,
-              borderBottom: `1px solid ${BORDER}`,
+              borderBottom: t.divider,
               marginBottom: 12,
             }}
           >
             {!panelContraido && (
               <div>
-                <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 800, color: CARBON }}>
+                <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 800, color: t.textPrimary }}>
                   Solicitudes
                 </h3>
-                <span style={{ fontSize: '0.74rem', color: GRAY, fontWeight: 600 }}>
+                <span style={{ fontSize: '0.74rem', color: t.textSecondary, fontWeight: 600 }}>
                   {quejasFiltradas.length} recibidas
                 </span>
               </div>
@@ -484,9 +546,9 @@ export default function QuejasVendedor() {
               onClick={() => setPanelContraido(!panelContraido)}
               title={panelContraido ? 'Expandir lista de solicitudes' : 'Contraer lista para ampliar el chat'}
               style={{
-                background: panelContraido ? VINOTINTO_LIGHT : '#f8fafc',
-                border: `1px solid ${panelContraido ? '#f3d1dc' : BORDER}`,
-                color: panelContraido ? VINOTINTO : GRAY,
+                background: panelContraido ? t.vinoLight : (darkMode ? '#353535' : '#f8fafc'),
+                border: `1px solid ${panelContraido ? t.vinoLightBorder : t.inputBorder}`,
+                color: panelContraido ? (darkMode ? '#e090a0' : VINOTINTO) : t.textSecondary,
                 borderRadius: 8,
                 padding: '6px',
                 cursor: 'pointer',
@@ -495,7 +557,7 @@ export default function QuejasVendedor() {
                 transition: 'all 0.2s',
               }}
               onMouseEnter={(e) => (e.currentTarget.style.borderColor = VINOTINTO)}
-              onMouseLeave={(e) => (e.currentTarget.style.borderColor = panelContraido ? '#f3d1dc' : BORDER)}
+              onMouseLeave={(e) => (e.currentTarget.style.borderColor = panelContraido ? t.vinoLightBorder : t.inputBorder)}
             >
               <IconSidebarToggle width={16} height={16} contraido={panelContraido} />
             </button>
@@ -503,12 +565,12 @@ export default function QuejasVendedor() {
 
           {/* Estado Cargando */}
           {cargando ? (
-            <div style={{ textAlign: 'center', padding: '30px 10px', color: GRAY, fontSize: '0.82rem' }}>
+            <div style={{ textAlign: 'center', padding: '30px 10px', color: t.textSecondary, fontSize: '0.82rem' }}>
               {!panelContraido && 'Cargando...'}
             </div>
           ) : quejasFiltradas.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '30px 10px', color: GRAY }}>
-              <IconAlertTriangle width={20} height={20} style={{ color: GRAY, margin: '0 auto 6px' }} />
+            <div style={{ textAlign: 'center', padding: '30px 10px', color: t.textSecondary }}>
+              <IconAlertTriangle width={20} height={20} style={{ color: t.textSecondary, margin: '0 auto 6px' }} />
               {!panelContraido && <p style={{ margin: 0, fontSize: '0.82rem', fontWeight: 600 }}>Sin reclamos</p>}
             </div>
           ) : (
@@ -516,7 +578,7 @@ export default function QuejasVendedor() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {quejasFiltradas.map((queja) => {
                 const esActivo = seleccionada?.id_solicitud === queja.id_solicitud;
-                const estConfig = ESTADO_CONFIG[queja.estado] || ESTADO_CONFIG['Abierto'];
+                const estConfig = EC[queja.estado] || EC['Abierto'];
 
                 if (panelContraido) {
                   // MODO CONTRAÍDO (Iconos compactos)
@@ -530,8 +592,8 @@ export default function QuejasVendedor() {
                         height: 48,
                         margin: '0 auto',
                         borderRadius: 10,
-                        border: esActivo ? `2px solid ${VINOTINTO}` : `1px solid ${BORDER}`,
-                        background: esActivo ? VINOTINTO_LIGHT : WHITE,
+                        border: esActivo ? `2px solid ${VINOTINTO}` : `1px solid ${t.inputBorder}`,
+                        background: esActivo ? t.vinoLight : t.cardBg,
                         cursor: 'pointer',
                         display: 'flex',
                         flexDirection: 'column',
@@ -554,10 +616,10 @@ export default function QuejasVendedor() {
                           right: 4,
                         }}
                       />
-                      <span style={{ fontSize: '0.68rem', fontWeight: 800, color: esActivo ? VINOTINTO : CARBON }}>
+                      <span style={{ fontSize: '0.68rem', fontWeight: 800, color: esActivo ? (darkMode ? '#e090a0' : VINOTINTO) : t.textPrimary }}>
                         #{queja.id_orden}
                       </span>
-                      <span style={{ fontSize: '0.62rem', color: GRAY, textTransform: 'uppercase' }}>
+                      <span style={{ fontSize: '0.62rem', color: t.textSecondary, textTransform: 'uppercase' }}>
                         {(queja.comprador || 'C').substring(0, 2)}
                       </span>
                     </button>
@@ -572,20 +634,20 @@ export default function QuejasVendedor() {
                     style={{
                       padding: '12px 14px',
                       borderRadius: 12,
-                      border: esActivo ? `1.5px solid ${VINOTINTO}` : `1px solid ${BORDER}`,
-                      background: esActivo ? VINOTINTO_LIGHT : WHITE,
+                      border: esActivo ? `1.5px solid ${VINOTINTO}` : `1px solid ${t.inputBorder}`,
+                      background: esActivo ? t.vinoLight : t.cardBg,
                       boxShadow: esActivo ? '0 3px 12px rgba(122,30,58,0.08)' : '0 1px 4px rgba(0,0,0,0.02)',
                       cursor: 'pointer',
                       transition: 'all 0.2s',
-                      borderLeft: esActivo ? `4px solid ${VINOTINTO}` : `1px solid ${BORDER}`,
+                      borderLeft: esActivo ? `4px solid ${VINOTINTO}` : `1px solid ${t.inputBorder}`,
                     }}
                   >
                     {/* Header: Orden y Estado */}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
                       <span
                         style={{
-                          background: esActivo ? VINOTINTO : '#f1f5f9',
-                          color: esActivo ? WHITE : CARBON,
+                          background: esActivo ? VINOTINTO : (darkMode ? '#2a2a2a' : '#f1f5f9'),
+                          color: esActivo ? WHITE : t.textPrimary,
                           fontSize: '0.72rem',
                           fontWeight: 800,
                           padding: '2px 6px',
@@ -616,10 +678,10 @@ export default function QuejasVendedor() {
 
                     {/* Comprador y Tiempo */}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                      <strong style={{ fontSize: '0.82rem', color: CARBON, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 150 }}>
+                      <strong style={{ fontSize: '0.82rem', color: t.textPrimary, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 150 }}>
                         {queja.comprador || 'Comprador'}
                       </strong>
-                      <span style={{ fontSize: '0.68rem', color: GRAY }}>
+                      <span style={{ fontSize: '0.68rem', color: t.textSecondary }}>
                         {tiempoTranscurrido(queja.fecha_creacion)}
                       </span>
                     </div>
@@ -632,7 +694,7 @@ export default function QuejasVendedor() {
                         gap: 4,
                         fontSize: '0.72rem',
                         fontWeight: 700,
-                        color: VINOTINTO,
+                        color: darkMode ? '#e090a0' : VINOTINTO,
                         whiteSpace: 'nowrap',
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
@@ -652,9 +714,9 @@ export default function QuejasVendedor() {
         {/* ==================== COLUMNA DERECHA: CONVERSACIÓN Y DETALLE (MAXIMIZADO) ==================== */}
         <div
           style={{
-            background: WHITE,
+            background: t.cardBg,
             borderRadius: 16,
-            border: `1px solid ${BORDER}`,
+            border: t.subCardBorder,
             boxShadow: '0 2px 12px rgba(0,0,0,0.03)',
             display: 'flex',
             flexDirection: 'column',
@@ -663,14 +725,14 @@ export default function QuejasVendedor() {
           }}
         >
           {!seleccionada ? (
-            <div style={{ textAlign: 'center', margin: 'auto', padding: '60px 24px', color: GRAY, maxWidth: 360 }}>
-              <div style={{ width: 56, height: 56, borderRadius: '50%', background: VINOTINTO_LIGHT, color: VINOTINTO, display: 'grid', placeItems: 'center', margin: '0 auto 14px' }}>
+            <div style={{ textAlign: 'center', margin: 'auto', padding: '60px 24px', color: t.textSecondary, maxWidth: 360 }}>
+              <div style={{ width: 56, height: 56, borderRadius: '50%', background: t.vinoLight, color: VINOTINTO, display: 'grid', placeItems: 'center', margin: '0 auto 14px' }}>
                 <IconMessage width={28} height={28} />
               </div>
-              <h3 style={{ margin: '0 0 6px', color: CARBON, fontSize: '1.1rem', fontWeight: 800 }}>
+              <h3 style={{ margin: '0 0 6px', color: t.textPrimary, fontSize: '1.1rem', fontWeight: 800 }}>
                 Selecciona un reclamo
               </h3>
-              <p style={{ margin: 0, fontSize: '0.86rem', color: GRAY, lineHeight: 1.5 }}>
+              <p style={{ margin: 0, fontSize: '0.86rem', color: t.textSecondary, lineHeight: 1.5 }}>
                 Elige una solicitud para revisar los detalles del caso, evidencias y dialogar en tiempo real con el comprador.
               </p>
             </div>
@@ -680,8 +742,8 @@ export default function QuejasVendedor() {
               <div
                 style={{
                   padding: '16px 20px',
-                  background: 'linear-gradient(180deg, #fafafa 0%, #ffffff 100%)',
-                  borderBottom: `1px solid ${BORDER}`,
+                  background: darkMode ? 'linear-gradient(180deg, #252525 0%, #1e1e1e 100%)' : 'linear-gradient(180deg, #fafafa 0%, #ffffff 100%)',
+                  borderBottom: t.divider,
                 }}
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
@@ -692,9 +754,9 @@ export default function QuejasVendedor() {
                         onClick={() => setPanelContraido(false)}
                         title="Expandir lista de solicitudes"
                         style={{
-                          background: VINOTINTO_LIGHT,
-                          border: `1px solid #f3d1dc`,
-                          color: VINOTINTO,
+                          background: t.vinoLight,
+                          border: `1px solid ${t.vinoLightBorder}`,
+                          color: darkMode ? '#e090a0' : VINOTINTO,
                           padding: '6px 10px',
                           borderRadius: 8,
                           fontSize: '0.76rem',
@@ -715,8 +777,8 @@ export default function QuejasVendedor() {
                         width: 44,
                         height: 56,
                         borderRadius: 6,
-                        background: '#f8fafc',
-                        border: `1px solid ${BORDER}`,
+                        background: darkMode ? '#2a2a2a' : '#f8fafc',
+                        border: `1px solid ${t.inputBorder}`,
                         overflow: 'hidden',
                         flexShrink: 0,
                         display: 'grid',
@@ -730,7 +792,7 @@ export default function QuejasVendedor() {
                           style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                         />
                       ) : (
-                        <IconBookSvg width={20} height={20} style={{ color: GRAY }} />
+                        <IconBookSvg width={20} height={20} style={{ color: t.textSecondary }} />
                       )}
                     </div>
 
@@ -739,15 +801,15 @@ export default function QuejasVendedor() {
                         <span style={{ background: VINOTINTO, color: WHITE, fontSize: '0.74rem', fontWeight: 800, padding: '2px 7px', borderRadius: 4 }}>
                           Orden #{seleccionada.id_orden}
                         </span>
-                        <span style={{ fontSize: '0.78rem', color: GRAY, fontWeight: 600 }}>
+                        <span style={{ fontSize: '0.78rem', color: t.textSecondary, fontWeight: 600 }}>
                           Caso #{seleccionada.id_solicitud}
                         </span>
                       </div>
-                      <h2 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, color: CARBON }}>
+                      <h2 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, color: t.textPrimary }}>
                         {seleccionada.titulo_libro || `Reclamo de ${seleccionada.comprador}`}
                       </h2>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 2, fontSize: '0.78rem', color: GRAY }}>
-                        <span>Comprador: <strong style={{ color: CARBON }}>{seleccionada.comprador}</strong></span>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 2, fontSize: '0.78rem', color: t.textSecondary }}>
+                        <span>Comprador: <strong style={{ color: t.textPrimary }}>{seleccionada.comprador}</strong></span>
                         {seleccionada.correo_comprador && (
                           <a href={`mailto:${seleccionada.correo_comprador}`} style={{ color: '#0284c7', textDecoration: 'none', fontWeight: 600 }}>
                             {seleccionada.correo_comprador}
@@ -763,7 +825,7 @@ export default function QuejasVendedor() {
                   {/* Estado y Acción de Colapsar */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     {(() => {
-                      const est = ESTADO_CONFIG[seleccionada.estado] || ESTADO_CONFIG['Abierto'];
+                      const est = EC[seleccionada.estado] || EC['Abierto'];
                       return (
                         <span
                           style={{
@@ -789,9 +851,9 @@ export default function QuejasVendedor() {
                       onClick={() => setPanelContraido(!panelContraido)}
                       title={panelContraido ? 'Mostrar lista completa' : 'Maximizar espacio del chat'}
                       style={{
-                        background: '#f8fafc',
-                        border: `1px solid ${BORDER}`,
-                        color: GRAY,
+                        background: darkMode ? '#2a2a2a' : '#f8fafc',
+                        border: `1px solid ${t.inputBorder}`,
+                        color: t.textSecondary,
                         borderRadius: 8,
                         padding: '6px 10px',
                         fontSize: '0.75rem',
@@ -803,7 +865,7 @@ export default function QuejasVendedor() {
                         transition: 'all 0.2s',
                       }}
                       onMouseEnter={(e) => (e.currentTarget.style.borderColor = VINOTINTO)}
-                      onMouseLeave={(e) => (e.currentTarget.style.borderColor = BORDER)}
+                      onMouseLeave={(e) => (e.currentTarget.style.borderColor = t.inputBorder)}
                     >
                       <IconSidebarToggle width={14} height={14} contraido={panelContraido} />
                       <span>{panelContraido ? 'Restaurar panel' : 'Maximizar chat'}</span>
@@ -817,25 +879,25 @@ export default function QuejasVendedor() {
                     marginTop: 12,
                     padding: '10px 14px',
                     borderRadius: 10,
-                    background: '#fef2f2',
-                    border: '1px solid #fee2e2',
+                    background: t.motivoBg,
+                    border: t.motivoBorder,
                     display: 'flex',
                     flexDirection: 'column',
                     gap: 6,
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 6 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#991b1b', fontWeight: 700, fontSize: '0.82rem' }}>
-                      <IconAlertTriangle width={14} height={14} style={{ color: '#dc2626' }} />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: t.motivoColor, fontWeight: 700, fontSize: '0.82rem' }}>
+                      <IconAlertTriangle width={14} height={14} style={{ color: darkMode ? '#ff8a8a' : '#dc2626' }} />
                       Motivo: {seleccionada.asunto}
                     </div>
                     {seleccionada.evidencia_url && (
                       <button
                         onClick={() => setEvidenciaModalUrl(`${getApiBaseUrl()}${seleccionada.evidencia_url}`)}
                         style={{
-                          background: WHITE,
-                          border: '1px solid #fca5a5',
-                          color: '#991b1b',
+                          background: t.cardBg,
+                          border: t.motivoBorder,
+                          color: t.motivoColor,
                           padding: '3px 8px',
                           borderRadius: 6,
                           fontSize: '0.74rem',
@@ -851,7 +913,7 @@ export default function QuejasVendedor() {
                       </button>
                     )}
                   </div>
-                  <p style={{ margin: 0, fontSize: '0.84rem', color: '#450a0a', lineHeight: 1.45, background: 'rgba(255,255,255,0.75)', padding: '8px 10px', borderRadius: 6 }}>
+                  <p style={{ margin: 0, fontSize: '0.84rem', color: t.descColor, lineHeight: 1.45, background: t.descBg, padding: '8px 10px', borderRadius: 6 }}>
                     "{seleccionada.descripcion}"
                   </p>
                 </div>
@@ -868,19 +930,19 @@ export default function QuejasVendedor() {
                   display: 'flex',
                   flexDirection: 'column',
                   gap: 12,
-                  background: '#fcfcfc',
+                  background: t.chatBg,
                 }}
               >
                 {cargandoChat ? (
-                  <div style={{ textAlign: 'center', padding: '30px', color: GRAY, fontSize: '0.85rem' }}>
+                  <div style={{ textAlign: 'center', padding: '30px', color: t.textSecondary, fontSize: '0.85rem' }}>
                     Cargando mensajes...
                   </div>
                 ) : mensajes.length === 0 ? (
-                  <div style={{ textAlign: 'center', margin: 'auto', padding: '30px 20px', color: GRAY }}>
-                    <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#f1f5f9', display: 'grid', placeItems: 'center', margin: '0 auto 8px' }}>
-                      <IconMessage width={20} height={20} style={{ color: GRAY }} />
+                  <div style={{ textAlign: 'center', margin: 'auto', padding: '30px 20px', color: t.textSecondary }}>
+                    <div style={{ width: 40, height: 40, borderRadius: '50%', background: darkMode ? '#2a2a2a' : '#f1f5f9', display: 'grid', placeItems: 'center', margin: '0 auto 8px' }}>
+                      <IconMessage width={20} height={20} style={{ color: t.textSecondary }} />
                     </div>
-                    <p style={{ margin: 0, fontWeight: 700, color: CARBON, fontSize: '0.9rem' }}>
+                    <p style={{ margin: 0, fontWeight: 700, color: t.textPrimary, fontSize: '0.9rem' }}>
                       Aún no hay respuestas en este reclamo
                     </p>
                     <p style={{ margin: '3px 0 0', fontSize: '0.8rem' }}>
@@ -899,8 +961,8 @@ export default function QuejasVendedor() {
                         style={{
                           alignSelf: esVendedor ? 'flex-end' : 'flex-start',
                           maxWidth: '78%',
-                          background: esVendedor ? VINOTINTO_LIGHT : esAdmin ? '#fffbeb' : WHITE,
-                          border: esVendedor ? `1.5px solid #f3d1dc` : esAdmin ? `1.5px solid #fef3c7` : `1px solid ${BORDER}`,
+                          background: esVendedor ? t.chatMsgVendorBg : esAdmin ? t.chatMsgAdminBg : t.chatMsgUserBg,
+                          border: esVendedor ? `1.5px solid ${t.chatMsgVendorBorder}` : esAdmin ? `1.5px solid ${t.chatMsgAdminBorder}` : `1px solid ${t.chatMsgUserBorder}`,
                           borderRadius: 12,
                           padding: '10px 14px',
                           boxShadow: '0 1px 6px rgba(0,0,0,0.02)',
@@ -910,7 +972,7 @@ export default function QuejasVendedor() {
                           <strong
                             style={{
                               fontSize: '0.82rem',
-                              color: esVendedor ? VINOTINTO : esAdmin ? '#b45309' : '#1e40af',
+                              color: esVendedor ? t.chatMsgVendorColor : esAdmin ? t.chatMsgAdminColor : t.chatMsgUserColor,
                             }}
                           >
                             {item.nombre_usuario}
@@ -930,13 +992,13 @@ export default function QuejasVendedor() {
                           </span>
 
                           {item.fecha_creacion && (
-                            <span style={{ fontSize: '0.7rem', color: GRAY, marginLeft: 'auto' }}>
+                            <span style={{ fontSize: '0.7rem', color: t.textSecondary, marginLeft: 'auto' }}>
                               {new Date(item.fecha_creacion).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })}
                             </span>
                           )}
                         </div>
 
-                        <p style={{ margin: 0, color: CARBON, fontSize: '0.88rem', lineHeight: 1.5, wordBreak: 'break-word' }}>
+                        <p style={{ margin: 0, color: t.textPrimary, fontSize: '0.88rem', lineHeight: 1.5, wordBreak: 'break-word' }}>
                           {item.mensaje}
                         </p>
                       </div>
@@ -947,8 +1009,8 @@ export default function QuejasVendedor() {
               </div>
 
               {/* PLANTILLAS RÁPIDAS */}
-              <div style={{ padding: '7px 20px', background: '#fafafa', borderTop: `1px solid ${BORDER}`, display: 'flex', gap: 6, overflowX: 'auto', alignItems: 'center' }}>
-                <span style={{ fontSize: '0.7rem', fontWeight: 800, color: GRAY, textTransform: 'uppercase', flexShrink: 0 }}>
+              <div style={{ padding: '7px 20px', background: darkMode ? '#252525' : '#fafafa', borderTop: t.divider, display: 'flex', gap: 6, overflowX: 'auto', alignItems: 'center' }}>
+                <span style={{ fontSize: '0.7rem', fontWeight: 800, color: t.textSecondary, textTransform: 'uppercase', flexShrink: 0 }}>
                   Respuestas rápidas:
                 </span>
                 {plantillasRapidas.map((txt, idx) => (
@@ -957,19 +1019,19 @@ export default function QuejasVendedor() {
                     type="button"
                     onClick={() => setMensaje(txt)}
                     style={{
-                      background: WHITE,
-                      border: `1px solid ${BORDER}`,
+                      background: t.cardBg,
+                      border: `1px solid ${t.inputBorder}`,
                       padding: '3px 9px',
                       borderRadius: 12,
                       fontSize: '0.72rem',
-                      color: CARBON,
+                      color: t.textPrimary,
                       cursor: 'pointer',
                       whiteSpace: 'nowrap',
                       fontWeight: 600,
                       transition: 'all 0.2s',
                     }}
                     onMouseEnter={(e) => (e.currentTarget.style.borderColor = VINOTINTO)}
-                    onMouseLeave={(e) => (e.currentTarget.style.borderColor = BORDER)}
+                    onMouseLeave={(e) => (e.currentTarget.style.borderColor = t.inputBorder)}
                   >
                     {txt.substring(0, 36)}...
                   </button>
@@ -981,8 +1043,8 @@ export default function QuejasVendedor() {
                 onSubmit={responder}
                 style={{
                   padding: '14px 20px 16px',
-                  background: WHITE,
-                  borderTop: `1px solid ${BORDER}`,
+                  background: t.cardBg,
+                  borderTop: t.divider,
                   display: 'flex',
                   flexDirection: 'column',
                   gap: 8,
@@ -1004,7 +1066,7 @@ export default function QuejasVendedor() {
                       flex: 1,
                       padding: '10px 12px',
                       borderRadius: 10,
-                      border: `1.5px solid ${BORDER}`,
+                      border: `1.5px solid ${t.inputBorder}`,
                       fontSize: '0.88rem',
                       fontFamily: 'inherit',
                       resize: 'vertical',
@@ -1012,9 +1074,11 @@ export default function QuejasVendedor() {
                       lineHeight: 1.45,
                       boxSizing: 'border-box',
                       transition: 'border-color 0.2s',
+                      background: t.inputBg,
+                      color: t.inputColor,
                     }}
                     onFocus={(e) => (e.target.style.borderColor = VINOTINTO)}
-                    onBlur={(e) => (e.target.style.borderColor = BORDER)}
+                    onBlur={(e) => (e.target.style.borderColor = t.inputBorder)}
                   />
 
                   <button
@@ -1049,7 +1113,7 @@ export default function QuejasVendedor() {
                   </button>
                 </div>
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.72rem', color: GRAY }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.72rem', color: t.textSecondary }}>
                   <span>El comprador y el equipo de soporte de BookyHome recibirán tu mensaje.</span>
                   <span>Enter para enviar · Shift + Enter para salto de línea</span>
                 </div>
@@ -1066,7 +1130,7 @@ export default function QuejasVendedor() {
           style={{
             position: 'fixed',
             inset: 0,
-            background: 'rgba(0,0,0,0.8)',
+            background: t.modalOverlay,
             zIndex: 9999,
             display: 'grid',
             placeItems: 'center',
@@ -1076,7 +1140,7 @@ export default function QuejasVendedor() {
           <div
             onClick={(e) => e.stopPropagation()}
             style={{
-              background: WHITE,
+              background: t.modalBg,
               borderRadius: 16,
               maxWidth: 700,
               maxHeight: '90vh',

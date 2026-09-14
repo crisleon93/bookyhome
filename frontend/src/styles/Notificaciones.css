@@ -144,6 +144,31 @@
   color: white;
 }
 
+.notif-orden-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 12px;
+  background: white;
+  border: 2px solid #e0dbd4;
+  border-radius: 10px;
+  color: #64748b;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.notif-orden-control select {
+  appearance: none;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #374151;
+  padding: 10px 18px 10px 0;
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
 /* ============= LISTA DE NOTIFICACIONES ============= */
 
 .notif-lista {
@@ -336,6 +361,201 @@
   font-size: 1.1rem;
   font-weight: 500;
   animation: pulse 2s ease-in-out infinite;
+}
+
+/* ============= MODO OSCURO ============= */
+
+.dark .notificaciones-container--embedded .notif-header--embedded {
+  background: linear-gradient(135deg, #252525 0%, #1e1e1e 100%);
+  border-color: #454545;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.28);
+}
+
+.dark .notif-header h1 {
+  color: #f1f1f1;
+}
+
+.dark .notificaciones-container--embedded .notif-item,
+.dark .notificaciones-container--embedded .notif-empty,
+.dark .loading {
+  background: #252525;
+  border-color: #454545;
+  color: #c8c8c8;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.28);
+}
+
+.dark .notificaciones-container--embedded .notif-item.no-leida {
+  background: linear-gradient(135deg, #30262a 0%, #252525 100%);
+  border-left-color: #ff4f83;
+}
+
+.dark .filtro {
+  background: #252525;
+  border-color: #454545;
+  color: #c8c8c8;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.22);
+}
+
+.dark .filtro:hover {
+  background: #303030;
+  border-color: #ff4f83;
+  color: #ff8eae;
+}
+
+.dark .filtro.active {
+  background: linear-gradient(135deg, #8f2348 0%, #64152f 100%);
+  border-color: #d5526a;
+  color: #ffffff;
+}
+
+.dark .filtro-badge {
+  background: rgba(255, 107, 151, 0.18);
+  color: #ff9ab4;
+}
+
+.dark .filtro.active .filtro-badge {
+  background: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+}
+
+.dark .notif-orden-control {
+  background: #252525;
+  border-color: #454545;
+  color: #9fd2ff;
+}
+
+.dark .notif-orden-control select {
+  color: #ececec;
+}
+
+.dark .notif-orden-control select option {
+  background: #252525;
+  color: #ececec;
+}
+
+.dark .notif-icono {
+  background: linear-gradient(135deg, #26232a 0%, #1f1f22 100%);
+  border-color: #55505a;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.dark .notif-icono span svg {
+  color: #ff6b97 !important;
+  filter: drop-shadow(0 0 4px rgba(255, 107, 151, 0.24));
+}
+
+.dark .notif-contenido h3 {
+  color: #f1f1f1;
+}
+
+.dark .notif-contenido p {
+  color: #c8c8c8;
+}
+
+.dark .notif-contenido small {
+  color: #9fabb8;
+}
+
+.dark .notif-item.no-leida .notif-contenido h3 {
+  color: #ffb4c9;
+}
+
+.dark .notif-acciones .btn-marcar {
+  background: linear-gradient(135deg, #123d29 0%, #14532d 100%);
+  color: #86efac;
+  border-color: #4ade80;
+}
+
+.dark .notif-acciones .btn-eliminar {
+  background: linear-gradient(135deg, #452127 0%, #3a2024 100%);
+  color: #ff9b9b;
+  border-color: #f87171;
+}
+
+.dark .notif-empty p {
+  color: #c8c8c8;
+}
+
+.dark .notificaciones-container .pagination-info,
+.dark .notificaciones-container .pagination-per-page,
+.dark .notificaciones-container .pagination-total-note {
+  color: #aeb8c4;
+}
+
+.dark .notificaciones-container .pagination-btn-nav,
+.dark .notificaciones-container .pagination-num-btn,
+.dark .notificaciones-container .select-per-page {
+  background: #252525;
+  border-color: #454545;
+  color: #d6dbe1;
+}
+
+.dark .notificaciones-container .pagination-num-btn.active {
+  background: #8f2348;
+  border-color: #d5526a;
+  color: #ffffff;
+}
+
+.dark .btn-eliminar-mensajes {
+  background: #3a2024 !important;
+  border-color: #f87171 !important;
+  color: #ffb4b4 !important;
+  box-shadow: 0 3px 10px rgba(248, 113, 113, 0.14);
+}
+
+.dark .btn-eliminar-mensajes:hover {
+  background: #b91c1c !important;
+  border-color: #fecaca !important;
+  color: #ffffff !important;
+}
+
+.dark .notificaciones-delete-modal {
+  background: #252525 !important;
+  border: 1px solid #454545;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6) !important;
+}
+
+.dark .notificaciones-delete-modal-title {
+  color: #f1f1f1 !important;
+}
+
+.dark .notificaciones-delete-modal-description {
+  color: #b8c0ca !important;
+}
+
+.dark .notificaciones-delete-option {
+  background: #303030 !important;
+  border-color: #505050 !important;
+  color: #dbe1e8 !important;
+}
+
+.dark .notificaciones-delete-option span {
+  color: #e4e8ed !important;
+}
+
+.dark .notificaciones-delete-option.selected {
+  background: #3a202c !important;
+  border-color: #d5526a !important;
+  color: #ffb4c9 !important;
+}
+
+.dark .notificaciones-delete-option.selected span {
+  color: #ffb4c9 !important;
+}
+
+.dark .notificaciones-delete-option input {
+  accent-color: #ff6b97 !important;
+}
+
+.dark .notificaciones-delete-cancel {
+  background: #303030 !important;
+  border-color: #505050 !important;
+  color: #dbe1e8 !important;
+}
+
+.dark .notificaciones-delete-submit {
+  background: #dc2626 !important;
+  color: #ffffff !important;
 }
 
 @keyframes pulse {

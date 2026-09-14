@@ -24,20 +24,13 @@ export default function BookyPagoFinanzas({ defaultTab = 'balance' }) {
   const [historial, setHistorial] = useState({});
   
   // Resumen histórico de pagos heredados; las ventas nuevas se liquidan directamente.
-  const [nomina, setNomina] = useState({});
-  const [cuentasBancarias, setCuentasBancarias] = useState({});
+  const [, setNomina] = useState({});
+  const [cuentasBancarias] = useState({});
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedVendedor, setSelectedVendedor] = useState(null);
   const [selectedCuentaId, setSelectedCuentaId] = useState(null);
-  const [loadingCuentasModal, setLoadingCuentasModal] = useState(false);
   const [cuentaExito, setCuentaExito] = useState(null);
   const [mostrarExitoPago, setMostrarExitoPago] = useState(false);
-
-  useEffect(() => {
-    cargarBalance();
-    cargarEstadisticas();
-    cargarHistorial();
-  }, []);
 
   const cargarBalance = async () => {
     try {
@@ -72,34 +65,6 @@ export default function BookyPagoFinanzas({ defaultTab = 'balance' }) {
       setNomina(response.data.nomina);
     } catch (error) {
       console.error('Error cargando nómina:', error);
-    }
-  };
-
-  const cargarCuentasBancarias = async (idVendedor) => {
-    try {
-      const response = await api.get(`/api/v1/bookypago-finanzas/cuentas-bancarias/${idVendedor}`);
-      setCuentasBancarias(prev => ({
-        ...prev,
-        [idVendedor]: response.data.cuentas
-      }));
-      return response.data.cuentas;
-    } catch (error) {
-      console.error('Error cargando cuentas bancarias:', error);
-      return [];
-    }
-  };
-
-  const handleProcesarNomina = async (idVendedor) => {
-    setSelectedVendedor(idVendedor);
-    setSelectedCuentaId(null);
-    setShowPaymentModal(true);
-    setLoadingCuentasModal(true);
-    try {
-      const cuentas = await cargarCuentasBancarias(idVendedor);
-      const principal = cuentas.find((c) => c.es_principal) || cuentas[0] || null;
-      setSelectedCuentaId(principal?.id_metodo ?? null);
-    } finally {
-      setLoadingCuentasModal(false);
     }
   };
 
@@ -142,6 +107,16 @@ export default function BookyPagoFinanzas({ defaultTab = 'balance' }) {
     }).format(valor);
   };
 
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      void cargarBalance();
+      void cargarEstadisticas();
+      void cargarHistorial();
+    }, 0);
+
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
     <div style={{ padding: '24px', backgroundColor: BEIGE, minHeight: '100vh' }}>
       <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
@@ -175,7 +150,11 @@ export default function BookyPagoFinanzas({ defaultTab = 'balance' }) {
               </div>
             </div>
             <button 
-              onClick={() => { cargarBalance(); cargarEstadisticas(); cargarHistorial(); }}
+              onClick={() => {
+                void cargarBalance();
+                void cargarEstadisticas();
+                void cargarHistorial();
+              }}
               style={{
                 backgroundColor: VINOTINTO,
                 color: WHITE,
@@ -602,11 +581,7 @@ export default function BookyPagoFinanzas({ defaultTab = 'balance' }) {
               Cuenta bancaria registrada por el vendedor para recibir el pago:
             </p>
 
-            {loadingCuentasModal ? (
-              <p style={{ color: GRAY, textAlign: 'center', padding: '20px' }}>
-                Cargando datos bancarios del vendedor...
-              </p>
-            ) : cuentasBancarias[selectedVendedor] && cuentasBancarias[selectedVendedor].length > 0 ? (
+            {cuentasBancarias[selectedVendedor] && cuentasBancarias[selectedVendedor].length > 0 ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '20px' }}>
                 {cuentasBancarias[selectedVendedor].map((cuenta) => {
                   const seleccionada = selectedCuentaId === cuenta.id_metodo;
@@ -690,7 +665,7 @@ export default function BookyPagoFinanzas({ defaultTab = 'balance' }) {
               </button>
               <button
                 onClick={confirmarProcesarNomina}
-                disabled={!selectedCuentaId || loadingCuentasModal}
+                disabled={!selectedCuentaId}
                 style={{
                   flex: 1,
                   padding: '12px',
@@ -698,8 +673,8 @@ export default function BookyPagoFinanzas({ defaultTab = 'balance' }) {
                   color: WHITE,
                   border: 'none',
                   borderRadius: '8px',
-                  cursor: (!selectedCuentaId || loadingCuentasModal) ? 'not-allowed' : 'pointer',
-                  opacity: (!selectedCuentaId || loadingCuentasModal) ? 0.6 : 1,
+                  cursor: !selectedCuentaId ? 'not-allowed' : 'pointer',
+                  opacity: !selectedCuentaId ? 0.6 : 1,
                   fontWeight: '500',
                   fontSize: '14px'
                 }}

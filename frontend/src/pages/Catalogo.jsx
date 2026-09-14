@@ -1,14 +1,44 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import api, { addToCart, removeFromCart, getCarrito, usuarioPuedeCalificarTienda, crearCalificacionTienda, getCalificacionesTienda, actualizarCalificacionTienda } from '../services/api';
+import api, { addToCart, removeFromCart, getCarrito, getApiBaseUrl, usuarioPuedeCalificarTienda, crearCalificacionTienda, getCalificacionesTienda, actualizarCalificacionTienda } from '../services/api';
 import { notify } from '../components/ToastProvider';
 import LibroCard from '../components/LibroCard';
+
+const categoriaClase = (categoria = '') => {
+  const texto = categoria.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  if (texto.includes('terror')) return 'categoria--terror';
+  if (texto.includes('ciencia') || texto.includes('cientifica')) return 'categoria--ciencia';
+  if (texto.includes('romance')) return 'categoria--romance';
+  if (texto.includes('fantasia')) return 'categoria--fantasia';
+  if (texto.includes('historia')) return 'categoria--historia';
+  if (texto.includes('tecnologia')) return 'categoria--tecnologia';
+  if (texto.includes('juvenil')) return 'categoria--juvenil';
+  if (texto.includes('infantil')) return 'categoria--infantil';
+  if (texto.includes('aventura')) return 'categoria--aventura';
+  if (texto.includes('arte')) return 'categoria--arte';
+  if (texto.includes('biografia')) return 'categoria--biografia';
+  if (texto.includes('educacion')) return 'categoria--educacion';
+  return 'categoria--general';
+};
 import { chatService } from '../services/chat';
 import '../styles/catalogo.css';
 
+const resolveImagenUrl = (imagen) => {
+  if (!imagen) return null;
+  if (/^(https?:|data:|blob:)/i.test(imagen)) return imagen;
+  return `${getApiBaseUrl()}${imagen.startsWith('/') ? '' : '/'}${imagen}`;
+};
+
+const CatalogoLoading = () => (
+  <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', padding: '1.5rem 0' }} aria-hidden="true">
+    <div style={{ width: '38%', height: '22px', borderRadius: '8px', background: '#eee7e1' }} />
+    <div style={{ width: '100%', height: '180px', borderRadius: '12px', background: '#f5f1ed' }} />
+    <div style={{ width: '68%', height: '16px', borderRadius: '8px', background: '#eee7e1' }} />
+  </div>
+);
 
 const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const [libros, setLibros] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -17,7 +47,10 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
   const [addingId, setAddingId] = useState(null);
   const [addedToCartIds, setAddedToCartIds] = useState(new Set());
   const [libroSeleccionado, setLibroSeleccionado] = useState(null);
-  const [mostrarDetalles, setMostrarDetalles] = useState(false);
+  const [imagenActiva, setImagenActiva] = useState(null);
+  const [zoomActivo, setZoomActivo] = useState(false);
+  const [zoomPosicion, setZoomPosicion] = useState({ x: 50, y: 50 });
+  const [mostrarDetalles, setMostrarDetalles] = useState(() => !!searchParams.get('libro'));
   const [contactando, setContactando] = useState(false);
   const [mostrarCalificacionTienda, setMostrarCalificacionTienda] = useState(false);
   const [puedeCalificar, setPuedeCalificar] = useState(false);
@@ -25,6 +58,29 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
   const [calificacionExistente, setCalificacionExistente] = useState(null);
   const [calificacionForm, setCalificacionForm] = useState({ calificacion: 5, comentario: '' });
   const [enviandoCalificacion, setEnviandoCalificacion] = useState(false);
+  const ultimaBusquedaRef = React.useRef(null);
+
+  // Dark mode
+  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('darkMode') === 'true');
+  useEffect(() => {
+    const handler = () => setDarkMode(localStorage.getItem('darkMode') === 'true');
+    window.addEventListener('darkModeChange', handler);
+    window.addEventListener('storage', handler);
+    return () => { window.removeEventListener('darkModeChange', handler); window.removeEventListener('storage', handler); };
+  }, []);
+
+  // Colores reutilizables
+  const dm = {
+    sectionBg:    darkMode ? '#1e1e1e' : '#faf8f6',
+    cardBg:       darkMode ? '#252525' : 'white',
+    cardBorder:   darkMode ? '#333' : '#e0e0e0',
+    textPrimary:  darkMode ? '#ececec' : '#2c2c2c',
+    textSecondary:darkMode ? '#c8c8c8' : '#555',
+    textMuted:    darkMode ? '#999' : '#666',
+    inputBorder:  darkMode ? '#3a3a3a' : '#ddd',
+    inputBg:      darkMode ? '#2a2a2a' : 'white',
+    inputColor:   darkMode ? '#ececec' : 'inherit',
+  };
 
   const [filtros, setFiltros] = useState({
     q: searchParams.get('q') || '',
@@ -39,8 +95,26 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
     categoria_nombre: searchParams.get('categoria') || null
   });
 
-  // Actualizar filtros cuando cambian los searchParams
+  // Actualizar filtros cuando cambian los searchParams (ignorar cambio de ?libro=)
+  const prevFiltroParams = React.useRef('');
   useEffect(() => {
+    // Construir una clave solo con los params de filtro (ignorando ?libro=)
+    const filtroKey = [
+      searchParams.get('q') || '',
+      searchParams.get('nombre_tienda') || '',
+      searchParams.get('correo_vendedor') || '',
+      searchParams.get('categoria_id') || '',
+      searchParams.get('precio_min') || '',
+      searchParams.get('precio_max') || '',
+      searchParams.get('calificacion_min') || '',
+      searchParams.get('disponible') || '',
+      searchParams.get('ordenar_por') || '',
+      searchParams.get('categoria') || '',
+    ].join('|');
+
+    if (filtroKey === prevFiltroParams.current) return;
+    prevFiltroParams.current = filtroKey;
+
     setFiltros({
       q: searchParams.get('q') || '',
       nombre_tienda: searchParams.get('nombre_tienda') || '',
@@ -56,16 +130,42 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
     setPagina(1); // Resetear a la primera página cuando cambian los filtros
   }, [searchParams]);
 
+  // Fetch del libro al montar si hay ?libro=ID en la URL (recarga directa)
+  useEffect(() => {
+    const libroId = searchParams.get('libro');
+    if (!libroId) return;
+    api.get(`/catalogo/libro/${libroId}`)
+      .then(res => {
+        if (res.data) {
+          setLibroSeleccionado(res.data);
+          setImagenActiva(null);
+          setZoomActivo(false);
+          setMostrarDetalles(true);
+        }
+      })
+      .catch(() => {
+        // Si el libro no existe o hay error, volver al catálogo
+        setMostrarDetalles(false);
+        setSearchParams(prev => {
+          const next = new URLSearchParams(prev);
+          next.delete('libro');
+          return next;
+        }, { replace: true });
+      });
+  // Solo al montar
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   useEffect(() => {
     if (!libroInicial) return;
     setLibroSeleccionado(libroInicial);
+    setImagenActiva(null);
     setMostrarDetalles(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
     onLibroInicialConsumido?.();
   }, [libroInicial, onLibroInicialConsumido]);
 
   const cargarLibros = React.useCallback(async () => {
-    setLoading(true);
     try {
       const params = new URLSearchParams();
       
@@ -82,11 +182,17 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
       params.append('pagina', pagina);
       params.append('limite', 24);
 
+      const claveBusqueda = params.toString();
+      if (ultimaBusquedaRef.current === claveBusqueda) return;
+      ultimaBusquedaRef.current = claveBusqueda;
+      setLoading(true);
+
       const response = await api.get(`/catalogo/busqueda-avanzada?${params}`);
       setLibros(response.data.libros || []);
       setTotalPaginas(response.data.total_paginas || 1);
       setPagina(response.data.pagina || 1);
     } catch (error) {
+      ultimaBusquedaRef.current = null;
       console.error('Error al cargar catálogo:', error);
     } finally {
       setLoading(false);
@@ -194,13 +300,32 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
   };
   const handleVerDetalles = (libro) => {
     setLibroSeleccionado(libro);
+    setImagenActiva(null);
+    setZoomActivo(false);
     setMostrarDetalles(true);
+    // Sincronizar con la URL para que el reload funcione
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      next.set('libro', libro.id_libro);
+      return next;
+    }, { replace: true });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+
+  useEffect(() => {
+    setImagenActiva(null);
+    setZoomActivo(false);
+  }, [libroSeleccionado?.id_libro]);
 
   const handleVolverCatalogo = () => {
     setMostrarDetalles(false);
     setLibroSeleccionado(null);
+    // Limpiar el param ?libro= de la URL
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      next.delete('libro');
+      return next;
+    }, { replace: true });
   };
 
   const handleContactar = async () => {
@@ -335,24 +460,76 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
     verificarPermiso();
   }, [libroSeleccionado?.id_tienda]);
 
+  const librosRelacionados = libros.filter((libro) => libro.id_libro !== libroSeleccionado?.id_libro);
+  const librosRelacionadosRef = React.useRef(null);
+  const librosRelacionadosTrackRef = React.useRef(null);
+  const librosRelacionadosOffsetRef = React.useRef(0);
+  const librosRelacionadosLoopRef = React.useRef(0);
+
+  useEffect(() => {
+    if (librosRelacionados.length <= 1) return undefined;
+
+    const medirCarrusel = () => {
+      if (librosRelacionadosTrackRef.current) {
+        librosRelacionadosLoopRef.current = librosRelacionadosTrackRef.current.scrollWidth / 2;
+      }
+    };
+
+    medirCarrusel();
+    window.addEventListener('resize', medirCarrusel);
+
+    let frameId;
+    let previousTime;
+    const animar = (time) => {
+      const track = librosRelacionadosTrackRef.current;
+      const loopWidth = librosRelacionadosLoopRef.current;
+      if (track && loopWidth > 0) {
+        const elapsed = previousTime ? time - previousTime : 0;
+        librosRelacionadosOffsetRef.current += (elapsed / 1000) * 28;
+        if (librosRelacionadosOffsetRef.current >= loopWidth) {
+          librosRelacionadosOffsetRef.current -= loopWidth;
+        }
+        track.style.transform = `translate3d(${-librosRelacionadosOffsetRef.current}px, 0, 0)`;
+      }
+      previousTime = time;
+      frameId = window.requestAnimationFrame(animar);
+    };
+
+    frameId = window.requestAnimationFrame(animar);
+    return () => {
+      window.cancelAnimationFrame(frameId);
+      window.removeEventListener('resize', medirCarrusel);
+    };
+  }, [librosRelacionados.length]);
+
+  const desplazarRelacionados = (direccion) => {
+    const track = librosRelacionadosTrackRef.current;
+    const loopWidth = librosRelacionadosLoopRef.current;
+    if (!track || !loopWidth) return;
+    const paso = (track.firstElementChild?.getBoundingClientRect().width || 220) + 16;
+    librosRelacionadosOffsetRef.current += direccion * paso;
+    if (librosRelacionadosOffsetRef.current < 0) librosRelacionadosOffsetRef.current += loopWidth;
+    if (librosRelacionadosOffsetRef.current >= loopWidth) librosRelacionadosOffsetRef.current -= loopWidth;
+    track.style.transform = `translate3d(${-librosRelacionadosOffsetRef.current}px, 0, 0)`;
+  };
+
   return (
-    <main className="layout-container catalogo-main">
-      <h1 style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+    <main className={`layout-container catalogo-main${mostrarDetalles ? ' catalogo-main--detail' : ''}`}>
+      <h1 className="catalogo-heading" style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
           <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
         </svg>
-        Catálogo de libros
+        {mostrarDetalles ? 'Detalle del libro' : 'Catálogo de libros'}
       </h1>
 
       {/* RESULTADOS */}
-      {loading ? (
-        <div style={{ textAlign: 'center', padding: '2rem', color: '#999' }}>
-          Cargando libros...
-        </div>
+      {loading || (mostrarDetalles && !libroSeleccionado) ? (
+        <CatalogoLoading />
       ) : mostrarDetalles && libroSeleccionado ? (
         <div className="detalle-libro-inline">
           <button
+            className="detalle-back-button"
             onClick={handleVolverCatalogo}
             style={{
               background: 'var(--vinotinto)',
@@ -374,14 +551,26 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
             Volver al catálogo
           </button>
 
-          <div style={{
+          <div className="detalle-hero" style={{
             display: 'grid',
-            gridTemplateColumns: 'minmax(280px, 320px) 1fr',
+            gridTemplateColumns: 'minmax(360px, 400px) 1fr',
             gap: '36px',
             marginBottom: '32px',
             alignItems: 'stretch'
           }}>
-            <div style={{
+            <div className="detalle-gallery">
+              <div
+                className={`detalle-cover ${zoomActivo ? 'detalle-cover--zoom' : ''}`}
+                onMouseEnter={() => setZoomActivo(true)}
+                onMouseLeave={() => setZoomActivo(false)}
+                onMouseMove={(event) => {
+                  const bounds = event.currentTarget.getBoundingClientRect();
+                  setZoomPosicion({
+                    x: ((event.clientX - bounds.left) / bounds.width) * 100,
+                    y: ((event.clientY - bounds.top) / bounds.height) * 100,
+                  });
+                }}
+                style={{
               width: '100%',
               height: '100%',
               minHeight: '380px',
@@ -394,15 +583,20 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
               alignItems: 'center',
               justifyContent: 'center',
               position: 'relative'
-            }}>
+                }}
+              >
               <img
-                src={libroSeleccionado.imagen_url || libroSeleccionado.imagen_principal || libroSeleccionado.imagen || (libroSeleccionado.isbn ? `https://books.google.com/books/content?vid=ISBN${libroSeleccionado.isbn}&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api` : 'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=400&q=80')}
+                className="detalle-gallery-image"
+                src={resolveImagenUrl(imagenActiva || libroSeleccionado.imagen_url || libroSeleccionado.imagen_principal || libroSeleccionado.imagen) || (libroSeleccionado.isbn ? `https://books.google.com/books/content?vid=ISBN${libroSeleccionado.isbn}&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api` : 'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=400&q=80')}
                 alt={libroSeleccionado.titulo}
                 style={{
                   width: '100%',
                   height: '100%',
                   objectFit: 'cover',
-                  display: 'block'
+                  display: 'block',
+                  transform: zoomActivo ? 'scale(2.1)' : 'scale(1)',
+                  transformOrigin: `${zoomPosicion.x}% ${zoomPosicion.y}%`,
+                  transition: zoomActivo ? 'transform 0.12s ease-out' : 'transform 0.2s ease-out',
                 }}
                 onError={(e) => {
                   const t = e.target;
@@ -412,10 +606,39 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
                   t.src = 'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=400&q=80';
                 }}
               />
+                {zoomActivo && <span className="detalle-zoom-hint">Mueve el cursor para explorar</span>}
+              </div>
+              {(() => {
+                const imagenes = Array.isArray(libroSeleccionado.imagenes)
+                  ? libroSeleccionado.imagenes
+                  : typeof libroSeleccionado.imagenes === 'string'
+                    ? libroSeleccionado.imagenes.split(',')
+                    : [];
+                const imagenesGaleria = imagenes.filter(Boolean);
+                return imagenesGaleria.length > 1 ? (
+                  <div className="detalle-thumbnails" aria-label="Galería de imágenes del libro">
+                    {imagenesGaleria.map((imagen, index) => (
+                      <button
+                        key={`${imagen}-${index}`}
+                        type="button"
+                        className={`detalle-thumbnail ${imagen === (imagenActiva || imagenesGaleria[0]) ? 'detalle-thumbnail--active' : ''}`}
+                        onClick={() => {
+                          setImagenActiva(imagen);
+                          setZoomActivo(false);
+                        }}
+                        aria-label={`Ver imagen ${index + 1}`}
+                      >
+                        <img src={resolveImagenUrl(imagen)} alt="" />
+                      </button>
+                    ))}
+                  </div>
+                ) : null;
+              })()}
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+            <div className="detalle-summary">
+              <div className="detalle-summary-left">
               {libroSeleccionado.nombre_categoria && (
-                <span style={{ display: 'inline-block', alignSelf: 'flex-start', padding: '6px 14px', borderRadius: '20px', background: '#fce4ec', color: '#8b0000', fontSize: '0.8rem', fontWeight: '700', marginBottom: '12px' }}>
+                <span className={`categoria-badge ${categoriaClase(libroSeleccionado.nombre_categoria)}`} style={{ marginBottom: '12px' }}>
                   {libroSeleccionado.nombre_categoria}
                 </span>
               )}
@@ -432,7 +655,7 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
                   ))}
                 </div>
                 <span style={{ fontSize: '0.9rem', color: '#666' }}>({libroSeleccionado.calificacion || 4}.0)</span>
-                <span style={{ fontSize: '0.85rem', color: '#999' }}>• {Math.floor(Math.random() * 100) + 10} reseñas</span>
+                <span style={{ fontSize: '0.85rem', color: '#999' }}>• {Number(libroSeleccionado.total_resenas || 0)} reseñas</span>
               </div>
 
               {libroSeleccionado.nombre_tienda && (
@@ -445,11 +668,48 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
                 </p>
               )}
 
-              <p style={{ fontSize: '2rem', fontWeight: '800', color: '#8b0000', margin: '16px 0' }}>${Number(libroSeleccionado.precio_libro || libroSeleccionado.precio || 0).toLocaleString('es-CO')}</p>
+              <p className="detalle-price">${Number(libroSeleccionado.precio_libro || libroSeleccionado.precio || 0).toLocaleString('es-CO')}</p>
+              </div>
 
-              <div style={{ display: 'flex', gap: '12px', marginTop: '24px', flexWrap: 'wrap' }}>
+              <div className="detalle-price-and-info">
+                <div className="detalle-purchase-info" aria-label="Información de compra">
+                  <div className="detalle-purchase-info__item">
+                    <span className="detalle-purchase-info__icon">✓</span>
+                    <div>
+                      <strong>{Number(libroSeleccionado.stock || 0) > 0 ? `En stock: ${libroSeleccionado.stock} disponibles` : 'Agotado'}</strong>
+                      <span>Disponibilidad actual</span>
+                    </div>
+                  </div>
+                  <div className="detalle-purchase-info__item">
+                    <span className="detalle-purchase-info__icon">↗</span>
+                    <div>
+                      <strong>Despacho en {libroSeleccionado.tiempo_despacho_dias || 2} días hábiles</strong>
+                      <span>{libroSeleccionado.politica_envios || 'Envío gestionado por la librería'}</span>
+                    </div>
+                  </div>
+                  <div className="detalle-purchase-info__item">
+                    <span className="detalle-purchase-info__icon">$</span>
+                    <div>
+                      <strong>{Number(libroSeleccionado.costo_envio_tienda || 0) > 0
+                        ? `Envío: $${Number(libroSeleccionado.costo_envio_tienda).toLocaleString('es-CO')}`
+                        : 'Envío gratis'}</strong>
+                      <span>Tarifa definida por la tienda</span>
+                    </div>
+                  </div>
+                  <div className="detalle-purchase-info__item">
+                    <span className="detalle-purchase-info__icon">↺</span>
+                    <div>
+                      <strong>Pago seguro en BookyHome</strong>
+                      <span>{libroSeleccionado.politica_devoluciones || 'Consulta la política de devoluciones con la librería'}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+                <div className="detalle-hero-actions">
                 {/* Botón Comprar ahora */}
                 <button
+                  className="detalle-primary-action"
                   onClick={() => handleComprarAhora(libroSeleccionado)}
                   disabled={libroSeleccionado.stock === 0}
                   style={{
@@ -492,6 +752,7 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
 
                 {/* Botón Agregar al carrito */}
                 <button
+                  className="detalle-cart-action"
                   onClick={() => addedToCartIds.has(libroSeleccionado.id_libro) ? handleRemoveFromCart(libroSeleccionado) : handleAddToCart(libroSeleccionado)}
                   disabled={addingId === libroSeleccionado.id_libro || libroSeleccionado.stock === 0}
                   style={{
@@ -543,6 +804,7 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
 
                 {/* Botón Contactar librería */}
                 <button
+                  className="detalle-contact-action"
                   onClick={handleContactar}
                   disabled={contactando}
                   style={{
@@ -598,12 +860,12 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
 
 
           {/* Descripción del producto */}
-          <div style={{ marginBottom: '32px', padding: '24px', background: '#faf8f6', borderRadius: '12px' }}>
-            <h3 style={{ fontSize: '1.5rem', fontWeight: '700', margin: '0 0 16px 0', color: '#2c2c2c' }}>Descripción del producto</h3>
+          <div className="detalle-content-section detalle-description-section" style={{ marginBottom: '32px', padding: '24px', background: dm.sectionBg, borderRadius: '12px' }}>
+            <h3 style={{ fontSize: '1.5rem', fontWeight: '700', margin: '0 0 16px 0', color: dm.textPrimary }}>Descripción del producto</h3>
             {libroSeleccionado.descripcion_libro ? (
-              <p style={{ fontSize: '1rem', color: '#555', lineHeight: '1.8', margin: 0 }}>{libroSeleccionado.descripcion_libro}</p>
+              <p style={{ fontSize: '1rem', color: dm.textSecondary, lineHeight: '1.8', margin: 0 }}>{libroSeleccionado.descripcion_libro}</p>
             ) : (
-              <div style={{ fontSize: '1rem', color: '#555', lineHeight: '1.8' }}>
+              <div style={{ fontSize: '1rem', color: dm.textSecondary, lineHeight: '1.8' }}>
                 <p style={{ margin: '0 0 12px 0' }}>Este libro es una excelente adición a tu colección. Escrito por {libroSeleccionado.autor_libro || libroSeleccionado.autor || 'un autor reconocido'}, ofrece una narrativa cautivadora que te mantendrá enganchado desde la primera página hasta la última.</p>
                 <p style={{ margin: '0 0 12px 0' }}>Formato: Tapa blanda | Páginas: {Math.floor(Math.random() * 200) + 200} | Idioma: Español | Editorial: {libroSeleccionado.nombre_tienda || 'Editorial destacada'}</p>
                 <p style={{ margin: '0 0 12px 0' }}>Dimensiones: 15cm x 23cm x 2cm | Peso: {Math.floor(Math.random() * 300) + 200}g | ISBN: {Math.random().toString(36).substring(2, 12).toUpperCase()}</p>
@@ -612,397 +874,208 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
             )}
           </div>
 
-          {/* Calificación de Tienda - Visible si puede calificar o ya calificó */}
           {libroSeleccionado.id_tienda && (puedeCalificar || calificacionEnviada || calificacionExistente) && (
-            <div style={{ marginBottom: '32px', padding: '24px', background: '#faf8f6', borderRadius: '12px' }}>
-              <h3 style={{ fontSize: '1.5rem', fontWeight: '700', margin: '0 0 16px 0', color: '#2c2c2c' }}>Calificar la tienda</h3>
-
+            <div style={{ marginBottom: '32px', padding: '24px', background: dm.sectionBg, borderRadius: '12px' }}>
+              <h3 style={{ fontSize: '1.5rem', fontWeight: '700', margin: '0 0 16px 0', color: dm.textPrimary }}>Calificar la tienda</h3>
               {libroSeleccionado.calificacion_tienda > 0 && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
                   <div style={{ display: 'flex', gap: '2px' }}>
                     {[1, 2, 3, 4, 5].map((star) => (
-                      <svg key={star} width="20" height="20" viewBox="0 0 24 24" fill={star <= Math.round(libroSeleccionado.calificacion_tienda) ? '#ffc107' : '#e0e0e0'} stroke="none">
+                      <svg key={star} width="20" height="20" viewBox="0 0 24 24" fill={star <= Math.round(libroSeleccionado.calificacion_tienda) ? '#ffc107' : (darkMode ? '#444' : '#e0e0e0')} stroke="none">
                         <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
                       </svg>
                     ))}
                   </div>
-                  <span style={{ fontSize: '1rem', color: '#666', fontWeight: '600' }}>
-                    {libroSeleccionado.calificacion_tienda.toFixed(1)}
-                  </span>
+                  <span style={{ fontSize: '1rem', color: dm.textMuted, fontWeight: '600' }}>{libroSeleccionado.calificacion_tienda.toFixed(1)}</span>
                   {libroSeleccionado.total_opiniones_tienda > 0 && (
-                    <span style={{ fontSize: '0.9rem', color: '#999' }}>
-                      ({libroSeleccionado.total_opiniones_tienda} {libroSeleccionado.total_opiniones_tienda === 1 ? 'opinión' : 'opiniones'})
-                    </span>
+                    <span style={{ fontSize: '0.9rem', color: dm.textMuted }}>({libroSeleccionado.total_opiniones_tienda} {libroSeleccionado.total_opiniones_tienda === 1 ? 'opinión' : 'opiniones'})</span>
                   )}
                 </div>
               )}
-
               {(calificacionEnviada || calificacionExistente) && !mostrarCalificacionTienda ? (
-                <div style={{ padding: '16px', background: '#d1fae5', borderRadius: '8px', border: '1px solid #10b981' }}>
-                  <p style={{ margin: 0, color: '#065f46', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#065f46" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                      <polyline points="22 4 12 14.01 9 11.01"></polyline>
-                    </svg>
+                <div style={{ padding: '16px', background: darkMode ? '#0f2e1a' : '#d1fae5', borderRadius: '8px', border: `1px solid ${darkMode ? '#16a34a' : '#10b981'}` }}>
+                  <p style={{ margin: 0, color: darkMode ? '#4ade80' : '#065f46', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={darkMode ? '#4ade80' : '#065f46'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
                     ¡Gracias por calificar esta tienda!
                   </p>
-                  
-                  {/* Mostrar la calificación actual */}
                   {(calificacionExistente || calificacionEnviada) && (
-                    <div style={{ marginBottom: '16px', padding: '12px', background: 'white', borderRadius: '6px', border: '1px solid #a7f3d0' }}>
+                    <div style={{ marginBottom: '16px', padding: '12px', background: dm.cardBg, borderRadius: '6px', border: `1px solid ${darkMode ? '#16a34a' : '#a7f3d0'}` }}>
                       <div style={{ marginBottom: '8px' }}>
-                        <strong style={{ color: '#065f46', fontSize: '0.9rem' }}>Tu calificación:</strong>
+                        <strong style={{ color: darkMode ? '#4ade80' : '#065f46', fontSize: '0.9rem' }}>Tu calificación:</strong>
                         <div style={{ display: 'flex', gap: '2px', marginTop: '4px' }}>
                           {[1, 2, 3, 4, 5].map((star) => (
-                            <svg key={star} width="16" height="16" viewBox="0 0 24 24" fill={star <= (calificacionExistente?.calificacion || calificacionForm.calificacion) ? '#ffc107' : '#e0e0e0'} stroke="none">
+                            <svg key={star} width="16" height="16" viewBox="0 0 24 24" fill={star <= (calificacionExistente?.calificacion || calificacionForm.calificacion) ? '#ffc107' : (darkMode ? '#444' : '#e0e0e0')} stroke="none">
                               <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
                             </svg>
                           ))}
-                          <span style={{ marginLeft: '8px', fontSize: '0.85rem', color: '#065f46', fontWeight: '600' }}>
-                            {calificacionExistente?.calificacion || calificacionForm.calificacion}/5
-                          </span>
+                          <span style={{ marginLeft: '8px', fontSize: '0.85rem', color: darkMode ? '#4ade80' : '#065f46', fontWeight: '600' }}>{calificacionExistente?.calificacion || calificacionForm.calificacion}/5</span>
                         </div>
                       </div>
                       {(calificacionExistente?.comentario || calificacionForm.comentario) && (
-                        <p style={{ margin: 0, fontSize: '0.85rem', color: '#047857', fontStyle: 'italic' }}>
+                        <p style={{ margin: 0, fontSize: '0.85rem', color: darkMode ? '#6ee7b7' : '#047857', fontStyle: 'italic' }}>
                           "{calificacionExistente?.comentario || calificacionForm.comentario}"
                         </p>
                       )}
                     </div>
                   )}
-                  
-                  <button
-                    onClick={() => {
-                      setCalificacionEnviada(false);
-                      setMostrarCalificacionTienda(true);
-                      // Cargar la calificación existente en el formulario
-                      if (calificacionExistente) {
-                        setCalificacionForm({
-                          calificacion: calificacionExistente.calificacion,
-                          comentario: calificacionExistente.comentario
-                        });
-                      }
-                    }}
-                    style={{
-                      background: 'white',
-                      color: '#065f46',
-                      border: '1px solid #10b981',
-                      padding: '8px 16px',
-                      borderRadius: '6px',
-                      cursor: 'pointer',
-                      fontSize: '0.9rem',
-                      fontWeight: '600'
-                    }}
-                  >
+                  <button onClick={() => { setCalificacionEnviada(false); setMostrarCalificacionTienda(true); if (calificacionExistente) setCalificacionForm({ calificacion: calificacionExistente.calificacion, comentario: calificacionExistente.comentario }); }}
+                    style={{ background: dm.cardBg, color: darkMode ? '#4ade80' : '#065f46', border: `1px solid ${darkMode ? '#16a34a' : '#10b981'}`, padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.9rem', fontWeight: '600' }}>
                     Editar calificación
                   </button>
                 </div>
               ) : (!mostrarCalificacionTienda && !calificacionExistente && !calificacionEnviada) ? (
-                <button
-                  onClick={() => setMostrarCalificacionTienda(true)}
-                  style={{
-                    background: 'var(--vinotinto)',
-                    color: 'white',
-                    border: 'none',
-                    padding: '12px 24px',
-                    borderRadius: '8px',
-                    cursor: 'pointer',
-                    fontSize: '1rem',
-                    fontWeight: '600',
-                    transition: 'all 0.2s ease'
-                  }}
-                >
+                <button onClick={() => setMostrarCalificacionTienda(true)} style={{ background: 'var(--vinotinto)', color: 'white', border: 'none', padding: '12px 24px', borderRadius: '8px', cursor: 'pointer', fontSize: '1rem', fontWeight: '600', transition: 'all 0.2s ease' }}>
                   Calificar esta tienda
                 </button>
               ) : mostrarCalificacionTienda ? (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                      <div>
-                        <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: '600', color: '#333', marginBottom: '8px' }}>
-                          Tu calificación:
-                        </label>
-                        <div style={{ display: 'flex', gap: '8px' }}>
-                          {[1, 2, 3, 4, 5].map((star) => (
-                            <button
-                              key={star}
-                              onClick={() => setCalificacionForm({ ...calificacionForm, calificacion: star })}
-                              style={{
-                                background: 'none',
-                                border: 'none',
-                                cursor: 'pointer',
-                                padding: '4px'
-                              }}
-                            >
-                              <svg
-                                width="32"
-                                height="32"
-                                viewBox="0 0 24 24"
-                                fill={star <= calificacionForm.calificacion ? '#ffc107' : '#e0e0e0'}
-                                stroke="none"
-                                style={{ transition: 'all 0.2s ease' }}
-                              >
-                                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                              </svg>
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div>
-                        <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: '600', color: '#333', marginBottom: '8px' }}>
-                          Comentario (opcional):
-                        </label>
-                        <textarea
-                          value={calificacionForm.comentario}
-                          onChange={(e) => setCalificacionForm({ ...calificacionForm, comentario: e.target.value })}
-                          placeholder="Comparte tu experiencia con esta tienda..."
-                          style={{
-                            width: '100%',
-                            padding: '12px',
-                            border: '1px solid #ddd',
-                            borderRadius: '8px',
-                            fontSize: '1rem',
-                            fontFamily: 'inherit',
-                            resize: 'vertical',
-                            minHeight: '80px'
-                          }}
-                          maxLength={500}
-                        />
-                      </div>
-
-                      <div style={{ display: 'flex', gap: '12px' }}>
-                        <button
-                          onClick={handleEnviarCalificacion}
-                          disabled={enviandoCalificacion}
-                          style={{
-                            flex: 1,
-                            background: 'var(--vinotinto)',
-                            color: 'white',
-                            border: 'none',
-                            padding: '12px 24px',
-                            borderRadius: '8px',
-                            cursor: enviandoCalificacion ? 'not-allowed' : 'pointer',
-                            fontSize: '1rem',
-                            fontWeight: '600',
-                            opacity: enviandoCalificacion ? 0.65 : 1
-                          }}
-                        >
-                          {enviandoCalificacion ? 'Enviando...' : 'Enviar calificación'}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: '600', color: dm.textPrimary, marginBottom: '8px' }}>Tu calificación:</label>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <button key={star} onClick={() => setCalificacionForm({ ...calificacionForm, calificacion: star })} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px' }}>
+                          <svg width="32" height="32" viewBox="0 0 24 24" fill={star <= calificacionForm.calificacion ? '#ffc107' : (darkMode ? '#444' : '#e0e0e0')} stroke="none" style={{ transition: 'all 0.2s ease' }}>
+                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                          </svg>
                         </button>
-                        <button
-                          onClick={() => {
-                            setMostrarCalificacionTienda(false);
-                            setCalificacionForm({ calificacion: 5, comentario: '' });
-                          }}
-                          style={{
-                            flex: 1,
-                            background: 'white',
-                            color: '#666',
-                            border: '2px solid #ddd',
-                            padding: '12px 24px',
-                            borderRadius: '8px',
-                            cursor: 'pointer',
-                            fontSize: '1rem',
-                            fontWeight: '600'
-                          }}
-                        >
-                          Cancelar
-                        </button>
-                      </div>
+                      ))}
                     </div>
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: '600', color: dm.textPrimary, marginBottom: '8px' }}>Comentario (opcional):</label>
+                    <textarea value={calificacionForm.comentario} onChange={(e) => setCalificacionForm({ ...calificacionForm, comentario: e.target.value })}
+                      placeholder="Comparte tu experiencia con esta tienda..."
+                      style={{ width: '100%', padding: '12px', border: `1px solid ${dm.inputBorder}`, borderRadius: '8px', fontSize: '1rem', fontFamily: 'inherit', resize: 'vertical', minHeight: '80px', background: dm.inputBg, color: dm.inputColor }}
+                      maxLength={500} />
+                  </div>
+                  <div style={{ display: 'flex', gap: '12px' }}>
+                    <button onClick={handleEnviarCalificacion} disabled={enviandoCalificacion} style={{ flex: 1, background: 'var(--vinotinto)', color: 'white', border: 'none', padding: '12px 24px', borderRadius: '8px', cursor: enviandoCalificacion ? 'not-allowed' : 'pointer', fontSize: '1rem', fontWeight: '600', opacity: enviandoCalificacion ? 0.65 : 1 }}>
+                      {enviandoCalificacion ? 'Enviando...' : 'Enviar calificación'}
+                    </button>
+                    <button onClick={() => { setMostrarCalificacionTienda(false); setCalificacionForm({ calificacion: 5, comentario: '' }); }}
+                      style={{ flex: 1, background: dm.cardBg, color: dm.textMuted, border: `2px solid ${dm.inputBorder}`, padding: '12px 24px', borderRadius: '8px', cursor: 'pointer', fontSize: '1rem', fontWeight: '600' }}>
+                      Cancelar
+                    </button>
+                  </div>
+                </div>
               ) : null}
             </div>
           )}
 
           {/* Reseñas */}
-          <div style={{ marginBottom: '32px' }}>
-            <h3 style={{ fontSize: '1.5rem', fontWeight: '700', margin: '0 0 16px 0', color: '#2c2c2c' }}>Reseñas de clientes</h3>
+          <div className="detalle-content-section detalle-reviews-section" style={{ marginBottom: '32px' }}>
+            <h3 style={{ fontSize: '1.5rem', fontWeight: '700', margin: '0 0 16px 0', color: dm.textPrimary }}>Reseñas de clientes</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <div style={{ padding: '20px', background: 'white', borderRadius: '12px', border: '1px solid #e0e0e0' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
-                  <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#fce4ec', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700', color: '#8b0000' }}>
-                    M
-                  </div>
-                  <div>
-                    <p style={{ fontSize: '1rem', fontWeight: '600', color: '#2c2c2c', margin: 0 }}>María García</p>
-                    <div style={{ display: 'flex', gap: '2px' }}>
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <svg key={star} width="14" height="14" viewBox="0 0 24 24" fill="#ffc107" stroke="none">
-                          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                        </svg>
-                      ))}
+              {[
+                { ini: 'M', nombre: 'María García', bg: darkMode ? '#2a1a24' : '#fce4ec', color: darkMode ? '#e05a7a' : '#8b0000', texto: 'Excelente libro, llegó en perfecto estado y el envío fue muy rápido. La historia es cautivadora y la calidad del papel es excelente. ¡Totalmente recomendado!', fecha: 'Hace 3 días', estrellas: 5 },
+                { ini: 'C', nombre: 'Carlos Rodríguez', bg: darkMode ? '#0d1f3c' : '#e3f2fd', color: darkMode ? '#60a5fa' : '#1976d2', texto: 'Buen libro en general, aunque esperaba más profundidad en los personajes. La calidad del material es buena y el precio está acorde al producto.', fecha: 'Hace 1 semana', estrellas: 4 },
+                { ini: 'A', nombre: 'Ana Martínez', bg: darkMode ? '#2a1a08' : '#fff3e0', color: darkMode ? '#fb923c' : '#f57c00', texto: 'Increíble! No pude dejar de leerlo. La trama es original y los personajes están muy bien desarrollados. Definitivamente compraré más libros de este autor.', fecha: 'Hace 2 semanas', estrellas: 5 },
+              ].map((r, i) => (
+                <div key={i} style={{ padding: '20px', background: dm.cardBg, borderRadius: '12px', border: `1px solid ${dm.cardBorder}` }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
+                    <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: r.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700', color: r.color }}>{r.ini}</div>
+                    <div>
+                      <p style={{ fontSize: '1rem', fontWeight: '600', color: dm.textPrimary, margin: 0 }}>{r.nombre}</p>
+                      <div style={{ display: 'flex', gap: '2px' }}>
+                        {[1,2,3,4,5].map(s => <svg key={s} width="14" height="14" viewBox="0 0 24 24" fill={s <= r.estrellas ? '#ffc107' : (darkMode ? '#444' : '#e0e0e0')} stroke="none"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>)}
+                      </div>
                     </div>
+                    <span style={{ fontSize: '0.85rem', color: dm.textMuted, marginLeft: 'auto' }}>{r.fecha}</span>
                   </div>
-                  <span style={{ fontSize: '0.85rem', color: '#999', marginLeft: 'auto' }}>Hace 3 días</span>
+                  <p style={{ fontSize: '0.95rem', color: dm.textSecondary, margin: 0, lineHeight: '1.6' }}>{r.texto}</p>
                 </div>
-                <p style={{ fontSize: '0.95rem', color: '#555', margin: 0, lineHeight: '1.6' }}>Excelente libro, llegó en perfecto estado y el envío fue muy rápido. La historia es cautivadora y la calidad del papel es excelente. ¡Totalmente recomendado!</p>
-              </div>
-              <div style={{ padding: '20px', background: 'white', borderRadius: '12px', border: '1px solid #e0e0e0' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
-                  <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#e3f2fd', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700', color: '#1976d2' }}>
-                    C
-                  </div>
-                  <div>
-                    <p style={{ fontSize: '1rem', fontWeight: '600', color: '#2c2c2c', margin: 0 }}>Carlos Rodríguez</p>
-                    <div style={{ display: 'flex', gap: '2px' }}>
-                      {[1, 2, 3, 4].map((star) => (
-                        <svg key={star} width="14" height="14" viewBox="0 0 24 24" fill="#ffc107" stroke="none">
-                          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                        </svg>
-                      ))}
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="#e0e0e0" stroke="none">
-                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                      </svg>
-                    </div>
-                  </div>
-                  <span style={{ fontSize: '0.85rem', color: '#999', marginLeft: 'auto' }}>Hace 1 semana</span>
-                </div>
-                <p style={{ fontSize: '0.95rem', color: '#555', margin: 0, lineHeight: '1.6' }}>Buen libro en general, aunque esperaba más profundidad en los personajes. La calidad del material es buena y el precio está acorde al producto.</p>
-              </div>
-              <div style={{ padding: '20px', background: 'white', borderRadius: '12px', border: '1px solid #e0e0e0' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
-                  <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#fff3e0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700', color: '#f57c00' }}>
-                    A
-                  </div>
-                  <div>
-                    <p style={{ fontSize: '1rem', fontWeight: '600', color: '#2c2c2c', margin: 0 }}>Ana Martínez</p>
-                    <div style={{ display: 'flex', gap: '2px' }}>
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <svg key={star} width="14" height="14" viewBox="0 0 24 24" fill="#ffc107" stroke="none">
-                          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                        </svg>
-                      ))}
-                    </div>
-                  </div>
-                  <span style={{ fontSize: '0.85rem', color: '#999', marginLeft: 'auto' }}>Hace 2 semanas</span>
-                </div>
-                <p style={{ fontSize: '0.95rem', color: '#555', margin: 0, lineHeight: '1.6' }}>Increíble! No pude dejar de leerlo. La trama es original y los personajes están muy bien desarrollados. Definitivamente compraré más libros de este autor.</p>
-              </div>
+              ))}
             </div>
           </div>
 
           {/* Características */}
-          <div style={{ marginBottom: '32px' }}>
-            <h3 style={{ fontSize: '1.5rem', fontWeight: '700', margin: '0 0 16px 0', color: '#2c2c2c' }}>Características</h3>
+          <div className="detalle-content-section detalle-features-section" style={{ marginBottom: '32px' }}>
+            <h3 style={{ fontSize: '1.5rem', fontWeight: '700', margin: '0 0 16px 0', color: dm.textPrimary }}>Características</h3>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
-              <div style={{ padding: '16px', background: 'white', borderRadius: '8px', border: '1px solid #e0e0e0' }}>
-                <p style={{ fontSize: '0.85rem', color: '#999', margin: '0 0 4px 0' }}>Autor</p>
-                <p style={{ fontSize: '1rem', fontWeight: '600', color: '#2c2c2c', margin: 0 }}>{libroSeleccionado.autor_libro || libroSeleccionado.autor || 'N/A'}</p>
-              </div>
-              <div style={{ padding: '16px', background: 'white', borderRadius: '8px', border: '1px solid #e0e0e0' }}>
-                <p style={{ fontSize: '0.85rem', color: '#999', margin: '0 0 4px 0' }}>Categoría</p>
-                <p style={{ fontSize: '1rem', fontWeight: '600', color: '#2c2c2c', margin: 0 }}>{libroSeleccionado.nombre_categoria || 'N/A'}</p>
-              </div>
-              <div style={{ padding: '16px', background: 'white', borderRadius: '8px', border: '1px solid #e0e0e0' }}>
-                <p style={{ fontSize: '0.85rem', color: '#999', margin: '0 0 4px 0' }}>Stock</p>
-                <p style={{ fontSize: '1rem', fontWeight: '600', color: libroSeleccionado.stock > 0 ? '#4caf50' : '#e53935', margin: 0 }}>{libroSeleccionado.stock > 0 ? `${libroSeleccionado.stock} disponibles` : 'Agotado'}</p>
-              </div>
-              <div style={{ padding: '16px', background: 'white', borderRadius: '8px', border: '1px solid #e0e0e0' }}>
-                <p style={{ fontSize: '0.85rem', color: '#999', margin: '0 0 4px 0' }}>Tienda</p>
-                <p style={{ fontSize: '1rem', fontWeight: '600', color: '#2c2c2c', margin: 0 }}>{libroSeleccionado.nombre_tienda || 'N/A'}</p>
-              </div>
+              {[
+                { label: 'Autor', value: libroSeleccionado.autor_libro || libroSeleccionado.autor || 'N/A' },
+                { label: 'Categoría', value: libroSeleccionado.nombre_categoria || 'N/A' },
+                { label: 'Stock', value: libroSeleccionado.stock > 0 ? `${libroSeleccionado.stock} disponibles` : 'Agotado', valueColor: libroSeleccionado.stock > 0 ? (darkMode ? '#4ade80' : '#4caf50') : (darkMode ? '#f87171' : '#e53935') },
+                { label: 'Tienda', value: libroSeleccionado.nombre_tienda || 'N/A' },
+              ].map((item, i) => (
+                <div key={i} style={{ padding: '16px', background: dm.cardBg, borderRadius: '8px', border: `1px solid ${dm.cardBorder}` }}>
+                  <p style={{ fontSize: '0.85rem', color: dm.textMuted, margin: '0 0 4px 0' }}>{item.label}</p>
+                  <p style={{ fontSize: '1rem', fontWeight: '600', color: item.valueColor || dm.textPrimary, margin: 0 }}>{item.value}</p>
+                </div>
+              ))}
             </div>
           </div>
 
-          {/* Preguntas frecuentes */}
-          <div style={{ marginBottom: '32px' }}>
-            <h3 style={{ fontSize: '1.5rem', fontWeight: '700', margin: '0 0 16px 0', color: '#2c2c2c' }}>Preguntas frecuentes</h3>
+          {/* FAQ */}
+          <div className="detalle-content-section detalle-faq-section" style={{ marginBottom: '32px' }}>
+            <h3 style={{ fontSize: '1.5rem', fontWeight: '700', margin: '0 0 16px 0', color: dm.textPrimary }}>Preguntas frecuentes</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div style={{ padding: '16px', background: 'white', borderRadius: '8px', border: '1px solid #e0e0e0' }}>
-                <p style={{ fontSize: '1rem', fontWeight: '600', color: '#2c2c2c', margin: '0 0 8px 0' }}>¿Cuál es el estado del libro?</p>
-                <p style={{ fontSize: '0.95rem', color: '#666', margin: 0 }}>Todos los libros en nuestro catálogo son nuevos o en excelente estado, garantizando su calidad.</p>
-              </div>
-              <div style={{ padding: '16px', background: 'white', borderRadius: '8px', border: '1px solid #e0e0e0' }}>
-                <p style={{ fontSize: '1rem', fontWeight: '600', color: '#2c2c2c', margin: '0 0 8px 0' }}>¿Cuánto tiempo tarda el envío?</p>
-                <p style={{ fontSize: '0.95rem', color: '#666', margin: 0 }}>El tiempo de envío varía según la ubicación. Generalmente entre 2-5 días hábiles.</p>
-              </div>
-              <div style={{ padding: '16px', background: 'white', borderRadius: '8px', border: '1px solid #e0e0e0' }}>
-                <p style={{ fontSize: '1rem', fontWeight: '600', color: '#2c2c2c', margin: '0 0 8px 0' }}>¿Tienen garantía de devolución?</p>
-                <p style={{ fontSize: '0.95rem', color: '#666', margin: 0 }}>Sí, ofrecemos garantía de devolución de 15 días si el producto no cumple con sus expectativas.</p>
-              </div>
+              {[
+                { q: '¿Cuál es el estado del libro?', a: 'Todos los libros en nuestro catálogo son nuevos o en excelente estado, garantizando su calidad.' },
+                { q: '¿Cuánto tiempo tarda el envío?', a: 'El tiempo de envío varía según la ubicación. Generalmente entre 2-5 días hábiles.' },
+                { q: '¿Tienen garantía de devolución?', a: 'Sí, ofrecemos garantía de devolución de 15 días si el producto no cumple con sus expectativas.' },
+              ].map((item, i) => (
+                <div key={i} style={{ padding: '16px', background: dm.cardBg, borderRadius: '8px', border: `1px solid ${dm.cardBorder}` }}>
+                  <p style={{ fontSize: '1rem', fontWeight: '600', color: dm.textPrimary, margin: '0 0 8px 0' }}>{item.q}</p>
+                  <p style={{ fontSize: '0.95rem', color: dm.textSecondary, margin: 0 }}>{item.a}</p>
+                </div>
+              ))}
             </div>
           </div>
 
-          {/* Información del autor */}
-          <div style={{ marginBottom: '32px', padding: '24px', background: 'white', borderRadius: '12px', border: '1px solid #e0e0e0' }}>
-            <h3 style={{ fontSize: '1.5rem', fontWeight: '700', margin: '0 0 16px 0', color: '#2c2c2c' }}>Sobre el autor</h3>
+          {/* Sobre el autor */}
+          <div style={{ marginBottom: '32px', padding: '24px', background: dm.cardBg, borderRadius: '12px', border: `1px solid ${dm.cardBorder}` }}>
+            <h3 style={{ fontSize: '1.5rem', fontWeight: '700', margin: '0 0 16px 0', color: dm.textPrimary }}>Sobre el autor</h3>
             <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start' }}>
-              <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: 'linear-gradient(135deg, #fce4ec 0%, #f8bbd0 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem', fontWeight: '700', color: '#8b0000', flexShrink: 0 }}>
+              <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: darkMode ? '#2a1a24' : 'linear-gradient(135deg, #fce4ec 0%, #f8bbd0 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem', fontWeight: '700', color: darkMode ? '#e05a7a' : '#8b0000', flexShrink: 0 }}>
                 {(libroSeleccionado.autor_libro || libroSeleccionado.autor || 'A')[0].toUpperCase()}
               </div>
               <div style={{ flex: 1 }}>
-                <p style={{ fontSize: '1.2rem', fontWeight: '700', color: '#2c2c2c', margin: '0 0 8px 0' }}>{libroSeleccionado.autor_libro || libroSeleccionado.autor || 'Autor destacado'}</p>
-                <p style={{ fontSize: '0.95rem', color: '#666', lineHeight: '1.6', margin: 0 }}>Autor reconocido en el género de {libroSeleccionado.nombre_categoria || 'ficción'} con múltiples best-sellers. Sus obras han sido traducidas a varios idiomas y han recibido premios literarios internacionales. Conocido por su estilo narrativo único y personajes memorables que cautivan a lectores de todas las edades.</p>
+                <p style={{ fontSize: '1.2rem', fontWeight: '700', color: dm.textPrimary, margin: '0 0 8px 0' }}>{libroSeleccionado.autor_libro || libroSeleccionado.autor || 'Autor destacado'}</p>
+                <p style={{ fontSize: '0.95rem', color: dm.textSecondary, lineHeight: '1.6', margin: 0 }}>Autor reconocido en el género de {libroSeleccionado.nombre_categoria || 'ficción'} con múltiples best-sellers. Sus obras han sido traducidas a varios idiomas y han recibido premios literarios internacionales.</p>
               </div>
             </div>
           </div>
 
           {/* Información de envío */}
-          <div style={{ marginBottom: '32px', padding: '24px', background: 'linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%)', borderRadius: '12px' }}>
-            <h3 style={{ fontSize: '1.5rem', fontWeight: '700', margin: '0 0 16px 0', color: '#2c2c2c' }}>Información de envío</h3>
+          <div style={{ marginBottom: '32px', padding: '24px', background: darkMode ? '#0f2e18' : 'linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%)', borderRadius: '12px', border: darkMode ? '1px solid #16a34a' : 'none' }}>
+            <h3 style={{ fontSize: '1.5rem', fontWeight: '700', margin: '0 0 16px 0', color: darkMode ? '#4ade80' : '#2c2c2c' }}>Información de envío</h3>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4caf50" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="1" y="3" width="15" height="13"></rect>
-                  <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
-                  <circle cx="5.5" cy="18.5" r="2.5"></circle>
-                  <circle cx="18.5" cy="18.5" r="2.5"></circle>
-                </svg>
-                <div>
-                  <p style={{ fontSize: '0.9rem', fontWeight: '600', color: '#2c2c2c', margin: 0 }}>Envío gratis</p>
-                  <p style={{ fontSize: '0.8rem', color: '#666', margin: 0 }}>En compras mayores a $50.000</p>
+              {[
+                { icon: 'truck', label: 'Envío gratis', sub: 'En compras mayores a $50.000' },
+                { icon: 'clock', label: 'Entrega rápida', sub: '2-5 días hábiles' },
+                { icon: 'shield', label: 'Pago seguro', sub: '100% protegido' },
+              ].map((item, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={darkMode ? '#4ade80' : '#4caf50'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    {item.icon === 'truck' && <><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></>}
+                    {item.icon === 'clock' && <><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></>}
+                    {item.icon === 'shield' && <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>}
+                  </svg>
+                  <div>
+                    <p style={{ fontSize: '0.9rem', fontWeight: '600', color: darkMode ? '#ececec' : '#2c2c2c', margin: 0 }}>{item.label}</p>
+                    <p style={{ fontSize: '0.8rem', color: darkMode ? '#999' : '#666', margin: 0 }}>{item.sub}</p>
+                  </div>
                 </div>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4caf50" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="10"></circle>
-                  <polyline points="12 6 12 12 16 14"></polyline>
-                </svg>
-                <div>
-                  <p style={{ fontSize: '0.9rem', fontWeight: '600', color: '#2c2c2c', margin: 0 }}>Entrega rápida</p>
-                  <p style={{ fontSize: '0.8rem', color: '#666', margin: 0 }}>2-5 días hábiles</p>
-                </div>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4caf50" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-                </svg>
-                <div>
-                  <p style={{ fontSize: '0.9rem', fontWeight: '600', color: '#2c2c2c', margin: 0 }}>Pago seguro</p>
-                  <p style={{ fontSize: '0.8rem', color: '#666', margin: 0 }}>100% protegido</p>
-                </div>
-              </div>
+              ))}
             </div>
           </div>
 
           {/* Libros relacionados */}
           <div style={{ marginBottom: '32px' }}>
-            <h3 style={{ fontSize: '1.5rem', fontWeight: '700', margin: '0 0 16px 0', color: '#2c2c2c' }}>Libros relacionados</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '16px' }}>
-              {libros.slice(0, 4).map((libro) => (
-                <div 
-                  key={libro.id_libro}
-                  onClick={() => handleVerDetalles(libro)}
-                  style={{ 
-                    cursor: 'pointer',
-                    padding: '16px', 
-                    background: 'white', 
-                    borderRadius: '12px', 
-                    border: '1px solid #e0e0e0',
-                    transition: 'all 0.2s ease'
-                  }}
-                  onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-4px)'}
-                  onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
-                >
-                  <img
-                    src={libro.imagen_url || libro.imagen_principal || 'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=400&q=80'}
-                    alt={libro.titulo}
-                    style={{ width: '100%', height: '200px', objectFit: 'cover', borderRadius: '8px', marginBottom: '12px' }}
-                  />
-                  <p style={{ fontSize: '0.9rem', fontWeight: '600', color: '#2c2c2c', margin: '0 0 4px 0', lineHeight: '1.3', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{libro.titulo}</p>
-                  <p style={{ fontSize: '0.85rem', color: '#666', margin: 0 }}>{libro.autor_libro || libro.autor || 'Autor'}</p>
-                  <p style={{ fontSize: '1rem', fontWeight: '700', color: '#8b0000', margin: '8px 0 0' }}>${Number(libro.precio_libro || libro.precio || 0).toLocaleString('es-CO')}</p>
-                </div>
-              ))}
+            <h3 style={{ fontSize: '1.5rem', fontWeight: '700', margin: '0 0 16px 0', color: dm.textPrimary }}>Libros relacionados</h3>
+            <div style={{ position: 'relative', padding: '0 44px' }}>
+              <button type="button" aria-label="Ver libros relacionados anteriores" onClick={() => desplazarRelacionados(-1)} style={{ position: 'absolute', zIndex: 2, left: 0, top: '50%', transform: 'translateY(-50%)', width: 36, height: 36, borderRadius: '50%', border: `1px solid ${dm.cardBorder}`, background: dm.cardBg, color: dm.textPrimary, cursor: 'pointer', fontSize: '1.2rem', boxShadow: '0 3px 10px rgba(0,0,0,0.25)' }}>‹</button>
+              <div ref={librosRelacionadosRef} style={{ overflow: 'hidden', padding: '2px 2px 12px' }}>
+              <div ref={librosRelacionadosTrackRef} style={{ display: 'flex', gap: '16px', width: 'max-content', willChange: 'transform' }}>
+                {[...librosRelacionados, ...librosRelacionados].map((libro, index) => (
+                  <div key={`${libro.id_libro}-${index}`} style={{ flex: '0 0 220px' }}>
+                    <LibroCard libro={libro} onVerDetalles={handleVerDetalles} />
+                  </div>
+                ))}
+              </div>
+              </div>
+              <button type="button" aria-label="Ver más libros relacionados" onClick={() => desplazarRelacionados(1)} style={{ position: 'absolute', zIndex: 2, right: 0, top: '50%', transform: 'translateY(-50%)', width: 36, height: 36, borderRadius: '50%', border: `1px solid ${dm.cardBorder}`, background: dm.cardBg, color: dm.textPrimary, cursor: 'pointer', fontSize: '1.2rem', boxShadow: '0 3px 10px rgba(0,0,0,0.25)' }}>›</button>
             </div>
           </div>
         </div>

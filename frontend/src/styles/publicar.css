@@ -480,6 +480,132 @@
   to   { transform: scale(1);   opacity: 1; }
 }
 
+.dark .publicar-title,
+.dark .card-title,
+.dark .form-group label,
+.dark .estado-label,
+.dark .publicar-exito h2 {
+  color: #f3f4f6;
+}
+
+.dark .publicar-subtitle,
+.dark .card-hint,
+.dark .input-hint,
+.dark .estado-desc,
+.dark .publicar-exito p {
+  color: #b8b8b8;
+}
+
+.dark .form-card {
+  background: #1e1e1e;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+}
+
+.dark .btn-back {
+  background: #2a2a2a;
+  border-color: #3a3a3a;
+  color: #f3f4f6;
+}
+
+.dark .btn-back:hover {
+  border-color: #ff4f83;
+  color: #ff4f83;
+}
+
+.dark .form-group input,
+.dark .form-group select,
+.dark .form-group textarea {
+  background: #2a2a2a;
+  border-color: #3a3a3a;
+  color: #f3f4f6;
+}
+
+.dark .form-group input::placeholder,
+.dark .form-group textarea::placeholder {
+  color: #999;
+}
+
+.dark .form-group input:focus,
+.dark .form-group select:focus,
+.dark .form-group textarea:focus {
+  border-color: #ff4f83;
+  box-shadow: 0 0 0 3px rgba(255, 79, 131, 0.15);
+}
+
+.dark .char-count {
+  color: #b8b8b8;
+}
+
+.dark .img-preview,
+.dark .img-add {
+  border-color: #3a3a3a;
+}
+
+.dark .img-add {
+  background: #272727;
+  color: #d1d5db;
+}
+
+.dark .img-add:hover {
+  border-color: #ff4f83;
+  color: #ff4f83;
+  background: #2a1a24;
+}
+
+.dark .estado-option {
+  background: #252525;
+  border-color: #3a3a3a;
+}
+
+.dark .estado-option:hover {
+  background: #2a1a24;
+  border-color: #ff4f83;
+}
+
+.dark .estado-option.selected {
+  background: #2a1a24;
+  border-color: #ff4f83;
+}
+
+.dark .precio-preview {
+  background: #2a1a24;
+  color: #d1d5db;
+}
+
+.dark .precio-preview strong {
+  color: #ff4f83;
+}
+
+.dark .form-error {
+  background: #2a1a18;
+  border-color: #6b1f1f;
+  color: #fca5a5;
+}
+
+.dark .btn-outline {
+  background: #2a2a2a;
+  border-color: #3a3a3a;
+  color: #f3f4f6;
+}
+
+.dark .btn-outline:hover {
+  border-color: #ff4f83;
+  color: #ff4f83;
+}
+
+.dark .publicar-exito {
+  background: #1e1e1e;
+  border-radius: 16px;
+}
+
+.dark .publicar-exito h2 {
+  color: #f3f4f6;
+}
+
+.dark .publicar-exito p {
+  color: #b8b8b8;
+}
+
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(12px); }
   to   { opacity: 1; transform: translateY(0); }

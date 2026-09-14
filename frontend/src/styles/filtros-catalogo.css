@@ -282,3 +282,54 @@
     font-size: 0.8rem;
   }
 }
+
+/* ===========================
+   MODO OSCURO — FILTROS
+   =========================== */
+.dark .filtros-catalogo {
+  background: #1e1e1e;
+  border-color: #333;
+}
+.dark .filtros-header {
+  background: #252525;
+  border-bottom-color: #333;
+}
+.dark .filtros-panel {
+  border-top-color: #333;
+}
+.dark .filtro-grupo label { color: #ececec; }
+.dark .input-busqueda,
+.dark .select-filtro,
+.dark .input-precio {
+  background: #2a2a2a;
+  border-color: #3a3a3a;
+  color: #ececec;
+}
+.dark .input-busqueda::placeholder { color: #666; }
+.dark .btn-limpiar {
+  background: #2a2a2a;
+  border-color: #3a3a3a;
+  color: #c8c8c8;
+}
+.dark .btn-limpiar:hover {
+  background: #2e0d0d;
+  border-color: #f87171;
+  color: #f87171;
+}
+.dark .star-filter {
+  background: #2a2a2a;
+  border-color: #3a3a3a;
+  color: #c8c8c8;
+}
+.dark .star-filter:hover {
+  border-color: #e05a7a;
+  background: rgba(224, 90, 122, 0.1);
+}
+.dark .star-filter.activa {
+  background: var(--vinotinto);
+  color: white;
+  border-color: var(--vinotinto);
+}
+.dark .checkbox-label { color: #ececec; }
+.dark .rango-precio > span { color: #999; }
+.dark .precio-mostrado { color: #e05a7a; }

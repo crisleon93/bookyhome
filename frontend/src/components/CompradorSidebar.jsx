@@ -209,6 +209,7 @@ export default function CompradorSidebar({ userName, userEmail, profilePhotoUrl,
       <button
         onClick={() => {
           localStorage.removeItem('token');
+          document.documentElement.classList.remove('dark');
           window.dispatchEvent(new CustomEvent('auth-change', { detail: { authenticated: false } }));
           navigate('/');
         }}

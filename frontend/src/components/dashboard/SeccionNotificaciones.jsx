@@ -21,11 +21,11 @@ export default function SeccionNotificaciones() {
   // ── Datos ─────────────────────────────────────────────────────────────────
   const [notificaciones, setNotificaciones]           = useState([]);
   const [notificacionesLoading, setNotificacionesLoading] = useState(false);
-  const [ordenes, setOrdenes]                         = useState([]);
   const navigate = useNavigate();
 
   // ── Filtro de categoría ───────────────────────────────────────────────────
   const [notificacionesFilter, setNotificacionesFilter] = useState("todas");
+  const [notificacionesOrden, setNotificacionesOrden] = useState("recientes");
 
   // ── Paginación ────────────────────────────────────────────────────────────
   const [paginaActual,      setPaginaActual]      = useState(1);
@@ -42,15 +42,8 @@ export default function SeccionNotificaciones() {
   const [notificacionesEliminadasAutomaticas, setNotificacionesEliminadasAutomaticas]
     = useState(new Set());
 
-  // ── Cargar órdenes para notificaciones sintéticas ─────────────────────────
-  useEffect(() => {
-    getOrdenes()
-      .then((res) => setOrdenes(res.data))
-      .catch((err) => console.error(err));
-  }, []);
-
   // ── Generar notificaciones sintéticas desde órdenes ───────────────────────
-  const generarNotificacionesOrdenes = useCallback(() => {
+  const generarNotificacionesOrdenes = useCallback((ordenes = []) => {
     const generadas = [];
     ordenes.forEach((orden) => {
       if (orden.estado === "pendiente") {
@@ -82,15 +75,19 @@ export default function SeccionNotificaciones() {
       }
     });
     return generadas;
-  }, [ordenes, notificacionesLeidasAutomaticas, notificacionesEliminadasAutomaticas]);
+  }, [notificacionesLeidasAutomaticas, notificacionesEliminadasAutomaticas]);
 
   // ── Cargar notificaciones API + mezclar sintéticas ────────────────────────
   const cargarNotificaciones = useCallback(async (silent = false) => {
     try {
       if (!silent) setNotificacionesLoading(true);
-      const data           = await notificacionesService.obtener(false, 200, 0);
+      const [data, ordenesResponse] = await Promise.all([
+        notificacionesService.obtener(false, 200, 0),
+        getOrdenes(),
+      ]);
       const apiItems       = data.notificaciones || [];
-      const sinteticas     = generarNotificacionesOrdenes();
+      const ordenes = ordenesResponse.data?.orders || ordenesResponse.data || [];
+      const sinteticas     = generarNotificacionesOrdenes(ordenes);
       const idsRefCubiertos = new Set(
         apiItems
           .filter((n) => n.tipo === "pedido" || n.tipo === "pago")
@@ -101,7 +98,7 @@ export default function SeccionNotificaciones() {
       );
       setNotificaciones([...apiItems, ...sinteticasFiltradas]);
     } catch {
-      setNotificaciones(generarNotificacionesOrdenes());
+      setNotificaciones([]);
     } finally {
       if (!silent) setNotificacionesLoading(false);
     }
@@ -120,12 +117,16 @@ export default function SeccionNotificaciones() {
 
   const notificacionesFiltradas = useMemo(() => {
     let lista = notificaciones;
-    if (notificacionesFilter === "no_leidas") return lista.filter((n) => !n.leida);
+    if (notificacionesFilter === "no_leidas") lista = lista.filter((n) => !n.leida);
     const tipos = FILTROS[notificacionesFilter];
     if (tipos) lista = lista.filter((n) => tipos.includes(n.tipo));
-    return lista;
+    return [...lista].sort((a, b) => {
+      const fechaA = new Date(a.fecha_creacion || 0).getTime();
+      const fechaB = new Date(b.fecha_creacion || 0).getTime();
+      return notificacionesOrden === "antiguas" ? fechaA - fechaB : fechaB - fechaA;
+    });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [notificaciones, notificacionesFilter]);
+  }, [notificaciones, notificacionesFilter, notificacionesOrden]);
 
   // ── Paginación derivada ───────────────────────────────────────────────────
   const totalFiltradas  = notificacionesFiltradas.length;
@@ -239,6 +240,7 @@ export default function SeccionNotificaciones() {
               </button>
             )}
             <button
+              className="btn-eliminar-mensajes"
               onClick={() => { setDeleteFilter("leidas"); setShowDeleteModal(true); }}
               style={{
                 display: "inline-flex", alignItems: "center", gap: 6,
@@ -280,6 +282,17 @@ export default function SeccionNotificaciones() {
               </button>
             );
           })}
+          <label className="notif-orden-control">
+            <span aria-hidden="true">🗓️</span>
+            <select
+              value={notificacionesOrden}
+              onChange={(e) => { setNotificacionesOrden(e.target.value); setPaginaActual(1); }}
+              aria-label="Ordenar notificaciones"
+            >
+              <option value="recientes">Más recientes</option>
+              <option value="antiguas">Más antiguas</option>
+            </select>
+          </label>
         </div>
 
         {/* ── LISTA ── */}
@@ -401,20 +414,20 @@ export default function SeccionNotificaciones() {
           }}
           onClick={(e) => { if (e.target === e.currentTarget) setShowDeleteModal(false); }}
         >
-          <div style={{
+          <div className="notificaciones-delete-modal" style={{
             background: "#fff", borderRadius: 16, width: "100%", maxWidth: 420,
             padding: 28, boxShadow: "0 20px 60px rgba(0,0,0,0.18)",
           }}>
-            <h2 style={{ margin: "0 0 6px", fontSize: "1.15rem", fontWeight: 800, color: "#1F2937" }}>
+            <h2 className="notificaciones-delete-modal-title" style={{ margin: "0 0 6px", fontSize: "1.15rem", fontWeight: 800, color: "#1F2937" }}>
               🗑️ Eliminar notificaciones
             </h2>
-            <p style={{ margin: "0 0 20px", fontSize: "0.86rem", color: "#6B7280" }}>
+            <p className="notificaciones-delete-modal-description" style={{ margin: "0 0 20px", fontSize: "0.86rem", color: "#6B7280" }}>
               Selecciona qué notificaciones quieres eliminar. Esta acción no se puede deshacer.
             </p>
 
             <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 24 }}>
               {OPCIONES_ELIMINAR.map((op) => (
-                <label key={op.value} style={{
+                <label key={op.value} className={`notificaciones-delete-option ${deleteFilter === op.value ? "selected" : ""}`} style={{
                   display: "flex", alignItems: "center", gap: 10,
                   padding: "10px 14px", borderRadius: 10, cursor: "pointer",
                   border: `1.5px solid ${deleteFilter === op.value ? "#7A1E3A" : "#E5E7EB"}`,
@@ -439,6 +452,7 @@ export default function SeccionNotificaciones() {
 
             <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
               <button
+                className="notificaciones-delete-cancel"
                 onClick={() => setShowDeleteModal(false)}
                 style={{
                   padding: "9px 18px", borderRadius: 8, border: "1.5px solid #E5E7EB",
@@ -449,6 +463,7 @@ export default function SeccionNotificaciones() {
                 Cancelar
               </button>
               <button
+                className="notificaciones-delete-submit"
                 onClick={handleEliminarVarias}
                 disabled={eliminando}
                 style={{

@@ -2216,6 +2216,32 @@
       "monto": 13005.0,
       "fecha": "2026-09-11T19:17:48.926438Z",
       "estado": "procesado"
+    },
+    {
+      "id": 189,
+      "tipo": "venta",
+      "id_venta": 756,
+      "id_vendedor": 281,
+      "monto_venta": 98000.0,
+      "comision": 14700.0,
+      "monto_vendedor": 83300.0,
+      "tipo_entrega": "domicilio",
+      "monto": 14700.0,
+      "fecha": "2026-09-14T00:11:26.146150Z",
+      "estado": "procesado"
+    },
+    {
+      "id": 190,
+      "tipo": "venta",
+      "id_venta": 755,
+      "id_vendedor": 281,
+      "monto_venta": 156000.0,
+      "comision": 23400.0,
+      "monto_vendedor": 132600.0,
+      "tipo_entrega": "domicilio",
+      "monto": 23400.0,
+      "fecha": "2026-09-14T00:13:00.614062Z",
+      "estado": "procesado"
     }
   ],
   "pagos": [

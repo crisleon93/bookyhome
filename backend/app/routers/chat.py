@@ -76,9 +76,14 @@ def obtener_salas_usuario(user_id: int = Depends(get_current_user), rol: str = D
                 sc.id_tienda,
                 t.nombre_tienda,
                 u.nombre_usuario as nombre_comprador,
+                u.foto_perfil as foto_comprador,
                 u.correo_usuario as correo_comprador,
                 u.telefono as telefono_comprador,
                 u.rol as rol_comprador,
+                ut.foto_perfil as foto_tienda,
+                ut.banner_perfil as banner_perfil_tienda,
+                tc.banner_url as banner_tienda,
+                tc.logo_url as logo_tienda,
                 ut.correo_usuario as correo_tienda,
                 ut.telefono as telefono_tienda,
                 m.mensaje as ultimo_mensaje,
@@ -94,6 +99,7 @@ def obtener_salas_usuario(user_id: int = Depends(get_current_user), rol: str = D
             LEFT JOIN tiendas t ON sc.id_tienda = t.id_tienda
             LEFT JOIN usuarios u ON sc.id_usuario = u.id_usuario
             LEFT JOIN usuarios ut ON t.id_usuario = ut.id_usuario
+            LEFT JOIN tienda_configuracion tc ON t.id_tienda = tc.id_tienda
             LEFT JOIN mensajes m ON sc.id_sala = m.id_sala
                 AND m.enviado_en = (
                     SELECT MAX(enviado_en) 
@@ -101,12 +107,32 @@ def obtener_salas_usuario(user_id: int = Depends(get_current_user), rol: str = D
                     WHERE id_sala = sc.id_sala
                 )
             WHERE {filtro}
-            GROUP BY sc.id_sala, sc.id_usuario, sc.id_tienda, t.nombre_tienda, u.nombre_usuario, u.correo_usuario, u.telefono, u.rol, ut.correo_usuario, ut.telefono, m.mensaje, m.enviado_en, sc.actualizado_en, sc.creado_en
+            GROUP BY sc.id_sala, sc.id_usuario, sc.id_tienda, t.nombre_tienda, u.nombre_usuario, u.foto_perfil, u.correo_usuario, u.telefono, u.rol, ut.foto_perfil, ut.banner_perfil, tc.banner_url, tc.logo_url, ut.correo_usuario, ut.telefono, m.mensaje, m.enviado_en, sc.actualizado_en, sc.creado_en
             ORDER BY COALESCE(m.enviado_en, sc.actualizado_en, sc.creado_en) DESC
         """
         cursor.execute(query, (user_id, user_id))
         salas = cursor.fetchall()
         for s in salas:
+            if not s.get("foto_tienda"):
+                cursor.execute(
+                    """
+                    SELECT u.foto_perfil
+                    FROM mensajes m
+                    JOIN usuarios u ON u.id_usuario = m.id_remitente
+                    WHERE m.id_sala = %s
+                      AND m.id_remitente <> %s
+                      AND u.foto_perfil IS NOT NULL
+                      AND u.foto_perfil <> ''
+                    ORDER BY m.enviado_en DESC
+                    LIMIT 1
+                    """,
+                    (s["id_sala"], s["id_usuario"]),
+                )
+                foto_remitente = cursor.fetchone()
+                if foto_remitente:
+                    s["foto_tienda"] = foto_remitente["foto_perfil"]
+            if not s.get("foto_tienda"):
+                s["foto_tienda"] = s.get("logo_tienda")
             um = s.get("ultimo_mensaje")
             if um and um.startswith("[AUDIO]"):
                 s["ultimo_mensaje"] = "🎤 Nota de voz"

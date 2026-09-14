@@ -1,4 +1,4 @@
-import { useState, useEffect, startTransition } from 'react'
+import { useState, useEffect, startTransition, lazy, Suspense } from 'react'
 import { Link, useNavigate, useLocation, Navigate } from 'react-router-dom'
 import { jwtDecode } from 'jwt-decode'
 import { getUserRole } from '../hooks/useAuth'
@@ -7,21 +7,35 @@ import { IconUsers } from '../components/Icons'
 import SeccionInicio from '../components/dashboard/SeccionInicio'
 import CompradorSidebar from '../components/CompradorSidebar'
 import api from '../services/api'
-import SeccionCarrito from '../components/dashboard/SeccionCarrito'
-import SeccionMisCompras from '../components/dashboard/SeccionMisCompras'
 import SeccionSeguimiento from '../components/dashboard/SeccionSeguimiento'
 import SeccionFavoritos from '../components/dashboard/SeccionFavoritos'
 import SeccionConfiguracion from '../components/dashboard/SeccionConfiguracion'
 import SeccionMiPerfil from '../components/dashboard/SeccionMiPerfil'
 import SeccionMisDirecciones from '../components/dashboard/SeccionMisDirecciones'
 import SeccionNotificaciones from '../components/dashboard/SeccionNotificaciones'
-import Catalogo from './Catalogo'
-import Chat from './Chat'
-import ListaDeseos from './ListaDeseos'
-import QuejasReclamos from './QuejasReclamos'
-import Soporte from './Soporte'
+
+// Secciones pesadas: carga diferida
+const SeccionCarrito     = lazy(() => import('../components/dashboard/SeccionCarrito'))
+const SeccionMisCompras  = lazy(() => import('../components/dashboard/SeccionMisCompras'))
 import CarruselPublico from '../components/CarruselPublico'
 import LibreriasDestacadas from '../components/LibreriasDestacadas'
+
+// Carga diferida: solo se descargan cuando el usuario navega a esa sección
+const Catalogo       = lazy(() => import('./Catalogo'))
+const Chat           = lazy(() => import('./Chat'))
+const ListaDeseos    = lazy(() => import('./ListaDeseos'))
+const QuejasReclamos = lazy(() => import('./QuejasReclamos'))
+const Soporte        = lazy(() => import('./Soporte'))
+
+function SectionLoading() {
+  return (
+    <div style={{ minHeight: '240px', padding: '28px', display: 'flex', flexDirection: 'column', gap: '14px' }} aria-hidden="true">
+      <div style={{ width: '42%', height: '22px', borderRadius: '8px', background: '#eee7e1' }} />
+      <div style={{ width: '100%', height: '120px', borderRadius: '12px', background: '#f5f1ed' }} />
+      <div style={{ width: '72%', height: '16px', borderRadius: '8px', background: '#eee7e1' }} />
+    </div>
+  )
+}
 
 import ficcion from '../assets/ficcion.png'
 import romance from '../assets/romance.png'
@@ -39,7 +53,6 @@ import juvenil from '../assets/Juvenil.jpg'
 import aventura from '../assets/aventura.jpg'
 import educacion from '../assets/educacion.jpg'
 import comedia from '../assets/comedia.jpg'
-
 const HERO_IMAGES = [
   { src: 'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=1000&q=85', alt: 'Personas explorando libros en una librería' },
   { src: 'https://images.unsplash.com/photo-1521587760476-6c12a4b040da?w=1000&q=85', alt: 'Pasillo de una librería con estanterías llenas de libros' },
@@ -179,6 +192,14 @@ function Home() {
     window.addEventListener('bookyhome:open-join', openJoin)
     return () => window.removeEventListener('bookyhome:open-join', openJoin)
   }, [])
+
+  // Limpiar modo oscuro en página pública (no autenticado)
+  useEffect(() => {
+    const token = localStorage.getItem('token')
+    if (!token) {
+      document.documentElement.classList.remove('dark')
+    }
+  }, [])
   const [heroImageIndex, setHeroImageIndex] = useState(0)
   const navigate = useNavigate()
   const location = useLocation()
@@ -191,15 +212,26 @@ function Home() {
     return () => clearInterval(carouselTimer)
   }, [])
   
-  // Dashboard state
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
-  const [userName, setUserName] = useState('')
+  // Dashboard state — inicializar síncronamente desde el token para evitar flash
+  const _initAuth = () => {
+    const token = localStorage.getItem('token')
+    if (!token) return { isAuthenticated: false, userName: '', userId: null }
+    try {
+      const payload = jwtDecode(token)
+      return { isAuthenticated: true, userName: payload.nombre || 'Usuario', userId: parseInt(payload.sub) }
+    } catch {
+      return { isAuthenticated: false, userName: '', userId: null }
+    }
+  }
+  const _init = _initAuth()
+  const [isAuthenticated, setIsAuthenticated] = useState(_init.isAuthenticated)
+  const [userName, setUserName] = useState(_init.userName)
   const [userEmail, setUserEmail] = useState('')
-  const [userId, setUserId] = useState(null)
+  const [userId, setUserId] = useState(_init.userId)
   const [profilePhotoUrl, setProfilePhotoUrl] = useState(null)
   const [bannerUrl, setBannerUrl] = useState(null)
   const [bannerColor, setBannerColor] = useState('#7A1E3A')
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [activeSide, setActiveSide] = useState('Inicio')
   const [catalogoLibroInicial, setCatalogoLibroInicial] = useState(null)
   const [selectedSalaInChat, setSelectedSalaInChat] = useState(null)
@@ -306,7 +338,7 @@ function Home() {
 
   // Handle section selection
   const handleSelectSection = (seccion) => {
-    setActiveSide(seccion)
+    startTransition(() => setActiveSide(seccion))
     navigate(`/?seccion=${encodeURIComponent(seccion)}`, { replace: true })
   }
   
@@ -331,7 +363,7 @@ function Home() {
   
   // If loading, show loading state
   if (loading) {
-    return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>Cargando...</div>
+    return <SectionLoading />
   }
   
   // If authenticated, check role: if seller/admin redirect to their dedicated dashboard
@@ -345,7 +377,7 @@ function Home() {
     }
 
     return (
-      <div className={`dashboard-container ${activeSide === 'Inicio' ? 'home-view' : ''}`}>
+      <div className={`dashboard-container ${activeSide === 'Inicio' ? 'home-view' : ''} ${activeSide === 'Soporte técnico' ? 'dashboard-container--compact' : ''}`}>
         <CompradorSidebar
           userName={userName}
           userEmail={userEmail}
@@ -371,27 +403,37 @@ function Home() {
           )}
           {activeSide === 'Mensajes' && (
             <div style={{ height: '100%', width: '100%', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-              <Chat embedded={true} selectedSalaProp={selectedSalaInChat} onSelectSala={(id) => setSelectedSalaInChat(id)} />
+              <Suspense fallback={<SectionLoading />}>
+                <Chat embedded={true} selectedSalaProp={selectedSalaInChat} onSelectSala={(id) => setSelectedSalaInChat(id)} />
+              </Suspense>
             </div>
           )}
           {activeSide === 'Carrito' && (
-            <div style={{ height: '100%', width: '100%', overflow: 'auto' }}><SeccionCarrito userId={userId} /></div>
+            <div style={{ height: '100%', width: '100%', overflow: 'auto' }}>
+              <Suspense fallback={<SectionLoading />}><SeccionCarrito userId={userId} /></Suspense>
+            </div>
           )}
           {activeSide === 'Mis Compras' && (
-            <div style={{ height: '100%', width: '100%', overflow: 'auto' }}><SeccionMisCompras userId={userId} /></div>
+            <div style={{ height: '100%', width: '100%', overflow: 'auto' }}>
+              <Suspense fallback={<SectionLoading />}><SeccionMisCompras userId={userId} /></Suspense>
+            </div>
           )}
           {activeSide === 'Seguimiento' && (
             <div style={{ height: '100%', width: '100%', overflow: 'auto' }}><SeccionSeguimiento userId={userId} /></div>
           )}
           {activeSide === 'Lista de Deseos' && (
-            <div style={{ height: '100%', width: '100%', overflow: 'auto' }}><ListaDeseos
-              embedded
-              onIrCatalogo={() => handleSelectSection('Catálogo')}
-              onVerLibro={(libro) => {
-                setCatalogoLibroInicial(libro)
-                handleSelectSection('Catálogo')
-              }}
-            /></div>
+            <div style={{ height: '100%', width: '100%', overflow: 'auto' }}>
+              <Suspense fallback={<SectionLoading />}>
+                <ListaDeseos
+                  embedded
+                  onIrCatalogo={() => handleSelectSection('Catálogo')}
+                  onVerLibro={(libro) => {
+                    setCatalogoLibroInicial(libro)
+                    handleSelectSection('Catálogo')
+                  }}
+                />
+              </Suspense>
+            </div>
           )}
           {activeSide === 'Favoritos' && (
             <div style={{ height: '100%', width: '100%', overflow: 'auto' }}><SeccionFavoritos
@@ -413,14 +455,16 @@ function Home() {
           )}
           {activeSide === 'Catálogo' && (
             <div style={{ height: '100%', width: '100%', overflow: 'auto' }}>
-              <Catalogo
-                libroInicial={catalogoLibroInicial}
-                onLibroInicialConsumido={() => setCatalogoLibroInicial(null)}
-              />
+              <Suspense fallback={<SectionLoading />}>
+                <Catalogo
+                  libroInicial={catalogoLibroInicial}
+                  onLibroInicialConsumido={() => setCatalogoLibroInicial(null)}
+                />
+              </Suspense>
             </div>
           )}
-          {activeSide === 'Quejas y reclamos' && <div style={{ height: '100%', width: '100%', overflow: 'auto' }}><QuejasReclamos /></div>}
-          {activeSide === 'Soporte técnico' && <div style={{ height: '100%', width: '100%', overflow: 'auto' }}><Soporte /></div>}
+          {activeSide === 'Quejas y reclamos' && <div style={{ height: '100%', width: '100%', overflow: 'auto' }}><Suspense fallback={<SectionLoading />}><QuejasReclamos /></Suspense></div>}
+          {activeSide === 'Soporte técnico' && <div style={{ height: '100%', width: '100%', overflow: 'auto' }}><Suspense fallback={<SectionLoading />}><Soporte /></Suspense></div>}
         </main>
       </div>
     )

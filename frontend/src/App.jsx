@@ -61,9 +61,26 @@ function MainLayout() {
     // Verificar periódicamente por si el token se estableció
     const interval = setInterval(checkToken, 1000);
     
+    // Manejar cambio de autenticación para modo oscuro
+    const handleAuthChange = (e) => {
+      if (e.detail.authenticated) {
+        // Usuario se autenticó: restaurar modo oscuro si estaba activo
+        const savedDarkMode = localStorage.getItem('darkMode') === 'true';
+        if (savedDarkMode) {
+          document.documentElement.classList.add('dark');
+        }
+      } else {
+        // Usuario cerró sesión: remover modo oscuro del DOM pero guardar preferencia
+        document.documentElement.classList.remove('dark');
+      }
+    };
+    
+    window.addEventListener('auth-change', handleAuthChange);
+    
     return () => {
       window.removeEventListener('storage', checkToken);
       window.removeEventListener('auth-change', checkToken);
+      window.removeEventListener('auth-change', handleAuthChange);
       clearInterval(interval);
     };
   }, []);
