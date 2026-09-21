@@ -8,6 +8,7 @@ import {
   IconStoreAlt, IconBookOpen, IconPlus, IconCartAlt, IconShoppingBag,
   IconNomina, IconStar, IconAlertTriangle, IconMail,
   IconBell, IconUser, IconSettings, IconLayers, IconTag, IconTicket, IconBolt,
+  IconCreditCard,
 } from './Icons';
 import { useNotifications } from '../context/NotificationContext';
 import { getConfigLibreria, getApiBaseUrl } from '../services/api';
@@ -135,7 +136,7 @@ export default function SidebarVendedor({ visible, onClose, user, navigation, on
             <MenuItem icon={<IconCartAlt      size={19} color={WHITE} />} label="Ventas"          onPress={() => go('VentasVendedor')} />
             <MenuItem icon={<IconShoppingBag  size={19} color={WHITE} />} label="Pedidos"         onPress={() => go('PedidosVendedor')} />
             <Sep />
-            <MenuItem icon={<IconNomina    size={19} color={WHITE} />} label="Nómina"             onPress={null} soon />
+            <MenuItem icon={<IconCreditCard size={19} color={WHITE} />} label="Métodos de cobro" onPress={() => go('MetodosCobroVendedor')} />
             <MenuItem icon={<IconStar      size={19} color={WHITE} />} label="Calificaciones"     onPress={() => go('CalificacionesVendedor')} />
             <MenuItem icon={<IconAlertTriangle size={19} color={WHITE} />} label="Quejas y reclamos" onPress={() => go('QuejasReclamos')} />
             <Sep />

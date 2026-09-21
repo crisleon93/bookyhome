@@ -190,6 +190,12 @@ export const getFinanzasEstadisticas = () => api.get('/api/v1/bookypago-finanzas
 export const getFinanzasHistorial = () => api.get('/api/v1/bookypago-finanzas/historial?dias=30');
 export const getFinanzasNomina = () => api.get('/api/v1/bookypago-finanzas/nomina');
 export const getCuentasBancariasVendedor = (idVendedor) => api.get(`/api/v1/bookypago-finanzas/cuentas-bancarias/${idVendedor}`);
+export const crearCuentaBancariaVendedor = (idVendedor, data) =>
+  api.post(`/api/v1/bookypago-finanzas/cuentas-bancarias/${idVendedor}`, data);
+export const marcarCuentaPrincipalVendedor = (idVendedor, idCuenta) =>
+  api.put(`/api/v1/bookypago-finanzas/cuentas-bancarias/${idVendedor}/principal/${idCuenta}`);
+export const eliminarCuentaBancariaVendedor = (idVendedor, idCuenta) =>
+  api.delete(`/api/v1/bookypago-finanzas/cuentas-bancarias/${idVendedor}/${idCuenta}`);
 export const procesarNominaVendedor = (idVendedor, idMetodo) =>
   api.post(`/api/v1/bookypago-finanzas/nomina/procesar/${idVendedor}`, { id_metodo: idMetodo });
 
