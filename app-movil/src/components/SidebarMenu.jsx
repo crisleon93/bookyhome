@@ -200,6 +200,16 @@ export default function SidebarMenu({ visible, onClose, user, navigation, onSign
               badge={unreadNotifCount}
               onPress={() => navigateTo('Notifications')}
             />
+            <MenuItem
+              icon={<IconChat size={22} color="#FFF" />}
+              label="Soporte técnico"
+              onPress={() => navigateTo('SoporteTecnico')}
+            />
+            <MenuItem
+              icon={<IconUser size={22} color="#FFF" />}
+              label="Configuración"
+              onPress={() => navigateTo('Profile')}
+            />
             
             {isVendedor && (
               <>

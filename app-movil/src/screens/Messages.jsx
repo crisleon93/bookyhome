@@ -17,10 +17,12 @@ import { AuthContext } from '../context/AuthContext';
 import SidebarMenu from '../components/SidebarMenu';
 import SidebarVendedor from '../components/SidebarVendedor';
 const PRIMARY = '#7A1E3A';
+const PRIMARY_DARK = '#4E1022';
 const BG = '#F9F6F1';
+const SOFT = '#F4EEF0';
 const WHITE = '#FFFFFF';
-const BORDER = '#E5DED3';
-const TEXT_MUTED = '#8A8A8A';
+const BORDER = '#EADFE5';
+const TEXT_MUTED = '#6B5B63';
 
 export default function Messages() {
   const navigation = useNavigation();
@@ -127,11 +129,11 @@ export default function Messages() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: PRIMARY },
+  safe: { flex: 1, backgroundColor: BG },
 
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32 },
-  emptyTitle: { fontSize: 15, fontWeight: '700', color: WHITE, marginBottom: 6, textAlign: 'center' },
-  emptySubtitle: { fontSize: 13, color: 'rgba(255,255,255,0.75)', textAlign: 'center' },
+  emptyTitle: { fontSize: 15, fontWeight: '700', color: PRIMARY_DARK, marginBottom: 6, textAlign: 'center' },
+  emptySubtitle: { fontSize: 13, color: TEXT_MUTED, textAlign: 'center' },
 
   salaItem: {
     flexDirection: 'row',
@@ -139,9 +141,17 @@ const styles = StyleSheet.create({
     backgroundColor: WHITE,
     paddingHorizontal: 16,
     paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: BORDER,
+    marginHorizontal: 12,
+    marginVertical: 6,
+    borderRadius: 26,
+    borderWidth: 1,
+    borderColor: BORDER,
     gap: 10,
+    shadowColor: '#7A1E3A',
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
   },
   avatarPlaceholder: {
     width: 42,

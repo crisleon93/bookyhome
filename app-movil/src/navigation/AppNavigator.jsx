@@ -28,11 +28,13 @@ import Messages from '../screens/Messages';
 import Chat from '../screens/Chat';
 import QuejasReclamos from '../screens/QuejasReclamos';
 import Direcciones from '../screens/Direcciones';
+import SoporteTecnico from '../screens/SoporteTecnico';
 
 import VendedorHome from '../screens/VendedorHome';
 import AdminHome from '../screens/AdminHome';
 import PedidosVendedor from '../screens/PedidosVendedor';
 import VentasVendedor from '../screens/VentasVendedor';
+import MetodosCobroVendedor from '../screens/MetodosCobroVendedor';
 import CalificacionesVendedor from '../screens/CalificacionesVendedor';
 import SuscripcionesVendedor from '../screens/SuscripcionesVendedor';
 import ImpulsosVendedor from '../screens/ImpulsosVendedor';
@@ -76,6 +78,7 @@ export default function AppNavigator() {
           <Stack.Screen name="PublicarLibro" component={PublicarLibro} options={{ headerShown: false }} />
           <Stack.Screen name="VentasVendedor" component={VentasVendedor} options={{ headerShown: false }} />
           <Stack.Screen name="PedidosVendedor" component={PedidosVendedor} options={{ headerShown: false }} />
+          <Stack.Screen name="MetodosCobroVendedor" component={MetodosCobroVendedor} options={{ headerShown: false }} />
           <Stack.Screen name="CalificacionesVendedor" component={CalificacionesVendedor} options={{ headerShown: false }} />
           <Stack.Screen name="SuscripcionesVendedor" component={SuscripcionesVendedor} options={{ headerShown: false }} />
           <Stack.Screen name="ImpulsosVendedor" component={ImpulsosVendedor} options={{ headerShown: false }} />
@@ -85,8 +88,30 @@ export default function AppNavigator() {
           <Stack.Screen name="ConfiguracionTienda" component={ConfiguracionTienda} options={{ headerShown: false }} />
           <Stack.Screen name="PerfilTienda" component={PerfilTienda} options={{ headerShown: false }} />
           <Stack.Screen name="Notifications" component={Notifications} options={{ headerShown: false }} />
-          <Stack.Screen name="Messages" component={Messages} options={{ headerShown: false }} />
-          <Stack.Screen name="Chat" component={Chat} options={{ title: 'Chat' }} />
+          <Stack.Screen
+            name="Messages"
+            component={Messages}
+            options={{
+              title: 'Mensajes',
+              headerStyle: { backgroundColor: '#7A1E3A' },
+              headerTintColor: '#FFFFFF',
+              headerTitleStyle: { color: '#FFFFFF', fontWeight: '700' },
+              headerBackTitle: 'Atrás',
+              headerShadowVisible: false,
+            }}
+          />
+          <Stack.Screen
+            name="Chat"
+            component={Chat}
+            options={{
+              title: 'Chat',
+              headerStyle: { backgroundColor: '#7A1E3A' },
+              headerTintColor: '#FFFFFF',
+              headerTitleStyle: { color: '#FFFFFF', fontWeight: '700' },
+              headerBackTitle: 'Atrás',
+              headerShadowVisible: false,
+            }}
+          />
           <Stack.Screen name="QuejasReclamos" component={QuejasReclamos} options={{ headerShown: false }} />
         </>
       ) : isAdmin ? (
@@ -126,9 +151,32 @@ export default function AppNavigator() {
           <Stack.Screen name="PublicarLibro" component={PublicarLibro} options={{ title: 'Publicar Libro' }} />
           <Stack.Screen name="ConfiguracionTienda" component={ConfiguracionTienda} options={{ title: 'Configuración de Tienda' }} />
           <Stack.Screen name="PerfilTienda" component={PerfilTienda} options={{ title: 'Perfil de Tienda', headerBackTitle: 'Atrás' }} />
-          <Stack.Screen name="Messages" component={Messages} options={{ title: 'Mensajes' }} />
-          <Stack.Screen name="Chat" component={Chat} options={{ title: 'Chat' }} />
+          <Stack.Screen
+            name="Messages"
+            component={Messages}
+            options={{
+              title: 'Mensajes',
+              headerStyle: { backgroundColor: '#7A1E3A' },
+              headerTintColor: '#FFFFFF',
+              headerTitleStyle: { color: '#FFFFFF', fontWeight: '700' },
+              headerBackTitle: 'Atrás',
+              headerShadowVisible: false,
+            }}
+          />
+          <Stack.Screen
+            name="Chat"
+            component={Chat}
+            options={{
+              title: 'Chat',
+              headerStyle: { backgroundColor: '#7A1E3A' },
+              headerTintColor: '#FFFFFF',
+              headerTitleStyle: { color: '#FFFFFF', fontWeight: '700' },
+              headerBackTitle: 'Atrás',
+              headerShadowVisible: false,
+            }}
+          />
           <Stack.Screen name="QuejasReclamos" component={QuejasReclamos} options={{ title: 'Quejas y reclamos' }} />
+          <Stack.Screen name="SoporteTecnico" component={SoporteTecnico} options={{ title: 'Soporte técnico' }} />
         </Stack.Group>
       )}
     </Stack.Navigator>
