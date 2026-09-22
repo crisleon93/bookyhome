@@ -55,7 +55,10 @@ export default function VentasVendedor({ navigation }) {
         ordenes[idOrden].total += Number(venta.total || 0);
         ordenes[idOrden].items.push(venta);
         return ordenes;
-      }, {}));
+      }, {})).sort((a, b) => {
+        // Ordenar por fecha descendente (más reciente primero) y luego por ID ascendente
+        return (new Date(b.fecha || 0) - new Date(a.fecha || 0)) || (Number(a.id_orden) - Number(b.id_orden));
+      });
       setVentas(ventasAgrupadas);
     } catch (e) {
       setVentas([]);

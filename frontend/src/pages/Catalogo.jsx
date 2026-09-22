@@ -3,6 +3,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import api, { addToCart, removeFromCart, getCarrito, getApiBaseUrl, usuarioPuedeCalificarTienda, crearCalificacionTienda, getCalificacionesTienda, actualizarCalificacionTienda } from '../services/api';
 import { notify } from '../components/ToastProvider';
 import LibroCard from '../components/LibroCard';
+import ResenaLibro from '../components/ResenaLibro';
 
 const categoriaClase = (categoria = '') => {
   const texto = categoria.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
@@ -29,6 +30,17 @@ const resolveImagenUrl = (imagen) => {
   return `${getApiBaseUrl()}${imagen.startsWith('/') ? '' : '/'}${imagen}`;
 };
 
+const obtenerIdUsuarioActual = () => {
+  const token = localStorage.getItem('token');
+  if (!token) return null;
+
+  try {
+    return Number(JSON.parse(atob(token.split('.')[1])).sub) || null;
+  } catch {
+    return null;
+  }
+};
+
 const CatalogoLoading = () => (
   <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', padding: '1.5rem 0' }} aria-hidden="true">
     <div style={{ width: '38%', height: '22px', borderRadius: '8px', background: '#eee7e1' }} />
@@ -44,6 +56,7 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
   const [loading, setLoading] = useState(true);
   const [pagina, setPagina] = useState(1);
   const [totalPaginas, setTotalPaginas] = useState(1);
+  const [totalLibros, setTotalLibros] = useState(0);
   const [addingId, setAddingId] = useState(null);
   const [addedToCartIds, setAddedToCartIds] = useState(new Set());
   const [libroSeleccionado, setLibroSeleccionado] = useState(null);
@@ -56,6 +69,9 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
   const [puedeCalificar, setPuedeCalificar] = useState(false);
   const [calificacionEnviada, setCalificacionEnviada] = useState(false);
   const [calificacionExistente, setCalificacionExistente] = useState(null);
+  const [calificacionesTienda, setCalificacionesTienda] = useState([]);
+  const [filtroOpinionesTienda, setFiltroOpinionesTienda] = useState('todas');
+  const [paginaOpinionesTienda, setPaginaOpinionesTienda] = useState(1);
   const [calificacionForm, setCalificacionForm] = useState({ calificacion: 5, comentario: '' });
   const [enviandoCalificacion, setEnviandoCalificacion] = useState(false);
   const ultimaBusquedaRef = React.useRef(null);
@@ -130,10 +146,11 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
     setPagina(1); // Resetear a la primera página cuando cambian los filtros
   }, [searchParams]);
 
-  // Fetch del libro al montar si hay ?libro=ID en la URL (recarga directa)
+  // Fetch del detalle del libro cuando cambia la URL ?libro=ID, incluso sin recargar la página.
   useEffect(() => {
     const libroId = searchParams.get('libro');
     if (!libroId) return;
+
     api.get(`/catalogo/libro/${libroId}`)
       .then(res => {
         if (res.data) {
@@ -144,7 +161,6 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
         }
       })
       .catch(() => {
-        // Si el libro no existe o hay error, volver al catálogo
         setMostrarDetalles(false);
         setSearchParams(prev => {
           const next = new URLSearchParams(prev);
@@ -152,9 +168,7 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
           return next;
         }, { replace: true });
       });
-  // Solo al montar
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [searchParams, setSearchParams]);
 
   useEffect(() => {
     if (!libroInicial) return;
@@ -164,6 +178,10 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
     onLibroInicialConsumido?.();
   }, [libroInicial, onLibroInicialConsumido]);
+
+  useEffect(() => {
+    ultimaBusquedaRef.current = null;
+  }, [searchParams]);
 
   const cargarLibros = React.useCallback(async () => {
     try {
@@ -190,6 +208,7 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
       const response = await api.get(`/catalogo/busqueda-avanzada?${params}`);
       setLibros(response.data.libros || []);
       setTotalPaginas(response.data.total_paginas || 1);
+      setTotalLibros(response.data.total || 0);
       setPagina(response.data.pagina || 1);
     } catch (error) {
       ultimaBusquedaRef.current = null;
@@ -202,6 +221,23 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
   useEffect(() => {
     cargarLibros();
   }, [cargarLibros]);
+  
+  // Registrar impresiones de libros impulsados visibles
+  useEffect(() => {
+    if (!libros || libros.length === 0) return;
+    
+    const impulsados = libros.filter(l => l.id_impulso && l.es_impulsado);
+    if (impulsados.length === 0) return;
+    
+    // Registrar impresión una sola vez por cada libro impulsado visible
+    const registradas = new Set();
+    impulsados.forEach(libro => {
+      if (!registradas.has(libro.id_impulso)) {
+        api.post(`/impulsos/${libro.id_impulso}/impresion`).catch(() => {});
+        registradas.add(libro.id_impulso);
+      }
+    });
+  }, [libros]);
 
   // Sincronizar addedToCartIds con el carrito del backend al montar
   useEffect(() => {
@@ -299,6 +335,11 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
     });
   };
   const handleVerDetalles = (libro) => {
+    // Registrar clic si el libro tiene impulso activo
+    if (libro.id_impulso) {
+      api.post(`/impulsos/${libro.id_impulso}/clic`).catch(() => {});
+    }
+    
     setLibroSeleccionado(libro);
     setImagenActiva(null);
     setZoomActivo(false);
@@ -402,6 +443,8 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
       
       setCalificacionEnviada(true);
       setMostrarCalificacionTienda(false);
+      const calificacionesActualizadas = await getCalificacionesTienda(libroSeleccionado.id_tienda);
+      setCalificacionesTienda(calificacionesActualizadas.data?.calificaciones || []);
       // NO cambiar puedeCalificar para que siga mostrando la sección
     } catch (error) {
       const errorMsg = error.response?.data?.detail || 'No se pudo enviar la calificación';
@@ -416,6 +459,14 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
     if (!libroSeleccionado?.id_tienda) return;
     
     const verificarPermiso = async () => {
+      try {
+        const calificacionesResponse = await getCalificacionesTienda(libroSeleccionado.id_tienda);
+        setCalificacionesTienda(calificacionesResponse.data?.calificaciones || []);
+      } catch (error) {
+        console.error('Error cargando opiniones de la tienda:', error);
+        setCalificacionesTienda([]);
+      }
+
       const token = localStorage.getItem('token');
       if (!token) {
         setPuedeCalificar(false);
@@ -461,10 +512,23 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
   }, [libroSeleccionado?.id_tienda]);
 
   const librosRelacionados = libros.filter((libro) => libro.id_libro !== libroSeleccionado?.id_libro);
+  const opinionesFiltradas = calificacionesTienda.filter((opinion) => (
+    filtroOpinionesTienda === 'todas' || Number(opinion.calificacion) === Number(filtroOpinionesTienda)
+  ));
+  const opinionesPorPagina = 8;
+  const totalPaginasOpiniones = Math.max(1, Math.ceil(opinionesFiltradas.length / opinionesPorPagina));
+  const opinionesVisibles = opinionesFiltradas.slice(
+    (paginaOpinionesTienda - 1) * opinionesPorPagina,
+    paginaOpinionesTienda * opinionesPorPagina
+  );
   const librosRelacionadosRef = React.useRef(null);
   const librosRelacionadosTrackRef = React.useRef(null);
   const librosRelacionadosOffsetRef = React.useRef(0);
   const librosRelacionadosLoopRef = React.useRef(0);
+
+  useEffect(() => {
+    setPaginaOpinionesTienda(1);
+  }, [libroSeleccionado?.id_tienda, filtroOpinionesTienda]);
 
   useEffect(() => {
     if (librosRelacionados.length <= 1) return undefined;
@@ -571,41 +635,41 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
                   });
                 }}
                 style={{
-              width: '100%',
-              height: '100%',
-              minHeight: '380px',
-              maxHeight: '440px',
-              borderRadius: '16px',
-              overflow: 'hidden',
-              boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
-              background: '#f8f5f2',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              position: 'relative'
-                }}
-              >
-              <img
-                className="detalle-gallery-image"
-                src={resolveImagenUrl(imagenActiva || libroSeleccionado.imagen_url || libroSeleccionado.imagen_principal || libroSeleccionado.imagen) || (libroSeleccionado.isbn ? `https://books.google.com/books/content?vid=ISBN${libroSeleccionado.isbn}&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api` : 'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=400&q=80')}
-                alt={libroSeleccionado.titulo}
-                style={{
                   width: '100%',
                   height: '100%',
-                  objectFit: 'cover',
-                  display: 'block',
-                  transform: zoomActivo ? 'scale(2.1)' : 'scale(1)',
-                  transformOrigin: `${zoomPosicion.x}% ${zoomPosicion.y}%`,
-                  transition: zoomActivo ? 'transform 0.12s ease-out' : 'transform 0.2s ease-out',
+                  minHeight: '380px',
+                  maxHeight: '440px',
+                  borderRadius: '16px',
+                  overflow: 'hidden',
+                  boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
+                  background: '#f8f5f2',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  position: 'relative'
                 }}
-                onError={(e) => {
-                  const t = e.target;
-                  const isbn = libroSeleccionado.isbn || '';
-                  const gbUrl = isbn ? `https://books.google.com/books/content?vid=ISBN${isbn}&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api` : null;
-                  if (gbUrl && t.src !== gbUrl) { t.src = gbUrl; return; }
-                  t.src = 'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=400&q=80';
-                }}
-              />
+              >
+                <img
+                  className="detalle-gallery-image"
+                  src={resolveImagenUrl(imagenActiva || libroSeleccionado.imagen_url || libroSeleccionado.imagen_principal || libroSeleccionado.imagen) || (libroSeleccionado.isbn ? `https://books.google.com/books/content?vid=ISBN${libroSeleccionado.isbn}&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api` : 'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=400&q=80')}
+                  alt={libroSeleccionado.titulo}
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    display: 'block',
+                    transform: zoomActivo ? 'scale(2.1)' : 'scale(1)',
+                    transformOrigin: `${zoomPosicion.x}% ${zoomPosicion.y}%`,
+                    transition: zoomActivo ? 'transform 0.12s ease-out' : 'transform 0.2s ease-out',
+                  }}
+                  onError={(e) => {
+                    const t = e.target;
+                    const isbn = libroSeleccionado.isbn || '';
+                    const gbUrl = isbn ? `https://books.google.com/books/content?vid=ISBN${isbn}&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api` : null;
+                    if (gbUrl && t.src !== gbUrl) { t.src = gbUrl; return; }
+                    t.src = 'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=400&q=80';
+                  }}
+                />
                 {zoomActivo && <span className="detalle-zoom-hint">Mueve el cursor para explorar</span>}
               </div>
               {(() => {
@@ -876,7 +940,7 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
 
           {libroSeleccionado.id_tienda && (puedeCalificar || calificacionEnviada || calificacionExistente) && (
             <div style={{ marginBottom: '32px', padding: '24px', background: dm.sectionBg, borderRadius: '12px' }}>
-              <h3 style={{ fontSize: '1.5rem', fontWeight: '700', margin: '0 0 16px 0', color: dm.textPrimary }}>Calificar la tienda</h3>
+              <h3 style={{ fontSize: '1.5rem', fontWeight: '700', margin: '0 0 16px 0', color: dm.textPrimary }}>Opiniones de la tienda</h3>
               {libroSeleccionado.calificacion_tienda > 0 && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
                   <div style={{ display: 'flex', gap: '2px' }}>
@@ -893,35 +957,31 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
                 </div>
               )}
               {(calificacionEnviada || calificacionExistente) && !mostrarCalificacionTienda ? (
-                <div style={{ padding: '16px', background: darkMode ? '#0f2e1a' : '#d1fae5', borderRadius: '8px', border: `1px solid ${darkMode ? '#16a34a' : '#10b981'}` }}>
-                  <p style={{ margin: 0, color: darkMode ? '#4ade80' : '#065f46', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={darkMode ? '#4ade80' : '#065f46'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
-                    ¡Gracias por calificar esta tienda!
-                  </p>
-                  {(calificacionExistente || calificacionEnviada) && (
-                    <div style={{ marginBottom: '16px', padding: '12px', background: dm.cardBg, borderRadius: '6px', border: `1px solid ${darkMode ? '#16a34a' : '#a7f3d0'}` }}>
-                      <div style={{ marginBottom: '8px' }}>
-                        <strong style={{ color: darkMode ? '#4ade80' : '#065f46', fontSize: '0.9rem' }}>Tu calificación:</strong>
-                        <div style={{ display: 'flex', gap: '2px', marginTop: '4px' }}>
-                          {[1, 2, 3, 4, 5].map((star) => (
-                            <svg key={star} width="16" height="16" viewBox="0 0 24 24" fill={star <= (calificacionExistente?.calificacion || calificacionForm.calificacion) ? '#ffc107' : (darkMode ? '#444' : '#e0e0e0')} stroke="none">
-                              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                            </svg>
-                          ))}
-                          <span style={{ marginLeft: '8px', fontSize: '0.85rem', color: darkMode ? '#4ade80' : '#065f46', fontWeight: '600' }}>{calificacionExistente?.calificacion || calificacionForm.calificacion}/5</span>
-                        </div>
+                <div style={{ marginTop: '12px' }}>
+                  <div style={{ padding: '14px 16px', background: dm.cardBg, border: `1px solid ${dm.cardBorder}`, borderRadius: '8px' }}>
+                    <strong style={{ color: dm.textPrimary, fontSize: '0.9rem' }}>Tu opinión</strong>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '6px' }}>
+                      <div style={{ display: 'flex', gap: '2px' }}>
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <svg key={star} width="16" height="16" viewBox="0 0 24 24" fill={star <= (calificacionExistente?.calificacion || calificacionForm.calificacion) ? '#ffc107' : (darkMode ? '#444' : '#e0e0e0')} stroke="none">
+                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                          </svg>
+                        ))}
                       </div>
-                      {(calificacionExistente?.comentario || calificacionForm.comentario) && (
-                        <p style={{ margin: 0, fontSize: '0.85rem', color: darkMode ? '#6ee7b7' : '#047857', fontStyle: 'italic' }}>
-                          "{calificacionExistente?.comentario || calificacionForm.comentario}"
-                        </p>
-                      )}
+                      <span style={{ color: dm.textMuted, fontSize: '0.85rem' }}>{calificacionExistente?.calificacion || calificacionForm.calificacion}/5</span>
                     </div>
-                  )}
-                  <button onClick={() => { setCalificacionEnviada(false); setMostrarCalificacionTienda(true); if (calificacionExistente) setCalificacionForm({ calificacion: calificacionExistente.calificacion, comentario: calificacionExistente.comentario }); }}
-                    style={{ background: dm.cardBg, color: darkMode ? '#4ade80' : '#065f46', border: `1px solid ${darkMode ? '#16a34a' : '#10b981'}`, padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.9rem', fontWeight: '600' }}>
+                    {(calificacionExistente?.comentario || calificacionForm.comentario) && (
+                      <p style={{ margin: '8px 0 0', color: dm.textSecondary, fontSize: '0.9rem', lineHeight: '1.5' }}>
+                        “{calificacionExistente?.comentario || calificacionForm.comentario}”
+                      </p>
+                    )}
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px' }}>
+                  <button type="button" onClick={() => { setCalificacionEnviada(false); setMostrarCalificacionTienda(true); if (calificacionExistente) setCalificacionForm({ calificacion: calificacionExistente.calificacion, comentario: calificacionExistente.comentario }); }}
+                    style={{ background: dm.cardBg, color: dm.textPrimary, border: `1px solid ${dm.inputBorder}`, padding: '9px 16px', borderRadius: '7px', cursor: 'pointer', fontSize: '0.9rem', fontWeight: '600' }}>
                     Editar calificación
                   </button>
+                  </div>
                 </div>
               ) : (!mostrarCalificacionTienda && !calificacionExistente && !calificacionEnviada) ? (
                 <button onClick={() => setMostrarCalificacionTienda(true)} style={{ background: 'var(--vinotinto)', color: 'white', border: 'none', padding: '12px 24px', borderRadius: '8px', cursor: 'pointer', fontSize: '1rem', fontWeight: '600', transition: 'all 0.2s ease' }}>
@@ -959,33 +1019,67 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
                   </div>
                 </div>
               ) : null}
+              {calificacionesTienda.length > 0 && (
+                <div style={{ marginTop: '24px', borderTop: `1px solid ${dm.cardBorder}`, paddingTop: '18px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginBottom: '12px', flexWrap: 'wrap' }}>
+                    <h4 style={{ margin: 0, color: dm.textPrimary, fontSize: '1rem' }}>Opiniones de clientes</h4>
+                    <select value={filtroOpinionesTienda} onChange={(e) => setFiltroOpinionesTienda(e.target.value)}
+                      aria-label="Filtrar opiniones por estrellas"
+                      style={{ padding: '7px 10px', border: `1px solid ${dm.inputBorder}`, borderRadius: '7px', background: dm.cardBg, color: dm.textPrimary }}>
+                      <option value="todas">Todas las estrellas</option>
+                      {[5, 4, 3, 2, 1].map((estrellas) => <option key={estrellas} value={estrellas}>{estrellas} estrellas</option>)}
+                    </select>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    {opinionesVisibles.map((opinion) => (
+                      <div key={opinion.id_calificacion} style={{ padding: '12px 14px', background: dm.cardBg, border: `1px solid ${dm.cardBorder}`, borderRadius: '8px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', alignItems: 'center' }}>
+                          <strong style={{ color: dm.textPrimary, fontSize: '0.9rem' }}>{opinion.nombre_usuario}</strong>
+                          <span style={{ color: dm.textMuted, fontSize: '0.8rem' }}>{opinion.calificacion}/5</span>
+                        </div>
+                        <div style={{ display: 'flex', gap: '2px', margin: '5px 0' }}>
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <span key={star} style={{ color: star <= opinion.calificacion ? '#ffc107' : dm.cardBorder }}>★</span>
+                          ))}
+                        </div>
+                        {opinion.comentario && <p style={{ margin: 0, color: dm.textSecondary, fontSize: '0.88rem' }}>{opinion.comentario}</p>}
+                      </div>
+                    ))}
+                  </div>
+                  {opinionesFiltradas.length === 0 ? (
+                    <p style={{ margin: '14px 0 0', color: dm.textMuted, textAlign: 'center' }}>No hay opiniones con ese filtro.</p>
+                  ) : totalPaginasOpiniones > 1 ? (
+                    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '12px', marginTop: '16px' }}>
+                      <button type="button" disabled={paginaOpinionesTienda === 1} onClick={() => setPaginaOpinionesTienda((pagina) => pagina - 1)}
+                        style={{ padding: '7px 12px', border: `1px solid ${dm.inputBorder}`, borderRadius: '7px', background: dm.cardBg, color: dm.textPrimary, cursor: paginaOpinionesTienda === 1 ? 'not-allowed' : 'pointer', opacity: paginaOpinionesTienda === 1 ? 0.5 : 1 }}>
+                        Anterior
+                      </button>
+                      <span style={{ color: dm.textMuted, fontSize: '0.85rem' }}>Página {paginaOpinionesTienda} de {totalPaginasOpiniones}</span>
+                      <button type="button" disabled={paginaOpinionesTienda === totalPaginasOpiniones} onClick={() => setPaginaOpinionesTienda((pagina) => pagina + 1)}
+                        style={{ padding: '7px 12px', border: `1px solid ${dm.inputBorder}`, borderRadius: '7px', background: dm.cardBg, color: dm.textPrimary, cursor: paginaOpinionesTienda === totalPaginasOpiniones ? 'not-allowed' : 'pointer', opacity: paginaOpinionesTienda === totalPaginasOpiniones ? 0.5 : 1 }}>
+                        Siguiente
+                      </button>
+                    </div>
+                  ) : null}
+                </div>
+              )}
             </div>
           )}
 
           {/* Reseñas */}
-          <div className="detalle-content-section detalle-reviews-section" style={{ marginBottom: '32px' }}>
-            <h3 style={{ fontSize: '1.5rem', fontWeight: '700', margin: '0 0 16px 0', color: dm.textPrimary }}>Reseñas de clientes</h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              {[
-                { ini: 'M', nombre: 'María García', bg: darkMode ? '#2a1a24' : '#fce4ec', color: darkMode ? '#e05a7a' : '#8b0000', texto: 'Excelente libro, llegó en perfecto estado y el envío fue muy rápido. La historia es cautivadora y la calidad del papel es excelente. ¡Totalmente recomendado!', fecha: 'Hace 3 días', estrellas: 5 },
-                { ini: 'C', nombre: 'Carlos Rodríguez', bg: darkMode ? '#0d1f3c' : '#e3f2fd', color: darkMode ? '#60a5fa' : '#1976d2', texto: 'Buen libro en general, aunque esperaba más profundidad en los personajes. La calidad del material es buena y el precio está acorde al producto.', fecha: 'Hace 1 semana', estrellas: 4 },
-                { ini: 'A', nombre: 'Ana Martínez', bg: darkMode ? '#2a1a08' : '#fff3e0', color: darkMode ? '#fb923c' : '#f57c00', texto: 'Increíble! No pude dejar de leerlo. La trama es original y los personajes están muy bien desarrollados. Definitivamente compraré más libros de este autor.', fecha: 'Hace 2 semanas', estrellas: 5 },
-              ].map((r, i) => (
-                <div key={i} style={{ padding: '20px', background: dm.cardBg, borderRadius: '12px', border: `1px solid ${dm.cardBorder}` }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
-                    <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: r.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700', color: r.color }}>{r.ini}</div>
-                    <div>
-                      <p style={{ fontSize: '1rem', fontWeight: '600', color: dm.textPrimary, margin: 0 }}>{r.nombre}</p>
-                      <div style={{ display: 'flex', gap: '2px' }}>
-                        {[1,2,3,4,5].map(s => <svg key={s} width="14" height="14" viewBox="0 0 24 24" fill={s <= r.estrellas ? '#ffc107' : (darkMode ? '#444' : '#e0e0e0')} stroke="none"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>)}
-                      </div>
-                    </div>
-                    <span style={{ fontSize: '0.85rem', color: dm.textMuted, marginLeft: 'auto' }}>{r.fecha}</span>
-                  </div>
-                  <p style={{ fontSize: '0.95rem', color: dm.textSecondary, margin: 0, lineHeight: '1.6' }}>{r.texto}</p>
-                </div>
-              ))}
-            </div>
+          <div className="detalle-content-section detalle-reviews-section" style={{
+            marginBottom: '32px',
+            padding: '24px',
+            background: dm.sectionBg,
+            borderRadius: '12px',
+            border: `1px solid ${dm.cardBorder}`,
+            boxShadow: '0 6px 18px rgba(66, 32, 42, 0.05)'
+          }}>
+            <h3 style={{ fontSize: '1.5rem', fontWeight: '700', margin: '0 0 16px 0', color: dm.textPrimary }}>Reseñas del libro</h3>
+            <ResenaLibro
+              idLibro={libroSeleccionado.id_libro}
+              idUsuario={obtenerIdUsuarioActual()}
+            />
           </div>
 
           {/* Características */}
@@ -1117,24 +1211,53 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
 
           {/* PAGINACIÓN */}
           {totalPaginas > 1 && (
-            <div className="paginacion">
-              <button
-                disabled={pagina === 1}
-                onClick={() => setPagina(pagina - 1)}
-                className="btn-paginacion"
-              >
-                ← Anterior
-              </button>
-              <span className="pagina-info">
-                Página {pagina} de {totalPaginas}
-              </span>
-              <button
-                disabled={pagina === totalPaginas}
-                onClick={() => setPagina(pagina + 1)}
-                className="btn-paginacion"
-              >
-                Siguiente →
-              </button>
+            <div className="catalogo-pagination">
+              <div className="pagination-info">
+                Mostrando <strong>{(pagina - 1) * 24 + 1}–{Math.min(pagina * 24, totalLibros)}</strong> de <strong>{totalLibros}</strong> {totalLibros === 1 ? 'libro' : 'libros'}
+              </div>
+
+              <div className="pagination-controls">
+                <button
+                  type="button"
+                  className="pagination-btn-nav"
+                  disabled={pagina <= 1}
+                  onClick={() => setPagina(p => Math.max(1, p - 1))}
+                >
+                  ‹ Anterior
+                </button>
+
+                <div className="pagination-numbers">
+                  {Array.from({ length: totalPaginas }, (_, idx) => idx + 1).map((num) => {
+                    if (num === 1 || num === totalPaginas || Math.abs(num - pagina) <= 1) {
+                      return (
+                        <button
+                          key={num}
+                          type="button"
+                          className={`pagination-num-btn ${num === pagina ? 'active' : ''}`}
+                          onClick={() => setPagina(num)}
+                        >
+                          {num}
+                        </button>
+                      );
+                    } else if (
+                      (num === 2 && pagina > 3) ||
+                      (num === totalPaginas - 1 && pagina < totalPaginas - 2)
+                    ) {
+                      return <span key={num} className="pagination-ellipsis">…</span>;
+                    }
+                    return null;
+                  })}
+                </div>
+
+                <button
+                  type="button"
+                  className="pagination-btn-nav"
+                  disabled={pagina >= totalPaginas}
+                  onClick={() => setPagina(p => Math.min(totalPaginas, p + 1))}
+                >
+                  Siguiente ›
+                </button>
+              </div>
             </div>
           )}
         </>

@@ -23,7 +23,7 @@ import {
   IconMessage,
   IconFilter
 } from './Icons';
-import { login } from '../services/api';
+import { login, getOrdenes } from '../services/api';
 import { jwtDecode } from 'jwt-decode';
 import { notify } from './ToastProvider';
 import Register from '../pages/Register';
@@ -828,8 +828,15 @@ function Header({ variant, hasSidebar }) {
     let mounted = true;
     const cargarContadores = async () => {
       try {
-        const notifData = await notificacionesService.obtener(false, 1, 0);
-        if (mounted) setNoLeidosNotif(notifData.no_leidas || 0);
+        const [notifData, ordenesResponse] = await Promise.all([
+          notificacionesService.obtener(false, 1, 0),
+          getOrdenes(),
+        ]);
+        const ordenes = ordenesResponse.data?.orders || ordenesResponse.data || [];
+        const comprasNotificables = ordenes.filter((orden) => [
+          'pendiente', 'completada', 'pagada', 'pagado', 'entregada', 'entregado', 'enviado', 'procesando'
+        ].includes(String(orden.estado || '').toLowerCase())).length;
+        if (mounted) setNoLeidosNotif((notifData.no_leidas || 0) + comprasNotificables);
 
         const salasData = await chatService.getSalas();
         const totalNo = (salasData.salas || []).reduce((acc, s) => acc + (s.no_leidos || 0), 0);
@@ -888,10 +895,15 @@ function Header({ variant, hasSidebar }) {
   const handleSuggestionClick = (sugerencia) => {
     setSearchTerm(sugerencia.titulo);
     setShowSuggestions(false);
+
+    const params = new URLSearchParams();
+    params.set('q', sugerencia.titulo);
+    params.set('libro', String(sugerencia.id_libro));
+
     if (isLoggedIn) {
-      navigate(`/?seccion=Catálogo&q=${encodeURIComponent(sugerencia.titulo)}`);
+      navigate(`/?seccion=Catálogo&${params.toString()}`);
     } else {
-      navigate(`/catalogo?q=${encodeURIComponent(sugerencia.titulo)}`);
+      navigate(`/catalogo?${params.toString()}`);
     }
   };
 
@@ -1095,7 +1107,7 @@ function Header({ variant, hasSidebar }) {
                   ) : (
                     searchSuggestions.map((sugerencia) => (
                       <div
-                        key={sugerencia.id_libro}
+                        key={`${sugerencia.id_libro}-${sugerencia.nombre_tienda || 'sin-tienda'}`}
                         className="suggestion-item"
                         onClick={() => handleSuggestionClick(sugerencia)}
                       >
@@ -1108,6 +1120,9 @@ function Header({ variant, hasSidebar }) {
                         <div className="suggestion-content">
                           <div className="suggestion-title">{sugerencia.titulo}</div>
                           <div className="suggestion-author">{sugerencia.autor_libro}</div>
+                          {sugerencia.nombre_tienda && (
+                            <div className="suggestion-store">Tienda: {sugerencia.nombre_tienda}</div>
+                          )}
                         </div>
                         <div className="suggestion-price">${sugerencia.precio_libro.toLocaleString('es-CO')}</div>
                       </div>

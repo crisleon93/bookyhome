@@ -342,7 +342,7 @@ export default function SeccionMisCompras({ userId }) {
     })
     .sort((a, b) => {
       if (ordenarPor === 'recientes') {
-        return (new Date(b.fecha || 0) - new Date(a.fecha || 0)) || (Number(b.id_orden) - Number(a.id_orden));
+        return (new Date(b.fecha || 0) - new Date(a.fecha || 0)) || (Number(a.id_orden) - Number(b.id_orden));
       }
       if (ordenarPor === 'antiguas') {
         return (new Date(a.fecha || 0) - new Date(b.fecha || 0)) || (Number(a.id_orden) - Number(b.id_orden));

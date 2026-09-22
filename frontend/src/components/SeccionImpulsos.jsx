@@ -383,7 +383,7 @@ export default function SeccionImpulsos({ tiendaId, onNavegar, darkMode = false 
                     {/* Métricas */}
                     <div style={{ display: "flex", gap: "20px", flexWrap: "wrap" }}>
                       {[
-                        { label: "Impresiones", valor: imp.impresiones || 0, icon: "👁" },
+                        { label: "Vistas", valor: imp.impresiones || 0, icon: "👁" },
                         { label: "Clics", valor: imp.clics || 0, icon: "🖱" },
                         { label: "Ventas", valor: imp.ventas_generadas || 0, icon: "🛒" },
                       ].map((m) => (

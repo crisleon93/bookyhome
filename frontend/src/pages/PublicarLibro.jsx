@@ -15,6 +15,25 @@ const ESTADOS = [
 const TIPOS_TAPA = ['Tapa Blanda', 'Tapa Dura', 'Digital'];
 const IDIOMAS = ['Español', 'Inglés', 'Portugués', 'Francés', 'Otro'];
 
+const getSellerMediaStorageKey = (key) => {
+  const token = localStorage.getItem("token");
+  if (!token) return key;
+
+  try {
+    const payload = jwtDecode(token);
+    const userId = payload?.sub || payload?.id || payload?.usuario_id || payload?.user_id;
+    if (!userId) return key;
+    return `${key}_${userId}`;
+  } catch {
+    return key;
+  }
+};
+
+const clearLegacySellerMediaCache = () => {
+  localStorage.removeItem('vendedor_user_photo_url');
+  localStorage.removeItem('vendedor_banner_url');
+};
+
 export default function PublicarLibro() {
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
@@ -31,8 +50,8 @@ export default function PublicarLibro() {
     }
     return "Vendedor";
   })();
-  const [userPhotoUrl, setUserPhotoUrl] = useState(() => localStorage.getItem('vendedor_user_photo_url') || null);
-  const [bannerUrl, setBannerUrl] = useState(() => localStorage.getItem('vendedor_banner_url') || null);
+  const [userPhotoUrl, setUserPhotoUrl] = useState(() => localStorage.getItem(getSellerMediaStorageKey('vendedor_user_photo_url')) || null);
+  const [bannerUrl, setBannerUrl] = useState(() => localStorage.getItem(getSellerMediaStorageKey('vendedor_banner_url')) || null);
 
   const [categorias, setCategorias] = useState([]);
   const [previews, setPreviews] = useState([]);
@@ -87,12 +106,14 @@ export default function PublicarLibro() {
         if (r.data?.logo_url) {
           const nextPhotoUrl = resolve(r.data.logo_url);
           setUserPhotoUrl(nextPhotoUrl);
-          localStorage.setItem('vendedor_user_photo_url', nextPhotoUrl);
+          localStorage.setItem(getSellerMediaStorageKey('vendedor_user_photo_url'), nextPhotoUrl);
+          clearLegacySellerMediaCache();
         }
         if (r.data?.banner_url) {
           const nextBannerUrl = resolve(r.data.banner_url);
           setBannerUrl(nextBannerUrl);
-          localStorage.setItem('vendedor_banner_url', nextBannerUrl);
+          localStorage.setItem(getSellerMediaStorageKey('vendedor_banner_url'), nextBannerUrl);
+          clearLegacySellerMediaCache();
         }
       })
       .catch(() => {});

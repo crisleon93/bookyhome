@@ -2760,7 +2760,6 @@ INSERT INTO tiendas (id_usuario, nombre_tienda, direccion, telefono, estado_tien
 -- 3. CALIFICACIONES TIENDAS
 -- =============================================================================
 INSERT INTO calificaciones_tiendas (id_tienda, id_usuario, calificacion, comentario, fecha_calificacion) VALUES
-((SELECT id_tienda FROM tiendas WHERE nombre_tienda = 'Librería El Sótano'), (SELECT id_usuario FROM usuarios WHERE correo_usuario = 'camila.rojas@gmail.com'), 5, 'Excelente atención y el libro llegó impecable.', '2025-02-10'),
 ((SELECT id_tienda FROM tiendas WHERE nombre_tienda = 'Librería El Sótano'), (SELECT id_usuario FROM usuarios WHERE correo_usuario = 'andres.gomez@hotmail.com'), 4, 'Buen catálogo, demoró un día más de lo esperado.', '2025-02-22'),
 ((SELECT id_tienda FROM tiendas WHERE nombre_tienda = 'Página Trece'), (SELECT id_usuario FROM usuarios WHERE correo_usuario = 'valentina.castro@gmail.com'), 5, '¡Encontré ediciones hermosas de fantasía!', '2025-03-05'),
 ((SELECT id_tienda FROM tiendas WHERE nombre_tienda = 'El Rincón Literario'), (SELECT id_usuario FROM usuarios WHERE correo_usuario = 'jp.martinez@outlook.com'), 4, 'Buen empaque y libros muy bien cuidados.', '2025-03-18'),

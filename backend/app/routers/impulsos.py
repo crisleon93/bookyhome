@@ -7,6 +7,9 @@ from app.models.impulsos import (
     obtener_impulsos_tienda,
     contratar_impulso,
     cancelar_impulso,
+    obtener_impulsos_activos_publicos,
+    registrar_impresion,
+    registrar_clic,
 )
 from app.models.herramientas import obtener_suscripcion_activa_herramientas
 from app.utils.finance_hooks import registrar_ingreso_impulso
@@ -82,3 +85,32 @@ def cancelar(id_impulso: int, user: dict = Depends(get_current_user)):
     if not resultado["ok"]:
         raise HTTPException(status_code=404, detail=resultado.get("error"))
     return {"ok": True, "mensaje": "Impulso cancelado"}
+
+
+@router.get("/activos")
+def impulsos_activos():
+    """
+    Endpoint público. Retorna los libros e info de tiendas con impulsos
+    activos y vigentes para mostrar en catálogo y home.
+    """
+    return obtener_impulsos_activos_publicos()
+
+
+@router.post("/{id_impulso}/impresion")
+def registrar_impresion_endpoint(id_impulso: int):
+    """
+    Endpoint público. Incrementa el contador de impresiones de un impulso.
+    El frontend lo llama cuando el libro impulsado es visible en pantalla.
+    """
+    registrar_impresion(id_impulso)
+    return {"ok": True}
+
+
+@router.post("/{id_impulso}/clic")
+def registrar_clic_endpoint(id_impulso: int):
+    """
+    Endpoint público. Incrementa el contador de clics de un impulso.
+    El frontend lo llama cuando el usuario hace clic en un libro impulsado.
+    """
+    registrar_clic(id_impulso)
+    return {"ok": True}

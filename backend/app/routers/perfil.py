@@ -1072,8 +1072,8 @@ def actualizar_calificacion_tienda(id_calificacion: int, data: CalificacionTiend
                 VALUES (%s, 'resena', %s, %s, %s, NOW())
             """, (
                 info['id_vendedor'],
-                'CalificaciÃ³n actualizada',
-                f'{info["nombre_usuario"]} actualizÃ³ su calificaciÃ³n de tu tienda "{info["nombre_tienda"]}" a {data.calificacion} estrellas',
+                'Calificacion actualizada',
+                f'{info["nombre_usuario"]} actualizo su calificacion de tu tienda "{info["nombre_tienda"]}" a {data.calificacion} estrellas',
                 info['id_tienda']
             ))
         

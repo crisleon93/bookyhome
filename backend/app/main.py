@@ -76,10 +76,13 @@ load_dotenv()
 # Scheduler — tareas programadas
 # ========================
 from app.tasks.auto_entrega import ejecutar_auto_confirmacion
+from app.models.impulsos import expirar_impulsos_vencidos
 
 scheduler = BackgroundScheduler(timezone="America/Bogota")
 # Corre todos los días a las 3:00 AM hora Colombia
 scheduler.add_job(ejecutar_auto_confirmacion, "cron", hour=3, minute=0, id="auto_entrega")
+# Expira impulsos vencidos cada hora
+scheduler.add_job(expirar_impulsos_vencidos, "interval", minutes=60, id="expirar_impulsos")
 
 @asynccontextmanager
 async def lifespan(app):
@@ -163,7 +166,7 @@ app.include_router(libros.router, prefix="/libros", tags=["Libros"])
 
 app.include_router(ofertas.router, prefix="/ofertas", tags=["ofertas"])
 
-app.include_router(resenas_router, prefix="/resenas", tags=["Reseñas"])
+app.include_router(resenas_router)
 
 app.include_router(perfil_router)
 
