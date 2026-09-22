@@ -59,14 +59,20 @@ export default function SeccionNotificaciones() {
           referencia_id: orden.id_orden,
           es_automatica: true,
         });
-      } else if (["completada","pagada","pagado"].includes(orden.estado)) {
-        const id = `orden-completada-${orden.id_orden}`;
+      } else if (["completada", "pagada", "pagado", "entregada", "entregado", "enviado", "procesando"].includes(orden.estado)) {
+        const esEntregada = ["entregada", "entregado"].includes(orden.estado);
+        const esEnviada = ["enviado", "procesando"].includes(orden.estado);
+        const id = `orden-estado-${orden.id_orden}`;
         if (notificacionesEliminadasAutomaticas.has(id)) return;
         generadas.push({
           id_notificacion: id,
-          tipo: "pedido",
-          titulo: "Compra Realizada",
-          descripcion: `Tu compra #${orden.id_orden} ha sido completada exitosamente por ${Number(orden.total).toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 })}`,
+          tipo: esEntregada || esEnviada ? "entrega" : "pedido",
+          titulo: esEntregada ? "Compra entregada" : esEnviada ? "Compra en camino" : "Compra realizada",
+          descripcion: esEntregada
+            ? `Tu compra #${orden.id_orden} fue entregada correctamente por ${Number(orden.total).toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 })}.`
+            : esEnviada
+              ? `Tu compra #${orden.id_orden} está en proceso de entrega por ${Number(orden.total).toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 })}.`
+              : `Tu compra #${orden.id_orden} fue confirmada por ${Number(orden.total).toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 })}.`,
           fecha_creacion: orden.fecha || new Date().toISOString(),
           leida: notificacionesLeidasAutomaticas.has(id),
           referencia_id: orden.id_orden,

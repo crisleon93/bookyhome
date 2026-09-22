@@ -106,14 +106,12 @@ def busqueda_avanzada(
             where_conditions.append("u.correo_usuario = %s")
             params.append(correo_vendedor)
 
-        # HAVING para calificacion_min (valor agregado, no puede ir en WHERE)
-        having_clause = ""
         having_params = []
         if calificacion_min:
-            having_clause = "HAVING COALESCE(AVG(r.calificacion), 0) >= %s"
-            having_params.append(calificacion_min)
+            where_conditions.append("(SELECT COALESCE(AVG(rf.calificacion), 0) FROM resenas_libros rf WHERE rf.id_libro = l.id_libro) >= %s")
+            params.append(calificacion_min)
         
-        # Construir ORDER BY
+        # Construir ORDER BY — impulsados siempre primero, luego criterio elegido
         orden_map = {
             "relevancia": "l.fecha_listado DESC",
             "precio_asc": "l.precio_libro ASC",
@@ -139,7 +137,7 @@ def busqueda_avanzada(
         total_result = cursor.fetchone()
         total = total_result["total"] if total_result else 0
         
-        # Query principal con calificaciones
+        # Query principal con calificaciones e impulsos activos
         offset = (pagina - 1) * limite
         
         main_query = f"""
@@ -160,27 +158,30 @@ def busqueda_avanzada(
                 COALESCE(tc.tiempo_despacho_dias, 2) AS tiempo_despacho_dias,
                 tc.politica_devoluciones,
                 tc.politica_envios,
-                (SELECT url_imagen FROM imagenes_libro WHERE id_libro = l.id_libro LIMIT 1) as imagen_url,
-                GROUP_CONCAT(DISTINCT i.url_imagen ORDER BY i.es_principal DESC, i.id_imagen ASC) AS imagenes,
-                COALESCE(AVG(r.calificacion), 0) as promedio_calificacion,
-                COUNT(DISTINCT r.id_resena) as total_resenas,
-                (SELECT ROUND(AVG(ct.calificacion), 1) 
-                 FROM calificaciones_tiendas ct 
-                 WHERE ct.id_tienda = t.id_tienda) as calificacion_tienda,
-                (SELECT COUNT(ct.id_calificacion) 
-                 FROM calificaciones_tiendas ct 
-                 WHERE ct.id_tienda = t.id_tienda) as total_opiniones_tienda
+                (SELECT url_imagen FROM imagenes_libro WHERE id_libro = l.id_libro ORDER BY es_principal DESC, id_imagen ASC LIMIT 1) AS imagen_url,
+                (SELECT GROUP_CONCAT(DISTINCT il.url_imagen ORDER BY il.es_principal DESC, il.id_imagen ASC) FROM imagenes_libro il WHERE il.id_libro = l.id_libro) AS imagenes,
+                COALESCE((SELECT ROUND(AVG(rf.calificacion), 1) FROM resenas_libros rf WHERE rf.id_libro = l.id_libro), 0) AS promedio_calificacion,
+                (SELECT COUNT(*) FROM resenas_libros rf WHERE rf.id_libro = l.id_libro) AS total_resenas,
+                COALESCE((SELECT ROUND(AVG(ct.calificacion), 1) FROM calificaciones_tiendas ct WHERE ct.id_tienda = t.id_tienda), 0) AS calificacion_tienda,
+                (SELECT COUNT(*) FROM calificaciones_tiendas ct WHERE ct.id_tienda = t.id_tienda) AS total_opiniones_tienda,
+                -- Impulso activo del libro (si existe)
+                imp.id_impulso,
+                imp.id_tipo_impulso AS impulso_tipo_id,
+                ti_imp.tipo          AS impulso_tipo,
+                ti_imp.nombre        AS impulso_nombre,
+                CASE WHEN imp.id_impulso IS NOT NULL THEN 1 ELSE 0 END AS es_impulsado
             FROM libros l
             LEFT JOIN categorias c ON l.id_categoria = c.id_categoria
             LEFT JOIN tiendas t ON l.id_tienda = t.id_tienda
             LEFT JOIN usuarios u ON t.id_usuario = u.id_usuario
             LEFT JOIN tienda_configuracion tc ON t.id_tienda = tc.id_tienda
-            LEFT JOIN imagenes_libro i ON l.id_libro = i.id_libro
-            LEFT JOIN resenas_libros r ON l.id_libro = r.id_libro
+            LEFT JOIN impulsos_contratados imp
+                   ON imp.id_libro = l.id_libro
+                  AND imp.estado = 'Activo'
+                  AND NOW() BETWEEN imp.fecha_inicio AND imp.fecha_fin
+            LEFT JOIN tipos_impulso ti_imp ON ti_imp.id_tipo_impulso = imp.id_tipo_impulso
             WHERE {where_clause}
-            GROUP BY l.id_libro, l.titulo, l.autor_libro, l.isbn, l.precio_libro, l.stock, l.descripcion_libro, l.fecha_listado, c.nombre_categoria, t.nombre_tienda, t.id_tienda, tc.tarifa_envio, tc.tiempo_despacho_dias, tc.politica_devoluciones, tc.politica_envios
-            {having_clause}
-            ORDER BY {order_clause}
+            ORDER BY es_impulsado DESC, {order_clause}
             LIMIT %s OFFSET %s
         """
         

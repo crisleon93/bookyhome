@@ -313,7 +313,7 @@
       "subtotal": 107000.0,
       "costo_envio": 12000.0,
       "total": 119000.0,
-      "estado": "pagado",
+      "estado": "enviado",
       "tipo_entrega": "domicilio",
       "pin_retiro": null,
       "estado_retiro": null,
@@ -321,7 +321,18 @@
       "id_orden_db": 753,
       "estado_orden": "pagado",
       "metodo_pago": "Transferencia Bancaria",
-      "id_direccion": 16
+      "id_direccion": 16,
+      "envio": {
+        "id_empresa": 9,
+        "empresa_mensajeria": "FedEx Colombia",
+        "sitio_web": "https://www.fedex.com/es-co/home.html",
+        "url_rastreo": "https://www.fedex.com/es-co/home.html",
+        "numero_guia": "wqeqeqw",
+        "estado_envio": "Guía registrada",
+        "fecha_despacho_con_hora": "2026-09-21T18:24:28.466135+00:00",
+        "actualizado_en": "2026-09-21T18:24:28.466135+00:00",
+        "origen": "Librería El Sótano · Calle 45 # 13-22, Bogotá"
+      }
     },
     {
       "id_orden": 11,
@@ -356,7 +367,7 @@
       "subtotal": 107000.0,
       "costo_envio": 12000.0,
       "total": 119000.0,
-      "estado": "pagado",
+      "estado": "enviado",
       "tipo_entrega": "domicilio",
       "pin_retiro": null,
       "estado_retiro": null,
@@ -364,7 +375,18 @@
       "id_orden_db": 754,
       "estado_orden": "pagado",
       "metodo_pago": "Tarjeta de Crédito",
-      "id_direccion": 16
+      "id_direccion": 16,
+      "envio": {
+        "id_empresa": 2,
+        "empresa_mensajeria": "Interrapidisimo",
+        "sitio_web": "https://www.interrapidisimo.com",
+        "url_rastreo": "https://www.interrapidisimo.com",
+        "numero_guia": "weqwewqewqe",
+        "estado_envio": "Guía registrada",
+        "fecha_despacho_con_hora": "2026-09-21T18:24:22.918979+00:00",
+        "actualizado_en": "2026-09-21T18:24:22.918979+00:00",
+        "origen": "Librería El Sótano · Calle 45 # 13-22, Bogotá"
+      }
     },
     {
       "id_orden": 12,
@@ -492,7 +514,7 @@
       "subtotal": 234443.0,
       "costo_envio": 12000.0,
       "total": 246443.0,
-      "estado": "pagado",
+      "estado": "entregada",
       "tipo_entrega": "domicilio",
       "pin_retiro": null,
       "estado_retiro": null,
@@ -500,7 +522,8 @@
       "id_orden_db": 758,
       "estado_orden": "pagado",
       "metodo_pago": "Pago en Efecty",
-      "id_direccion": 16
+      "id_direccion": 16,
+      "fecha_entrega_confirmada": "2026-09-21T18:25:46.739453Z"
     }
   ]
 }

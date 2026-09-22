@@ -209,10 +209,11 @@ const LibroCard = ({ libro, onVerDetalles }) => {
         flexDirection: 'column',
         background: darkMode ? '#252525' : 'white',
         borderRadius: '10px',
-        overflow: 'hidden',
+        overflow: 'visible',
         border: `1px solid ${darkMode ? '#606060' : '#d8cec6'}`,
         cursor: 'pointer',
         transition: 'all 0.15s ease',
+        position: 'relative',
         boxShadow: darkMode ? '0 4px 14px rgba(0,0,0,0.38)' : '0 3px 10px rgba(36,27,31,0.1)',
         height: '100%',
       }}
@@ -243,7 +244,7 @@ const LibroCard = ({ libro, onVerDetalles }) => {
           </div>
         )}
         
-        {/* Badge estado */}
+        {/* Badge estado sin stock — dentro del overflow:hidden está bien */}
         {outOfStock && (
           <span style={{
             position: 'absolute',
@@ -257,7 +258,7 @@ const LibroCard = ({ libro, onVerDetalles }) => {
             fontWeight: 600
           }}>Sin stock</span>
         )}
-        
+
         {/* Botón favoritos superpuesto */}
         <button
           onClick={(e) => { e.stopPropagation(); toggleListaDeseos(); }}
@@ -288,6 +289,42 @@ const LibroCard = ({ libro, onVerDetalles }) => {
           )}
         </button>
       </div>
+
+      {/* Badge impulsado — FUERA del overflow:hidden, superpuesto sobre la card */}
+      {libro.es_impulsado && (() => {
+        const tipo = libro.impulso_tipo || 'home';
+        const config = {
+          home:      { icon: '⭐', label: 'Destacado',    bg: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)', color: '#78350f', shadow: 'rgba(251,191,36,0.45)', tooltip: 'Libro destacado en la página principal' },
+          categoria: { icon: '🏷️', label: 'En categoría', bg: 'linear-gradient(135deg, #818cf8 0%, #6366f1 100%)', color: '#fff',    shadow: 'rgba(99,102,241,0.45)', tooltip: 'Aparece en el banner de su categoría' },
+          libro_dia: { icon: '🔥', label: 'Libro del día', bg: 'linear-gradient(135deg, #f87171 0%, #ef4444 100%)', color: '#fff',    shadow: 'rgba(239,68,68,0.45)',  tooltip: 'Seleccionado como Libro del Día' },
+          email:     { icon: '📧', label: 'Recomendado',  bg: 'linear-gradient(135deg, #34d399 0%, #10b981 100%)', color: '#fff',    shadow: 'rgba(16,185,129,0.45)', tooltip: 'Recomendado por email a suscriptores' },
+        };
+        const c = config[tipo] || config.home;
+        return (
+          <span className="impulso-badge" style={{
+            position: 'absolute',
+            top: 8,
+            left: 8,
+            zIndex: 3,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '3px',
+            background: c.bg,
+            color: c.color,
+            fontSize: '0.62rem',
+            padding: '3px 8px',
+            borderRadius: '20px',
+            fontWeight: 700,
+            boxShadow: `0 2px 8px ${c.shadow}`,
+            userSelect: 'none',
+            letterSpacing: '0.02em',
+            cursor: 'default',
+          }}>
+            <span style={{ fontSize: '0.78rem' }}>{c.icon}</span>
+            {c.label}
+          </span>
+        );
+      })()}
 
       {/* Info */}
       <div style={{ padding: '12px', display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>

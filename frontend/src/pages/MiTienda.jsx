@@ -1373,10 +1373,43 @@ function SeccionCalificacionesVendedor({ tiendaId, darkMode = false }) {
   );
 }
 
+const getSellerMediaStorageKey = (key) => {
+  const token = localStorage.getItem("token");
+  if (!token) return key;
+
+  try {
+    const payload = jwtDecode(token);
+    const userId = payload?.sub || payload?.id || payload?.usuario_id || payload?.user_id;
+    if (!userId) return key;
+    return `${key}_${userId}`;
+  } catch {
+    return key;
+  }
+};
+
+const clearLegacySellerMediaCache = () => {
+  localStorage.removeItem('vendedor_user_photo_url');
+  localStorage.removeItem('vendedor_banner_url');
+};
+
 /* ================= COMPONENTE PRINCIPAL ================= */
 export default function MiTienda() {
   const navigate = useNavigate();
   const handleLogout = () => {
+    clearLegacySellerMediaCache();
+    const token = localStorage.getItem("token");
+    if (token) {
+      try {
+        const payload = jwtDecode(token);
+        const userId = payload?.sub || payload?.id || payload?.usuario_id || payload?.user_id;
+        if (userId) {
+          localStorage.removeItem(`vendedor_user_photo_url_${userId}`);
+          localStorage.removeItem(`vendedor_banner_url_${userId}`);
+        }
+      } catch {
+        // Ignore malformed JWT while clearing cached seller media.
+      }
+    }
     localStorage.removeItem("token");
     document.documentElement.classList.remove('dark');
     window.dispatchEvent(new CustomEvent('auth-change', { detail: { authenticated: false } }));
@@ -1394,8 +1427,8 @@ export default function MiTienda() {
     }
     return "Vendedor";
   });
-  const [userPhotoUrl,  setUserPhotoUrl]  = useState(() => localStorage.getItem('vendedor_user_photo_url') || null);
-  const [bannerUrl,     setBannerUrl]     = useState(() => localStorage.getItem('vendedor_banner_url') || null);
+  const [userPhotoUrl,  setUserPhotoUrl]  = useState(() => localStorage.getItem(getSellerMediaStorageKey('vendedor_user_photo_url')) || null);
+  const [bannerUrl,     setBannerUrl]     = useState(() => localStorage.getItem(getSellerMediaStorageKey('vendedor_banner_url')) || null);
   const [loading]                 = useState(false);
   const location = useLocation();
   const [activeSide, setActiveSide] = useState(() => {
@@ -1722,7 +1755,7 @@ export default function MiTienda() {
   const cargarNotificaciones = useCallback(async (silent = false) => {
     try {
       if (!silent) setNotificacionesLoading(true);
-      const data = await notificacionesService.obtener(false, 50, 0);
+      const data = await notificacionesService.obtener(false, 3000, 0);
       setNotificaciones(data.notificaciones || []);
     } catch (err) {
       console.error("Error cargando notificaciones:", err);
@@ -1735,7 +1768,7 @@ export default function MiTienda() {
   const FILTROS_VENDEDOR = {
     todas:          null,
     no_leidas:      null,
-    ventas_envios:  ["pedido", "entrega"],
+    ventas_envios:  ["orden", "pedido", "entrega", "pago"],
     reclamos:       ["sistema"],
     resenas:        ["resena"],
     mensajes:       ["mensaje"],
@@ -2128,20 +2161,21 @@ export default function MiTienda() {
       .then((r) => {
         if (r.data) {
           if (r.data.logo_url) {
-            // El logo de la tienda tiene prioridad en el panel vendedor
-            setUserPhotoUrl(resolveImageUrl(r.data.logo_url));
-            // Fallback: si no hay foto de perfil personal, usar el logo de la tienda
-            setProfilePhotoUrl(prev => prev || resolveImageUrl(r.data.logo_url));
+            const nextLogoUrl = resolveImageUrl(r.data.logo_url);
+            setUserPhotoUrl(nextLogoUrl);
+            localStorage.setItem(getSellerMediaStorageKey('vendedor_user_photo_url'), nextLogoUrl);
+            clearLegacySellerMediaCache();
+            setProfilePhotoUrl(prev => prev || nextLogoUrl);
           }
           if (r.data.banner_url) {
             const nextBannerUrl = resolveImageUrl(r.data.banner_url);
             setBannerUrl(nextBannerUrl);
-            localStorage.setItem('vendedor_banner_url', nextBannerUrl);
-            // Fallback: si no hay banner personal, usar el banner de la tienda
+            localStorage.setItem(getSellerMediaStorageKey('vendedor_banner_url'), nextBannerUrl);
+            clearLegacySellerMediaCache();
             setPerfilBannerUrl(prev => {
               if (prev) return prev;
               setPerfilBannerColor(null);
-              return resolveImageUrl(r.data.banner_url);
+              return nextBannerUrl;
             });
           }
           setConfigForm({
@@ -2154,6 +2188,7 @@ export default function MiTienda() {
             descripcion: r.data.descripcion || "",
             ciudad_origen: r.data.ciudad_origen || "",
             email_publico: r.data.email_publico || "",
+            tarifa_envio: r.data.tarifa_envio !== undefined && r.data.tarifa_envio !== null ? Number(r.data.tarifa_envio) : 0,
           });
         }
       })
@@ -3578,7 +3613,8 @@ export default function MiTienda() {
         const url = resolveImageUrl(res.data?.url || res.data?.foto_perfil);
         setProfilePhotoUrl(url);
         setUserPhotoUrl(url);
-        localStorage.setItem('vendedor_user_photo_url', url);
+        localStorage.setItem(getSellerMediaStorageKey('vendedor_user_photo_url'), url);
+        clearLegacySellerMediaCache();
         window.dispatchEvent(new CustomEvent('profile-photo-updated', { detail: { url } }));
         setPerfilMsg('Foto actualizada');
         setTimeout(() => setPerfilMsg(''), 3000);
@@ -3598,7 +3634,8 @@ export default function MiTienda() {
         setPerfilBannerUrl(url);
         setPerfilBannerColor(null);
         setBannerUrl(url);
-        localStorage.setItem('vendedor_banner_url', url);
+        localStorage.setItem(getSellerMediaStorageKey('vendedor_banner_url'), url);
+        clearLegacySellerMediaCache();
         setShowBannerEditor(false);
         window.dispatchEvent(new CustomEvent('profile-banner-updated', { detail: { bannerUrl: url, bannerColor: null } }));
         setPerfilMsg('Banner actualizado');
@@ -3613,7 +3650,8 @@ export default function MiTienda() {
         setPerfilBannerColor(color);
         setPerfilBannerUrl(null);
         setBannerUrl(null);
-        localStorage.removeItem('vendedor_banner_url');
+        localStorage.removeItem(getSellerMediaStorageKey('vendedor_banner_url'));
+        clearLegacySellerMediaCache();
         setShowBannerEditor(false);
         window.dispatchEvent(new CustomEvent('profile-banner-updated', { detail: { bannerUrl: null, bannerColor: color } }));
         setPerfilMsg('Color de banner guardado');
@@ -5928,7 +5966,10 @@ export default function MiTienda() {
       ordenes[idOrden].items.push(venta);
       ordenes[idOrden].totalOrden += Number(venta.total || 0);
       return ordenes;
-    }, {}));
+    }, {})).sort((a, b) => {
+      // Ordenar por fecha descendente (más reciente primero) y luego por ID ascendente
+      return (new Date(b.fecha || 0) - new Date(a.fecha || 0)) || (Number(a.id_orden) - Number(b.id_orden));
+    });
     ventasAgrupadas.forEach((venta) => {
       venta.cantidadOrden = venta.items.reduce((total, item) => total + Number(item.cantidad || 0), 0);
     });
@@ -6459,7 +6500,7 @@ export default function MiTienda() {
             {[
               { key: "todas",         label: "Todas",           tipos: null },
               { key: "no_leidas",     label: "No leídas",       soloNoLeidas: true },
-              { key: "ventas_envios", label: "Ventas y envíos", tipos: ["pedido", "entrega"] },
+              { key: "ventas_envios", label: "Ventas y envíos", tipos: ["orden", "pedido", "entrega", "pago"] },
               { key: "reclamos",      label: "Reclamos",        tipos: ["sistema"] },
               { key: "resenas",       label: "Reseñas",         tipos: ["resena"] },
               { key: "mensajes",      label: "Mensajes",        tipos: ["mensaje"] },

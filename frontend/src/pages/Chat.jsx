@@ -1130,6 +1130,7 @@ export default function Chat({
   const id_sala = embedded ? null : Number(params.id_sala);
 
   const [salas, setSalas] = useState([]);
+  const [salasCargadas, setSalasCargadas] = useState(false);
   const [selectedSala, setSelectedSala] = useState(() => {
     if (selectedSalaProp) return selectedSalaProp;
     if (id_sala) return id_sala;
@@ -1363,18 +1364,19 @@ export default function Chat({
       const data = await chatService.getSalas();
       const list = data.salas || [];
       setSalas(list);
+      setSalasCargadas(true);
 
       // Restaurar automáticamente la última sala abierta al recargar
       setSelectedSala((prev) => {
-        if (prev && list.some((s) => s.id_sala === prev)) return prev;
+        if (prev && list.some((s) => Number(s.id_sala) === Number(prev))) return Number(prev);
         try {
           const saved = localStorage.getItem("bkh_selected_sala");
           if (saved) {
             const num = Number(saved);
-            if (list.some((s) => s.id_sala === num)) return num;
+            if (list.some((s) => Number(s.id_sala) === num)) return num;
           }
         } catch { /* Ignorar si localStorage no está disponible. */ }
-        return prev || null;
+        return list[0] ? Number(list[0].id_sala) : null;
       });
     } catch {
       console.error("Error cargando salas");
@@ -1387,13 +1389,12 @@ export default function Chat({
   const intentosReconexion = useRef(0);
   const selectedSalaRef = useRef(selectedSala);
 
-  // Si cambia la sala desde el componente padre
+  // Si cambia la sala desde el componente padre, solo acepta salas de la cuenta actual.
   useEffect(() => {
-    if (selectedSalaProp) {
-      setSelectedSala(selectedSalaProp);
-      cargarSalas();
+    if (selectedSalaProp && salas.some((s) => Number(s.id_sala) === Number(selectedSalaProp))) {
+      setSelectedSala(Number(selectedSalaProp));
     }
-  }, [selectedSalaProp, cargarSalas]);
+  }, [selectedSalaProp, salas]);
 
   // Mantiene sincronizado el ref y persiste en localStorage
   useEffect(() => {
@@ -1566,7 +1567,7 @@ export default function Chat({
   // ==========================
 
   const cargarMensajes = useCallback(async () => {
-    if (!selectedSala) return;
+    if (!selectedSala || !salasCargadas || !salas.some((s) => Number(s.id_sala) === Number(selectedSala))) return;
 
     try {
       const data = await chatService.obtenerMensajes(selectedSala, 50, 0);
@@ -1578,7 +1579,7 @@ export default function Chat({
       console.error(err);
       setError("Error cargando mensajes");
     }
-  }, [selectedSala]);
+  }, [selectedSala, salas, salasCargadas]);
 
   useEffect(() => {
     if (!selectedSala) return;

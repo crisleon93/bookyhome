@@ -1,0 +1,58 @@
+-- Mantiene los registros existentes y garantiza que ninguna fecha sea anterior a 2026-01-01.
+USE bookyhome;
+
+SET @fecha_minima = '2026-01-01 00:00:00';
+
+UPDATE calificaciones_tiendas SET fecha_calificacion = @fecha_minima WHERE fecha_calificacion < @fecha_minima;
+UPDATE carrito_compras SET fecha_agregado = @fecha_minima WHERE fecha_agregado < @fecha_minima;
+UPDATE comisiones SET fecha_generacion = @fecha_minima WHERE fecha_generacion < @fecha_minima;
+UPDATE comisiones SET fecha_pago_vendedor = @fecha_minima WHERE fecha_pago_vendedor < @fecha_minima;
+UPDATE cupones_descuento SET fecha_inicio = @fecha_minima WHERE fecha_inicio < @fecha_minima;
+UPDATE cupones_descuento SET fecha_fin = @fecha_minima WHERE fecha_fin < @fecha_minima;
+UPDATE devoluciones SET fecha_solicitud = @fecha_minima WHERE fecha_solicitud < @fecha_minima;
+UPDATE devoluciones SET fecha_resolucion = @fecha_minima WHERE fecha_resolucion < @fecha_minima;
+UPDATE envios SET fecha_estimada_entrega = DATE(@fecha_minima) WHERE fecha_estimada_entrega < DATE(@fecha_minima);
+UPDATE envios SET fecha_despacho = DATE(@fecha_minima) WHERE fecha_despacho < DATE(@fecha_minima);
+UPDATE favoritos SET fecha = DATE(@fecha_minima) WHERE fecha < DATE(@fecha_minima);
+UPDATE historial_pagos_vendedor SET periodo_inicio = DATE(@fecha_minima) WHERE periodo_inicio < DATE(@fecha_minima);
+UPDATE historial_pagos_vendedor SET periodo_fin = DATE(@fecha_minima) WHERE periodo_fin < DATE(@fecha_minima);
+UPDATE historial_pagos_vendedor SET fecha_transferencia = @fecha_minima WHERE fecha_transferencia < @fecha_minima;
+UPDATE historial_precios SET fecha_cambio = @fecha_minima WHERE fecha_cambio < @fecha_minima;
+UPDATE impulsos_contratados SET fecha_inicio = @fecha_minima WHERE fecha_inicio < @fecha_minima;
+UPDATE impulsos_contratados SET fecha_fin = @fecha_minima WHERE fecha_fin < @fecha_minima;
+UPDATE libros SET fecha_publicacion = DATE(@fecha_minima) WHERE fecha_publicacion < DATE(@fecha_minima);
+UPDATE libros SET fecha_listado = DATE(@fecha_minima) WHERE fecha_listado < DATE(@fecha_minima);
+UPDATE lista_deseos SET fecha_creacion = @fecha_minima WHERE fecha_creacion < @fecha_minima;
+UPDATE lista_deseos_libros SET fecha_agregado = @fecha_minima WHERE fecha_agregado < @fecha_minima;
+UPDATE log_actividad SET fecha_log = @fecha_minima WHERE fecha_log < @fecha_minima;
+UPDATE mensajes SET enviado_en = @fecha_minima WHERE enviado_en < @fecha_minima;
+UPDATE mensajes_reclamo SET fecha_creacion = @fecha_minima WHERE fecha_creacion < @fecha_minima;
+UPDATE metodos_cobro_vendedor SET fecha_registro = @fecha_minima WHERE fecha_registro < @fecha_minima;
+UPDATE metricas_tienda SET fecha_calculo = @fecha_minima WHERE fecha_calculo < @fecha_minima;
+UPDATE notificaciones SET fecha_creacion = @fecha_minima WHERE fecha_creacion < @fecha_minima;
+UPDATE ofertas SET fecha_inicio = @fecha_minima WHERE fecha_inicio < @fecha_minima;
+UPDATE ofertas SET fecha_fin = @fecha_minima WHERE fecha_fin < @fecha_minima;
+UPDATE ordenes_compra SET fecha_orden = @fecha_minima WHERE fecha_orden < @fecha_minima;
+UPDATE ordenes_compra SET fecha_limite_retiro = @fecha_minima WHERE fecha_limite_retiro < @fecha_minima;
+UPDATE pagos SET fecha_pago = @fecha_minima WHERE fecha_pago < @fecha_minima;
+UPDATE pagos_impulsos SET fecha_pago = @fecha_minima WHERE fecha_pago < @fecha_minima;
+UPDATE reportes_contenido SET fecha_reporte = @fecha_minima WHERE fecha_reporte < @fecha_minima;
+UPDATE reportes_contenido SET fecha_resolucion = @fecha_minima WHERE fecha_resolucion < @fecha_minima;
+UPDATE resenas_libros SET fecha_resena = @fecha_minima WHERE fecha_resena < @fecha_minima;
+UPDATE salasChats SET creado_en = @fecha_minima WHERE creado_en < @fecha_minima;
+UPDATE salasChats SET actualizado_en = @fecha_minima WHERE actualizado_en < @fecha_minima;
+UPDATE solicitudes_soporte SET fecha_creacion = @fecha_minima WHERE fecha_creacion < @fecha_minima;
+UPDATE solicitudes_soporte SET fecha_resolucion = @fecha_minima WHERE fecha_resolucion < @fecha_minima;
+UPDATE suscripciones_herramientas SET fecha_inicio = DATE(@fecha_minima) WHERE fecha_inicio < DATE(@fecha_minima);
+UPDATE suscripciones_herramientas SET fecha_fin = DATE(@fecha_minima) WHERE fecha_fin < DATE(@fecha_minima);
+UPDATE suscripciones_tienda SET fecha_suscripcion = @fecha_minima WHERE fecha_suscripcion < @fecha_minima;
+UPDATE tienda_configuracion SET fecha_actualizacion = @fecha_minima WHERE fecha_actualizacion < @fecha_minima;
+UPDATE tienda_vacaciones SET fecha_inicio = DATE(@fecha_minima) WHERE fecha_inicio < DATE(@fecha_minima);
+UPDATE tienda_vacaciones SET fecha_fin = DATE(@fecha_minima) WHERE fecha_fin < DATE(@fecha_minima);
+UPDATE tienda_vacaciones SET creado_en = @fecha_minima WHERE creado_en < @fecha_minima;
+UPDATE tiendas SET fecha_creacion = DATE(@fecha_minima) WHERE fecha_creacion < DATE(@fecha_minima);
+UPDATE uso_cupones SET fecha_uso = @fecha_minima WHERE fecha_uso < @fecha_minima;
+UPDATE usuarios SET fecha_verificacion = DATE(@fecha_minima) WHERE fecha_verificacion < DATE(@fecha_minima);
+UPDATE usuarios SET fecha_registro = DATE(@fecha_minima) WHERE fecha_registro < DATE(@fecha_minima);
+
+SELECT '057 - Fechas normalizadas desde 2026-01-01' AS resultado;

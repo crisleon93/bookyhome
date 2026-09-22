@@ -87,7 +87,19 @@ def crear_resena(data: ResenaCreate, user_id: int = Depends(get_current_user)):
         cursor.execute("""
             SELECT COUNT(*) as comprado FROM detalle_orden do
             JOIN ordenes_compra oc ON do.id_orden = oc.id_orden
-            WHERE oc.id_usuario = %s AND do.id_libro = %s AND oc.estado_orden = 'Entregada'
+                        WHERE oc.id_usuario = %s
+                            AND do.id_libro = %s
+                            AND (
+                                        (
+                                            LOWER(COALESCE(oc.tipo_entrega, 'domicilio')) = 'retiro_tienda'
+                                            AND LOWER(COALESCE(oc.estado_retiro, '')) = 'entregada'
+                                        )
+                                        OR
+                                        (
+                                            LOWER(COALESCE(oc.tipo_entrega, 'domicilio')) <> 'retiro_tienda'
+                                            AND LOWER(oc.estado_orden) = 'entregada'
+                                        )
+                                    )
         """, (user_id, data.id_libro))
         
         compra = cursor.fetchone()
@@ -109,6 +121,20 @@ def crear_resena(data: ResenaCreate, user_id: int = Depends(get_current_user)):
             (id_usuario, id_libro, calificacion, comentario, fecha_resena)
             VALUES (%s, %s, %s, %s, NOW())
         """, (user_id, data.id_libro, data.calificacion, data.comentario))
+
+        cursor.execute("""
+            INSERT INTO notificaciones
+            (id_usuario, tipo, titulo, cuerpo, id_referencia, leida, fecha_creacion)
+            SELECT t.id_usuario, 'resena', 'Nueva resena de libro',
+                   CONCAT(u.nombre_usuario, ' dejo una resena de tu libro "', l.titulo,
+                          '" con ', %s, ' estrellas'),
+                   data_ref.id_resena, FALSE, NOW()
+            FROM libros l
+            JOIN tiendas t ON t.id_tienda = l.id_tienda
+            JOIN usuarios u ON u.id_usuario = %s
+            JOIN (SELECT id_resena FROM resenas_libros WHERE id_usuario = %s AND id_libro = %s ORDER BY id_resena DESC LIMIT 1) data_ref
+            WHERE l.id_libro = %s
+        """, (data.calificacion, user_id, user_id, data.id_libro, data.id_libro))
         
         db.commit()
         
@@ -151,6 +177,20 @@ def actualizar_resena(id_resena: int, data: ResenaCreate, user_id: int = Depends
             SET calificacion = %s, comentario = %s, fecha_resena = NOW()
             WHERE id_resena = %s
         """, (data.calificacion, data.comentario, id_resena))
+
+        cursor.execute("""
+            INSERT INTO notificaciones
+            (id_usuario, tipo, titulo, cuerpo, id_referencia, leida, fecha_creacion)
+            SELECT t.id_usuario, 'resena', 'Resena de libro actualizada',
+                   CONCAT(u.nombre_usuario, ' actualizo la resena de tu libro "', l.titulo,
+                          '" a ', %s, ' estrellas'),
+                   r.id_resena, FALSE, NOW()
+            FROM resenas_libros r
+            JOIN libros l ON l.id_libro = r.id_libro
+            JOIN tiendas t ON t.id_tienda = l.id_tienda
+            JOIN usuarios u ON u.id_usuario = r.id_usuario
+            WHERE r.id_resena = %s
+        """, (data.calificacion, id_resena))
         
         db.commit()
         

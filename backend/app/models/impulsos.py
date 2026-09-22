@@ -135,3 +135,147 @@ def cancelar_impulso(id_impulso: int, id_tienda: int):
     finally:
         cursor.close()
         db.close()
+
+
+def obtener_impulsos_activos_publicos():
+    """
+    Retorna los libros e info de tiendas con impulsos activos y vigentes.
+    Usado por el catálogo y el home para destacar libros impulsados.
+    """
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    try:
+        cursor.execute("""
+            SELECT
+                ic.id_impulso,
+                ic.id_tienda,
+                ic.id_libro,
+                ic.id_categoria,
+                ic.fecha_fin,
+                ti.tipo         AS tipo_impulso,
+                ti.nombre       AS nombre_impulso,
+                l.titulo,
+                l.autor_libro,
+                l.precio_libro,
+                l.stock,
+                t.nombre_tienda,
+                (SELECT url_imagen FROM imagenes_libro
+                 WHERE id_libro = l.id_libro
+                 ORDER BY es_principal DESC, id_imagen ASC LIMIT 1) AS imagen_url
+            FROM impulsos_contratados ic
+            INNER JOIN tipos_impulso ti ON ti.id_tipo_impulso = ic.id_tipo_impulso
+            LEFT JOIN libros l ON l.id_libro = ic.id_libro
+            LEFT JOIN tiendas t ON t.id_tienda = ic.id_tienda
+            WHERE ic.estado = 'Activo'
+              AND NOW() BETWEEN ic.fecha_inicio AND ic.fecha_fin
+              AND ti.activo = 1
+            ORDER BY ti.precio DESC, ic.fecha_inicio ASC
+        """)
+        return cursor.fetchall() or []
+    except Exception as e:
+        logging.error(f"Error al obtener impulsos activos públicos: {e}")
+        return []
+    finally:
+        cursor.close()
+        db.close()
+
+
+def obtener_ids_libros_impulsados(tipo: str = None):
+    """
+    Retorna los id_libro de libros con impulso activo y vigente.
+    Si tipo es 'home' o 'libro_dia' filtra por ese tipo.
+    Usado por el catálogo para ordenar impulsados primero.
+    """
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    try:
+        tipo_filter = ""
+        params = []
+        if tipo:
+            tipo_filter = "AND ti.tipo = %s"
+            params.append(tipo)
+        cursor.execute(f"""
+            SELECT DISTINCT ic.id_libro
+            FROM impulsos_contratados ic
+            INNER JOIN tipos_impulso ti ON ti.id_tipo_impulso = ic.id_tipo_impulso
+            WHERE ic.estado = 'Activo'
+              AND NOW() BETWEEN ic.fecha_inicio AND ic.fecha_fin
+              AND ic.id_libro IS NOT NULL
+              AND ti.activo = 1
+              {tipo_filter}
+        """, params)
+        rows = cursor.fetchall() or []
+        return [r["id_libro"] for r in rows]
+    except Exception as e:
+        logging.error(f"Error al obtener ids de libros impulsados: {e}")
+        return []
+    finally:
+        cursor.close()
+        db.close()
+
+
+def registrar_impresion(id_impulso: int):
+    """Incrementa el contador de impresiones de un impulso activo."""
+    db = get_db()
+    cursor = db.cursor()
+    try:
+        cursor.execute("""
+            UPDATE impulsos_contratados
+            SET impresiones = impresiones + 1
+            WHERE id_impulso = %s AND estado = 'Activo'
+        """, (id_impulso,))
+        db.commit()
+        return cursor.rowcount > 0
+    except Exception as e:
+        logging.error(f"Error registrando impresión del impulso {id_impulso}: {e}")
+        return False
+    finally:
+        cursor.close()
+        db.close()
+
+
+def registrar_clic(id_impulso: int):
+    """Incrementa el contador de clics de un impulso activo."""
+    db = get_db()
+    cursor = db.cursor()
+    try:
+        cursor.execute("""
+            UPDATE impulsos_contratados
+            SET clics = clics + 1
+            WHERE id_impulso = %s AND estado = 'Activo'
+        """, (id_impulso,))
+        db.commit()
+        return cursor.rowcount > 0
+    except Exception as e:
+        logging.error(f"Error registrando clic del impulso {id_impulso}: {e}")
+        return False
+    finally:
+        cursor.close()
+        db.close()
+
+
+def expirar_impulsos_vencidos():
+    """
+    Tarea programada: cambia a 'Finalizado' los impulsos cuya fecha_fin ya pasó.
+    Retorna el número de impulsos expirados.
+    """
+    db = get_db()
+    cursor = db.cursor()
+    try:
+        cursor.execute("""
+            UPDATE impulsos_contratados
+            SET estado = 'Finalizado'
+            WHERE estado = 'Activo' AND fecha_fin < NOW()
+        """)
+        db.commit()
+        expirados = cursor.rowcount
+        if expirados > 0:
+            logging.info(f"[impulsos] {expirados} impulso(s) expirado(s) y marcado(s) como Finalizado.")
+        return expirados
+    except Exception as e:
+        db.rollback()
+        logging.error(f"Error al expirar impulsos vencidos: {e}")
+        return 0
+    finally:
+        cursor.close()
+        db.close()

@@ -4,8 +4,8 @@ import { notify } from './ToastProvider';
 import '../styles/resenas.css';
 
 const IconStar = ({ filled }) => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill={filled ? "#7A1E3A" : "none"} 
-       stroke={filled ? "#7A1E3A" : "#ddd"} strokeWidth="2">
+  <svg width="20" height="20" viewBox="0 0 24 24" fill={filled ? "#ffc107" : "none"} 
+       stroke={filled ? "#ffc107" : "#d7d7d7"} strokeWidth="2">
     <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
   </svg>
 );
@@ -16,6 +16,8 @@ function ResenaLibro({ idLibro, idUsuario }) {
   const [loading, setLoading] = useState(true);
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [miResena, setMiResena] = useState(null);
+  const [filtroResenas, setFiltroResenas] = useState('todas');
+  const [paginaResenas, setPaginaResenas] = useState(1);
   
   // Form state
   const [calificacion, setCalificacion] = useState(0);
@@ -43,6 +45,20 @@ function ResenaLibro({ idLibro, idUsuario }) {
   useEffect(() => {
     cargarResenas();
   }, [cargarResenas]);
+
+  useEffect(() => {
+    setPaginaResenas(1);
+  }, [filtroResenas]);
+
+  const resenasFiltradas = resenas.filter((resena) => (
+    filtroResenas === 'todas' || Number(resena.calificacion) === Number(filtroResenas)
+  ));
+  const resenasPorPagina = 5;
+  const totalPaginasResenas = Math.max(1, Math.ceil(resenasFiltradas.length / resenasPorPagina));
+  const resenasVisibles = resenasFiltradas.slice(
+    (paginaResenas - 1) * resenasPorPagina,
+    paginaResenas * resenasPorPagina
+  );
 
   const handleEnviarResena = async (e) => {
     e.preventDefault();
@@ -101,6 +117,17 @@ function ResenaLibro({ idLibro, idUsuario }) {
     }
   };
 
+  const abrirFormulario = () => {
+    if (miResena) {
+      setCalificacion(miResena.calificacion);
+      setComentario(miResena.comentario || '');
+    } else {
+      setCalificacion(0);
+      setComentario('');
+    }
+    setMostrarFormulario((visible) => !visible);
+  };
+
   if (loading) {
     return <div className="resena-loading">Cargando reseñas...</div>;
   }
@@ -123,12 +150,16 @@ function ResenaLibro({ idLibro, idUsuario }) {
 
       {/* BOTÓN DEJAR RESEÑA */}
       {idUsuario && (
-        <button 
-          className="btn-resena-crear"
-          onClick={() => setMostrarFormulario(!mostrarFormulario)}
-        >
-          {miResena ? '✏️ Editar mi reseña' : '⭐ Dejar una reseña'}
-        </button>
+        <div className="resena-acciones-principal">
+          <button
+            type="button"
+            className="btn-resena-crear"
+            onClick={abrirFormulario}
+            aria-expanded={mostrarFormulario}
+          >
+            {miResena ? '✏️ Editar mi reseña' : '⭐ Dejar una reseña'}
+          </button>
+        </div>
       )}
 
       {/* FORMULARIO */}
@@ -175,18 +206,46 @@ function ResenaLibro({ idLibro, idUsuario }) {
               className="btn btn-secondary"
               onClick={() => setMostrarFormulario(false)}
             >
-              Cancelar
+              Cancelar reseña
             </button>
           </div>
         </form>
       )}
 
       {/* LISTA DE RESEÑAS */}
+      {resenas.length > 0 && (
+        <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+          <div style={{ color: '#666', fontSize: '0.9rem', fontWeight: 600 }}>
+            {resenasFiltradas.length} reseña{resenasFiltradas.length !== 1 ? 's' : ''} filtrada{resenasFiltradas.length !== 1 ? 's' : ''}
+          </div>
+          <select
+            value={filtroResenas}
+            onChange={(e) => setFiltroResenas(e.target.value)}
+            aria-label="Filtrar reseñas por estrellas"
+            style={{
+              padding: '7px 10px',
+              border: '1px solid #d6d3d1',
+              borderRadius: '7px',
+              background: 'white',
+              color: '#1f2937',
+              fontSize: '0.9rem'
+            }}
+          >
+            <option value="todas">Todas las estrellas</option>
+            {[5, 4, 3, 2, 1].map((estrellas) => (
+              <option key={estrellas} value={estrellas}>{estrellas} estrellas</option>
+            ))}
+          </select>
+        </div>
+      )}
+
       <div className="resena-lista">
         {resenas.length === 0 ? (
           <p className="sin-resenas">Aún no hay reseñas. ¡Sé el primero en comentar!</p>
+        ) : resenasFiltradas.length === 0 ? (
+          <p className="sin-resenas">No hay reseñas con ese filtro.</p>
         ) : (
-          resenas.map((resena) => (
+          resenasVisibles.map((resena) => (
             <div key={resena.id_resena} className="resena-item">
               <div className="resena-header">
                 <div>
@@ -203,7 +262,6 @@ function ResenaLibro({ idLibro, idUsuario }) {
               </div>
               <p className="resena-comentario">{resena.comentario}</p>
               
-              {/* Botón eliminar si es la mía */}
               {idUsuario === resena.id_usuario && (
                 <button
                   className="btn-eliminar-resena"
@@ -216,6 +274,46 @@ function ResenaLibro({ idLibro, idUsuario }) {
           ))
         )}
       </div>
+
+      {resenasFiltradas.length > 0 && totalPaginasResenas > 1 && (
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '12px', marginTop: '16px', flexWrap: 'wrap' }}>
+          <button
+            type="button"
+            disabled={paginaResenas === 1}
+            onClick={() => setPaginaResenas((pagina) => pagina - 1)}
+            style={{
+              padding: '7px 12px',
+              border: '1px solid #d6d3d1',
+              borderRadius: '7px',
+              background: 'white',
+              color: '#1f2937',
+              cursor: paginaResenas === 1 ? 'not-allowed' : 'pointer',
+              opacity: paginaResenas === 1 ? 0.5 : 1
+            }}
+          >
+            Anterior
+          </button>
+          <span style={{ color: '#666', fontSize: '0.85rem' }}>
+            Página {paginaResenas} de {totalPaginasResenas}
+          </span>
+          <button
+            type="button"
+            disabled={paginaResenas === totalPaginasResenas}
+            onClick={() => setPaginaResenas((pagina) => pagina + 1)}
+            style={{
+              padding: '7px 12px',
+              border: '1px solid #d6d3d1',
+              borderRadius: '7px',
+              background: 'white',
+              color: '#1f2937',
+              cursor: paginaResenas === totalPaginasResenas ? 'not-allowed' : 'pointer',
+              opacity: paginaResenas === totalPaginasResenas ? 0.5 : 1
+            }}
+          >
+            Siguiente
+          </button>
+        </div>
+      )}
     </div>
   );
 }
