@@ -10,6 +10,9 @@ import ResetPassword from '../screens/ResetPassword';
 import VerifyEmail from '../screens/VerifyEmail';
 import Home from '../screens/Home';
 import RegisterLibrary from '../screens/RegisterLibrary';
+import Librerias from '../screens/Librerias';
+import CatalogoPublico from '../screens/CatalogoPublico';
+import BookDetailPublico from '../screens/BookDetailPublico';
 
 import PostLogin from '../screens/PostLogin';
 import Catalogo from '../screens/Catalogo';
@@ -69,6 +72,12 @@ export default function AppNavigator() {
           <Stack.Screen name="ResetPassword" component={ResetPassword} options={{ headerShown: false }} />
           <Stack.Screen name="VerifyEmail" component={VerifyEmail} options={{ headerShown: false }} />
           <Stack.Screen name="RegisterLibrary" component={RegisterLibrary} options={{ headerShown: false }} />
+          {/* Catálogo y Librerías accesibles sin autenticación */}
+          <Stack.Screen name="CatalogoPublico"    component={CatalogoPublico}    options={{ headerShown: false }} />
+          <Stack.Screen name="BookDetailPublico"  component={BookDetailPublico}  options={{ headerShown: false }} />
+          <Stack.Screen name="Catalogo"           component={CatalogoPublico}    options={{ headerShown: false }} />
+          <Stack.Screen name="Librerias"          component={Librerias}          options={{ headerShown: false }} />
+          <Stack.Screen name="PerfilTienda"       component={PerfilTienda}       options={{ headerShown: false }} />
         </>
       ) : user.rol === 'vendedor' ? (
         // ─── Rutas vendedor ──────────────────────────────────────────────────
@@ -144,6 +153,7 @@ export default function AppNavigator() {
           />
           <Stack.Screen name="Notifications" component={Notifications} options={{ title: 'Notificaciones' }} />
           <Stack.Screen name="BookDetail" component={BookDetail} options={{ title: 'Detalle del libro' }} />
+          <Stack.Screen name="BookDetailPublico" component={BookDetailPublico} options={{ headerShown: false }} />
           <Stack.Screen name="Cart" component={Cart} options={{ title: 'Mi Carrito' }} />
           <Stack.Screen name="Checkout" component={Checkout} options={{ title: 'Pago Seguro' }} />
           <Stack.Screen name="ListaDeseos" component={ListaDeseos} options={{ title: 'Lista de Deseos' }} />

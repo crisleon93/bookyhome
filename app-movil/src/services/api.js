@@ -5,8 +5,26 @@ const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://192.168.137.218:
 
 const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 10000,
+  timeout: 15000,
 });
+
+// Interceptor de request — log de cada llamada
+api.interceptors.request.use(
+  config => {
+    console.log(`[API] ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`, config.params || '');
+    return config;
+  },
+  error => Promise.reject(error)
+);
+
+// Interceptor de response — log de errores
+api.interceptors.response.use(
+  response => response,
+  error => {
+    console.warn(`[API ERROR] ${error?.config?.url}:`, error?.message, error?.response?.status);
+    return Promise.reject(error);
+  }
+);
 
 // ===== Auth =====
 export const login = (credentials) => api.post('/login', credentials);
@@ -16,11 +34,14 @@ export const verifyEmail = ({ token }) => api.get('/verify-email', { params: { t
 
 // ===== Catálogo =====
 export const getBooks = (params) => api.get('/api/stored/libros', { params });
-export const getStoredLibros = () => api.get('/api/stored/libros');
+export const getStoredLibros = (params) => api.get('/api/stored/libros', { params });
 export const getBusquedaAvanzada = (params) => api.get('/catalogo/busqueda-avanzada', { params });
 export const getBookById = (id) => api.get(`/api/stored/libros/${id}`);
 export const getVariantes = (id_libro) => api.get(`/libros/${id_libro}/variantes`);
 export const getCuponesDisponibles = () => api.get('/cupones/disponibles');
+export const getCatalogoStats = () => api.get('/catalogo/stats');
+export const getFiltrosDisponibles = () => api.get('/catalogo/filtros-disponibles');
+export const getTiendasDestacadas = (params = {}) => api.get('/tiendas/destacadas', { params });
 export const crearVariante = (id_libro, data) => api.post(`/libros/${id_libro}/variantes`, data);
 export const getBookAvailability = (id, cantidad) => api.get(`/libros/${id}/disponibilidad`, { params: { cantidad } });
 export const getBookOffer = (id) => api.get(`/ofertas/libro/${id}/activa`);

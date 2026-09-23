@@ -236,6 +236,13 @@ export default function Login({ navigation }) {
           showsVerticalScrollIndicator={false}
         >
           <AuthHeader />
+          <TouchableOpacity
+            style={styles.backArrow}
+            onPress={() => navigation.navigate('Home')}
+            activeOpacity={0.75}
+          >
+            <Text style={styles.backArrowText}>‹</Text>
+          </TouchableOpacity>
           <View style={styles.authMain}>
             <View style={styles.authCard}>
               <View style={styles.heroContainer}>
@@ -536,6 +543,25 @@ const styles = StyleSheet.create({
   footerLinks: { marginTop: 22, alignItems: 'center' },
   footerText: { fontSize: 14, color: '#888' },
   footerLink: { color: VINOTINTO, fontWeight: '700' },
+  backArrow: {
+    position: 'absolute',
+    top: 14,
+    left: 16,
+    zIndex: 10,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  backArrowText: {
+    color: WHITE,
+    fontSize: 30,
+    lineHeight: 34,
+    fontWeight: '300',
+    marginTop: -2,
+  },
 
   /* Modal biométrico */
   bioModalOverlay: {
