@@ -1,19 +1,23 @@
 // src/components/Header.jsx
-import React, { useState, useContext } from 'react';
+import React, { useEffect, useState, useContext } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, Image,
-  StyleSheet, Modal, StatusBar, Alert,
+  StyleSheet, Modal, StatusBar,
 } from 'react-native';
 import { AuthContext } from '../context/AuthContext';
-import { IconSearch, IconUser, IconUserPlus, IconLocation, IconClose, IconChevronRight, IconBook, IconMenu, IconCart, IconCamera, IconFilter } from './Icons';
+import {
+  IconSearch, IconUser, IconUserPlus, IconLocation, IconClose,
+  IconChevronRight, IconBook, IconMenu, IconCart, IconCamera, IconFilter,
+} from './Icons';
 import SidebarMenu from './SidebarMenu';
 import BarcodeScanner from './BarcodeScanner';
+import FiltrosBusqueda from './FiltrosBusqueda';
 
-const VINOTINTO  = '#7A1E3A';
-const WHITE      = '#FFFFFF';
-const BEIGE      = '#F4EDE2';
-const CARBON     = '#2A2A2A';
-const GRAY       = '#666';
+const VINOTINTO = '#7A1E3A';
+const WHITE     = '#FFFFFF';
+const BEIGE     = '#F4EDE2';
+const CARBON    = '#2A2A2A';
+const GRAY      = '#666';
 
 function ModalOption({ icon, title, desc, onPress }) {
   return (
@@ -28,66 +32,108 @@ function ModalOption({ icon, title, desc, onPress }) {
   );
 }
 
+// ── Badge de filtros activos encima del ícono embudo ──────────────────────────
+function FilterBadge({ count }) {
+  if (!count) return null;
+  return (
+    <View style={styles.filterBadge}>
+      <Text style={styles.filterBadgeText}>{count > 9 ? '9+' : count}</Text>
+    </View>
+  );
+}
+
 export default function Header({
   variant = 'public',
   navigation,
   showTopBar,
+  // Callbacks para pantallas que quieran manejar búsqueda/filtros ellas mismas
   onSearch,
   onSignOut,
   onBarcodeScanned,
-  onFilterPress,
+  onFilterApply,   // (filtros, tab) => void — si se pasa, la pantalla maneja la lógica
+  filtrosActivos = 0, // número de filtros activos para mostrar en el badge
 }) {
-  const [search, setSearch]           = useState('');
-  const [modalVisible, setModalVisible] = useState(false);
+  const [search, setSearch]               = useState('');
+  const [cuentaModalVisible, setCuentaModalVisible] = useState(false);
   const [locationModalVisible, setLocationModalVisible] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState('Todo el país (Colombia)');
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [barcodeScannerVisible, setBarcodeScannerVisible] = useState(false);
-  
+  const [filtrosVisible, setFiltrosVisible] = useState(false);
+  const [filtrosActuales, setFiltrosActuales] = useState({});
+
   const { user } = useContext(AuthContext);
 
   const isPublic    = variant === 'public';
   const isDashboard = variant === 'dashboard';
   const topBar      = showTopBar !== undefined ? showTopBar : isPublic;
 
+  // Las categorías y precio máximo los carga FiltrosBusqueda internamente
+  // — no hace falta duplicar la petición aquí
+
   const handleSearch = (text) => {
     setSearch(text);
     onSearch?.(text);
   };
 
-  const handleBarcodeDetected = async (isbn) => {
+  const handleBarcodeDetected = (isbn) => {
     setBarcodeScannerVisible(false);
-    // Pasar el ISBN detectado al componente padre
     onBarcodeScanned?.(isbn);
   };
 
+  const handleFiltrosApply = (filtros, tab) => {
+    setFiltrosActuales(filtros);
+    setFiltrosVisible(false);
+    if (onFilterApply) {
+      // La pantalla maneja la navegación/filtrado
+      onFilterApply(filtros, tab);
+    } else {
+      // Comportamiento por defecto: navegar al catálogo con los filtros
+      const params = {};
+      if (filtros.busqueda)         params.q               = filtros.busqueda;
+      if (filtros.categoria_id)     params.categoryId      = filtros.categoria_id;
+      else if (filtros.categoria_nombre) params.categoria  = filtros.categoria_nombre;
+      if (filtros.ordenar_por && filtros.ordenar_por !== 'relevancia')
+        params.ordenar_por = filtros.ordenar_por;
+
+      if (tab === 'librerias') {
+        // Llevar al catálogo filtrando por la tienda buscada — la API soporta nombre_tienda y correo_vendedor
+        navigation?.navigate?.('CatalogoPublico', {
+          nombre_tienda:   filtros.nombre_tienda   || undefined,
+          correo_vendedor: filtros.correo_vendedor || undefined,
+          ordenar_por:     filtros.ordenar_por !== 'relevancia' ? filtros.ordenar_por : undefined,
+        });
+      } else {
+        navigation?.navigate?.('CatalogoPublico', params);
+      }
+    }
+  };
+
   const bgColor = VINOTINTO;
-  const fgColor = WHITE;
-  const isPublicHeader = isPublic;
 
   return (
     <>
-      <StatusBar
-        barStyle="light-content"
-        backgroundColor={VINOTINTO}
-        translucent={false}
-      />
+      <StatusBar barStyle="light-content" backgroundColor={VINOTINTO} translucent={false} />
 
+      {/* TOP BAR — ubicación */}
       {topBar && (
-        <TouchableOpacity style={[styles.topBar, { flexDirection: 'row', justifyContent: 'flex-start', alignItems: 'center' }]} activeOpacity={0.7} onPress={() => setLocationModalVisible(true)}>
+        <TouchableOpacity
+          style={styles.topBar}
+          activeOpacity={0.7}
+          onPress={() => setLocationModalVisible(true)}
+        >
           <IconLocation size={14} color={WHITE} />
-          <Text style={styles.topBarText}> Enviar a: {selectedLocation}</Text>
+          <Text style={styles.topBarText}> Envíos a Colombia</Text>
           <Text style={{ color: WHITE, fontSize: 10, marginLeft: 6 }}>▼</Text>
         </TouchableOpacity>
       )}
 
-      {/* FILA 1 — Logo + acciones */}
+      {/* FILA 1 — Logo + acciones usuario */}
       <View style={[styles.row1, { backgroundColor: bgColor }]}>
-        {/* Logo y Menú */}
         <View style={styles.logoArea}>
           {isDashboard && (
-            <TouchableOpacity 
-              style={styles.menuIconBtn} 
+            <TouchableOpacity
+              style={styles.menuIconBtn}
               onPress={() => setDrawerVisible(true)}
               activeOpacity={0.8}
             >
@@ -106,7 +152,6 @@ export default function Header({
           </TouchableOpacity>
         </View>
 
-        {/* Acciones — public */}
         {isPublic && (
           <View style={styles.actions}>
             <TouchableOpacity
@@ -114,21 +159,20 @@ export default function Header({
               onPress={() => navigation?.navigate?.('Login')}
               activeOpacity={0.8}
             >
-              <IconUser size={22} color={fgColor} />
-              <Text style={[styles.actionText, { color: fgColor }]}>Ingresa</Text>
+              <IconUser size={22} color={WHITE} />
+              <Text style={styles.actionText}>Ingresa</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.actionBtn}
-              onPress={() => setModalVisible(true)}
+              onPress={() => setCuentaModalVisible(true)}
               activeOpacity={0.8}
             >
-              <IconUserPlus size={22} color={fgColor} />
-              <Text style={[styles.actionText, { color: fgColor }]}>Crear cuenta</Text>
+              <IconUserPlus size={22} color={WHITE} />
+              <Text style={styles.actionText}>Crear cuenta</Text>
             </TouchableOpacity>
           </View>
         )}
 
-        {/* Acciones — dashboard */}
         {isDashboard && (
           <View style={styles.dashRight}>
             <TouchableOpacity
@@ -142,59 +186,62 @@ export default function Header({
         )}
       </View>
 
-      {/* FILA 2 — Barra de búsqueda a ancho completo */}
+      {/* FILA 2 — Barra de búsqueda + botón filtro al lado */}
       <View style={[styles.row2, { backgroundColor: bgColor }]}>
-        <View style={[styles.searchWrapper, isDashboard && styles.searchWrapperDark]}>
-          <IconSearch size={18} color={isDashboard ? VINOTINTO : VINOTINTO} />
+        {/* Barra de búsqueda: lupa + input + cámara — todo dentro */}
+        <View style={[styles.searchWrapper, isDashboard && styles.searchWrapperDash]}>
+          <IconSearch size={17} color="#999" />
           <TextInput
-            style={[styles.searchInput, isDashboard && styles.searchInputDark]}
+            style={styles.searchInput}
             placeholder="Buscar libros..."
-            placeholderTextColor={isDashboard ? '#AAA' : '#AAA'}
+            placeholderTextColor="#AAA"
             value={search}
             onChangeText={handleSearch}
+            returnKeyType="search"
+            onSubmitEditing={() => {
+              if (search.trim()) handleFiltrosApply({ ...filtrosActuales, busqueda: search.trim() }, 'libros');
+            }}
           />
           {search.length > 0 && (
-            <TouchableOpacity onPress={() => handleSearch('')}>
-              <IconClose size={16} color={GRAY} />
+            <TouchableOpacity onPress={() => handleSearch('')} style={styles.clearBtn}>
+              <IconClose size={14} color={GRAY} />
             </TouchableOpacity>
           )}
-          {/* Botón de Filtros */}
-          {onFilterPress && (
-            <TouchableOpacity
-              style={[styles.barcodeButton, { marginRight: 8 }]}
-              onPress={onFilterPress}
-              activeOpacity={0.8}
-            >
-              <IconFilter size={18} color={VINOTINTO} />
-            </TouchableOpacity>
-          )}
-          {/* Botón de escáner de códigos de barras */}
-          {isDashboard && (
-            <TouchableOpacity
-              style={styles.barcodeButton}
-              onPress={() => setBarcodeScannerVisible(true)}
-              activeOpacity={0.8}
-            >
-              <IconCamera size={18} color={VINOTINTO} />
-            </TouchableOpacity>
-          )}
+          {/* Cámara dentro de la barra */}
+          <TouchableOpacity
+            style={styles.cameraBtn}
+            onPress={() => setBarcodeScannerVisible(true)}
+            activeOpacity={0.8}
+          >
+            <IconCamera size={18} color="#888" />
+          </TouchableOpacity>
         </View>
+
+        {/* Botón filtro — FUERA de la barra, al lado derecho */}
+        <TouchableOpacity
+          style={[styles.filterBtn, filtrosActivos > 0 && styles.filterBtnActive]}
+          onPress={() => setFiltrosVisible(true)}
+          activeOpacity={0.85}
+        >
+          <IconFilter size={18} color={filtrosActivos > 0 ? WHITE : VINOTINTO} />
+          <FilterBadge count={filtrosActivos} />
+        </TouchableOpacity>
       </View>
 
-      {/* MODAL — Crear cuenta */}
+      {/* ── MODAL: Crear cuenta ────────────────────────────────────────────── */}
       <Modal
-        visible={modalVisible}
+        visible={cuentaModalVisible}
         transparent
         animationType="fade"
-        onRequestClose={() => setModalVisible(false)}
+        onRequestClose={() => setCuentaModalVisible(false)}
       >
         <TouchableOpacity
           style={styles.modalOverlay}
           activeOpacity={1}
-          onPress={() => setModalVisible(false)}
+          onPress={() => setCuentaModalVisible(false)}
         >
           <View style={styles.modalCard} onStartShouldSetResponder={() => true}>
-            <TouchableOpacity style={styles.modalClose} onPress={() => setModalVisible(false)}>
+            <TouchableOpacity style={styles.modalClose} onPress={() => setCuentaModalVisible(false)}>
               <IconClose size={20} color={CARBON} />
             </TouchableOpacity>
             <Text style={styles.modalTitle}>Crear cuenta</Text>
@@ -203,20 +250,25 @@ export default function Header({
               icon={<IconUser size={22} color={VINOTINTO} />}
               title="Soy comprador"
               desc="Quiero explorar y comprar libros"
-              onPress={() => { setModalVisible(false); navigation?.navigate?.('Register'); }}
+              onPress={() => { setCuentaModalVisible(false); navigation?.navigate?.('Register'); }}
             />
             <ModalOption
               icon={<IconBook size={22} color={VINOTINTO} />}
               title="Tengo una librería"
               desc="Quiero vender mis libros en BookyHome"
-              onPress={() => { setModalVisible(false); navigation?.navigate?.('RegisterLibrary'); }}
+              onPress={() => { setCuentaModalVisible(false); navigation?.navigate?.('RegisterLibrary'); }}
             />
           </View>
         </TouchableOpacity>
       </Modal>
 
-      {/* Modal: Elige tu ubicación */}
-      <Modal visible={locationModalVisible} transparent animationType="fade" onRequestClose={() => setLocationModalVisible(false)}>
+      {/* ── MODAL: Ubicación ──────────────────────────────────────────────── */}
+      <Modal
+        visible={locationModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setLocationModalVisible(false)}
+      >
         <TouchableOpacity
           style={styles.modalOverlay}
           activeOpacity={1}
@@ -233,18 +285,11 @@ export default function Header({
                 <TouchableOpacity
                   key={idx}
                   style={{
-                    paddingVertical: 12,
-                    paddingHorizontal: 15,
-                    backgroundColor: selectedLocation === city ? '#F4EDE2' : 'transparent',
-                    borderWidth: 1.5,
-                    borderColor: '#E0DBD4',
-                    borderRadius: 8,
-                    marginBottom: 10,
+                    paddingVertical: 12, paddingHorizontal: 15, marginBottom: 10,
+                    backgroundColor: selectedLocation === city ? BEIGE : 'transparent',
+                    borderWidth: 1.5, borderColor: '#E0DBD4', borderRadius: 8,
                   }}
-                  onPress={() => {
-                    setSelectedLocation(city);
-                    setLocationModalVisible(false);
-                  }}
+                  onPress={() => { setSelectedLocation(city); setLocationModalVisible(false); }}
                 >
                   <Text style={{ fontSize: 15, fontWeight: selectedLocation === city ? 'bold' : 'normal', color: CARBON }}>
                     {city}
@@ -256,27 +301,36 @@ export default function Header({
         </TouchableOpacity>
       </Modal>
 
-      {/* Menú lateral (Drawer) para Dashboard */}
+      {/* ── Drawer lateral (dashboard) ────────────────────────────────────── */}
       {isDashboard && (
-        <SidebarMenu 
-          visible={drawerVisible} 
-          onClose={() => setDrawerVisible(false)} 
-          user={user} 
+        <SidebarMenu
+          visible={drawerVisible}
+          onClose={() => setDrawerVisible(false)}
+          user={user}
           navigation={navigation}
           onSignOut={onSignOut}
         />
       )}
 
-      {/* Escáner de códigos de barras */}
+      {/* ── Escáner de código de barras ───────────────────────────────────── */}
       <BarcodeScanner
         visible={barcodeScannerVisible}
         onClose={() => setBarcodeScannerVisible(false)}
         onBarcodeDetected={handleBarcodeDetected}
       />
+
+      {/* ── Modal de filtros ─────────────────────────────────────────────── */}
+      <FiltrosBusqueda
+        visible={filtrosVisible}
+        onClose={() => setFiltrosVisible(false)}
+        filtros={filtrosActuales}
+        onApply={handleFiltrosApply}
+      />
     </>
   );
 }
 
+// ════════════════════════════════════════════════════════════════════════════
 const styles = StyleSheet.create({
   /* Top bar */
   topBar: {
@@ -289,85 +343,83 @@ const styles = StyleSheet.create({
   },
   topBarText: { color: WHITE, fontSize: 12, fontWeight: '600', letterSpacing: 0.2 },
 
-  /* Fila 1 — logo + acciones */
+  /* Fila 1 */
   row1: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 20, paddingVertical: 10,
-    borderBottomWidth: 0,
   },
-  logoArea: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexShrink: 1,
-    marginLeft: 0,
-    justifyContent: 'flex-start',
-  },
-  menuIconBtn: {
-    padding: 8,
-    marginRight: 2,
-    marginLeft: 0,
-  },
-  logoImg: { width: 160, height: 51, marginLeft: 0 },
-  logoImgDash: { width: 130, height: 41, marginLeft: 0 },
-  logoText: { fontSize: 17, fontWeight: '800', color: VINOTINTO },
-  logoTextWhite: { color: WHITE },
+  logoArea:    { flexDirection: 'row', alignItems: 'center', flexShrink: 1 },
+  menuIconBtn: { padding: 8, marginRight: 2 },
+  logoImg:     { width: 160, height: 51 },
+  logoImgDash: { width: 130, height: 41 },
 
   /* Acciones public */
-  actions: { flexDirection: 'row', alignItems: 'center', gap: 6, justifyContent: 'center', marginLeft: 6 },
-  actionBtn: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    minWidth: 60,
-    paddingVertical: 2,
-    paddingHorizontal: 2,
-    borderRadius: 8,
-  },
+  actions:    { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  actionBtn:  { alignItems: 'center', justifyContent: 'center', minWidth: 60, paddingVertical: 2, paddingHorizontal: 2, borderRadius: 8 },
   actionText: { fontSize: 10, color: WHITE, fontWeight: '700', marginTop: 2, textAlign: 'center' },
 
   /* Dashboard derecha */
   dashRight:   { flexDirection: 'row', alignItems: 'center', marginRight: 5 },
   cartIconBtn: { padding: 6 },
-  barcodeButton: {
-    padding: 6,
-    marginLeft: 4,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    borderRadius: 6,
-  },
 
-  /* Fila 2 — búsqueda */
+  /* Fila 2 — búsqueda + filtro */
   row2: {
-    paddingHorizontal: 20,
-    paddingTop: 2,
-    paddingBottom: 6,
-    boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.04)',
-    elevation: 2,
-  },
-  searchWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingTop: 4,
+    paddingBottom: 10,
     gap: 8,
-    backgroundColor: '#F5F5F5',
+    elevation: 2,
+  },
+
+  /* Barra de búsqueda */
+  searchWrapper: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: WHITE,
     borderRadius: 10,
     paddingHorizontal: 10,
-    height: 40,
-    borderWidth: 1,
-    borderColor: '#E0DBD4',
+    height: 42,
+    gap: 6,
   },
-  searchWrapperDark: { backgroundColor: WHITE, borderColor: WHITE },
-  searchInput:       { flex: 1, fontSize: 14, color: '#222', paddingVertical: 0 },
-  searchInputDark:   { color: '#222' },
+  searchWrapperDash: { backgroundColor: WHITE },
+  searchInput: { flex: 1, fontSize: 14, color: '#222', paddingVertical: 0 },
+  clearBtn:    { padding: 2 },
+  cameraBtn:   { padding: 4, marginLeft: 2 },
 
-  /* Modal */
+  /* Botón filtro — cuadrado al lado */
+  filterBtn: {
+    width: 42, height: 42,
+    borderRadius: 10,
+    backgroundColor: WHITE,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  filterBtnActive: { backgroundColor: VINOTINTO },
+  filterBadge: {
+    position: 'absolute', top: -4, right: -4,
+    backgroundColor: '#E53E3E',
+    borderRadius: 8, minWidth: 16, height: 16,
+    alignItems: 'center', justifyContent: 'center',
+    paddingHorizontal: 3,
+    borderWidth: 1.5, borderColor: VINOTINTO,
+  },
+  filterBadgeText: { color: WHITE, fontSize: 9, fontWeight: '800' },
+
+  /* Modales */
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' },
   modalCard: {
     backgroundColor: WHITE, borderTopLeftRadius: 24, borderTopRightRadius: 24,
     padding: 24, paddingBottom: 36,
   },
-  modalClose:         { alignSelf: 'flex-end', padding: 4, marginBottom: 8 },
-  modalTitle:         { fontSize: 20, fontWeight: '800', color: CARBON, marginBottom: 4 },
-  modalSubtitle:      { fontSize: 14, color: GRAY, marginBottom: 20 },
-  modalOption:        { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: '#F0EBE5' },
-  modalOptionIcon:    { width: 46, height: 46, borderRadius: 23, backgroundColor: BEIGE, justifyContent: 'center', alignItems: 'center' },
-  modalOptionTitle:   { fontSize: 15, fontWeight: '700', color: CARBON, marginBottom: 2 },
-  modalOptionDesc:    { fontSize: 12, color: GRAY },
+  modalClose:       { alignSelf: 'flex-end', padding: 4, marginBottom: 8 },
+  modalTitle:       { fontSize: 20, fontWeight: '800', color: CARBON, marginBottom: 4 },
+  modalSubtitle:    { fontSize: 14, color: GRAY, marginBottom: 20 },
+  modalOption:      { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: '#F0EBE5' },
+  modalOptionIcon:  { width: 46, height: 46, borderRadius: 23, backgroundColor: BEIGE, justifyContent: 'center', alignItems: 'center' },
+  modalOptionTitle: { fontSize: 15, fontWeight: '700', color: CARBON, marginBottom: 2 },
+  modalOptionDesc:  { fontSize: 12, color: GRAY },
 });
