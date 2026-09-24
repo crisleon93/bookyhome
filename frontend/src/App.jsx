@@ -21,6 +21,7 @@ import ListaDeseos from './pages/ListaDeseos';
 import Devoluciones from './pages/Devoluciones';
 import BookyPagoFinanzas from './pages/BookyPagoFinanzas';
 import LegalPage from './pages/LegalPage';
+import AsistenteIA from './components/AsistenteIA';
 
 import { getUserRole } from './hooks/useAuth';
 
@@ -87,6 +88,12 @@ function MainLayout() {
 
   // Pasar prop para indicar al Header si debe ajustarse por el sidebar
   const hasSidebar = location.pathname === '/' && hasToken;
+  const hasFooterSidebar = hasSidebar ||
+    location.pathname.startsWith('/mi-tienda') ||
+    location.pathname.startsWith('/vendedor') ||
+    location.pathname.startsWith('/post-login') ||
+    location.pathname.startsWith('/perfil') ||
+    location.pathname.startsWith('/publicar');
 
   return (
     <>
@@ -149,7 +156,8 @@ function MainLayout() {
       </Routes>
 
       {/* Footer siempre en Home, incluso autenticado */}
-      {!isDashboard && <Footer />}
+      {!isDashboard && <Footer hasSidebar={hasFooterSidebar} />}
+      <AsistenteIA />
     </>
   );
 }

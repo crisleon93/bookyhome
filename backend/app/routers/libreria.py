@@ -85,15 +85,25 @@ def tiendas_destacadas(
                 tc.logo_url,
                 tc.descripcion,
                 tc.ciudad_origen,
-                COUNT(DISTINCT CASE WHEN l.stock > 0 AND (l.oculto IS NULL OR l.oculto = 0) THEN l.id_libro ELSE NULL END) AS total_libros,
-                COALESCE(ROUND(AVG(ct.calificacion), 1), 0.0) AS calificacion_promedio,
-                COUNT(DISTINCT ct.id_calificacion) AS total_calificaciones
+                COALESCE(libros.total_libros, 0) AS total_libros,
+                COALESCE(calificaciones.calificacion_promedio, 0.0) AS calificacion_promedio,
+                COALESCE(calificaciones.total_calificaciones, 0) AS total_calificaciones
             FROM tiendas t
             LEFT JOIN tienda_configuracion tc ON tc.id_tienda = t.id_tienda
-            LEFT JOIN libros l ON l.id_tienda = t.id_tienda
-            LEFT JOIN calificaciones_tiendas ct ON ct.id_tienda = t.id_tienda
+            LEFT JOIN (
+                SELECT id_tienda, COUNT(*) AS total_libros
+                FROM libros
+                WHERE stock > 0 AND (oculto IS NULL OR oculto = 0)
+                GROUP BY id_tienda
+            ) libros ON libros.id_tienda = t.id_tienda
+            LEFT JOIN (
+                SELECT id_tienda,
+                       ROUND(AVG(calificacion), 1) AS calificacion_promedio,
+                       COUNT(*) AS total_calificaciones
+                FROM calificaciones_tiendas
+                GROUP BY id_tienda
+            ) calificaciones ON calificaciones.id_tienda = t.id_tienda
             WHERE t.estado_tienda = 'activa'
-            GROUP BY t.id_tienda, t.nombre_tienda, t.direccion, tc.logo_url, tc.descripcion, tc.ciudad_origen
         """
 
         debe_tener_stock = solo_con_stock is True or (solo_con_stock is None and not todas and limit is None)
