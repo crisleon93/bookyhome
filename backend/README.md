@@ -92,6 +92,17 @@ MAIL_SERVER=smtp.gmail.com
 MAIL_PORT=587
 ```
 
+### Asistente IA
+
+El asistente de BookyHome ya funciona con respuestas locales básicas. Para que mantenga una conversación natural y responda con mayor precisión sobre la plataforma, añade estas variables **solo** en `backend/.env` (nunca en el frontend):
+
+```env
+OPENAI_API_KEY=tu_clave_secreta
+OPENAI_MODEL=gpt-4o-mini
+```
+
+El endpoint `POST /asistente/chat` recibe el mensaje actual y hasta 12 mensajes previos. El frontend ya envía ese historial automáticamente.
+
 ## Ejecutar con Docker
 
 Desde la raiz del proyecto:

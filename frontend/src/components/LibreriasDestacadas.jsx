@@ -3,6 +3,28 @@ import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+const CACHE_KEY = 'bookyhome:librerias-destacadas:v1';
+const CACHE_TTL_MS = 5 * 60 * 1000;
+
+function leerCacheTiendas() {
+  try {
+    const cache = JSON.parse(sessionStorage.getItem(CACHE_KEY) || 'null');
+    if (cache?.guardadoEn && Date.now() - cache.guardadoEn < CACHE_TTL_MS && Array.isArray(cache.tiendas)) {
+      return cache.tiendas;
+    }
+  } catch {
+    // Si no hay caché válida se solicita el contenido al servidor normalmente.
+  }
+  return null;
+}
+
+function guardarCacheTiendas(tiendas) {
+  try {
+    sessionStorage.setItem(CACHE_KEY, JSON.stringify({ guardadoEn: Date.now(), tiendas }));
+  } catch {
+    // La caché es opcional; la sección funciona incluso si el navegador la bloquea.
+  }
+}
 
 function getLogoUrl(logo_url) {
   if (!logo_url) return null;
@@ -99,8 +121,8 @@ function parseTiendaInfo(tienda) {
 }
 
 export default function LibreriasDestacadas() {
-  const [tiendas, setTiendas] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [tiendas, setTiendas] = useState(() => leerCacheTiendas() || []);
+  const [loading, setLoading] = useState(() => !leerCacheTiendas());
   const trackRef = useRef(null);
   const innerRef = useRef(null);
   const navigate = useNavigate();
@@ -117,7 +139,11 @@ export default function LibreriasDestacadas() {
 
   useEffect(() => {
     api.get('/tiendas/destacadas')
-      .then(res => setTiendas(res.data || []))
+      .then(res => {
+        const siguiente = res.data || [];
+        setTiendas(siguiente);
+        guardarCacheTiendas(siguiente);
+      })
       .catch(() => setTiendas([]))
       .finally(() => setLoading(false));
   }, []);

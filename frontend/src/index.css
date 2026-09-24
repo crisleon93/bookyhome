@@ -3413,8 +3413,9 @@ footer {
   background-color: var(--gris-carbon);
   color: #b0b0b0;
   padding: 3.5rem 2rem 2rem;
+  box-sizing: border-box;
+  width: 100%;
   transition: margin-left 0.25s ease, width 0.25s ease;
-  margin-left: var(--dashboard-sidebar-width, 250px);
 }
 .footer-container {
   display: grid;

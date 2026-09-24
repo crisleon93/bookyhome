@@ -4,6 +4,35 @@ import api from '../services/api';
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
 const VINOTINTO = '#7A1E3A';
+const CACHE_KEY = 'bookyhome:portada-carruseles:v1';
+const CACHE_TTL_MS = 5 * 60 * 1000;
+
+const EMPTY_SECCIONES = {
+  recientes: { libros: [], loading: true },
+  populares: { libros: [], loading: true },
+  calificados: { libros: [], loading: true },
+  economicos: { libros: [], loading: true },
+};
+
+function leerCacheCarruseles() {
+  try {
+    const cache = JSON.parse(sessionStorage.getItem(CACHE_KEY) || 'null');
+    if (cache?.guardadoEn && Date.now() - cache.guardadoEn < CACHE_TTL_MS && cache.secciones) {
+      return cache.secciones;
+    }
+  } catch {
+    // Una caché inválida no debe impedir que la portada cargue datos nuevos.
+  }
+  return null;
+}
+
+function guardarCacheCarruseles(secciones) {
+  try {
+    sessionStorage.setItem(CACHE_KEY, JSON.stringify({ guardadoEn: Date.now(), secciones }));
+  } catch {
+    // El almacenamiento es una mejora de velocidad, no un requisito funcional.
+  }
+}
 const VINOTINTO2 = '#9B2648';
 
 const IMAGENES_CAT = {
@@ -258,20 +287,25 @@ function SeccionCarrusel({ emoji, titulo, subtitulo, accentColor, libros, loadin
 export default function CarruselPublico({ onVerDetalles }) {
   const navigate = useNavigate();
 
-  const [secciones, setSecciones] = useState({
-    recientes:   { libros: [], loading: true },
-    populares:   { libros: [], loading: true },
-    calificados: { libros: [], loading: true },
-    economicos:  { libros: [], loading: true },
-  });
+  const [secciones, setSecciones] = useState(() => leerCacheCarruseles() || EMPTY_SECCIONES);
 
   const fetchSeccion = useCallback(async (key, params) => {
     try {
-      const res = await api.get('/catalogo/busqueda-avanzada', { params: { limite: 12, ...params } });
+      const res = await api.get('/catalogo/busqueda-avanzada', {
+        params: { limite: 12, incluir_total: false, ...params },
+      });
       const libros = res.data?.libros || res.data || [];
-      setSecciones(prev => ({ ...prev, [key]: { libros, loading: false } }));
+      setSecciones(prev => {
+        const siguiente = { ...prev, [key]: { libros, loading: false } };
+        guardarCacheCarruseles(siguiente);
+        return siguiente;
+      });
     } catch {
-      setSecciones(prev => ({ ...prev, [key]: { libros: [], loading: false } }));
+      setSecciones(prev => {
+        const siguiente = { ...prev, [key]: { libros: [], loading: false } };
+        guardarCacheCarruseles(siguiente);
+        return siguiente;
+      });
     }
   }, []);
 

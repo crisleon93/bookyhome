@@ -14,14 +14,8 @@ import {
   FAQVendedores,
 } from './Legal';
 
-function Footer() {
+function Footer({ hasSidebar = false }) {
   const navigate = useNavigate();
-  const location = window.location.pathname;
-  const isDashboardPage = location.startsWith('/mi-tienda') ||
-    location.startsWith('/post-login') ||
-    location.startsWith('/vendedor') ||
-    location.startsWith('/perfil') ||
-    location.startsWith('/publicar');
 
   const [activeLegal, setActiveLegal] = useState(null);
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('darkMode') === 'true');
@@ -96,8 +90,8 @@ function Footer() {
   return (
     <>
       <footer style={{ 
-        marginLeft: isDashboardPage ? 'var(--dashboard-sidebar-width, 250px)' : undefined, 
-        width: isDashboardPage ? 'calc(100% - var(--dashboard-sidebar-width, 250px))' : undefined,
+        marginLeft: hasSidebar ? 'var(--dashboard-sidebar-width, 250px)' : 0,
+        width: hasSidebar ? 'calc(100% - var(--dashboard-sidebar-width, 250px))' : '100%',
         backgroundColor: darkMode ? '#1a1a1a' : 'var(--gris-carbon)',
         color: darkMode ? '#b0b0b0' : '#b0b0b0'
       }}>

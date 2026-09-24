@@ -47,6 +47,7 @@ def busqueda_avanzada(
     ordenar_por: Optional[str] = Query("relevancia", pattern="^(relevancia|precio_asc|precio_desc|calificacion|recientes)$"),
     pagina: int = Query(1, ge=1),
     limite: int = Query(20, ge=1, le=100),
+    incluir_total: bool = Query(True, description="Incluir total y páginas; desactívalo para carruseles"),
     categoria: Optional[str] = Query(None, description="Nombre de la categoría"),
     nombre_tienda: Optional[str] = Query(None, description="Nombre de la librería/tienda"),
     correo_vendedor: Optional[str] = Query(None, description="Correo del vendedor")
@@ -124,18 +125,21 @@ def busqueda_avanzada(
         # Query base
         where_clause = " AND ".join(where_conditions)
         
-        # Contar total
-        count_query = f"""
-            SELECT COUNT(*) as total 
-            FROM libros l
-            LEFT JOIN categorias c ON l.id_categoria = c.id_categoria
-            LEFT JOIN tiendas t ON l.id_tienda = t.id_tienda
-            LEFT JOIN usuarios u ON t.id_usuario = u.id_usuario
-            WHERE {where_clause}
-        """
-        cursor.execute(count_query, params)
-        total_result = cursor.fetchone()
-        total = total_result["total"] if total_result else 0
+        # Los carruseles de la página pública no muestran paginación. Evitar este
+        # COUNT reduce a la mitad las consultas al cargar la portada.
+        total = None
+        if incluir_total:
+            count_query = f"""
+                SELECT COUNT(*) as total
+                FROM libros l
+                LEFT JOIN categorias c ON l.id_categoria = c.id_categoria
+                LEFT JOIN tiendas t ON l.id_tienda = t.id_tienda
+                LEFT JOIN usuarios u ON t.id_usuario = u.id_usuario
+                WHERE {where_clause}
+            """
+            cursor.execute(count_query, params)
+            total_result = cursor.fetchone()
+            total = total_result["total"] if total_result else 0
         
         # Query principal con calificaciones e impulsos activos
         offset = (pagina - 1) * limite
@@ -192,7 +196,7 @@ def busqueda_avanzada(
             libro["imagenes"] = libro["imagenes"].split(",") if libro.get("imagenes") else []
         
         # Calcular páginas
-        total_paginas = (total + limite - 1) // limite
+        total_paginas = (total + limite - 1) // limite if total is not None else None
         
         return {
             "total": total,
