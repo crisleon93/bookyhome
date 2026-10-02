@@ -100,26 +100,12 @@ export default function AppNavigator() {
           <Stack.Screen
             name="Messages"
             component={Messages}
-            options={{
-              title: 'Mensajes',
-              headerStyle: { backgroundColor: '#7A1E3A' },
-              headerTintColor: '#FFFFFF',
-              headerTitleStyle: { color: '#FFFFFF', fontWeight: '700' },
-              headerBackTitle: 'Atrás',
-              headerShadowVisible: false,
-            }}
+            options={{ headerShown: false }}
           />
           <Stack.Screen
             name="Chat"
             component={Chat}
-            options={{
-              title: 'Chat',
-              headerStyle: { backgroundColor: '#7A1E3A' },
-              headerTintColor: '#FFFFFF',
-              headerTitleStyle: { color: '#FFFFFF', fontWeight: '700' },
-              headerBackTitle: 'Atrás',
-              headerShadowVisible: false,
-            }}
+            options={{ headerShown: false }}
           />
           <Stack.Screen name="QuejasReclamos" component={QuejasReclamos} options={{ headerShown: false }} />
         </>
@@ -164,26 +150,12 @@ export default function AppNavigator() {
           <Stack.Screen
             name="Messages"
             component={Messages}
-            options={{
-              title: 'Mensajes',
-              headerStyle: { backgroundColor: '#7A1E3A' },
-              headerTintColor: '#FFFFFF',
-              headerTitleStyle: { color: '#FFFFFF', fontWeight: '700' },
-              headerBackTitle: 'Atrás',
-              headerShadowVisible: false,
-            }}
+            options={{ headerShown: false }}
           />
           <Stack.Screen
             name="Chat"
             component={Chat}
-            options={{
-              title: 'Chat',
-              headerStyle: { backgroundColor: '#7A1E3A' },
-              headerTintColor: '#FFFFFF',
-              headerTitleStyle: { color: '#FFFFFF', fontWeight: '700' },
-              headerBackTitle: 'Atrás',
-              headerShadowVisible: false,
-            }}
+            options={{ headerShown: false }}
           />
           <Stack.Screen name="QuejasReclamos" component={QuejasReclamos} options={{ title: 'Quejas y reclamos' }} />
           <Stack.Screen name="SoporteTecnico" component={SoporteTecnico} options={{ title: 'Soporte técnico' }} />

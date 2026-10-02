@@ -92,7 +92,7 @@ function LibroCardInterna({ libro, onPress, baseUrl, cardWidth, coverHeight }) {
             <Text style={c.sinStockText}>Sin stock</Text>
           </View>
         )}
-        {libro.es_impulsado && (
+        {Boolean(libro.es_impulsado) && (
           <View style={c.impulsoBadge}>
             <Text style={c.impulsoText}>⭐ Dest.</Text>
           </View>
@@ -108,7 +108,7 @@ function LibroCardInterna({ libro, onPress, baseUrl, cardWidth, coverHeight }) {
         ) : null}
         <Text style={c.title} numberOfLines={2}>{libro.titulo || 'Sin título'}</Text>
         <Text style={c.author} numberOfLines={1}>{libro.autor_libro || libro.autor || ''}</Text>
-        {rating > 0 && <Text style={c.rating}>★ {rating.toFixed(1)}</Text>}
+        {rating > 0 ? <Text style={c.rating}>★ {rating.toFixed(1)}</Text> : null}
         <Text style={c.price}>${price.toLocaleString('es-CO')}</Text>
         {libro.nombre_tienda ? (
           <Text style={c.tienda} numberOfLines={1}>{libro.nombre_tienda}</Text>
