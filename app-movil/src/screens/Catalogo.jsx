@@ -350,7 +350,7 @@ export default function Catalogo({ navigation, route }) {
             </Text>
           </TouchableOpacity>
           {/* Badge impulso */}
-          {item.es_impulsado && (
+          {Boolean(item.es_impulsado) && (
             <View style={styles.impulsoBadge}>
               <Text style={styles.impulsoBadgeText}>⭐ Destacado</Text>
             </View>

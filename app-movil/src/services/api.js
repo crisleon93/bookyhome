@@ -54,7 +54,13 @@ export const checkoutCarrito = (payload = {}) => api.post('/carrito/checkout', p
 
 // ===== Pagos / Pedidos =====
 export const getOrderDetails = (orderId) => api.get(`/api/v1/orders/${orderId}`);
-export const cancelOrder = (orderId) => api.delete(`/api/v1/orders/${orderId}`);
+export const actualizarCostoEnvio = (orderId, tipo_entrega) => api.post(`/api/v1/orders/${orderId}/actualizar-envio`, { tipo_entrega });
+export const reservarRetiroEnTienda = (orderId, metodoPago) => api.post(`/api/v1/orders/${orderId}/reservar-retiro`, { metodo_pago: metodoPago });
+export const notificarLlegadaTienda = (orderId) => api.post(`/api/v1/orders/${orderId}/llegada-tienda`);
+export const getDatosTransferenciaVendedor = (orderId) => api.get(`/api/v1/orders/${orderId}/vendedor-transferencia`);
+export const cancelOrder = (orderId, motivo) => api.delete(`/api/v1/orders/${orderId}`, {
+  data: motivo ? { motivo } : undefined,
+});
 export const processPayment = (payload) => api.post('/api/v1/payments', payload);
 export const sendConfirmationEmail = (orderId) => api.post(`/api/v1/orders/${orderId}/send-confirmation`);
 
@@ -177,6 +183,8 @@ export const getChatHistory = (id_sala, params = { limit: 50, offset: 0 }) =>
 export const marcarSalaLeida = (id_sala) => api.put(`/chat/salas/${id_sala}/marcar-leidos`);
 export const enviarMensajeChat = (payload) => api.post('/chat/mensajes', payload);
 export const getSalasUsuario = () => api.get('/chat/salas');
+export const vaciarSalaChat = (id_sala) => api.delete(`/chat/salas/${id_sala}/mensajes`);
+export const eliminarSalaChat = (id_sala) => api.delete(`/chat/salas/${id_sala}`);
 
 // ===== Quejas y Reclamos =====
 export const getApiBaseUrl = () => api.defaults.baseURL;

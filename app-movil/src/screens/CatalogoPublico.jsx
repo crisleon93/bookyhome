@@ -97,14 +97,14 @@ function LibroCard({ libro, onPress, cardWidth, coverHeight, BASE }) {
         <Image source={{ uri }} style={st.coverImg} resizeMode="cover"
           onError={() => setUri(IMAGENES_CAT[cat] || IMG_DEFAULT)} />
         {outOfStock && <View style={st.sinStock}><Text style={st.sinStockTxt}>Sin stock</Text></View>}
-        {libro.es_impulsado && <View style={st.impulso}><Text style={st.impulsoTxt}>⭐ Dest.</Text></View>}
+        {Boolean(libro.es_impulsado) && <View style={st.impulso}><Text style={st.impulsoTxt}>⭐ Dest.</Text></View>}
       </View>
       <View style={st.body}>
         {cat ? <View style={[st.catPill, { backgroundColor: cBg }]}><Text style={[st.catTxt, { color: cColor }]} numberOfLines={1}>{cat}</Text></View> : null}
         <Text style={st.title} numberOfLines={2}>{libro.titulo || 'Sin título'}</Text>
         <Text style={st.author} numberOfLines={1}>{libro.autor_libro || libro.autor || '—'}</Text>
         <View style={st.ratingRow}>
-          {rating > 0 && <Text style={st.rating}>★ {rating.toFixed(1)}</Text>}
+          {rating > 0 ? <Text style={st.rating}>★ {rating.toFixed(1)}</Text> : null}
           <View style={[st.stockPill, outOfStock && st.stockPillOut]}>
             <Text style={[st.stockTxt, outOfStock && st.stockTxtOut]}>{outOfStock ? 'Sin stock' : 'Disponible'}</Text>
           </View>
