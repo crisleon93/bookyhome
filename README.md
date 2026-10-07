@@ -50,7 +50,7 @@ Estructura principal:
 - `app/email.py`: envio de correos de recuperacion.
 - `app/schemas.py`: validaciones Pydantic.
 - `Dockerfile`: imagen del backend.
-- `requirements.txt`: dependencias Python.
+- `pyproject.toml` y `uv.lock`: dependencias Python y versiones bloqueadas.
 
 Mas detalle en:
 

@@ -1,0 +1,24 @@
+[project]
+name = "bookyhome-backend"
+version = "0.1.0"
+description = "Backend de BookyHome construido con FastAPI y MySQL"
+requires-python = ">=3.10"
+dependencies = [
+    "apscheduler==3.10.4",
+    "bcrypt==4.0.1",
+    "email-validator==2.3.0",
+    "fastapi==0.135.1",
+    "fastapi-mail==1.6.2",
+    "httpx==0.28.1",
+    "mysql-connector-python==9.6.0",
+    "passlib==1.7.4",
+    "pydantic==2.12.5",
+    "python-dotenv==1.2.2",
+    "python-multipart==0.0.22",
+    "PyJWT==2.12.1",
+    "uvicorn==0.42.0",
+    "websockets==14.1",
+]
+
+[tool.uv]
+package = false

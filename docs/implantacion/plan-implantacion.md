@@ -41,11 +41,11 @@ Versiones observadas en las imágenes/contenedores del entorno de desarrollo o f
 | Vite | Servidor de desarrollo y bundler | 8.0.1 | MIT | No |
 | Flowbite / Flowbite React | Componentes de interfaz | 4.0.2 / 0.12.17 | MIT | No |
 | Passlib / bcrypt | Hash de contraseñas | 1.7.4 / 4.0.1 | BSD / Apache-2.0 | No |
-| PyJWT / python-jose | Tokens de autenticación | 2.12.1 / 3.5.0 | MIT / MIT | No |
-| Resend / FastAPI-Mail | Integración de correo | 2.26.0 / 1.6.2 | MIT / MIT | El SDK no; el proveedor puede cobrar según plan y volumen |
+| PyJWT | Tokens de autenticación | 2.12.1 | MIT | No |
+| FastAPI-Mail | Integración de correo | 1.6.2 | MIT | El SDK no; el proveedor puede cobrar según plan y volumen |
 | Expo / React Native | Aplicación móvil cliente, fuera del servidor | 54.0.35 / 0.81.5 | MIT | No; servicios de publicación/tienda pueden tener costo |
 
-Las versiones de dependencias Python están fijadas en `backend/requirements.txt`; las del frontend web y la app móvil, en sus respectivos `package.json` y archivos de bloqueo. El envío de correo depende de un proveedor externo y sus tarifas. Antes de distribuir el sistema, deben conservarse los avisos de licencia de dependencias transitivas.
+Las dependencias directas de Python se declaran en `backend/pyproject.toml` y su resolución completa queda fijada en `backend/uv.lock`; las del frontend web y la app móvil, en sus respectivos `package.json` y archivos de bloqueo. El envío de correo depende de un proveedor externo y sus tarifas. Antes de distribuir el sistema, deben conservarse los avisos de licencia de dependencias transitivas.
 
 ### 1.3 Sistema operativo del servidor
 

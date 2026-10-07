@@ -27,7 +27,8 @@ backend/
     main.py               Entrada principal de FastAPI
     schemas.py            Esquemas de validacion Pydantic
   Dockerfile              Imagen del backend
-  requirements.txt        Dependencias Python
+  pyproject.toml          Dependencias directas y configuracion del proyecto
+  uv.lock                 Resolucion reproducible de dependencias
 ```
 
 ## Routers
@@ -123,13 +124,11 @@ Si se desea ejecutar el backend sin Docker:
 
 ```bash
 cd backend
-python -m venv venv
-venv\Scripts\activate
-pip install -r requirements.txt
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+uv sync --frozen
+uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-Para esto se necesita tener MySQL disponible y configurar las variables de entorno de conexion.
+Instala `uv` previamente siguiendo sus instrucciones oficiales. `uv sync --frozen` crea el entorno virtual e instala exactamente las versiones de `uv.lock`; `uv run` ejecuta el servidor dentro de ese entorno. Para esto se necesita tener MySQL disponible y configurar las variables de entorno de conexion.
 
 ## Base de datos
 

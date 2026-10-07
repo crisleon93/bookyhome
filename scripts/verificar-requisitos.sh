@@ -154,8 +154,8 @@ else
   compose_file_ok=false
 fi
 
-if [ -d "backend" ] && [ -f "backend/requirements.txt" ]; then
-  echo "Backend: detectado"
+if [ -d "backend" ] && [ -f "backend/pyproject.toml" ] && [ -f "backend/uv.lock" ]; then
+  echo "Backend Python (uv): detectado"
 fi
 if [ -d "frontend" ] && [ -f "frontend/package.json" ]; then
   echo "Frontend: detectado"
