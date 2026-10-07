@@ -1,145 +1,159 @@
-# Plan de Implantación
-
-## 1. Ficha Técnica y Matriz de Requisitos
-
-### 1.1 Descripción técnica
+# Plan de Implantación — BookyHome
 
 | Campo | Valor |
 |---|---|
 | Proyecto | BookyHome |
 | Equipo | Equipo BookyHome |
-| Fecha | 2026-10-06 |
-| Objetivo del sistema | Plataforma de e-commerce para venta de libros con catálogo, autenticación, carrito, pagos, ventas, gestión de tiendas y contenido de apoyo para vendedores. |
-| Servicios principales | Frontend web, backend API, base de datos relacional, almacenamiento de uploads y servicios de correo. |
-| Arquitectura general | Frontend React + Vite en Docker, backend FastAPI + Uvicorn en Docker, base de datos MySQL 8.0, despliegue tipo contenedores con Docker Compose y almacenamiento local persistente. |
+| Versión del plan | 1.0 |
+| Fecha | 2026-10-07 |
 
-BookyHome está compuesto por tres capas principales:
+## 1. Ficha técnica y matriz de requisitos — Semana 1
 
-- Frontend web: desarrollado con React 19, Vite 8 y Flowbite para la experiencia de compra/venta.
-- Backend: API REST con FastAPI y Pydantic, responsable de autenticación, catálogo, ventas, pagos, perfiles, reseñas y administración.
-- Base de datos: MySQL 8.0, con inicialización automática desde database/bookyhome.sql y persistencia via volumen Docker.
+### 1.1 Descripción técnica
 
-La estructura del despliegue en contenedores está definida en `docker-compose.yml` y usa una base de datos MySQL, un backend Python y un frontend Node. El sistema está pensado para ejecutarse sin una infraestructura compleja, pero requiere un entorno Linux o servidor con Docker, sistema operativo LTS y almacenamiento SSD para mantener buen rendimiento.
+| Campo | Valor |
+|---|---|
+| Objetivo | Plataforma de comercio electrónico para descubrir y vender libros, con cuentas, catálogo, carrito, pagos, ventas, tiendas, reseñas y herramientas para vendedores. |
+| Usuarios | Compradores, vendedores y administradores. |
+| Servicios principales | Frontend web, API REST, base de datos MySQL, almacenamiento persistente de imágenes/archivos y envío de correo mediante proveedor externo. |
+| Arquitectura | Aplicación web de tres capas: React/Vite, API FastAPI/Uvicorn y MySQL 8. Los servicios se desarrollan actualmente con Docker Compose; el frontend móvil con Expo es un cliente aparte. |
+| Persistencia | Volumen Docker para MySQL y volumen para archivos subidos. La inicialización de la base de datos monta `database/migrations` en `/docker-entrypoint-initdb.d`. |
+
+El Compose actual es una configuración de desarrollo: ejecuta Vite y publica los puertos 5173 (frontend), 8000 (API) y 3306 (MySQL) en el host. En producción se recomienda servir el frontend compilado detrás de un proxy HTTPS y dejar la base de datos y la API accesibles solo desde la red interna.
 
 ### 1.2 Inventario de software
 
+Versiones observadas en las imágenes/contenedores del entorno de desarrollo o fijadas en los manifiestos del proyecto. Docker Engine 29.7.2 y Compose 5.5.0 corresponden al equipo de pruebas. Para ejecutar la prueba Linux se utilizó Docker CLI 29.8.2 y Compose 5.5.1. La versión definitiva instalada directamente en un servidor Linux debe registrarse al desplegarlo.
+
 | Componente | Función | Versión | Licencia | ¿Genera costo? |
 |---|---|---:|---|---|
-| Ubuntu Server | Sistema operativo base del servidor | 24.04 LTS | Canonical Ubuntu Pro / licencias Open Source | No |
-| Docker Engine | Runtime de contenedores | 27.x (o equivalente) | Apache 2.0 | No |
-| Docker Compose | Orquestación de servicios | v2.x | Apache 2.0 | No |
-| MySQL Community Server | Base de datos relacional principal | 8.0 | GPL con excepciones comerciales | Sí, si se requiere soporte comercial o extensión comercial cerrada |
-| Python | Runtime del backend | 3.10 | Python Software Foundation License | No |
-| FastAPI | Framework de la API | 0.135.1 | MIT | No |
+| Ubuntu Server | Sistema operativo objetivo | 24.04 LTS | Componentes principalmente libres; términos de Ubuntu | Sin costo de licencia; Ubuntu Pro es opcional |
+| Docker Engine | Ejecución de contenedores | Servidor 29.7.2, observado en Docker Desktop | Apache-2.0 | Sin costo para Docker Engine; Docker Desktop tiene términos de uso propios |
+| Docker Compose | Orquestación local/servidor | 5.5.0 en Windows; 5.5.1 en prueba Linux | Apache-2.0 | Sin costo |
+| MySQL Community Server | Base de datos | 8.0.46 | GPL-2.0 | Sin costo para Community; soporte/ediciones comerciales son opcionales |
+| Python | Runtime del backend | 3.10.21 (`python:3.10-slim`) | PSF License | No |
+| FastAPI | Framework de API | 0.135.1 | MIT | No |
 | Uvicorn | Servidor ASGI | 0.42.0 | BSD-3-Clause | No |
 | Pydantic | Validación y modelos | 2.12.5 | MIT | No |
-| Node.js | Runtime del frontend | 20-alpine (contenedor) | MIT | No |
-| React | Biblioteca del frontend | 19.2.4 | MIT | No |
-| Vite | Bundler y servidor de desarrollo | 8.0.1 | MIT | No |
-| pnpm | Gestor de dependencias frontend | 10.x (según instalación) | MIT | No |
-| Expo / React Native | App móvil | Dependiente del entorno | MIT | No |
-| Passlib / bcrypt | Hashing de contraseñas | 1.7.4 / 4.0.1 | MIT / Apache 2.0 | No |
-| JWT / python-jose | Autenticación y tokens | 2.12.1 / 3.5.0 | MIT | No |
-| Resend / FastAPI-Mail | Envío de correos transaccionales | 2.26.0 / 1.6.2 | MIT / Apache 2.0 | Puede generar costo según proveedor externo |
+| Node.js | Runtime frontend | 20.20.2 (`node:20-alpine`) | MIT y avisos de componentes incluidos | No |
+| pnpm | Gestor de paquetes frontend | 10.34.3 | MIT | No |
+| React / React DOM | Interfaz web | 19.2.4 | MIT | No |
+| Vite | Servidor de desarrollo y bundler | 8.0.1 | MIT | No |
+| Flowbite / Flowbite React | Componentes de interfaz | 4.0.2 / 0.12.17 | MIT | No |
+| Passlib / bcrypt | Hash de contraseñas | 1.7.4 / 4.0.1 | BSD / Apache-2.0 | No |
+| PyJWT / python-jose | Tokens de autenticación | 2.12.1 / 3.5.0 | MIT / MIT | No |
+| Resend / FastAPI-Mail | Integración de correo | 2.26.0 / 1.6.2 | MIT / MIT | El SDK no; el proveedor puede cobrar según plan y volumen |
+| Expo / React Native | Aplicación móvil cliente, fuera del servidor | 54.0.35 / 0.81.5 | MIT | No; servicios de publicación/tienda pueden tener costo |
 
-Observación: la mayor parte del software es open source y sin costo de licencia directa. La única consideración de costo o restricción importante es MySQL en uso comercial, y también los servicios de correo transaccionales si se usa un proveedor externo de email con planes de pago.
+Las versiones de dependencias Python están fijadas en `backend/requirements.txt`; las del frontend web y la app móvil, en sus respectivos `package.json` y archivos de bloqueo. El envío de correo depende de un proveedor externo y sus tarifas. Antes de distribuir el sistema, deben conservarse los avisos de licencia de dependencias transitivas.
 
 ### 1.3 Sistema operativo del servidor
 
 | Campo | Valor |
 |---|---|
-| Distribución y versión | Ubuntu Server 24.04 LTS |
-| Arquitectura | x86_64 / amd64 |
-| Fin de soporte estándar | Mayo de 2029 |
-| Licencia | Ubuntu Open Source / Canonical LTS |
-| Requisitos mínimos oficiales | Ubuntu Server 24.04 LTS requiere, en general, 2 GB RAM, 2 vCPU y 25 GB de disco para instalación mínima, aunque para producción con Docker y base de datos es preferible exceder esos valores. |
+| Distribución y versión | Ubuntu Server 24.04 LTS (sistema objetivo; aún no medido en una VM Linux de este proyecto) |
+| Arquitectura | x86_64 / amd64, compatible con las imágenes del stack |
+| Fin de soporte estándar | Mayo de 2029, según el ciclo de mantenimiento LTS de Ubuntu |
+| Licencia | Distribución basada principalmente en software libre y de código abierto; se aplican las licencias de cada paquete |
+| Requisitos mínimos oficiales | Consultar la [documentación oficial de instalación de Ubuntu Server](https://ubuntu.com/server/docs/how-to/installation/) y la [página oficial de descarga](https://ubuntu.com/download/server). El dimensionamiento depende del perfil de instalación y de las cargas; los valores de este plan son requisitos de BookyHome, no una transcripción de los mínimos del instalador. |
+| Referencia de soporte | [Ciclo oficial de lanzamientos y mantenimiento de Ubuntu](https://ubuntu.com/about/release-cycle) |
 
-Se recomienda Ubuntu Server 24.04 LTS por la estabilidad de larga duración, soporte del ecosistema Docker y compatibilidad con la mayoría de herramientas del stack actual.
+Se selecciona Ubuntu Server 24.04 LTS por su periodo de mantenimiento, soporte de Docker y disponibilidad de paquetes para la arquitectura objetivo.
 
 ### 1.4 Medición de consumo
 
-| Servicio | RAM reposo | RAM pico | CPU pico |
-|---|---:|---:|---:|
-| MySQL 8.0 | 512 MB | 1.5 GB | 0.8 vCPU |
-| Backend FastAPI | 256 MB | 768 MB | 0.6 vCPU |
-| Frontend React/Vite | 256 MB | 512 MB | 0.4 vCPU |
-| Sistema base + Docker + SO | 512 MB | 1.0 GB | 0.3 vCPU |
-| Total estimado | 1.5 GB | 3.8 GB | 1.5-2.0 vCPU |
+Medición con `docker stats --no-stream` sobre los contenedores en ejecución. La columna “reposo” corresponde a muestras sin solicitudes de carga generadas; el frontend seguía ejecutando Vite en modo desarrollo y con sondeo de archivos habilitado, por lo que no representa un servidor de producción realmente inactivo.
 
-Carga simulada con: 25-40 usuarios concurrentes, consultas sobre catálogo e historial, manejo de carrito y procesamiento de ventas con base de datos operando localmente en Docker.
+| Servicio | RAM reposo | RAM pico observado | CPU pico durante prueba |
+|---|---:|---:|---:|
+| MySQL Community 8.0.46 | 423.5 MiB | 423.7 MiB | 1.47% |
+| Backend FastAPI/Uvicorn | 103.5 MiB | 103.5 MiB | 15.60% |
+| Frontend React/Vite | 257.4 MiB | 261.0 MiB | 43.94% |
+| **Total de contenedores** | **784.4 MiB (0.77 GiB)** | **788.2 MiB (0.77 GiB)** | **61.01% (0.61 vCPU)** |
+
+Prueba simulada: 10 clientes concurrentes; cada uno realizó 15 solicitudes GET al frontend (`/`) y 15 a la documentación de la API (`/docs`), para un total de 150 solicitudes a cada endpoint. Se muestreó `docker stats` durante la prueba. El total de CPU suma los máximos individuales observados y es una cota conservadora (no necesariamente simultánea); 100% equivale aproximadamente a un núcleo lógico. No se enviaron transacciones ni se ejercitó la base de datos con consultas de negocio; estos valores son una prueba de humo/carga HTTP ligera, no una prueba de capacidad de producción.
 
 ### 1.5 Matriz de requisitos
 
-| Requisito | Mínimo | Recomendado | Justificación |
+| Requisito | Mínimo | Recomendado | Justificación y cálculo |
 |---|---|---|---|
-| CPU | 2 vCPU | 4 vCPU | El pico estimado del stack en carga es cercano a 1.5-2.0 vCPU; con margen de seguridad para consultas y picos se recomienda 4 vCPU. |
-| RAM | 4 GB | 8 GB | El total estimado en carga ronda 3.8 GB y es prudente reservar margen para gestión del SO, Docker y crecimiento del sistema. |
-| Disco | 40 GB SSD | 80 GB SSD | El sistema base y la BD requieren almacenamiento persistente; 80 GB permite crecimiento, respaldos y logs. |
-| Tipo de disco / IOPS | SSD SATA/NVMe, 10-20k IOPS estimados | SSD NVMe, 30k IOPS o superior | MySQL y el acceso al catálogo producen IOPS moderadas; un SSD mejora tiempos de respuesta. |
-| Red | 1 Gbps | 1 Gbps redundante o 10 Gbps si se escala | El tráfico web y la consola de administración no exige un ancho muy alto pero sí un enlace estable y bien dimensionado. |
-| Arquitectura | x86_64 / amd64 | x86_64 / amd64 | Compatible con el ecosistema de Docker, Ubuntu, MySQL y Node. |
-| Sistema operativo | Ubuntu Server 24.04 LTS | Ubuntu Server 24.04 LTS | Estabilidad LTS, soporte largo y compatibilidad con Docker y la base de datos. |
-| Docker / runtime | Docker Engine + Compose | Docker Engine + Compose + monitorización | Permite containerización y mantenimiento más simple del stack. |
-| Puertos | 8000, 5173, 3306 | 80/443, 8000, 5173, 3306 interno restringido | El backend expone API en 8000; frontend y MySQL quedan conectados por red interna, con acceso restringido según la topología. |
-| Crecimiento estimado de datos | 5-10 GB al año | 20-40 GB en 2-3 años | El volumen aumentado se debe a imágenes, base de datos, logs y backups. |
+| CPU | 2 vCPU | 4 vCPU | En la prueba ligera se observaron 0.61 vCPU agregados; con 50% de margen: 0.61 × 1.5 = 0.92 vCPU. Se redondea a 2 vCPU para incluir SO/Docker; se recomiendan 4 vCPU (2 × el mínimo) para crecimiento y cargas de base de datos aún no probadas. |
+| RAM | 4 GB | 8 GB | Pico observado de contenedores: 0.77 GiB; con 50%: 0.77 × 1.5 = 1.16 GiB. Se reserva memoria adicional para SO, Docker y caché de MySQL; mínimo redondeado a 4 GB y 8 GB recomendados (2 × mínimo) para crecimiento. |
+| Disco | 40 GB libres | 80 GB SSD | El script comprueba espacio libre, no capacidad total. Recomendado: 40 GB × 1.5 = 60 GB, redondeado a 80 GB para imágenes Docker, volúmenes persistentes, logs y respaldos. |
+| Tipo de disco / IOPS | SSD SATA, mínimo 40 GB libres | SSD NVMe con espacio para datos y respaldos | MySQL requiere almacenamiento persistente; no se midieron IOPS, por lo que se validarán con una prueba de disco en el servidor destino. |
+| Red | 100 Mbps simétricos | 1 Gbps en LAN y conexión estable a Internet | Estimación para una aplicación web de carga inicial baja/media; el ancho de banda real debe ajustarse al tráfico, las imágenes y el número de usuarios. No se ejecutó una prueba de red. |
+| Arquitectura | x86_64 / amd64 | x86_64 / amd64 | Es la arquitectura seleccionada para el servidor y compatible con las imágenes Docker usadas. |
+| Sistema operativo | Ubuntu Server 24.04 LTS | Ubuntu Server 24.04 LTS actualizado | Versión LTS seleccionada; el mantenimiento estándar llega hasta mayo de 2029. |
+| Docker / runtime | Docker Engine y Docker Compose; imágenes MySQL 8, Python 3.10 y Node 20 | Versiones soportadas y fijadas, monitorización y actualizaciones controladas | Los tres servicios se ejecutan actualmente mediante Compose. La versión del motor Linux de producción aún debe registrarse. |
+| Puertos | Desarrollo: 5173 (frontend), 8000 (API), 3306 (MySQL) | Producción: 80/443 públicos; 8000 y 3306 solo en red interna | El Compose actual publica los tres puertos en el host. En producción se debe restringir MySQL y colocar la API detrás de un proxy/firewall. |
+| Crecimiento estimado de datos | 6 GB/año (estimación inicial) | 18 GB para 3 años, más respaldos | Supuesto de planificación: 100 imágenes/mes × 3 MB × 12 = 3.6 GB/año; datos de BD/logs estimados en 0.2 GB/mes × 12 = 2.4 GB/año; total 6 GB/año. Sustituir el supuesto por el volumen real al medir el uso. |
 
 ### 1.6 Plataforma física recomendada
 
 | Decisión | Elección | Justificación |
 |---|---|---|
-| Formato (torre / rack / blade) | Servidor rack 1U o torre empresarial | Es una solución económica, fácil de expandir y suficientemente robusta para un sistema con base de datos y frontend. |
-| Nivel RAID del servidor de base de datos | RAID 10 | Ofrece buen equilibrio entre rendimiento y tolerancia a fallos; es la recomendación más segura para un servidor con MySQL. |
-| Plataforma de ejecución (bare metal / VM / contenedores) | VM con Proxmox/KVM + contenedores Docker | Permite aislamiento, snapshot, respaldos, y escalado sin comprometer la estabilidad del sistema. |
-
-La recomendación para una implantación en cliente es: un servidor físico de nivel medio con discos SSD y RAID 10, donde se desplegará una VM Ubuntu y dentro de ella Docker Compose para ejecutar MySQL, backend y frontend. Esto mantiene la base de datos protegida, facilita backups y reduce el riesgo operativo.
+| Formato (torre / rack / blade) | Torre empresarial para una instalación pequeña; rack si ya existe centro de datos | La torre simplifica el despliegue y la ampliación en instalaciones sin rack. El rack facilita administración centralizada cuando ya hay infraestructura. |
+| Nivel RAID del servidor de base de datos | RAID 10 con al menos cuatro unidades SSD | Combina rendimiento y tolerancia a fallos de un disco por espejo; ofrece aproximadamente la mitad de la capacidad bruta. RAID no sustituye copias de seguridad verificadas. |
+| Plataforma de ejecución (bare metal / VM / contenedores) | Hipervisor tipo 1 (Proxmox VE/KVM), VM Ubuntu Server y Docker Compose dentro de la VM | Aísla el sistema, facilita restauración y administración de recursos. Para una implantación pequeña sin hipervisor, Docker Engine sobre Ubuntu en bare metal también es viable. |
 
 ### 1.7 Verificación de requisitos
 
-Script: `scripts/verificar-requisitos.sh` del repositorio del proyecto.
+Script: `scripts/verificar-requisitos.sh`.
 
-Servidor donde se ejecutó:
+Entorno de ejecución: contenedor efímero basado en Ubuntu 24.04.5 LTS (`ubuntu:24.04`), con el repositorio montado para ejecutar el script y el socket del motor Docker disponible. El CLI de Docker/Compose se suministró desde la imagen oficial `docker:cli`; no fue posible instalar paquetes dentro de Ubuntu porque el contenedor no tuvo acceso a los repositorios de Ubuntu. El nombre del host se omite por privacidad. Esta evidencia cumple la ejecución en Linux de laboratorio, pero no es una VM ni un servidor físico independiente.
+
+Comando ejecutado dentro del contenedor:
 
 ```bash
-wsl.exe -d Ubuntu -- bash -lc "cd /mnt/c/Users/sena/bookyhome && bash scripts/verificar-requisitos.sh"
+bash scripts/verificar-requisitos.sh
 ```
+
+Salida real:
 
 ```text
 === Verificación de requisitos BookyHome ===
-Fecha: 2026-10-06 20:00:56 UTC
-Servidor: BOGDFPCGMP1094
-Sistema operativo: Ubuntu 26.04.1 LTS
+Fecha: 2026-10-07 20:23:42 UTC
+Servidor: nombre omitido por privacidad
+Sistema operativo: Ubuntu 24.04.5 LTS
+Entorno: contenedor Docker (recursos visibles para el contenedor)
 Arquitectura: x86_64
-CPU: 28 núcleos - Intel(R) Core(TM) i7-14700
-Memoria total: 15 GB
-Memoria disponible: 14 GB
-Espacio en disco (/): /dev/sdd       1007G  1.3G  955G   1% /
+CPU: 12 procesadores lógicos - 13th Gen Intel(R) Core(TM) i5-13420H
+Memoria total: 7.6 GB
+Memoria disponible: 6.0 GB
+Disco raíz (/): capacidad 1006.9 GB; libre 933.9 GB
 
 === Herramientas del stack ===
-Docker: 
-Docker Compose: 
-Python: Python 3.14.4
-node: no instalado
-npm: 11.13.0
-pnpm: 
-mysql: no instalado
+Docker CLI: Docker version 29.8.2, build 7fc2dff
+Docker Compose: Docker Compose version v5.5.1
+Motor Docker: disponible
+python3: no instalado en el host (puede ejecutarse dentro de Docker)
+node: no instalado en el host (puede ejecutarse dentro de Docker)
+npm: no instalado en el host (puede ejecutarse dentro de Docker)
+pnpm: no instalado en el host (puede ejecutarse dentro de Docker)
+mysql: no instalado en el host (puede ejecutarse dentro de Docker)
 
 === Validación del proyecto ===
-docker-compose.yml: detectado
-backend: detectado
-frontend: detectado
-database: detectado
+Archivo Compose: detectado
+Backend: detectado
+Frontend: detectado
+Base de datos: detectada
 
 === Requisitos mínimos del proyecto ===
-- CPU mínimo: 2 vCPU
-- RAM mínima: 4 GB
-- Disco mínimo: 40 GB SSD
+- CPU: 2 procesadores lógicos
+- RAM: 4 GB
+- Espacio libre en disco: 40 GB
+- Docker Engine y Docker Compose: requeridos
 - Sistema operativo recomendado: Ubuntu Server 24.04 LTS
 
-Resultado: CUMPLE LOS REQUISITOS MÍNIMOS
+Comprobaciones:
+  CPU: cumple
+  RAM: cumple
+  Espacio libre en disco (40 GB): cumple
+  Docker Engine, Compose y archivo de proyecto: disponibles
 
-Conclusión: este entorno debe tener al menos 2 vCPU, 4 GB RAM y 40 GB SSD para operar BookyHome sin problema. Para producción se recomienda 4 vCPU, 8 GB RAM y 80 GB SSD.
+Resultado: CUMPLE LOS REQUISITOS MÍNIMOS
+Nota: en contenedor, disco y memoria son los recursos visibles para Docker y pueden no representar la capacidad física disponible.
+Para validar producción, ejecute este script en el servidor destino.
 ```
 
-Resultado:
-
-El entorno analizado cumple los requisitos mínimos del proyecto para desarrollo y despliegue ligero. La validación confirma 28 núcleos, 15 GB de RAM y más de 955 GB libres en disco, por lo que la plataforma queda sobredimensionada para el stack actual; para producción, se recomienda mantener un servidor con 4 vCPU, 8 GB RAM y 80 GB SSD, con RAID 10 y copias de seguridad automáticas para la base de datos.
+Resultado: el entorno Linux de laboratorio cumple los umbrales que el script pudo observar y confirmó acceso al motor Docker, Compose y los archivos del proyecto. La cifra de disco libre pertenece al sistema de archivos overlay que Docker expuso al contenedor y no demuestra que el almacenamiento físico o la unidad Windows de respaldo tenga 40 GB libres. En una comprobación previa del equipo Windows anfitrión se observaron solo 6.0 GB libres en C:. Antes de certificar el destino de producción, ejecutar el script directamente en la VM/servidor Ubuntu y confirmar allí el espacio persistente disponible y el tipo de disco (SSD).
