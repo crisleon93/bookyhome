@@ -1,7 +1,8 @@
 import json
 import os
+import random
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 from app.database import get_db
 
 STORAGE_DIR = os.path.join(os.path.dirname(__file__), '..', 'data')
@@ -24,6 +25,15 @@ def _load_store(path):
 def _save_store(path, data):
     with open(path, 'w', encoding='utf-8') as file:
         json.dump(data, file, indent=2, ensure_ascii=False)
+
+
+def _crear_datos_retiro(tipo_entrega):
+    if tipo_entrega != 'retiro_tienda':
+        return None, None, None
+
+    pin_retiro = f"{random.randint(1000, 9999)}"
+    fecha_limite = (datetime.utcnow() + timedelta(hours=48)).isoformat() + 'Z'
+    return pin_retiro, 'reservado', fecha_limite
 
 
 def obtener_carrito(id_usuario):
@@ -169,13 +179,7 @@ def checkout_carrito(id_usuario, id_direccion=None, tipo_entrega='domicilio'):
     orders = _load_store(ORDER_FILE)
     user_orders = orders.get(str(id_usuario), [])
     order_id = len(user_orders) + 1
-    import random
-    from datetime import timedelta
-
-    es_retiro = (tipo_entrega == 'retiro_tienda')
-    pin_retiro = f"{random.randint(1000, 9999)}" if es_retiro else None
-    estado_retiro = 'reservado' if es_retiro else None
-    fecha_limite = (datetime.utcnow() + timedelta(hours=48)).isoformat() + 'Z' if es_retiro else None
+    pin_retiro, estado_retiro, fecha_limite = _crear_datos_retiro(tipo_entrega)
 
     order = {
         'id_orden': order_id,
@@ -271,13 +275,7 @@ def crear_orden_directa(id_usuario, item_libro, id_direccion=None, tipo_entrega=
 
     total = subtotal + costo_envio
 
-    import random
-    from datetime import timedelta
-
-    es_retiro = (tipo_entrega == 'retiro_tienda')
-    pin_retiro = f"{random.randint(1000, 9999)}" if es_retiro else None
-    estado_retiro = 'reservado' if es_retiro else None
-    fecha_limite = (datetime.utcnow() + timedelta(hours=48)).isoformat() + 'Z' if es_retiro else None
+    pin_retiro, estado_retiro, fecha_limite = _crear_datos_retiro(tipo_entrega)
 
     item = {
         'id_libro': int(item_libro['id_libro']),

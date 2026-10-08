@@ -1,6 +1,6 @@
-from pydantic import BaseModel, EmailStr
-from pydantic import BaseModel, Field
-from typing import List, Optional, Literal
+from typing import List, Literal, Optional
+
+from pydantic import BaseModel, EmailStr, Field
 
 # ===========================
 # USUARIOS
@@ -70,7 +70,7 @@ class LibroRespuesta(BaseModel):
     fecha_publicacion: str
     fecha_listado: str
     nombre_categoria: Optional[str] = None
-    imagenes: List[str] = []
+    imagenes: List[str] = Field(default_factory=list)
  
 class CategoriaRespuesta(BaseModel):
     id_categoria: int
