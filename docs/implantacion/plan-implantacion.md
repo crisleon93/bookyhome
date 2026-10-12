@@ -4,8 +4,8 @@
 |---|---|
 | Proyecto | BookyHome |
 | Equipo | Equipo BookyHome |
-| Versión del plan | 1.0 |
-| Fecha | 2026-10-07 |
+| Versión del plan | 1.1 |
+| Fecha | 2026-10-12 |
 
 ## 1. Ficha técnica y matriz de requisitos — Semana 1
 
@@ -157,3 +157,113 @@ Para validar producción, ejecute este script en el servidor destino.
 ```
 
 Resultado: el entorno Linux de laboratorio cumple los umbrales que el script pudo observar y confirmó acceso al motor Docker, Compose y los archivos del proyecto. La cifra de disco libre pertenece al sistema de archivos overlay que Docker expuso al contenedor y no demuestra que el almacenamiento físico o la unidad Windows de respaldo tenga 40 GB libres. En una comprobación previa del equipo Windows anfitrión se observaron solo 6.0 GB libres en C:. Antes de certificar el destino de producción, ejecutar el script directamente en la VM/servidor Ubuntu y confirmar allí el espacio persistente disponible y el tipo de disco (SSD).
+
+---
+
+## 2. Plan de migración de datos — Semana 2
+
+> Documento completo: [`docs/implantacion/entregable-s02-planes.md § 2`](entregable-s02-planes.md)
+
+### 2.1 Objetivo medible
+
+Migrar el 100 % de los libros y vendedores válidos del sistema anterior (hojas de cálculo Excel entregadas por el coordinador de la librería) a las tablas `libros` y `tiendas` de BookyHome, con reporte de rechazos aprobado por el cliente, en máximo 3 horas, sin modificar los registros existentes en producción.
+
+### 2.2 Origen de datos
+
+| Origen | Formato | Volumen | Responsable | Calidad |
+|---|---|---|---|---|
+| Catálogo de libros de librería anterior | Excel → CSV `;` | ~500 filas | Coordinador de la librería | ISBNs incompletos, precios sin decimal uniforme, categorías en texto libre |
+| Registro de vendedores / tiendas | Excel → CSV `;` | ~30 filas | Administrador de plataforma | Correos duplicados, nombres con mayúsculas inconsistentes |
+| Imágenes de portadas | ZIP con JPG/PNG | ~500 archivos | Coordinador de la librería | Nombres de archivo sin relación con ISBN |
+
+### 2.3 Estrategia
+
+**Big bang** en ventana de mantenimiento dominical (02:00–05:00 h). Volumen pequeño (~530 filas) sin transacciones activas durante la migración.
+
+### 2.4 Tabla de mapeo (resumen)
+
+| Origen CSV | Destino | Transformación | Regla de rechazo |
+|---|---|---|---|
+| `titulo` | `libros.titulo` | trim() | Vacío → rechazar |
+| `isbn` | `libros.isbn` | trim, eliminar guiones | Longitud ≠ 10/13 → rechazar |
+| `precio` | `libros.precio` | `,` → `.`, DECIMAL(10,2) | ≤ 0 o no numérico → rechazar |
+| `categoria` | `libros.id_categoria` | Búsqueda en `categorias` | Sin coincidencia → marcar pendiente |
+| `correo_vendedor` | `usuarios.email` | trim + minúsculas | Vacío, inválido o duplicado → rechazar |
+
+### 2.5 Rollback
+
+Respaldo completo con `scripts/respaldar.sh` antes de iniciar. Si rechazos > 10 %: conservar producción intacta (carga se hace en staging primero). Rol que decide: líder técnico con aprobación del coordinador.
+
+---
+
+## 3. Plan de respaldo — Semana 2
+
+> Documento completo: [`docs/implantacion/entregable-s02-planes.md § 3`](entregable-s02-planes.md)
+
+### 3.1 Qué se respalda
+
+| Elemento | Método | ¿Datos personales? |
+|---|---|---|
+| Base de datos `bookyhome` (MySQL) | `mysqldump --single-transaction --routines --triggers` + `gzip -9` | Sí |
+| Volumen `uploads_data` (imágenes de libros) | `tar czf` desde contenedor efímero | No |
+| Archivo `backend/.env` | Copia manual cifrada antes de cada despliegue | Sí |
+
+### 3.2 RPO / RTO
+
+| RPO | RTO | Justificación |
+|---|---|---|
+| 24 horas | 2 horas | Plataforma de e-commerce en fase inicial; pérdida de un día de transacciones tolerable. Se revisará al aumentar volumen de ventas. |
+
+### 3.3 Política 3-2-1
+
+| Copia | Ubicación | Cifrado |
+|---|---|---|
+| 1 | Carpeta `backups/` en el mismo servidor (SSD local) | No (red interna) |
+| 2 | NAS de la librería (red interna, SMB/SSHFS) | No (red privada) |
+| 3 (fuera del sitio) | Bucket en la nube (S3 o equivalente) | Sí — AES-256 vía GPG |
+
+Frecuencia: diaria a las 20:00 h. Retención: 30 días diarios; último día de mes → 12 meses.
+
+### 3.4 Evidencia de restauración (2026-10-12)
+
+Respaldo generado: `backups/bookyhome-s02-20261012-183158.sql` (~174 MB).  
+Base restaurada: `bookyhome_s02_prueba`.
+
+| Tabla | Producción | Restaurada | ¿Coincide? |
+|---|---|---|---|
+| usuarios | 285 | 285 | ✅ |
+| tiendas | 151 | 151 | ✅ |
+| libros | 5 258 | 5 258 | ✅ |
+| ordenes_compra | 23 439 | 23 439 | ✅ |
+| pagos | 23 402 | 23 402 | ✅ |
+| notificaciones | 653 851 | 653 851 | ✅ |
+| resenas_libros | 310 367 | 310 367 | ✅ |
+| categorias | 16 | 16 | ✅ |
+| Total objetos (tablas + vistas) | 75 | 75 | ✅ |
+
+Tiempo de restauración: ~95 segundos.
+
+---
+
+## 4. _(reservado para semanas futuras)_
+
+---
+
+## 5. Plan de instalación — Semana 2 (v0)
+
+> Documento completo: [`docs/implantacion/entregable-s02-planes.md § 5`](entregable-s02-planes.md)
+
+### Tabla resumen de las 10 secciones
+
+| # | Sección | Resumen |
+|---|---|---|
+| 1 | Alcance | Despliegue inicial de BookyHome en Ubuntu Server 24.04 LTS con Docker Compose (frontend + API + MySQL). La app móvil Expo es un cliente independiente fuera de alcance. |
+| 2 | Ambientes | Desarrollo (Docker Desktop/Windows), Staging (VM Ubuntu mínima), Producción (VM/servidor Ubuntu recomendado). |
+| 3 | Roles | Responsable técnico, coordinador de la librería (cliente), responsable de respaldos. |
+| 4 | Prerrequisitos | Ver sección 1: 2 vCPU, 4 GB RAM, 40 GB libres, Ubuntu 24.04 LTS, Docker Engine + Compose. |
+| 5 | Preparación | Clonar repositorio, completar `.env`, ejecutar `scripts/verificar-requisitos.sh` con código 0, tener respaldo previo. |
+| 6 | Procedimiento | 12 pasos: verificar → clonar → `.env` → build → up → verificar BD → migraciones → respaldar → verificar frontend → verificar API → verificar negocio → notificar. |
+| 7 | Migración de datos | Ver sección 2 de este documento. |
+| 8 | Verificación | Lista de 8 comprobaciones post-instalación (contenedores, API, frontend, login, catálogo, respaldo). |
+| 9 | Rollback | `docker compose down` + restaurar respaldo pre-instalación con `scripts/restaurar.sh`. |
+| 10 | Cronograma | Ventana de 120 min (80 min de trabajo + 40 min de margen). Punto de no retorno: tras aplicar migraciones con usuarios activos. |
