@@ -57,15 +57,21 @@ En la reunion de cierre de cada iteracion, el equipo revisara el estado de las a
 
 ## 11. Avance minimo del proyecto
 
-De acuerdo con el [Reporte de Estado de Requisitos](../requisitos/REPORTE_REQUISITOS.md), BookyHome alcanza un avance del **97.9%** sobre los requisitos funcionales y no funcionales con estado explicito: **47 de 48 requisitos implementados**. Este resultado supera el avance minimo requerido del **90%**.
+De acuerdo con el [Reporte de Estado de Requisitos](../requisitos/REPORTE_REQUISITOS.md), BookyHome tiene un avance verificado del **94.3%** sobre los requisitos funcionales y no funcionales: **50 de 53 requisitos implementados**. Este resultado **supera el avance minimo requerido del 90%** en 4.3 puntos porcentuales. El porcentaje fue recalculado en octubre 2026 tras verificacion directa en el codigo del frontend web y el backend.
 
 El calculo se compone de:
 
-- Requisitos funcionales: 35 de 36 implementados (**97.2%**).
-- Requisitos no funcionales: 12 de 12 implementados (**100%**), segun el reporte de estado.
+- Requisitos funcionales: 38 de 41 implementados (**92.7%**).
+- Requisitos no funcionales: 12 de 12 implementados (**100%**).
 - Historias de usuario: se mantienen como `Definida` porque la documentacion no registra un estado de implementacion independiente; por ello no se incluyen en el porcentaje.
 
-El requisito funcional RF-033, relacionado con la comparacion de libros, permanece como alcance final de baja prioridad. Su existencia no impide cumplir el umbral del 90%, pero debe conservarse como pendiente hasta que se implemente y verifique.
+Los unicos 3 RF pendientes son:
+
+- **RF-034** (Alta): falta un endpoint PUT/PATCH para actualizar la cantidad de un item ya en el carrito; el frontend no tiene boton +/-.
+- **RF-040** (Media): el backend de ofertas esta completo; falta que `Catalogo.jsx` consuma `/ofertas/libro/{id}/activa` y muestre el precio con descuento.
+- **RF-033** (Baja): comparacion de libros lado a lado, sin implementacion en backend ni frontend.
+
+RF-025, RF-037, RF-038, RF-039 y RF-041 fueron confirmados como implementados tras revision directa de rutas, modelos y componentes en octubre 2026. El porcentaje anterior del 80.5% subestimaba el avance real del proyecto.
 
 ## 12. Herramienta de gestion del proyecto
 
