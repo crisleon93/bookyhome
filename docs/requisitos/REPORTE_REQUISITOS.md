@@ -9,10 +9,10 @@
 
 | Categoría | Total | Implementado | Alcance Final | Pendiente | % Completado |
 |-----------|-------|--------------|---------------|------------|--------------|
-| Historias de Usuario (HU) | 35 | N/A* | 35 | 0 | N/A* |
-| Requisitos Funcionales (RF) | 36 | 35 | 1 | 0 | 97.2% |
+| Historias de Usuario (HU) | 42 | N/A* | 42 | 0 | N/A* |
+| Requisitos Funcionales (RF) | 41 | 33 | 8 | 0 | 80.5% |
 | Requisitos No Funcionales (RNF) | 12 | 12 | 0 | 0 | 100% |
-| **TOTAL (RF + RNF)** | **48** | **47** | **1** | **0** | **97.9%** |
+| **TOTAL (RF + RNF)** | **53** | **45** | **8** | **0** | **84.9%** |
 
 *Nota: Las historias de usuario no tienen estado de implementación explícito en los archivos (solo "Definida"), pero la mayoría está cubierta por RFs que sí están implementados. El porcentaje total se calcula solo sobre RF y RNF que tienen estado explícito.
 
@@ -22,7 +22,7 @@
 
 Todas las historias de usuario están marcadas como **"Definida"** en los archivos de documentación. No tienen un estado de implementación explícito, pero se pueden inferir de los requisitos funcionales asociados.
 
-### HU-001 a HU-035: Estado General
+### HU-001 a HU-042: Estado General
 - **Estado documentado:** Definida
 - **Estado de implementación:** Inferido desde RFs asociados
 
@@ -76,14 +76,14 @@ Todas las historias de usuario están marcadas como **"Definida"** en los archiv
 | RF-016 | Gestión de favoritos | ✅ Implementado | Media | lista_deseos.py | ListaDeseos.jsx |
 | RF-017 | Historial de actividad | ✅ Implementado | Media | historial_interacciones.py | Historial.jsx |
 
-### 2.6 Compras y Pagos (100% implementado)
+### 2.6 Compras y Pagos (50% implementado)
 
 | ID | Nombre | Estado | Prioridad | Backend | Frontend |
 |----|--------|--------|-----------|---------|----------|
 | RF-023 | Historial de compras | ✅ Implementado | Media | - | Historial.jsx |
 | RF-024 | Gestión de pedidos | ✅ Implementado | Alta | payments.py | PostLogin.jsx |
-| RF-025 | Gestión de pagos | ✅ Implementado | Alta | payments.py | PostLogin.jsx |
-| RF-034 | Carrito de compras | ✅ Implementado | Alta | carrito.py | PostLogin.jsx, Catalogo.jsx |
+| RF-025 | Gestión de pagos | ⏳ Alcance final | Alta | payments.py | PostLogin.jsx |
+| RF-034 | Carrito de compras | ⏳ Alcance final | Alta | carrito.py | PostLogin.jsx, Catalogo.jsx |
 
 ### 2.7 Moderación y Administración (100% implementado)
 
@@ -125,6 +125,16 @@ Todas las historias de usuario están marcadas como **"Definida"** en los archiv
 |----|--------|--------|-----------|---------|----------|
 | RF-033 | Comparación de libros | ⏳ Alcance final | Baja | - | - |
 | RF-035 | Notificaciones de novedades | ✅ Implementado | Media | notificaciones.py | PostLogin.jsx |
+
+### 2.13 Requisitos funcionales incorporados al alcance final
+
+| ID | Nombre | Estado | Prioridad |
+|----|--------|--------|-----------|
+| RF-037 | Gestión de perfil de negocio | ⏳ Alcance final | Media |
+| RF-038 | Disponibilidad de libros | ⏳ Alcance final | Alta |
+| RF-039 | Gestión de stock | ⏳ Alcance final | Alta |
+| RF-040 | Promociones y descuentos | ⏳ Alcance final | Media |
+| RF-041 | Historial de interacciones | ⏳ Alcance final | Media |
 
 ---
 
@@ -178,15 +188,22 @@ El proyecto incluye funcionalidades adicionales que no están documentadas en lo
 
 ## 5. Requisitos Pendientes de Implementación
 
-### 5.1 Alcance Final (1 requisito)
+### 5.1 Alcance Final (8 requisitos)
 
 Estos requisitos están documentados como parte del alcance final del producto pero aún no están completamente implementados:
 
 | ID | Nombre | Prioridad | Descripción |
 |----|--------|-----------|-------------|
+| RF-025 | Gestión de pagos | Alta | Falta validar que el monto coincida con la orden o con un descuento válido |
 | RF-033 | Comparación de libros | Baja | Funcionalidad de comparación lado a lado |
+| RF-034 | Carrito de compras | Alta | Falta permitir modificar la cantidad de un producto ya agregado |
+| RF-037 | Gestión de perfil de negocio | Media | Edición de nombre, contacto y descripción de la tienda |
+| RF-038 | Disponibilidad de libros | Alta | Estado disponible y formato físico o digital |
+| RF-039 | Gestión de stock | Alta | Cantidades disponibles y actualización por ventas |
+| RF-040 | Promociones y descuentos | Media | Creación de descuentos visibles en el catálogo |
+| RF-041 | Historial de interacciones | Media | Consulta de libros vistos y mensajes enviados |
 
-**Nota:** Aunque RF-007, RF-011, RF-025 y RF-034 conservan el estado `Alcance final` en sus archivos de requisitos, la revisión del código documentada en este reporte los considera implementados en backend y frontend. Por ello no se cuentan como pendientes en esta matriz.
+**Nota:** La revisión del código confirma implementados RF-007 y RF-011. RF-025 y RF-034 permanecen en alcance final hasta completar sus validaciones pendientes.
 
 ### 5.2 Requisitos no iniciados (0)
 
@@ -234,22 +251,21 @@ No se identificaron requisitos marcados como "Pendiente" sin implementación par
 
 ### 7.2 Acciones Sugeridas
 
-1. **Actualizar estados en documentación:** Los archivos de RF deberían reflejar el estado actual de implementación más preciso (RF-007, RF-011, RF-025, RF-034 están implementados pero marcados como "Alcance final")
-2. **Documentar funcionalidades adicionales:** Las funcionalidades extra (BookyPago, cupones, devoluciones, etc.) deberían tener sus propios RFs
-3. **Actualizar documentación de RF:** Considerar cambiar el estado de RF-007, RF-011, RF-025 y RF-034 de "Alcance final" a "Implementado"
+1. **Completar RF-025:** Validar en backend que el monto pagado corresponda al total de la orden o a un descuento aprobado.
+2. **Completar RF-034:** Permitir actualizar la cantidad de un libro ya agregado al carrito.
+3. **Validar RF-037 a RF-041:** Mantenerlos como "Alcance final" hasta comprobar su implementacion.
+3. **Aprobar funcionalidades adicionales:** Incorporar al catalogo funciones como BookyPago, cupones y devoluciones solo si se aceptan formalmente dentro del alcance.
 
 ---
 
 ## 8. Conclusión
 
-El proyecto BookyHome tiene un **97.9% de completitud** basado en los requisitos funcionales y no funcionales con estado explícito:
+El proyecto BookyHome tiene un **84.9% de completitud documentada** basado en los requisitos funcionales y no funcionales con estado explícito:
 
 - **Requisitos no funcionales:** 100% implementados ✅ (12/12)
-- **Requisitos funcionales:** 97.2% implementados ✅ (35/36)
-- **Historias de usuario:** No tienen estado explícito, pero la mayoría está cubierta por RFs implementados
+- **Requisitos funcionales:** 80.5% implementados (33/41)
+- **Historias de usuario:** 42 definidas; no tienen estado de implementación explícito
 
-El proyecto tiene una base sólida con casi todas las funcionalidades core implementadas. Tras revisión detallada del código, se encontró que la búsqueda avanzada, mensajería, pagos y carrito están completamente implementados en backend y frontend, aunque estaban marcados como "Alcance final" en la documentación.
+Ocho RF están clasificados como alcance final: RF-025, RF-033, RF-034 y RF-037 a RF-041. RF-007 y RF-011 se marcaron como implementados tras revisar sus rutas y flujos en backend y frontend. Los demás porcentajes reflejan los estados documentados y no sustituyen la verificación mediante pruebas.
 
-El único requisito pendiente de implementación es RF-033 (Comparación de libros), que es una funcionalidad de baja prioridad.
-
-Además, el proyecto ha implementado funcionalidades adicionales significativas (BookyPago Finanzas, cupones, devoluciones, etc.) que enriquecen el producto más allá de los requisitos originales.
+El proyecto también contiene funcionalidades adicionales como BookyPago Finanzas, cupones y devoluciones; su inclusión formal en el catálogo requiere aprobación de alcance.
