@@ -19,6 +19,7 @@ import SidebarMenu from '../components/SidebarMenu';
 import SidebarVendedor from '../components/SidebarVendedor';
 import { useChatSocket } from '../context/ChatSocketContext';
 import { AuthContext } from '../context/AuthContext';
+import Footer from '../components/Footer';
 
 const PRIMARY = '#7A1E3A';
 const PRIMARY_DARK = '#4E1022';
@@ -270,6 +271,7 @@ export default function Messages() {
             contentContainerStyle={styles.listContent}
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={PRIMARY} />}
             showsVerticalScrollIndicator={false}
+            ListFooterComponent={<Footer onLinkPress={() => {}} />}
           />
         )}
       </View>

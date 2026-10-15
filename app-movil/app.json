@@ -23,7 +23,9 @@
       "permissions": [
         "USE_BIOMETRIC",
         "USE_FINGERPRINT",
-        "CAMERA"
+        "CAMERA",
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION"
       ],
       "adaptiveIcon": {
         "foregroundImage": "./src/assets/adaptive-icon.png",
@@ -51,6 +53,12 @@
         "expo-camera",
         {
           "cameraPermission": "BookyHome necesita acceso a la cámara para escanear códigos de barras de libros y buscar mejores precios."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "BookyHome necesita tu ubicación para centrar el mapa en la dirección de envío."
         }
       ]
     ]

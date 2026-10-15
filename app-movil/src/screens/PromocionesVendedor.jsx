@@ -19,6 +19,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { AuthContext } from '../context/AuthContext';
+import Footer from '../components/Footer';
 import SidebarVendedor from '../components/SidebarVendedor';
 import CalendarioPicker from '../components/CalendarioPicker';
 import {
@@ -745,6 +746,7 @@ export default function PromocionesVendedor({ navigation }) {
               />
             </>
           )}
+          <Footer onLinkPress={() => {}} />
         </ScrollView>
       )}
 

@@ -4,6 +4,7 @@ import {
   StyleSheet, Alert, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView
 } from 'react-native';
 import { resetPassword } from '../services/api';
+import Footer from '../components/Footer';
 
 export default function ResetPassword({ route, navigation }) {
   // El token llega por deep link como parámetro de navegación
@@ -37,25 +38,31 @@ export default function ResetPassword({ route, navigation }) {
   };
 
   if (!token) return (
-    <View style={s.center}>
-      <Text style={s.errorIcon}>⚠️</Text>
-      <Text style={s.title}>Enlace inválido</Text>
-      <Text style={s.subtitle}>No se encontró un token de restablecimiento. Solicita un nuevo enlace.</Text>
-      <TouchableOpacity style={s.btn} onPress={() => navigation.navigate('ForgotPassword')}>
-        <Text style={s.btnText}>Solicitar nuevo enlace</Text>
-      </TouchableOpacity>
-    </View>
+    <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+      <View style={s.center}>
+        <Text style={s.errorIcon}>⚠️</Text>
+        <Text style={s.title}>Enlace inválido</Text>
+        <Text style={s.subtitle}>No se encontró un token de restablecimiento. Solicita un nuevo enlace.</Text>
+        <TouchableOpacity style={s.btn} onPress={() => navigation.navigate('ForgotPassword')}>
+          <Text style={s.btnText}>Solicitar nuevo enlace</Text>
+        </TouchableOpacity>
+      </View>
+      <Footer onLinkPress={() => {}} />
+    </ScrollView>
   );
 
   if (exito) return (
-    <View style={s.center}>
-      <Text style={s.successIcon}>✅</Text>
-      <Text style={s.title}>Contraseña actualizada</Text>
-      <Text style={s.subtitle}>Ya puedes iniciar sesión con tu nueva contraseña.</Text>
-      <TouchableOpacity style={s.btn} onPress={() => navigation.navigate('Login')}>
-        <Text style={s.btnText}>Ir al inicio de sesión</Text>
-      </TouchableOpacity>
-    </View>
+    <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+      <View style={s.center}>
+        <Text style={s.successIcon}>✅</Text>
+        <Text style={s.title}>Contraseña actualizada</Text>
+        <Text style={s.subtitle}>Ya puedes iniciar sesión con tu nueva contraseña.</Text>
+        <TouchableOpacity style={s.btn} onPress={() => navigation.navigate('Login')}>
+          <Text style={s.btnText}>Ir al inicio de sesión</Text>
+        </TouchableOpacity>
+      </View>
+      <Footer onLinkPress={() => {}} />
+    </ScrollView>
   );
 
   return (
@@ -97,6 +104,7 @@ export default function ResetPassword({ route, navigation }) {
             : <Text style={s.btnText}>Cambiar contraseña</Text>
           }
         </TouchableOpacity>
+        <Footer onLinkPress={() => {}} />
       </ScrollView>
     </KeyboardAvoidingView>
   );

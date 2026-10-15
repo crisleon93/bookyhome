@@ -19,6 +19,7 @@ import { addFavorito, getApiBaseUrl, getBusquedaAvanzada, getFiltrosDisponibles,
 import { IconBooks } from '../components/Icons';
 import { AuthContext } from '../context/AuthContext';
 import Header from '../components/Header';
+import Footer from '../components/Footer';
 
 const PRIMARY = '#7A1E3A';
 const BG      = '#F9F6F1';
@@ -599,6 +600,7 @@ export default function Catalogo({ navigation, route }) {
                   )}
                 </View>
               }
+              ListFooterComponent={<Footer onLinkPress={() => {}} />}
             />
 
             {/* Se revela al llegar al final de la lista y se mantiene fija abajo. */}

@@ -14,6 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { getTiendasDestacadas, getApiBaseUrl } from '../services/api';
 import Header from '../components/Header';
+import Footer from '../components/Footer';
 
 const PRIMARY   = '#7A1E3A';
 const PRIMARY2  = '#4B1E2F';
@@ -246,13 +247,17 @@ export default function Librerias({ navigation, route }) {
       {loading ? (
         <ScrollView contentContainerStyle={s.listContainer}>
           {renderSkeleton()}
+          <Footer onLinkPress={() => {}} />
         </ScrollView>
       ) : filtradas.length === 0 ? (
-        <View style={s.empty}>
-          <Text style={s.emptyIcon}>🔍</Text>
-          <Text style={s.emptyTitle}>Sin resultados</Text>
-          <Text style={s.emptySub}>No se encontraron librerías con ese filtro</Text>
-        </View>
+        <>
+          <View style={s.empty}>
+            <Text style={s.emptyIcon}>🔍</Text>
+            <Text style={s.emptyTitle}>Sin resultados</Text>
+            <Text style={s.emptySub}>No se encontraron librerías con ese filtro</Text>
+          </View>
+          <Footer onLinkPress={() => {}} />
+        </>
       ) : (
         <FlatList
           data={filtradas}
@@ -262,6 +267,7 @@ export default function Librerias({ navigation, route }) {
           columnWrapperStyle={s.row}
           contentContainerStyle={s.listContainer}
           showsVerticalScrollIndicator={false}
+          ListFooterComponent={<Footer onLinkPress={() => {}} />}
         />
       )}
 

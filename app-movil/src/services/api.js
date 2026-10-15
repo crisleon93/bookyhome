@@ -61,6 +61,7 @@ export const getDatosTransferenciaVendedor = (orderId) => api.get(`/api/v1/order
 export const cancelOrder = (orderId, motivo) => api.delete(`/api/v1/orders/${orderId}`, {
   data: motivo ? { motivo } : undefined,
 });
+export const cancelarMisPendientes = () => api.post('/api/v1/orders/cancelar-mis-pendientes');
 export const processPayment = (payload) => api.post('/api/v1/payments', payload);
 export const sendConfirmationEmail = (orderId) => api.post(`/api/v1/orders/${orderId}/send-confirmation`);
 
@@ -83,6 +84,8 @@ export const getNotifications = (soloNoLeidas = false, limit = 50, offset = 0) =
 export const markNotificationRead = (id) => api.put(`/notificaciones/${id}/leer`);
 export const markAllNotificationsRead = () => api.put('/notificaciones/marcar-todas-leidas');
 export const deleteNotification = (id) => api.delete(`/notificaciones/${id}`);
+export const deleteNotificationsByFilter = (filtro = 'leidas') =>
+  api.delete('/notificaciones', { params: { filtro } });
 
 // ===== Reseñas =====
 export const getReviewsForBook = (id) => api.get(`/resenas/resenas/libro/${id}`);
@@ -100,6 +103,7 @@ export const removeFavorito = (id_libro) => api.delete(`/favoritos/${id_libro}`)
 // Las listas personalizadas se mantienen como una función independiente.
 export const getListaDeseos = () => api.get('/lista-deseos');
 export const createListaDeseos = (data) => api.post('/lista-deseos', data);
+export const deleteListaDeseos = (id_lista) => api.delete(`/lista-deseos/${id_lista}`);
 export const getLibrosListaDeseos = (id_lista) => api.get(`/lista-deseos/${id_lista}/libros`);
 export const addToListaDeseos = (id_libro, id_lista) => api.post(`/lista-deseos/${id_lista}/libros`, { id_libro });
 export const removeFromListaDeseos = (id_libro, id_lista) => api.delete(`/lista-deseos/${id_lista}/libros/${id_libro}`);
@@ -191,6 +195,9 @@ export const getApiBaseUrl = () => api.defaults.baseURL;
 export const getOrdenes = () => api.get('/api/v1/orders');
 export const getQuejas = () => api.get('/quejas');
 export const crearQueja = (formData) => api.post('/quejas', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+export const cancelarQueja = (id) => api.delete(`/quejas/${id}`);
+export const getMensajesReclamo = (id) => api.get(`/quejas/${id}/mensajes`);
+export const enviarMensajeReclamo = (id, mensaje) => api.post(`/quejas/${id}/mensajes`, { mensaje });
 
 // ===== Administración =====
 // El panel conserva las mismas fuentes de datos que el dashboard web.

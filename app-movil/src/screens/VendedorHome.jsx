@@ -12,6 +12,7 @@ import {
   getAlertasStock, getMisPedidos, getApiBaseUrl,
 } from '../services/api';
 import SidebarVendedor from '../components/SidebarVendedor';
+import Footer from '../components/Footer';
 
 const PRIMARY   = '#7A1E3A';
 const PRIMARY_L = '#9B2648';
@@ -315,6 +316,7 @@ export default function VendedorHome({ navigation: navProp }) {
           </View>
 
         </View>{/* fin body */}
+        <Footer onLinkPress={() => {}} />
       </ScrollView>
 
       <SidebarVendedor

@@ -4,18 +4,25 @@ import {
   TextInput, ActivityIndicator, Alert, Modal, Image, Dimensions
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Footer from '../components/Footer';
+import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
-import { getOrdenes, getQuejas, crearQueja, cancelarQueja, getApiBaseUrl } from '../services/api';
-import { IconAlertTriangle, IconCheck, IconEye, IconChevronRight } from '../components/Icons';
+import {
+  getOrdenes, getQuejas, crearQueja, cancelarQueja, getApiBaseUrl,
+  getMensajesReclamo, enviarMensajeReclamo,
+} from '../services/api';
+import {
+  IconAlertTriangle, IconCheck, IconEye, IconChevronRight, IconMessage, IconStoreAlt,
+} from '../components/Icons';
 import { AuthContext } from '../context/AuthContext';
 import SidebarMenu from '../components/SidebarMenu';
 import SidebarVendedor from '../components/SidebarVendedor';
 
 const PRIMARY = '#7A1E3A';
 const WHITE = '#FFFFFF';
-const GRAY = '#888';
-const BG = '#F9F6F1';
-const BORDER = '#EEE';
+const GRAY = '#6B7280';
+const BG = '#F8FAFC';
+const BORDER = '#E5E7EB';
 
 const MOTIVOS = [
   'Libro dañado o defectuoso',
@@ -25,6 +32,33 @@ const MOTIVOS = [
   'Otro',
 ];
 
+const ESTADO_CONFIG = {
+  'Resuelto': { bg: '#DCFCE7', color: '#166534', dot: '#16A34A' },
+  'En revisión': { bg: '#FFF7ED', color: '#9A3412', dot: '#EA580C' },
+  'Abierto': { bg: '#EFF6FF', color: '#1E40AF', dot: '#3B82F6' },
+  'Cerrado': { bg: '#F3F4F6', color: '#374151', dot: '#6B7280' },
+  'Rechazado': { bg: '#FEF2F2', color: '#991B1B', dot: '#EF4444' },
+};
+
+const getEstadoConfig = (estado) =>
+  ESTADO_CONFIG[estado === 'En revision' ? 'En revisión' : estado] || ESTADO_CONFIG.Cerrado;
+
+const getFechaQueja = (queja) =>
+  queja.fecha_solicitud || queja.fecha_creacion || queja.created_at;
+
+const getTiempoTranscurrido = (fecha) => {
+  if (!fecha) return null;
+  const minutos = Math.floor((Date.now() - new Date(fecha).getTime()) / 60000);
+  if (!Number.isFinite(minutos) || minutos < 0) return null;
+  if (minutos < 60) return `hace ${minutos} min`;
+  const horas = Math.floor(minutos / 60);
+  if (horas < 24) return `hace ${horas} h`;
+  const dias = Math.floor(horas / 24);
+  if (dias < 30) return `hace ${dias} día${dias === 1 ? '' : 's'}`;
+  const meses = Math.floor(dias / 30);
+  return `hace ${meses} mes${meses === 1 ? '' : 'es'}`;
+};
+
 export default function QuejasReclamos({ navigation }) {
   const { user, signOut } = useContext(AuthContext);
   const [sidebarVisible, setSidebarVisible] = useState(false);
@@ -32,23 +66,34 @@ export default function QuejasReclamos({ navigation }) {
   const [quejas, setQuejas] = useState([]);
   const [ordenSeleccionada, setOrdenSeleccionada] = useState(null);
   const [motivo, setMotivo] = useState('');
+  const [motivoOtro, setMotivoOtro] = useState('');
   const [descripcion, setDescripcion] = useState('');
   const [evidencia, setEvidencia] = useState(null);
   
   const [cargando, setCargando] = useState(true);
   const [enviando, setEnviando] = useState(false);
   const [mensajeExito, setMensajeExito] = useState('');
+  const [error, setError] = useState('');
+  const [vistaPrincipal, setVistaPrincipal] = useState('nueva');
   const [vistaEvidencia, setVistaEvidencia] = useState(null);
   const [filtroEstado, setFiltroEstado] = useState('Todos');
   const [cancelando, setCancelando] = useState(null);
+  const [paginaReclamos, setPaginaReclamos] = useState(1);
+  const [itemsPorPagina, setItemsPorPagina] = useState(5);
+  const [tarjetaColapsada, setTarjetaColapsada] = useState({});
+  const [chatAbierto, setChatAbierto] = useState(null);
+  const [mensajesChat, setMensajesChat] = useState({});
+  const [cargandoChat, setCargandoChat] = useState(null);
+  const [mensajeChatInput, setMensajeChatInput] = useState({});
+  const [enviandoMensaje, setEnviandoMensaje] = useState(null);
   
   // Modals for selection
   const [showOrdenModal, setShowOrdenModal] = useState(false);
   const [showMotivoModal, setShowMotivoModal] = useState(false);
+  const [showPageSizeModal, setShowPageSizeModal] = useState(false);
 
   const cargar = useCallback(async () => {
     setCargando(true);
-    setMensajeExito('');
     try {
       const [ordenesRes, quejasRes] = await Promise.all([getOrdenes(), getQuejas()]);
       const solicitudes = quejasRes.data || [];
@@ -96,16 +141,22 @@ export default function QuejasReclamos({ navigation }) {
   };
 
   const enviar = async () => {
+    setError('');
     if (!ordenSeleccionada || !motivo) {
       Alert.alert('Incompleto', 'Selecciona una compra y un motivo.');
+      return;
+    }
+    if (motivo === 'Otro' && !motivoOtro.trim()) {
+      Alert.alert('Incompleto', 'Por favor especifica el motivo del reclamo.');
       return;
     }
     
     setEnviando(true);
     const data = new FormData();
     data.append('id_orden', ordenSeleccionada.id_orden);
-    data.append('motivo', motivo);
-    data.append('descripcion', descripcion.trim() || motivo);
+    const motivoFinal = motivo === 'Otro' ? motivoOtro.trim() : motivo;
+    data.append('motivo', motivoFinal);
+    data.append('descripcion', descripcion.trim() || motivoFinal);
     
     if (evidencia) {
       data.append('evidencia', {
@@ -119,57 +170,124 @@ export default function QuejasReclamos({ navigation }) {
       await crearQueja(data);
       setOrdenSeleccionada(null);
       setMotivo('');
+      setMotivoOtro('');
       setDescripcion('');
       setEvidencia(null);
       setMensajeExito('Solicitud enviada. El administrador revisará tu caso.');
+      setError('');
+      setVistaPrincipal('historial');
       await cargar();
     } catch (err) {
-      Alert.alert('Error', err.response?.data?.detail || 'No se pudo enviar la solicitud.');
+      const errorMessage = err.response?.data?.detail || 'No se pudo enviar la solicitud.';
+      setError(errorMessage);
+      Alert.alert('Error', errorMessage);
     } finally {
       setEnviando(false);
     }
   };
 
   const renderBadge = (estado) => {
-    let bg = '#E5E7EB';
-    let text = '#333';
-    if (estado === 'Resuelto') {
-      bg = '#DCFCE7';
-      text = '#166534';
-    } else if (estado === 'En revisión' || estado === 'En revision') {
-      bg = '#FEF3C7';
-      text = '#B45309';
-    }
+    const estadoNormalizado = estado === 'En revision' ? 'En revisión' : estado;
+    const config = getEstadoConfig(estado);
     
     return (
-      <View style={[styles.badge, { backgroundColor: bg }]}>
-        <Text style={[styles.badgeText, { color: text }]}>{estado}</Text>
+      <View style={[styles.badge, { backgroundColor: config.dot }]}>
+        <View style={styles.badgeDot} />
+        <Text style={styles.badgeText}>{estadoNormalizado}</Text>
       </View>
     );
   };
 
+  const reclamosFiltrados = quejas.filter((queja) =>
+    filtroEstado === 'Todos' || queja.estado === filtroEstado ||
+    (filtroEstado === 'En revisión' && queja.estado === 'En revision')
+  );
+  const totalPaginasReclamos = Math.max(1, Math.ceil(reclamosFiltrados.length / itemsPorPagina));
+  const paginaActualReclamos = Math.min(paginaReclamos, totalPaginasReclamos);
+  const reclamosVisibles = reclamosFiltrados.slice(
+    (paginaActualReclamos - 1) * itemsPorPagina,
+    paginaActualReclamos * itemsPorPagina
+  );
+  const conteosEstados = quejas.reduce((conteos, queja) => {
+    const estado = queja.estado === 'En revision' ? 'En revisión' : queja.estado;
+    conteos[estado] = (conteos[estado] || 0) + 1;
+    return conteos;
+  }, {});
+
+  const abrirChat = async (idSolicitud) => {
+    if (chatAbierto === idSolicitud) {
+      setChatAbierto(null);
+      return;
+    }
+    setChatAbierto(idSolicitud);
+    if (mensajesChat[idSolicitud]) return;
+    setCargandoChat(idSolicitud);
+    try {
+      const response = await getMensajesReclamo(idSolicitud);
+      setMensajesChat((actuales) => ({ ...actuales, [idSolicitud]: response.data || [] }));
+    } catch (err) {
+      Alert.alert('Error', err.response?.data?.detail || 'No se pudieron cargar los mensajes del reclamo.');
+    } finally {
+      setCargandoChat(null);
+    }
+  };
+
+  const handleEnviarMensaje = async (idSolicitud) => {
+    const texto = (mensajeChatInput[idSolicitud] || '').trim();
+    if (!texto || enviandoMensaje === idSolicitud) return;
+    setEnviandoMensaje(idSolicitud);
+    try {
+      await enviarMensajeReclamo(idSolicitud, texto);
+      setMensajeChatInput((actuales) => ({ ...actuales, [idSolicitud]: '' }));
+      const response = await getMensajesReclamo(idSolicitud);
+      setMensajesChat((actuales) => ({ ...actuales, [idSolicitud]: response.data || [] }));
+    } catch (err) {
+      Alert.alert('Error', err.response?.data?.detail || 'No se pudo enviar el mensaje.');
+    } finally {
+      setEnviandoMensaje(null);
+    }
+  };
+
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
-      {user?.rol === 'vendedor' && (
-        <View style={styles.topHeader}>
-          <TouchableOpacity onPress={() => setSidebarVisible(true)} style={styles.menuBtn}>
-            <Text style={styles.menuIcon}>☰</Text>
-          </TouchableOpacity>
-          <Text style={styles.topHeaderTitle}>Quejas y reclamos</Text>
-        </View>
-      )}
-
       <ScrollView contentContainerStyle={styles.scroll}>
         
-        {/* Header */}
-        <View style={styles.headerBox}>
+        <LinearGradient colors={['#7A1E3A', '#8E2640']} style={styles.headerBox}>
           <View style={styles.iconWrap}>
-            <IconAlertTriangle size={32} color={PRIMARY} />
+            <IconAlertTriangle size={28} color={WHITE} />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={styles.title}>Quejas y reclamos</Text>
-            <Text style={styles.subtitle}>Reporta un problema de una compra pagada y adjunta evidencia.</Text>
+            <Text style={styles.subtitle}>
+              {vistaPrincipal === 'nueva'
+                ? 'Reporta un problema de una compra pagada y adjunta evidencia si la tienes.'
+                : 'Consulta el estado de tus solicitudes anteriores.'}
+            </Text>
           </View>
+        </LinearGradient>
+
+        <View style={styles.tabs}>
+          <TouchableOpacity
+            accessibilityRole="tab"
+            accessibilityState={{ selected: vistaPrincipal === 'nueva' }}
+            style={[styles.tab, vistaPrincipal === 'nueva' && styles.tabActive]}
+            onPress={() => setVistaPrincipal('nueva')}
+            activeOpacity={0.8}
+          >
+            <Text style={[styles.tabText, vistaPrincipal === 'nueva' && styles.tabTextActive]}>
+              Nueva queja o reclamo
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            accessibilityRole="tab"
+            accessibilityState={{ selected: vistaPrincipal === 'historial' }}
+            style={[styles.tab, vistaPrincipal === 'historial' && styles.tabActive]}
+            onPress={() => setVistaPrincipal('historial')}
+            activeOpacity={0.8}
+          >
+            <Text style={[styles.tabText, vistaPrincipal === 'historial' && styles.tabTextActive]}>
+              Mis quejas y reclamos
+            </Text>
+          </TouchableOpacity>
         </View>
 
         {mensajeExito ? (
@@ -179,25 +297,27 @@ export default function QuejasReclamos({ navigation }) {
           </View>
         ) : null}
 
-        {/* Formulario */}
-        <View style={styles.card}>
-          <View style={styles.cardHeader}>
-            <Text style={styles.cardTitle}>Nueva queja o reclamo</Text>
-            <Text style={styles.cardSubtitle}>Solo aparecen compras pagadas de tu cuenta.</Text>
+        {error ? (
+          <View style={styles.errorBox}>
+            <IconAlertTriangle size={18} color="#991B1B" />
+            <Text style={styles.errorText}>{error}</Text>
           </View>
+        ) : null}
 
+        {vistaPrincipal === 'nueva' ? (
+        <View style={styles.card}>
           {cargando ? (
             <ActivityIndicator size="large" color={PRIMARY} style={{ marginVertical: 30 }} />
           ) : ordenes.length === 0 ? (
             <View style={styles.emptyBox}>
-              <IconAlertTriangle size={32} color={PRIMARY} />
-              <Text style={styles.emptyText}>No tienes compras pagadas disponibles para una nueva solicitud.</Text>
+              <Text style={styles.emptyIcon}>📦</Text>
+              <Text style={styles.emptyText}>No hay compras disponibles</Text>
             </View>
           ) : (
             <>
-              {/* Select Orden */}
-              <Text style={styles.label}>Selecciona una compra pagada</Text>
-              <TouchableOpacity style={[styles.selectInput, ordenSeleccionada && { height: 'auto', paddingVertical: 12 }]} onPress={() => setShowOrdenModal(true)} activeOpacity={0.8}>
+              <View style={styles.purchaseGroup}>
+                <Text style={styles.groupTitle}>📦  Selecciona tu compra</Text>
+                <TouchableOpacity style={[styles.selectInput, ordenSeleccionada && { height: 'auto', paddingVertical: 12 }]} onPress={() => setShowOrdenModal(true)} activeOpacity={0.8}>
                 {ordenSeleccionada ? (
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 }}>
                     {ordenSeleccionada.items?.[0]?.imagen_url || ordenSeleccionada.items?.[0]?.imagen ? (
@@ -218,146 +338,390 @@ export default function QuejasReclamos({ navigation }) {
                     </View>
                   </View>
                 ) : (
-                  <Text style={styles.selectText}>Selecciona una compra pagada</Text>
+                  <Text style={[styles.selectText, styles.placeholderText]}>Selecciona una compra...</Text>
                 )}
                 <IconChevronRight size={18} color={GRAY} />
-              </TouchableOpacity>
-
-              {/* Select Motivo */}
-              <Text style={styles.label}>Motivo del reclamo</Text>
-              <TouchableOpacity style={styles.selectInput} onPress={() => setShowMotivoModal(true)} activeOpacity={0.8}>
-                <Text style={styles.selectText}>{motivo || 'Selecciona un motivo'}</Text>
-                <IconChevronRight size={18} color={GRAY} />
-              </TouchableOpacity>
-
-              {/* Upload Evidencia */}
-              <Text style={styles.label}>Evidencia (opcional)</Text>
-              <View style={styles.row}>
-                <TouchableOpacity style={styles.uploadBtn} onPress={seleccionarEvidencia} activeOpacity={0.8}>
-                  <Text style={styles.uploadBtnText}>Seleccionar archivo</Text>
                 </TouchableOpacity>
-                <Text style={styles.fileText} numberOfLines={1}>
-                  {evidencia ? evidencia.name : 'Sin archivos seleccionados'}
-                </Text>
               </View>
 
-              {/* Descripción */}
-              <Text style={styles.label}>Descripción del problema (opcional)</Text>
-              <TextInput
-                style={styles.textArea}
-                value={descripcion}
-                onChangeText={setDescripcion}
-                placeholder="Describe el problema con más detalle..."
-                placeholderTextColor={GRAY}
-                multiline
-                numberOfLines={4}
-                textAlignVertical="top"
-              />
+              <View style={styles.problemGroup}>
+                <Text style={styles.groupTitle}>📝  Describe el problema</Text>
+                <Text style={styles.label}>Motivo del reclamo</Text>
+                <TouchableOpacity style={styles.selectInput} onPress={() => setShowMotivoModal(true)} activeOpacity={0.8}>
+                  <Text style={[styles.selectText, !motivo && styles.placeholderText]}>{motivo || 'Selecciona un motivo'}</Text>
+                  <IconChevronRight size={18} color={GRAY} />
+                </TouchableOpacity>
+                {motivo === 'Otro' && (
+                  <TextInput
+                    style={styles.input}
+                    value={motivoOtro}
+                    onChangeText={setMotivoOtro}
+                    placeholder="Especifica el motivo..."
+                    placeholderTextColor={GRAY}
+                  />
+                )}
 
-              <TouchableOpacity 
-                style={[styles.submitBtn, enviando && styles.submitBtnDisabled]}
-                onPress={enviar}
-                disabled={enviando}
-                activeOpacity={0.8}
-              >
-                {enviando ? <ActivityIndicator size="small" color={WHITE} /> : <Text style={styles.submitBtnText}>Enviar solicitud</Text>}
-              </TouchableOpacity>
+                <Text style={styles.label}>Evidencia <Text style={styles.optionalText}>(opcional)</Text></Text>
+                <TouchableOpacity style={styles.uploadBtn} onPress={seleccionarEvidencia} activeOpacity={0.8}>
+                  <Text style={styles.uploadChoice}>Elegir</Text>
+                  <Text style={styles.fileText} numberOfLines={1}>{evidencia ? evidencia.name : 'Sin archivo'}</Text>
+                </TouchableOpacity>
+
+                <Text style={styles.label}>Descripción <Text style={styles.optionalText}>(opcional)</Text></Text>
+                <TextInput
+                  style={styles.textArea}
+                  value={descripcion}
+                  onChangeText={setDescripcion}
+                  placeholder="Describe el problema..."
+                  placeholderTextColor={GRAY}
+                  multiline
+                  numberOfLines={3}
+                  textAlignVertical="top"
+                />
+
+                <TouchableOpacity
+                  style={[styles.submitBtn, enviando && styles.submitBtnDisabled]}
+                  onPress={enviar}
+                  disabled={enviando}
+                  activeOpacity={0.8}
+                >
+                  {enviando ? <ActivityIndicator size="small" color={WHITE} /> : <Text style={styles.submitBtnText}>Enviar</Text>}
+                </TouchableOpacity>
+              </View>
             </>
           )}
         </View>
-
-        {/* Historial */}
+        ) : (
         <View style={styles.card}>
           <View style={styles.historyHeading}>
             <Text style={styles.historyTitle}>Mis quejas y reclamos</Text>
             {quejas.length > 0 && <Text style={styles.historyCount}>{quejas.length} solicitud{quejas.length !== 1 ? 'es' : ''}</Text>}
           </View>
-          {quejas.length > 1 && (
+          {quejas.length > 0 && (
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
-              {['Todos', 'Abierto', 'En revisión', 'Resuelto', 'Cerrado', 'Rechazado']
-                .filter(estado => estado === 'Todos' || quejas.some(q => q.estado === estado || (estado === 'En revisión' && q.estado === 'En revision')))
-                .map(estado => (
+              {['Todos', 'Abierto', 'En revisión', 'Resuelto', 'Rechazado'].map(estado => (
                   <TouchableOpacity
                     key={estado}
                     style={[styles.filterBtn, filtroEstado === estado && styles.filterBtnActive]}
-                    onPress={() => setFiltroEstado(estado)}
+                    onPress={() => { setFiltroEstado(estado); setPaginaReclamos(1); }}
                   >
-                    <Text style={[styles.filterText, filtroEstado === estado && styles.filterTextActive]}>{estado}</Text>
+                    <Text style={[styles.filterText, filtroEstado === estado && styles.filterTextActive]}>
+                      {estado} {((estado === 'Todos' ? quejas.length : conteosEstados[estado]) || 0) > 0
+                        ? ` (${estado === 'Todos' ? quejas.length : conteosEstados[estado]})`
+                        : ''}
+                    </Text>
                   </TouchableOpacity>
-                ))}
+              ))}
             </ScrollView>
           )}
           
           {quejas.length === 0 && !cargando ? (
-            <Text style={styles.emptyHistory}>No tienes solicitudes previas.</Text>
+            <View style={styles.emptyHistory}>
+              <Text style={styles.emptyIcon}>📋</Text>
+              <Text style={styles.emptyText}>No hay solicitudes</Text>
+            </View>
+          ) : reclamosFiltrados.length === 0 ? (
+            <View style={styles.emptyHistory}>
+              <Text style={styles.emptyText}>No hay solicitudes con este estado</Text>
+            </View>
           ) : (
-            quejas.filter(queja => filtroEstado === 'Todos' || queja.estado === filtroEstado || (filtroEstado === 'En revisión' && queja.estado === 'En revision')).map((queja) => (
-              <View key={queja.id_solicitud} style={styles.historyItem}>
-                <View style={styles.historyHeader}>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.historyMeta}>Solicitud #{queja.id_solicitud} · Orden #{queja.id_orden}</Text>
-                    <Text style={styles.historyItemTitle}>{queja.titulo_libro || queja.asunto || 'Libro'}</Text>
-                    {queja.nombre_tienda && <Text style={styles.historyStore}>{queja.nombre_tienda}</Text>}
+            <>
+            <View style={styles.ticketList}>
+            {reclamosVisibles.map((queja) => {
+              const estadoConfig = getEstadoConfig(queja.estado);
+              const estadoActual = queja.estado === 'En revision' ? 'En revisión' : queja.estado;
+              const progresoActual = ['Abierto', 'En revisión', 'Resuelto'].indexOf(estadoActual);
+              const fecha = getFechaQueja(queja);
+              const fechaTexto = fecha
+                ? new Date(fecha).toLocaleDateString('es-CO', { day: '2-digit', month: 'long', year: 'numeric' })
+                : null;
+              const tiempoTexto = getTiempoTranscurrido(fecha);
+              const tienda = queja.nombre_tienda || queja.tienda || null;
+              const imagen = queja.imagen_libro
+                ? (queja.imagen_libro.startsWith('http') ? queja.imagen_libro : `${getApiBaseUrl()}${queja.imagen_libro}`)
+                : null;
+              const numero = queja.numero || queja.id_solicitud;
+              const colapsada = Boolean(tarjetaColapsada[queja.id_solicitud]);
+              const puedeChatear = !['Cerrado', 'Resuelto', 'Rechazado'].includes(queja.estado);
+              return (
+              <View key={queja.id_solicitud} style={[styles.ticketCard, { borderColor: `${estadoConfig.dot}33`, borderLeftColor: estadoConfig.dot }]}>
+                <TouchableOpacity
+                  style={[styles.ticketHeader, colapsada && styles.ticketHeaderCollapsed]}
+                  onPress={() => setTarjetaColapsada((actuales) => ({
+                    ...actuales,
+                    [queja.id_solicitud]: !actuales[queja.id_solicitud],
+                  }))}
+                  activeOpacity={0.8}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${colapsada ? 'Expandir' : 'Contraer'} reclamo ${numero}`}
+                >
+                  {imagen ? (
+                    <Image source={{ uri: imagen }} style={styles.ticketImage} />
+                  ) : (
+                    <View style={styles.ticketImageFallback}>
+                      <Text style={styles.ticketImageNumber}>#{numero}</Text>
+                    </View>
+                  )}
+                  <View style={styles.ticketHeadingText}>
+                    <View style={styles.ticketNumberRow}>
+                      <Text style={styles.ticketNumber}>#{numero}</Text>
+                      {queja.id_orden ? <Text style={styles.ticketOrder}>· #{queja.id_orden}</Text> : null}
+                    </View>
+                    <Text style={styles.ticketBookTitle} numberOfLines={1}>
+                      {queja.titulo_libro || 'Libro'}
+                      {queja.total_items > 1 ? ` +${queja.total_items - 1} más` : ''}
+                    </Text>
+                    {colapsada && (
+                      <Text style={styles.collapsedSummary} numberOfLines={1}>
+                        {queja.asunto}{tiempoTexto ? ` · ${tiempoTexto}` : ''}
+                      </Text>
+                    )}
                   </View>
                   {renderBadge(queja.estado)}
-                </View>
+                  <Text style={styles.collapseIcon}>{colapsada ? '⌄' : '⌃'}</Text>
+                </TouchableOpacity>
 
-                {['Abierto', 'En revisión', 'En revision'].includes(queja.estado) && (
-                  <View style={styles.progressRow}>
-                    {['Abierto', 'En revisión', 'Resuelto'].map((paso, index) => {
-                      const estadoActual = queja.estado === 'En revision' ? 'En revisión' : queja.estado;
-                      const actual = ['Abierto', 'En revisión', 'Resuelto'].indexOf(estadoActual);
-                      return <View key={paso} style={styles.progressStep}>
-                        <View style={[styles.progressDot, index <= actual && styles.progressDotActive]} />
-                        <Text style={[styles.progressText, index <= actual && styles.progressTextActive]}>{paso}</Text>
-                      </View>;
-                    })}
-                  </View>
-                )}
-                
-                <Text style={styles.historyDesc}>{queja.descripcion}</Text>
-                
-                {queja.evidencia_url && (
-                  <TouchableOpacity 
-                    style={styles.evidenciaBtn} 
-                    onPress={() => setVistaEvidencia(`${getApiBaseUrl()}${queja.evidencia_url}`)}
-                    activeOpacity={0.8}
-                  >
-                    <IconEye size={18} color={PRIMARY} />
-                    <Text style={styles.evidenciaText}>Ver evidencia</Text>
-                  </TouchableOpacity>
-                )}
-                
-                {queja.respuesta && (
-                  <View style={styles.respuestaBox}>
-                    <Text style={styles.respuestaTitle}>Respuesta del administrador:</Text>
-                    <Text style={styles.respuestaText}>{queja.respuesta}</Text>
-                  </View>
-                )}
+                {!colapsada && (
+                  <View style={styles.ticketBody}>
+                    {!['Rechazado', 'Cerrado'].includes(queja.estado) && (
+                      <View style={styles.progressRow}>
+                        <View style={styles.progressSteps}>
+                          {['Abierto', 'En revisión', 'Resuelto'].map((paso, index) => {
+                            const completado = progresoActual >= index;
+                            return (
+                              <View key={paso} style={styles.progressStep}>
+                                <View style={[
+                                  styles.progressDot,
+                                  completado && { backgroundColor: estadoConfig.dot },
+                                  progresoActual === index && { borderWidth: 2, borderColor: estadoConfig.dot },
+                                ]}>
+                                  {completado && <Text style={styles.progressCheck}>✓</Text>}
+                                </View>
+                                <Text style={[
+                                  styles.progressText,
+                                  completado && { color: estadoConfig.color, fontWeight: '600' },
+                                ]}>{paso}</Text>
+                              </View>
+                            );
+                          })}
+                        </View>
+                        <View style={styles.progressTrack}>
+                          <View style={[
+                            styles.progressFill,
+                            { backgroundColor: estadoConfig.dot, width: progresoActual <= 0 ? '0%' : progresoActual === 1 ? '50%' : '100%' },
+                          ]} />
+                        </View>
+                      </View>
+                    )}
 
-                {queja.estado === 'Abierto' && (
-                  <TouchableOpacity
-                    style={styles.cancelBtn}
-                    disabled={cancelando === queja.id_solicitud}
-                    onPress={() => Alert.alert('Cancelar reclamo', '¿Seguro que quieres cancelar este reclamo?', [
-                      { text: 'No', style: 'cancel' },
-                      { text: 'Sí, cancelar', style: 'destructive', onPress: async () => {
-                        setCancelando(queja.id_solicitud);
-                        try { await cancelarQueja(queja.id_solicitud); await cargar(); }
-                        catch (err) { Alert.alert('Error', err.response?.data?.detail || 'No se pudo cancelar.'); }
-                        finally { setCancelando(null); }
-                      } },
-                    ])}
-                  >
-                    <Text style={styles.cancelBtnText}>{cancelando === queja.id_solicitud ? 'Cancelando...' : 'Cancelar reclamo'}</Text>
-                  </TouchableOpacity>
+                    <View style={styles.ticketMetadata}>
+                      <View style={styles.reasonTag}>
+                        <IconMessage size={12} color={PRIMARY} />
+                        <Text style={styles.reasonTagText}>{queja.asunto}</Text>
+                      </View>
+                      {tienda && (
+                        <View style={styles.storeTag}>
+                          <IconStoreAlt size={12} color="#0369A1" />
+                          <Text style={styles.storeTagText}>{tienda}</Text>
+                        </View>
+                      )}
+                      {fechaTexto && <Text style={styles.ticketDate}>{fechaTexto}</Text>}
+                      {tiempoTexto && <Text style={styles.ticketElapsed}>{tiempoTexto}</Text>}
+                    </View>
+
+                    {queja.descripcion ? (
+                      <View style={styles.descriptionBox}>
+                        <Text style={styles.historyDesc}>{queja.descripcion}</Text>
+                      </View>
+                    ) : null}
+
+                    {queja.evidencia_url && (
+                      <TouchableOpacity
+                        style={styles.evidenciaBtn}
+                        onPress={() => setVistaEvidencia(`${getApiBaseUrl()}${queja.evidencia_url}`)}
+                        activeOpacity={0.8}
+                      >
+                        <IconEye size={14} color={PRIMARY} />
+                        <Text style={styles.evidenciaText}>Ver evidencia</Text>
+                      </TouchableOpacity>
+                    )}
+
+                    {queja.respuesta && queja.respuesta !== 'Cancelado por el usuario' && (
+                      <View style={styles.respuestaBox}>
+                        <Text style={styles.respuestaText}>
+                          <Text style={styles.respuestaTitle}>Admin: </Text>{queja.respuesta}
+                        </Text>
+                      </View>
+                    )}
+
+                    {puedeChatear && (
+                      <View>
+                        <TouchableOpacity style={styles.chatToggle} onPress={() => abrirChat(queja.id_solicitud)} activeOpacity={0.8}>
+                          <IconMessage size={14} color={PRIMARY} />
+                          <Text style={styles.chatToggleText}>
+                            {chatAbierto === queja.id_solicitud ? 'Ocultar chat' : 'Chat'}
+                          </Text>
+                        </TouchableOpacity>
+                        {chatAbierto === queja.id_solicitud && (
+                          <View style={styles.chatPanel}>
+                            <View style={styles.chatHeader}>
+                              <IconMessage size={14} color={WHITE} />
+                              <Text style={styles.chatHeaderText}>Chat · #{queja.id_solicitud}</Text>
+                            </View>
+                            <ScrollView style={styles.chatMessages} contentContainerStyle={styles.chatMessagesContent} nestedScrollEnabled>
+                              {cargandoChat === queja.id_solicitud ? (
+                                <ActivityIndicator size="small" color={PRIMARY} />
+                              ) : !mensajesChat[queja.id_solicitud]?.length ? (
+                                <Text style={styles.chatEmpty}>Sin mensajes aún</Text>
+                              ) : mensajesChat[queja.id_solicitud].map((mensaje, index) => {
+                                const esComprador = mensaje.rol === 'usuario' || mensaje.rol === 'comprador';
+                                const esAdmin = mensaje.rol === 'admin' || mensaje.rol === 'administrador';
+                                const hora = mensaje.fecha_creacion || mensaje.creado_en;
+                                return (
+                                  <View key={mensaje.id_mensaje || index} style={[
+                                    styles.chatMessageRow,
+                                    esComprador ? styles.chatMessageBuyer : styles.chatMessageOther,
+                                  ]}>
+                                    <View style={[
+                                      styles.chatBubble,
+                                      esComprador ? styles.chatBubbleBuyer : esAdmin ? styles.chatBubbleAdmin : styles.chatBubbleOther,
+                                    ]}>
+                                      <Text style={[
+                                        styles.chatMessageText,
+                                        esComprador && styles.chatMessageBuyerText,
+                                        esAdmin && styles.chatMessageAdminText,
+                                      ]}>{mensaje.mensaje}</Text>
+                                    </View>
+                                    {hora ? (
+                                      <Text style={styles.chatTime}>
+                                        {new Date(hora).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })}
+                                      </Text>
+                                    ) : null}
+                                  </View>
+                                );
+                              })}
+                            </ScrollView>
+                            <View style={styles.chatInputRow}>
+                              <TextInput
+                                style={styles.chatInput}
+                                value={mensajeChatInput[queja.id_solicitud] || ''}
+                                onChangeText={(texto) => setMensajeChatInput((actuales) => ({
+                                  ...actuales,
+                                  [queja.id_solicitud]: texto,
+                                }))}
+                                placeholder="Escribe..."
+                                placeholderTextColor={GRAY}
+                                returnKeyType="send"
+                                onSubmitEditing={() => handleEnviarMensaje(queja.id_solicitud)}
+                              />
+                              <TouchableOpacity
+                                style={[
+                                  styles.chatSendButton,
+                                  (!(mensajeChatInput[queja.id_solicitud] || '').trim() || enviandoMensaje === queja.id_solicitud) && styles.chatSendDisabled,
+                                ]}
+                                onPress={() => handleEnviarMensaje(queja.id_solicitud)}
+                                disabled={!(mensajeChatInput[queja.id_solicitud] || '').trim() || enviandoMensaje === queja.id_solicitud}
+                                accessibilityRole="button"
+                                accessibilityLabel="Enviar mensaje"
+                              >
+                                {enviandoMensaje === queja.id_solicitud
+                                  ? <ActivityIndicator size="small" color={WHITE} />
+                                  : <Text style={styles.chatSendText}>→</Text>}
+                              </TouchableOpacity>
+                            </View>
+                          </View>
+                        )}
+                      </View>
+                    )}
+
+                    {queja.estado === 'Abierto' && (
+                      <TouchableOpacity
+                        style={styles.cancelBtn}
+                        disabled={cancelando === queja.id_solicitud}
+                        onPress={() => Alert.alert('Cancelar reclamo', '¿Seguro que quieres cancelar este reclamo? Esta acción no se puede deshacer.', [
+                          { text: 'No', style: 'cancel' },
+                          { text: 'Sí, cancelar', style: 'destructive', onPress: async () => {
+                            setCancelando(queja.id_solicitud);
+                            try { await cancelarQueja(queja.id_solicitud); await cargar(); }
+                            catch (err) { Alert.alert('Error', err.response?.data?.detail || 'No se pudo cancelar.'); }
+                            finally { setCancelando(null); }
+                          } },
+                        ])}
+                      >
+                        <Text style={styles.cancelBtnText}>{cancelando === queja.id_solicitud ? 'Cancelando...' : '⊗  Cancelar'}</Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
                 )}
               </View>
-            ))
+              );
+            })}
+            </View>
+            <View style={styles.pagination}>
+              <Text style={styles.paginationCount}>
+                {(paginaActualReclamos - 1) * itemsPorPagina + 1}-{Math.min(paginaActualReclamos * itemsPorPagina, reclamosFiltrados.length)} de {reclamosFiltrados.length}
+              </Text>
+              <View style={styles.paginationControls}>
+                <TouchableOpacity
+                  style={[styles.pageButton, paginaActualReclamos === 1 && styles.pageButtonDisabled]}
+                  onPress={() => setPaginaReclamos(paginaActualReclamos - 1)}
+                  disabled={paginaActualReclamos === 1}
+                ><Text style={styles.pageButtonText}>‹</Text></TouchableOpacity>
+                <View style={styles.currentPage}><Text style={styles.currentPageText}>{paginaActualReclamos}</Text></View>
+                <TouchableOpacity
+                  style={[styles.pageButton, paginaActualReclamos === totalPaginasReclamos && styles.pageButtonDisabled]}
+                  onPress={() => setPaginaReclamos(paginaActualReclamos + 1)}
+                  disabled={paginaActualReclamos === totalPaginasReclamos}
+                ><Text style={styles.pageButtonText}>›</Text></TouchableOpacity>
+              </View>
+              <TouchableOpacity
+                style={styles.pageSizeDropdown}
+                onPress={() => setShowPageSizeModal(true)}
+                accessibilityRole="button"
+                accessibilityLabel={`Solicitudes por página: ${itemsPorPagina}`}
+              >
+                <Text style={styles.pageSizeDropdownText}>{itemsPorPagina}</Text>
+                <Text style={styles.pageSizeChevron}>⌄</Text>
+              </TouchableOpacity>
+            </View>
+            </>
           )}
         </View>
-
+        )}
+        <Footer onLinkPress={() => {}} />
       </ScrollView>
+
+      <Modal
+        visible={showPageSizeModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowPageSizeModal(false)}
+      >
+        <TouchableOpacity
+          style={styles.pageSizeModalOverlay}
+          activeOpacity={1}
+          onPress={() => setShowPageSizeModal(false)}
+        >
+          <View style={styles.pageSizeMenu}>
+            {[5, 10, 15].map((cantidad) => (
+              <TouchableOpacity
+                key={cantidad}
+                style={[styles.pageSizeOption, itemsPorPagina === cantidad && styles.pageSizeOptionActive]}
+                onPress={() => {
+                  setItemsPorPagina(cantidad);
+                  setPaginaReclamos(1);
+                  setShowPageSizeModal(false);
+                }}
+              >
+                <Text style={[styles.pageSizeOptionText, itemsPorPagina === cantidad && styles.pageSizeOptionTextActive]}>
+                  {cantidad}
+                </Text>
+                {itemsPorPagina === cantidad && <IconCheck size={16} color={PRIMARY} />}
+              </TouchableOpacity>
+            ))}
+          </View>
+        </TouchableOpacity>
+      </Modal>
 
       {/* Modal Ordenes */}
       <Modal visible={showOrdenModal} transparent animationType="fade" onRequestClose={() => setShowOrdenModal(false)}>
@@ -473,122 +837,177 @@ export default function QuejasReclamos({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  safe:            { flex: 1, backgroundColor: '#7A1E3A' },
-  topHeader:       { flexDirection: 'row', alignItems: 'center', backgroundColor: '#7A1E3A', paddingHorizontal: 16, paddingVertical: 14, gap: 12 },
-  menuBtn:         { width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.15)', justifyContent: 'center', alignItems: 'center' },
-  menuIcon:        { color: WHITE, fontSize: 20, fontWeight: '700' },
-  topHeaderTitle:  { fontSize: 18, fontWeight: '800', color: WHITE },
-  scroll: { padding: 16, paddingBottom: 40, backgroundColor: PRIMARY },
-  
+  safe:            { flex: 1, backgroundColor: BG },
+  scroll: { padding: 16, paddingBottom: 40, backgroundColor: BG },
   headerBox: {
-    flexDirection: 'row', alignItems: 'center', gap: 16,
-    backgroundColor: WHITE, padding: 20, borderRadius: 16,
-    marginBottom: 20,
-    elevation: 2, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 6,
+    flexDirection: 'row', alignItems: 'center', gap: 14,
+    padding: 20, borderRadius: 16, marginBottom: 20,
+    elevation: 4, shadowColor: PRIMARY, shadowOpacity: 0.2, shadowRadius: 12,
   },
   iconWrap: {
-    width: 56, height: 56, borderRadius: 16,
-    backgroundColor: '#F7E9EE',
+    width: 54, height: 54, borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)',
     alignItems: 'center', justifyContent: 'center'
   },
-  title: { fontSize: 20, fontWeight: '800', color: PRIMARY, marginBottom: 4 },
-  subtitle: { fontSize: 13, color: GRAY, lineHeight: 18 },
+  subtitle: { fontSize: 13, color: 'rgba(255,255,255,0.82)', lineHeight: 19 },
+
+  tabs: { flexDirection: 'row', gap: 4, padding: 4, borderRadius: 12, backgroundColor: '#F3F4F6', marginBottom: 20 },
+  tab: { flex: 1, minHeight: 44, paddingHorizontal: 8, paddingVertical: 10, justifyContent: 'center', alignItems: 'center', borderRadius: 8 },
+  tabActive: { backgroundColor: WHITE, elevation: 2, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 4 },
+  tabText: { color: GRAY, fontSize: 12, fontWeight: '500', textAlign: 'center' },
+  tabTextActive: { color: PRIMARY, fontWeight: '700' },
 
   successBox: {
     flexDirection: 'row', alignItems: 'center', gap: 10,
-    backgroundColor: '#F0FDF4', padding: 16, borderRadius: 12,
-    borderWidth: 1, borderColor: '#86EFAC', marginBottom: 20,
+    backgroundColor: '#F0FDF4', padding: 14, borderRadius: 12,
+    borderWidth: 1, borderColor: '#86EFAC', marginBottom: 16,
   },
   successText: { fontSize: 14, color: '#166534', fontWeight: '500', flex: 1 },
+  errorBox: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#FEF2F2', padding: 14, borderRadius: 12, borderWidth: 1, borderColor: '#FCA5A5', marginBottom: 16 },
+  errorText: { flex: 1, color: '#991B1B', fontSize: 13, lineHeight: 18 },
 
   card: {
-    backgroundColor: WHITE, borderRadius: 16, padding: 20, marginBottom: 20,
-    elevation: 2, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 6,
+    backgroundColor: WHITE, borderRadius: 16, padding: 16, marginBottom: 20,
+    elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8,
   },
-  cardHeader: { borderBottomWidth: 1, borderBottomColor: BORDER, paddingBottom: 16, marginBottom: 16 },
-  cardTitle: { fontSize: 18, fontWeight: '800', color: PRIMARY, marginBottom: 4 },
-  cardSubtitle: { fontSize: 13, color: GRAY },
-
-  emptyBox: { backgroundColor: BG, padding: 24, borderRadius: 12, alignItems: 'center', gap: 12 },
-  emptyText: { textAlign: 'center', color: GRAY, fontSize: 14, fontWeight: '500' },
-
-  label: { fontSize: 14, fontWeight: '700', color: '#333', marginBottom: 8, marginTop: 16 },
-  
+  emptyBox: { backgroundColor: '#FAFAFA', padding: 28, borderRadius: 10, borderWidth: 1, borderColor: BORDER, borderStyle: 'dashed', alignItems: 'center', gap: 8 },
+  emptyIcon: { fontSize: 30, marginBottom: 3 },
+  emptyText: { textAlign: 'center', color: GRAY, fontSize: 13, fontWeight: '500' },
+  purchaseGroup: { gap: 12, padding: 12, backgroundColor: '#FDF8F9', borderRadius: 8, borderWidth: 1, borderColor: '#F0DDE4', marginBottom: 12 },
+  problemGroup: { gap: 8, padding: 12, backgroundColor: '#FAFAFA', borderRadius: 8, borderWidth: 1, borderColor: BORDER },
+  groupTitle: { color: PRIMARY, fontSize: 13, fontWeight: '700', marginBottom: 2 },
+  label: { fontSize: 12, fontWeight: '600', color: '#374151', marginTop: 8, marginBottom: 2 },
+  optionalText: { color: GRAY, fontWeight: '400' },
   selectInput: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    borderWidth: 1, borderColor: '#DDD', borderRadius: 12,
-    paddingHorizontal: 16, height: 52, backgroundColor: WHITE,
+    borderWidth: 1.5, borderColor: BORDER, borderRadius: 10,
+    paddingHorizontal: 12, minHeight: 46, backgroundColor: WHITE,
   },
-  selectText: { fontSize: 14, color: '#333' },
-
-  row: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  selectText: { flex: 1, fontSize: 13, color: '#1A1A1A' },
+  placeholderText: { color: GRAY },
+  input: { borderWidth: 1.5, borderColor: BORDER, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 11, fontSize: 14, color: '#1A1A1A', backgroundColor: WHITE },
   uploadBtn: {
-    borderWidth: 1, borderColor: '#DDD', borderRadius: 8,
-    paddingHorizontal: 12, paddingVertical: 10, backgroundColor: '#F9F9F9',
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    borderWidth: 1.5, borderColor: '#D1D5DB', borderStyle: 'dashed', borderRadius: 8,
+    paddingHorizontal: 10, paddingVertical: 8, backgroundColor: WHITE,
   },
-  uploadBtnText: { fontSize: 13, color: '#333', fontWeight: '500' },
-  fileText: { flex: 1, fontSize: 13, color: GRAY },
-
+  uploadChoice: { backgroundColor: '#F7E9EE', color: PRIMARY, borderRadius: 4, paddingHorizontal: 10, paddingVertical: 5, fontSize: 12, fontWeight: '700', overflow: 'hidden' },
+  fileText: { flex: 1, fontSize: 12, color: GRAY },
   textArea: {
-    borderWidth: 1, borderColor: '#DDD', borderRadius: 12,
-    padding: 16, fontSize: 14, backgroundColor: WHITE,
-    minHeight: 100,
+    borderWidth: 1.5, borderColor: BORDER, borderRadius: 8,
+    padding: 12, fontSize: 13, color: '#1A1A1A', backgroundColor: WHITE,
+    minHeight: 84, lineHeight: 19,
   },
-
   submitBtn: {
-    backgroundColor: PRIMARY, borderRadius: 12,
-    paddingVertical: 16, alignItems: 'center',
-    marginTop: 24,
-    shadowColor: PRIMARY, shadowOpacity: 0.2, shadowRadius: 8, elevation: 4,
+    alignSelf: 'flex-end', minWidth: 105, backgroundColor: PRIMARY, borderRadius: 8,
+    paddingHorizontal: 24, paddingVertical: 11, alignItems: 'center',
+    marginTop: 10, shadowColor: PRIMARY, shadowOpacity: 0.2, shadowRadius: 6, elevation: 3,
   },
   submitBtnDisabled: { opacity: 0.7 },
-  submitBtnText: { color: WHITE, fontSize: 15, fontWeight: '700' },
+  submitBtnText: { color: WHITE, fontSize: 13, fontWeight: '700' },
 
-  historyTitle: { fontSize: 18, fontWeight: '800', color: PRIMARY, marginBottom: 16 },
-  historyHeading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
-  historyCount: { color: PRIMARY, backgroundColor: '#F7E9EE', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, fontSize: 11, fontWeight: '700' },
-  filterRow: { gap: 8, paddingBottom: 12 },
-  filterBtn: { borderWidth: 1, borderColor: '#DDD', borderRadius: 16, paddingHorizontal: 12, paddingVertical: 6, backgroundColor: WHITE },
-  filterBtnActive: { backgroundColor: PRIMARY, borderColor: PRIMARY },
-  filterText: { color: '#555', fontSize: 12, fontWeight: '600' },
+  historyTitle: { flex: 1, fontSize: 17, fontWeight: '800', color: '#111827' },
+  historyHeading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: '#F0F0F0' },
+  historyCount: { color: PRIMARY, backgroundColor: '#FDF2F4', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 12, fontSize: 11, fontWeight: '700', overflow: 'hidden' },
+  filterRow: { gap: 4, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#F0F0F0' },
+  filterBtn: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 4 },
+  filterBtnActive: { backgroundColor: '#3B82F6' },
+  filterText: { color: PRIMARY, fontSize: 12, fontWeight: '400' },
   filterTextActive: { color: WHITE },
-  emptyHistory: { textAlign: 'center', color: WHITE, paddingVertical: 24 },
-  historyItem: {
-    borderTopWidth: 1, borderTopColor: BORDER,
-    paddingVertical: 16,
-  },
-  historyHeader: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start',
-    marginBottom: 8, gap: 10,
-  },
-  historyMeta: { fontSize: 11, color: GRAY, marginBottom: 3 },
-  historyItemTitle: { fontSize: 15, fontWeight: '700', color: '#333', lineHeight: 20 },
-  historyStore: { fontSize: 12, color: PRIMARY, marginTop: 3 },
-  progressRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12, paddingHorizontal: 4 },
-  progressStep: { alignItems: 'center', flex: 1 },
-  progressDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#E5DCE0', marginBottom: 4 },
-  progressDotActive: { backgroundColor: PRIMARY },
-  progressText: { color: '#AAA', fontSize: 10, textAlign: 'center' },
-  progressTextActive: { color: PRIMARY, fontWeight: '700' },
-  badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
-  badgeText: { fontSize: 11, fontWeight: '700' },
-  historyDesc: { fontSize: 14, color: '#555', lineHeight: 20, marginBottom: 12 },
+  emptyHistory: { alignItems: 'center', paddingVertical: 24, gap: 8 },
+  ticketList: { gap: 12 },
+  ticketCard: { borderWidth: 1, borderLeftWidth: 4, borderRadius: 14, overflow: 'hidden', backgroundColor: WHITE, elevation: 2, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 8 },
+  ticketHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12, paddingVertical: 10, backgroundColor: '#FDF8F9', borderBottomWidth: 1, borderBottomColor: '#F0E8EC' },
+  ticketHeaderCollapsed: { borderBottomWidth: 0 },
+  ticketImage: { width: 40, height: 40, borderRadius: 6, backgroundColor: '#F3F4F6' },
+  ticketImageFallback: { width: 40, height: 40, borderRadius: 6, backgroundColor: PRIMARY, justifyContent: 'center', alignItems: 'center' },
+  ticketImageNumber: { color: WHITE, fontSize: 10, fontWeight: '800' },
+  ticketHeadingText: { flex: 1, minWidth: 0 },
+  ticketNumberRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 2 },
+  ticketNumber: { overflow: 'hidden', backgroundColor: PRIMARY, color: WHITE, borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2, fontSize: 10, fontWeight: '800' },
+  ticketOrder: { color: PRIMARY, fontSize: 10, fontWeight: '600' },
+  ticketBookTitle: { color: '#111827', fontSize: 13, lineHeight: 17, fontWeight: '800' },
+  collapsedSummary: { color: GRAY, fontSize: 10, marginTop: 2 },
+  collapseIcon: { width: 18, color: PRIMARY, fontSize: 19, fontWeight: '700', textAlign: 'center' },
+  ticketBody: { gap: 10, padding: 12 },
+  progressRow: { padding: 10, backgroundColor: '#FAFAFA', borderWidth: 1, borderColor: BORDER, borderRadius: 6 },
+  progressSteps: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
+  progressStep: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, flex: 1 },
+  progressDot: { width: 16, height: 16, borderRadius: 8, backgroundColor: '#E5E7EB', justifyContent: 'center', alignItems: 'center' },
+  progressCheck: { color: WHITE, fontSize: 9, fontWeight: '900' },
+  progressText: { color: GRAY, fontSize: 9, textAlign: 'center', flexShrink: 1 },
+  progressTrack: { height: 3, borderRadius: 2, backgroundColor: '#E5E7EB', overflow: 'hidden' },
+  progressFill: { height: 3, borderRadius: 2 },
+  ticketMetadata: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 5 },
+  reasonTag: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 7, paddingVertical: 4, borderRadius: 4, backgroundColor: '#FDF2F4', borderWidth: 1, borderColor: '#F0DDE4' },
+  reasonTagText: { color: PRIMARY, fontSize: 10, fontWeight: '600', flexShrink: 1 },
+  storeTag: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 7, paddingVertical: 4, borderRadius: 4, backgroundColor: '#F0F9FF', borderWidth: 1, borderColor: '#BAE6FD' },
+  storeTagText: { color: '#0369A1', fontSize: 10, fontWeight: '600', flexShrink: 1 },
+  ticketDate: { color: GRAY, fontSize: 10 },
+  ticketElapsed: { color: GRAY, fontSize: 9, marginLeft: 'auto' },
+  descriptionBox: { paddingHorizontal: 9, paddingVertical: 8, backgroundColor: '#FAFAFA', borderWidth: 1, borderColor: BORDER, borderRadius: 6 },
+  historyDesc: { color: '#374151', fontSize: 12, lineHeight: 18 },
+  badge: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 9, paddingVertical: 5, borderRadius: 14 },
+  badgeDot: { width: 5, height: 5, borderRadius: 3, backgroundColor: WHITE },
+  badgeText: { fontSize: 10, fontWeight: '700', color: WHITE },
 
   evidenciaBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
     backgroundColor: '#F7E9EE', alignSelf: 'flex-start',
-    paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8,
+    paddingHorizontal: 9, paddingVertical: 6, borderRadius: 5,
   },
-  evidenciaText: { fontSize: 13, fontWeight: '700', color: PRIMARY },
+  evidenciaText: { fontSize: 10, fontWeight: '700', color: PRIMARY },
 
   respuestaBox: {
-    backgroundColor: BG, padding: 14, borderRadius: 10,
+    backgroundColor: '#FAFAFA', padding: 12, borderRadius: 8,
     borderLeftWidth: 3, borderLeftColor: PRIMARY, marginTop: 12,
   },
-  respuestaTitle: { fontSize: 13, fontWeight: '700', color: PRIMARY, marginBottom: 4 },
-  respuestaText: { fontSize: 14, color: '#555', lineHeight: 20 },
-  cancelBtn: { alignSelf: 'flex-end', borderWidth: 1, borderColor: '#FCA5A5', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8, marginTop: 12 },
-  cancelBtnText: { color: '#DC2626', fontSize: 12, fontWeight: '700' },
+  respuestaTitle: { fontSize: 11, fontWeight: '700', color: PRIMARY },
+  respuestaText: { fontSize: 12, color: '#374151', lineHeight: 18 },
+  chatToggle: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', gap: 5, paddingHorizontal: 9, paddingVertical: 6, borderWidth: 1, borderColor: '#E0DBD4', backgroundColor: WHITE, borderRadius: 6 },
+  chatToggleText: { color: PRIMARY, fontSize: 10, fontWeight: '600' },
+  chatPanel: { marginTop: 8, borderWidth: 1, borderColor: BORDER, borderRadius: 8, overflow: 'hidden', backgroundColor: WHITE, elevation: 1 },
+  chatHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 10, paddingVertical: 8, backgroundColor: PRIMARY },
+  chatHeaderText: { color: WHITE, fontSize: 11, fontWeight: '700' },
+  chatMessages: { maxHeight: 230, minHeight: 60, backgroundColor: '#FAFAFA' },
+  chatMessagesContent: { padding: 10, gap: 8, flexGrow: 1, justifyContent: 'flex-end' },
+  chatEmpty: { color: GRAY, fontSize: 11, textAlign: 'center', marginVertical: 18 },
+  chatMessageRow: { gap: 2 },
+  chatMessageBuyer: { alignItems: 'flex-end' },
+  chatMessageOther: { alignItems: 'flex-start' },
+  chatBubble: { maxWidth: '88%', paddingHorizontal: 10, paddingVertical: 7, borderRadius: 12 },
+  chatBubbleBuyer: { backgroundColor: PRIMARY },
+  chatBubbleAdmin: { backgroundColor: '#E0F2FE', borderWidth: 1, borderColor: '#BAE6FD' },
+  chatBubbleOther: { backgroundColor: '#FAFAFA', borderWidth: 1, borderColor: BORDER },
+  chatMessageText: { color: '#374151', fontSize: 12, lineHeight: 17 },
+  chatMessageBuyerText: { color: WHITE },
+  chatMessageAdminText: { color: '#1A1A1A' },
+  chatTime: { color: GRAY, fontSize: 9 },
+  chatInputRow: { flexDirection: 'row', alignItems: 'center', gap: 6, padding: 8, borderTopWidth: 1, borderTopColor: BORDER, backgroundColor: '#FAFAFA' },
+  chatInput: { flex: 1, minHeight: 36, borderWidth: 1, borderColor: BORDER, borderRadius: 6, paddingHorizontal: 9, paddingVertical: 6, backgroundColor: WHITE, color: '#1A1A1A', fontSize: 12 },
+  chatSendButton: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center', backgroundColor: PRIMARY, borderRadius: 6 },
+  chatSendDisabled: { backgroundColor: '#D1C0C5' },
+  chatSendText: { color: WHITE, fontSize: 18, fontWeight: '700' },
+  cancelBtn: { alignSelf: 'flex-end', borderWidth: 1, borderColor: '#FCA5A5', backgroundColor: '#FFF', borderRadius: 7, paddingHorizontal: 12, paddingVertical: 7 },
+  cancelBtnText: { color: '#DC2626', fontSize: 10, fontWeight: '700' },
+  pagination: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8, marginTop: 14, paddingTop: 10, borderTopWidth: 1, borderTopColor: '#F0F0F0' },
+  paginationCount: { color: GRAY, fontSize: 10, fontWeight: '500' },
+  paginationControls: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  pageButton: { minWidth: 26, height: 26, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: BORDER, borderRadius: 5, backgroundColor: WHITE },
+  pageButtonDisabled: { opacity: 0.45 },
+  pageButtonText: { color: '#374151', fontSize: 14, fontWeight: '600' },
+  currentPage: { minWidth: 24, height: 24, alignItems: 'center', justifyContent: 'center', backgroundColor: PRIMARY, borderRadius: 4 },
+  currentPageText: { color: WHITE, fontSize: 11, fontWeight: '700' },
+  pageSizeDropdown: { minWidth: 58, height: 30, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, paddingHorizontal: 8, borderWidth: 1, borderColor: BORDER, borderRadius: 5, backgroundColor: WHITE },
+  pageSizeDropdownText: { color: '#374151', fontSize: 11, fontWeight: '600' },
+  pageSizeChevron: { color: '#374151', fontSize: 13, marginTop: -4 },
+  pageSizeModalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.18)', justifyContent: 'flex-end', alignItems: 'flex-end', padding: 20 },
+  pageSizeMenu: { minWidth: 110, padding: 4, borderRadius: 8, backgroundColor: WHITE, elevation: 8, shadowColor: '#000', shadowOpacity: 0.18, shadowRadius: 12 },
+  pageSizeOption: { minHeight: 42, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 12, borderRadius: 5 },
+  pageSizeOptionActive: { backgroundColor: '#FDF2F4' },
+  pageSizeOptionText: { color: '#374151', fontSize: 13 },
+  pageSizeOptionTextActive: { color: PRIMARY, fontWeight: '700' },
 
   // Modals
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },

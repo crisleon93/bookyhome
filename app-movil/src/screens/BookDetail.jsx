@@ -3,6 +3,7 @@ import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity, Alert, Tex
 import { CartContext } from '../context/CartContext';
 import { AuthContext } from '../context/AuthContext';
 import { getReviewsForBook, createReview, crearSalaChat, getBookById, getVariantes, getApiBaseUrl } from '../services/api';
+import Footer from '../components/Footer';
 
 export default function BookDetail({ route, navigation }) {
   const { book: bookParam } = route.params;
@@ -323,6 +324,7 @@ export default function BookDetail({ route, navigation }) {
             </TouchableOpacity>
           </View>
         </View>
+        <Footer onLinkPress={() => {}} />
       </ScrollView>
 
       <Modal
