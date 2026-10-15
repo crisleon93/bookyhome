@@ -11,6 +11,7 @@ import {
   getPlanesHerramientas, suscribirPlanHerramientas,
 } from '../services/api';
 import SidebarVendedor from '../components/SidebarVendedor';
+import Footer from '../components/Footer';
 
 const PRIMARY = '#7A1E3A';
 const BG = '#FAF8F5';
@@ -191,6 +192,7 @@ export default function SuscripcionesVendedor({ navigation }) {
               <Text style={styles.impulsosButtonText}>🚀 Ver y contratar Impulsos</Text>
             </TouchableOpacity>
           </View>
+          <Footer onLinkPress={() => {}} />
         </ScrollView>
       )}
 

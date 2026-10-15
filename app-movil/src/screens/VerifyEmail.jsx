@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import {
-  View, Text, TouchableOpacity, StyleSheet, ActivityIndicator
+  View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, ScrollView
 } from 'react-native';
 import { verifyEmail } from '../services/api';
+import Footer from '../components/Footer';
 
 export default function VerifyEmail({ route, navigation }) {
   // El token llega por deep link como parámetro de navegación
@@ -31,36 +32,45 @@ export default function VerifyEmail({ route, navigation }) {
   };
 
   if (estado === 'cargando') return (
-    <View style={s.center}>
-      <ActivityIndicator size="large" color="#7A1E3A" style={{ marginBottom: 20 }} />
-      <Text style={s.title}>Verificando tu cuenta...</Text>
-      <Text style={s.subtitle}>Por favor espera un momento.</Text>
-    </View>
+    <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+      <View style={s.center}>
+        <ActivityIndicator size="large" color="#7A1E3A" style={{ marginBottom: 20 }} />
+        <Text style={s.title}>Verificando tu cuenta...</Text>
+        <Text style={s.subtitle}>Por favor espera un momento.</Text>
+      </View>
+      <Footer onLinkPress={() => {}} />
+    </ScrollView>
   );
 
   if (estado === 'exito') return (
-    <View style={s.center}>
-      <Text style={s.icon}>🎉</Text>
-      <Text style={s.title}>¡Cuenta verificada!</Text>
-      <Text style={s.subtitle}>Tu correo ha sido verificado correctamente. Ya puedes iniciar sesión.</Text>
-      <TouchableOpacity style={s.btn} onPress={() => navigation.navigate('Login')}>
-        <Text style={s.btnText}>Iniciar sesión</Text>
-      </TouchableOpacity>
-    </View>
+    <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+      <View style={s.center}>
+        <Text style={s.icon}>🎉</Text>
+        <Text style={s.title}>¡Cuenta verificada!</Text>
+        <Text style={s.subtitle}>Tu correo ha sido verificado correctamente. Ya puedes iniciar sesión.</Text>
+        <TouchableOpacity style={s.btn} onPress={() => navigation.navigate('Login')}>
+          <Text style={s.btnText}>Iniciar sesión</Text>
+        </TouchableOpacity>
+      </View>
+      <Footer onLinkPress={() => {}} />
+    </ScrollView>
   );
 
   return (
-    <View style={s.center}>
-      <Text style={s.icon}>❌</Text>
-      <Text style={s.title}>Verificación fallida</Text>
-      <Text style={s.subtitle}>{mensajeError}</Text>
-      <TouchableOpacity style={s.btn} onPress={verificar}>
-        <Text style={s.btnText}>Reintentar</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={s.secondaryBtn} onPress={() => navigation.navigate('Login')}>
-        <Text style={s.secondaryText}>Ir al inicio de sesión</Text>
-      </TouchableOpacity>
-    </View>
+    <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+      <View style={s.center}>
+        <Text style={s.icon}>❌</Text>
+        <Text style={s.title}>Verificación fallida</Text>
+        <Text style={s.subtitle}>{mensajeError}</Text>
+        <TouchableOpacity style={s.btn} onPress={verificar}>
+          <Text style={s.btnText}>Reintentar</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={s.secondaryBtn} onPress={() => navigation.navigate('Login')}>
+          <Text style={s.secondaryText}>Ir al inicio de sesión</Text>
+        </TouchableOpacity>
+      </View>
+      <Footer onLinkPress={() => {}} />
+    </ScrollView>
   );
 }
 

@@ -8,6 +8,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { AuthContext } from '../context/AuthContext';
 import { getApiBaseUrl, getMisVentas } from '../services/api';
 import SidebarVendedor from '../components/SidebarVendedor';
+import Footer from '../components/Footer';
 
 const PRIMARY = '#7A1E3A';
 const BG = '#FAF8F5';
@@ -191,6 +192,7 @@ export default function VentasVendedor({ navigation }) {
           ) : null}
           ListEmptyComponent={contenidoVacio}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refrescar} tintColor={PRIMARY} colors={[PRIMARY]} />}
+          ListFooterComponent={<Footer onLinkPress={() => {}} />}
         />
       )}
 

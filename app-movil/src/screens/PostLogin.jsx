@@ -32,6 +32,7 @@ import {
   IconBook, IconCart, IconBookOpen,
 } from '../components/Icons';
 import CarruselAnimado from '../components/CarruselAnimado';
+import Footer from '../components/Footer';
 
 // ── Paleta (idéntica al frontend) ─────────────────────────────────────────────
 const VINOTINTO  = '#7A1E3A';
@@ -425,6 +426,7 @@ export default function PostLogin({ navigation }) {
         )}
 
         <View style={{ height: 48 }} />
+        <Footer onLinkPress={() => {}} />
       </ScrollView>
 
       <Modal

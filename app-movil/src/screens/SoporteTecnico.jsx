@@ -10,6 +10,7 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Footer from '../components/Footer';
 import { crearSoporte, getSoporte } from '../services/api';
 
 const PRIMARY = '#7A1E3A';
@@ -163,6 +164,7 @@ export default function SoporteTecnico() {
             })
           )}
         </View>
+        <Footer onLinkPress={() => {}} />
       </ScrollView>
     </SafeAreaView>
   );

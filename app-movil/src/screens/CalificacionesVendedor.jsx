@@ -9,6 +9,7 @@ import { AuthContext } from '../context/AuthContext';
 import { getCalificacionesVendedor, getLibreria } from '../services/api';
 import SidebarVendedor from '../components/SidebarVendedor';
 import { IconCalendar, IconMessage, IconStar } from '../components/Icons';
+import Footer from '../components/Footer';
 
 const PRIMARY = '#7A1E3A';
 const BG = '#FAF8F5';
@@ -151,6 +152,7 @@ export default function CalificacionesVendedor({ navigation }) {
           ListEmptyComponent={vacio}
           contentContainerStyle={styles.list}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refrescar} tintColor={PRIMARY} colors={[PRIMARY]} />}
+          ListFooterComponent={<Footer onLinkPress={() => {}} />}
         />
       )}
 

@@ -9,6 +9,7 @@ import {
 } from '../services/api';
 import { CartContext } from '../context/CartContext';
 import { AuthContext } from '../context/AuthContext';
+import Footer from '../components/Footer';
 
 function PaymentMethodHeader({ icon, title, description, totalLabel, total, palette }) {
   return (
@@ -528,14 +529,16 @@ export default function Checkout({ route, navigation }) {
             <Text style={styles.backToCartText}>Ir a mis compras</Text>
           </TouchableOpacity>
         </View>
+        <Footer onLinkPress={() => {}} />
       </ScrollView>
     );
   }
 
   if (paymentSuccess) {
     return (
-      <View style={styles.successContainer}>
-        <View style={styles.successCard}>
+      <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+        <View style={styles.successContainer}>
+          <View style={styles.successCard}>
           <Text style={styles.successIcon}>✓</Text>
           <Text style={styles.successTitle}>¡Pago Exitoso!</Text>
           <Text style={styles.successDesc}>{emailConfirmation || 'Tu compra ha sido procesada de manera segura.'}</Text>
@@ -577,8 +580,10 @@ export default function Checkout({ route, navigation }) {
           <TouchableOpacity style={[styles.homeBtn, { marginTop: order.items?.some(i => i.variante_label?.includes('Digital')) ? 10 : 0 }]} onPress={() => navigation.navigate('PostLogin')}>
             <Text style={styles.homeBtnText}>Volver al Catálogo</Text>
           </TouchableOpacity>
+          </View>
         </View>
-      </View>
+        <Footer onLinkPress={() => {}} />
+      </ScrollView>
     );
   }
 
@@ -1189,6 +1194,7 @@ export default function Checkout({ route, navigation }) {
           </View>
         </View>
       </Modal>
+      <Footer onLinkPress={() => {}} />
     </ScrollView>
   );
 }

@@ -1,10 +1,12 @@
 // src/components/Footer.jsx
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useRef, useState } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, useWindowDimensions } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const CARBON = '#2A2A2A';
 const WHITE  = '#FFFFFF';
 const VINOTINTO = '#7A1E3A';
+const BOTTOM_GUTTER = 40;
 
 const COLUMNS = [
   {
@@ -25,9 +27,35 @@ const COLUMNS = [
   },
 ];
 
-export default function Footer({ onLinkPress }) {
+export default function Footer({ onLinkPress, style }) {
+  const footerRef = useRef(null);
+  const measured = useRef(false);
+  const [leftOffset, setLeftOffset] = useState(0);
+  const { width } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+
+  const measurePosition = () => {
+    if (measured.current) return;
+    measured.current = true;
+    footerRef.current?.measureInWindow?.((x) => setLeftOffset(x));
+  };
+
   return (
-    <View style={styles.footer}>
+    <View
+      ref={footerRef}
+      collapsable={false}
+      onLayout={measurePosition}
+      style={[
+        styles.footer,
+        {
+          width,
+          marginLeft: -leftOffset,
+          marginBottom: -BOTTOM_GUTTER,
+          paddingBottom: styles.footer.paddingBottom + BOTTOM_GUTTER + insets.bottom,
+        },
+        style,
+      ]}
+    >
 
       {/* Columnas */}
       <View style={styles.grid}>

@@ -4,6 +4,7 @@ import {
   StyleSheet, ActivityIndicator, Image, Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Footer from '../components/Footer';
 import * as ImagePicker from 'expo-image-picker';
 import { getCategorias, publicarLibro, updateLibro, updateStockLibro, crearVariante } from '../services/api';
 import BarcodeScanner from '../components/BarcodeScanner';
@@ -243,6 +244,7 @@ export default function PublicarLibro({ navigation, route }) {
           <TouchableOpacity style={s.submitBtn} onPress={handleGuardar} disabled={cargando} activeOpacity={0.85}>
             {cargando ? <ActivityIndicator color={WHITE} /> : <Text style={s.submitBtnText}>📦 Guardar stock</Text>}
           </TouchableOpacity>
+          <Footer onLinkPress={() => {}} />
         </ScrollView>
       </SafeAreaView>
     );
@@ -442,6 +444,7 @@ export default function PublicarLibro({ navigation, route }) {
           }
         </TouchableOpacity>
 
+        <Footer onLinkPress={() => {}} />
       </ScrollView>
 
       {/* ── Modal categoría ── */}

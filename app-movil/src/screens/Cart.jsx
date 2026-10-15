@@ -9,6 +9,7 @@ import { CartContext } from '../context/CartContext';
 import { AuthContext } from '../context/AuthContext';
 import { cancelOrder, checkoutCarrito, getApiBaseUrl, getDirecciones, getOrdenes } from '../services/api';
 import { IconCart } from '../components/Icons';
+import Footer from '../components/Footer';
 
 function PendingOrderIcon({ type, color = 'currentColor', size = 14 }) {
   return (
@@ -287,30 +288,35 @@ export default function Cart({ navigation }) {
             </TouchableOpacity>
           </View>
         )}
-        ListFooterComponent={cart.length > 0 ? (
-          <View style={styles.deliveryCard}>
-            <Text style={styles.deliveryLabel}>Dirección de entrega</Text>
-            {direccionesLoading ? <ActivityIndicator color="#7A1E3A" /> : direcciones.length === 0 ? (
-              <Text style={styles.deliveryEmpty}>Aún no tienes direcciones registradas.</Text>
-            ) : (
-              <View style={styles.addressList}>
-                {direcciones.map((direccion) => (
-                  <TouchableOpacity
-                    key={direccion.id_direccion}
-                    style={[styles.addressOption, Number(direccionSeleccionadaId) === Number(direccion.id_direccion) && styles.addressOptionSelected]}
-                    onPress={() => setDireccionSeleccionadaId(direccion.id_direccion)}
-                  >
-                    <Text style={styles.addressOptionTitle}>{direccion.alias_direccion || 'Dirección'}{direccion.es_principal ? ' · Principal' : ''}</Text>
-                    <Text style={styles.addressOptionText}>{direccion.direccion}, {direccion.ciudad}</Text>
-                  </TouchableOpacity>
-                ))}
+        ListFooterComponent={
+          <>
+            {cart.length > 0 && (
+              <View style={styles.deliveryCard}>
+                <Text style={styles.deliveryLabel}>Dirección de entrega</Text>
+                {direccionesLoading ? <ActivityIndicator color="#7A1E3A" /> : direcciones.length === 0 ? (
+                  <Text style={styles.deliveryEmpty}>Aún no tienes direcciones registradas.</Text>
+                ) : (
+                  <View style={styles.addressList}>
+                    {direcciones.map((direccion) => (
+                      <TouchableOpacity
+                        key={direccion.id_direccion}
+                        style={[styles.addressOption, Number(direccionSeleccionadaId) === Number(direccion.id_direccion) && styles.addressOptionSelected]}
+                        onPress={() => setDireccionSeleccionadaId(direccion.id_direccion)}
+                      >
+                        <Text style={styles.addressOptionTitle}>{direccion.alias_direccion || 'Dirección'}{direccion.es_principal ? ' · Principal' : ''}</Text>
+                        <Text style={styles.addressOptionText}>{direccion.direccion}, {direccion.ciudad}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                )}
+                <TouchableOpacity style={styles.addAddressBtn} onPress={() => navigation.navigate('Direcciones')}>
+                  <Text style={styles.addAddressBtnText}>Administrar direcciones</Text>
+                </TouchableOpacity>
               </View>
             )}
-            <TouchableOpacity style={styles.addAddressBtn} onPress={() => navigation.navigate('Direcciones')}>
-              <Text style={styles.addAddressBtnText}>Administrar direcciones</Text>
-            </TouchableOpacity>
-          </View>
-        ) : null}
+            <Footer onLinkPress={() => {}} />
+          </>
+        }
       />
 
       {/* Resumen fijo al fondo */}

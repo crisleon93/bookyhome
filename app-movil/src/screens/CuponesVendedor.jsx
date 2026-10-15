@@ -20,6 +20,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { AuthContext } from '../context/AuthContext';
 import SidebarVendedor from '../components/SidebarVendedor';
 import CalendarioPicker from '../components/CalendarioPicker';
+import Footer from '../components/Footer';
 import {
   getCuponesVendedor,
   crearCupon,
@@ -625,6 +626,7 @@ export default function CuponesVendedor({ navigation }) {
               />
             ))
           )}
+          <Footer onLinkPress={() => {}} />
         </ScrollView>
       )}
 

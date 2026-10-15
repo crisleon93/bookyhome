@@ -8,6 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { getMisPedidos, actualizarEstadoOrden, registrarGuia, getEmpresasMensajeria } from '../services/api';
 import { AuthContext } from '../context/AuthContext';
 import SidebarVendedor from '../components/SidebarVendedor';
+import Footer from '../components/Footer';
 
 const PRIMARY = '#7A1E3A';
 const WHITE = '#FFFFFF';
@@ -259,6 +260,7 @@ export default function PedidosVendedor({ navigation }) {
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={PRIMARY} />
           }
+          ListFooterComponent={<Footer onLinkPress={() => {}} />}
         />
       )}
 

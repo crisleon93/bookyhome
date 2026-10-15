@@ -15,6 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { AuthContext } from '../context/AuthContext';
 import SidebarVendedor from '../components/SidebarVendedor';
+import Footer from '../components/Footer';
 import {
   crearCuentaBancariaVendedor,
   eliminarCuentaBancariaVendedor,
@@ -329,6 +330,7 @@ export default function MetodosCobroVendedor({ navigation }) {
               <Text style={styles.summaryText}>Final {String(principal.numero_cuenta || '').slice(-4)}</Text>
             </View>
           )}
+          <Footer onLinkPress={() => {}} />
         </ScrollView>
       )}
 

@@ -8,6 +8,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { getConfigLibreria, updateConfigLibreria, uploadTiendaImage, getApiBaseUrl } from '../services/api';
 import { AuthContext } from '../context/AuthContext';
 import SidebarVendedor from '../components/SidebarVendedor';
+import Footer from '../components/Footer';
 
 export default function ConfiguracionTienda({ navigation }) {
   const { user, signOut } = useContext(AuthContext);
@@ -235,6 +236,7 @@ export default function ConfiguracionTienda({ navigation }) {
         {loading && saving === false && (
           <ActivityIndicator size="small" color="#7A1E3A" style={{ marginTop: 10 }} />
         )}
+        <Footer onLinkPress={() => {}} />
       </ScrollView>
 
       <SidebarVendedor

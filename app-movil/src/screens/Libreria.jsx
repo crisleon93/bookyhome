@@ -8,6 +8,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { getMisLibros, deleteLibro, getAlertasStock, getApiBaseUrl } from '../services/api';
 import { AuthContext } from '../context/AuthContext';
 import SidebarVendedor from '../components/SidebarVendedor';
+import Footer from '../components/Footer';
 
 const PRIMARY = '#7A1E3A';
 const WHITE   = '#FFFFFF';
@@ -208,6 +209,7 @@ export default function Libreria({ navigation }) {
           contentContainerStyle={{ padding: 14, paddingBottom: 32 }}
           showsVerticalScrollIndicator={false}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={PRIMARY} />}
+          ListFooterComponent={<Footer onLinkPress={() => {}} />}
         />
       )}
 
