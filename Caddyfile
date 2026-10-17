@@ -1,0 +1,38 @@
+# Caddyfile — BookyHome (prueba local con TLS interno)
+# Uso:
+#   caddy run --config Caddyfile
+#   curl --resolve bookyhome.local:443:127.0.0.1 https://bookyhome.local/
+#   curl --resolve api.bookyhome.local:443:127.0.0.1 https://api.bookyhome.local/health
+
+{
+	# TLS interno: genera una CA local; confia con: caddy trust
+	local_certs
+	# Desactiva la telemetría
+	admin off
+}
+
+# ─── Frontend ──────────────────────────────────────────────────────────────────
+bookyhome.local {
+	tls internal
+
+	# En producción sirve el build estático: raíz /opt/bookyhome/frontend/dist
+	# En prueba local reenvía al servidor de desarrollo Vite (puerto 5173)
+	reverse_proxy localhost:5173
+}
+
+# ─── API REST ──────────────────────────────────────────────────────────────────
+api.bookyhome.local {
+	tls internal
+
+	# Reenvía al backend FastAPI/Uvicorn (puerto 8000, solo red interna)
+	reverse_proxy localhost:8000
+}
+
+# ─── Redirección HTTP → HTTPS ──────────────────────────────────────────────────
+http://bookyhome.local {
+	redir https://bookyhome.local{uri} permanent
+}
+
+http://api.bookyhome.local {
+	redir https://api.bookyhome.local{uri} permanent
+}
