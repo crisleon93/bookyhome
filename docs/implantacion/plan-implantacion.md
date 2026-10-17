@@ -592,3 +592,46 @@ Reemplaza la sección 3 (ver arriba). Resumen: `mysqldump` + `restic` con cifrad
 | Tiempo total | 4 min 12 s (252 s) |
 | RTO | 2 h — cumple con 96.5 % de margen |
 | Huellas | 8/8 tablas con `CHECKSUM TABLE` idénticas |
+
+---
+
+## 8. Pipeline de Despliegue y Monitoreo — Semana 7
+
+> Documento completo: [`docs/implantacion/entregable-s07-pipeline-y-monitoreo.md`](entregable-s07-pipeline-y-monitoreo.md)  
+> Workflows: [ci.yml](../../.github/workflows/ci.yml) · [release.yml](../../.github/workflows/release.yml) · [rollback.yml](../../.github/workflows/rollback.yml)  
+> Script de servidor: [`scripts/desplegar.sh`](../../scripts/desplegar.sh)  
+> Monitoreo: [`deploy/uptime-kuma/`](../../deploy/uptime-kuma/) · [`scripts/latido-respaldo.sh`](../../scripts/latido-respaldo.sh)
+
+### 8.1 Pipeline
+
+| Workflow | Evento | Etapas | Resultado |
+|---|---|---|---|
+| `ci.yml` | push a main, pull request | construir → levantar → migraciones → prueba de humo | check `prueba-de-humo` |
+| `release.yml` | etiqueta `vX.Y.Z` | construir → probar → publicar GHCR → desplegar Render → verificar | imagen `ghcr.io/<owner>/bkh-backend:X.Y.Z` en producción |
+| `rollback.yml` | `workflow_dispatch` (manual) | verificar imagen GHCR (sin construir) → desplegar Render → verificar | versión anterior en producción sin reconstruir |
+
+Regla de `main`: pull request obligatorio, check `prueba-de-humo` obligatorio, sin push directo. Ambiente `produccion` con secretos `RENDER_DEPLOY_HOOK_URL`, `RENDER_API_KEY`, `RENDER_SERVICE_ID_API`.
+
+### 8.2 Secretos
+
+Solo en el ambiente `produccion` de GitHub. Ninguno en los workflows ni en el repo. `GITHUB_TOKEN` lo provee GitHub automáticamente para GHCR.
+
+### 8.3 Evidencia
+
+| Evento | Duración | Resultado |
+|---|---|---|
+| PR rechazado (regresión) | 2 m 15 s | FALLA — smoke test 6/7 (health 503) |
+| Liberación v1.0.1 | 8 m 42 s | OK — 7/7 PASS en producción |
+| Rollback a v1.0.0 | 3 m 28 s | OK — sin reconstruir, 7/7 PASS |
+
+### 8.4 Despliegue en servidor
+
+`scripts/desplegar.sh <version>`: pre-verifica → respalda (restic) → descarga imágenes GHCR → aplica migraciones → reinicia → verifica (health + smoke test) → si falla, rollback automático a la versión anterior. Registro en `deploy/despliegues.log`.
+
+Migraciones: 83 migraciones aditivas (solo `ADD COLUMN` nullable + `INSERT` idempotente). Ninguna impide el rollback. Regla: migraciones destructivas se aplazan a N+1.
+
+### 8.5 Monitoreo
+
+Uptime Kuma en VM separada. Monitores: salud API (60 s), API raíz (60 s), frontend (120 s), versión correcta (keyword, 300 s), latido de respaldo (push, 25 h). Canal de alertas: Telegram (BookyHome-Ops, lo leen ana y luis). Horario: 24/7.
+
+Evidencia de alerta: respaldo no ejecutado tras reinicio del servidor → alerta Telegram a las 21:00 → operador reinicia cron, ejecuta respaldo manual, envía latido → recuperación a las 21:05 (1 h 05 m de incidencia).

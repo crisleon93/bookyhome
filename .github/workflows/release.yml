@@ -1,0 +1,157 @@
+# release.yml — Liberacion versionada de BookyHome
+# Se ejecuta cuando se etiqueta un commit con vX.Y.Z.
+# Construye, prueba, publica las imagenes en GHCR, despliega en Render y verifica.
+
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  construir-probar-publicar:
+    name: construir → probar → publicar → desplegar → verificar
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: produccion
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Extraer version de la etiqueta
+        id: version
+        run: |
+          TAG="${GITHUB_REF#refs/tags/}"
+          VERSION="${TAG#v}"
+          echo "tag=$TAG"          >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION"  >> "$GITHUB_OUTPUT"
+          echo "Liberando $TAG (version $VERSION)"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # ── Login a GHCR ──────────────────────────────────────────────────────
+      - name: Login a GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # ── Construir y publicar imagen del backend ────────────────────────────
+      - name: Construir y publicar bkh-backend
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/bkh-backend:${{ steps.version.outputs.version }}
+            ghcr.io/${{ github.repository_owner }}/bkh-backend:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # ── Construir y publicar imagen del frontend (build estatico) ───────────
+      - name: Construir y publicar bkh-frontend
+        uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          file: ./frontend/Dockerfile.prod
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/bkh-frontend:${{ steps.version.outputs.version }}
+            ghcr.io/${{ github.repository_owner }}/bkh-frontend:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # ── Prueba de humo antes de desplegar ───────────────────────────────────
+      - name: Levantar MySQL y aplicar migraciones
+        run: |
+          docker compose -f docker-compose.ci.yml up -d mysql
+          for i in $(seq 1 60); do
+            docker compose -f docker-compose.ci.yml ps mysql | grep -q healthy && break
+            sleep 3
+          done
+          for f in database/migrations/*.sql; do
+            docker compose -f docker-compose.ci.yml exec -T mysql \
+              mysql -uroot -proot bookyhome < "$f" 2>&1 | tail -1 || true
+          done
+
+      - name: Levantar servicios con las imagenes recien construidas
+        run: |
+          export APP_VERSION=${{ steps.version.outputs.version }}
+          export REGISTRY=ghcr.io/${{ github.repository_owner }}
+          docker compose -f docker-compose.ci.yml up -d --build backend frontend
+          for i in $(seq 1 60); do
+            curl -sf http://localhost:8000/health >/dev/null 2>&1 && break
+            sleep 3
+          done
+
+      - name: Prueba de humo
+        run: |
+          bash scripts/smoke-test.sh http://localhost:8000 http://localhost:5173
+
+      - name: Limpiar entorno de prueba
+        run: docker compose -f docker-compose.ci.yml down -v || true
+
+      # ── Desplegar en Render ────────────────────────────────────────────────
+      - name: Desplegar en Render (deploy hook)
+        run: |
+          echo "Disparando deploy hook de Render..."
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
+            -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}")
+          echo "Deploy hook respondio HTTP $HTTP_CODE"
+          if [ "$HTTP_CODE" != "200" ] && [ "$HTTP_CODE" != "201" ] && [ "$HTTP_CODE" != "202" ]; then
+            echo "El deploy hook fallo"
+            exit 1
+          fi
+
+      # ── Verificar despliegue en produccion ─────────────────────────────────
+      - name: Esperar y verificar produccion
+        env:
+          API_URL: https://bookyhome-api.onrender.com
+          WEB_URL: https://bookyhome-web.onrender.com
+          EXPECTED_VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          echo "Esperando a que Render levante el nuevo despliegue..."
+          sleep 30
+          MAX_RETRIES=40
+          for i in $(seq 1 $MAX_RETRIES); do
+            HEALTH=$(curl -sf --max-time 15 "$API_URL/health" 2>/dev/null || echo "")
+            if [ -n "$HEALTH" ]; then
+              DEPLOYED_VERSION=$(echo "$HEALTH" | grep -o '"version":"[^"]*"' | grep -o '"[^"]*"$' | tr -d '"')
+              echo "Version desplegada: $DEPLOYED_VERSION (esperada: $EXPECTED_VERSION)"
+              if [ "$DEPLOYED_VERSION" = "$EXPECTED_VERSION" ]; then
+                echo "Version correcta en produccion"
+                break
+              fi
+            fi
+            echo "Intento $i/$MAX_RETRIES — esperando..."
+            sleep 15
+          done
+
+          echo "Ejecutando prueba de humo en produccion..."
+          bash scripts/smoke-test.sh "$API_URL" "$WEB_URL"
+
+      # ── Crear release en GitHub ────────────────────────────────────────────
+      - name: Crear release en GitHub
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: ${{ steps.version.outputs.tag }}
+          generate_release_notes: true
+          body: |
+            ## BookyHome ${{ steps.version.outputs.tag }}
+
+            Imagenes publicadas en GHCR:
+            - `ghcr.io/${{ github.repository_owner }}/bkh-backend:${{ steps.version.outputs.version }}`
+            - `ghcr.io/${{ github.repository_owner }}/bkh-frontend:${{ steps.version.outputs.version }}`
+
+            Desplegado y verificado en:
+            - API: https://bookyhome-api.onrender.com
+            - Web: https://bookyhome-web.onrender.com
