@@ -5,8 +5,10 @@ backend/venv/
 backend/.venv/
 .venv/
 .venv-1/
-backend/__pycache__/
-backend/**/*.pyc
+# __pycache__ en cualquier subcarpeta del proyecto (tests/, app/, etc.)
+**/__pycache__/
+**/*.pyc
+**/*.pyo
 backend/.env
 
 # ======================
@@ -39,6 +41,18 @@ frontend/.pnpm-store/
 /scripts/backups/*.sql
 .DS_Store
 Thumbs.db
+
+# ======================
+# 🧪 TESTING / COBERTURA
+# ======================
+# Reportes de cobertura — se regeneran con cada ejecución, no se versionan
+coverage/
+frontend/coverage/
+.coverage
+htmlcov/
+# Caché de pytest — acelera runs sucesivos, no tiene valor en el repo
+.pytest_cache/
+backend/.pytest_cache/
 
 # ======================
 # 💻 EDITORES

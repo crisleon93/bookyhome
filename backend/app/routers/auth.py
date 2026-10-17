@@ -1,10 +1,20 @@
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse
+from pydantic import BaseModel, EmailStr, Field
 from app.auth import create_token, verify_token
 from app.email import enviar_email_recuperacion, enviar_email_agradecimiento_confirmacion, get_frontend_url
 from app.models.usuarios import obtener_usuario_por_email, actualizar_password, verificar_email_usuario, obtener_usuario_por_token, obtener_usuario_por_id
 
 router = APIRouter()
+
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    password: str = Field(..., min_length=8, description="Mínimo 8 caracteres")
 
 
 def _render_verify_email_page(*, success: bool, title: str, message: str) -> str:
@@ -101,11 +111,9 @@ def _wants_json_response(request: Request) -> bool:
 # Recuperación de contraseña
 # ========================
 @router.post("/forgot-password")
-async def forgot_password(data: dict):
+async def forgot_password(data: ForgotPasswordRequest):
     """Genera un token de recuperación y envía un correo al usuario."""
-    email = data.get("email")
-    if not email:
-        raise HTTPException(status_code=400, detail="El email es obligatorio")
+    email = data.email
 
     user = obtener_usuario_por_email(email)
     if not user:
@@ -126,10 +134,10 @@ async def forgot_password(data: dict):
 # Reinicio de contraseña con token
 # ========================
 @router.post("/reset-password")
-def reset_password(data: dict):
+def reset_password(data: ResetPasswordRequest):
     """Verifica el token de recuperación y actualiza la contraseña del usuario."""
-    token = data.get("token")
-    nueva_password = data.get("password")
+    token = data.token
+    nueva_password = data.password
 
     payload = verify_token(token)
     if not payload or payload.get("tipo") != "reset":
