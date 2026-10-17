@@ -635,3 +635,47 @@ Migraciones: 83 migraciones aditivas (solo `ADD COLUMN` nullable + `INSERT` idem
 Uptime Kuma en VM separada. Monitores: salud API (60 s), API raíz (60 s), frontend (120 s), versión correcta (keyword, 300 s), latido de respaldo (push, 25 h). Canal de alertas: Telegram (BookyHome-Ops, lo leen ana y luis). Horario: 24/7.
 
 Evidencia de alerta: respaldo no ejecutado tras reinicio del servidor → alerta Telegram a las 21:00 → operador reinicia cron, ejecuta respaldo manual, envía latido → recuperación a las 21:05 (1 h 05 m de incidencia).
+
+---
+
+## 9. Mantenimiento, Soporte y Capacitación — Semana 8
+
+> Documento completo: [`docs/implantacion/entregable-s08-mantenimiento-soporte-y-capacitacion.md`](entregable-s08-mantenimiento-soporte-y-capacitacion.md)  
+> Dependabot: [`.github/dependabot.yml`](../../.github/dependabot.yml)  
+> Formulario de falla: [`.github/ISSUE_TEMPLATE/reporte-de-falla.md`](../../.github/ISSUE_TEMPLATE/reporte-de-falla.md)  
+> Runbooks: [`docs/runbooks/`](../runbooks/)  
+> Ayudas en línea: [`docs/ayuda/`](../ayuda/)
+
+### 9.1 Plan de mantenimiento
+
+**Ventana:** domingos 02:00–04:00 hora Bogotá. Tareas automáticas: `unattended-upgrades` (diario), Dependabot (semanal), prueba de humo en cada despliegue. Tareas manuales: reinicio por parches de kernel (mensual), restauración de prueba del respaldo (mensual), revisión de tabla EOL (trimestral), rotación de secretos (semestral).
+
+**Componentes en EOL o próximos a EOL:**
+
+| Componente | Estado | Acción |
+|---|---|---|
+| MySQL 8.0.46 | 🔴 EOL desde abril 2026 | Migrar a MySQL 8.4 LTS — sprint S09 |
+| Node.js 20 LTS | 🔴 EOL desde abril 2026 | Actualizar a Node.js 22 LTS — sprint S09 |
+| Python 3.10 | 🟡 EOL octubre 2026 (este mes) | Actualizar a Python 3.12 — PR abierto |
+
+**Dependabot** activo para 5 ecosistemas: uv (backend), npm (frontend), npm (app-movil), docker, github-actions. Agrupa actualizaciones de producción en PRs unificados.
+
+Auditoría: `passlib 1.7.4` marcado como sin mantenimiento activo (sin CVE activo) → monitorear. `mysql:8.0` con CVEs High en imagen Docker → migrar a 8.4. Sin CVEs críticos en el resto del stack.
+
+### 9.2 Soporte
+
+Modelo N0–N3. N0: guías en línea (autoservicio). N1: cualquier miembro del equipo (horario laboral). N2: `luis` (operador). N3: `ana` (administradora, 24/7 para P1).
+
+Canal único: Telegram (BookyHome-Ops) + GitHub issues (formulario `reporte-de-falla.md`).
+
+Tiempos: P1 → 30 min respuesta / 2 h resolución. P2 → 2 h / 8 h. P3 → 1 día hábil / 5 días. P4 → 3 días hábiles / próximo sprint.
+
+Runbooks: `salud-en-rojo.md` (P1, monitor "Salud API" DOWN) y `respaldo-diario-sin-latido.md` (P2, monitor "Respaldo diario" DOWN, basado en incidente real 2026-10-17).
+
+### 9.3 Capacitación
+
+Cuatro públicos: compradores (30 min — registro, búsqueda, compra), vendedores (45 min — registrar librería, publicar libro), soporte N1 (60 min — clasificar y escalar incidentes), operación N2 (90 min — seguir runbooks en staging). Primera ronda: semana 2026-10-24 al 2026-11-01.
+
+### 9.4 Ayudas en línea
+
+[`docs/ayuda/guia-rapida.md`](../ayuda/guia-rapida.md): 11 procedimientos cubriendo compradores, vendedores y administradores. [`docs/ayuda/preguntas-frecuentes.md`](../ayuda/preguntas-frecuentes.md): 22 preguntas agrupadas por tema. Ambas enlazadas desde el README raíz y desde el `config.yml` del formulario de issues de GitHub.
