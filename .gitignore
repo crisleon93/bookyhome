@@ -57,3 +57,9 @@ Thumbs.db
 # ======================
 # Binario descargado localmente — no se versiona
 caddy.exe
+
+# ======================
+# 🚀 PRODUCCIÓN
+# ======================
+# Variables de entorno de producción — NUNCA subir al repo
+deploy/.env.prod

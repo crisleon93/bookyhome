@@ -1,0 +1,94 @@
+# compose.prod.yaml — BookyHome producción
+# Uso: docker compose -f deploy/compose.prod.yaml up -d
+# NO usar en desarrollo: sin volúmenes de código, sin --reload, sin puertos internos expuestos.
+
+services:
+
+  # ─── Base de datos ────────────────────────────────────────────────────────────
+  mysql:
+    image: mysql:8.0
+    container_name: bookyhome-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+      TZ: America/Bogota
+    command: --default-time-zone='-05:00'
+    # Puerto NO expuesto al host; solo accesible en la red interna de Docker
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_PASSWORD}"]
+      interval: 10s
+      timeout: 10s
+      retries: 15
+      start_period: 120s
+    networks:
+      - bookyhome_net
+
+  # ─── API Backend ──────────────────────────────────────────────────────────────
+  backend:
+    image: ${REGISTRY:-ghcr.io/bookyhome}/bkh-backend:${APP_VERSION:-latest}
+    container_name: bookyhome-backend
+    restart: unless-stopped
+    env_file:
+      - .env.prod
+    environment:
+      DB_HOST: mysql
+      DB_PORT: "3306"
+      DB_USER: root
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+      TZ: America/Bogota
+      APP_VERSION: ${APP_VERSION:-latest}
+    # Puerto 8000 NO expuesto al host; Caddy lo accede por red interna
+    depends_on:
+      mysql:
+        condition: service_healthy
+    volumes:
+      - uploads_data:/app/uploads
+    networks:
+      - bookyhome_net
+
+  # ─── Frontend (build estático servido por Caddy) ─────────────────────────────
+  # En producción el frontend es un build estático; Caddy lo sirve directamente.
+  # El contenedor solo se usa para extraer el artefacto de /app/dist.
+  frontend:
+    image: ${REGISTRY:-ghcr.io/bookyhome}/bkh-frontend:${APP_VERSION:-latest}
+    container_name: bookyhome-frontend
+    restart: unless-stopped
+    environment:
+      VITE_API_BASE_URL: ${VITE_API_BASE_URL}
+      APP_VERSION: ${APP_VERSION:-latest}
+    # Puerto 80 del contenedor → Caddy hace proxy; no se expone directamente
+    networks:
+      - bookyhome_net
+
+  # ─── Reverse proxy ────────────────────────────────────────────────────────────
+  caddy:
+    image: caddy:2.9-alpine
+    container_name: bookyhome-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"   # HTTP/3
+    volumes:
+      - ../deploy/Caddyfile.prod:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - bookyhome_net
+    depends_on:
+      - backend
+      - frontend
+
+networks:
+  bookyhome_net:
+    driver: bridge
+
+volumes:
+  mysql_data:
+  uploads_data:
+  caddy_data:
+  caddy_config:

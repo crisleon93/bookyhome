@@ -328,21 +328,49 @@ curl --resolve api.bookyhome.local:443:127.0.0.1 https://api.bookyhome.local/hea
 
 ---
 
-## 5. Plan de instalación — Semana 2 (v0)
+## 5. Plan de instalación v1 — Semana 4
 
-> Documento completo: [`docs/implantacion/entregable-s02-planes.md § 5`](entregable-s02-planes.md)
+> Documento completo: [`docs/implantacion/entregable-s04-procedimiento-despliegue.md`](entregable-s04-procedimiento-despliegue.md)  
+> Plan v0 (semana 2): [`docs/implantacion/entregable-s02-planes.md § 5`](entregable-s02-planes.md)
 
-### Tabla resumen de las 10 secciones
+### 5.1 Proceso de liberación
 
-| # | Sección | Resumen |
+Versión `1.0.0` con SemVer. Proceso: pruebas en verde → CHANGELOG → `git tag -a v1.0.0` → `git push origin v1.0.0` → `docker build` + `docker push` → notas de versión en GitHub.  
+Ver [`CHANGELOG.md`](../../CHANGELOG.md) en la raíz del repositorio.
+
+### 5.2 Despliegue en servidor Linux
+
+Estructura en `/opt/bookyhome/`: carpetas `deploy/`, `scripts/`, `backups/`.  
+Archivos en `deploy/`: `compose.prod.yaml`, `Caddyfile.prod`, `.env.prod` (no en repo).
+
+**Prueba de humo ejecutada 2026-10-17 (5/5 PASS):**
+
+```
+  ✔ PASS API raíz — HTTP 200
+  ✔ PASS API /docs (Swagger) — HTTP 200
+  ✔ PASS API /catalogo/categorias — HTTP 200
+  ✔ PASS API /catalogo/busqueda-avanzada — HTTP 200
+  ✔ PASS Frontend raíz — HTTP 200
+  RESULTADO: OK — todas las pruebas pasaron
+```
+
+Todas las 83 migraciones de v1.0.0 son compatibles hacia atrás (columnas nullable, DML idempotente). Rollback posible sin restaurar BD para esta versión.
+
+### 5.3 Despliegue en la nube
+
+| Componente | Proveedor | Plan |
 |---|---|---|
-| 1 | Alcance | Despliegue inicial de BookyHome en Ubuntu Server 24.04 LTS con Docker Compose (frontend + API + MySQL). La app móvil Expo es un cliente independiente fuera de alcance. |
-| 2 | Ambientes | Desarrollo (Docker Desktop/Windows), Staging (VM Ubuntu mínima), Producción (VM/servidor Ubuntu recomendado). |
-| 3 | Roles | Responsable técnico, coordinador de la librería (cliente), responsable de respaldos. |
-| 4 | Prerrequisitos | Ver sección 1: 2 vCPU, 4 GB RAM, 40 GB libres, Ubuntu 24.04 LTS, Docker Engine + Compose. |
-| 5 | Preparación | Clonar repositorio, completar `.env`, ejecutar `scripts/verificar-requisitos.sh` con código 0, tener respaldo previo. |
-| 6 | Procedimiento | 12 pasos: verificar → clonar → `.env` → build → up → verificar BD → migraciones → respaldar → verificar frontend → verificar API → verificar negocio → notificar. |
-| 7 | Migración de datos | Ver sección 2 de este documento. |
-| 8 | Verificación | Lista de 8 comprobaciones post-instalación (contenedores, API, frontend, login, catálogo, respaldo). |
-| 9 | Rollback | `docker compose down` + restaurar respaldo pre-instalación con `scripts/restaurar.sh`. |
-| 10 | Cronograma | Ventana de 120 min (80 min de trabajo + 40 min de margen). Punto de no retorno: tras aplicar migraciones con usuarios activos. |
+| API | Render Web Service | Free (con suspensión por inactividad) |
+| Frontend | Render Static Site | Free (CDN, sin suspensión) |
+| Base de datos | Neon PostgreSQL | Free (0.5 GB, suspensión tras 5 días) |
+
+Blueprint: `deploy/render.yaml`. URLs: `https://bookyhome-api.onrender.com` y `https://bookyhome-web.onrender.com`.
+
+### 5.4 Estimación de costos
+
+| Alternativa | Costo mensual | Costo anual |
+|---|---|---|
+| Render + Neon (gratuito) | $0 | $0 |
+| Render Starter + Railway MySQL | ~$12 | ~$144 |
+
+**Recomendación:** iniciar con la alternativa gratuita los primeros 3 meses; migrar a la paga cuando haya más de ~20 usuarios activos diarios.
