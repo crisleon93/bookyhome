@@ -205,6 +205,35 @@ def ensure_tarifa_envio_schema():
             db.close()
 
 
+def ensure_acceso_anticipado_libros_schema():
+    """Agrega configuración del acceso anticipado a libros existentes."""
+    db = None
+    cursor = None
+    try:
+        db = get_db()
+        cursor = db.cursor()
+
+        columnas = {
+            "acceso_anticipado": "TINYINT(1) NOT NULL DEFAULT 0",
+            "nivel_minimo_acceso": "VARCHAR(20) NOT NULL DEFAULT 'Plata'",
+            "fecha_lanzamiento_publico": "DATETIME NULL",
+        }
+        for nombre, definicion in columnas.items():
+            cursor.execute("SHOW COLUMNS FROM `libros` LIKE %s", (nombre,))
+            if not cursor.fetchone():
+                cursor.execute(f"ALTER TABLE libros ADD COLUMN `{nombre}` {definicion}")
+        db.commit()
+    except Exception as exc:
+        if db is not None:
+            db.rollback()
+        print(f"[DATABASE] No se pudo asegurar esquema de acceso anticipado: {exc}", file=sys.stderr, flush=True)
+    finally:
+        if cursor is not None:
+            cursor.close()
+        if db is not None:
+            db.close()
+
+
 def get_db():
     # ========================
     # Configuración de conexión

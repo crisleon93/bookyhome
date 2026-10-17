@@ -341,11 +341,20 @@ function ModalEditarLibro({ libro, categorias, onClose, onGuardado }) {
     precio_libro:      libro.precio_libro,
     stock:             libro.stock,
     estado_libro:      libro.estado_libro,
+    acceso_anticipado: libro.acceso_anticipado === true || libro.acceso_anticipado === 1 || libro.acceso_anticipado === "1",
+    nivel_minimo_acceso: libro.nivel_minimo_acceso || "Plata",
+    fecha_lanzamiento_publico: libro.fecha_lanzamiento_publico
+      ? String(libro.fecha_lanzamiento_publico).replace(" ", "T").slice(0, 16)
+      : "",
   });
   const [cargando, setCargando] = useState(false);
   const [error,    setError]    = useState("");
 
-  const handleChange = (e) => { setForm({ ...form, [e.target.name]: e.target.value }); setError(""); };
+  const handleChange = (e) => {
+    const value = e.target.type === "checkbox" ? e.target.checked : e.target.value;
+    setForm({ ...form, [e.target.name]: value });
+    setError("");
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -354,6 +363,13 @@ function ModalEditarLibro({ libro, categorias, onClose, onGuardado }) {
     if (!form.id_categoria)             return setError("Selecciona una categoría");
     if (Number(form.precio_libro) <= 0) return setError("El precio debe ser mayor a 0");
     if (Number(form.stock) < 0)         return setError("El stock no puede ser negativo");
+    if (form.acceso_anticipado && !form.fecha_lanzamiento_publico)
+      return setError("Indica cuándo estará disponible el libro para todos");
+    if (
+      form.acceso_anticipado &&
+      new Date(form.fecha_lanzamiento_publico).getTime() < Date.now() + 24 * 60 * 60 * 1000
+    )
+      return setError("La disponibilidad pública debe ser al menos 24 horas después");
     setCargando(true);
     try {
       const data = new FormData();
@@ -413,6 +429,47 @@ function ModalEditarLibro({ libro, categorias, onClose, onGuardado }) {
             </label>
             <textarea name="descripcion_libro" maxLength={300} rows={3}
               value={form.descripcion_libro} onChange={handleChange} />
+          </div>
+          <div className="acceso-anticipado-config" style={{ border: "1px solid #eadde1", borderRadius: "10px", padding: "16px", marginBottom: "16px" }}>
+            <h3 style={{ margin: "0 0 6px", fontSize: "1rem" }}>Acceso anticipado</h3>
+            <p style={{ color: "#777", fontSize: "0.85rem", margin: "0 0 14px" }}>
+              Prepara este libro para el programa: el nivel elegido podrá verlo 24 horas antes de su disponibilidad pública.
+            </p>
+            <label style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "14px" }}>
+              <input
+                type="checkbox"
+                name="acceso_anticipado"
+                checked={form.acceso_anticipado}
+                onChange={handleChange}
+              />
+              Preparar acceso anticipado para este libro
+            </label>
+            {form.acceso_anticipado && (
+              <div className="modal-grid">
+                <div className="form-group">
+                  <label htmlFor="editar-nivel-minimo-acceso">Nivel mínimo del comprador</label>
+                  <select id="editar-nivel-minimo-acceso" name="nivel_minimo_acceso" value={form.nivel_minimo_acceso} onChange={handleChange}>
+                    {["Bronce", "Plata", "Oro", "Zafiro", "Rubi", "Esmeralda", "Amatista", "Perla", "Obsidiana", "Diamante", "Onix", "Platino"].map((nivel) => (
+                      <option key={nivel} value={nivel}>{nivel}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label htmlFor="editar-fecha-lanzamiento-publico">Disponible para todos desde (hora Colombia)</label>
+                  <input
+                    id="editar-fecha-lanzamiento-publico"
+                    type="datetime-local"
+                    name="fecha_lanzamiento_publico"
+                    min={new Date(Date.now() + 24 * 60 * 60 * 1000 - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16)}
+                    value={form.fecha_lanzamiento_publico}
+                    onChange={handleChange}
+                  />
+                </div>
+              </div>
+            )}
+            <p style={{ color: "#777", fontSize: "0.8rem", margin: "12px 0 0" }}>
+              La programación se guarda en el panel; la visibilidad anticipada para compradores se habilitará al completar la integración del catálogo.
+            </p>
           </div>
           {error && <div className="form-error" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><IconLock width={16} height={16} strokeWidth={2} style={{ color: '#b91c1c' }} /> {error}</div>}
           <div className="modal-actions">
@@ -1433,13 +1490,45 @@ export default function MiTienda() {
   const location = useLocation();
   const [activeSide, setActiveSide] = useState(() => {
     const seccion = new URLSearchParams(window.location.search).get('seccion');
-    return seccion || 'Inicio';
+    return ['Métodos de cobro', 'Suscripciones', 'Impulsos'].includes(seccion)
+      ? 'Perfil'
+      : seccion || 'Inicio';
+  });
+  const [activeProfileTab, setActiveProfileTab] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    const seccion = params.get('seccion');
+    if (seccion === 'Suscripciones') return 'suscripciones';
+    if (seccion === 'Impulsos') return 'impulsos';
+    if (seccion === 'Métodos de cobro') return 'cobro';
+    const tab = params.get('tab');
+    return params.get('seccion') === 'Perfil' &&
+      ['perfil', 'cobro', 'suscripciones', 'impulsos'].includes(tab)
+      ? tab
+      : 'perfil';
   });
 
   useEffect(() => {
-    const seccion = new URLSearchParams(location.search).get('seccion');
+    const params = new URLSearchParams(location.search);
+    const seccion = params.get('seccion');
     if (seccion) {
-      setActiveSide(seccion);
+      const legacyProfileTabs = {
+        'Métodos de cobro': 'cobro',
+        Suscripciones: 'suscripciones',
+        Impulsos: 'impulsos',
+      };
+      if (legacyProfileTabs[seccion]) {
+        setActiveSide('Perfil');
+        setActiveProfileTab(legacyProfileTabs[seccion]);
+        window.history.replaceState(null, '', `/mi-tienda?seccion=Perfil&tab=${legacyProfileTabs[seccion]}`);
+      } else {
+        setActiveSide(seccion);
+        if (seccion === 'Perfil') {
+          const tab = params.get('tab');
+          setActiveProfileTab(
+            ['perfil', 'cobro', 'suscripciones', 'impulsos'].includes(tab) ? tab : 'perfil'
+          );
+        }
+      }
     }
   }, [location.search]);
   const [selectedSalaInChat, setSelectedSalaInChat] = useState(null);
@@ -1735,12 +1824,12 @@ export default function MiTienda() {
   }, []);
 
   useEffect(() => {
-    if (activeSide === 'Métodos de cobro') {
+    if (activeSide === 'Perfil' && activeProfileTab === 'cobro') {
       setLoadingNomina(true);
       Promise.all([cargarPagosPendientes(), cargarHistorialPagos()])
         .finally(() => setLoadingNomina(false));
     }
-  }, [activeSide]);
+  }, [activeSide, activeProfileTab]);
 
   useEffect(() => {
     const handleDarkModeChange = () => setDarkMode(localStorage.getItem('darkMode') === 'true');
@@ -1928,6 +2017,19 @@ export default function MiTienda() {
   // navigate() para no disparar el ciclo de re-render de React Router (que causa
   // el parpadeo blanco al cambiar de Sección).
   const cambiarSeccion = (nuevaSeccion) => {
+    const legacyProfileTabs = {
+      'Métodos de cobro': 'cobro',
+      Suscripciones: 'suscripciones',
+      Impulsos: 'impulsos',
+    };
+    if (legacyProfileTabs[nuevaSeccion]) {
+      const tab = legacyProfileTabs[nuevaSeccion];
+      setActiveProfileTab(tab);
+      setActiveSide('Perfil');
+      window.history.replaceState(null, '', `/mi-tienda?seccion=Perfil&tab=${tab}`);
+      return;
+    }
+    if (nuevaSeccion === 'Perfil') setActiveProfileTab('perfil');
     setActiveSide(nuevaSeccion);
     window.history.replaceState(null, '', `/mi-tienda?seccion=${encodeURIComponent(nuevaSeccion)}`);
   };
@@ -3430,6 +3532,11 @@ export default function MiTienda() {
                         {libro.titulo}
                       </h4>
                       <p className="libro-author">{libro.autor_libro || "Autor desconocido"}</p>
+                      {(libro.acceso_anticipado === true || libro.acceso_anticipado === 1 || libro.acceso_anticipado === "1") && (
+                        <p className="acceso-anticipado-status" style={{ margin: "5px 0 0", color: "#7A1E3A", fontSize: "0.76rem", fontWeight: 650 }}>
+                          Preparado para acceso anticipado · {libro.nivel_minimo_acceso || "Plata"} · Público desde {String(libro.fecha_lanzamiento_publico || "").replace("T", " ").slice(0, 16)}
+                        </p>
+                      )}
                     </div>
 
                     {/* Categoría en columna dedicada y alineada en hilera */}
@@ -3791,7 +3898,66 @@ export default function MiTienda() {
           </p>
         </div>
 
-        {!perfilLoaded ? (
+        <div role="tablist" aria-label="Secciones del perfil del vendedor" style={{
+          display: 'flex',
+          gap: 8,
+          margin: '1rem 0',
+          borderBottom: `1px solid ${darkMode ? '#3a3a3a' : BORDER}`,
+        }}>
+          {[
+            { id: 'perfil', label: 'Mi perfil', icon: <IconUser width={18} height={18} /> },
+            { id: 'cobro', label: 'Métodos de cobro', icon: <IconCreditCard width={18} height={18} /> },
+            { id: 'suscripciones', label: 'Suscripciones', icon: <IconGift width={18} height={18} /> },
+            { id: 'impulsos', label: 'Impulsos', icon: <IconStar width={18} height={18} /> },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              role="tab"
+              aria-selected={activeProfileTab === tab.id}
+              onClick={() => {
+                setActiveProfileTab(tab.id);
+                window.history.replaceState(
+                  null,
+                  '',
+                  `/mi-tienda?seccion=Perfil${tab.id !== 'perfil' ? `&tab=${tab.id}` : ''}`
+                );
+              }}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 8,
+                padding: '10px 14px',
+                border: 'none',
+                borderBottom: `3px solid ${activeProfileTab === tab.id ? (darkMode ? '#e05a7a' : PRIMARY) : 'transparent'}`,
+                background: 'transparent',
+                color: activeProfileTab === tab.id ? (darkMode ? '#e05a7a' : PRIMARY) : (darkMode ? '#c8c8c8' : MUTED),
+                font: 'inherit',
+                fontWeight: activeProfileTab === tab.id ? 700 : 600,
+                cursor: 'pointer',
+              }}
+            >
+              {tab.icon}
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {activeProfileTab === 'cobro' ? (
+          <RenderCuentasBancarias />
+        ) : activeProfileTab === 'suscripciones' ? (
+          <SeccionSuscripciones
+            tiendaId={tiendaInfo?.id_tienda}
+            onNavegar={cambiarSeccion}
+            darkMode={darkMode}
+          />
+        ) : activeProfileTab === 'impulsos' ? (
+          <SeccionImpulsos
+            tiendaId={tiendaInfo?.id_tienda}
+            onNavegar={cambiarSeccion}
+            darkMode={darkMode}
+          />
+        ) : !perfilLoaded ? (
           <div className="pl-card" style={{ padding: '3rem', textAlign: 'center', color: MUTED }}>Cargando perfil...</div>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1.25rem', alignItems: 'start', marginTop: '1rem' }}>
@@ -6738,11 +6904,8 @@ export default function MiTienda() {
       case "Clientes":      return renderProximamente("Clientes");
       case "Configuración": return renderConfiguracion();
       case "Perfil":        return renderPerfil();
-      case "Métodos de cobro": return RenderCuentasBancarias();
       case "Promociones":   return <SeccionOfertas />;
       case "Cupones":       return <SeccionCuponesVendedor tiendaId={tiendaInfo?.id_tienda} darkMode={darkMode} />;
-      case "Suscripciones": return <SeccionSuscripciones tiendaId={tiendaInfo?.id_tienda} onNavegar={cambiarSeccion} darkMode={darkMode} />;
-      case "Impulsos":      return <SeccionImpulsos tiendaId={tiendaInfo?.id_tienda} onNavegar={cambiarSeccion} darkMode={darkMode} />;
       default:              return renderInicio();
     }
   };

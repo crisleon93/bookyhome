@@ -32,7 +32,6 @@ const MENU_LINKS = [
   { name: 'Ventas' },
   { name: 'Pedidos' },
   { name: 'Envíos' },
-  { name: 'Métodos de cobro' },
   { name: 'Calificaciones' },
   { name: 'Quejas y reclamos' },
   { name: 'Soporte técnico' },
@@ -40,8 +39,6 @@ const MENU_LINKS = [
   { name: 'Mensajes' },
   { name: 'Perfil' },
   { name: 'Configuración' },
-  { name: 'Suscripciones' },
-  { name: 'Impulsos' },
 ];
 
 const ICONS = {
@@ -60,14 +57,6 @@ const ICONS = {
   Ventas: <IconCart width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
   Pedidos: <IconShoppingBag width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
   'Envíos': <IconTruck width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
-  'Métodos de cobro': (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={WHITE} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="2" y="5" width="20" height="14" rx="2"></rect>
-      <line x1="2" y1="10" x2="22" y2="10"></line>
-      <line x1="12" y1="19" x2="12" y2="19"></line>
-      <line x1="12" y1="10" x2="12" y2="15"></line>
-    </svg>
-  ),
   Calificaciones: <IconStar width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
   'Quejas y reclamos': <IconAlertTriangle width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
   'Soporte técnico': <IconTool width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
@@ -75,16 +64,6 @@ const ICONS = {
   Mensajes: <IconMail className="" width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
   Perfil: <IconUser width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
   Configuración: <IconSettings width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
-  Suscripciones: (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={WHITE} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
-    </svg>
-  ),
-  Impulsos: (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={WHITE} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path>
-    </svg>
-  ),
 };
 
 function SidebarIcon(props) {
