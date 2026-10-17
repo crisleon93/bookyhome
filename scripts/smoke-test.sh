@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+﻿#!/usr/bin/env bash
 # smoke-test.sh — Prueba de humo BookyHome
 # Verifica que los endpoints críticos respondan correctamente.
 #
@@ -62,6 +62,42 @@ check "API raíz"                       "$BASE_URL/"                        200 
 check "API /docs (Swagger)"            "$BASE_URL/docs"                    200 "swagger"
 check "API /catalogo/categorias"       "$BASE_URL/catalogo/categorias"     200
 check "API /catalogo/busqueda-avanzada" "$BASE_URL/catalogo/busqueda-avanzada" 200
+
+# ─── Endpoint de salud (verificación propia) ─────────────────────────────────
+# Verifica que /health responda 200 y que la base de datos esté sana.
+log_info "Comprobando endpoint de salud ($BASE_URL/health)..."
+
+health_response=$(curl -s -o /tmp/smoke_health -w "%{http_code}" \
+  --max-time 15 --connect-timeout 5 "$BASE_URL/health" 2>/dev/null)
+health_body=$(cat /tmp/smoke_health 2>/dev/null || echo "")
+
+if [ "$health_response" = "200" ]; then
+  # Verificar que el estado de la base de datos sea "ok"
+  db_status=$(echo "$health_body" | grep -o '"database"[[:space:]]*:[[:space:]]*{[^}]*"status"[[:space:]]*:[[:space:]]*"[^"]*"' | grep -o '"status"[[:space:]]*:[[:space:]]*"[^"]*"' | tail -1 | grep -o '"[^"]*"$' | tr -d '"')
+  if [ "$db_status" = "ok" ]; then
+    log_ok "API /health — HTTP 200, base de datos sana"
+  else
+    log_fail "API /health — HTTP 200 pero base de datos no sana: '$db_status'"
+  fi
+elif [ "$health_response" = "503" ]; then
+  log_fail "API /health — HTTP 503 (dependencia crítica caída)"
+else
+  log_fail "API /health — esperado HTTP 200, obtuvo HTTP $health_response"
+fi
+
+# ─── Verificación propia: catálogo devuelve libros ───────────────────────────
+# Comprueba que la API no solo responda, sino que devuelva datos reales.
+log_info "Verificación propia: catálogo con datos..."
+
+catalogo_body=$(curl -s --max-time 15 --connect-timeout 5 \
+  "$BASE_URL/catalogo/busqueda-avanzada" 2>/dev/null || echo "")
+
+# El endpoint de búsqueda avanzada devuelve un JSON con "libros" o "data"
+if echo "$catalogo_body" | grep -q '"libros"\|"data"'; then
+  log_ok "Catálogo devuelve estructura JSON con resultados"
+else
+  log_fail "Catálogo no devuelve estructura JSON esperada"
+fi
 
 # ─── Frontend ─────────────────────────────────────────────────────────────────
 log_info "Comprobando Frontend ($FRONTEND_URL)..."

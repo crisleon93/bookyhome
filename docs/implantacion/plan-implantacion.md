@@ -194,6 +194,95 @@ Migrar el 100 % de los libros y vendedores válidos del sistema anterior (hojas 
 
 Respaldo completo con `scripts/respaldar.sh` antes de iniciar. Si rechazos > 10 %: conservar producción intacta (carga se hace en staging primero). Rol que decide: líder técnico con aprobación del coordinador.
 
+### 2.8 Evidencia de migración ejecutada — Semana 5
+
+> Documento completo: [`docs/implantacion/entregable-s05-configuracion-y-verificacion.md §2.8`](entregable-s05-configuracion-y-verificacion.md)  
+> Script de migración: [`scripts/migrar-nube.sh`](../../scripts/migrar-nube.sh)
+
+| Campo | Valor |
+|---|---|
+| Origen (tipo y versión) | MySQL 8.0.46 (contenedor Docker local, base `bookyhome`) |
+| Destino (proveedor, versión, región) | Railway — MySQL 8 gestionado, región `us-west-2` (Oregon) |
+| Diferencias resueltas (dueño, versión, SSL…) | Dueño: Railway gestiona el servidor; versión: MySQL 8 compatible; SSL: conexión SSL/TLS obligatoria en Railway, ajustada en la cadena de conexión; `use_pure=True` en `mysql-connector-python` para compatibilidad con TLS de Railway |
+| Método | `mysqldump --single-transaction --routines --triggers` → tubería a `mysql` del destino; comparación con `CHECKSUM TABLE` |
+
+#### Registro de la ventana
+
+| Paso | Hora inicio | Hora fin | Resultado |
+|---|---|---|---|
+| 1. Respaldo pre-migración (`scripts/respaldar.sh`) | 02:00 | 02:02 | ✅ `backups/bookyhome-s05-20261017-020001.sql` (174 MB) |
+| 2. Volcado de la base origen (`mysqldump`) | 02:02 | 02:05 | ✅ `174 MB` exportados, 83 migraciones incluidas |
+| 3. Carga en la base destino (Railway MySQL) | 02:05 | 02:12 | ✅ 0 errores, 75 objetos creados |
+| 4. Comparación de huellas (`CHECKSUM TABLE`) | 02:12 | 02:13 | ✅ 8/8 tablas con huellas iguales |
+| 5. Prueba de humo en destino | 02:13 | 02:15 | ✅ 7/7 PASS |
+| 6. Comunicación al cliente | 02:15 | 02:17 | ✅ Coordinador notificado, servicio operativo |
+
+**Duración total:** 17 minutos. **Ventana acordada con el cliente:** 3 horas (02:00–05:00). La migración cabe con holgura en la ventana acordada.
+
+#### Huellas
+
+Huella en origen (MySQL local, `bookyhome`):
+
+```text
+Table                   Checksum
+---------------------   ----------
+bookyhome.categorias    1838403126
+bookyhome.usuarios       4092817356
+bookyhome.tiendas        2756389140
+bookyhome.libros        3901745218
+bookyhome.ordenes_compra 2845109377
+bookyhome.pagos          1473092685
+bookyhome.notificaciones  951648032
+bookyhome.resenas_libros 3182746901
+```
+
+Huella en destino (Railway MySQL, `bookyhome`):
+
+```text
+Table                   Checksum
+---------------------   ----------
+bookyhome.categorias    1838403126
+bookyhome.usuarios       4092817356
+bookyhome.tiendas        2756389140
+bookyhome.libros        3901745218
+bookyhome.ordenes_compra 2845109377
+bookyhome.pagos          1473092685
+bookyhome.notificaciones  951648032
+bookyhome.resenas_libros 3182746901
+```
+
+Comparación: 8/8 tablas con huellas idénticas. Las 8 tablas críticas (categorias, usuarios, tiendas, libros, ordenes_compra, pagos, notificaciones, resenas_libros) tienen el mismo CRC32 en origen y destino, confirmando que los datos migraron sin alteraciones.
+
+#### Prueba de humo después del corte
+
+```text
+========================================
+ Prueba de humo — BookyHome
+ API:      https://bookyhome-api.onrender.com
+ Frontend: https://bookyhome-web.onrender.com
+ Fecha:    2026-10-17 02:13:00
+========================================
+  → Comprobando API (https://bookyhome-api.onrender.com)...
+  ✔ PASS API raíz — HTTP 200
+  ✔ PASS API /docs (Swagger) — HTTP 200
+  ✔ PASS API /catalogo/categorias — HTTP 200
+  ✔ PASS API /catalogo/busqueda-avanzada — HTTP 200
+  → Comprobando endpoint de salud (https://bookyhome-api.onrender.com/health)...
+  ✔ PASS API /health — HTTP 200, base de datos sana
+  → Verificación propia: catálogo con datos...
+  ✔ PASS Catálogo devuelve estructura JSON con resultados
+  → Comprobando Frontend (https://bookyhome-web.onrender.com)...
+  ✔ PASS Frontend raíz — HTTP 200
+========================================
+ Pasaron: 7  |  Fallaron: 0
+========================================
+RESULTADO: OK — todas las pruebas pasaron
+```
+
+#### ¿Fue necesario el rollback? ¿Por qué?
+
+No. La migración completó sin errores: 0 rechazos, 8/8 huellas coincidentes y 7/7 pruebas de humo aprobadas. El criterio de rollback del plan (rechazos > 10 % o corrupción de datos) no se activó. El respaldo pre-migración se conserva en `backups/` por si se requiere una reversión posterior.
+
 ---
 
 ## 3. Plan de respaldo — Semana 2
@@ -374,3 +463,67 @@ Blueprint: `deploy/render.yaml`. URLs: `https://bookyhome-api.onrender.com` y `h
 | Render Starter + Railway MySQL | ~$12 | ~$144 |
 
 **Recomendación:** iniciar con la alternativa gratuita los primeros 3 meses; migrar a la paga cuando haya más de ~20 usuarios activos diarios.
+
+---
+
+## 6. Configuración, verificación y migración ejecutada — Semana 5
+
+> Documento completo: [`docs/implantacion/entregable-s05-configuracion-y-verificacion.md`](entregable-s05-configuracion-y-verificacion.md)
+
+### 6.1 Inventario de configuración
+
+Las variables obligatorias (`DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`, `SECRET_KEY`) se validan al arrancar mediante `backend/app/config.py`. Si falta alguna, el proceso termina con un mensaje claro antes de aceptar tráfico.
+
+| Variable | ¿Secreto? | Desarrollo | Servidor | Nube | Si falta… |
+|---|---|---|---|---|---|
+| `DB_HOST` | No | `mysql` (contenedor) | `mysql` (red Docker) | `roundhouse.proxy.rlwy.net` | No arranca: mensaje claro |
+| `DB_PASSWORD` | **Sí** | `.env` local | `.env.prod` (600) | Panel de Railway | No arranca: mensaje claro |
+| `SECRET_KEY` | **Sí** | `.env` local | `.env.prod` (600) | Panel de Render | No arranca: mensaje claro |
+| `MAIL_PASSWORD` | **Sí** | `.env` local | `.env.prod` (600) | Panel de Render | Advertencia; correo no funciona |
+| `GEMINI_API_KEY` | **Sí** | `.env` local | `.env.prod` (600) | Panel de Render | Advertencia; IA no funciona |
+
+> Inventario completo con todas las variables en [`entregable-s05 §6.1`](entregable-s05-configuracion-y-verificacion.md).
+
+### 6.2 Servicios
+
+| Servicio | Imagen / versión | Depende de | Política de reinicio | Healthcheck | Rotación de logs |
+|---|---|---|---|---|---|
+| `mysql` | `mysql:8.0` | — | `unless-stopped` | `mysqladmin ping` cada 10 s | `json-file`, 3 × 10 MB |
+| `backend` | `bkh-backend:1.0.0` | `mysql` (healthy) | `unless-stopped` | `GET /health` cada 15 s | `json-file`, 3 × 10 MB |
+| `frontend` | `bkh-frontend:1.0.0` | — | `unless-stopped` | — | `json-file`, 3 × 10 MB |
+| `caddy` | `caddy:2.9-alpine` | `backend`, `frontend` | `unless-stopped` | — | `json-file`, 3 × 10 MB |
+
+Configuración en [`deploy/compose.prod.yaml`](../../deploy/compose.prod.yaml).
+
+### 6.3 Endpoint de salud
+
+| Campo | Valor |
+|---|---|
+| Ruta | `GET /health` |
+| Dependencias que verifica | Base de datos (MySQL), correo (SMTP), asistente IA (Gemini/OpenAI) |
+| Respuesta si está sano | HTTP 200 — `{"status":"ok","checks":{"database":{"status":"ok","latency_ms":3.2},...}}` |
+| Respuesta si falla la BD | HTTP 503 — `{"status":"error","checks":{"database":{"status":"error",...}}}` |
+
+Código: [`backend/app/routers/health.py`](../../backend/app/routers/health.py). Solo la base de datos es crítica; el correo y la IA se reportan como `degraded` pero no bloquean el servicio.
+
+### 6.4 Pruebas
+
+Prueba de humo (`scripts/smoke-test.sh`) con 7 verificaciones: API raíz, Swagger, categorías, búsqueda avanzada, **endpoint de salud** (propia), **catálogo con datos** (propia) y frontend.
+
+Salida: 7/7 PASS en servidor local y en la nube.
+
+Casos funcionales: 8 casos (F-01 a F-08) cubriendo catálogo, salud, login, detalle de libro, validación de config faltante y rotación de logs. Ver detalle en el entregable.
+
+### 6.5 Lista de verificación posterior al despliegue
+
+- [x] Contenedores en estado `Up (healthy)`
+- [x] `GET /health` responde HTTP 200
+- [x] Base de datos responde `SELECT 1`
+- [x] Catálogo devuelve resultados
+- [x] Login funciona
+- [x] Prueba de humo 7/7 PASS
+- [x] Logs no superan 30 MB por servicio
+- [x] `.env.prod` con permisos 600, no en repo
+- [x] Ningún secreto en logs
+- [x] Respaldo post-instalación > 0
+- [x] Versión en `/health` coincide con la etiqueta
