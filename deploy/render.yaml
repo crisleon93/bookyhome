@@ -1,0 +1,76 @@
+# render.yaml — Blueprint de despliegue en Render
+# Referencia: https://render.com/docs/blueprint-spec
+# Este archivo define los servicios de BookyHome en Render.
+# La base de datos MySQL se sustituye por Neon (PostgreSQL) en la nube;
+# ajustar las variables de conexión antes de desplegar.
+
+services:
+
+  # ─── API Backend ──────────────────────────────────────────────────────────────
+  - type: web
+    name: bookyhome-api
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    plan: free
+    envVars:
+      - key: DB_HOST
+        sync: false          # Se completa en el panel de Render
+      - key: DB_PORT
+        value: "5432"        # Neon usa PostgreSQL
+      - key: DB_USER
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: DB_NAME
+        value: bookyhome
+      - key: PUBLIC_API_URL
+        value: https://bookyhome-api.onrender.com
+      - key: FRONTEND_URL
+        value: https://bookyhome-web.onrender.com
+      - key: SECRET_KEY
+        generateValue: true
+      - key: MAIL_USERNAME
+        sync: false
+      - key: MAIL_PASSWORD
+        sync: false
+      - key: MAIL_FROM
+        sync: false
+      - key: MAIL_SERVER
+        value: smtp.gmail.com
+      - key: MAIL_PORT
+        value: "587"
+      - key: MAIL_STARTTLS
+        value: "true"
+      - key: MAIL_SSL_TLS
+        value: "false"
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        value: gemini-3.8-flash
+      - key: GEMINI_BASE_URL
+        value: https://generativelanguage.googleapis.com/v1beta/openai
+      - key: APP_VERSION
+        value: "1.0.0"
+
+  # ─── Frontend estático ────────────────────────────────────────────────────────
+  - type: web
+    name: bookyhome-web
+    runtime: static
+    buildCommand: cd frontend && pnpm install --frozen-lockfile && pnpm run build
+    staticPublishPath: ./frontend/dist
+    plan: free
+    envVars:
+      - key: VITE_API_BASE_URL
+        value: https://bookyhome-api.onrender.com
+    headers:
+      - path: /*
+        name: X-Frame-Options
+        value: SAMEORIGIN
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
