@@ -1,0 +1,46 @@
+# ─── infra/.gitignore — BookyHome ────────────────────────────────────────────
+# Nunca subir al repositorio:
+
+# Llaves SSH privadas
+*.pem
+*.key
+id_ed25519
+id_rsa
+id_ecdsa
+*.ppk
+
+# Contraseña del Ansible Vault
+.vault_password
+vault-password.txt
+vault_pass.txt
+.vault_pass
+
+# Archivos de estado de OpenTofu / Terraform
+*.tfstate
+*.tfstate.backup
+*.tfstate.*.backup
+.terraform/
+.terraform.lock.hcl
+opentofu/.terraform/
+
+# Variables de entorno reales
+.env
+.env.prod
+.env.local
+
+# Inventarios con IPs reales (usar inventario.ini como ejemplo)
+inventario-real.ini
+hosts-real.ini
+
+# Logs de ejecución de Ansible
+ansible.log
+*.retry
+
+# Caché de Ansible
+.ansible/
+__pycache__/
+
+# Archivos temporales de OpenTofu
+*.tfvars
+# Excepción: mantener *.tfvars.example en el repo
+!*.tfvars.example

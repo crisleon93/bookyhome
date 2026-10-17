@@ -711,6 +711,58 @@ Instalado por el Equipo Alfa en servidor limpio (VM Ubuntu 24.04 LTS). Duración
 
 Alcance, resultados de aceptación y simulacro, niveles de servicio, transferencia de accesos (sin secretos), garantía de 90 días, 13 pendientes asignados por rol. Firmada por equipo entregante, cliente e instructor.
 
+---
+
+## 5.10 Instalación automatizada (IaC) — Semana 10
+
+> Documento completo: [`docs/implantacion/entregable-s10-instalacion-ejecutable.md`](entregable-s10-instalacion-ejecutable.md)  
+> Infraestructura: [`infra/`](../../infra/)
+
+### Qué automatiza cada herramienta
+
+| Herramienta | Archivo | Qué cubre del plan |
+|---|---|---|
+| cloud-init | `infra/cloud-init/user-data.yaml` | §7.1 usuarios, §7.2 SSH/UFW, §1.2 Docker, parches automáticos |
+| Ansible | `infra/ansible/instalar-bookyhome.yml` | §5.2–5.7 instalación del stack, §7.1–7.3 seguridad y roles BD, §3 respaldo con restic |
+| OpenTofu (opcional) | `infra/opentofu/main.tf` | Creación de la VM y asignación de IP flotante |
+
+### Prerrequisitos del nodo de control
+
+Ansible ≥ 2.15, colecciones `community.general`, `ansible.posix`, `community.docker`, `community.mysql`. Llave SSH del servidor en el equipo de quien instala. Contraseña del vault entregada por canal seguro separado.
+
+### Ejecución resumida
+
+```bash
+# Instalar colecciones (una vez)
+ansible-galaxy collection install community.general ansible.posix community.docker community.mysql
+
+# 1. Comprobar acceso
+ansible -i infra/ansible/inventario.ini bookyhome_prod -m ping --ask-vault-pass
+
+# 2. Ver qué cambiaría
+ansible-playbook -i infra/ansible/inventario.ini infra/ansible/instalar-bookyhome.yml \
+  --ask-vault-pass --check --diff
+
+# 3. Aplicar
+ansible-playbook -i infra/ansible/inventario.ini infra/ansible/instalar-bookyhome.yml \
+  --ask-vault-pass
+
+# 4. Comprobar idempotencia (debe dar changed=0)
+ansible-playbook -i infra/ansible/inventario.ini infra/ansible/instalar-bookyhome.yml \
+  --ask-vault-pass
+```
+
+### Qué sigue siendo manual
+
+| Paso | Por qué |
+|---|---|
+| Restaurar datos de un respaldo | Decisión humana: qué instantánea, verificar huellas — §3.3 |
+| Crear cuentas en la nube | Requieren registro, verificación e identidad humana — §5.3 |
+| Actualizar registros DNS | Supervisión humana durante el corte — §4.3 |
+| Entregar contraseña del vault | Canal fuera de banda por diseño de seguridad — §7.5 |
+
+---
+
 ### 10.5 Socialización y lecciones aprendidas
 
 Presentación de 10 minutos con demostración en vivo el 2026-10-17. Retroalimentación recibida de instructor, evaluador externo y cliente: 4 observaciones incorporadas (diagrama en guía rápida, ajuste de SLA P1 fuera de horario, RF-033 postergado a roadmap v2, app móvil añadida al acta).

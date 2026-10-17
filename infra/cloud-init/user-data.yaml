@@ -1,0 +1,133 @@
+#cloud-config
+# ─────────────────────────────────────────────────────────────────────────────
+# BookyHome — user-data.yaml
+# Primer arranque de un servidor Ubuntu Server 24.04 LTS limpio.
+# Automatiza: usuario con llave SSH, SSH endurecido, UFW, Python y parches.
+#
+# Validación:
+#   sudo cloud-init schema --config-file infra/cloud-init/user-data.yaml
+#
+# Uso con multipass:
+#   multipass launch --name bkh-server --cloud-init infra/cloud-init/user-data.yaml 24.04
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ─── Usuarios ─────────────────────────────────────────────────────────────────
+users:
+  - name: ana
+    groups: [sudo, adm]
+    shell: /bin/bash
+    sudo: "ALL=(ALL) PASSWD:ALL"
+    lock_passwd: true
+    # Sustituir con la llave pública real antes de desplegar.
+    # Nunca subir llaves privadas al repositorio.
+    ssh_authorized_keys:
+      - "ssh-ed25519 AAAAC3Nz... ana@bookyhome  # reemplazar con llave real"
+
+  - name: luis
+    groups: [adm]
+    shell: /bin/bash
+    lock_passwd: true
+    ssh_authorized_keys:
+      - "ssh-ed25519 AAAAC3Nz... luis@bookyhome  # reemplazar con llave real"
+
+  - name: respaldo
+    shell: /usr/sbin/nologin
+    lock_passwd: true
+    system: true
+
+# ─── Parches y paquetes ───────────────────────────────────────────────────────
+package_update: true
+package_upgrade: true
+
+packages:
+  - apt-transport-https
+  - ca-certificates
+  - curl
+  - gnupg
+  - lsb-release
+  - ufw
+  - unattended-upgrades
+  - python3
+  - python3-pip
+  - restic
+  - git
+
+# ─── SSH endurecido ───────────────────────────────────────────────────────────
+write_files:
+  - path: /etc/ssh/sshd_config.d/10-endurecer.conf
+    owner: root:root
+    permissions: "0600"
+    content: |
+      # SSH endurecido — BookyHome (semana 6)
+      PasswordAuthentication no
+      PermitRootLogin no
+      AllowUsers ana luis
+      PubkeyAuthentication yes
+      AuthorizedKeysFile .ssh/authorized_keys
+      X11Forwarding no
+      PrintLastLog yes
+      MaxAuthTries 3
+      LoginGraceTime 30
+
+  - path: /etc/apt/apt.conf.d/50unattended-upgrades-bookyhome
+    owner: root:root
+    permissions: "0644"
+    content: |
+      // Parches automáticos de seguridad — BookyHome
+      Unattended-Upgrade::Allowed-Origins {
+        "${distro_id}:${distro_codename}-security";
+      };
+      Unattended-Upgrade::Mail "ana@bookyhome.com.co";
+      Unattended-Upgrade::Remove-Unused-Packages "true";
+      Unattended-Upgrade::Automatic-Reboot "false";
+
+# ─── Comandos de primer arranque ──────────────────────────────────────────────
+runcmd:
+  # --- UFW firewall ---
+  - ufw default deny incoming
+  - ufw default allow outgoing
+  - ufw allow 22/tcp   comment 'SSH'
+  - ufw allow 80/tcp   comment 'HTTP Caddy'
+  - ufw allow 443/tcp  comment 'HTTPS Caddy'
+  - ufw allow 443/udp  comment 'HTTP3 Caddy'
+  - ufw --force enable
+
+  # --- Recargar SSH con la nueva configuración ---
+  - systemctl restart ssh
+
+  # --- Habilitar parches automáticos ---
+  - systemctl enable --now unattended-upgrades
+
+  # --- Directorio base del proyecto ---
+  - mkdir -p /opt/bookyhome/{deploy,scripts,backups}
+  - chown -R root:root /opt/bookyhome
+  - chmod 755 /opt/bookyhome
+
+  # --- Docker Engine (repositorio oficial) ---
+  - install -m 0755 -d /etc/apt/keyrings
+  - curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+  - chmod a+r /etc/apt/keyrings/docker.asc
+  - |
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] \
+    https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo $VERSION_CODENAME) stable" \
+    > /etc/apt/sources.list.d/docker.list
+  - apt-get update -q
+  - apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+  - systemctl enable --now docker
+
+  # --- grupo despliegue ---
+  - groupadd -f despliegue
+  - usermod -aG despliegue ana
+  - usermod -aG despliegue luis
+  - usermod -aG docker ana
+  - usermod -aG docker luis
+
+  # --- restic: directorio de contraseña ---
+  - mkdir -p /etc/restic
+  - chmod 750 /etc/restic
+
+# ─── Mensaje final (aparece en los logs de cloud-init) ────────────────────────
+final_message: |
+  BookyHome — cloud-init completado en $UPTIME segundos.
+  Próximo paso: ejecutar el playbook de Ansible.
+    ansible-playbook -i infra/ansible/inventario.ini infra/ansible/instalar-bookyhome.yml
