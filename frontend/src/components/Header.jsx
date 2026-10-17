@@ -20,6 +20,7 @@ import {
   IconEyeClosed,
   IconBell,
   IconTruck,
+  IconShoppingBag,
   IconMessage,
   IconFilter
 } from './Icons';
@@ -672,6 +673,81 @@ function ModalOption({ to, onClick, iconPath, title, desc, onClose }) {
   );
 }
 
+function SellerQuickAccessItems({ noLeidosNotif, noLeidosMensajes }) {
+  return (
+    <>
+      <Link
+        to="/mi-tienda?seccion=Mis%20Libros"
+        className="quick-access-item"
+        title="Mis Libros"
+      >
+        <IconBookOpen />
+        <span className="quick-access-label">Libros</span>
+      </Link>
+
+      <Link
+        to="/mi-tienda?seccion=Ventas"
+        className="quick-access-item"
+        title="Ventas"
+      >
+        <IconCart />
+        <span className="quick-access-label">Ventas</span>
+      </Link>
+
+      <Link
+        to="/mi-tienda?seccion=Pedidos"
+        className="quick-access-item"
+        title="Pedidos"
+      >
+        <IconShoppingBag />
+        <span className="quick-access-label">Pedidos</span>
+      </Link>
+
+      <Link
+        to="/mi-tienda?seccion=Notificaciones"
+        className="quick-access-item"
+        title="Notificaciones"
+      >
+        <IconBell />
+        {noLeidosNotif > 0 && (
+          <span className="notification-badge">{noLeidosNotif}</span>
+        )}
+        <span className="quick-access-label">Notificaciones</span>
+      </Link>
+
+      <Link
+        to="/mi-tienda?seccion=Mensajes"
+        className="quick-access-item"
+        title="Mensajes y Chat"
+      >
+        <IconMessage />
+        {noLeidosMensajes > 0 && (
+          <span className="notification-badge">{noLeidosMensajes}</span>
+        )}
+        <span className="quick-access-label">Chat</span>
+      </Link>
+
+      <Link
+        to="/mi-tienda?seccion=Envíos"
+        className="quick-access-item"
+        title="Gestión de envíos"
+      >
+        <IconTruck />
+        <span className="quick-access-label">Envíos</span>
+      </Link>
+
+      <Link
+        to="/mi-tienda?seccion=Perfil"
+        className="quick-access-item"
+        title="Mi Tienda y Perfil"
+      >
+        <IconUser />
+        <span className="quick-access-label">Perfil</span>
+      </Link>
+    </>
+  );
+}
+
 function Header({ variant, hasSidebar }) {
   const location = useLocation();
   const navigate = useNavigate();
@@ -900,7 +976,7 @@ function Header({ variant, hasSidebar }) {
     params.set('q', sugerencia.titulo);
     params.set('libro', String(sugerencia.id_libro));
 
-    if (isLoggedIn) {
+    if (isLoggedIn && userRole !== 'vendedor') {
       navigate(`/?seccion=Catálogo&${params.toString()}`);
     } else {
       navigate(`/catalogo?${params.toString()}`);
@@ -909,7 +985,7 @@ function Header({ variant, hasSidebar }) {
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
-    if (isLoggedIn) {
+    if (isLoggedIn && userRole !== 'vendedor') {
       if (searchTerm.trim()) {
         navigate(`/?seccion=Catálogo&q=${encodeURIComponent(searchTerm.trim())}`);
       } else {
@@ -940,7 +1016,7 @@ function Header({ variant, hasSidebar }) {
     setSearchTerm(filtros.busqueda || '');
     setFiltrosOpen(false);
 
-    if (isLoggedIn) {
+    if (isLoggedIn && userRole !== 'vendedor') {
       params.append('seccion', 'Catálogo');
       navigate(`/?${params.toString()}`);
     } else {
@@ -1038,7 +1114,7 @@ function Header({ variant, hasSidebar }) {
         id="main-header"
         onMouseEnter={handleHeaderMouseEnter}
         onMouseLeave={handleHeaderMouseLeave}
-        className={`${isSimple ? "header-center header-simple" : ""} ${isHome ? "header-vinotinto" : isWhite ? "header-white" : "header-vinotinto"} ${mobileMenuOpen ? "header-menu-open" : ""} ${isDashboardPage ? (headerHovered ? "header-curtain-open" : "header-curtain-closed") : ""}`}
+        className={`${isSimple ? "header-center header-simple" : ""} ${isHome ? "header-vinotinto" : isWhite ? "header-white" : "header-vinotinto"} ${isLoggedIn && userRole === 'vendedor' ? "header-seller" : ""} ${mobileMenuOpen ? "header-menu-open" : ""} ${isDashboardPage ? (headerHovered ? "header-curtain-open" : "header-curtain-closed") : ""}`}
         style={{
           position: isDashboardPage ? 'fixed' : undefined,
           left: isDashboardPage ? 'var(--dashboard-sidebar-width, 250px)' : undefined,
@@ -1072,7 +1148,7 @@ function Header({ variant, hasSidebar }) {
           <IconMenu />
         </button>
 
-        {!isSimple && (
+        {(!isSimple || (isLoggedIn && userRole === 'vendedor')) && (
           <>
             <div className="search-container">
               <form className="search-wrapper" onSubmit={handleSearchSubmit}>
@@ -1136,7 +1212,7 @@ function Header({ variant, hasSidebar }) {
               {isLoggedIn ? (
                 <>
                   {/* Accesos rápidos para usuarios logueados */}
-                  <div className="quick-access">
+                  <div className={`quick-access${userRole === 'vendedor' ? ' quick-access--seller' : ''}`}>
                     {userRole !== 'vendedor' ? (
                       <>
                         <Link 
@@ -1200,71 +1276,12 @@ function Header({ variant, hasSidebar }) {
                         </Link>
                       </>
                     ) : (
-                      <>
-                        <Link 
-                          to="/mi-tienda?seccion=Mis%20Libros" 
-                          className="quick-access-item"
-                          title="Mis Libros"
-                        >
-                          <IconBookOpen />
-                          <span className="quick-access-label">Libros</span>
-                        </Link>
-
-                        <Link 
-                          to="/mi-tienda?seccion=Notificaciones" 
-                          className="quick-access-item"
-                          title="Notificaciones"
-                        >
-                          <IconBell />
-                          {noLeidosNotif > 0 && (
-                            <span className="notification-badge">{noLeidosNotif}</span>
-                          )}
-                          <span className="quick-access-label">Notificaciones</span>
-                        </Link>
-                        
-                        <Link 
-                          to="/mi-tienda?seccion=Mensajes" 
-                          className="quick-access-item"
-                          title="Mensajes y Chat"
-                        >
-                          <IconMessage />
-                          {noLeidosMensajes > 0 && (
-                            <span className="notification-badge">{noLeidosMensajes}</span>
-                          )}
-                          <span className="quick-access-label">Chat</span>
-                        </Link>
-
-                        <Link 
-                          to="/mi-tienda?seccion=Pedidos" 
-                          className="quick-access-item"
-                          title="Pedidos y Ventas"
-                        >
-                          <IconCart />
-                          <span className="quick-access-label">Pedidos</span>
-                        </Link>
-
-                        <Link 
-                          to="/mi-tienda?seccion=Perfil" 
-                          className="quick-access-item"
-                          title="Mi Tienda y Perfil"
-                        >
-                          <IconUser />
-                          <span className="quick-access-label">Perfil</span>
-                        </Link>
-                      </>
+                      <SellerQuickAccessItems
+                        noLeidosNotif={noLeidosNotif}
+                        noLeidosMensajes={noLeidosMensajes}
+                      />
                     )}
                   </div>
-
-                  {userRole === 'vendedor' && (
-                    <Link 
-                      to="/mi-tienda?seccion=Envíos" 
-                      className="header-seller-envios-btn"
-                      title="Gestión de envíos"
-                    >
-                      <IconTruck width={22} height={22} strokeWidth={2} />
-                      <span>Envíos</span>
-                    </Link>
-                  )}
                 </>
               ) : (
                 <>

@@ -92,6 +92,9 @@ export default function PublicarLibro() {
     stock: "",
     estado_libro: "",
   });
+  const [accesoAnticipado, setAccesoAnticipado] = useState(false);
+  const [nivelMinimoAcceso, setNivelMinimoAcceso] = useState("Plata");
+  const [fechaLanzamientoPublico, setFechaLanzamientoPublico] = useState("");
 
   // Cargar logo y banner de la tienda para el sidebar
   useEffect(() => {
@@ -197,11 +200,21 @@ export default function PublicarLibro() {
     if (!form.stock || Number(form.stock) < 1)
       return setError("El stock debe ser al menos 1");
     if (!form.estado_libro) return setError("Selecciona el estado del libro");
+    if (accesoAnticipado && !fechaLanzamientoPublico)
+      return setError("Indica cuándo estará disponible el libro para todos");
+    if (
+      accesoAnticipado &&
+      new Date(fechaLanzamientoPublico).getTime() < Date.now() + 24 * 60 * 60 * 1000
+    )
+      return setError("La disponibilidad pública debe ser al menos 24 horas después");
 
     setCargando(true);
     try {
       const data = new FormData();
       Object.entries(form).forEach(([k, v]) => data.append(k, v));
+      data.append("acceso_anticipado", String(accesoAnticipado));
+      data.append("nivel_minimo_acceso", nivelMinimoAcceso);
+      data.append("fecha_lanzamiento_publico", fechaLanzamientoPublico);
       archivos.forEach((file) => data.append("imagenes", file));
 
       const res = await axios.post("/libros/publicar", data, {
@@ -586,6 +599,52 @@ export default function PublicarLibro() {
             <button type="button" onClick={agregarVariante} style={{width:'100%',padding:'10px',borderRadius:'8px',background:'#7A1E3A',color:'#fff',border:'none',cursor:'pointer',fontWeight:'600',fontSize:'14px'}}>
               + Agregar variante
             </button>
+          </div>
+
+          <div className="form-card acceso-anticipado-config">
+            <h3 className="card-title">Acceso anticipado</h3>
+            <p className="card-hint">
+              Prepara este libro para el programa de acceso anticipado: el nivel elegido podrá verlo
+              24 horas antes de la fecha de disponibilidad pública.
+            </p>
+            <label style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "16px" }}>
+              <input
+                type="checkbox"
+                checked={accesoAnticipado}
+                onChange={(e) => setAccesoAnticipado(e.target.checked)}
+              />
+              Preparar acceso anticipado para este libro
+            </label>
+            {accesoAnticipado && (
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                <div className="form-group">
+                  <label htmlFor="nivel-minimo-acceso">Nivel mínimo del comprador</label>
+                  <select
+                    id="nivel-minimo-acceso"
+                    value={nivelMinimoAcceso}
+                    onChange={(e) => setNivelMinimoAcceso(e.target.value)}
+                  >
+                    {["Bronce", "Plata", "Oro", "Zafiro", "Rubi", "Esmeralda", "Amatista", "Perla", "Obsidiana", "Diamante", "Onix", "Platino"].map((nivel) => (
+                      <option key={nivel} value={nivel}>{nivel}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label htmlFor="fecha-lanzamiento-publico">Disponible para todos desde (hora Colombia)</label>
+                  <input
+                    id="fecha-lanzamiento-publico"
+                    type="datetime-local"
+                    min={new Date(Date.now() + 24 * 60 * 60 * 1000 - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16)}
+                    value={fechaLanzamientoPublico}
+                    onChange={(e) => setFechaLanzamientoPublico(e.target.value)}
+                  />
+                </div>
+              </div>
+            )}
+            <p className="input-hint">
+              La programación se guardará en tu panel. La visibilidad anticipada para compradores
+              se habilitará cuando se complete la integración del catálogo.
+            </p>
           </div>
 
           {/* Error */}

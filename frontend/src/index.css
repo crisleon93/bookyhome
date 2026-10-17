@@ -2640,6 +2640,10 @@ header.scrolled { box-shadow: none; }
   gap: 1.5rem;
 }
 
+.quick-access--seller {
+  gap: 1rem;
+}
+
 .quick-access-item {
   position: relative;
   display: flex;
@@ -6971,6 +6975,9 @@ body.auth-page {
     width: 100%;
     max-width: 100%;
   }
+  .header-seller .search-container {
+    display: none;
+  }
   .search-suggestions {
     right: 0;
     left: 0;
@@ -11122,6 +11129,12 @@ body.auth-page {
     order: 5;
     padding-top: 8px;
     border-top: 1px dashed #f0ece6;
+  }
+  .acceso-anticipado-config {
+    display: none !important;
+  }
+  .acceso-anticipado-status {
+    display: none !important;
   }
 }
 

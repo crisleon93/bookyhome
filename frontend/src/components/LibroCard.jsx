@@ -221,7 +221,7 @@ const LibroCard = ({ libro, onVerDetalles }) => {
       onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = darkMode ? '0 4px 14px rgba(0,0,0,0.38)' : '0 3px 10px rgba(36,27,31,0.1)'; }}
     >
       {/* Portada */}
-      <div style={{ height: 180, background: `linear-gradient(135deg, ${VINOTINTO} 0%, ${VINOTINTO2} 100%)`, position: 'relative', overflow: 'hidden', flexShrink: 0 }}>
+      <div style={{ height: 180, background: `linear-gradient(135deg, ${VINOTINTO} 0%, ${VINOTINTO2} 100%)`, position: 'relative', overflow: 'hidden', borderRadius: '9px 9px 0 0', flexShrink: 0 }}>
         {!imgFailed ? (
           <img
             src={imgSrc}

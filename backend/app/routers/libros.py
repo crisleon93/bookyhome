@@ -3,6 +3,7 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from typing import List, Optional
 from fastapi.responses import FileResponse
 import os, shutil, uuid
+from datetime import datetime, timedelta, timezone
 
 from app.auth import verify_token
 from app.models.libro import (
@@ -34,6 +35,11 @@ UPLOAD_DIGITAL_DIR = "uploads/libros_digitales"
 os.makedirs(UPLOAD_DIGITAL_DIR, exist_ok=True)
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
+NIVELES_FIDELIZACION = (
+    "Bronce", "Plata", "Oro", "Zafiro", "Rubi", "Esmeralda",
+    "Amatista", "Perla", "Obsidiana", "Diamante", "Onix", "Platino",
+)
+
 
 # ──────────────────────────────────────────────
 #  HELPER — obtener usuario del token
@@ -60,6 +66,35 @@ def verificar_tienda_activa(tienda):
             detail="Tu tienda ha sido suspendida por incumplir las normas. Comunícate con el administrador."
         )
     return True
+
+
+def validar_configuracion_acceso_anticipado(
+    activo: bool, nivel_minimo: str, fecha_lanzamiento: Optional[str]
+):
+    if not activo:
+        return False, "Plata", None
+
+    if nivel_minimo not in NIVELES_FIDELIZACION:
+        raise HTTPException(status_code=400, detail="Selecciona un nivel de fidelización válido")
+    if not fecha_lanzamiento:
+        raise HTTPException(status_code=400, detail="Indica cuándo estará disponible el libro para todos")
+
+    try:
+        fecha = datetime.fromisoformat(fecha_lanzamiento)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="La fecha de lanzamiento no es válida")
+
+    zona_colombia = timezone(timedelta(hours=-5))
+    if fecha.tzinfo is not None:
+        fecha = fecha.astimezone(zona_colombia).replace(tzinfo=None)
+    ahora = datetime.now(zona_colombia).replace(tzinfo=None)
+    if fecha < ahora + timedelta(hours=24):
+        raise HTTPException(
+            status_code=400,
+            detail="La fecha de disponibilidad pública debe ser al menos 24 horas posterior",
+        )
+
+    return True, nivel_minimo, fecha
 
 
 # ══════════════════════════════════════════════
@@ -153,6 +188,9 @@ async def publicar_libro(
     stock: int = Form(...),
     estado_libro: str = Form(...),
     isbn: Optional[str] = Form(None),
+    acceso_anticipado: bool = Form(False),
+    nivel_minimo_acceso: str = Form("Plata"),
+    fecha_lanzamiento_publico: Optional[str] = Form(None),
     imagenes: Optional[List[UploadFile]] = File(None),
     user=Depends(get_current_user),
 ):
@@ -166,6 +204,12 @@ async def publicar_libro(
         raise HTTPException(status_code=400, detail="El precio debe ser mayor a 0")
     if stock < 1:
         raise HTTPException(status_code=400, detail="El stock debe ser al menos 1")
+
+    acceso_anticipado, nivel_minimo_acceso, fecha_lanzamiento_publico = (
+        validar_configuracion_acceso_anticipado(
+            acceso_anticipado, nivel_minimo_acceso, fecha_lanzamiento_publico
+        )
+    )
 
     id_usuario = int(user["sub"])
     tienda = obtener_tienda_por_usuario(id_usuario)
@@ -184,6 +228,9 @@ async def publicar_libro(
         stock=stock,
         estado=estado_libro,
         isbn=validar_y_normalizar_isbn(isbn) if isbn else None,
+        acceso_anticipado=acceso_anticipado,
+        nivel_minimo_acceso=nivel_minimo_acceso,
+        fecha_lanzamiento_publico=fecha_lanzamiento_publico,
     )
     if not resultado["ok"]:
         raise HTTPException(status_code=500, detail="Error al crear el libro: " + resultado["error"])
@@ -229,8 +276,17 @@ def editar(
     stock: int = Form(...),
     estado_libro: str = Form(...),
     isbn: Optional[str] = Form(None),
+    acceso_anticipado: bool = Form(False),
+    nivel_minimo_acceso: str = Form("Plata"),
+    fecha_lanzamiento_publico: Optional[str] = Form(None),
     user=Depends(get_current_user),
 ):
+    acceso_anticipado, nivel_minimo_acceso, fecha_lanzamiento_publico = (
+        validar_configuracion_acceso_anticipado(
+            acceso_anticipado, nivel_minimo_acceso, fecha_lanzamiento_publico
+        )
+    )
+
     id_usuario = int(user["sub"])
     tienda = obtener_tienda_por_usuario(id_usuario)
     if not tienda:
@@ -249,6 +305,9 @@ def editar(
         stock=stock,
         estado=estado_libro,
         isbn=validar_y_normalizar_isbn(isbn) if isbn else None,
+        acceso_anticipado=acceso_anticipado,
+        nivel_minimo_acceso=nivel_minimo_acceso,
+        fecha_lanzamiento_publico=fecha_lanzamiento_publico,
     )
     if not resultado["ok"]:
         raise HTTPException(

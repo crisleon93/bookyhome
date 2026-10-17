@@ -1,24 +1,30 @@
 from app.database import get_db
-from datetime import date
+from datetime import date, datetime
 import re
+from typing import Optional
 
 # ──────────────────────────────────────────────
 #  CREAR LIBRO
 # ──────────────────────────────────────────────
 def crear_libro(id_tienda: int, id_categoria: int, titulo: str, autor: str,
-                descripcion: str, precio: float, stock: int, estado: str, isbn: str = None):
+                descripcion: str, precio: float, stock: int, estado: str, isbn: str = None,
+                acceso_anticipado: bool = False, nivel_minimo_acceso: str = "Plata",
+                fecha_lanzamiento_publico: Optional[datetime] = None):
     db = get_db()
     cursor = db.cursor()
     try:
         cursor.execute("""
             INSERT INTO libros (id_tienda, id_categoria, titulo, autor_libro, isbn,
                                 descripcion_libro, precio_libro, stock,
-                                estado_libro, fecha_publicacion, fecha_listado)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                                estado_libro, fecha_publicacion, fecha_listado,
+                                acceso_anticipado, nivel_minimo_acceso,
+                                fecha_lanzamiento_publico)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         """, (
             id_tienda, id_categoria, titulo, autor, isbn,
             descripcion, precio, stock,
-            estado, date.today(), date.today()
+            estado, date.today(), date.today(), acceso_anticipado,
+            nivel_minimo_acceso, fecha_lanzamiento_publico,
         ))
         db.commit()
         return {"ok": True, "id_libro": cursor.lastrowid}
@@ -162,7 +168,10 @@ def obtener_categorias():
 #  EDITAR LIBRO
 # ──────────────────────────────────────────────
 def editar_libro(id_libro: int, id_tienda: int, id_categoria: int, titulo: str,
-                 autor: str, descripcion: str, precio: float, stock: int, estado: str, isbn: str = None):
+                 autor: str, descripcion: str, precio: float, stock: int, estado: str,
+                 isbn: str = None, acceso_anticipado: bool = False,
+                 nivel_minimo_acceso: str = "Plata",
+                 fecha_lanzamiento_publico: Optional[datetime] = None):
     db = get_db()
     cursor = db.cursor()
     try:
@@ -176,9 +185,13 @@ def editar_libro(id_libro: int, id_tienda: int, id_categoria: int, titulo: str,
             UPDATE libros
             SET id_categoria = %s, titulo = %s, autor_libro = %s, isbn = %s,
                 descripcion_libro = %s, precio_libro = %s,
-                stock = %s, estado_libro = %s
+                stock = %s, estado_libro = %s, acceso_anticipado = %s,
+                nivel_minimo_acceso = %s, fecha_lanzamiento_publico = %s
             WHERE id_libro = %s
-        """, (id_categoria, titulo, autor, isbn, descripcion, precio, stock, estado, id_libro))
+        """, (
+            id_categoria, titulo, autor, isbn, descripcion, precio, stock, estado,
+            acceso_anticipado, nivel_minimo_acceso, fecha_lanzamiento_publico, id_libro,
+        ))
         db.commit()
         return {"ok": True}
     except Exception as e:

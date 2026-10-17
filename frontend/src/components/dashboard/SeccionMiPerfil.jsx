@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
-import { IconUser, IconStar, IconChartBar, IconBookOpen, IconBook } from "../Icons";
+import { useNavigate } from "react-router-dom";
+import { IconUser, IconStar, IconChartBar, IconBookOpen, IconBook, IconGift } from "../Icons";
 import { notify } from "../ToastProvider";
 import api, { getEstadisticasUsuario, uploadProfilePhoto, uploadBannerPhoto, saveBannerColor } from "../../services/api";
 
@@ -36,6 +37,7 @@ const getPuntosParaSiguiente = (nivelActual, puntosActuales) => {
 };
 
 export default function SeccionMiPerfil({ userId }) {
+  const navigate = useNavigate();
   const [userName, setUserName] = useState("");
   const [userSurname, setUserSurname] = useState("");
   const [userEmail, setUserEmail] = useState("");
@@ -583,6 +585,117 @@ export default function SeccionMiPerfil({ userId }) {
           </div>
         </div>
       )}
+
+      {/* Beneficios no monetarios: insignia por nivel y recomendaciones personalizadas. */}
+      <section
+        aria-labelledby="club-booky-title"
+        className="pl-card"
+        style={{ padding: "2rem", marginBottom: 20 }}
+      >
+        <h3
+          id="club-booky-title"
+          style={{
+            margin: "0 0 0.5rem",
+            color: t.headingColor,
+            fontSize: "1.2rem",
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+          }}
+        >
+          <IconGift width={24} height={24} strokeWidth={2} style={{ color: "#7A1E3A" }} />
+          Club Booky
+        </h3>
+        <p style={{ margin: "0 0 1.25rem", color: t.statLabel, fontSize: "0.9rem" }}>
+          Beneficios de lector que no cambian el precio de los libros ni el pago a las librerías.
+        </p>
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>
+          <div style={{ background: t.statBg, border: `1px solid ${t.statBorder}`, borderRadius: 10, padding: "1rem" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, color: t.headingColor, fontWeight: 700 }}>
+              <IconStar width={20} height={20} style={{ color: nivelColorActual.border }} />
+              Insignia {nivelFidelizacion?.nivel || "Bronce"}
+            </div>
+            <p style={{ margin: "0.5rem 0 0", color: t.statLabel, fontSize: "0.86rem", lineHeight: 1.5 }}>
+              Tu insignia refleja el nivel que ya alcanzaste en BookyHome.
+            </p>
+          </div>
+
+          <div style={{ background: t.statBg, border: `1px solid ${t.statBorder}`, borderRadius: 10, padding: "1rem" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, color: t.headingColor, fontWeight: 700 }}>
+              <IconBookOpen width={20} height={20} style={{ color: "#7A1E3A" }} />
+              Recomendaciones para ti
+            </div>
+            <p style={{ margin: "0.5rem 0 0", color: t.statLabel, fontSize: "0.86rem", lineHeight: 1.5 }}>
+              {categoriasFavoritas.length > 0
+                ? `Descubre libros de ${categoriasFavoritas[0].nombre}, según tus compras.`
+                : "Cuando tengas compras registradas, te recomendaremos libros según tus categorías favoritas."}
+            </p>
+          </div>
+
+          <div style={{ background: t.statBg, border: `1px solid ${t.statBorder}`, borderRadius: 10, padding: "1rem" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, color: t.headingColor, fontWeight: 700 }}>
+              <IconBook width={20} height={20} style={{ color: "#7A1E3A" }} />
+              Acceso anticipado a novedades
+            </div>
+            <span style={{
+              display: "inline-block",
+              marginTop: 8,
+              padding: "3px 8px",
+              borderRadius: 999,
+              background: darkMode ? "#3a3020" : "#fff3cd",
+              color: darkMode ? "#fcd34d" : "#805b00",
+              fontSize: "0.72rem",
+              fontWeight: 700,
+            }}>
+              Próximamente
+            </span>
+            <p style={{ margin: "0.45rem 0 0", color: t.statLabel, fontSize: "0.86rem", lineHeight: 1.5 }}>
+              Estamos preparando esta función para anunciar novedades con anticipación y de forma justa para todas las librerías.
+            </p>
+          </div>
+        </div>
+
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 16 }}>
+          {categoriasFavoritas.slice(0, 3).map((categoria) => (
+            <button
+              key={categoria.nombre}
+              type="button"
+              onClick={() => navigate(`/?seccion=Catálogo&categoria=${encodeURIComponent(categoria.nombre)}`)}
+              style={{
+                border: `1px solid ${t.catItemBorder}`,
+                borderRadius: 8,
+                padding: "8px 12px",
+                background: t.catItemBg,
+                color: t.headingColor,
+                font: "inherit",
+                fontSize: "0.84rem",
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              Explorar {categoria.nombre}
+            </button>
+          ))}
+          <button
+            type="button"
+            onClick={() => navigate("/?seccion=Catálogo&ordenar_por=recientes")}
+            style={{
+              border: "1px solid #7A1E3A",
+              borderRadius: 8,
+              padding: "8px 12px",
+              background: darkMode ? "#3a1d28" : "#fff",
+              color: darkMode ? "#f9a8d4" : "#7A1E3A",
+              font: "inherit",
+              fontSize: "0.84rem",
+              fontWeight: 700,
+              cursor: "pointer",
+            }}
+          >
+            Ver novedades disponibles
+          </button>
+        </div>
+      </section>
 
       {/* Estadísticas de Compras */}
       <div className="pl-card perfil-stats-card" style={{ padding: "2rem", marginBottom: 20 }}>
