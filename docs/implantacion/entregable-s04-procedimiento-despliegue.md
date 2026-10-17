@@ -193,14 +193,23 @@ RESULTADO: OK — todas las pruebas pasaron
 | Render Free (Static Site) | Sin suspensión (solo archivos estáticos en CDN) | Sin impacto | [render.com/pricing](https://render.com/pricing) — 2026-10-17 |
 | Neon Free | 0.5 GB de almacenamiento; se **suspende tras 5 días de inactividad**; 191,9 horas de compute/mes | Si la BD se suspende, la API falla hasta que Neon la despierta (~5 s) | [neon.tech/docs/introduction/plans](https://neon.tech/docs/introduction/plans) — 2026-10-17 |
 
-### Evidencia de prueba de humo en la nube
+### Estado del despliegue en la nube
 
-> La prueba contra las URLs públicas se ejecutará al completar el despliegue en Render en la semana 4. El resultado se pegará aquí con el mismo formato que la prueba local.
+**Fecha de intento:** 2026-10-17
 
-```
-# Resultado esperado (se completará tras el despliegue real):
-RESULTADO: OK — todas las pruebas pasaron
-```
+| Componente | Estado | Detalle |
+|---|---|---|
+| Render Web Service (API) | ⚠️ Build exitoso, runtime falla | La imagen Docker construyó correctamente. El backend arranca pero no puede conectarse a la BD: usa `mysql-connector-python` y Neon ofrece PostgreSQL — motores incompatibles. |
+| Neon (PostgreSQL) | ✅ Proyecto creado | Base de datos `neondb` en `AWS us-east-1`. No compatible con el driver MySQL del backend sin refactorizar la capa de datos. |
+| Railway (MySQL) | ✅ Instancia MySQL online | MySQL 8 disponible en `mysql.railway.internal:3306`. El host interno solo es accesible desde la red de Railway — no desde Render. |
+| Render Static Site (Frontend) | 🔜 Pendiente | Se configura después de que la API esté estable. |
+
+**Causa raíz:** BookyHome usa MySQL 8 con `mysql-connector-python`. Los PaaS con base de datos gratuita compatibles con MySQL (Railway) usan red interna que no es accesible desde Render. Las alternativas gratuitas con PostgreSQL (Neon, Supabase) requieren cambiar el driver de conexión del backend.
+
+**Opciones para completar el despliegue:**
+1. **Railway completo** — mover también el backend a Railway; así el backend y MySQL comparten la red interna `railway.internal` sin costo de egress.
+2. **Refactorizar a PostgreSQL** — cambiar `mysql-connector-python` por `asyncpg`/`psycopg2` y adaptar las migraciones SQL para usar Neon o Supabase.
+3. **Fly.io** — permite desplegar el stack completo con MySQL en la misma región sin restricciones de red interna.
 
 ---
 
