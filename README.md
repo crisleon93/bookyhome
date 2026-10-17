@@ -317,6 +317,14 @@ Estos comandos entran a `frontend/` y ejecutan el script correspondiente.
 - `backend/README.md`: detalles de la API.
 - `app-movil/README.md`: detalles de la app movil.
 
+## Ayuda y soporte
+
+- **Guía rápida de uso:** [`docs/ayuda/guia-rapida.md`](docs/ayuda/guia-rapida.md)
+- **Preguntas frecuentes:** [`docs/ayuda/preguntas-frecuentes.md`](docs/ayuda/preguntas-frecuentes.md)
+- **Reportar una falla:** [Abrir un issue](https://github.com/bookyhome/biblioteca/issues/new?template=reporte-de-falla.md)
+- **Canal de soporte (Telegram):** @bookyhome_ops
+- **Runbooks de operación:** [`docs/runbooks/`](docs/runbooks/)
+
 ## Estado general
 
 El proyecto esta organizado por capas:

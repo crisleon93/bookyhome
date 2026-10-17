@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Canal de soporte (Telegram BookyHome-Ops)
+    url: https://t.me/bookyhome_ops
+    about: Para consultas de uso y soporte N1, escríbenos por Telegram.
+  - name: Guía rápida
+    url: https://github.com/bookyhome/biblioteca/blob/main/docs/ayuda/guia-rapida.md
+    about: Antes de reportar, consulta la guía rápida de uso.
+  - name: Preguntas frecuentes
+    url: https://github.com/bookyhome/biblioteca/blob/main/docs/ayuda/preguntas-frecuentes.md
+    about: Es posible que tu pregunta ya esté resuelta aquí.
