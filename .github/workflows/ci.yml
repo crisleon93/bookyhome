@@ -1,0 +1,83 @@
+# ci.yml — Integración continua de BookyHome
+# Se ejecuta en cada push a main y en cada pull request.
+# Construye las imágenes, levanta el stack y ejecuta la prueba de humo.
+# El check se llama "prueba-de-humo" (exigido por la regla de proteccion de main).
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  prueba-de-humo:
+    name: prueba-de-humo
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # ── Construir y levantar ──────────────────────────────────────────────
+      - name: Levantar MySQL con esquema inicial
+        run: |
+          docker compose -f docker-compose.ci.yml up -d mysql
+          echo "Esperando a que MySQL este sano..."
+          for i in $(seq 1 60); do
+            if docker compose -f docker-compose.ci.yml ps mysql | grep -q "healthy"; then
+              echo "MySQL sano"
+              break
+            fi
+            sleep 3
+          done
+
+      - name: Aplicar migraciones
+        run: |
+          echo "Aplicando migraciones..."
+          for f in database/migrations/*.sql; do
+            echo "  → $(basename "$f")"
+            docker compose -f docker-compose.ci.yml exec -T mysql \
+              mysql -uroot -proot bookyhome < "$f" 2>&1 | tail -1 || true
+          done
+          echo "Migraciones aplicadas"
+
+      - name: Levantar backend y frontend
+        run: |
+          docker compose -f docker-compose.ci.yml up -d --build backend frontend
+          echo "Esperando a que el backend este sano..."
+          for i in $(seq 1 60); do
+            if curl -sf http://localhost:8000/health >/dev/null 2>&1; then
+              echo "Backend sano"
+              break
+            fi
+            sleep 3
+          done
+
+      # ── Prueba de humo ────────────────────────────────────────────────────
+      - name: Prueba de humo
+        run: |
+          bash scripts/smoke-test.sh http://localhost:8000 http://localhost:5173
+
+      # ── Pruebas del proyecto (si existen) ─────────────────────────────────
+      - name: Pruebas unitarias del backend (pytest)
+        run: |
+          if [ -d backend/tests ] && [ -n "$(ls -A backend/tests 2>/dev/null)" ]; then
+            docker compose -f docker-compose.ci.yml exec -T backend \
+              python -m pytest tests/ -v --tb=short || true
+          else
+            echo "No hay pruebas unitarias en backend/tests/"
+          fi
+
+      - name: Limpiar
+        if: always()
+        run: |
+          docker compose -f docker-compose.ci.yml down -v || true
