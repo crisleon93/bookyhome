@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+# respaldo-restic.sh — BookyHome respaldo diario
+# Generado por Ansible. No editar manualmente.
+# Cron: {{ restic_cron_schedule }}
+set -euo pipefail
+
+REPO_LOCAL="{{ restic_repo_local }}"
+PASSWORD_FILE="{{ restic_password_file }}"
+DB_CONTAINER="bookyhome-mysql"
+DUMP_DIR="{{ backups_dir }}"
+TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+DUMP_FILE="${DUMP_DIR}/bookyhome-${TIMESTAMP}.sql.gz"
+
+log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"; }
+
+log "=== Respaldo BookyHome — inicio ==="
+
+# Volcar la base de datos
+log "Volcando base de datos..."
+docker exec "${DB_CONTAINER}" \
+  mysqldump -u root -p"{{ vault_db_password_app }}" \
+  --single-transaction --routines --triggers --events \
+  {{ db_name }} | gzip -9 > "${DUMP_FILE}"
+
+log "Volcado completado: ${DUMP_FILE}"
+
+# Respaldar con restic (repositorio local)
+log "Enviando a restic (local)..."
+RESTIC_PASSWORD_FILE="${PASSWORD_FILE}" restic -r "${REPO_LOCAL}" \
+  backup "${DUMP_FILE}" \
+  --tag bookyhome --tag "$(date +%Y-%m-%d)"
+
+# Aplicar política de retención
+log "Aplicando retención (7d / 4w / 12m)..."
+RESTIC_PASSWORD_FILE="${PASSWORD_FILE}" restic -r "${REPO_LOCAL}" \
+  forget --keep-daily 7 --keep-weekly 4 --keep-monthly 12 --prune
+
+# Verificar integridad
+log "Verificando integridad del repositorio..."
+RESTIC_PASSWORD_FILE="${PASSWORD_FILE}" restic -r "${REPO_LOCAL}" check
+
+# Eliminar volcado temporal
+rm -f "${DUMP_FILE}"
+
+log "=== Respaldo completado ==="

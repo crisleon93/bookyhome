@@ -1,0 +1,59 @@
+---
+# group_vars/bookyhome_prod/vars.yml — variables no secretas de BookyHome
+# Los secretos van en vault.yml (cifrado con Ansible Vault).
+
+# ─── Versión ──────────────────────────────────────────────────────────────────
+app_version: "1.0.1"
+registry: "ghcr.io/bookyhome"
+
+# ─── Directorios ──────────────────────────────────────────────────────────────
+app_base_dir: /opt/bookyhome
+deploy_dir: "{{ app_base_dir }}/deploy"
+scripts_dir: "{{ app_base_dir }}/scripts"
+backups_dir: "{{ app_base_dir }}/backups"
+
+# ─── Usuario del sistema operativo ───────────────────────────────────────────
+app_user: ana
+app_group: despliegue
+
+# ─── Base de datos ────────────────────────────────────────────────────────────
+db_host: mysql
+db_port: 3306
+db_name: bookyhome
+db_user_app: bookyhome_app
+db_user_owner: bookyhome_owner
+
+# ─── Backend ─────────────────────────────────────────────────────────────────
+public_api_url: "https://api.bookyhome.com.co"
+frontend_url: "https://bookyhome.com.co"
+vite_api_base_url: "https://api.bookyhome.com.co"
+
+# ─── Correo transaccional ─────────────────────────────────────────────────────
+mail_server: smtp.gmail.com
+mail_port: 587
+mail_starttls: "true"
+mail_ssl_tls: "false"
+
+# ─── Gemini ──────────────────────────────────────────────────────────────────
+gemini_model: "gemini-3.8-flash"
+gemini_base_url: "https://generativelanguage.googleapis.com/v1beta/openai"
+
+# ─── BookyPago ────────────────────────────────────────────────────────────────
+bookypago_comision: "0.05"
+bookypago_comision_fija: "0.00"
+bookypago_saldo_minimo: "0.00"
+bookypago_saldo_maximo: "10000000.00"
+bookypago_comision_venta: "0.10"
+bookypago_comision_impulso: "0.05"
+bookypago_comision_plan: "0.02"
+bookypago_dias_pago: "7"
+bookypago_minimo_pago: "50000"
+
+# ─── Respaldo (restic) ────────────────────────────────────────────────────────
+restic_repo_local: /var/respaldos/restic
+restic_password_file: /etc/restic/password
+restic_cron_schedule: "0 20 * * *"
+
+# ─── Docker ───────────────────────────────────────────────────────────────────
+docker_network: bookyhome_net
+compose_file: "{{ deploy_dir }}/compose.prod.yaml"

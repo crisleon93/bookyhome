@@ -1,0 +1,58 @@
+---
+# compose.lab.yaml — BookyHome laboratorio Ansible
+# Simula: un "servidor limpio" Ubuntu 24.04 + el nodo de control Ansible.
+# El servidor expone SSH en el puerto 2222 del host.
+#
+# Uso:
+#   docker compose -f infra/docker-lab/compose.lab.yaml up -d
+#   docker compose -f infra/docker-lab/compose.lab.yaml down -v
+
+services:
+
+  # ─── Nodo de control (Ansible + colecciones) ──────────────────────────────
+  control:
+    image: willhallonline/ansible:2.17-ubuntu-24.04
+    container_name: bkh-control
+    hostname: control
+    working_dir: /workspace
+    volumes:
+      - ../../:/workspace:ro          # repositorio montado en lectura
+      - ./lab-keys:/root/.ssh:ro      # llaves SSH generadas para el lab
+      - ansible_cache:/root/.ansible
+    command: sleep infinity
+    networks:
+      - lab_net
+    depends_on:
+      servidor:
+        condition: service_healthy
+
+  # ─── Servidor "limpio" (Ubuntu 24.04 con SSH) ──────────────────────────────
+  servidor:
+    build:
+      context: .
+      dockerfile: Dockerfile.servidor
+    container_name: bkh-servidor
+    hostname: bkh-servidor
+    ports:
+      - "2222:22"
+    volumes:
+      # Monta el socket del Docker del host para que el servidor use el Docker
+      # que ya está corriendo, sin instalar Docker dentro del contenedor.
+      - /var/run/docker.sock:/var/run/docker.sock
+      - servidor_opt:/opt
+    healthcheck:
+      test: ["CMD", "bash", "-c", "ssh -o StrictHostKeyChecking=no -o ConnectTimeout=3 -i /root/.ssh/id_ed25519 ansible@localhost -p 22 echo ok 2>/dev/null || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    networks:
+      - lab_net
+
+networks:
+  lab_net:
+    driver: bridge
+
+volumes:
+  ansible_cache:
+  servidor_opt:
