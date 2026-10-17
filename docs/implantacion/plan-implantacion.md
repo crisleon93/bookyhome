@@ -245,7 +245,86 @@ Tiempo de restauración: ~95 segundos.
 
 ---
 
-## 4. _(reservado para semanas futuras)_
+## 4. Estrategia de hosting y dominio — Semana 3
+
+> Documento completo: [`docs/implantacion/entregable-s03-hosting-y-dominio.md`](entregable-s03-hosting-y-dominio.md)  
+> Archivo de reverse proxy: [`Caddyfile`](../../Caddyfile) en la raíz del repositorio.
+
+### 4.1 Tipo de hosting por componente
+
+| Componente | Tipo | Proveedor candidato | Justificación |
+|---|---|---|---|
+| Frontend (build estático React/Vite) | Estático (CDN) | Render Static Site | Solo archivos HTML/CSS/JS; CDN y HTTPS incluidos sin costo de servidor |
+| API REST (FastAPI/Uvicorn en Docker) | PaaS (contenedor) | Render Web Service | Corre la imagen Docker sin administrar SO; escalado y reinicio automáticos |
+| Base de datos MySQL 8 | DBaaS / gestionado | PlanetScale o Railway | Backups automáticos y conexiones seguras sin gestionar el servidor de BD |
+| Archivos subidos (imágenes de libros) | Object storage | Backblaze B2 / Cloudflare R2 | Los volúmenes Docker no escalan en PaaS; object storage integra con URL pública |
+| App móvil (Expo) | Sin servidor propio | Expo Application Services (EAS) | Cliente distribuido vía tiendas; no requiere hosting de servidor |
+
+> Alternativa en servidor propio: VM Ubuntu 24.04 LTS con Docker Compose para los tres servicios (frontend como archivos estáticos, API y MySQL), expuestos al exterior únicamente a través de Caddy en los puertos 80/443.
+
+### 4.2 Dominio
+
+| Campo | Valor |
+|---|---|
+| Dominio principal | `bookyhome.com.co` |
+| Subdominio de API | `api.bookyhome.com.co` |
+| Tipo | Propio |
+| Registrador candidato | Namecheap o Google Domains |
+| Responsable de pago y renovación | Coordinador de la librería (propietario del dominio) |
+
+Dominio local de prueba: `bookyhome.local` / `api.bookyhome.local` con `tls internal` de Caddy.
+
+### 4.3 Registros DNS (valores ficticios — se actualizarán en la semana 4)
+
+| Nombre | Tipo | Valor | TTL | Propósito |
+|---|---|---|---|---|
+| `@` | `A` | `<ip-servidor>` | `3600` | Raíz del dominio |
+| `www` | `CNAME` | `bookyhome.com.co.` | `3600` | Alias www |
+| `api` | `CNAME` | `<servicio>.onrender.com.` | `3600` | API en PaaS |
+| `@` | `TXT` | `v=spf1 include:_spf.google.com ~all` | `3600` | SPF anti-spam |
+
+### 4.4 Camino de una petición
+
+```
+Usuario
+  │
+  ▼ DNS: bookyhome.com.co → <ip-servidor>
+  │
+  ▼ TCP :443 (HTTPS / TLS — Caddy + Let's Encrypt)
+  │
+  ┌──────────────────────────────────────────────────────────┐
+  │  Servidor Ubuntu 24.04 LTS                               │
+  │  Caddy (80 / 443)                                        │
+  │    ├── bookyhome.com.co     → frontend :5173 (interno)   │
+  │    └── api.bookyhome.com.co → backend  :8000 (interno)   │
+  │  Red interna Docker                                      │
+  │    backend :8000 ──────────────→ mysql :3306             │
+  └──────────────────────────────────────────────────────────┘
+```
+
+**Puertos abiertos a Internet:** `80/tcp` (HTTP + ACME), `443/tcp` (HTTPS), `22/tcp` (SSH).  
+**Cerrados al exterior:** `8000` (API), `3306` (MySQL), `5173` (Vite dev).
+
+### 4.5 Reverse proxy
+
+Archivo `Caddyfile` en la raíz del repositorio. Publica el frontend y la API detrás de TLS con `tls internal` para pruebas locales.
+
+```bash
+# Comandos de prueba local
+caddy trust
+caddy run --config Caddyfile
+curl --resolve bookyhome.local:443:127.0.0.1 https://bookyhome.local/ -o /dev/null -s -w "%{http_code}\n"
+curl --resolve api.bookyhome.local:443:127.0.0.1 https://api.bookyhome.local/health -s
+```
+
+### 4.6 Transferencia de archivos
+
+| Qué se transfiere | Método | Autenticación | Frecuencia |
+|---|---|---|---|
+| Respaldos de BD (`.sql.gz`) | SFTP | Llave SSH Ed25519 (usuario solo-SFTP, sin shell) | Diaria |
+| Imágenes de libros (`uploads_data`) | rsync sobre SSH | Misma llave SSH de respaldo | Semanal / por despliegue |
+| Código / imagen Docker | Git push + CI/CD | Clave SSH del repositorio | Por despliegue |
+| Archivo `.env` | SCP manual | Llave SSH del responsable técnico | Solo al instalar o rotar credenciales |
 
 ---
 

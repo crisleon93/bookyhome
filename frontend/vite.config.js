@@ -7,5 +7,7 @@ export default defineConfig({
   server: {
     port: 5173,
     host: true,
+    // Permite acceder al dev server a través del reverse proxy local (Caddy)
+    allowedHosts: ['bookyhome.local', 'localhost'],
   },
 })

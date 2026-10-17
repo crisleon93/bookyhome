@@ -51,3 +51,9 @@ Thumbs.db
 *.njsproj
 *.sln
 *.sw?
+
+# ======================
+# 🌐 CADDY (reverse proxy)
+# ======================
+# Binario descargado localmente — no se versiona
+caddy.exe
