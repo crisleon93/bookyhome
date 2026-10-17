@@ -9,8 +9,8 @@ from pydantic import BaseModel, EmailStr, Field
 class UsuarioRegistro(BaseModel):
     nombre: str
     email: EmailStr
-    password: str
-    telefono: str
+    password: str = Field(..., min_length=8, description="Mínimo 8 caracteres")
+    telefono: str = Field(..., pattern=r"^\d{7,15}$", description="Solo dígitos, entre 7 y 15")
     rol: Literal["comprador", "vendedor"] = "comprador"
 
 class UsuarioLogin(BaseModel):
@@ -82,8 +82,8 @@ class CategoriaRespuesta(BaseModel):
 
 class PagoRequest(BaseModel):
     order_id: int
-    amount: float
-    payment_method: str
+    amount: float = Field(..., gt=0, description="Debe ser mayor a 0")
+    payment_method: Literal["tarjeta", "efectivo", "transferencia", "nequi", "daviplata", "pse"] 
     coupon_code: Optional[str] = None
     tipo_entrega: Optional[str] = None  # 'domicilio' | 'retiro_tienda'
     id_direccion: Optional[int] = None  # dirección de envío si tipo_entrega == 'domicilio'
