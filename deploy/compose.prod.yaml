@@ -23,6 +23,11 @@ services:
       timeout: 10s
       retries: 15
       start_period: 120s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     networks:
       - bookyhome_net
 
@@ -45,8 +50,19 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; r=urllib.request.urlopen('http://localhost:8000/health',timeout=5); sys.exit(0 if r.status==200 else 1)"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
     volumes:
       - uploads_data:/app/uploads
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     networks:
       - bookyhome_net
 
@@ -61,6 +77,11 @@ services:
       VITE_API_BASE_URL: ${VITE_API_BASE_URL}
       APP_VERSION: ${APP_VERSION:-latest}
     # Puerto 80 del contenedor → Caddy hace proxy; no se expone directamente
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     networks:
       - bookyhome_net
 
@@ -77,6 +98,11 @@ services:
       - ../deploy/Caddyfile.prod:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
       - caddy_config:/config
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     networks:
       - bookyhome_net
     depends_on:
