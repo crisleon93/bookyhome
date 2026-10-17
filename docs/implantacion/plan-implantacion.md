@@ -285,52 +285,43 @@ No. La migración completó sin errores: 0 rechazos, 8/8 huellas coincidentes y 
 
 ---
 
-## 3. Plan de respaldo — Semana 2
+## 3. Plan de respaldo final — Semana 6
 
-> Documento completo: [`docs/implantacion/entregable-s02-planes.md § 3`](entregable-s02-planes.md)
+> Reemplaza el plan v0 de la semana 2.  
+> Documento completo: [`docs/implantacion/entregable-s06-seguridad-y-respaldo.md § 3`](entregable-s06-seguridad-y-respaldo.md)  
+> Script: [`scripts/respaldo-restic.sh`](../../scripts/respaldo-restic.sh) · Restauración: [`scripts/restaurar-restic.sh`](../../scripts/restaurar-restic.sh)
 
-### 3.1 Qué se respalda
+| Campo | Valor |
+|---|---|
+| Qué se respalda | Base de datos `bookyhome` (MySQL 8) con `mysqldump --single-transaction --routines --triggers --events` + `gzip -9` |
+| RPO / RTO acordados | RPO: 24 h · RTO: 2 h (vigente desde semana 2) |
+| Herramienta | `mysqldump` + `restic` (cifrado AES-256 nativo, deduplicación) |
+| Usuario y rol de BD | Sistema: `respaldo` (nologin) · BD: `bookyhome_owner` |
+| Cifrado y contraseña | AES-256 nativo de restic · `/etc/restic/password` (640, `root:respaldo`) + copia en gestor (Bitwarden) |
+| Horario (cron) | `0 20 * * *` — diario a las 20:00 h (America/Bogota) |
+| Retención | 7 diarios, 4 semanales, 12 mensuales |
+| Verificación automática | `restic check` en cada ejecución (local + remoto) |
+| Responsable | `respaldo` (servicio automatizado) · `ana` (supervisión) |
 
-| Elemento | Método | ¿Datos personales? |
-|---|---|---|
-| Base de datos `bookyhome` (MySQL) | `mysqldump --single-transaction --routines --triggers` + `gzip -9` | Sí |
-| Volumen `uploads_data` (imágenes de libros) | `tar czf` desde contenedor efímero | No |
-| Archivo `backend/.env` | Copia manual cifrada antes de cada despliegue | Sí |
+### 3.1 Regla 3-2-1
 
-### 3.2 RPO / RTO
-
-| RPO | RTO | Justificación |
-|---|---|---|
-| 24 horas | 2 horas | Plataforma de e-commerce en fase inicial; pérdida de un día de transacciones tolerable. Se revisará al aumentar volumen de ventas. |
-
-### 3.3 Política 3-2-1
-
-| Copia | Ubicación | Cifrado |
-|---|---|---|
-| 1 | Carpeta `backups/` en el mismo servidor (SSD local) | No (red interna) |
-| 2 | NAS de la librería (red interna, SMB/SSHFS) | No (red privada) |
-| 3 (fuera del sitio) | Bucket en la nube (S3 o equivalente) | Sí — AES-256 vía GPG |
-
-Frecuencia: diaria a las 20:00 h. Retención: 30 días diarios; último día de mes → 12 meses.
-
-### 3.4 Evidencia de restauración (2026-10-12)
-
-Respaldo generado: `backups/bookyhome-s02-20261012-183158.sql` (~174 MB).  
-Base restaurada: `bookyhome_s02_prueba`.
-
-| Tabla | Producción | Restaurada | ¿Coincide? |
+| Copia | Medio | Ubicación | ¿Inmutable? |
 |---|---|---|---|
-| usuarios | 285 | 285 | ✅ |
-| tiendas | 151 | 151 | ✅ |
-| libros | 5 258 | 5 258 | ✅ |
-| ordenes_compra | 23 439 | 23 439 | ✅ |
-| pagos | 23 402 | 23 402 | ✅ |
-| notificaciones | 653 851 | 653 851 | ✅ |
-| resenas_libros | 310 367 | 310 367 | ✅ |
-| categorias | 16 | 16 | ✅ |
-| Total objetos (tablas + vistas) | 75 | 75 | ✅ |
+| Producción | Volumen Docker `mysql_data` | Servidor (SSD) | No (vivo) |
+| Repositorio local | Disco SSD del servidor | `/var/respaldos/restic/` (cifrado) | No |
+| Repositorio externo | SFTP al NAS de la librería | `sftp:respaldo@nas-libreria:/respaldos/bookyhome/` (cifrado) | No (WORM opcional) |
 
-Tiempo de restauración: ~95 segundos.
+### 3.2 Restauración probada (2026-10-17)
+
+| Campo | Valor |
+|---|---|
+| Quién restauró | Operador (`luis`), siguiendo solo el procedimiento escrito |
+| Instantánea | `8a3f2c1d` (2026-10-17 20:00 UTC), repositorio local |
+| Tiempo total | 4 min 12 s (252 s) |
+| RTO acordado | 2 h (7200 s) — **cumple con 96.5 % de margen** |
+| Huellas | 8/8 tablas con `CHECKSUM TABLE` idénticas |
+
+> Plan v0 (semana 2) archivado en [`entregable-s02-planes.md § 3`](entregable-s02-planes.md). Diferencias: v0 usaba `gpg --symmetric` manual sin repositorio cifrado ni copia fuera del sitio automatizada; el plan final usa restic con repositorios local y remoto, verificación automática y retención programada.
 
 ---
 
@@ -527,3 +518,77 @@ Casos funcionales: 8 casos (F-01 a F-08) cubriendo catálogo, salud, login, deta
 - [x] Ningún secreto en logs
 - [x] Respaldo post-instalación > 0
 - [x] Versión en `/health` coincide con la etiqueta
+
+---
+
+## 7. Seguridad, Usuarios y Plan de Respaldo Final — Semana 6
+
+> Documento completo: [`docs/implantacion/entregable-s06-seguridad-y-respaldo.md`](entregable-s06-seguridad-y-respaldo.md)  
+> Scripts: [`crear-roles-bd.sh`](../../scripts/crear-roles-bd.sh), [`respaldo-restic.sh`](../../scripts/respaldo-restic.sh), [`restaurar-restic.sh`](../../scripts/restaurar-restic.sh)
+
+### 7.1 Usuarios del sistema operativo
+
+| Cuenta | Tipo | Persona o servicio | Grupos | Inicia sesión | sudo permitido |
+|---|---|---|---|---|---|
+| `ana` | Persona | Administradora | `sudo`, `despliegue` | Llave SSH | Todo, con contraseña |
+| `luis` | Persona | Operador | `despliegue` | Llave SSH | `/usr/local/bin/reiniciar-bookyhome` |
+| `respaldo` | Servicio | cron + restic | `respaldo` | No (nologin) | Nada |
+
+Archivos sensibles: `/opt/bookyhome` (`root:despliegue`, 2770), `.env.prod` (`root:despliegue`, 640), `/etc/restic/password` (`root:respaldo`, 640).
+
+### 7.2 Acceso remoto y firewall
+
+SSH endurecido (`/etc/ssh/sshd_config.d/10-endurecer.conf`): `PasswordAuthentication no`, `PermitRootLogin no`, `AllowUsers ana luis`.
+
+UFW: `default deny incoming`; puertos abiertos: 22 (SSH), 80/443 (Caddy). MySQL (3306) y API (8000) no expuestos al host (solo red interna Docker). Ver evidencia con `docker compose ps` y `nc -zv` desde otro equipo en el entregable.
+
+### 7.3 Roles de la base de datos
+
+| Rol | Privilegios | No puede | Lo usa | Dónde vive la contraseña |
+|---|---|---|---|---|
+| `bookyhome_owner` | `ALL PRIVILEGES ON bookyhome.*` (DDL incluido) | Crear usuarios ni bases | Migraciones | Gestor de contraseñas (Bitwarden) |
+| `bookyhome_app` | `SELECT, INSERT, UPDATE, DELETE` | `CREATE`, `ALTER`, `DROP`, `TRUNCATE`, `INDEX`, `GRANT` | La app (backend) | `.env.prod` del servidor (600) |
+
+Script: [`scripts/crear-roles-bd.sh`](../../scripts/crear-roles-bd.sh) (sin contraseñas reales; las genera con `openssl rand`).
+
+### 7.4 Pruebas de privilegios
+
+| Rol | Operación | Resultado |
+|---|---|---|
+| `bookyhome_app` | `DROP TABLE usuarios` | ❌ `DROP command denied` |
+| `bookyhome_app` | `CREATE TABLE hack (id INT)` | ❌ `CREATE command denied` |
+| `bookyhome_app` | `ALTER TABLE libros ADD COLUMN x INT` | ❌ `ALTER command denied` |
+| `bookyhome_app` | `TRUNCATE TABLE usuarios` | ❌ `DROP command denied` |
+| `bookyhome_app` | `GRANT SELECT ON bookyhome.* TO 'otro'@'%'` | ❌ `Access denied` |
+| `bookyhome_app` | `SELECT * FROM usuarios` | ✅ 285 filas |
+| `bookyhome_owner` | `CREATE TABLE prueba (id INT)` | ✅ Tabla creada |
+| `bookyhome_owner` | `CREATE USER 'intruso'@'%'` | ❌ `Access denied; you need CREATE USER` |
+
+### 7.5 Inventario de secretos
+
+| Secreto | Da acceso a | Dónde vive | Permisos | Cómo se rota |
+|---|---|---|---|---|
+| `DB_PASSWORD` (app) | BD (CRUD de datos) | `.env.prod` (servidor) / panel (nube) | 600 | `crear-roles-bd.sh` → actualizar `.env.prod` → reiniciar |
+| `DB_MIGRATION_PASSWORD` (owner) | BD (DDL completo) | Gestor de contraseñas | — | `crear-roles-bd.sh` → ejecutar en MySQL → actualizar gestor |
+| `SECRET_KEY` | Firma JWT | `.env.prod` (servidor) / panel (nube) | 600 | `python3 -c "import secrets; print(secrets.token_hex(32))"` → reiniciar |
+| `MAIL_PASSWORD` | Correo SMTP | `.env.prod` / panel | 600 | App password del proveedor → reiniciar |
+| `GEMINI_API_KEY` | API Gemini | `.env.prod` / panel | 600 | Revocar en Google AI Studio → nueva clave → reiniciar |
+| Contraseña restic | Todos los respaldos | `/etc/restic/password` + gestor (fuera del servidor) | 640 | `restic key add` → `restic key remove` → actualizar gestor |
+| Llaves SSH | Acceso al servidor | `authorized_keys` (servidor) / `id_ed25519` (cliente) | 600 | `ssh-keygen -t ed25519` → añadir → eliminar la antigua |
+
+Revisión del historial de Git: ningún `.env` commiteado, ninguna contraseña real ni API key en el historial. El `docker-compose.yml` de desarrollo usa `MYSQL_ROOT_PASSWORD: root` (desarrollo local, no producción).
+
+### Plan de respaldo final
+
+Reemplaza la sección 3 (ver arriba). Resumen: `mysqldump` + `restic` con cifrado AES-256, repositorios local y SFTP al NAS (3-2-1), cron diario a las 20:00 h, retención 7d/4w/12m, verificación automática con `restic check`.
+
+### Restauración de desastre probada
+
+| Campo | Valor |
+|---|---|
+| Fecha | 2026-10-17 |
+| Quién restauró | Operador (`luis`), sin ayuda de la administradora |
+| Instantánea | `8a3f2c1d` (repo local) |
+| Tiempo total | 4 min 12 s (252 s) |
+| RTO | 2 h — cumple con 96.5 % de margen |
+| Huellas | 8/8 tablas con `CHECKSUM TABLE` idénticas |
