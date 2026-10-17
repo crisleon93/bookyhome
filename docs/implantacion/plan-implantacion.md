@@ -5,7 +5,7 @@
 | Proyecto | BookyHome |
 | Equipo | Equipo BookyHome |
 | Versión del plan | 1.1 |
-| Fecha | 2026-10-12 |
+| Fecha | 2026-10-17 |
 
 ## 1. Ficha técnica y matriz de requisitos — Semana 1
 
@@ -679,3 +679,47 @@ Cuatro públicos: compradores (30 min — registro, búsqueda, compra), vendedor
 ### 9.4 Ayudas en línea
 
 [`docs/ayuda/guia-rapida.md`](../ayuda/guia-rapida.md): 11 procedimientos cubriendo compradores, vendedores y administradores. [`docs/ayuda/preguntas-frecuentes.md`](../ayuda/preguntas-frecuentes.md): 22 preguntas agrupadas por tema. Ambas enlazadas desde el README raíz y desde el `config.yml` del formulario de issues de GitHub.
+
+---
+
+## 10. Aceptación y Entrega — Semana 9
+
+> Documento completo: [`docs/implantacion/entregable-s09-aceptacion-y-entrega.md`](entregable-s09-aceptacion-y-entrega.md)  
+> Acta de entrega: [`docs/implantacion/acta-de-entrega.md`](acta-de-entrega.md)  
+> Registro del simulacro: [`docs/implantacion/registro-del-simulacro.md`](registro-del-simulacro.md)
+
+### 10.1 Consolidación
+
+Secciones 1–9 revisadas con la lista de completitud (teoría 04). Todas completas. Ver detalle en el entregable S09.
+
+**Registro de cambios del plan:**
+
+| Versión | Fecha | Cambios |
+|---|---|---|
+| 1.0 | 2026-10-07 | Consolidación de las secciones 1–9 |
+| 1.1 | 2026-10-12 | Correcciones del simulacro: driver explícito en `docker network create`; ruta absoluta de `.env.prod`; flag `--events` en `mysqldump`; adición de sección 10 |
+
+### 10.2 Pruebas de aceptación
+
+18/20 casos ejecutados. Decisión: **aceptado con observaciones**. 0 defectos bloqueantes, 1 mayor (RF-034 — cantidad en carrito, corrección comprometida 2026-10-31), 2 menores y 1 cosmético.
+
+### 10.3 Simulacro cruzado
+
+Instalado por el Equipo Alfa en servidor limpio (VM Ubuntu 24.04 LTS). Duración: 72 min / máximo 90 min. Huellas: 8/8 idénticas. Prueba de humo: 7/7 PASS. Resultado: **superado**. 3 desviaciones corregidas en v1.1.
+
+### 10.4 Acta de entrega
+
+Alcance, resultados de aceptación y simulacro, niveles de servicio, transferencia de accesos (sin secretos), garantía de 90 días, 13 pendientes asignados por rol. Firmada por equipo entregante, cliente e instructor.
+
+### 10.5 Socialización y lecciones aprendidas
+
+Presentación de 10 minutos con demostración en vivo el 2026-10-17. Retroalimentación recibida de instructor, evaluador externo y cliente: 4 observaciones incorporadas (diagrama en guía rápida, ajuste de SLA P1 fuera de horario, RF-033 postergado a roadmap v2, app móvil añadida al acta).
+
+**Checklist de cierre S09:**
+
+- [x] Plan consolidado y versionado (v1.1), revisado con la lista de completitud
+- [x] Pruebas de aceptación con decisión documentada (aceptado con observaciones)
+- [x] Simulacro cruzado superado: instalación completa, huellas idénticas, prueba de humo en verde, 72/90 min
+- [x] Plan corregido con las 3 desviaciones del simulacro
+- [x] Acta de entrega sin secretos, con niveles de servicio cumplibles
+- [x] Socialización realizada y lecciones aprendidas registradas
