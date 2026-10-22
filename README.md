@@ -316,6 +316,9 @@ Estos comandos entran a `frontend/` y ejecutan el script correspondiente.
 - `frontend/README.md`: detalles del frontend web.
 - `backend/README.md`: detalles de la API.
 - `app-movil/README.md`: detalles de la app movil.
+- `autenticacion.md`: detalles del modulo de autenticacion.
+- `registro.md`: detalles del modulo de registro.
+- `reportes.md`: detalles del modulo de reportes.
 
 ## Ayuda y soporte
 
