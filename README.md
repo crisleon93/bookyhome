@@ -336,5 +336,5 @@ El proyecto esta organizado por capas:
 - App movil con navegacion, pantallas, contextos y servicios.
 - Base de datos inicializada por SQL.
 - Entorno web dockerizado para levantar frontend, backend y MySQL con un solo comando.
-I n t e g r a c i � n   M � d u l o   R e g i s t r o   -   C r i s t o p h e r  
- 
+Integración Módulo Autenticación - Compañero C
+Integración Módulo Registro - Cristopher
