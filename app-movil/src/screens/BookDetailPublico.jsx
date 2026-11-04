@@ -761,7 +761,7 @@ const d = StyleSheet.create({
   // ── Sobre el autor ────────────────────────────────────────────────────────
   autorCard:   { backgroundColor: CARD_BG, borderRadius: 12, borderWidth: 1, borderColor: CARD_BORDER, padding: 20, marginBottom: 20 },
   autorRow:    { flexDirection: 'row', alignItems: 'flex-start', gap: 16 },
-  autorAvatar: { width: 64, height: 64, borderRadius: 32, background: 'linear-gradient(135deg,#fce4ec,#f8bbd0)', backgroundColor: '#fce4ec', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+  autorAvatar: { width: 64, height: 64, borderRadius: 32, backgroundColor: '#fce4ec', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
   autorAvatarTxt: { fontSize: 26, fontWeight: '800', color: '#8b0000' },
   autorNombre: { fontSize: 17, fontWeight: '700', color: TEXT_P, marginBottom: 6 },
   autorDesc:   { fontSize: 14, color: TEXT_S, lineHeight: 21 },
