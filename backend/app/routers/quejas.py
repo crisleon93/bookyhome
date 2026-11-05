@@ -1,3 +1,4 @@
+import anyio
 import os
 
 import uuid
@@ -184,8 +185,8 @@ async def crear_queja(
             extension = os.path.splitext(evidencia.filename or "")[1].lower() or ".jpg"
             filename = f"{uuid.uuid4().hex}{extension}"
             os.makedirs(UPLOAD_DIR, exist_ok=True)
-            with open(os.path.join(UPLOAD_DIR, filename), "wb") as target:
-                target.write(await evidencia.read())
+            async with await anyio.open_file(os.path.join(UPLOAD_DIR, filename), "wb") as target:
+                await target.write(await evidencia.read())
             evidencia_url = f"/uploads/quejas/{filename}"
 
         # Fallback seguro para id_tienda si la base de datos requiere una tienda válida
@@ -646,5 +647,4 @@ def resolver_queja(id_solicitud: int, data: Resolucion, user=Depends(current_use
         return {"ok": True}
     finally:
         cursor.close(); db.close()
-
 
