@@ -230,7 +230,18 @@ function VoiceNoteBubble({
 
       {/* 3. Onda de Audio con Scrubber Interactivo */}
       <div className="audio-track-container">
-        <div className="audio-waveform-wrapper" onClick={handleSeek} style={{ cursor: "pointer" }}>
+        <div
+          className="audio-waveform-wrapper"
+          onClick={handleSeek}
+          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") handleSeek(e); }}
+          role="slider"
+          aria-label="Barra de progreso de audio"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={Math.round(progress)}
+          tabIndex={0}
+          style={{ cursor: "pointer" }}
+        >
           <div className="audio-waveform-bars">
             {waveHeights.map((h, barIdx) => {
               const barPct = (barIdx / (TOTAL_BARS - 1)) * 100;

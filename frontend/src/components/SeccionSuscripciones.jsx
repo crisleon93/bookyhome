@@ -77,7 +77,7 @@ export default function SeccionSuscripciones({ tiendaId, onNavegar, darkMode = f
   };
 
   useEffect(() => {
-    cargarDatos();
+    cargarDatos().catch((err) => console.error("Error inesperado al cargar datos:", err));
   }, [tiendaId]);
 
   const cargarDatos = async () => {
