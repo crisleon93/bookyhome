@@ -1,0 +1,49 @@
+name: SonarCloud Analysis
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+
+jobs:
+  sonarcloud:
+    name: SonarCloud Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout del repositorio
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Historial completo para métricas y git blame
+
+      # ── Instalar Node.js para poder generar cobertura del frontend ──────────
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Instalar pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 11
+
+      - name: Instalar dependencias del frontend
+        run: pnpm install
+        working-directory: frontend
+
+      # ── Ejecutar tests del frontend con cobertura ───────────────────────────
+      - name: Ejecutar tests y generar cobertura (frontend)
+        run: pnpm test:coverage
+        working-directory: frontend
+        continue-on-error: true  # No bloquear el análisis si fallan los tests
+
+      # ── Análisis SonarCloud ─────────────────────────────────────────────────
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}   # Proporcionado automáticamente por GitHub
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}     # Configurado manualmente en Settings > Secrets
