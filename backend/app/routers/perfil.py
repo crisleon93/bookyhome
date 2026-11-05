@@ -667,7 +667,6 @@ def obtener_estadisticas_reales(user_id: int = Depends(get_current_user)):
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-        db.close()
 
 @router.put("/ordenes/{id_orden}/estado")
 def actualizar_estado_orden(id_orden: int, data: ActualizarEstadoOrden, user_id: int = Depends(get_current_user)):
@@ -676,95 +675,6 @@ def actualizar_estado_orden(id_orden: int, data: ActualizarEstadoOrden, user_id:
         status_code=409,
         detail="El estado se actualiza automáticamente según el pago, el envío o la confirmación del comprador."
     )
-
-    db = get_db()
-    cursor = db.cursor(dictionary=True)
-    try:
-        # 1. Verificar que el usuario tiene tienda
-        cursor.execute("SELECT id_tienda FROM tiendas WHERE id_usuario = %s", (user_id,))
-        tienda = cursor.fetchone()
-        if not tienda:
-            raise HTTPException(status_code=403, detail="Solo vendedores pueden actualizar estados de Ã³rdenes")
-
-        # 2. Verificar que la orden existe y contiene al menos un libro de esta tienda
-        cursor.execute("""
-            SELECT COUNT(*) AS coincidencias
-            FROM detalle_orden do
-            JOIN libros l ON l.id_libro = do.id_libro
-            WHERE do.id_orden = %s AND l.id_tienda = %s
-        """, (id_orden, tienda['id_tienda']))
-        row = cursor.fetchone()
-        if not row or row['coincidencias'] == 0:
-            raise HTTPException(
-                status_code=403,
-                detail="Esta orden no contiene libros de tu tienda"
-            )
-
-        # 3. Actualizar el estado en MySQL
-        cursor.execute(
-            "UPDATE ordenes_compra SET estado_orden = %s WHERE id_orden = %s",
-            (data.estado.lower(), id_orden)
-        )
-
-        if cursor.rowcount == 0:
-            raise HTTPException(status_code=404, detail="Orden no encontrada")
-
-        # 4. Obtener informaciÃ³n de la orden y comprador para crear notificaciÃ³n
-        cursor.execute("""
-            SELECT oc.id_usuario, oc.total, t.nombre_tienda
-            FROM ordenes_compra oc
-            JOIN detalle_orden do ON do.id_orden = oc.id_orden
-            JOIN libros l ON l.id_libro = do.id_libro
-            JOIN tiendas t ON t.id_tienda = l.id_tienda
-            WHERE oc.id_orden = %s AND t.id_tienda = %s
-            LIMIT 1
-        """, (id_orden, tienda['id_tienda']))
-        
-        orden_info = cursor.fetchone()
-        
-        if orden_info:
-            # 5. Crear notificaciÃ³n para el comprador
-            estado_msg = {
-                'pagado': 'ha sido pagado y estÃ¡ siendo preparado',
-                'enviado': 'ha sido enviado y estÃ¡ en camino',
-                'cancelada': 'ha sido cancelado'
-            }
-            
-            cursor.execute("""
-                INSERT INTO notificaciones 
-                (id_usuario, tipo, titulo, cuerpo, id_referencia, fecha_creacion)
-                VALUES (%s, 'pedido', %s, %s, %s, NOW())
-            """, (
-                orden_info['id_usuario'],
-                f'Estado de pedido actualizado',
-                f'Tu pedido #{id_orden} de la tienda "{orden_info["nombre_tienda"]}" {estado_msg.get(data.estado.lower(), "ha sido actualizado")}',
-                id_orden
-            ))
-        
-        db.commit()
-
-    finally:
-        cursor.close()
-        db.close()
-
-    # 4. Sincronizar tambiÃ©n en orders.json para mantener consistencia con el flujo del comprador
-    try:
-        import json, os
-        storage_dir = os.path.join(os.path.dirname(__file__), '..', 'data')
-        order_file = os.path.join(storage_dir, 'orders.json')
-        if os.path.exists(order_file):
-            with open(order_file, 'r', encoding='utf-8') as f:
-                orders = json.load(f)
-            for user_orders in orders.values():
-                for order in user_orders:
-                    if order.get('id_orden') == id_orden:
-                        order['estado'] = data.estado.lower()
-            with open(order_file, 'w', encoding='utf-8') as f:
-                json.dump(orders, f, indent=2, ensure_ascii=False)
-    except Exception:
-        pass  # No es crÃ­tico â€” MySQL es la fuente de verdad
-
-    return {"success": True, "mensaje": f"Estado actualizado a {data.estado.lower()}"}
 
 
 @router.post("/ordenes/{id_orden}/confirmar-entrega")
