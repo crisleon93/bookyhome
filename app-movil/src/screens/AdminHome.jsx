@@ -10,10 +10,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { AuthContext } from '../context/AuthContext';
 import SidebarAdmin from '../components/SidebarAdmin';
 import FinanzasAdmin from './FinanzasAdmin';
+import AdminRequests from './AdminRequests';
+import AdminProfile from './AdminProfile';
 import {
   IconAlertTriangle, IconBook, IconCheck,
   IconEye, IconEyeOff, IconLock, IconMenu,
   IconPackage, IconStore, IconTrash, IconUnlock, IconUser,
+  IconSettings, IconTool,
 } from '../components/Icons';
 import {
   bloquearUsuario, cambiarEstadoTienda, eliminarLibroAdmin,
@@ -82,6 +85,9 @@ const SECTION_CONFIG = {
   libros:   { title: 'Libros',    subtitle: 'Catálogo publicado en BookyHome',       Icon: IconBook,    color: '#7E22CE',  soft: '#F3E8FF' },
   tiendas:  { title: 'Tiendas',   subtitle: 'Librerías y vendedores asociados',      Icon: IconStore,   color: '#047857',  soft: '#ECFDF5' },
   ordenes:  { title: 'Órdenes',   subtitle: 'Transacciones de la plataforma',        Icon: IconPackage, color: '#1D4ED8',  soft: '#EFF6FF' },
+  reclamos: { title: 'Quejas y reclamos', subtitle: 'Atiende casos reportados por compradores', Icon: IconAlertTriangle, color: VINOTINTO, soft: '#FDF2F4' },
+  soporte:  { title: 'Soporte técnico', subtitle: 'Gestiona tickets de compradores y vendedores', Icon: IconTool, color: '#1E40AF', soft: '#EFF6FF' },
+  perfil:   { title: 'Mi Perfil', subtitle: 'Información y cuenta del administrador', Icon: IconSettings, color: VINOTINTO, soft: '#FDF2F4' },
 };
 
 const PER_PAGE = 10;
@@ -353,7 +359,17 @@ function AdminReports({ data, stats }) {
     <View style={rs.card}><PanelHeader iconNode={<IconUser size={20} color={VINOTINTO} />} title="Usuarios por Rol" subtitle="Composición de la comunidad BookyHome" extra={`${totalUsers} Total`} />
       <View style={rs.miniGrid}>{roleItems.map((item) => <View key={item.key} style={[rs.mini, { backgroundColor: item.bg, borderColor: item.border }]}><Text>{item.icon}</Text><Text style={[rs.miniCount, { color: item.color }]}>{item.count}</Text><Text style={[rs.miniLabel, { color: item.color }]}>{item.label}</Text><Text style={rs.miniPct}>{totalUsers ? Math.round(item.count / totalUsers * 100) : 0}% del total</Text></View>)}</View>
       <View style={rs.composed}>{roleItems.map((item) => <View key={item.key} style={{ height: '100%', backgroundColor: item.color, width: `${totalUsers ? item.count / totalUsers * 100 : 0}%` }} />)}</View>
-      {roleItems.map((item) => <ReportRow key={item.key} {...item} total={totalUsers} />)}
+      {roleItems.map((item) => (
+        <ReportRow
+          key={item.key}
+          icon={item.icon}
+          label={item.label}
+          desc={item.desc}
+          count={item.count}
+          total={totalUsers}
+          color={item.color}
+        />
+      ))}
     </View>
     <View style={rs.card}><PanelHeader iconNode={<IconBook size={20} color="#6D28D9" />} title="Libros por Categoría" subtitle="Ranking de géneros en el catálogo" extra={`${data.libros.length} Libros`} />
       {categories.length >= 3 && <View style={rs.miniGrid}>{categories.slice(0, 3).map(([name, count], index) => { const theme = categoryTheme(name); return <View key={name} style={[rs.mini, { backgroundColor: theme.bg, borderColor: theme.border }]}><Text style={[rs.miniLabel, { color: theme.color }]}>{['🥇 1º', '🥈 2º', '🥉 3º'][index]}</Text><Text style={[rs.miniCount, { color: theme.color }]}>{count}</Text><Text style={rs.miniLabel} numberOfLines={1}>{theme.icon} {name}</Text><Text style={[rs.miniPct, { color: theme.color }]}>{data.libros.length ? Math.round(count / data.libros.length * 100) : 0}% catálogo</Text></View>; })}</View>}
@@ -363,12 +379,32 @@ function AdminReports({ data, stats }) {
     <View style={rs.card}><PanelHeader iconNode={<IconStore size={20} color="#047857" />} title="Tiendas por Estado" subtitle="Salud y disponibilidad de librerías" extra={`${data.tiendas.length} Librerías`} />
       <View style={rs.highlight}><Text style={rs.highlightTitle}>✓ TASA DE OPERATIVIDAD</Text><Text style={rs.highlightText}><Text style={{ fontWeight: '800' }}>{activeStores} de {data.tiendas.length}</Text> librerías activas vendiendo</Text><Text style={rs.highlightPct}>{storePct}%</Text></View>
       <View style={rs.composed}>{storeItems.map((item) => <View key={item.key} style={{ height: '100%', backgroundColor: item.color, width: `${data.tiendas.length ? (storeCounts[item.key] || 0) / data.tiendas.length * 100 : 0}%` }} />)}</View>
-      {storeItems.map((item) => <ReportRow key={item.key} {...item} count={storeCounts[item.key] || 0} total={data.tiendas.length} />)}
+      {storeItems.map((item) => (
+        <ReportRow
+          key={item.key}
+          icon={item.icon}
+          label={item.label}
+          desc={item.desc}
+          count={storeCounts[item.key] || 0}
+          total={data.tiendas.length}
+          color={item.color}
+        />
+      ))}
     </View>
     <View style={rs.card}><PanelHeader iconNode={<IconPackage size={20} color="#1E40AF" />} title="Órdenes por Estado" subtitle="Pipeline y ciclo de vida de pedidos" extra={`${data.ordenes.length} Órdenes`} />
       <View style={[rs.highlight, { backgroundColor: '#F8FAFC', borderColor: '#E2E8F0' }]}><Text style={[rs.highlightTitle, { color: '#475569' }]}>TASA DE EFECTIVIDAD</Text><Text style={[rs.highlightText, { color: '#334155' }]}>{successfulOrders} órdenes procesadas con éxito</Text><Text style={[rs.highlightPct, { color: '#1E40AF' }]}>{orderPct}%</Text></View>
       <View style={rs.composed}>{orderItems.map((item) => <View key={item.key} style={{ height: '100%', backgroundColor: item.color, width: `${data.ordenes.length ? (orderCounts[item.key] || 0) / data.ordenes.length * 100 : 0}%` }} />)}</View>
-      {orderItems.map((item) => <ReportRow key={item.key} {...item} count={orderCounts[item.key] || 0} total={data.ordenes.length} />)}
+      {orderItems.map((item) => (
+        <ReportRow
+          key={item.key}
+          icon={item.icon}
+          label={item.label}
+          desc={item.desc}
+          count={orderCounts[item.key] || 0}
+          total={data.ordenes.length}
+          color={item.color}
+        />
+      ))}
     </View>
   </ScrollView>;
 }
@@ -390,6 +426,8 @@ export default function AdminHome() {
   const [loading,    setLoading]    = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error,      setError]      = useState('');
+  const [solicitudesLoading, setSolicitudesLoading] = useState(false);
+  const [solicitudesError, setSolicitudesError] = useState('');
 
   // ── Estado del modal de confirmación ─────────────────────────────────────
   const [modal, setModal] = useState({ visible: false, title: '', message: '', confirmText: '', confirmColor: RED, onConfirm: null });
@@ -433,26 +471,61 @@ export default function AdminHome() {
     refresh ? setRefreshing(true) : setLoading(true);
     setError('');
     try {
-      const [u, l, o, t, s] = await Promise.all([
-        getAdminUsuarios(), getAdminLibros(), getAdminOrdenes(),
-        getAdminTiendas(), getAdminSolicitudes(),
+      const results = await Promise.allSettled([
+        getAdminUsuarios(), getAdminLibros(), getAdminOrdenes(), getAdminTiendas(),
       ]);
-      setData({
-        usuarios:    u.data || [],
-        libros:      l.data || [],
-        ordenes:     o.data || [],
-        tiendas:     t.data || [],
-        solicitudes: s.data || [],
+      const keys = ['usuarios', 'libros', 'ordenes', 'tiendas'];
+      const failures = [];
+
+      results.forEach((result, index) => {
+        if (result.status === 'fulfilled') {
+          setData((current) => ({
+            ...current,
+            [keys[index]]: Array.isArray(result.value.data) ? result.value.data : [],
+          }));
+        } else {
+          failures.push(result.reason);
+        }
       });
-    } catch (e) {
-      setError(e.response?.data?.detail || 'No pudimos cargar el resumen. Desliza para reintentar.');
+
+      if (failures.length) {
+        const firstDetail = failures.find((failure) => failure.response?.data?.detail)?.response?.data?.detail;
+        setError(firstDetail || 'No se pudieron cargar algunos datos. Desliza para reintentar.');
+      }
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
   }, []);
 
+  const loadSolicitudes = useCallback(async () => {
+    setSolicitudesLoading(true);
+    setSolicitudesError('');
+    try {
+      const response = await getAdminSolicitudes();
+      setData((current) => ({
+        ...current,
+        solicitudes: Array.isArray(response.data) ? response.data : [],
+      }));
+    } catch (requestError) {
+      setSolicitudesError(
+        requestError.response?.data?.detail ||
+        (requestError.code === 'ECONNABORTED'
+          ? 'La carga de solicitudes tardó demasiado. Intenta actualizar.'
+          : 'No se pudieron cargar las solicitudes. Revisa la conexión e intenta actualizar.')
+      );
+    } finally {
+      setSolicitudesLoading(false);
+    }
+  }, []);
+
   useEffect(() => { load(); }, [load]);
+
+  useEffect(() => {
+    if (['reclamos', 'soporte'].includes(activeSection)) {
+      loadSolicitudes();
+    }
+  }, [activeSection, loadSolicitudes]);
 
   // Resetear filtros al cambiar sección
   useEffect(() => {
@@ -1481,6 +1554,27 @@ export default function AdminHome() {
 
       ) : activeSection === 'finanzas' ? (
         <FinanzasAdmin />
+
+      ) : activeSection === 'reclamos' || activeSection === 'soporte' ? (
+        <AdminRequests
+          type={activeSection}
+          solicitudes={data.solicitudes}
+          loading={solicitudesLoading}
+          refreshing={solicitudesLoading}
+          error={solicitudesError}
+          onRefresh={loadSolicitudes}
+        />
+
+      ) : activeSection === 'perfil' ? (
+        <AdminProfile
+          stats={{
+            usuarios: data.usuarios.length,
+            libros: data.libros.length,
+            ordenes: data.ordenes.length,
+            tiendas: data.tiendas.length,
+          }}
+          solicitudes={data.solicitudes}
+        />
 
       ) : (
         /* ══════════════ SECCIÓN ══════════════ */

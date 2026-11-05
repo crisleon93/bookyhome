@@ -50,7 +50,9 @@ const Stack = createNativeStackNavigator();
 export default function AppNavigator() {
   const { user, token, loading, biometricLocked } = useContext(AuthContext);
   const isAuthenticated = Boolean(token || user);
-  const isAdmin = user?.rol === 'admin' || user?.rol === 'administrador';
+  const userRole = String(user?.rol || '').trim().toLowerCase();
+  const isAdmin = userRole === 'admin' || userRole === 'administrador';
+  const isVendor = userRole === 'vendedor';
 
   if (loading) {
     return (
@@ -79,7 +81,7 @@ export default function AppNavigator() {
           <Stack.Screen name="Librerias"          component={Librerias}          options={{ headerShown: false }} />
           <Stack.Screen name="PerfilTienda"       component={PerfilTienda}       options={{ headerShown: false }} />
         </>
-      ) : user.rol === 'vendedor' ? (
+      ) : isVendor ? (
         // ─── Rutas vendedor ──────────────────────────────────────────────────
         <>
           <Stack.Screen name="VendorHome" component={VendedorHome} options={{ headerShown: false }} />

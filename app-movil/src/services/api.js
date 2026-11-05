@@ -205,7 +205,13 @@ export const getAdminUsuarios = () => api.get('/usuarios');
 export const getAdminLibros = () => api.get('/api/stored/libros');
 export const getAdminOrdenes = () => api.get('/api/v1/admin/orders');
 export const getAdminTiendas = () => api.get('/tiendas');
-export const getAdminSolicitudes = () => api.get('/quejas/admin/todas');
+export const getAdminSolicitudes = () =>
+  api.get('/quejas/admin/todas', { timeout: 60000 });
+export const resolverSolicitudAdmin = (id, estado, respuesta) =>
+  api.patch(`/quejas/admin/${id}`, { estado, respuesta });
+export const getMensajesSolicitudAdmin = (id) => api.get(`/quejas/${id}/mensajes`);
+export const enviarMensajeSolicitudAdmin = (id, mensaje) =>
+  api.post(`/quejas/${id}/mensajes`, { mensaje });
 
 // Mutaciones admin — equivalentes a las acciones del dashboard web
 export const bloquearUsuario = (id, bloqueado) =>

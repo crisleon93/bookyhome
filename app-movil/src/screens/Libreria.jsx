@@ -28,6 +28,24 @@ const fmt = (val) =>
   val == null ? '$0 COP'
   : '$' + String(Math.floor(val)).replace(/\B(?=(\d{3})+(?!\d))/g, '.') + ' COP';
 
+const nivelesFidelizacion = {
+  Bronce: 'Bronce',
+  Plata: 'Plata',
+  Oro: 'Oro',
+  Zafiro: 'Zafiro',
+  Rubi: 'Rubí',
+  Esmeralda: 'Esmeralda',
+  Amatista: 'Amatista',
+  Perla: 'Perla',
+  Obsidiana: 'Obsidiana',
+  Diamante: 'Diamante',
+  Onix: 'Ónix',
+  Platino: 'Platino',
+};
+
+const tieneAccesoAnticipado = (libro) =>
+  [true, 1, '1', 'true'].includes(libro?.acceso_anticipado);
+
 const getImgUrl = (libro) => {
   const base = getApiBaseUrl();
   const raw = libro?.imagen_url || libro?.imagen_principal || libro?.imagen_principal_url
@@ -117,6 +135,14 @@ export default function Libreria({ navigation }) {
             {estadoBadge(item)}
           </View>
           <Text style={s.autor} numberOfLines={1}>{item.autor_libro} · {item.nombre_categoria}</Text>
+          {tieneAccesoAnticipado(item) && (
+            <View style={s.earlyAccessBadge}>
+              <Text style={s.earlyAccessBadgeTitle}>Club Booky · Acceso anticipado</Text>
+              <Text style={s.earlyAccessBadgeText}>
+                Nivel mínimo: {nivelesFidelizacion[item.nivel_minimo_acceso] || 'Plata'} · 24 horas
+              </Text>
+            </View>
+          )}
           <View style={s.infoBottom}>
             <Text style={s.precio}>{fmt(item.precio_libro ?? item.precio)}</Text>
             <Text style={[s.stock, (item.stock ?? 0) <= 3 && { color: '#DC2626', fontWeight: '700' }]}>
@@ -297,6 +323,9 @@ const s = StyleSheet.create({
   infoTop:     { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 6 },
   titulo:      { fontSize: 14, fontWeight: '700', color: TEXT, flex: 1 },
   autor:       { fontSize: 12, color: MUTED },
+  earlyAccessBadge: { alignSelf: 'flex-start', borderRadius: 9, borderWidth: 1, borderColor: '#EAC8D2', backgroundColor: '#FDF2F4', paddingHorizontal: 9, paddingVertical: 6, marginTop: 7, marginBottom: 5 },
+  earlyAccessBadgeTitle: { color: PRIMARY, fontSize: 10, fontWeight: '800' },
+  earlyAccessBadgeText: { color: '#6B4A55', fontSize: 10, marginTop: 2 },
   infoBottom:  { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 2 },
   precio:      { fontSize: 14, fontWeight: '800', color: PRIMARY },
   stock:       { fontSize: 12, color: MUTED },

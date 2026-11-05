@@ -26,6 +26,20 @@ const ESTADOS = [
 ];
 const TIPOS    = ['Tapa Blanda', 'Tapa Dura', 'Digital'];
 const IDIOMAS  = ['Español', 'Inglés', 'Otro'];
+const NIVELES_FIDELIZACION = [
+  { value: 'Bronce', label: 'Bronce' },
+  { value: 'Plata', label: 'Plata' },
+  { value: 'Oro', label: 'Oro' },
+  { value: 'Zafiro', label: 'Zafiro' },
+  { value: 'Rubi', label: 'Rubí' },
+  { value: 'Esmeralda', label: 'Esmeralda' },
+  { value: 'Amatista', label: 'Amatista' },
+  { value: 'Perla', label: 'Perla' },
+  { value: 'Obsidiana', label: 'Obsidiana' },
+  { value: 'Diamante', label: 'Diamante' },
+  { value: 'Onix', label: 'Ónix' },
+  { value: 'Platino', label: 'Platino' },
+];
 
 const CAT_ICONS = {
   'arte': '🎨', 'aventura': '🗺️', 'biografia': '👤', 'biografía': '👤',
@@ -62,6 +76,14 @@ export default function PublicarLibro({ navigation, route }) {
     estado:       libro?.estado_libro      ?? '',
     descripcion:  libro?.descripcion_libro ?? '',
   });
+  const [accesoAnticipado, setAccesoAnticipado] = useState(
+    [true, 1, '1', 'true'].includes(libro?.acceso_anticipado)
+  );
+  const [nivelMinimoAcceso, setNivelMinimoAcceso] = useState(
+    NIVELES_FIDELIZACION.some(({ value }) => value === libro?.nivel_minimo_acceso)
+      ? libro.nivel_minimo_acceso
+      : 'Plata'
+  );
 
   const [categorias,           setCategorias]           = useState([]);
   const [imagenes,             setImagenes]             = useState([]);
@@ -83,6 +105,22 @@ export default function PublicarLibro({ navigation, route }) {
   }, [modo]);
 
   const set = (key, val) => setForm(p => ({ ...p, [key]: val }));
+  const getFechaLanzamientoPublico = () => {
+    if (!accesoAnticipado) return '';
+    const fechaGuardada = libro?.fecha_lanzamiento_publico;
+    const fechaExistente = fechaGuardada ? new Date(fechaGuardada) : null;
+    const fechaMinima = Date.now() + 24 * 60 * 60 * 1000 + 60 * 1000;
+    if (
+      modo === 'editar' &&
+      libro?.acceso_anticipado &&
+      fechaExistente &&
+      !Number.isNaN(fechaExistente.getTime()) &&
+      fechaExistente.getTime() >= fechaMinima
+    ) {
+      return fechaGuardada;
+    }
+    return new Date(fechaMinima).toISOString();
+  };
 
   /* ── validaciones ── */
   const validarCompleto = () => {
@@ -130,6 +168,9 @@ export default function PublicarLibro({ navigation, route }) {
       formData.append('id_categoria',      form.id_categoria);
       formData.append('estado_libro',      form.estado);
       formData.append('descripcion_libro', form.descripcion || '');
+      formData.append('acceso_anticipado', String(accesoAnticipado));
+      formData.append('nivel_minimo_acceso', accesoAnticipado ? nivelMinimoAcceso : 'Plata');
+      formData.append('fecha_lanzamiento_publico', getFechaLanzamientoPublico());
       imagenes.forEach((uri, i) => formData.append('imagenes', { uri, name: `img_${i}.jpg`, type: 'image/jpeg' }));
       const res = await publicarLibro(formData);
       const id_libro = res?.data?.id_libro;
@@ -157,6 +198,9 @@ export default function PublicarLibro({ navigation, route }) {
       formData.append('id_categoria',      form.id_categoria);
       formData.append('estado_libro',      form.estado);
       formData.append('descripcion_libro', form.descripcion);
+      formData.append('acceso_anticipado', String(accesoAnticipado));
+      formData.append('nivel_minimo_acceso', accesoAnticipado ? nivelMinimoAcceso : 'Plata');
+      formData.append('fecha_lanzamiento_publico', getFechaLanzamientoPublico());
       await updateLibro(libro.id_libro, formData);
       navigation.goBack();
     } catch (err) {
@@ -408,6 +452,61 @@ export default function PublicarLibro({ navigation, route }) {
           </View>
         </View>
 
+        <View style={s.card}>
+          <Text style={s.cardTitle}>Club Booky · Acceso anticipado</Text>
+          <Text style={s.cardSubtitle}>
+            Permite que los miembros elegibles vean este libro antes del lanzamiento público. No cambia el precio ni las comisiones.
+          </Text>
+          <TouchableOpacity
+            accessibilityRole="switch"
+            accessibilityState={{ checked: accesoAnticipado }}
+            style={[s.earlyAccessToggle, accesoAnticipado && s.earlyAccessToggleActive]}
+            onPress={() => setAccesoAnticipado(value => !value)}
+            activeOpacity={0.8}
+          >
+            <View style={[s.earlyAccessIndicator, accesoAnticipado && s.earlyAccessIndicatorActive]}>
+              <Text style={[s.earlyAccessCheck, accesoAnticipado && s.earlyAccessCheckActive]}>
+                {accesoAnticipado ? '✓' : ''}
+              </Text>
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={s.earlyAccessTitle}>Ofrecer acceso anticipado</Text>
+              <Text style={s.earlyAccessHint}>
+                {accesoAnticipado ? 'Activado para este libro' : 'Opcional · desactivado por defecto'}
+              </Text>
+            </View>
+          </TouchableOpacity>
+          {accesoAnticipado && (
+            <View style={s.earlyAccessOptions}>
+              <Text style={s.fieldLabel}>Nivel mínimo de fidelización</Text>
+              <View style={s.levelOptions}>
+                {NIVELES_FIDELIZACION.map(({ value, label }) => {
+                  const selected = nivelMinimoAcceso === value;
+                  return (
+                    <TouchableOpacity
+                      key={value}
+                      accessibilityRole="radio"
+                      accessibilityState={{ selected }}
+                      style={[s.levelOption, selected && s.levelOptionSelected]}
+                      onPress={() => setNivelMinimoAcceso(value)}
+                    >
+                      <Text style={[s.levelOptionText, selected && s.levelOptionTextSelected]}>{label}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+              <View style={s.earlyAccessNotice}>
+                <Text style={s.earlyAccessNoticeTitle}>Disponibilidad pública</Text>
+                <Text style={s.earlyAccessNoticeText}>
+                  {modo === 'editar' && libro?.acceso_anticipado && libro?.fecha_lanzamiento_publico
+                    ? 'Se conserva la fecha programada si faltan al menos 24 horas. Si está más próxima, se reprogramará para al menos 24 horas después de guardar.'
+                    : 'El lanzamiento público se programará para al menos 24 horas después de guardar.'}
+                </Text>
+              </View>
+            </View>
+          )}
+        </View>
+
         {/* ── Formatos y variantes (solo nuevo) ── */}
         {modo === 'nuevo' && (
           <View style={s.card}>
@@ -635,6 +734,23 @@ const s = StyleSheet.create({
   estadoLabelSelected:{ color: PRIMARY },
   estadoDesc:         { fontSize: 12, color: MUTED, marginTop: 2 },
   estadoDescSelected: { color: PRIMARY, opacity: 0.75 },
+  earlyAccessToggle: { flexDirection: 'row', alignItems: 'center', gap: 11, marginTop: 12, padding: 12, borderWidth: 1, borderColor: BORDER, borderRadius: 12, backgroundColor: '#FAF9F7' },
+  earlyAccessToggleActive: { borderColor: PRIMARY, backgroundColor: '#FDF2F4' },
+  earlyAccessIndicator: { width: 22, height: 22, borderRadius: 6, borderWidth: 1.5, borderColor: '#A8A29E', backgroundColor: WHITE, alignItems: 'center', justifyContent: 'center' },
+  earlyAccessIndicatorActive: { borderColor: PRIMARY, backgroundColor: PRIMARY },
+  earlyAccessCheck: { color: 'transparent', fontSize: 15, fontWeight: '900' },
+  earlyAccessCheckActive: { color: WHITE },
+  earlyAccessTitle: { color: TEXT, fontSize: 13, fontWeight: '800' },
+  earlyAccessHint: { color: MUTED, fontSize: 11, marginTop: 3 },
+  earlyAccessOptions: { marginTop: 15 },
+  levelOptions: { flexDirection: 'row', flexWrap: 'wrap', gap: 7, marginTop: 7 },
+  levelOption: { borderWidth: 1, borderColor: BORDER, backgroundColor: WHITE, borderRadius: 18, paddingHorizontal: 10, paddingVertical: 7 },
+  levelOptionSelected: { backgroundColor: PRIMARY, borderColor: PRIMARY },
+  levelOptionText: { color: '#57534E', fontSize: 11, fontWeight: '700' },
+  levelOptionTextSelected: { color: WHITE },
+  earlyAccessNotice: { marginTop: 14, padding: 11, borderRadius: 10, backgroundColor: '#F5F3EF' },
+  earlyAccessNoticeTitle: { color: TEXT, fontSize: 12, fontWeight: '800', marginBottom: 4 },
+  earlyAccessNoticeText: { color: MUTED, fontSize: 11, lineHeight: 16 },
 
   /* chips (modal variantes) */
   chipRow:          { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 6 },

@@ -22,9 +22,9 @@ const ADMIN_SECTIONS = [
   { label: 'Tiendas',           Icon: IconStore,         id: 'tiendas'   },
   { label: 'Órdenes',           Icon: IconPackage,       id: 'ordenes'   },
   { label: 'Finanzas',          Icon: IconWallet,        id: 'finanzas'  },
-  { label: 'Quejas y reclamos', Icon: IconAlertTriangle                  },
-  { label: 'Soporte técnico',   Icon: IconTool                           },
-  { label: 'Mi perfil',         Icon: IconSettings                       },
+  { label: 'Quejas y reclamos', Icon: IconAlertTriangle,  id: 'reclamos' },
+  { label: 'Soporte técnico',   Icon: IconTool,           id: 'soporte'   },
+  { label: 'Mi perfil',         Icon: IconSettings,       id: 'perfil'    },
 ];
 
 // ─── Item deshabilitado ───────────────────────────────────────────────────────
@@ -139,9 +139,6 @@ export default function SidebarAdmin({
               return <ComingSoonItem key={sec.label} label={sec.label} Icon={sec.Icon} />;
             })}
 
-            <Text style={st.description}>
-              Reclamos, soporte y perfil se habilitarán progresivamente.
-            </Text>
           </ScrollView>
 
           {/* Cerrar sesión */}

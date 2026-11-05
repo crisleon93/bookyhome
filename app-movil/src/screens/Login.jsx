@@ -21,6 +21,44 @@ const GRAY = '#888';
 const BORDER = '#E0DBD4';
 const WHITE = '#FFFFFF';
 
+function traducirErrorLogin(error) {
+  const detail = error.response?.data?.detail;
+  if (Array.isArray(detail)) {
+    return detail.map((item) => {
+      const field = item?.loc?.[item.loc.length - 1];
+      const type = String(item?.type || '').toLowerCase();
+      const message = String(item?.msg || '').toLowerCase();
+
+      if (field === 'email' && (type.includes('email') || message.includes('email'))) {
+        return 'El correo electrónico no tiene un formato válido.';
+      }
+      if (type.includes('missing') || message.includes('field required')) {
+        return 'Completa todos los campos obligatorios.';
+      }
+      if (type.includes('string_too_short') || message.includes('too short')) {
+        return 'Uno de los campos es demasiado corto.';
+      }
+      if (type.includes('string_too_long') || message.includes('too long')) {
+        return 'Uno de los campos excede la longitud permitida.';
+      }
+      return 'Revisa los datos ingresados e intenta de nuevo.';
+    }).join(' ');
+  }
+
+  if (error.response?.status === 422) {
+    const message = String(detail || '').toLowerCase();
+    if (message.includes('email') || message.includes('correo')) {
+      return 'El correo electrónico no tiene un formato válido.';
+    }
+    return 'Revisa que el correo tenga un formato válido y que ambos campos estén completos.';
+  }
+
+  if (typeof detail === 'string' && detail.trim()) return detail;
+  if (error.code === 'ECONNABORTED') return 'La solicitud tardó demasiado. Intenta de nuevo.';
+  if (!error.response) return 'No se pudo conectar con el servidor. Revisa tu conexión e intenta de nuevo.';
+  return 'No se pudo iniciar sesión. Intenta de nuevo.';
+}
+
 export default function Login({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -28,6 +66,7 @@ export default function Login({ navigation }) {
   const [remember, setRemember] = useState(false);
   const [enableBiometrics, setEnableBiometrics] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [loginError, setLoginError] = useState('');
   const [biometricAvailable, setBiometricAvailable] = useState(false);
   const [supportedBiometricTypes, setSupportedBiometricTypes] = useState([]);
   const [biometricLoading, setBiometricLoading] = useState(false);
@@ -106,13 +145,16 @@ export default function Login({ navigation }) {
     if (loading) return;
 
     if (!email.trim() || !password) {
-      Alert.alert('Error', 'Ingresa email y contraseña');
+      const message = 'Ingresa email y contraseña';
+      setLoginError(message);
+      if (Platform.OS !== 'web') Alert.alert('Error', message);
       return;
     }
 
+    setLoginError('');
     setLoading(true);
     try {
-      const res = await api.post('/login', { email, password });
+      const res = await api.post('/login', { email: email.trim(), password });
       const token = res.data?.access_token;
       if (!token) throw new Error('No se recibió token');
 
@@ -126,8 +168,9 @@ export default function Login({ navigation }) {
       if (err.code === 'ERR_CANCELED' || err.name === 'CanceledError') {
         return;
       }
-      const msg = err.response?.data?.detail || err.message || 'Error';
-      Alert.alert('Error', String(msg));
+      const msg = traducirErrorLogin(err);
+      setLoginError(String(msg));
+      if (Platform.OS !== 'web') Alert.alert('Error', String(msg));
     } finally {
       setLoading(false);
     }
@@ -268,7 +311,7 @@ export default function Login({ navigation }) {
                     placeholder="ejemplo@gmail.com"
                     placeholderTextColor="#aaa"
                     value={email}
-                    onChangeText={setEmail}
+                    onChangeText={(value) => { setEmail(value); setLoginError(''); }}
                     autoCapitalize="none"
                     keyboardType="email-address"
                   />
@@ -286,7 +329,7 @@ export default function Login({ navigation }) {
                     placeholder="Contraseña"
                     placeholderTextColor="#aaa"
                     value={password}
-                    onChangeText={setPassword}
+                    onChangeText={(value) => { setPassword(value); setLoginError(''); }}
                     secureTextEntry={!showPassword}
                   />
                   <TouchableOpacity
@@ -316,6 +359,12 @@ export default function Login({ navigation }) {
                   </View>
                   <Text style={styles.rememberText}>Recordarme</Text>
                 </TouchableOpacity>
+
+                {!!loginError && (
+                  <View style={styles.loginErrorBox} accessibilityRole="alert">
+                    <Text style={styles.loginErrorText}>{loginError}</Text>
+                  </View>
+                )}
 
                 {biometricAvailable && (
                   <TouchableOpacity
@@ -513,6 +562,8 @@ const styles = StyleSheet.create({
   submitBtn: { backgroundColor: VINOTINTO, borderRadius: 10, paddingVertical: 16, alignItems: 'center', marginBottom: 10 },
   disabledBtn: { opacity: 0.7 },
   submitBtnText: { color: WHITE, fontSize: 16, fontWeight: '700' },
+  loginErrorBox: { backgroundColor: '#FEF2F2', borderColor: '#FECACA', borderWidth: 1, borderRadius: 10, padding: 12, marginTop: 12 },
+  loginErrorText: { color: '#991B1B', fontSize: 13, lineHeight: 18, fontWeight: '600' },
   bioButton: {
     backgroundColor: '#F8ECEF',
     borderRadius: 10,
