@@ -229,12 +229,12 @@ export default function QuejasVendedor() {
   }, []);
 
   useEffect(() => {
-    cargar(true);
+    void cargar(true);
   }, [cargar]);
 
   // Polling suave y eventos
   useEffect(() => {
-    const refrescar = () => cargar(false);
+    const refrescar = () => { void cargar(false); };
     window.addEventListener('bookyhome-complaint-updated', refrescar);
     const intervalId = window.setInterval(refrescar, 12000);
     return () => {

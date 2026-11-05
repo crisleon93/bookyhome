@@ -164,7 +164,7 @@ export default function SeccionMisCompras({ userId }) {
   }, [userId]);
 
   useEffect(() => {
-    cargarOrdenes();
+    void cargarOrdenes();
   }, [cargarOrdenes]);
 
   const handleLlegadaTienda = async (idOrden) => {
@@ -173,7 +173,7 @@ export default function SeccionMisCompras({ userId }) {
       const res = await notificarLlegadaTienda(idOrden);
       if (res.data?.ok) {
         notify("¡Se notificó tu llegada al vendedor con éxito!", "success");
-        cargarOrdenes();
+        void cargarOrdenes();
       }
     } catch (e) {
       notify(e.response?.data?.detail || "No se pudo notificar tu llegada", "error");
@@ -193,7 +193,7 @@ export default function SeccionMisCompras({ userId }) {
       } else {
         notify("No había órdenes pendientes para limpiar.", "info");
       }
-      cargarOrdenes();
+      void cargarOrdenes();
     } catch {
       notify("No se pudo completar la limpieza. Intenta de nuevo.", "error");
     } finally {
@@ -602,7 +602,7 @@ export default function SeccionMisCompras({ userId }) {
                           </div>
                           <div>
                             {estadoVisible.pago === "Pagado" ? (
-                              <button onClick={() => handleVerBaucher(orden)}
+                              <button onClick={() => { void handleVerBaucher(orden); }}
                                 style={{ width: "100%", padding: "6px 0", fontSize: "0.78rem", borderRadius: "8px", background: "#7A1E3A", color: "#FFFFFF", border: "1.5px solid #7A1E3A", cursor: "pointer", fontWeight: 700, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "5px", boxShadow: "0 2px 6px rgba(122,30,58,0.22)", transition: "all 0.15s ease" }}
                                 onMouseEnter={(e) => { e.currentTarget.style.background = "#902345"; }}
                                 onMouseLeave={(e) => { e.currentTarget.style.background = "#7A1E3A"; }}
@@ -804,7 +804,7 @@ export default function SeccionMisCompras({ userId }) {
             {/* Botones */}
             <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
               {(modalDetalleOrden.estado === "pagado" || modalDetalleOrden.estado_orden === "pagado") && (
-                <button onClick={() => { handleCerrarDetalle(); handleVerBaucher(modalDetalleOrden); }} className="btn btn-vinotinto" style={{ padding: "9px 16px", fontSize: "0.84rem", borderRadius: "8px", background: "#7A1E3A", color: "#fff", border: "none", cursor: "pointer", fontWeight: 700, display: "inline-flex", alignItems: "center", gap: "6px" }}>📄 Ver Baucher</button>
+                <button onClick={() => { handleCerrarDetalle(); void handleVerBaucher(modalDetalleOrden); }} className="btn btn-vinotinto" style={{ padding: "9px 16px", fontSize: "0.84rem", borderRadius: "8px", background: "#7A1E3A", color: "#fff", border: "none", cursor: "pointer", fontWeight: 700, display: "inline-flex", alignItems: "center", gap: "6px" }}>📄 Ver Baucher</button>
               )}
               <button onClick={handleCerrarDetalle} style={{ padding: "9px 18px", fontSize: "0.84rem", borderRadius: "8px", background: darkMode ? '#2a2a2a' : '#F1F5F9', color: darkMode ? '#c8c8c8' : '#334155', border: `1px solid ${darkMode ? '#3a3a3a' : '#CBD5E1'}`, cursor: "pointer", fontWeight: 700 }}>Cerrar</button>
             </div>

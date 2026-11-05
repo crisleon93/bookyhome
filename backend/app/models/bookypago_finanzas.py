@@ -5,7 +5,7 @@ Sistema de Finanzas BookyPago
 
 import json
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, List, Optional
 
 STORAGE_DIR = os.path.join(os.path.dirname(__file__), '..', 'data')
@@ -139,7 +139,7 @@ class BookyPagoFinanzas:
                 'monto_vendedor': monto_vendedor,
                 'tipo_entrega': 'domicilio',
                 'monto': comision,  # BookyHome gana la comisión
-                'fecha': datetime.utcnow().isoformat() + 'Z',
+                'fecha': datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'),
                 'estado': 'procesado'
             }
             
@@ -187,7 +187,7 @@ class BookyPagoFinanzas:
                 'comision': comision,
                 'monto': monto_plan - comision,  # Ingreso neto
                 'periodicidad': periodicidad,
-                'fecha': datetime.utcnow().isoformat() + 'Z',
+                'fecha': datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'),
                 'estado': 'procesado'
             }
             
@@ -228,7 +228,7 @@ class BookyPagoFinanzas:
                 'monto_impulso': monto_impulso,
                 'comision': comision,
                 'monto': monto_impulso - comision,  # Ingreso neto
-                'fecha': datetime.utcnow().isoformat() + 'Z',
+                'fecha': datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'),
                 'estado': 'procesado'
             }
             
@@ -252,9 +252,9 @@ class BookyPagoFinanzas:
             'id_vendedor': id_vendedor,
             'monto': monto,
             'id_venta': id_venta,
-            'fecha_venta': datetime.utcnow().isoformat() + 'Z',
+            'fecha_venta': datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'),
             'estado': 'pendiente',
-            'fecha_programada': (datetime.utcnow().timestamp() + (self.config['dias_pago'] * 86400))
+            'fecha_programada': (datetime.now(timezone.utc).timestamp() + (self.config['dias_pago'] * 86400))
         }
         
         pagos_vendedores.append(pago_pendiente)
@@ -338,7 +338,7 @@ class BookyPagoFinanzas:
             total_procesado = 0
             for pago in pagos_vendedor:
                 pago['estado'] = 'procesado'
-                pago['fecha_pago'] = datetime.utcnow().isoformat() + 'Z'
+                pago['fecha_pago'] = datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
                 pago['referencia'] = referencia
                 total_procesado += pago['monto']
             
@@ -355,7 +355,7 @@ class BookyPagoFinanzas:
                 'id_vendedor': id_vendedor,
                 'monto': total_procesado,
                 'referencia': referencia,
-                'fecha': datetime.utcnow().isoformat() + 'Z',
+                'fecha': datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'),
                 'estado': 'procesado',
                 'num_pagos': len(pagos_vendedor)
             }
@@ -403,7 +403,7 @@ class BookyPagoFinanzas:
             
             # Actualizar estado del pago
             pago['estado'] = 'procesado'
-            pago['fecha_procesado'] = datetime.utcnow().isoformat() + 'Z'
+            pago['fecha_procesado'] = datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
             
             # Registrar en finanzas como egreso
             finanzas = _load_store(FINANZAS_FILE)
@@ -417,7 +417,7 @@ class BookyPagoFinanzas:
                 'id_pago_vendedor': id_pago,
                 'id_vendedor': pago['id_vendedor'],
                 'monto': pago['monto'],
-                'fecha': datetime.utcnow().isoformat() + 'Z',
+                'fecha': datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'),
                 'estado': 'completado'
             }
             
@@ -442,7 +442,7 @@ class BookyPagoFinanzas:
         """
         finanzas = _load_store(FINANZAS_FILE)
         
-        fecha_limite = datetime.utcnow().timestamp() - (dias * 86400)
+        fecha_limite = datetime.now(timezone.utc).timestamp() - (dias * 86400)
         
         ingresos = finanzas.get('ingresos', [])
         pagos = finanzas.get('pagos', [])

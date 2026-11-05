@@ -2140,12 +2140,12 @@ export default function MiTienda() {
   // ========================
   // Cargar libros únicamente al montar el componente
   useEffect(() => {
-    cargarLibros();
+    void cargarLibros();
   }, [cargarLibros]);
 
   useEffect(() => {
     if (activeSide === "Pedidos" || activeSide === "Envios" || activeSide === "Envíos") {
-      cargarPedidos();
+      void cargarPedidos();
       const intervalId = setInterval(() => {
         api.get("/libros/mis-pedidos")
           .then((res) => {
@@ -2157,14 +2157,14 @@ export default function MiTienda() {
       }, 4000);
       return () => clearInterval(intervalId);
     } else if (activeSide === "Ventas") {
-      cargarVentas();
+      void cargarVentas();
     } else if (activeSide === "Mis Libros") {
-      cargarLibros();
+      void cargarLibros();
     } else if (activeSide === "Inicio") {
-      cargarLibros();
-      cargarVentas();
+      void cargarLibros();
+      void cargarVentas();
     } else if (activeSide === "Perfil") {
-      cargarEstadisticasUsuario();
+      void cargarEstadisticasUsuario();
     }
   }, [activeSide, cargarPedidos, cargarVentas, cargarLibros]);
 
@@ -4810,7 +4810,7 @@ export default function MiTienda() {
       const res = await habilitarPagoRetiro(idOrden);
       if (res.data?.ok) {
         setModalHabilitarPago(prev => ({ ...prev, exito: true, error: "" }));
-        cargarPedidos();
+        void cargarPedidos();
         setTimeout(() => {
           setModalHabilitarPago(null);
         }, 1600);
@@ -4833,7 +4833,7 @@ export default function MiTienda() {
       const res = await confirmarEntregaRetiro(idOrden, esEfectivo);
       if (res.data?.ok) {
         setModalConfirmarEntrega(prev => ({ ...prev, exito: true, error: "" }));
-        cargarPedidos();
+        void cargarPedidos();
         setTimeout(() => {
           setModalConfirmarEntrega(null);
         }, 1600);
@@ -6936,21 +6936,21 @@ export default function MiTienda() {
           libro={modalEditar}
           categorias={categorias}
           onClose={() => setModalEditar(null)}
-          onGuardado={() => { setModalEditar(null); cargarLibros(); cargarAlertas(); }}
+          onGuardado={() => { setModalEditar(null); void cargarLibros(); void cargarAlertas(); }}
         />
       )}
       {modalEliminar && (
         <ModalEliminar
           libro={modalEliminar}
           onClose={() => setModalEliminar(null)}
-          onEliminado={() => { setModalEliminar(null); cargarLibros(); cargarAlertas(); }}
+          onEliminado={() => { setModalEliminar(null); void cargarLibros(); void cargarAlertas(); }}
         />
       )}
       {modalStock && (
         <ModalStock
           libro={modalStock}
           onClose={() => setModalStock(null)}
-          onActualizado={() => { setModalStock(null); cargarLibros(); cargarAlertas(); }}
+          onActualizado={() => { setModalStock(null); void cargarLibros(); void cargarAlertas(); }}
         />
       )}
       {modalVentaFisica && (
@@ -6958,7 +6958,7 @@ export default function MiTienda() {
           libro={modalVentaFisica}
           libros={libros}
           onClose={() => setModalVentaFisica(null)}
-          onVendido={() => { setModalVentaFisica(null); cargarLibros(); cargarAlertas(); }}
+          onVendido={() => { setModalVentaFisica(null); void cargarLibros(); void cargarAlertas(); }}
         />
       )}
       {modalCodigo && (
@@ -6971,7 +6971,7 @@ export default function MiTienda() {
         <ModalRetiroTienda
           libro={modalRetiro}
           onClose={() => setModalRetiro(null)}
-          onConfirmado={() => { setModalRetiro(null); cargarLibros(); cargarAlertas(); }}
+          onConfirmado={() => { setModalRetiro(null); void cargarLibros(); void cargarAlertas(); }}
         />
       )}
     </div>

@@ -44,8 +44,8 @@ export default function Historial() {
       navigate("/login");
       return;
     }
-    cargarHistorial();
-    cargarEstadisticas();
+    void cargarHistorial();
+    void cargarEstadisticas();
   }, [token, filter, navigate, cargarHistorial]);
 
   // ============= ELIMINAR =============

@@ -106,7 +106,7 @@ export default function Devoluciones({ embedded = false }) {
       navigate('/login');
       return;
     }
-    cargarDatos().catch((err) => console.error("Error inesperado al cargar datos:", err));
+    void cargarDatos();
   }, [cargarDatos, navigate]);
 
   const handleSubmit = async (e) => {

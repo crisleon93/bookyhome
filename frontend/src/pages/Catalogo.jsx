@@ -219,7 +219,7 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
   }, [filtros, pagina]);
 
   useEffect(() => {
-    cargarLibros();
+    void cargarLibros();
   }, [cargarLibros]);
   
   // Registrar impresiones de libros impulsados visibles

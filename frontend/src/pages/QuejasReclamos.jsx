@@ -223,7 +223,7 @@ export default function QuejasReclamos() {
     }
   }, []);
 
-  useEffect(() => { cargar(); }, [cargar]);
+  useEffect(() => { void cargar(); }, [cargar]);
 
   const handleEvidencia = (e) => {
     const file = e.target.files?.[0] || null;

@@ -1,5 +1,6 @@
 import json
 import os
+import secrets
 from datetime import datetime
 
 STORAGE_DIR = os.path.join(os.path.dirname(__file__), '..', 'data')
@@ -606,7 +607,6 @@ def cancelar_orden(id_usuario, id_orden, motivo="Cancelación solicitada por el 
 
 
 def reservar_retiro(id_usuario, id_orden, metodo_pago="Efectivo en Tienda"):
-    import random
     from datetime import timedelta
     orders = _load_store(ORDER_FILE)
     user_orders = orders.get(str(id_usuario), [])
@@ -616,7 +616,7 @@ def reservar_retiro(id_usuario, id_orden, metodo_pago="Efectivo en Tienda"):
             target = o
             break
 
-    pin = target.get("pin_retiro") if target and target.get("pin_retiro") else f"{random.randint(1000, 9999)}"
+    pin = target.get("pin_retiro") if target and target.get("pin_retiro") else str(secrets.randbelow(9000) + 1000)
     ahora = datetime.utcnow()
     limite = ahora + timedelta(hours=48)
     limite_str = limite.isoformat() + "Z"

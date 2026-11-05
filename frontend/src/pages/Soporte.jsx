@@ -129,14 +129,14 @@ export default function Soporte() {
   const cargar = async () => {
     try { const res = await getSoporte(); setTickets(res.data || []); } catch { setError('No se pudieron cargar los tickets de soporte.'); }
   };
-  useEffect(() => { cargar(); }, []);
+  useEffect(() => { void cargar(); }, []);
 
   const enviar = async (event) => {
     event.preventDefault(); setError(''); setMensaje('');
     setEnviando(true);
     try {
       await crearSoporte({ asunto, descripcion, categoria });
-      setAsunto(''); setDescripcion(''); setMensaje('Ticket enviado al soporte técnico.'); cargar();
+      setAsunto(''); setDescripcion(''); setMensaje('Ticket enviado al soporte técnico.'); void cargar();
       window.dispatchEvent(new Event('bookyhome-complaint-updated'));
     } catch (err) { setError(err.response?.data?.detail || 'No se pudo crear el ticket.'); }
     finally { setEnviando(false); }

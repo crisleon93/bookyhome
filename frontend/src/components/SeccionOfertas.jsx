@@ -1411,7 +1411,7 @@ export default function SeccionOfertas() {
   };
 
   const cerrarForm = () => { setMostrarForm(false); setOfertaEditar(null); };
-  const onGuardado = () => { cerrarForm(); cargar(); };
+  const onGuardado = () => { cerrarForm(); void cargar(); };
 
   const activas  = ofertas.filter((o) => o.estado === "activa");
   const proximas = ofertas.filter((o) => o.estado === "proxima");
@@ -1576,7 +1576,7 @@ export default function SeccionOfertas() {
         <ModalEliminarOferta
           oferta={ofertaEliminar}
           onClose={() => setOfertaEliminar(null)}
-          onEliminado={() => { setOfertaEliminar(null); cargar(); }}
+          onEliminado={() => { setOfertaEliminar(null); void cargar(); }}
           darkMode={darkMode}
         />
       )}
