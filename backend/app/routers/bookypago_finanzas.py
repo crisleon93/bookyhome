@@ -4,7 +4,7 @@ Gestión de ingresos, pagos a vendedores, planes e impulsos
 """
 
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException, Depends, Body
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from dotenv import load_dotenv
@@ -532,7 +532,7 @@ def procesar_nomina_vendedor(id_vendedor: int, data: NominaRequest, user=Depends
             ultimos_digitos = str(cuenta_principal["numero_cuenta"])[-4:]
             referencia = (
                 f"TRF-{cuenta_principal['banco'][:12]}-"
-                f"{ultimos_digitos}-{datetime.utcnow().strftime('%Y%m%d%H%M%S')}"
+                f"{ultimos_digitos}-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}"
             )
 
         resultado = bookypago_finanzas_configurado.procesar_nomina_vendedor(id_vendedor, referencia)
