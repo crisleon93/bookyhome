@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Body
+from fastapi import APIRouter, Depends, HTTPException, Body, Form
 from typing import Dict, Any
 from app.auth import get_current_user
 from app.models.tiendas import obtener_tienda_por_usuario
@@ -92,7 +92,7 @@ os.makedirs(UPLOAD_TIENDAS_DIR, exist_ok=True)
 @router.post("/upload-image")
 def upload_tienda_image(
     file: UploadFile = File(...),
-    tipo: str = Body(..., embed=True), # 'logo' o 'banner'
+    tipo: str = Form(...), # 'logo' o 'banner'
     user: dict = Depends(get_current_user)
 ):
     """Sube un logo o banner de la tienda y devuelve la URL relativa."""
