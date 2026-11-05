@@ -126,7 +126,7 @@ export default function SeccionImpulsos({ tiendaId, onNavegar, darkMode = false 
   }, []);
 
   useEffect(() => {
-    cargarDatos();
+    void cargarDatos();
   }, [tiendaId, cargarDatos]);
 
   const precioConDescuento = (precio) => {

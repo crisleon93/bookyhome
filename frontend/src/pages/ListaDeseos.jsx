@@ -134,12 +134,12 @@ export default function ListaDeseos({ embedded = false, onVerLibro, onIrCatalogo
       navigate('/login');
       return;
     }
-    cargarListas();
+    void cargarListas();
   }, [cargarListas, navigate]);
 
   useEffect(() => {
     if (listaSeleccionadaId) {
-      cargarLibros(listaSeleccionadaId);
+      void cargarLibros(listaSeleccionadaId);
     }
   }, [listaSeleccionadaId, cargarLibros]);
 

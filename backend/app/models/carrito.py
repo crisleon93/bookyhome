@@ -1,6 +1,6 @@
 import json
 import os
-import random
+import secrets
 import uuid
 from datetime import datetime, timedelta
 from app.database import get_db
@@ -31,7 +31,7 @@ def _crear_datos_retiro(tipo_entrega):
     if tipo_entrega != 'retiro_tienda':
         return None, None, None
 
-    pin_retiro = f"{random.randint(1000, 9999)}"
+    pin_retiro = str(secrets.randbelow(9000) + 1000)
     fecha_limite = (datetime.utcnow() + timedelta(hours=48)).isoformat() + 'Z'
     return pin_retiro, 'reservado', fecha_limite
 

@@ -215,16 +215,16 @@ export default function AdminDashboard() {
   };
 
   useEffect(() => {
-    if (activeSection === 'reclamos') cargarReclamos();
-    if (activeSection === 'soporte') cargarSoporte();
-    if (activeSection === 'dashboard') { cargarReclamos(); cargarSoporte(); }
+    if (activeSection === 'reclamos') void cargarReclamos();
+    if (activeSection === 'soporte') void cargarSoporte();
+    if (activeSection === 'dashboard') { void cargarReclamos(); void cargarSoporte(); }
   }, [activeSection]);
 
   useEffect(() => {
     const refrescar = () => {
-      if (activeSection === 'reclamos') cargarReclamos();
-      if (activeSection === 'soporte') cargarSoporte();
-      if (activeSection === 'dashboard') { cargarReclamos(); cargarSoporte(); }
+      if (activeSection === 'reclamos') void cargarReclamos();
+      if (activeSection === 'soporte') void cargarSoporte();
+      if (activeSection === 'dashboard') { void cargarReclamos(); void cargarSoporte(); }
     };
     window.addEventListener('bookyhome-complaint-updated', refrescar);
     const intervalId = window.setInterval(refrescar, 10000);
@@ -261,8 +261,8 @@ export default function AdminDashboard() {
       setModalOpen(false);
       setModalReclamo(null);
       setModalRespuesta('');
-      cargarReclamos();
-      cargarSoporte();
+      void cargarReclamos();
+      void cargarSoporte();
     } catch (error) {
       notify(error.response?.data?.detail || error.message || 'No se pudo resolver la solicitud', 'error');
     }
@@ -301,7 +301,7 @@ export default function AdminDashboard() {
       }
     };
 
-    cargarDatos();
+    void cargarDatos();
   }, [navigate]);
 
   const ocultarLibro = async (idLibro, estadoOcultoActual) => {

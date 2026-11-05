@@ -94,15 +94,15 @@ export default function SeccionSeguimiento({ userId }) {
     }
   }, [userId]);
 
-  useEffect(() => { cargarOrdenes(); }, [cargarOrdenes]);
+  useEffect(() => { void cargarOrdenes(); }, [cargarOrdenes]);
   useEffect(() => {
     // Refresca los cambios hechos por el vendedor sin exigir que el comprador
     // cierre y vuelva a abrir la sección.
     // Se pasa false para no mostrar spinner en actualizaciones silenciosas
     // y evitar el flash de "todos los pedidos sin filtrar".
-    const intervalo = window.setInterval(() => cargarOrdenes(false), 20000);
+    const intervalo = window.setInterval(() => { void cargarOrdenes(false); }, 20000);
     const alVolver = () => {
-      if (document.visibilityState === "visible") cargarOrdenes(false);
+      if (document.visibilityState === "visible") void cargarOrdenes(false);
     };
     document.addEventListener("visibilitychange", alVolver);
     return () => {

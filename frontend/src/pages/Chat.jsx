@@ -2250,7 +2250,7 @@ export default function Chat({
                     className="notif-link"
                     onClick={() => {
                       if ('Notification' in window) {
-                        Notification.requestPermission().then(() => {
+                        void Notification.requestPermission().then(() => {
                           setMostrarBannerNotif(false);
                           try { localStorage.setItem('bkh_notif_banner_dismissed', 'true'); } catch (e) { console.warn(e); }
                         });

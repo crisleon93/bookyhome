@@ -184,3 +184,23 @@ class TestCancelarOrden:
             result = mod.cancelar_orden(id_usuario=1, id_orden=999)
 
         assert result["ok"] is False
+
+
+class TestReservarRetiro:
+    def test_genera_pin_seguro_de_cuatro_digitos(self, tmp_path, monkeypatch):
+        order_file = tmp_path / "orders.json"
+        order_file.write_text(json.dumps({"42": [{"id_orden": 7}]}))
+
+        import app.models.payments as mod
+        monkeypatch.setattr(mod, "ORDER_FILE", str(order_file))
+        monkeypatch.setattr(mod.secrets, "randbelow", lambda limite: 0)
+
+        db_mock = MagicMock()
+        cursor_mock = db_mock.cursor.return_value
+        cursor_mock.fetchone.return_value = None
+
+        with patch("app.database.get_db", return_value=db_mock):
+            result = mod.reservar_retiro(id_usuario=42, id_orden=7)
+
+        assert result["pin_retiro"] == "1000"
+        assert result["order"]["pin_retiro"] == "1000"

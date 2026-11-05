@@ -13,6 +13,17 @@ import pytest
 from unittest.mock import MagicMock, patch
 
 
+def test_pin_retiro_usa_generador_seguro(monkeypatch):
+    import app.models.carrito as mod
+
+    monkeypatch.setattr(mod.secrets, "randbelow", lambda limite: limite - 1)
+
+    pin_retiro, estado_retiro, _ = mod._crear_datos_retiro("retiro_tienda")
+
+    assert pin_retiro == "9999"
+    assert estado_retiro == "reservado"
+
+
 # ---------------------------------------------------------------------------
 # Fixture: CART_FILE temporal
 # ---------------------------------------------------------------------------
