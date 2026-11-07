@@ -1,233 +1,148 @@
-import { useState, useEffect } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import Header from '../components/Header'
-import { resetPassword } from '../services/api'
+import { useState } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
+import api from '../services/api';
 
-const IconLock = () => (
-  <svg className="auth-input-icon" xmlns="http://www.w3.org/2000/svg" fill="none"
-    viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
-    <path strokeLinecap="round" strokeLinejoin="round"
-      d="M16.5 10.5V7.125A4.125 4.125 0 008.25 7.125V10.5M6 10.5h12a1.5 1.5 0 011.5 1.5v7.5A1.5 1.5 0 0118 21H6a1.5 1.5 0 01-1.5-1.5V12A1.5 1.5 0 016 10.5z" />
-  </svg>
-)
+export default function ResetPassword() {
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const token = searchParams.get('token') || '';
 
-const IconEyeOpen = () => (
-  <svg className="eye-icon" xmlns="http://www.w3.org/2000/svg" fill="none"
-    viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
-    <path strokeLinecap="round" strokeLinejoin="round"
-      d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
-    <path strokeLinecap="round" strokeLinejoin="round"
-      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-  </svg>
-)
+  const [password, setPassword]     = useState('');
+  const [confirmar, setConfirmar]   = useState('');
+  const [cargando, setCargando]     = useState(false);
+  const [exito, setExito]           = useState(false);
+  const [errores, setErrores]       = useState({});
+  const [errorGlobal, setErrorGlobal] = useState('');
 
-const IconEyeClosed = () => (
-  <svg className="eye-icon" xmlns="http://www.w3.org/2000/svg" fill="none"
-    viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
-    <path strokeLinecap="round" strokeLinejoin="round"
-      d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
-  </svg>
-)
-
-const IconCheck = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-    stroke="currentColor" strokeWidth="2" width="18" height="18">
-    <path strokeLinecap="round" strokeLinejoin="round"
-      d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-  </svg>
-)
-
-function ResetPassword() {
-  const [password,    setPassword]    = useState('')
-  const [confirmar,   setConfirmar]   = useState('')
-  const [showPass,    setShowPass]    = useState(false)
-  const [showConfirm, setShowConfirm] = useState(false)
-  const [loading,     setLoading]     = useState(false)
-  const [exito,       setExito]       = useState(false)
-  const [error,       setError]       = useState('')
-  const [tokenError,  setTokenError]  = useState(false)
-  const [errors,      setErrors]      = useState({ password: '', confirmar: '' })
-  const [countdown,   setCountdown]   = useState(5)
-
-  const [searchParams] = useSearchParams()
-  const token = searchParams.get('token')
-  const navigate = useNavigate()
-
-  // Verificar que hay token en la URL
-  useEffect(() => {
-    if (!token) setTokenError(true)
-  }, [token])
-
-  // Countdown para redirigir al login tras éxito
-  useEffect(() => {
-    if (!exito) return
-    if (countdown === 0) { navigate('/'); return }
-    const timer = setTimeout(() => setCountdown(c => c - 1), 1000)
-    return () => clearTimeout(timer)
-  }, [exito, countdown, navigate])
-
-  const validate = () => {
-    const newErrors = { password: '', confirmar: '' }
-    let valid = true
-
-    if (!password.trim()) {
-      newErrors.password = 'Este campo es obligatorio'; valid = false
-    } else if (password.length < 8) {
-      newErrors.password = 'Mínimo 8 caracteres'; valid = false
-    }
-    if (!confirmar.trim()) {
-      newErrors.confirmar = 'Este campo es obligatorio'; valid = false
-    } else if (password !== confirmar) {
-      newErrors.confirmar = 'Las contraseñas no coinciden'; valid = false
-    }
-
-    setErrors(newErrors)
-    return valid
-  }
+  const validar = () => {
+    const e = {};
+    if (password.length < 8) e.password = 'La contraseña debe tener al menos 8 caracteres';
+    if (password !== confirmar) e.confirmar = 'Las contraseñas no coinciden';
+    setErrores(e);
+    return Object.keys(e).length === 0;
+  };
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
-    setError('')
-    if (!validate()) return
-
-    setLoading(true)
+    e.preventDefault();
+    setErrorGlobal('');
+    if (!validar()) return;
+    setCargando(true);
     try {
-      await resetPassword({ token, password })
-      setExito(true)
-      setCountdown(5)
+      await api.post('/reset-password', { token, password });
+      setExito(true);
     } catch (err) {
-      setError(err.response?.data?.detail || 'Error al actualizar la contraseña')
+      setErrorGlobal(err.response?.data?.detail || 'El enlace es inválido o ha expirado.');
     } finally {
-      setLoading(false)
+      setCargando(false);
     }
-  }
+  };
 
-  // Token inválido o no existe
-  if (tokenError) {
-    return (
-      <>
-        <main className="auth-main">
-          <div className="auth-card">
-            <div className="auth-icon-top">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                stroke="currentColor" strokeWidth="1.8">
-                <path strokeLinecap="round" strokeLinejoin="round"
-                  d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
-              </svg>
-            </div>
-            <h1 className="auth-title">Enlace inválido</h1>
-            <p className="auth-subtitle">Este enlace no es válido o ha expirado. Solicita uno nuevo.</p>
-            <div className="auth-footer-links">
-              <p><Link to="/forgot-password">Solicitar nuevo enlace</Link></p>
-              <p><Link to="/login">← Volver al login</Link></p>
-            </div>
-          </div>
-        </main>
-      </>
-    )
-  }
+  const styles = {
+    page: {
+      minHeight: '100vh', background: '#FAF8F5',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      padding: '2rem',
+    },
+    card: {
+      background: '#fff', borderRadius: 20, padding: '2.5rem 2rem',
+      maxWidth: 440, width: '100%',
+      boxShadow: '0 4px 24px rgba(122,30,58,0.10)',
+      border: '1px solid #f0e8e8',
+      textAlign: 'center',
+    },
+    icon:     { fontSize: '3rem', marginBottom: '1rem' },
+    title:    { margin: '0 0 0.5rem', fontSize: '1.5rem', fontWeight: 800, color: '#222' },
+    subtitle: { margin: '0 0 2rem', color: '#666', fontSize: '0.95rem', lineHeight: 1.5 },
+    label:    { display: 'block', textAlign: 'left', fontWeight: 700, color: '#444', marginBottom: 6, fontSize: '0.88rem', textTransform: 'uppercase', letterSpacing: '0.04em' },
+    input:    { width: '100%', padding: '11px 14px', borderRadius: 10, border: '1.5px solid #ddd', fontSize: '0.95rem', outline: 'none', boxSizing: 'border-box', marginBottom: 4 },
+    inputErr: { borderColor: '#e74c3c' },
+    errTxt:   { color: '#e74c3c', fontSize: '0.82rem', textAlign: 'left', marginBottom: 12 },
+    field:    { marginBottom: '1rem', textAlign: 'left' },
+    btn: {
+      width: '100%', padding: '13px', borderRadius: 12, border: 'none',
+      background: '#7A1E3A', color: '#fff', fontWeight: 800, fontSize: '1rem',
+      cursor: 'pointer', marginTop: 8, transition: 'background 0.2s',
+    },
+    btnDisabled: { opacity: 0.65, cursor: 'not-allowed' },
+    errGlobal: { background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 10, padding: '10px 14px', color: '#991b1b', fontSize: '0.88rem', marginBottom: '1rem' },
+    link: { color: '#7A1E3A', fontWeight: 700, cursor: 'pointer', textDecoration: 'underline', background: 'none', border: 'none', fontSize: '0.9rem' },
+  };
 
+  /* ── Sin token ───────────────────────────────────────────── */
+  if (!token) return (
+    <div style={styles.page}>
+      <div style={styles.card}>
+        <div style={styles.icon}>⚠️</div>
+        <h2 style={styles.title}>Enlace inválido</h2>
+        <p style={styles.subtitle}>No se encontró un token de restablecimiento. Solicita un nuevo enlace desde la pantalla de inicio de sesión.</p>
+        <button style={styles.btn} onClick={() => navigate('/')}>Volver al inicio</button>
+      </div>
+    </div>
+  );
+
+  /* ── Éxito ───────────────────────────────────────────────── */
+  if (exito) return (
+    <div style={styles.page}>
+      <div style={styles.card}>
+        <div style={styles.icon}>✅</div>
+        <h2 style={styles.title}>Contraseña actualizada</h2>
+        <p style={styles.subtitle}>Ya puedes iniciar sesión con tu nueva contraseña.</p>
+        <button style={styles.btn} onClick={() => navigate('/')}>Ir al inicio de sesión</button>
+      </div>
+    </div>
+  );
+
+  /* ── Formulario ──────────────────────────────────────────── */
   return (
-    <>
-      <main className="auth-main">
-        <div className="auth-card">
+    <div style={styles.page}>
+      <div style={styles.card}>
+        <div style={styles.icon}>🔐</div>
+        <h2 style={styles.title}>Nueva contraseña</h2>
+        <p style={styles.subtitle}>Ingresa y confirma tu nueva contraseña para continuar.</p>
 
-          <div className="auth-icon-top">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-              stroke="currentColor" strokeWidth="1.8">
-              <path strokeLinecap="round" strokeLinejoin="round"
-                d="M16.5 10.5V7.125A4.125 4.125 0 008.25 7.125V10.5M6 10.5h12a1.5 1.5 0 011.5 1.5v7.5A1.5 1.5 0 0118 21H6a1.5 1.5 0 01-1.5-1.5V12A1.5 1.5 0 016 10.5z" />
-            </svg>
+        {errorGlobal && <div style={styles.errGlobal}>{errorGlobal}</div>}
+
+        <form onSubmit={handleSubmit}>
+          <div style={styles.field}>
+            <label style={styles.label}>Nueva contraseña</label>
+            <input
+              type="password"
+              placeholder="Mínimo 8 caracteres"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              style={{ ...styles.input, ...(errores.password ? styles.inputErr : {}) }}
+              autoComplete="new-password"
+            />
+            {errores.password && <div style={styles.errTxt}>{errores.password}</div>}
           </div>
 
-          <h1 className="auth-title">Nueva contraseña</h1>
-          <p className="auth-subtitle">Escribe tu nueva contraseña</p>
-
-          {exito && (
-            <div className="flash flash--success" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.6rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <IconCheck />
-                <span>¡Contraseña actualizada! Serás redirigido al login en <strong>{countdown}</strong> segundos...</span>
-              </div>
-              <div style={{ width: '100%', height: '4px', background: '#a5d6a7', borderRadius: '2px' }}>
-                <div style={{
-                  height: '100%', background: '#2e7d32', borderRadius: '2px',
-                  width: `${(countdown / 5) * 100}%`, transition: 'width 1s linear'
-                }} />
-              </div>
-              <button onClick={() => navigate('/login')}
-                style={{ background: 'none', border: 'none', color: '#2e7d32', fontWeight: '700', cursor: 'pointer', fontSize: '0.85rem', padding: 0, textDecoration: 'underline' }}>
-                Ir al login ahora →
-              </button>
-            </div>
-          )}
-
-          {error && (
-            <span className="error-msg" style={{ textAlign: 'center', display: 'block', marginBottom: '1rem' }}>
-              {error}
-            </span>
-          )}
-
-          {!exito && (
-            <form onSubmit={handleSubmit} noValidate>
-
-              <div className="auth-field">
-                <label htmlFor="password">Nueva contraseña</label>
-                <div className="auth-input-wrapper">
-                  <IconLock />
-                  <input
-                    id="password"
-                    type={showPass ? 'text' : 'password'}
-                    placeholder="Mínimo 8 caracteres"
-                    value={password}
-                    onChange={e => { setPassword(e.target.value); setErrors(p => ({ ...p, password: '' })) }}
-                    className={errors.password ? 'input-error' : ''}
-                  />
-                  <button type="button" className="btn-eye"
-                    aria-label={showPass ? 'Ocultar' : 'Mostrar'}
-                    onClick={() => setShowPass(v => !v)}>
-                    {showPass ? <IconEyeClosed /> : <IconEyeOpen />}
-                  </button>
-                </div>
-                {errors.password && <span className="error-msg">{errors.password}</span>}
-              </div>
-
-              <div className="auth-field">
-                <label htmlFor="confirmar">Confirmar contraseña</label>
-                <div className="auth-input-wrapper">
-                  <IconLock />
-                  <input
-                    id="confirmar"
-                    type={showConfirm ? 'text' : 'password'}
-                    placeholder="Repite la contraseña"
-                    value={confirmar}
-                    onChange={e => { setConfirmar(e.target.value); setErrors(p => ({ ...p, confirmar: '' })) }}
-                    className={errors.confirmar ? 'input-error' : ''}
-                  />
-                  <button type="button" className="btn-eye"
-                    aria-label={showConfirm ? 'Ocultar' : 'Mostrar'}
-                    onClick={() => setShowConfirm(v => !v)}>
-                    {showConfirm ? <IconEyeClosed /> : <IconEyeOpen />}
-                  </button>
-                </div>
-                {errors.confirmar && <span className="error-msg">{errors.confirmar}</span>}
-              </div>
-
-              <button type="submit" className="btn btn-vinotinto" disabled={loading}>
-                {loading ? 'Actualizando...' : 'Actualizar contraseña'}
-              </button>
-
-            </form>
-          )}
-
-          <div className="auth-footer-links">
-            <p><Link to="/login">← Volver al inicio de sesión</Link></p>
+          <div style={styles.field}>
+            <label style={styles.label}>Confirmar contraseña</label>
+            <input
+              type="password"
+              placeholder="Repite la contraseña"
+              value={confirmar}
+              onChange={e => setConfirmar(e.target.value)}
+              style={{ ...styles.input, ...(errores.confirmar ? styles.inputErr : {}) }}
+              autoComplete="new-password"
+            />
+            {errores.confirmar && <div style={styles.errTxt}>{errores.confirmar}</div>}
           </div>
 
-        </div>
-      </main>
-    </>
-  )
+          <button
+            type="submit"
+            disabled={cargando}
+            style={{ ...styles.btn, ...(cargando ? styles.btnDisabled : {}) }}
+          >
+            {cargando ? 'Cambiando...' : 'Cambiar contraseña'}
+          </button>
+        </form>
+
+        <p style={{ marginTop: '1.5rem', color: '#888', fontSize: '0.88rem' }}>
+          ¿Recordaste tu contraseña?{' '}
+          <button style={styles.link} onClick={() => navigate('/')}>Iniciar sesión</button>
+        </p>
+      </div>
+    </div>
+  );
 }
-
-export default ResetPassword
