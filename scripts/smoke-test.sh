@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env bash
+#!/usr/bin/env bash
 # smoke-test.sh — Prueba de humo BookyHome
 # Verifica que los endpoints críticos respondan correctamente.
 #
