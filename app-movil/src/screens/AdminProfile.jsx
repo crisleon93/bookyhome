@@ -39,7 +39,7 @@ function StatCard({ Icon, label, value, color }) {
   );
 }
 
-export default function AdminProfile({ stats = {}, solicitudes = [] }) {
+export default function AdminProfile({ stats = {}, solicitudes = [], onProfilePhotoChange, onProfileNameChange }) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -81,7 +81,10 @@ export default function AdminProfile({ stats = {}, solicitudes = [] }) {
     }
     setSaving(true);
     try {
-      await updateProfile({ nombre_usuario: name.trim(), telefono: phone.trim() });
+      const savedName = name.trim();
+      await updateProfile({ nombre_usuario: savedName, telefono: phone.trim() });
+      setName(savedName);
+      onProfileNameChange?.(savedName);
       Alert.alert('Listo', 'El perfil se actualizó correctamente.');
     } catch (error) {
       Alert.alert('Error', error.response?.data?.detail || 'No se pudo actualizar el perfil.');
@@ -125,7 +128,10 @@ export default function AdminProfile({ stats = {}, solicitudes = [] }) {
         : await uploadBannerPhoto(formData);
       const imageUrl = resolveImage(response.data?.url || response.data?.[type === 'foto' ? 'foto_perfil' : 'banner_perfil']);
       if (!imageUrl) throw new Error('El servidor no devolvió la URL de la imagen.');
-      if (type === 'foto') setPhoto(imageUrl);
+      if (type === 'foto') {
+        setPhoto(imageUrl);
+        onProfilePhotoChange?.(imageUrl);
+      }
       else {
         setBanner(imageUrl);
         setBannerColor(null);

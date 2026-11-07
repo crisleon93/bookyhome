@@ -2242,6 +2242,30 @@
       "monto": 23400.0,
       "fecha": "2026-09-14T00:13:00.614062Z",
       "estado": "procesado"
+    },
+    {
+      "id": 191,
+      "tipo": "plan",
+      "id_tienda": 8,
+      "id_plan": 1,
+      "monto_plan": 0.0,
+      "comision": 0.0,
+      "monto": 0.0,
+      "periodicidad": "mensual",
+      "fecha": "2026-10-13T04:07:12.722603Z",
+      "estado": "procesado"
+    },
+    {
+      "id": 192,
+      "tipo": "plan",
+      "id_tienda": 8,
+      "id_plan": 2,
+      "monto_plan": 29000.0,
+      "comision": 2320.0,
+      "monto": 26680.0,
+      "periodicidad": "mensual",
+      "fecha": "2026-10-13T04:07:15.627006Z",
+      "estado": "procesado"
     }
   ],
   "pagos": [
@@ -2304,6 +2328,16 @@
       "fecha": "2026-08-29T16:38:08.372683Z",
       "estado": "procesado",
       "num_pagos": 1
+    },
+    {
+      "id": 7,
+      "tipo": "nomina",
+      "id_vendedor": 29,
+      "monto": 1400400.0,
+      "referencia": "TRF-Davivienda-9821-20261105053118",
+      "fecha": "2026-11-05T05:31:18.604319Z",
+      "estado": "procesado",
+      "num_pagos": 29
     }
   ]
 }

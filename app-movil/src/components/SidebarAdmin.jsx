@@ -1,8 +1,9 @@
 import React, { useEffect, useRef } from 'react';
 import {
   Animated, Dimensions, Modal, Platform, ScrollView,
-  StyleSheet, Text, TouchableOpacity, View,
+  Image, StyleSheet, Text, TouchableOpacity, View,
 } from 'react-native';
+import { getApiBaseUrl } from '../services/api';
 import {
   IconAlertTriangle, IconBook, IconClose, IconLayoutDashboard, IconLogout,
   IconPackage, IconSettings, IconStore, IconTool, IconTrendingUp, IconUser, IconWallet,
@@ -83,6 +84,11 @@ export default function SidebarAdmin({
   if (!visible && slideAnim._value === -DRAWER_WIDTH) return null;
 
   const initial = (user?.nombre || 'A').charAt(0).toUpperCase();
+  const photoUri = user?.foto_perfil
+    ? (/^https?:\/\//i.test(user.foto_perfil)
+      ? user.foto_perfil
+      : `${getApiBaseUrl()}/${String(user.foto_perfil).replace(/^\/+/, '')}`)
+    : null;
 
   return (
     <Modal visible={visible} transparent animationType="none" onRequestClose={onClose}>
@@ -98,7 +104,11 @@ export default function SidebarAdmin({
           {/* Cabecera con avatar */}
           <View style={st.header}>
             <View style={st.avatar}>
-              <Text style={st.avatarTxt}>{initial}</Text>
+              {photoUri ? (
+                <Image source={{ uri: photoUri }} style={st.avatarImage} resizeMode="cover" />
+              ) : (
+                <Text style={st.avatarTxt}>{initial}</Text>
+              )}
             </View>
             <View style={st.userInfo}>
               <Text style={st.name} numberOfLines={1}>{user?.nombre || 'Administrador'}</Text>
@@ -174,6 +184,7 @@ const st = StyleSheet.create({
   // Cabecera
   header:    { backgroundColor: VINOTINTO_DARK, paddingTop: Platform.OS === 'ios' ? 54 : 34, paddingBottom: 20, paddingHorizontal: 18, flexDirection: 'row', alignItems: 'center' },
   avatar:    { width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.2)', borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.35)', alignItems: 'center', justifyContent: 'center' },
+  avatarImage: { width: '100%', height: '100%', borderRadius: 22 },
   avatarTxt: { color: WHITE, fontSize: 18, fontWeight: '800' },
   userInfo:  { flex: 1, marginLeft: 12 },
   name:      { color: WHITE, fontSize: 14, fontWeight: '800' },
