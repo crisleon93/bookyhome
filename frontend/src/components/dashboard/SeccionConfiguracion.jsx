@@ -2,6 +2,14 @@ import { IconSettings, IconEyeOpen, IconEyeClosed } from "../Icons";
 import { notify } from "../ToastProvider";
 import { useState, useEffect } from "react";
 
+const PASSWORD_REQUIREMENTS = "Mínimo 8 caracteres, una mayúscula, un número y un carácter especial";
+
+const isStrongPassword = (password) =>
+  password.length >= 8 &&
+  /[A-Z]/.test(password) &&
+  /[0-9]/.test(password) &&
+  /[^A-Za-z0-9]/.test(password);
+
 export default function SeccionConfiguracion({ userId }) {
   const [preferencias, setPreferencias] = useState({
     notificaciones_mensajes: { email: true, web: true },
@@ -128,8 +136,8 @@ export default function SeccionConfiguracion({ userId }) {
       return;
     }
     
-    if (passwordForm.password_nueva.length < 6) {
-      notify("La contraseña debe tener al menos 6 caracteres", "error");
+    if (!isStrongPassword(passwordForm.password_nueva)) {
+      notify(PASSWORD_REQUIREMENTS, "error");
       return;
     }
     
@@ -893,7 +901,7 @@ export default function SeccionConfiguracion({ userId }) {
                         width: "100%", padding: "10px 42px 10px 10px", borderRadius: "6px", border: darkMode ? "1px solid #444" : "1px solid #ddd",
                         fontSize: "0.9rem", fontFamily: "Montserrat, sans-serif", background: darkMode ? "#2a2a2a" : "white", color: darkMode ? "#e0e0e0" : "#2a2a2a"
                       }}
-                      placeholder="Mínimo 6 caracteres"
+                      placeholder="Mínimo 8 caracteres"
                     />
                     <button
                       type="button"
@@ -905,6 +913,9 @@ export default function SeccionConfiguracion({ userId }) {
                       {showNewPassword ? <IconEyeClosed /> : <IconEyeOpen />}
                     </button>
                   </div>
+                  <p style={{ margin: "0.4rem 0 0", color: darkMode ? "#b8b8b8" : "#777", fontSize: "0.78rem" }}>
+                    {PASSWORD_REQUIREMENTS}
+                  </p>
                 </div>
                 <div>
                   <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: 600, color: darkMode ? "#e0e0e0" : "#2a2a2a", fontSize: "0.9rem" }}>

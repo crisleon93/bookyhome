@@ -12,6 +12,7 @@ import {
 import SidebarMenu from './SidebarMenu';
 import BarcodeScanner from './BarcodeScanner';
 import FiltrosBusqueda from './FiltrosBusqueda';
+import { useThemedStyles } from '../context/ThemeContext';
 
 const VINOTINTO = '#7A1E3A';
 const WHITE     = '#FFFFFF';
@@ -20,6 +21,7 @@ const CARBON    = '#2A2A2A';
 const GRAY      = '#666';
 
 function ModalOption({ icon, title, desc, onPress }) {
+  const styles = useThemedStyles(baseStyles);
   return (
     <TouchableOpacity style={styles.modalOption} onPress={onPress} activeOpacity={0.85}>
       <View style={styles.modalOptionIcon}>{icon}</View>
@@ -34,6 +36,7 @@ function ModalOption({ icon, title, desc, onPress }) {
 
 // ── Badge de filtros activos encima del ícono embudo ──────────────────────────
 function FilterBadge({ count }) {
+  const styles = useThemedStyles(baseStyles);
   if (!count) return null;
   return (
     <View style={styles.filterBadge}>
@@ -63,6 +66,7 @@ export default function Header({
   const [filtrosActuales, setFiltrosActuales] = useState({});
 
   const { user } = useContext(AuthContext);
+  const styles = useThemedStyles(baseStyles);
 
   const isPublic    = variant === 'public';
   const isDashboard = variant === 'dashboard';
@@ -284,14 +288,13 @@ export default function Header({
               {['Todo el país (Colombia)', 'Bogotá', 'Medellín', 'Cali', 'Barranquilla', 'Cartagena', 'Bucaramanga'].map((city, idx) => (
                 <TouchableOpacity
                   key={idx}
-                  style={{
-                    paddingVertical: 12, paddingHorizontal: 15, marginBottom: 10,
-                    backgroundColor: selectedLocation === city ? BEIGE : 'transparent',
-                    borderWidth: 1.5, borderColor: '#E0DBD4', borderRadius: 8,
-                  }}
+                  style={[
+                    styles.locationOption,
+                    selectedLocation === city && styles.locationOptionSelected,
+                  ]}
                   onPress={() => { setSelectedLocation(city); setLocationModalVisible(false); }}
                 >
-                  <Text style={{ fontSize: 15, fontWeight: selectedLocation === city ? 'bold' : 'normal', color: CARBON }}>
+                  <Text style={[styles.locationText, { fontWeight: selectedLocation === city ? 'bold' : 'normal' }]}>
                     {city}
                   </Text>
                 </TouchableOpacity>
@@ -331,7 +334,7 @@ export default function Header({
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-const styles = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   /* Top bar */
   topBar: {
     backgroundColor: VINOTINTO,
@@ -388,6 +391,17 @@ const styles = StyleSheet.create({
   searchInput: { flex: 1, fontSize: 14, color: '#222', paddingVertical: 0 },
   clearBtn:    { padding: 2 },
   cameraBtn:   { padding: 4, marginLeft: 2 },
+  locationOption: {
+    paddingVertical: 12,
+    paddingHorizontal: 15,
+    marginBottom: 10,
+    backgroundColor: 'transparent',
+    borderWidth: 1.5,
+    borderColor: '#E0DBD4',
+    borderRadius: 8,
+  },
+  locationOptionSelected: { backgroundColor: BEIGE },
+  locationText: { fontSize: 15, color: CARBON },
 
   /* Botón filtro — cuadrado al lado */
   filterBtn: {

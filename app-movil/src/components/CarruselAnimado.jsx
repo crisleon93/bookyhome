@@ -17,6 +17,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { adaptStyleForTheme, useAppTheme, useThemedStyles } from '../context/ThemeContext';
 
 const TICK_MS    = 16;   // ~60 fps
 const SPEED_PX_S = 38;   // píxeles por segundo (similar al web 28px/s pero más visible en móvil)
@@ -68,10 +69,15 @@ export function categoriaColor(cat = '') {
 // TARJETA DE LIBRO (interna — no exportar para no romper imports existentes)
 // ════════════════════════════════════════════════════════════════════════════
 function LibroCardInterna({ libro, onPress, baseUrl, cardWidth, coverHeight }) {
+  const c = useThemedStyles(cardStyles);
   const [imgUri, setImgUri] = useState(() => resolveImgUri(libro, baseUrl));
   const cat   = libro.nombre_categoria || '';
   const price = Number(libro.precio_libro ?? libro.precio ?? 0);
   const { bg: catBg, color: catColor } = categoriaColor(cat);
+  const categoryStyles = useThemedStyles({
+    category: { backgroundColor: catBg },
+    categoryText: { color: catColor },
+  });
   const rating = Number(libro.calificacion_tienda || libro.calificacion_promedio || libro.calificacion || 0);
   const sinStock = Number(libro.stock ?? 1) <= 0;
 
@@ -102,8 +108,8 @@ function LibroCardInterna({ libro, onPress, baseUrl, cardWidth, coverHeight }) {
       {/* Cuerpo */}
       <View style={c.body}>
         {cat ? (
-          <View style={[c.catPill, { backgroundColor: catBg }]}>
-            <Text style={[c.catPillText, { color: catColor }]} numberOfLines={1}>{cat}</Text>
+          <View style={[c.catPill, categoryStyles.category]}>
+            <Text style={[c.catPillText, categoryStyles.categoryText]} numberOfLines={1}>{cat}</Text>
           </View>
         ) : null}
         <Text style={c.title} numberOfLines={2}>{libro.titulo || 'Sin título'}</Text>
@@ -123,14 +129,21 @@ function LibroCardInterna({ libro, onPress, baseUrl, cardWidth, coverHeight }) {
 
 // ── Skeleton ─────────────────────────────────────────────────────────────────
 function Skeleton({ cardWidth, coverHeight }) {
+  const c = useThemedStyles(cardStyles);
+  const placeholders = useThemedStyles({
+    cover: { backgroundColor: '#ddd' },
+    short: { backgroundColor: '#ddd' },
+    long: { backgroundColor: '#ddd' },
+    price: { backgroundColor: '#ddd' },
+  });
   return (
     <View style={[c.card, { width: cardWidth, opacity: 0.45 }]}>
-      <View style={[c.cover, { height: coverHeight, backgroundColor: '#ddd' }]} />
+      <View style={[c.cover, placeholders.cover, { height: coverHeight }]} />
       <View style={c.body}>
-        <View style={{ width: '55%', height: 7, borderRadius: 4, backgroundColor: '#ddd', marginBottom: 5 }} />
-        <View style={{ width: '90%', height: 9, borderRadius: 4, backgroundColor: '#ddd', marginBottom: 4 }} />
-        <View style={{ width: '65%', height: 7, borderRadius: 4, backgroundColor: '#ddd', marginBottom: 8 }} />
-        <View style={{ width: '40%', height: 11, borderRadius: 4, backgroundColor: '#ddd' }} />
+        <View style={[{ width: '55%', height: 7, borderRadius: 4, marginBottom: 5 }, placeholders.short]} />
+        <View style={[{ width: '90%', height: 9, borderRadius: 4, marginBottom: 4 }, placeholders.long]} />
+        <View style={[{ width: '65%', height: 7, borderRadius: 4, marginBottom: 8 }, placeholders.long]} />
+        <View style={[{ width: '40%', height: 11, borderRadius: 4 }, placeholders.price]} />
       </View>
     </View>
   );
@@ -169,6 +182,8 @@ export default function CarruselAnimado({
   // debug — poner true temporalmente para ver logs en consola
   debug = false,
 }) {
+  const r = useThemedStyles(carouselStyles);
+  const { darkMode } = useAppTheme();
   // Log de depuración para ver si los datos llegan
   if (debug) {
     console.log(`[CarruselAnimado] ${titulo} — loading:${loading} libros:${libros.length}`);
@@ -249,7 +264,10 @@ export default function CarruselAnimado({
         </View>
         {onVerTodos && (
           <TouchableOpacity onPress={onVerTodos} activeOpacity={0.7}>
-            <Text style={[r.verTodos, { color: accentColor }]}>Ver todos →</Text>
+            <Text style={[
+              r.verTodos,
+              adaptStyleForTheme({ color: accentColor }, darkMode),
+            ]}>Ver todos →</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -305,7 +323,7 @@ export default function CarruselAnimado({
 // ════════════════════════════════════════════════════════════════════════════
 // ESTILOS
 // ════════════════════════════════════════════════════════════════════════════
-const c = StyleSheet.create({
+const cardStyles = StyleSheet.create({
   // Tarjeta
   card:   { backgroundColor: '#fff', borderRadius: 10, overflow: 'hidden', borderWidth: 1, borderColor: '#E2D8D0', shadowColor: '#000', shadowOpacity: 0.07, shadowRadius: 5, elevation: 2 },
   cover:  { position: 'relative', backgroundColor: '#E8DDD5' },
@@ -326,7 +344,7 @@ const c = StyleSheet.create({
   detailsButtonText: { color: '#fff', fontSize: 10, fontWeight: '700' },
 });
 
-const r = StyleSheet.create({
+const carouselStyles = StyleSheet.create({
   section:   { paddingTop: 20, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: '#EEE8E0' },
   head:      { flexDirection: 'row', alignItems: 'flex-start', paddingHorizontal: 16, marginBottom: 14, gap: 12 },
   headTitle: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10 },

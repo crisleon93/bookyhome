@@ -25,6 +25,7 @@ import {
 } from '../services/api';
 import { IconTrash } from '../components/Icons';
 import Footer from '../components/Footer';
+import { adaptStyleForTheme, useAppTheme, useThemedStyles } from '../context/ThemeContext';
 
 const IMG_DEFAULT = 'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=400&q=80';
 
@@ -62,6 +63,8 @@ const categoriaColor = (categoria = '') => {
 };
 
 export default function ListaDeseos({ navigation }) {
+  const s = useThemedStyles(baseStyles);
+  const { colors, darkMode } = useAppTheme();
   const [favoritos, setFavoritos] = useState([]);
   const [listas, setListas] = useState([]);
   const [libros, setLibros] = useState([]);
@@ -251,7 +254,7 @@ export default function ListaDeseos({ navigation }) {
   }
 
   return (
-    <ScrollView style={s.screen} contentContainerStyle={s.content} keyboardShouldPersistTaps="handled">
+    <ScrollView style={[s.screen, { backgroundColor: colors.page }]} contentContainerStyle={s.content} keyboardShouldPersistTaps="handled">
       <View style={s.hero}>
         <View style={s.heroTitleRow}>
           <View style={s.heroIcon}><Text style={s.heroIconText}>♡</Text></View>
@@ -421,7 +424,13 @@ export default function ListaDeseos({ navigation }) {
                   <Text style={s.bookTitle} numberOfLines={2}>{libro.titulo}</Text>
                   <Text style={s.author} numberOfLines={1}>{libro.autor_libro || 'Autor no disponible'}</Text>
                   {categoria && (
-                    <Text style={[s.category, { backgroundColor: categoria.bg, color: categoria.color }]} numberOfLines={1}>
+                    <Text
+                      style={[
+                        s.category,
+                        adaptStyleForTheme({ backgroundColor: categoria.bg, color: categoria.color }, darkMode),
+                      ]}
+                      numberOfLines={1}
+                    >
                       {libro.nombre_categoria}
                     </Text>
                   )}
@@ -491,7 +500,7 @@ const COLORS = {
   page: '#f9f7f5',
 };
 
-const s = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: COLORS.page },
   content: { padding: 16, paddingBottom: 0, gap: 16 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: COLORS.page },
@@ -599,3 +608,5 @@ const s = StyleSheet.create({
   addToListOptionText: { color: COLORS.wine, fontSize: 11, fontWeight: '700' },
   cancelText: { color: COLORS.muted, fontSize: 11, textAlign: 'center', paddingVertical: 3 },
 });
+
+const s = baseStyles;

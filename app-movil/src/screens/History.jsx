@@ -11,7 +11,8 @@ import {
   ScrollView,
 } from 'react-native';
 import Svg, { Circle, Line, Path, Polyline, Rect, Polygon } from 'react-native-svg';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import SafeAreaView from '../components/ThemedSafeAreaView';
+import { useAppTheme, useThemedStyles } from '../context/ThemeContext';
 import * as Print from 'expo-print';
 import {
   cancelarMisPendientes,
@@ -65,6 +66,104 @@ const getOrderStatusBadge = (order) => {
 };
 
 export default function History({ navigation }) {
+  const { darkMode } = useAppTheme();
+  const themedBaseStyles = useThemedStyles(baseStyles);
+  const styles = useMemo(() => darkMode ? ({
+    ...themedBaseStyles,
+    safe: { ...themedBaseStyles.safe, backgroundColor: '#1A1A1A' },
+    container: { ...themedBaseStyles.container, backgroundColor: '#1A1A1A' },
+    headerCard: { ...themedBaseStyles.headerCard, backgroundColor: '#1E1E1E', borderColor: '#333333' },
+    subtitle: { ...themedBaseStyles.subtitle, color: '#999999' },
+    purchaseCount: { ...themedBaseStyles.purchaseCount, backgroundColor: '#2A1A24', borderColor: '#5A2A3A' },
+    purchaseCountText: { ...themedBaseStyles.purchaseCountText, color: '#E05A7A' },
+    clearPendingButton: { ...themedBaseStyles.clearPendingButton, backgroundColor: '#2A2510', borderColor: '#6B5A10' },
+    clearPendingText: { ...themedBaseStyles.clearPendingText, color: '#FBBF24' },
+    metrics: { ...themedBaseStyles.metrics, borderTopColor: '#333333' },
+    metricCard: { ...themedBaseStyles.metricCard, backgroundColor: '#252525', borderColor: '#333333' },
+    cleanupFeedback: { ...themedBaseStyles.cleanupFeedback, backgroundColor: '#0F2E1A', borderColor: '#16A34A' },
+    cleanupFeedbackText: { ...themedBaseStyles.cleanupFeedbackText, color: '#4ADE80' },
+    cleanupFeedbackError: { ...themedBaseStyles.cleanupFeedbackError, backgroundColor: '#2E0D0D', borderColor: '#EF4444' },
+    cleanupFeedbackErrorText: { ...themedBaseStyles.cleanupFeedbackErrorText, color: '#F87171' },
+    filterCard: { ...themedBaseStyles.filterCard, backgroundColor: '#1E1E1E', borderColor: '#2A2A2A' },
+    searchBox: { ...themedBaseStyles.searchBox, backgroundColor: '#2A2A2A', borderColor: '#3A3A3A' },
+    searchInput: { ...themedBaseStyles.searchInput, color: '#ECECEC' },
+    sortButton: { ...themedBaseStyles.sortButton, backgroundColor: '#2A2A2A', borderColor: '#3A3A3A' },
+    sortLabel: { ...themedBaseStyles.sortLabel, color: '#999999' },
+    sortValue: { ...themedBaseStyles.sortValue, color: '#C8C8C8' },
+    filterChips: { ...themedBaseStyles.filterChips, borderTopColor: '#333333' },
+    filterChip: { ...themedBaseStyles.filterChip, backgroundColor: '#2A2A2A', borderColor: '#3A3A3A' },
+    filterChipText: { ...themedBaseStyles.filterChipText, color: '#C8C8C8' },
+    filterChipCount: { ...themedBaseStyles.filterChipCount, backgroundColor: '#333333', color: '#AAAAAA' },
+    stateCard: { ...themedBaseStyles.stateCard, backgroundColor: '#1E1E1E', borderColor: '#2A2A2A' },
+    card: { ...themedBaseStyles.card, backgroundColor: '#1E1E1E', borderColor: '#2A2A2A' },
+    cardTitle: { ...themedBaseStyles.cardTitle, color: '#ECECEC' },
+    cardText: { ...themedBaseStyles.cardText, color: '#999999' },
+    orderTotal: { ...themedBaseStyles.orderTotal, color: '#E05A7A' },
+    productCount: { ...themedBaseStyles.productCount, backgroundColor: '#0F2E1A', borderColor: '#16A34A' },
+    productDot: { ...themedBaseStyles.productDot, backgroundColor: '#4ADE80' },
+    productCountText: { ...themedBaseStyles.productCountText, color: '#4ADE80' },
+    pickupBadge: { ...themedBaseStyles.pickupBadge, backgroundColor: '#0D1F3C', borderColor: '#1E3A5F' },
+    pickupBadgeText: { ...themedBaseStyles.pickupBadgeText, color: '#60A5FA' },
+    homeDeliveryBadge: { ...themedBaseStyles.homeDeliveryBadge, backgroundColor: '#252525', borderColor: '#3A3A3A' },
+    homeDeliveryBadgeText: { ...themedBaseStyles.homeDeliveryBadgeText, color: '#C8C8C8' },
+    payButton: { ...themedBaseStyles.payButton, backgroundColor: '#1E1218', borderColor: '#5A2A3A' },
+    payButtonText: { ...themedBaseStyles.payButtonText, color: '#E05A7A' },
+    detailsButton: { ...themedBaseStyles.detailsButton, backgroundColor: '#2A2A2A', borderColor: '#3A3A3A' },
+    detailsButtonText: { ...themedBaseStyles.detailsButtonText, color: '#C8C8C8' },
+    pagination: { ...themedBaseStyles.pagination, backgroundColor: '#1E1E1E', borderColor: '#2A2A2A' },
+    pageButton: { ...themedBaseStyles.pageButton, borderColor: '#3A3A3A', backgroundColor: '#2A2A2A' },
+    pageButtonText: { ...themedBaseStyles.pageButtonText, color: '#C8C8C8' },
+    sortModal: { ...themedBaseStyles.sortModal, backgroundColor: '#1E1E1E' },
+    sortOptionActive: { ...themedBaseStyles.sortOptionActive, backgroundColor: '#2A1A24' },
+    sortOptionText: { ...themedBaseStyles.sortOptionText, color: '#C8C8C8' },
+    cleanupModal: { ...themedBaseStyles.cleanupModal, backgroundColor: '#1E1E1E' },
+    cleanupModalIcon: { ...themedBaseStyles.cleanupModalIcon, backgroundColor: '#2E1A08' },
+    cleanupModalTitle: { ...themedBaseStyles.cleanupModalTitle, color: '#ECECEC' },
+    cleanupModalDescription: { ...themedBaseStyles.cleanupModalDescription, color: '#C8C8C8' },
+    cleanupCancelButton: { ...themedBaseStyles.cleanupCancelButton, borderColor: '#3A3A3A' },
+    cleanupCancelText: { ...themedBaseStyles.cleanupCancelText, color: '#C8C8C8' },
+    detailModal: { ...themedBaseStyles.detailModal, backgroundColor: '#1E1E1E' },
+    sortModalTitle: { ...themedBaseStyles.sortModalTitle, color: '#ECECEC' },
+    sortOptionTextActive: { ...themedBaseStyles.sortOptionTextActive, color: '#E05A7A' },
+    sortCheck: { ...themedBaseStyles.sortCheck, color: '#E05A7A' },
+    receiptInfoBox: { ...themedBaseStyles.receiptInfoBox, backgroundColor: '#252525', borderColor: '#3A3A3A' },
+    receiptProductRow: { ...themedBaseStyles.receiptProductRow, backgroundColor: '#252525', borderColor: '#3A3A3A' },
+    receiptProductsTitle: { ...themedBaseStyles.receiptProductsTitle, color: '#ECECEC' },
+    receiptTitle: { ...themedBaseStyles.receiptTitle, color: '#E05A7A' },
+    receiptSubtitle: { ...themedBaseStyles.receiptSubtitle, color: '#C8C8C8' },
+    receiptProductPrice: { ...themedBaseStyles.receiptProductPrice, color: '#E05A7A' },
+    receiptPaidValue: { ...themedBaseStyles.receiptPaidValue, color: '#E05A7A' },
+    detailTotalValue: { ...themedBaseStyles.detailTotalValue, color: '#E05A7A' },
+    orderDetailHeader: { ...themedBaseStyles.orderDetailHeader, borderColor: '#333333' },
+    orderDetailTitle: { ...themedBaseStyles.orderDetailTitle, color: '#ECECEC' },
+    orderDetailDate: { ...themedBaseStyles.orderDetailDate, color: '#999999' },
+    dismissButton: { ...themedBaseStyles.dismissButton, backgroundColor: '#2A2A2A' },
+    dismissButtonText: { ...themedBaseStyles.dismissButtonText, color: '#C8C8C8' },
+    pickupInfoBox: { ...themedBaseStyles.pickupInfoBox, backgroundColor: '#0D1F3C', borderColor: '#1E3A5F' },
+    deliveryTitle: { ...themedBaseStyles.deliveryTitle, color: '#93C5FD' },
+    deliveryFact: { ...themedBaseStyles.deliveryFact, color: '#C8C8C8' },
+    deliveryFactStrong: { ...themedBaseStyles.deliveryFactStrong, color: '#ECECEC' },
+    pickupStatusBox: { ...themedBaseStyles.pickupStatusBox, borderColor: '#1E3A5F' },
+    pickupStatusText: { ...themedBaseStyles.pickupStatusText, color: '#4ADE80' },
+    homeDeliveryInfoBox: { ...themedBaseStyles.homeDeliveryInfoBox, backgroundColor: '#252525', borderColor: '#333333' },
+    detailProductsTitle: { ...themedBaseStyles.detailProductsTitle, color: '#ECECEC' },
+    detailProductRow: { ...themedBaseStyles.detailProductRow, backgroundColor: '#2A2A2A', borderColor: '#333333' },
+    detailFinancials: { ...themedBaseStyles.detailFinancials, borderColor: '#333333' },
+    detailCloseButton: { ...themedBaseStyles.detailCloseButton, backgroundColor: '#2A2A2A', borderColor: '#3A3A3A' },
+    detailCloseButtonText: { ...themedBaseStyles.detailCloseButtonText, color: '#C8C8C8' },
+    detailReceiptButton: { ...themedBaseStyles.detailReceiptButton, backgroundColor: '#7A1E3A' },
+    closeBtn: { ...themedBaseStyles.closeBtn, borderColor: '#E05A7A' },
+    closeBtnText: { ...themedBaseStyles.closeBtnText, color: '#E05A7A' },
+    emailBtn: { ...themedBaseStyles.emailBtn, backgroundColor: '#16A34A' },
+    receiptIcon: { ...themedBaseStyles.receiptIcon, backgroundColor: '#2A1A24' },
+    productTitle: { ...themedBaseStyles.productTitle, color: '#ECECEC' },
+    productMeta: { ...themedBaseStyles.productMeta, color: '#999999' },
+    detailLabel: { ...themedBaseStyles.detailLabel, color: '#999999' },
+    detailValue: { ...themedBaseStyles.detailValue, color: '#ECECEC' },
+    receiptStateBadge: { ...themedBaseStyles.receiptStateBadge, backgroundColor: '#0F2E1A', borderColor: '#16A34A', color: '#4ADE80' },
+    couponRow: { ...themedBaseStyles.couponRow, backgroundColor: '#183123', borderColor: '#315B42' },
+    couponText: { ...themedBaseStyles.couponText, color: '#B5E3C2' },
+  }) : themedBaseStyles, [darkMode, themedBaseStyles]);
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -174,7 +273,7 @@ export default function History({ navigation }) {
   const renderEstadoIcono = (estadoVisible) => {
     if (estadoVisible.completada) {
       return (
-        <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">
+        <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={darkMode ? '#4ADE80' : '#059669'} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">
           <Path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
           <Polyline points="22 4 12 14.01 9 11.01" />
         </Svg>
@@ -182,7 +281,7 @@ export default function History({ navigation }) {
     }
     if (estadoVisible.esCancelada) {
       return (
-        <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="#DC2626" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">
+        <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={darkMode ? '#F87171' : '#DC2626'} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">
           <Circle cx="12" cy="12" r="10" />
           <Line x1="15" y1="9" x2="9" y2="15" />
           <Line x1="9" y1="9" x2="15" y2="15" />
@@ -191,14 +290,14 @@ export default function History({ navigation }) {
     }
     if (estadoVisible.pago === 'Pendiente de pago') {
       return (
-        <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="#D97706" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">
+        <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={darkMode ? '#FB923C' : '#D97706'} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">
           <Circle cx="12" cy="12" r="10" />
           <Polyline points="12 6 12 12 16 14" />
         </Svg>
       );
     }
     return (
-      <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="#2563EB" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+      <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={darkMode ? '#60A5FA' : '#2563EB'} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
         <Rect x="1" y="3" width="15" height="13" />
         <Polygon points="16 8 20 8 23 11 23 16 16 16 16 8" />
         <Circle cx="5.5" cy="18.5" r="2.5" />
@@ -344,12 +443,34 @@ export default function History({ navigation }) {
   };
 
   const estiloEstado = (clase) => {
-    if (clase === 'entregado') return { color: '#047857', backgroundColor: '#ECFDF5', borderColor: '#A7F3D0' };
-    if (clase === 'camino') return { color: '#1D4ED8', backgroundColor: '#EFF6FF', borderColor: '#BFDBFE' };
-    if (clase === 'cancelado') return { color: '#B91C1C', backgroundColor: '#FEF2F2', borderColor: '#FECACA' };
-    if (clase === 'devolucion') return { color: PRIMARY, backgroundColor: '#FDF2F4', borderColor: '#F8D2DA' };
-    if (clase === 'procesando') return { color: '#B45309', backgroundColor: '#FFFBEB', borderColor: '#FDE68A' };
-    return { color: '#374151', backgroundColor: '#F3F4F6', borderColor: '#E5E7EB' };
+    if (clase === 'entregado') {
+      return darkMode
+        ? { color: '#4ADE80', backgroundColor: '#0F2E1A', borderColor: '#16A34A' }
+        : { color: '#047857', backgroundColor: '#ECFDF5', borderColor: '#A7F3D0' };
+    }
+    if (clase === 'camino') {
+      return darkMode
+        ? { color: '#60A5FA', backgroundColor: '#0D1F3C', borderColor: '#1E3A5F' }
+        : { color: '#1D4ED8', backgroundColor: '#EFF6FF', borderColor: '#BFDBFE' };
+    }
+    if (clase === 'cancelado') {
+      return darkMode
+        ? { color: '#F87171', backgroundColor: '#2E0D0D', borderColor: '#EF4444' }
+        : { color: '#B91C1C', backgroundColor: '#FEF2F2', borderColor: '#FECACA' };
+    }
+    if (clase === 'devolucion') {
+      return darkMode
+        ? { color: '#E05A7A', backgroundColor: '#2A1A24', borderColor: '#5A2A3A' }
+        : { color: PRIMARY, backgroundColor: '#FDF2F4', borderColor: '#F8D2DA' };
+    }
+    if (clase === 'procesando') {
+      return darkMode
+        ? { color: '#FB923C', backgroundColor: '#2E1A08', borderColor: '#EA580C' }
+        : { color: '#B45309', backgroundColor: '#FFFBEB', borderColor: '#FDE68A' };
+    }
+    return darkMode
+      ? { color: '#C8C8C8', backgroundColor: '#252525', borderColor: '#3A3A3A' }
+      : { color: '#374151', backgroundColor: '#F3F4F6', borderColor: '#E5E7EB' };
   };
 
   const renderOrder = (orden) => {
@@ -357,12 +478,20 @@ export default function History({ navigation }) {
     const estadoPagoStyle = estiloEstado(estadoVisible.pagoClase);
     const estadoEntregaStyle = estiloEstado(estadoVisible.entregaClase);
     const estiloIcono = estadoVisible.completada
-      ? { backgroundColor: '#ECFDF5', borderColor: '#A7F3D0' }
+      ? (darkMode
+        ? { backgroundColor: '#0F2E1A', borderColor: '#16A34A' }
+        : { backgroundColor: '#ECFDF5', borderColor: '#A7F3D0' })
       : estadoVisible.esCancelada
-        ? { backgroundColor: '#FEF2F2', borderColor: '#FECACA' }
+        ? (darkMode
+          ? { backgroundColor: '#2E0D0D', borderColor: '#EF4444' }
+          : { backgroundColor: '#FEF2F2', borderColor: '#FECACA' })
         : estadoVisible.pago === 'Pendiente de pago'
-          ? { backgroundColor: '#FFFBEB', borderColor: '#FDE68A' }
-          : { backgroundColor: '#EFF6FF', borderColor: '#BFDBFE' };
+          ? (darkMode
+            ? { backgroundColor: '#2E1A08', borderColor: '#EA580C' }
+            : { backgroundColor: '#FFFBEB', borderColor: '#FDE68A' })
+          : (darkMode
+            ? { backgroundColor: '#0D1F3C', borderColor: '#1E3A5F' }
+            : { backgroundColor: '#EFF6FF', borderColor: '#BFDBFE' });
     return (
       <View key={String(orden.id_orden)} style={styles.card}>
         <View style={styles.orderHeader}>
@@ -481,17 +610,55 @@ export default function History({ navigation }) {
 
           <View style={styles.metrics}>
             {[
-              { id: 'todos', label: 'Total', count: totalCompras, color: TEXT, activeBackground: '#FDF2F4', activeBorder: PRIMARY },
-              { id: 'entregado', label: '✓ Entregadas', count: totalEntregadas, color: '#047857', activeBackground: '#ECFDF5', activeBorder: '#047857' },
-              { id: 'camino', label: '🚚 En camino', count: totalEnCamino, color: '#2563EB', activeBackground: '#EFF6FF', activeBorder: '#2563EB' },
-              { id: 'pendiente', label: '⏱️ Por Pagar', count: totalPendientes, color: '#B45309', activeBackground: '#FFFBEB', activeBorder: '#D97706' },
-              { id: 'cancelado', label: '❌ Canceladas', count: totalCanceladas, color: '#DC2626', activeBackground: '#FEF2F2', activeBorder: '#DC2626' },
+              {
+                id: 'todos',
+                label: 'Total',
+                count: totalCompras,
+                color: darkMode ? '#ECECEC' : TEXT,
+                activeBackground: darkMode ? '#2A1A24' : '#FDF2F4',
+                activeBorder: darkMode ? '#E05A7A' : PRIMARY,
+              },
+              {
+                id: 'entregado',
+                label: '✓ Entregadas',
+                count: totalEntregadas,
+                color: darkMode ? '#4ADE80' : '#047857',
+                activeBackground: darkMode ? '#0F2E1A' : '#ECFDF5',
+                activeBorder: darkMode ? '#16A34A' : '#047857',
+              },
+              {
+                id: 'camino',
+                label: '🚚 En camino',
+                count: totalEnCamino,
+                color: darkMode ? '#60A5FA' : '#2563EB',
+                activeBackground: darkMode ? '#0D1F3C' : '#EFF6FF',
+                activeBorder: darkMode ? '#3B82F6' : '#2563EB',
+              },
+              {
+                id: 'pendiente',
+                label: '⏱️ Por Pagar',
+                count: totalPendientes,
+                color: darkMode ? '#FB923C' : '#B45309',
+                activeBackground: darkMode ? '#2E1A08' : '#FFFBEB',
+                activeBorder: darkMode ? '#EA580C' : '#D97706',
+              },
+              {
+                id: 'cancelado',
+                label: '❌ Canceladas',
+                count: totalCanceladas,
+                color: darkMode ? '#F87171' : '#DC2626',
+                activeBackground: darkMode ? '#2E0D0D' : '#FEF2F2',
+                activeBorder: darkMode ? '#EF4444' : '#DC2626',
+              },
             ].map((metric) => (
               <TouchableOpacity
                 key={metric.id}
                 style={[
                   styles.metricCard,
-                  filtroEstado === metric.id && { backgroundColor: metric.activeBackground, borderColor: metric.activeBorder },
+                  filtroEstado === metric.id && {
+                    backgroundColor: metric.activeBackground,
+                    borderColor: metric.activeBorder,
+                  },
                 ]}
                 onPress={() => { setFiltroEstado(metric.id); setPaginaActual(1); }}
                 activeOpacity={0.75}
@@ -506,13 +673,13 @@ export default function History({ navigation }) {
         <View style={styles.filterCard}>
           <View style={styles.searchSortRow}>
             <View style={styles.searchBox}>
-              <IconSearch size={18} color={MUTED} />
+              <IconSearch size={18} color={darkMode ? '#999999' : MUTED} />
               <TextInput
                 style={styles.searchInput}
                 value={busqueda}
                 onChangeText={(value) => { setBusqueda(value); setPaginaActual(1); }}
                 placeholder="Buscar por # orden, libro o fecha..."
-                placeholderTextColor="#8C857B"
+                placeholderTextColor={darkMode ? '#999999' : '#8C857B'}
                 returnKeyType="search"
               />
               {!!busqueda && (
@@ -859,7 +1026,7 @@ export default function History({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: BG },
   container: { flex: 1, backgroundColor: BG },
   content: { padding: 16, paddingBottom: 28 },
@@ -1038,3 +1205,5 @@ const styles = StyleSheet.create({
   printBtnText: { color: '#fff', fontWeight: '800', fontSize: 15 },
   actionDisabled: { opacity: 0.65 },
 });
+
+const styles = baseStyles;

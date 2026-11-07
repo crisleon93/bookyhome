@@ -211,16 +211,29 @@ def get_frontend_url() -> str:
 mail_starttls = os.getenv("MAIL_STARTTLS", "true").strip().lower() in {"1", "true", "yes", "on"}
 mail_ssl_tls = os.getenv("MAIL_SSL_TLS", "false").strip().lower() in {"1", "true", "yes", "on"}
 
-conf = ConnectionConfig(
-    MAIL_USERNAME=os.getenv("MAIL_USERNAME"),
-    MAIL_PASSWORD=os.getenv("MAIL_PASSWORD"),
-    MAIL_FROM=os.getenv("MAIL_FROM"),
-    MAIL_SERVER=os.getenv("MAIL_SERVER"),
-    MAIL_PORT=int(os.getenv("MAIL_PORT", "587")),
-    MAIL_STARTTLS=mail_starttls,
-    MAIL_SSL_TLS=mail_ssl_tls,
-    USE_CREDENTIALS=True
-)
+def _create_connection_config():
+    if not is_smtp_configured():
+        return None
+
+    return ConnectionConfig(
+        MAIL_USERNAME=os.getenv("MAIL_USERNAME"),
+        MAIL_PASSWORD=os.getenv("MAIL_PASSWORD"),
+        MAIL_FROM=os.getenv("MAIL_FROM"),
+        MAIL_SERVER=os.getenv("MAIL_SERVER"),
+        MAIL_PORT=int(os.getenv("MAIL_PORT", "587")),
+        MAIL_STARTTLS=mail_starttls,
+        MAIL_SSL_TLS=mail_ssl_tls,
+        USE_CREDENTIALS=True
+    )
+
+
+conf = _create_connection_config()
+
+
+def _get_fast_mail() -> FastMail:
+    if conf is None:
+        raise RuntimeError("SMTP no está configurado")
+    return FastMail(conf)
 
 
 async def enviar_email_recuperacion(email: str, token: str):
@@ -251,7 +264,7 @@ async def enviar_email_recuperacion(email: str, token: str):
         html_content=content,
     )
 
-    fm = FastMail(conf)
+    fm = _get_fast_mail()
     await fm.send_message(mensaje)
 
 
@@ -287,7 +300,7 @@ async def enviar_email_confirmacion_registro(email: str, token: str):
         html_content=content,
     )
 
-    fm = FastMail(conf)
+    fm = _get_fast_mail()
     await fm.send_message(mensaje)
 
 
@@ -442,7 +455,7 @@ async def enviar_email_confirmacion(email: str, orden: dict):
         html_content=content,
     )
 
-    fm = FastMail(conf)
+    fm = _get_fast_mail()
     await fm.send_message(mensaje)
 
 
@@ -482,5 +495,5 @@ async def enviar_email_agradecimiento_confirmacion(email: str):
         html_content=content,
     )
 
-    fm = FastMail(conf)
+    fm = _get_fast_mail()
     await fm.send_message(mensaje)

@@ -127,6 +127,10 @@ export default function Register({ navigation }) {
       Alert.alert('Error', 'La contraseña debe tener al menos 8 caracteres');
       return false;
     }
+    if (!/[A-Z]/.test(password) || !/[0-9]/.test(password) || !/[^A-Za-z0-9]/.test(password)) {
+      Alert.alert('Error', 'La contraseña debe incluir una mayúscula, un número y un carácter especial');
+      return false;
+    }
     if (!terminosCompletos) {
       Alert.alert('Error', 'Debes aceptar tanto los Términos y Condiciones como la Política de Privacidad');
       return false;
@@ -258,6 +262,9 @@ export default function Register({ navigation }) {
                         {showPassword ? <IconEyeOff /> : <IconEye />}
                       </TouchableOpacity>
                     </View>
+                    <Text style={styles.passwordHint}>
+                      Usa al menos 8 caracteres, una mayúscula, un número y un carácter especial.
+                    </Text>
                   </View>
 
                   {/* Términos y privacidad */}
@@ -356,6 +363,7 @@ const styles = StyleSheet.create({
   inputIcon: { marginRight: 12 },
   input: { flex: 1, fontSize: 16, color: CARBON, padding: 0 },
   eyeBtn: { padding: 6, marginLeft: 6 },
+  passwordHint: { fontSize: 12, color: GRAY, lineHeight: 18, marginTop: 6 },
 
   /* Términos */
   termsRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginBottom: 26 },

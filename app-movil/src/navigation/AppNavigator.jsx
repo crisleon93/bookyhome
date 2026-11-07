@@ -2,6 +2,7 @@ import React, { useContext } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { AuthContext } from '../context/AuthContext';
+import { useAppTheme } from '../context/ThemeContext';
 
 import Login from '../screens/Login';
 import Register from '../screens/Register';
@@ -17,7 +18,9 @@ import BookDetailPublico from '../screens/BookDetailPublico';
 import PostLogin from '../screens/PostLogin';
 import Catalogo from '../screens/Catalogo';
 import Profile from '../screens/Profile';
+import ConfiguracionComprador from '../screens/ConfiguracionComprador';
 import History from '../screens/History';
+import Seguimiento from '../screens/Seguimiento';
 import Notifications from '../screens/Notifications';
 import BookDetail from '../screens/BookDetail';
 import Cart from '../screens/Cart';
@@ -49,6 +52,7 @@ const Stack = createNativeStackNavigator();
 
 export default function AppNavigator() {
   const { user, token, loading, biometricLocked } = useContext(AuthContext);
+  const { darkMode, colors } = useAppTheme();
   const isAuthenticated = Boolean(token || user);
   const userRole = String(user?.rol || '').trim().toLowerCase();
   const isAdmin = userRole === 'admin' || userRole === 'administrador';
@@ -63,7 +67,10 @@ export default function AppNavigator() {
   }
 
   return (
-    <Stack.Navigator initialRouteName={!isAuthenticated ? 'Home' : undefined}>
+    <Stack.Navigator
+      initialRouteName={!isAuthenticated ? 'Home' : undefined}
+      screenOptions={{ contentStyle: { backgroundColor: colors.page } }}
+    >
       {!isAuthenticated ? (
         // ─── Rutas públicas ──────────────────────────────────────────────────
         <>
@@ -119,7 +126,7 @@ export default function AppNavigator() {
       ) : (
         // ─── Rutas comprador ─────────────────────────────────────────────────
         <Stack.Group screenOptions={{
-          headerStyle: { backgroundColor: '#7A1E3A' },
+          headerStyle: { backgroundColor: darkMode ? '#1e1e1e' : '#7A1E3A' },
           headerTintColor: '#FFFFFF',
           headerTitleStyle: { color: '#FFFFFF' },
           headerLeft: () => <MobileMenuButton tintColor="#FFFFFF" />,
@@ -127,17 +134,23 @@ export default function AppNavigator() {
           <Stack.Screen name="PostLogin" component={PostLogin} options={{ headerShown: false }} />
           <Stack.Screen name="Catalogo" component={Catalogo} options={{ headerShown: false }} />
           <Stack.Screen name="Profile" component={Profile} options={{ title: 'Mi Perfil' }} />
+          <Stack.Screen name="ConfiguracionComprador" component={ConfiguracionComprador} options={{ title: 'Configuración' }} />
           <Stack.Screen name="Direcciones" component={Direcciones} options={{ title: 'Mis direcciones' }} />
           <Stack.Screen
             name="History"
             component={History}
             options={{
               title: 'Mis compras',
-              headerStyle: { backgroundColor: '#7A1E3A' },
+              headerStyle: { backgroundColor: darkMode ? '#1e1e1e' : '#7A1E3A' },
               headerTintColor: '#FFFFFF',
               headerTitleStyle: { color: '#FFFFFF' },
               headerLeft: () => <MobileMenuButton tintColor="#FFFFFF" />,
             }}
+          />
+          <Stack.Screen
+            name="Seguimiento"
+            component={Seguimiento}
+            options={{ title: 'Seguimiento de pedidos' }}
           />
           <Stack.Screen name="Notifications" component={Notifications} options={{ title: 'Notificaciones' }} />
           <Stack.Screen name="BookDetail" component={BookDetail} options={{ title: 'Detalle del libro' }} />

@@ -147,6 +147,15 @@ export const IconMail = ({ size = 18, color = '#C5425A' }) => (
   </Svg>
 );
 
+export const IconGlobe = ({ size = 18, color = '#C5425A' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+    stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <Circle cx="12" cy="12" r="10" stroke={color}/>
+    <Line x1="2" y1="12" x2="22" y2="12" stroke={color}/>
+    <Path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" stroke={color}/>
+  </Svg>
+);
+
 // ── Candado ───────────────────────────────────────────────────────────────────
 export const IconLock = ({ size = 18, color = '#C5425A' }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none"
@@ -540,5 +549,4 @@ export const IconReport = ({ size = 20, color = '#7A1E3A' }) => (
     <Polyline points="10 9 9 9 8 9" stroke={color}/>
   </Svg>
 );
-
 

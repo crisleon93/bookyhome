@@ -54,6 +54,7 @@ export const checkoutCarrito = (payload = {}) => api.post('/carrito/checkout', p
 
 // ===== Pagos / Pedidos =====
 export const getOrderDetails = (orderId) => api.get(`/api/v1/orders/${orderId}`);
+export const confirmarEntrega = (orderId) => api.post(`/perfil/ordenes/${orderId}/confirmar-entrega`);
 export const actualizarCostoEnvio = (orderId, tipo_entrega) => api.post(`/api/v1/orders/${orderId}/actualizar-envio`, { tipo_entrega });
 export const reservarRetiroEnTienda = (orderId, metodoPago) => api.post(`/api/v1/orders/${orderId}/reservar-retiro`, { metodo_pago: metodoPago });
 export const notificarLlegadaTienda = (orderId) => api.post(`/api/v1/orders/${orderId}/llegada-tienda`);
@@ -69,6 +70,7 @@ export const sendConfirmationEmail = (orderId) => api.post(`/api/v1/orders/${ord
 export const getProfile = () => api.get('/perfil/mi-perfil');
 export const updateProfile = (payload) => api.put('/perfil/actualizar', payload);
 export const updatePreferences = (payload) => api.put('/perfil/preferencias', payload);
+export const changePassword = (payload) => api.put('/perfil/cambiar-password', payload);
 export const uploadProfilePhoto = (formData) =>
   api.post('/perfil/foto-perfil', formData);
 export const uploadBannerPhoto = (formData) =>
@@ -198,6 +200,8 @@ export const crearQueja = (formData) => api.post('/quejas', formData, { headers:
 export const cancelarQueja = (id) => api.delete(`/quejas/${id}`);
 export const getMensajesReclamo = (id) => api.get(`/quejas/${id}/mensajes`);
 export const enviarMensajeReclamo = (id, mensaje) => api.post(`/quejas/${id}/mensajes`, { mensaje });
+export const getSoporte = () => api.get('/quejas/soporte');
+export const crearSoporte = (payload) => api.post('/quejas/soporte', payload);
 
 // ===== Administración =====
 // El panel conserva las mismas fuentes de datos que el dashboard web.

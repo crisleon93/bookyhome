@@ -16,7 +16,8 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import SafeAreaView from '../components/ThemedSafeAreaView';
+import { adaptStyleForTheme, useAppTheme, useThemedStyles } from '../context/ThemeContext';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path, Rect, Circle, Polyline } from 'react-native-svg';
 import {
@@ -102,6 +103,12 @@ function IconCheck() {
 
 // ── Tarjeta de cupón (idéntica al frontend) ───────────────────────────────────
 function CuponCard({ cupon, copiedCode, onCopy, compact = false }) {
+  const s = useThemedStyles(baseStyles);
+  const { darkMode } = useAppTheme();
+  const badgeStyle = adaptStyleForTheme(
+    { backgroundColor: cupon.nombre_tienda ? ORANGE : VINOTINTO },
+    darkMode,
+  );
   const isFijo    = cupon.tipo_descuento === 'fijo';
   const valFormato = isFijo
     ? `$${Number(cupon.valor_descuento).toLocaleString('es-CO')}`
@@ -110,7 +117,7 @@ function CuponCard({ cupon, copiedCode, onCopy, compact = false }) {
   return (
     <View style={[s.cuponCard, compact && s.cuponCardCompact]}>
       {/* Badge de tienda o global */}
-      <View style={[s.cuponBadge, compact && s.cuponBadgeCompact, { backgroundColor: cupon.nombre_tienda ? ORANGE : VINOTINTO }]}>
+      <View style={[s.cuponBadge, compact && s.cuponBadgeCompact, badgeStyle]}>
         <Text style={[s.cuponBadgeTxt, compact && s.cuponBadgeTxtCompact]} numberOfLines={1}>
           {cupon.nombre_tienda ? `Tienda: ${cupon.nombre_tienda}` : 'Global BookyHome'}
         </Text>
@@ -155,6 +162,8 @@ function CuponCard({ cupon, copiedCode, onCopy, compact = false }) {
 
 // ════════════════════════════════════════════════════════════════════════════
 export default function PostLogin({ navigation }) {
+  const s = useThemedStyles(baseStyles);
+  const { darkMode } = useAppTheme();
   const { signOut, user } = useContext(AuthContext);
   const { cart }          = useContext(CartContext);
   const BASE              = getApiBaseUrl();
@@ -265,7 +274,7 @@ export default function PostLogin({ navigation }) {
         onSearch={text => { if (text.trim()) navigation.navigate('Catalogo', { q: text.trim() }); }}
       />
 
-      <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1, backgroundColor: LIGHT_BG }}>
+      <ScrollView showsVerticalScrollIndicator={false} style={[{ flex: 1 }, s.page]}>
 
         {/* ── 1. HERO ──────────────────────────────────────────────────── */}
         <View style={s.heroWrap}>
@@ -403,8 +412,14 @@ export default function PostLogin({ navigation }) {
                     {/* Info */}
                     <View style={{ flex: 1, minWidth: 0 }}>
                       <Text style={s.purchaseTitulo} numberOfLines={1}>{titulo}</Text>
-                      <View style={[s.estadoBadge, { backgroundColor: badge.bg, borderColor: badge.border }]}>
-                        <Text style={[s.estadoBadgeTxt, { color: badge.color }]}>{estado}</Text>
+                      <View style={[
+                        s.estadoBadge,
+                        adaptStyleForTheme({ backgroundColor: badge.bg, borderColor: badge.border }, darkMode),
+                      ]}>
+                        <Text style={[
+                          s.estadoBadgeTxt,
+                          adaptStyleForTheme({ color: badge.color }, darkMode),
+                        ]}>{estado}</Text>
                       </View>
                       <Text style={s.purchaseMeta}>Pedido #{orden.id_orden || orden.id || idx + 1}</Text>
                     </View>
@@ -542,7 +557,8 @@ export default function PostLogin({ navigation }) {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-const s = StyleSheet.create({
+const baseStyles = StyleSheet.create({
+  page: { flex: 1, backgroundColor: LIGHT_BG },
   safe: { flex: 1, backgroundColor: VINOTINTO },
 
   // ── Hero ──────────────────────────────────────────────────────────────────
@@ -672,3 +688,5 @@ const s = StyleSheet.create({
   fabBadge:    { position: 'absolute', top: -2, right: -2, backgroundColor: WHITE, borderRadius: 11, minWidth: 22, height: 22, justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: '#C5425A' },
   fabBadgeTxt: { color: '#C5425A', fontSize: 10, fontWeight: '800' },
 });
+
+const s = baseStyles;

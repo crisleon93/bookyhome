@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, Modal, Platform, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import SafeAreaView from '../components/ThemedSafeAreaView';
+import { useThemedStyles } from '../context/ThemeContext';
 import * as Location from 'expo-location';
 import AddressMapFrame from '../components/AddressMapFrame';
 import { IconLocation } from '../components/Icons';
@@ -92,6 +93,7 @@ setTimeout(()=>map.invalidateSize(),300);
 </script></body></html>`;
 
 export default function Direcciones() {
+  const styles = useThemedStyles(baseStyles);
   const [direcciones, setDirecciones] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -576,7 +578,7 @@ function MapField({ label, value, placeholder, onChangeText, style, keyboardType
   );
 }
 
-const styles = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: BG },
   content: { padding: 16, paddingBottom: 36 },
   headingCard: { backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: BORDER, borderRadius: 14, padding: 18, marginBottom: 16 },
@@ -649,3 +651,5 @@ const styles = StyleSheet.create({
   mapConfirmBtn: { minHeight: 43, justifyContent: 'center', alignItems: 'center', backgroundColor: PRIMARY, borderRadius: 8, paddingHorizontal: 15 },
   mapConfirmText: { color: '#FFFFFF', fontSize: 13, fontWeight: '800' },
 });
+
+const styles = baseStyles;

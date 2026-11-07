@@ -27,6 +27,7 @@ import * as Clipboard from 'expo-clipboard';
 import Svg, { Path, Circle, Line, Rect, Polygon, SvgUri } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
 import { AuthContext } from '../context/AuthContext';
+import { useAppTheme, useThemedStyles } from '../context/ThemeContext';
 import { useChatSocket } from '../context/ChatSocketContext';
 import {
   getChatHistory,
@@ -186,6 +187,8 @@ const IconReaction = ({ size = 18, color = PRIMARY_DARK }) => (
 );
 
 export default function Chat() {
+  const styles = useThemedStyles(baseStyles);
+  const { colors } = useAppTheme();
   const route = useRoute();
   const navigation = useNavigation();
   const { id_sala, nombre_tienda, nombre_comprador, telefono_contacto } = route.params || {};
@@ -672,7 +675,7 @@ export default function Chat() {
 
   return (
     <KeyboardAvoidingView
-      style={styles.contenedor}
+      style={[styles.contenedor, { backgroundColor: colors.page }]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       keyboardVerticalOffset={90}
     >
@@ -945,7 +948,7 @@ export default function Chat() {
   );
 }
 
-const styles = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   contenedor: { flex: 1, backgroundColor: CHAT_BG },
   centrado: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: CHAT_BG },
   bannerDesconectado: {
@@ -1231,3 +1234,5 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
 });
+
+const styles = baseStyles;

@@ -90,7 +90,7 @@ function Register({ isModal = false, onSuccess }) {
 
     /^\d{7,15}$/.test(telefono.trim()) &&
 
-    password.length >= 8 &&
+    passwordScore === 4 &&
 
     password === confirmPassword &&
 
@@ -153,6 +153,14 @@ function Register({ isModal = false, onSuccess }) {
     if (!password.trim() || password.length < 8) {
 
       notify('La contraseña debe tener al menos 8 caracteres', 'error')
+
+      return false
+
+    }
+
+    if (!/[A-Z]/.test(password) || !/[0-9]/.test(password) || !/[^A-Za-z0-9]/.test(password)) {
+
+      notify('La contraseña debe incluir una mayúscula, un número y un carácter especial', 'error')
 
       return false
 
@@ -467,6 +475,8 @@ function Register({ isModal = false, onSuccess }) {
 
             </div>
 
+            <small>Usa al menos 8 caracteres, una mayúscula, un número y un carácter especial.</small>
+
           </div>
 
 
@@ -664,4 +674,3 @@ function Register({ isModal = false, onSuccess }) {
 
 
 export default Register
-

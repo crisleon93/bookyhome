@@ -2,13 +2,16 @@ import React, { useContext, useState, useEffect } from 'react';
 import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity, Alert, TextInput, ActivityIndicator, Modal } from 'react-native';
 import { CartContext } from '../context/CartContext';
 import { AuthContext } from '../context/AuthContext';
+import { useAppTheme, useThemedStyles } from '../context/ThemeContext';
 import { getReviewsForBook, createReview, crearSalaChat, getBookById, getVariantes, getApiBaseUrl } from '../services/api';
 import Footer from '../components/Footer';
 
 export default function BookDetail({ route, navigation }) {
+  const styles = useThemedStyles(baseStyles);
   const { book: bookParam } = route.params;
   const { addToCart, removeFromCart } = useContext(CartContext);
   const { user, loading: authLoading } = useContext(AuthContext);
+  const { colors } = useAppTheme();
   const [book, setBook] = useState(bookParam);
   const [adding, setAdding] = useState(false);
   const [addedToCart, setAddedToCart] = useState(false);
@@ -187,7 +190,7 @@ export default function BookDetail({ route, navigation }) {
 
   return (
     <View style={{ flex: 1 }}>
-      <ScrollView style={styles.container}>
+      <ScrollView style={[styles.container, { backgroundColor: colors.page }]}>
       <View style={styles.card}>
         {book.imagen_url || book.imagen ? (
           <Image 
@@ -361,7 +364,7 @@ export default function BookDetail({ route, navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fdfbfa', padding: 16 },
   card: { backgroundColor: '#fff', borderRadius: 12, padding: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 8, elevation: 4, alignItems: 'center', marginBottom: 30 },
   image: { width: 160, height: 240, borderRadius: 8, marginBottom: 20 },
@@ -435,3 +438,5 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 });
+
+const styles = baseStyles;
