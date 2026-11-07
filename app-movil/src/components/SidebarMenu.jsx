@@ -4,12 +4,14 @@ import {
   Modal, Animated, Dimensions, Platform
 } from 'react-native';
 import { 
-  IconClose, IconUser, IconFavorites, IconHistory, IconAlertTriangle,
-  IconStore, IconPackage, IconLogout, IconChevronRight, IconBell, IconChat, IconLocation
+  IconClose, IconUser, IconFavorites, IconAlertTriangle, IconStore, IconPackage,
+  IconLogout, IconChevronRight, IconBell, IconShoppingBag, IconTruck,
+  IconStoreAlt, IconBookOpen, IconMessage, IconCart, IconMapPin, IconTool, IconSettings
 } from './Icons';
 import { useNotifications } from '../context/NotificationContext';
 import { getApiBaseUrl, getProfile } from '../services/api';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useAppTheme, useThemedStyles } from '../context/ThemeContext';
 
 const { width } = Dimensions.get('window');
 const DRAWER_WIDTH = width * 0.75 > 320 ? 320 : width * 0.75;
@@ -20,6 +22,8 @@ export default function SidebarMenu({ visible, onClose, user, navigation, onSign
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const [profile, setProfile] = React.useState(null);
   const { unreadNotifCount, unreadMsgCount } = useNotifications();
+  const { darkMode } = useAppTheme();
+  const styles = useThemedStyles(baseStyles);
 
   useEffect(() => {
     if (!visible) return;
@@ -147,14 +151,19 @@ export default function SidebarMenu({ visible, onClose, user, navigation, onSign
             {!isVendedor && (
               <>
                 <MenuItem
-                  icon={<IconStore size={22} color="#FFF" />}
+                  icon={<IconStoreAlt size={22} color="#FFF" />}
                   label="Inicio"
                   onPress={() => navigateTo('PostLogin')}
                 />
                 <MenuItem
-                  icon={<IconPackage size={22} color="#FFF" />}
+                  icon={<IconBookOpen size={22} color="#FFF" />}
                   label="Catálogo"
                   onPress={() => navigateTo('Catalogo')}
+                />
+                <MenuItem
+                  icon={<IconTruck size={22} color="#FFF" />}
+                  label="Seguimiento de pedidos"
+                  onPress={() => navigateTo('Seguimiento')}
                 />
               </>
             )}
@@ -164,18 +173,18 @@ export default function SidebarMenu({ visible, onClose, user, navigation, onSign
               onPress={() => navigateTo('Profile')}
             />
             <MenuItem
-              icon={<IconChat size={22} color="#FFF" />}
+              icon={<IconMessage size={22} color="#FFF" />}
               label="Mensajes"
               badge={unreadMsgCount}
               onPress={() => navigateTo('Messages')}
             />
             <MenuItem
-              icon={<IconPackage size={22} color="#FFF" />}
+              icon={<IconCart size={22} color="#FFF" />}
               label="Mi Carrito"
               onPress={() => navigateTo('Cart')}
             />
             <MenuItem
-              icon={<IconLocation size={22} color="#FFF" />}
+              icon={<IconMapPin size={22} color="#FFF" />}
               label="Direcciones"
               onPress={() => navigateTo('Direcciones')}
             />
@@ -185,7 +194,7 @@ export default function SidebarMenu({ visible, onClose, user, navigation, onSign
               onPress={() => navigateTo('ListaDeseos')}
             />
             <MenuItem
-              icon={<IconHistory size={22} color="#FFF" />}
+              icon={<IconShoppingBag size={22} color="#FFF" />}
               label="Mis compras"
               onPress={() => navigateTo('History')}
             />
@@ -201,14 +210,14 @@ export default function SidebarMenu({ visible, onClose, user, navigation, onSign
               onPress={() => navigateTo('Notifications')}
             />
             <MenuItem
-              icon={<IconChat size={22} color="#FFF" />}
+              icon={<IconTool size={22} color="#FFF" />}
               label="Soporte técnico"
               onPress={() => navigateTo('SoporteTecnico')}
             />
             <MenuItem
-              icon={<IconUser size={22} color="#FFF" />}
+              icon={<IconSettings size={22} color="#FFF" />}
               label="Configuración"
-              onPress={() => navigateTo('Profile')}
+              onPress={() => navigateTo(isVendedor ? 'ConfiguracionTienda' : 'ConfiguracionComprador')}
             />
             
             {isVendedor && (
@@ -231,7 +240,7 @@ export default function SidebarMenu({ visible, onClose, user, navigation, onSign
             
             <View style={styles.divider} />
             <MenuItem 
-              icon={<IconLogout size={22} color="#7A1E3A" />} 
+              icon={<IconLogout size={22} color={darkMode ? '#ECECEC' : '#7A1E3A'} />}
               label="Cerrar Sesión" 
               onPress={() => {
                 onClose();
@@ -246,7 +255,7 @@ export default function SidebarMenu({ visible, onClose, user, navigation, onSign
   );
 }
 
-const styles = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   overlayContainer: {
     flex: 1,
     flexDirection: 'row',

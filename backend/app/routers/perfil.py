@@ -1,10 +1,11 @@
 from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Form
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
 from app.database import get_db
 from app.auth import verify_token
 import os
 import json
+import re
 from datetime import datetime
 
 router = APIRouter(prefix="/perfil", tags=["Perfil Usuario"])
@@ -552,7 +553,14 @@ def actualizar_preferencias(data: PreferenciasUsuario, user_id: int = Depends(ge
 
 class CambiarPassword(BaseModel):
     password_actual: str = Field(..., description="Contraseña actual del usuario")
-    password_nueva: str = Field(..., description="Nueva contraseña del usuario")
+    password_nueva: str = Field(..., min_length=8, description="Mínimo 8 caracteres")
+
+    @field_validator("password_nueva")
+    @classmethod
+    def validar_password_fuerte(cls, password):
+        if not re.search(r"[A-Z]", password) or not re.search(r"\d", password) or not re.search(r"[^A-Za-z0-9]", password):
+            raise ValueError("La contraseña debe incluir una mayúscula, un número y un carácter especial")
+        return password
 
 @router.put("/cambiar-password")
 def cambiar_password(data: CambiarPassword, user_id: int = Depends(get_current_user)):

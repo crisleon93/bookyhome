@@ -14,7 +14,8 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import SafeAreaView from '../components/ThemedSafeAreaView';
+import { useThemedStyles } from '../context/ThemeContext';
 import { addFavorito, getApiBaseUrl, getBusquedaAvanzada, getFiltrosDisponibles, getFavoritos, removeFavorito } from '../services/api';
 import { IconBooks } from '../components/Icons';
 import { AuthContext } from '../context/AuthContext';
@@ -67,6 +68,7 @@ function contarFiltrosActivos(filtros, precioMaxReal) {
 }
 
 export default function Catalogo({ navigation, route }) {
+  const styles = useThemedStyles(baseStyles);
   const { signOut } = useContext(AuthContext);
   const { width: windowWidth } = useWindowDimensions();
 
@@ -739,7 +741,7 @@ export default function Catalogo({ navigation, route }) {
 // ════════════════════════════════════════════════════════════════════════════
 // ESTILOS
 // ════════════════════════════════════════════════════════════════════════════
-const styles = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   safeArea:  { flex: 1, backgroundColor: '#f5f4f2' },
 
   // Top bar
@@ -870,3 +872,5 @@ const styles = StyleSheet.create({
   modalCancel:      { marginTop: 18, paddingVertical: 14, backgroundColor: BG, borderRadius: 12 },
   modalCancelText:  { fontSize: 15, fontWeight: '700', color: PRIMARY, textAlign: 'center' },
 });
+
+const styles = baseStyles;

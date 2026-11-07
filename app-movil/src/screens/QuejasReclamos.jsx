@@ -3,7 +3,8 @@ import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
   TextInput, ActivityIndicator, Alert, Modal, Image, Dimensions
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import SafeAreaView from '../components/ThemedSafeAreaView';
+import { useThemedStyles } from '../context/ThemeContext';
 import Footer from '../components/Footer';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
@@ -60,6 +61,7 @@ const getTiempoTranscurrido = (fecha) => {
 };
 
 export default function QuejasReclamos({ navigation }) {
+  const styles = useThemedStyles(baseStyles);
   const { user, signOut } = useContext(AuthContext);
   const [sidebarVisible, setSidebarVisible] = useState(false);
   const [ordenes, setOrdenes] = useState([]);
@@ -836,7 +838,7 @@ export default function QuejasReclamos({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   safe:            { flex: 1, backgroundColor: BG },
   scroll: { padding: 16, paddingBottom: 40, backgroundColor: BG },
   headerBox: {
@@ -1023,3 +1025,5 @@ const styles = StyleSheet.create({
   closeImgBtn: { position: 'absolute', bottom: 40, backgroundColor: WHITE, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 24 },
   closeImgText: { fontSize: 15, fontWeight: '700', color: PRIMARY },
 });
+
+const styles = baseStyles;

@@ -12,6 +12,7 @@ services:
       - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
+      - ./database/bookyhome.sql:/docker-entrypoint-initdb.d/000-schema.sql:ro
       - ./database/migrations:/docker-entrypoint-initdb.d
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
@@ -26,6 +27,8 @@ services:
     volumes:
       - ./backend:/app
       - uploads_data:/app/uploads
+    env_file:
+      - ./backend/.env
     container_name: contenedor-back
     ports:
       - "8000:8000"

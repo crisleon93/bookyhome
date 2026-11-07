@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import Svg, { Circle, Path, Polygon, Polyline, Line, Rect } from 'react-native-svg';
 import api from '../services/api';
+import { useThemedStyles } from '../context/ThemeContext';
 
 // ── Colores exactos del frontend ──────────────────────────────────────────────
 const VINOTINTO  = '#7A1E3A';   // var(--vinotinto)
@@ -174,6 +175,7 @@ const DEFAULTS = {
 // Definirlos dentro causaría re-montaje en cada render (pérdida de foco en inputs)
 
 function LabelRow({ icon, text }) {
+  const s = useThemedStyles(baseStyles);
   return (
     <View style={s.labelRow}>
       {icon}
@@ -183,6 +185,7 @@ function LabelRow({ icon, text }) {
 }
 
 function Seccion({ children, style }) {
+  const s = useThemedStyles(baseStyles);
   return <View style={[s.seccion, style]}>{children}</View>;
 }
 
@@ -194,6 +197,7 @@ export default function FiltrosBusqueda({
   filtros: filtrosIniciales = {},
   onApply,
 }) {
+  const s = useThemedStyles(baseStyles);
   const [activeTab, setActiveTab] = useState('libros');
   const [filtros, setFiltros]     = useState({ ...DEFAULTS, ...filtrosIniciales });
   const [opciones, setOpciones]   = useState({ categorias: [], precio_min: 0, precio_max: 1000000, opciones_ordenamiento: SORT_FALLBACK });
@@ -605,7 +609,7 @@ export default function FiltrosBusqueda({
 // ════════════════════════════════════════════════════════════════════════════
 // ESTILOS — replicando los inline styles del frontend web
 // ════════════════════════════════════════════════════════════════════════════
-const s = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   // Overlay: columna flex, zonas arriba/abajo son el backdrop
   overlay: {
     flex: 1,

@@ -10,7 +10,8 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import SafeAreaView from '../components/ThemedSafeAreaView';
+import { useThemedStyles } from '../context/ThemeContext';
 import {
   deleteNotification,
   deleteNotificationsByFilter,
@@ -166,6 +167,7 @@ const matchesDeleteFilter = (notification, filter) => {
 };
 
 export default function Notifications({ navigation }) {
+  const styles = useThemedStyles(baseStyles);
   const { user, signOut } = useContext(AuthContext);
   const { cargarConteo, resetearNotif } = useNotifications();
   const [notifications, setNotifications] = useState([]);
@@ -779,7 +781,7 @@ export default function Notifications({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: BG },
   vendorSafe: { backgroundColor: PRIMARY },
   list: { flex: 1, backgroundColor: BG },
@@ -1086,3 +1088,5 @@ const styles = StyleSheet.create({
   optionTextSelected: { color: PRIMARY },
   optionCheck: { color: PRIMARY, fontSize: 17, fontWeight: '800' },
 });
+
+const styles = baseStyles;

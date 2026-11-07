@@ -11,7 +11,8 @@ import {
   TextInput,
   Alert,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import SafeAreaView from '../components/ThemedSafeAreaView';
+import { useThemedStyles } from '../context/ThemeContext';
 import { useNavigation } from '@react-navigation/native';
 import * as Notifications from 'expo-notifications';
 import { IconChevronRight, IconMenu, IconSearch, IconMessage } from '../components/Icons';
@@ -67,6 +68,7 @@ const formatHoraSala = (fechaStr) => {
 };
 
 export default function Messages() {
+  const styles = useThemedStyles(baseStyles);
   const navigation = useNavigation();
   const { user, signOut } = useContext(AuthContext);
   const [refreshing, setRefreshing] = useState(false);
@@ -296,7 +298,7 @@ export default function Messages() {
   );
 }
 
-const styles = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: '#F4F1EF',
@@ -555,3 +557,5 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 });
+
+const styles = baseStyles;

@@ -16,6 +16,7 @@ from app.schemas import (
     PagoRequest,
     CancelacionOrdenRequest,
 )
+from app.routers.perfil import CambiarPassword
 
 
 # ---------------------------------------------------------------------------
@@ -109,6 +110,20 @@ class TestUsuarioRegistro:
 # ---------------------------------------------------------------------------
 # UsuarioLogin
 # ---------------------------------------------------------------------------
+
+class TestCambiarPassword:
+    def test_password_segura_pasa(self):
+        data = CambiarPassword(password_actual="actual", password_nueva="Nueva123!")
+        assert data.password_nueva == "Nueva123!"
+
+    @pytest.mark.parametrize(
+        "password",
+        ["corta", "minuscula123!", "SinNumero!", "SinEspecial123"],
+    )
+    def test_password_sin_requisitos_falla(self, password):
+        with pytest.raises(ValidationError):
+            CambiarPassword(password_actual="actual", password_nueva=password)
+
 
 class TestUsuarioLogin:
     def test_login_valido(self):

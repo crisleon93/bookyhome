@@ -9,9 +9,11 @@ import {
 } from '../services/api';
 import { CartContext } from '../context/CartContext';
 import { AuthContext } from '../context/AuthContext';
+import { useAppTheme, useThemedStyles } from '../context/ThemeContext';
 import Footer from '../components/Footer';
 
 function PaymentMethodHeader({ icon, title, description, totalLabel, total, palette }) {
+  const styles = useThemedStyles(baseStyles);
   return (
     <View style={[styles.methodHeader, { backgroundColor: palette.background, borderColor: palette.border }]}>
       <View style={styles.methodHeaderMain}>
@@ -32,6 +34,7 @@ function PaymentMethodHeader({ icon, title, description, totalLabel, total, pale
 }
 
 function PaymentBenefit({ icon, title, description, tint = '#F8FAFC' }) {
+  const styles = useThemedStyles(baseStyles);
   return (
     <View style={styles.methodBenefit}>
       <View style={[styles.methodBenefitIcon, { backgroundColor: tint }]}><Text style={styles.methodBenefitEmoji}>{icon}</Text></View>
@@ -44,6 +47,7 @@ function PaymentBenefit({ icon, title, description, tint = '#F8FAFC' }) {
 }
 
 function PaymentSteps({ title, steps, accent = '#475569' }) {
+  const styles = useThemedStyles(baseStyles);
   return (
     <View style={styles.methodInstructions}>
       <Text style={[styles.methodInstructionsTitle, { color: accent }]}>{title}</Text>
@@ -60,9 +64,11 @@ function PaymentSteps({ title, steps, accent = '#475569' }) {
 }
 
 export default function Checkout({ route, navigation }) {
+  const styles = useThemedStyles(baseStyles);
   const { orderId } = route.params;
   const { loadCart } = useContext(CartContext);
   const { token } = useContext(AuthContext);
+  const { colors } = useAppTheme();
 
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -496,7 +502,7 @@ export default function Checkout({ route, navigation }) {
     const pickupEnabled = order.estado_retiro === 'habilitado_pago';
     const pickupArrived = order.estado_retiro === 'en_tienda';
     return (
-      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <ScrollView style={[styles.container, { backgroundColor: colors.page }]} contentContainerStyle={styles.content}>
         <View style={styles.pickupCard}>
           <Text style={styles.pickupEyebrow}>RETIRO EN TIENDA · ORDEN #{order.id_orden_db || order.id_orden || orderId}</Text>
           <Text style={styles.pickupTitle}>{pickupEnabled ? 'Pago habilitado' : pickupArrived ? 'Llegada notificada' : 'Reserva confirmada'}</Text>
@@ -588,7 +594,7 @@ export default function Checkout({ route, navigation }) {
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView style={[styles.container, { backgroundColor: colors.page }]} contentContainerStyle={styles.content}>
       {paymentProcessing && (
         <View style={styles.overlay}>
           <ActivityIndicator size="large" color="#7A1E3A" />
@@ -1199,7 +1205,7 @@ export default function Checkout({ route, navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F8EFF1' },
   content: { padding: 14, paddingBottom: 40, gap: 14 },
   checkoutHeader: { backgroundColor: '#fff', borderRadius: 13, borderWidth: 1, borderColor: '#E5E7EB', padding: 15, marginBottom: 0, shadowColor: '#23151A', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 8, elevation: 1 },
@@ -1561,3 +1567,5 @@ const styles = StyleSheet.create({
   modalSubmit: { flex: 1, backgroundColor: '#0070ba', paddingVertical: 12, borderRadius: 6, alignItems: 'center' },
   modalSubmitText: { color: '#fff', fontWeight: '700' },
 });
+
+const styles = baseStyles;

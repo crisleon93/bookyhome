@@ -2,8 +2,10 @@ import React, { useCallback, useContext, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import {
   View, Text, FlatList, Image, StyleSheet, TouchableOpacity,
-  ActivityIndicator, Alert, Modal, SafeAreaView, ScrollView
+  ActivityIndicator, Alert, Modal, ScrollView
 } from 'react-native';
+import SafeAreaView from '../components/ThemedSafeAreaView';
+import { useThemedStyles } from '../context/ThemeContext';
 import Svg, { Circle, Line, Path, Rect } from 'react-native-svg';
 import { CartContext } from '../context/CartContext';
 import { AuthContext } from '../context/AuthContext';
@@ -24,6 +26,7 @@ function PendingOrderIcon({ type, color = 'currentColor', size = 14 }) {
 }
 
 export default function Cart({ navigation }) {
+  const styles = useThemedStyles(baseStyles);
   const { cart, removeFromCart, clearCart, loadCart, loading } = useContext(CartContext);
   const { token } = useContext(AuthContext);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
@@ -457,7 +460,7 @@ export default function Cart({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F8F9FA' },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F8F9FA' },
   loadingText: { marginTop: 12, fontSize: 14, color: '#6B7280' },
@@ -610,3 +613,5 @@ const styles = StyleSheet.create({
   clearBtn: { paddingHorizontal: 12, paddingVertical: 8, alignItems: 'center' },
   clearBtnText: { color: '#9CA3AF', fontSize: 11, fontWeight: '700' },
 });
+
+const styles = baseStyles;
