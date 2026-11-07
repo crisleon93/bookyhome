@@ -6,7 +6,7 @@ import {
   IconAlertTriangle, IconTool, IconCheck, IconSettings
 } from "../Icons";
 
-export default function SeccionPerfilAdmin({ stats }) {
+export default function SeccionPerfilAdmin({ stats, gestionProp }) {
   const [userName, setUserName] = useState("");
   const [userSurname, setUserSurname] = useState("");
   const [userEmail, setUserEmail] = useState("");
@@ -18,8 +18,14 @@ export default function SeccionPerfilAdmin({ stats }) {
   const [bannerColor, setBannerColor] = useState('#7A1E3A');
   const [bannerUploading, setBannerUploading] = useState(false);
   const [showBannerEditor, setShowBannerEditor] = useState(false);
-  const [gestion, setGestion] = useState({ reclamos: 0, soporte: 0, resueltos: 0, pendientes: 0 });
+  const [gestion, setGestion] = useState(() => gestionProp || { reclamos: 0, soporte: 0, resueltos: 0, pendientes: 0 });
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('darkMode') === 'true');
+
+  useEffect(() => {
+    if (gestionProp) {
+      setGestion(gestionProp);
+    }
+  }, [gestionProp]);
 
   const resolveImageUrl = (path) => {
     const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
@@ -28,6 +34,7 @@ export default function SeccionPerfilAdmin({ stats }) {
   };
 
   const cargarGestion = useCallback(async () => {
+    if (gestionProp) return;
     try {
       const res = await api.get('/quejas/admin/todas');
       const lista = Array.isArray(res.data) ? res.data : [];
@@ -40,7 +47,7 @@ export default function SeccionPerfilAdmin({ stats }) {
     } catch (error) {
       console.error('Error cargando gestión:', error);
     }
-  }, []);
+  }, [gestionProp]);
 
   const cargarPerfil = useCallback(async () => {
     try {
@@ -329,19 +336,24 @@ export default function SeccionPerfilAdmin({ stats }) {
           </div>
         </div>
         {/* Cuenta de Administrador */}
-        <div className="pl-card" style={{ padding: "2rem" }}>
+        <div className="pl-card" style={{ padding: "2rem", display: 'flex', flexDirection: 'column' }}>
           <h3 style={{ margin: "0 0 1rem 0", color: "var(--vinotinto)", fontSize: "1.2rem", display: 'flex', alignItems: 'center', gap: '10px' }}>
             <IconSettings width={24} height={24} strokeWidth={2} style={{ color: '#7A1E3A' }} />
             Cuenta de Administrador
           </h3>
           <div style={{
+            flex: 1,
             background: 'linear-gradient(135deg, #fdf2f6 0%, #fbe8ef 100%)',
             padding: "2rem",
             borderRadius: "16px",
             border: "3px solid #7A1E3A",
             textAlign: "center",
             position: "relative",
-            boxShadow: "0 8px 24px rgba(122,30,58,0.12)"
+            boxShadow: "0 8px 24px rgba(122,30,58,0.12)",
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
           }}>
             <div style={{
               display: "inline-flex",
@@ -351,7 +363,7 @@ export default function SeccionPerfilAdmin({ stats }) {
               height: "100px",
               borderRadius: "50%",
               background: profilePhotoUrl ? `url(${profilePhotoUrl}) center/cover no-repeat` : 'linear-gradient(135deg, #7A1E3A 0%, #9b2c4e 100%)',
-              marginBottom: "1.5rem",
+              marginBottom: "1rem",
               boxShadow: "0 4px 12px rgba(122,30,58,0.25)",
               border: '3px solid #fff'
             }}>
@@ -364,11 +376,14 @@ export default function SeccionPerfilAdmin({ stats }) {
             <div style={{ fontSize: "2rem", fontWeight: 800, color: '#7A1E3A', marginBottom: "0.5rem", textTransform: "uppercase", letterSpacing: "2px" }}>
               Administrador
             </div>
-            <div style={{ color: "#666", fontSize: "1rem", marginBottom: "0.75rem" }}>
+            <div style={{ color: "#555", fontSize: "1rem", marginBottom: "0.5rem", fontWeight: 600 }}>
               {userName} {userSurname}
             </div>
+            <div style={{ color: "#888", fontSize: "0.85rem", marginBottom: "0.25rem" }}>
+              Administrador BookyHome
+            </div>
             {fechaRegistro && (
-              <div style={{ color: "#888", fontSize: "0.88rem" }}>
+              <div style={{ color: "#aaa", fontSize: "0.82rem" }}>
                 Miembro desde {formatearFecha(fechaRegistro)}
               </div>
             )}

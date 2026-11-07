@@ -13,6 +13,12 @@ from pydantic import BaseModel
 
 from app.auth import verify_token
 from app.models.bookypago_finanzas import bookypago_finanzas, BookyPagoFinanzas, _load_store, PAGOS_VENDEDORES_FILE
+from app.models.finanzas_db import (
+    obtener_balance_db,
+    obtener_historial_db,
+    obtener_estadisticas_db,
+    obtener_nomina_db,
+)
 from app.database import get_db
 
 
@@ -65,14 +71,14 @@ def check_admin_role(user: dict):
 @router.get("/balance")
 def obtener_balance(user=Depends(get_current_user)):
     """
-    Obtiene el balance financiero de BookyHome
-    
+    Obtiene el balance financiero de BookyHome (lee directamente de MySQL).
+
     Roles: Admin
     """
     check_admin_role(user)
-    
+
     try:
-        balance = bookypago_finanzas_configurado.obtener_balance()
+        balance = obtener_balance_db()
         return {"ok": True, "balance": balance}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error obteniendo balance: {str(e)}")
@@ -250,7 +256,7 @@ def obtener_nomina(user=Depends(get_current_user)):
     check_admin_role(user)
     
     try:
-        nomina = bookypago_finanzas_configurado.obtener_nomina()
+        nomina = obtener_nomina_db()
         return {"ok": True, "nomina": nomina}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error obteniendo nómina: {str(e)}")
@@ -583,14 +589,14 @@ def procesar_pago_vendedor(id_pago: int, user=Depends(get_current_user)):
 @router.get("/historial")
 def obtener_historial_financiero(dias: int = 30, user=Depends(get_current_user)):
     """
-    Obtiene el historial financiero de los últimos N días
-    
+    Obtiene el historial financiero de los últimos N días (lee de MySQL).
+
     Roles: Admin
     """
     check_admin_role(user)
-    
+
     try:
-        historial = bookypago_finanzas_configurado.obtener_historial_financiero(dias)
+        historial = obtener_historial_db(dias)
         return {"ok": True, "historial": historial}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error obteniendo historial: {str(e)}")
@@ -599,14 +605,14 @@ def obtener_historial_financiero(dias: int = 30, user=Depends(get_current_user))
 @router.get("/estadisticas")
 def obtener_estadisticas(user=Depends(get_current_user)):
     """
-    Obtiene estadísticas financieras
-    
+    Obtiene estadísticas financieras (lee de MySQL).
+
     Roles: Admin
     """
     check_admin_role(user)
-    
+
     try:
-        estadisticas = bookypago_finanzas_configurado.obtener_estadisticas()
+        estadisticas = obtener_estadisticas_db()
         return {"ok": True, "estadisticas": estadisticas}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error obteniendo estadísticas: {str(e)}")

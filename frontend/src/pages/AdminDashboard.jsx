@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getUserRole } from '../hooks/useAuth';
 import api, { getApiBaseUrl } from '../services/api';
@@ -7,7 +7,7 @@ import BookyPagoFinanzas from './BookyPagoFinanzas';
 import SeccionPerfilAdmin from '../components/dashboard/SeccionPerfilAdmin';
 import {
   IconLayoutDashboard, IconTrendingUp, IconUser, IconUsers, IconBook, IconStore, IconPackage,
-  IconSettings, IconChevronLeft, IconMenu, IconLogOut, IconLock, IconUnlock,
+  IconSettings, IconChevronLeft, IconChevronDown, IconMenu, IconLogOut, IconLock, IconUnlock,
   IconCheck, IconBan, IconEye, IconTrash, IconDollar, IconCart, IconTool, IconAlertTriangle, IconWallet,
   IconInfo, IconTruck, IconMessage, IconStoreAlt, IconSearch, IconClose, IconPhone, IconMail,
 } from '../components/Icons';
@@ -61,6 +61,646 @@ function SidebarIcon(props) {
   );
 }
 
+// ── Componentes auxiliares fuera de AdminDashboard para evitar remontajes al cambiar pestañas ──
+const BarraProgreso = React.memo(function BarraProgreso({ label, value, max, color }) {
+  const pct = max > 0 ? Math.round((value / max) * 100) : 0;
+  return (
+    <div style={{ marginBottom: '14px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+        <span style={{ fontWeight: 600, fontSize: '0.88rem', color: '#444', textTransform: 'capitalize' }}>{label}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: '0.75rem', color: '#aaa', fontWeight: 500 }}>{pct}%</span>
+          <span style={{ fontWeight: 800, color, fontSize: '1rem', minWidth: 24, textAlign: 'right' }}>{value}</span>
+        </div>
+      </div>
+      <div style={{ background: '#f0ece9', borderRadius: '20px', height: '8px', overflow: 'hidden' }}>
+        <div style={{
+          background: `linear-gradient(90deg, ${color}, ${color}cc)`,
+          borderRadius: '20px', height: '8px',
+          width: `${pct}%`, transition: 'width 0.6s cubic-bezier(0.4,0,0.2,1)',
+          boxShadow: `0 2px 6px ${color}55`,
+        }} />
+      </div>
+    </div>
+  );
+});
+
+const AvatarUsuario = React.memo(function AvatarUsuario({ usuario, size = 38, fontSize = '0.95rem', border, background, shadow }) {
+  const [imgError, setImgError] = useState(false);
+  const nombre = usuario?.nombre_usuario || 'Usuario';
+  const inicial = nombre.charAt(0).toUpperCase();
+  const rolKey = (usuario?.rol || 'comprador').toLowerCase().trim();
+  const defaultBg = rolKey === 'vendedor' ? '#D97706' : rolKey.includes('admin') ? '#7A1E3A' : '#047857';
+
+  const rawFoto = usuario?.foto_perfil || usuario?.foto;
+  const fotoUrl = rawFoto && !imgError
+    ? (rawFoto.startsWith('http://') || rawFoto.startsWith('https://') ? rawFoto : `${getApiBaseUrl()}/${rawFoto.replace(/^\//, '')}`)
+    : null;
+
+  return (
+    <div
+      style={{
+        width: size,
+        height: size,
+        minWidth: size,
+        minHeight: size,
+        borderRadius: '50%',
+        background: background || `linear-gradient(135deg, ${defaultBg} 0%, ${defaultBg}cc 100%)`,
+        color: WHITE,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontWeight: 900,
+        fontSize: fontSize,
+        flexShrink: 0,
+        overflow: 'hidden',
+        border: border || 'none',
+        boxShadow: shadow || `0 2px 6px ${defaultBg}40`,
+        position: 'relative',
+      }}
+    >
+      {fotoUrl ? (
+        <img
+          src={fotoUrl}
+          alt={nombre}
+          onError={() => setImgError(true)}
+          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+        />
+      ) : (
+        <span>{inicial}</span>
+      )}
+    </div>
+  );
+});
+
+function tiempoTranscurridoAdmin(fechaStr) {
+  if (!fechaStr) return null;
+  const diff = Date.now() - new Date(fechaStr).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 60) return `hace ${mins} min`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `hace ${hrs} h`;
+  const days = Math.floor(hrs / 24);
+  if (days < 30) return `hace ${days} día${days > 1 ? 's' : ''}`;
+  const months = Math.floor(days / 30);
+  return `hace ${months} mes${months > 1 ? 'es' : ''}`;
+}
+
+const CardReclamoAdmin = React.memo(function CardReclamoAdmin({ reclamo, onAbrirChat, onAbrirModal, onVerEvidencia }) {
+  const [expandido, setExpandido] = useState(false);
+  const cfg = ESTADO_CONFIG_ADMIN[reclamo.estado] || ESTADO_CONFIG_ADMIN['Cerrado'];
+  const motivoIcon = MOTIVO_ICON_MAP_ADMIN[reclamo.asunto] || MOTIVO_ICON_MAP_ADMIN['Otro'];
+  const fechaStr = reclamo.fecha_creacion
+    ? new Date(reclamo.fecha_creacion).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' })
+    : null;
+  const tiempoStr = tiempoTranscurridoAdmin(reclamo.fecha_creacion);
+  const imgSrc = reclamo.imagen_libro
+    ? (reclamo.imagen_libro.startsWith('http') ? reclamo.imagen_libro : `${getApiBaseUrl()}${reclamo.imagen_libro}`)
+    : null;
+
+  return (
+    <article
+      style={{
+        background: WHITE,
+        border: `1.5px solid ${BORDER}`,
+        borderRadius: 16,
+        overflow: 'hidden',
+        boxShadow: '0 3px 14px rgba(0,0,0,0.04)',
+        transition: 'box-shadow 0.2s',
+      }}
+    >
+      {/* HEADER BANNER - CLICKABLE PARA DESPLEGAR / ENCOGER */}
+      <div
+        onClick={() => setExpandido(prev => !prev)}
+        style={{
+          background: 'linear-gradient(135deg, #fdf8f9 0%, #f9f0f3 100%)',
+          padding: '16px 20px',
+          borderBottom: expandido ? `1.5px solid ${BORDER}` : 'none',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 12,
+          cursor: 'pointer',
+          userSelect: 'none',
+          transition: 'background 0.15s ease',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          {imgSrc ? (
+            <img
+              src={imgSrc}
+              alt="Libro"
+              style={{ width: 50, height: 50, borderRadius: 10, objectFit: 'cover', flexShrink: 0, border: '1px solid #f0dde4', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}
+            />
+          ) : (
+            <div style={{
+              width: 50, height: 50, borderRadius: 10, flexShrink: 0,
+              background: VINOTINTO, color: WHITE,
+              display: 'grid', placeItems: 'center',
+              fontSize: '0.78rem', fontWeight: 800,
+              boxShadow: '0 2px 8px rgba(122,30,58,0.2)',
+            }}>
+              #{reclamo.numero || reclamo.id_solicitud}
+            </div>
+          )}
+
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 2 }}>
+              <span style={{ fontSize: '0.78rem', color: '#888', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Reclamo #{reclamo.numero || reclamo.id_solicitud}
+              </span>
+              {reclamo.id_orden && (
+                <span style={{ background: '#f7e9ee', color: VINOTINTO, padding: '2px 8px', borderRadius: 8, fontSize: '0.76rem', fontWeight: 700 }}>
+                  Orden #{reclamo.id_orden}
+                </span>
+              )}
+            </div>
+            <strong style={{ fontSize: '1rem', color: CARBON, display: 'block' }}>
+              {reclamo.titulo_libro || `Orden #${reclamo.id_orden || reclamo.id_solicitud}`}
+              {reclamo.total_items > 1 && (
+                <span style={{ fontWeight: 500, color: GRAY, fontSize: '0.85rem' }}> +{reclamo.total_items - 1} más</span>
+              )}
+            </strong>
+            <p style={{ margin: '2px 0 0', fontSize: '0.84rem', color: GRAY }}>
+              Comprador: <strong style={{ color: CARBON }}>{reclamo.comprador}</strong>
+              {reclamo.correo_comprador ? ` (${reclamo.correo_comprador})` : ''} · Tienda: <strong style={{ color: VINOTINTO }}>{reclamo.nombre_tienda || 'BookyHome'}</strong>
+            </p>
+          </div>
+        </div>
+
+        {/* Status Badge + Botón Desplegar/Recoger */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+            background: cfg.bg, color: cfg.color,
+            border: `1px solid ${cfg.border}`,
+            padding: '6px 14px', borderRadius: 20,
+            fontSize: '0.82rem', fontWeight: 800,
+            whiteSpace: 'nowrap',
+          }}>
+            <span style={{ width: 8, height: 8, borderRadius: '50%', background: cfg.dot, display: 'inline-block' }} />
+            {reclamo.estado}
+          </div>
+
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setExpandido(prev => !prev);
+            }}
+            title={expandido ? 'Plegar / Recoger' : 'Desplegar / Ver detalles'}
+            style={{
+              background: expandido ? '#fdf2f4' : WHITE,
+              border: `1.5px solid ${expandido ? VINOTINTO : BORDER}`,
+              color: expandido ? VINOTINTO : CARBON,
+              borderRadius: 20,
+              padding: '6px 14px',
+              fontSize: '0.82rem',
+              fontWeight: 700,
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              fontFamily: 'inherit',
+              transition: 'all 0.15s ease',
+              boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+            }}
+          >
+            <span>{expandido ? 'Recoger' : 'Desplegar'}</span>
+            <IconChevronDown
+              width={16}
+              height={16}
+              style={{
+                transform: expandido ? 'rotate(180deg)' : 'rotate(0deg)',
+                transition: 'transform 0.25s ease',
+              }}
+            />
+          </button>
+        </div>
+      </div>
+
+      {/* BODY CONTENT - SOLO VISIBLE SI ESTÁ DESPLEGADO */}
+      {expandido && (
+      <div style={{ padding: '20px', display: 'grid', gap: 16 }}>
+        {/* Metadata Tags Row */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
+            {/* Motivo Chip */}
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              background: '#fdf2f4', border: '1px solid #f0dde4',
+              borderRadius: 20, padding: '5px 12px',
+              color: VINOTINTO, fontSize: '0.82rem', fontWeight: 700,
+            }}>
+              {motivoIcon}
+              {reclamo.asunto}
+            </div>
+
+            {/* Tienda Chip */}
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              background: '#f0f9ff', border: '1px solid #bae6fd',
+              borderRadius: 20, padding: '5px 12px',
+              color: '#0369a1', fontSize: '0.82rem', fontWeight: 700,
+            }}>
+              <IconStoreAlt width={14} height={14} strokeWidth={1.5} />
+              {reclamo.nombre_tienda || 'BookyHome'}
+            </div>
+
+            {/* Total Orden */}
+            {reclamo.total_orden && (
+              <div style={{
+                display: 'inline-flex', alignItems: 'center', gap: 5,
+                background: '#f0fdf4', border: '1px solid #bbf7d0',
+                borderRadius: 20, padding: '5px 12px',
+                color: '#166534', fontSize: '0.82rem', fontWeight: 700,
+              }}>
+                <IconDollar width={13} height={13} strokeWidth={2} />
+                ${Number(reclamo.total_orden).toLocaleString('es-CO')}
+              </div>
+            )}
+
+            {/* Fecha */}
+            {fechaStr && (
+              <div style={{
+                display: 'inline-flex', alignItems: 'center', gap: 5,
+                background: '#fafafa', border: `1px solid ${BORDER}`,
+                borderRadius: 20, padding: '5px 12px',
+                color: GRAY, fontSize: '0.8rem', fontWeight: 600,
+              }}>
+                📅 {fechaStr}
+              </div>
+            )}
+          </div>
+
+          {tiempoStr && (
+            <span style={{ fontSize: '0.78rem', color: '#999', fontWeight: 600 }}>
+              {tiempoStr}
+            </span>
+          )}
+        </div>
+
+        {/* Customer Description */}
+        {reclamo.descripcion && (
+          <div style={{ background: '#fafafa', border: `1px solid ${BORDER}`, borderRadius: 12, padding: '14px 16px' }}>
+            <p style={{ margin: '0 0 4px', fontSize: '0.78rem', fontWeight: 700, color: GRAY, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Detalle del reclamo por el cliente:
+            </p>
+            <p style={{ margin: 0, color: CARBON, fontSize: '0.94rem', lineHeight: 1.6 }}>
+              {reclamo.descripcion}
+            </p>
+          </div>
+        )}
+
+        {/* Evidencia Adjunta */}
+        {reclamo.evidencia_url && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14, background: '#fdf8f9', border: '1px solid #f0dde4', borderRadius: 12, padding: '12px 16px' }}>
+            <img
+              src={`${getApiBaseUrl()}${reclamo.evidencia_url}`}
+              alt="Evidencia thumbnail"
+              onClick={() => onVerEvidencia(`${getApiBaseUrl()}${reclamo.evidencia_url}`)}
+              style={{ width: 56, height: 56, borderRadius: 8, objectFit: 'cover', cursor: 'pointer', border: '1px solid #f0dde4', boxShadow: '0 2px 6px rgba(0,0,0,0.08)' }}
+            />
+            <div style={{ flex: 1 }}>
+              <strong style={{ fontSize: '0.88rem', color: VINOTINTO, display: 'block' }}>Evidencia gráfica adjunta</strong>
+              <span style={{ fontSize: '0.8rem', color: GRAY }}>Haz clic para ampliar la imagen adjunta por el usuario.</span>
+            </div>
+            <button
+              onClick={() => onVerEvidencia(`${getApiBaseUrl()}${reclamo.evidencia_url}`)}
+              className="btn-reclamo-evidencia"
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                padding: '7px 14px', borderRadius: 8,
+                fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer',
+              }}
+            >
+              <IconEye width={15} height={15} /> Ver evidencia
+            </button>
+          </div>
+        )}
+
+        {/* Admin Previous Response */}
+        {reclamo.respuesta && (
+          <div style={{
+            padding: '14px 18px',
+            background: 'linear-gradient(135deg, #fdf8f9 0%, #f9f0f3 100%)',
+            borderRadius: 12,
+            borderLeft: `4px solid ${VINOTINTO}`,
+            borderTop: '1px solid #f0dde4',
+            borderRight: '1px solid #f0dde4',
+            borderBottom: '1px solid #f0dde4',
+          }}>
+            <strong style={{ color: VINOTINTO, display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.82rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>
+              <IconMessage width={15} height={15} /> Respuesta actual del administrador:
+            </strong>
+            <p style={{ margin: 0, color: '#444', lineHeight: 1.6, fontSize: '0.92rem' }}>
+              {reclamo.respuesta}
+            </p>
+          </div>
+        )}
+
+        {/* ACTION FOOTER BUTTONS */}
+        <div style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: 10,
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          paddingTop: 16,
+          borderTop: `1px solid ${BORDER}`,
+        }}>
+          {/* Botón de Contacto / Chat con la tienda */}
+          <button
+            onClick={() => onAbrirChat(reclamo)}
+            className="btn-reclamo-chat"
+            style={{
+              borderRadius: 10,
+              padding: '10px 18px',
+              cursor: 'pointer',
+              fontWeight: 700,
+              fontSize: '0.88rem',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              boxShadow: '0 2px 8px rgba(122,30,58,0.06)',
+            }}
+          >
+            <IconStoreAlt width={17} height={17} strokeWidth={1.8} />
+            Contactar / Chat con la tienda
+          </button>
+
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            <button
+              onClick={() => onAbrirModal(reclamo, 'En revisión')}
+              className="btn-reclamo-revision"
+              style={{
+                borderRadius: 10,
+                padding: '10px 18px',
+                cursor: 'pointer',
+                fontWeight: 700,
+                fontSize: '0.88rem',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+              }}
+            >
+              <IconTool width={16} height={16} />
+              Marcar En revisión
+            </button>
+
+            <button
+              onClick={() => onAbrirModal(reclamo, 'Rechazado')}
+              className="btn-reclamo-rechazar"
+              style={{
+                borderRadius: 10,
+                padding: '10px 18px',
+                cursor: 'pointer',
+                fontWeight: 700,
+                fontSize: '0.88rem',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+              }}
+            >
+              <IconBan width={16} height={16} />
+              Rechazar reclamo
+            </button>
+
+            <button
+              onClick={() => onAbrirModal(reclamo, 'Resuelto')}
+              className="btn-reclamo-resolver"
+              style={{
+                borderRadius: 10,
+                padding: '10px 18px',
+                cursor: 'pointer',
+                fontWeight: 700,
+                fontSize: '0.88rem',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                boxShadow: '0 4px 14px rgba(122,30,58,0.2)',
+              }}
+            >
+              <IconCheck width={16} height={16} strokeWidth={2.5} />
+              Resolver reclamo
+            </button>
+          </div>
+        </div>
+      </div>
+      )}
+    </article>
+  );
+});
+
+const CardSoporteAdmin = React.memo(function CardSoporteAdmin({ ticket, onAbrirModal }) {
+  const estadoCfg = ESTADO_CONFIG_ADMIN[ticket.estado] || ESTADO_CONFIG_ADMIN['Cerrado'];
+  const fechaStr = ticket.fecha_creacion
+    ? new Date(ticket.fecha_creacion).toLocaleDateString('es-CO', { day: '2-digit', month: 'long', year: 'numeric' })
+    : null;
+  const fotoUrl = ticket.foto_comprador
+    ? (ticket.foto_comprador.startsWith('http') ? ticket.foto_comprador : `${getApiBaseUrl()}/${ticket.foto_comprador.replace(/^\//, '')}`)
+    : null;
+
+  return (
+    <article
+      className="admin-soporte-card"
+      style={{
+        borderRadius: 16,
+        border: '1.5px solid #eee3e9',
+        borderLeft: `6px solid ${estadoCfg.dot}`,
+        overflow: 'hidden',
+        background: WHITE,
+        boxShadow: '0 3px 14px rgba(122,30,58,0.09)',
+        transition: 'box-shadow 0.2s ease, transform 0.2s ease',
+      }}
+    >
+      {/* Header de la card */}
+      <div
+        style={{
+          background: 'linear-gradient(135deg, #fdf8f9 0%, #f9f0f3 100%)',
+          padding: '16px 20px',
+          borderBottom: '1.5px solid #f0e8ec',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 12,
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, minWidth: 0 }}>
+          <div style={{
+            position: 'relative',
+            width: 48, height: 48, borderRadius: '50%', flexShrink: 0,
+            background: 'linear-gradient(135deg, #7A1E3A 0%, #9b2c4e 100%)', color: WHITE,
+            display: 'grid', placeItems: 'center',
+            fontSize: '0.85rem', fontWeight: 800,
+            border: '2px solid #fff',
+            boxShadow: '0 0 0 1.5px #ecdce3, 0 4px 12px rgba(122,30,58,0.22)',
+          }}>
+            {(ticket.comprador || '?').charAt(0).toUpperCase()}
+            {fotoUrl && (
+              <img
+                src={fotoUrl}
+                alt={ticket.comprador || 'Usuario'}
+                onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }}
+              />
+            )}
+          </div>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
+              <span style={{
+                background: 'linear-gradient(135deg, #7A1E3A 0%, #9b2c4e 100%)', color: WHITE,
+                borderRadius: 7, padding: '3px 11px',
+                fontSize: '0.73rem', fontWeight: 800, letterSpacing: '0.04em',
+                boxShadow: '0 2px 8px rgba(122,30,58,0.3)',
+                whiteSpace: 'nowrap',
+              }}>
+                TICKET #{ticket.numero || ticket.id_solicitud}
+              </span>
+              <span style={{
+                display: 'inline-flex', alignItems: 'center', gap: 5,
+                background: WHITE, border: '1.5px solid #ecdce3', color: VINOTINTO,
+                borderRadius: 7, padding: '2px 10px',
+                fontSize: '0.73rem', fontWeight: 700,
+                whiteSpace: 'nowrap',
+              }}>
+                <IconUser width={12} height={12} strokeWidth={2} />
+                {(ticket.rol_usuario || '').toLowerCase() === 'vendedor' ? 'Vendedor' : 'Comprador'}
+              </span>
+            </div>
+            <strong style={{ fontSize: '1rem', color: CARBON, fontWeight: 800, display: 'block', lineHeight: 1.35 }}>
+              {ticket.comprador}
+            </strong>
+          </div>
+        </div>
+
+        {/* Status Badge */}
+        <div>
+          <span style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+            background: estadoCfg.bg, color: estadoCfg.color,
+            border: `1px solid ${estadoCfg.border}`,
+            padding: '5px 12px', borderRadius: 20,
+            fontSize: '0.78rem', fontWeight: 700, whiteSpace: 'nowrap',
+          }}>
+            <span style={{ width: 7, height: 7, borderRadius: '50%', background: estadoCfg.dot, display: 'inline-block' }} />
+            {ticket.estado}
+          </span>
+        </div>
+      </div>
+
+      {/* Cuerpo */}
+      <div style={{ padding: '16px 20px', display: 'grid', gap: 14 }}>
+        {/* Metadata */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+            background: '#fdf2f4', border: '1px solid #f0dde4',
+            borderRadius: 20, padding: '5px 12px',
+            color: VINOTINTO, fontSize: '0.8rem', fontWeight: 700,
+          }}>
+            <IconTool width={13} height={13} />
+            {ticket.categoria || 'Soporte'}
+          </div>
+          {ticket.correo_comprador && (
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: 5,
+              background: '#f0f9ff', border: '1px solid #bae6fd',
+              borderRadius: 20, padding: '5px 12px',
+              color: '#0369a1', fontSize: '0.78rem', fontWeight: 600,
+            }}>
+              <IconMail width={13} height={13} />
+              {ticket.correo_comprador}
+            </div>
+          )}
+          {fechaStr && (
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: 5,
+              background: '#f9fafb', border: '1px solid #e5e7eb',
+              borderRadius: 20, padding: '5px 12px',
+              color: '#6b7280', fontSize: '0.78rem', fontWeight: 600,
+            }}>
+              📅 {fechaStr}
+            </div>
+          )}
+        </div>
+
+        {/* Asunto y descripción */}
+        <div style={{ padding: '12px 14px', background: '#fafafa', borderRadius: 10, border: '1px solid #f0f0f0' }}>
+          <p style={{ margin: 0, color: '#555', lineHeight: 1.65, fontSize: '0.92rem' }}>
+            <span style={{ fontWeight: 700, color: CARBON, display: 'block', marginBottom: 4, fontSize: '0.82rem' }}>
+              {ticket.asunto}
+            </span>
+            {ticket.descripcion}
+          </p>
+        </div>
+
+        {/* Respuesta del admin */}
+        {ticket.respuesta && (
+          <div style={{
+            padding: '14px 16px',
+            background: 'linear-gradient(135deg, #fdf8f9 0%, #f9f0f3 100%)',
+            borderRadius: 12, borderLeft: '4px solid #7A1E3A',
+          }}>
+            <p style={{ margin: '0 0 6px', color: VINOTINTO, display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.78rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              <IconMessage width={14} height={14} />
+              Respuesta del administrador
+            </p>
+            <p style={{ margin: 0, color: '#444', lineHeight: 1.65, fontSize: '0.92rem' }}>{ticket.respuesta}</p>
+          </div>
+        )}
+
+        {/* Acciones */}
+        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', paddingTop: 4 }}>
+          <button
+            onClick={() => onAbrirModal(ticket, 'En revisión')}
+            className="btn-soporte-revision"
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              border: '1.5px solid #fdba74', background: WHITE, color: '#c2410c',
+              borderRadius: 8, padding: '10px 18px', cursor: 'pointer',
+              fontWeight: 700, fontSize: '0.88rem',
+            }}
+          >
+            <IconEye width={15} height={15} />
+            Marcar en revisión
+          </button>
+          <button
+            onClick={() => onAbrirModal(ticket, 'Rechazado')}
+            className="btn-soporte-rechazar"
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              border: '1.5px solid #fca5a5', background: '#fef2f2', color: '#dc2626',
+              borderRadius: 8, padding: '10px 18px', cursor: 'pointer',
+              fontWeight: 700, fontSize: '0.88rem',
+            }}
+          >
+            <IconBan width={15} height={15} />
+            Rechazar ticket
+          </button>
+          <button
+            onClick={() => onAbrirModal(ticket, 'Resuelto')}
+            className="btn-soporte-resolver"
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              border: 'none',
+              background: `linear-gradient(135deg, ${VINOTINTO} 0%, #9b2c4e 100%)`,
+              color: WHITE, borderRadius: 8, padding: '10px 22px', cursor: 'pointer',
+              fontWeight: 700, fontSize: '0.88rem',
+              boxShadow: '0 4px 14px rgba(122,30,58,0.25)',
+            }}
+          >
+            <IconCheck width={15} height={15} strokeWidth={2.5} />
+            Resolver y notificar
+          </button>
+        </div>
+      </div>
+    </article>
+  );
+});
+
 export default function AdminDashboard() {
   const navigate = useNavigate();
   const [stats, setStats] = useState({ usuarios: 0, libros: 0, ordenes: 0, tiendas: 0 });
@@ -83,6 +723,8 @@ export default function AdminDashboard() {
   const [paginaUsuarios, setPaginaUsuarios] = useState(1);
   const [paginaLibros, setPaginaLibros] = useState(1);
   const [paginaTiendas, setPaginaTiendas] = useState(1);
+  const [paginaReclamos, setPaginaReclamos] = useState(1);
+  const [paginaSoporte, setPaginaSoporte] = useState(1);
   const [filtroEstadoReclamos, setFiltroEstadoReclamos] = useState('Todos');
   const [busquedaReclamos, setBusquedaReclamos] = useState('');
   const [chatModalReclamo, setChatModalReclamo] = useState(null);
@@ -92,6 +734,11 @@ export default function AdminDashboard() {
   const [motivoSuspension, setMotivoSuspension] = useState('');
   const [errorMotivoSuspension, setErrorMotivoSuspension] = useState('');
   const [guardandoEstadoTienda, setGuardandoEstadoTienda] = useState(false);
+  const [busquedaTiendas, setBusquedaTiendas] = useState('');
+  const [filtroEstadoTienda, setFiltroEstadoTienda] = useState('todos');
+  const [busquedaOrdenes, setBusquedaOrdenes] = useState('');
+  const [filtroEstadoOrden, setFiltroEstadoOrden] = useState('todos');
+  const [paginaOrdenes, setPaginaOrdenes] = useState(1);
   const [busquedaUsuarios, setBusquedaUsuarios] = useState('');
   const [filtroEstadoUsuario, setFiltroEstadoUsuario] = useState('todos');
   const [modalConfirmBloqueo, setModalConfirmBloqueo] = useState(null); // { usuario, bloqueado }
@@ -181,58 +828,46 @@ export default function AdminDashboard() {
     }
   };
 
-  function tiempoTranscurridoAdmin(fechaStr) {
-    if (!fechaStr) return null;
-    const diff = Date.now() - new Date(fechaStr).getTime();
-    const mins = Math.floor(diff / 60000);
-    if (mins < 60) return `hace ${mins} min`;
-    const hrs = Math.floor(mins / 60);
-    if (hrs < 24) return `hace ${hrs} h`;
-    const days = Math.floor(hrs / 24);
-    if (days < 30) return `hace ${days} día${days > 1 ? 's' : ''}`;
-    const months = Math.floor(days / 30);
-    return `hace ${months} mes${months > 1 ? 'es' : ''}`;
-  }
+  const handleAbrirChat = useCallback((reclamo) => {
+    void abrirChatReclamo(reclamo);
+  }, []);
+
+  const handleAbrirModal = useCallback((reclamo, estado) => {
+    abrirModal(reclamo, estado);
+  }, []);
+
+  const handleVerEvidencia = useCallback((url) => {
+    setEvidenciaPreview(url);
+  }, []);
 
   const registrosPorPagina = 10;
 
-  const cargarReclamos = async () => {
+  const cargarSolicitudes = useCallback(async () => {
     try {
       const res = await api.get('/quejas/admin/todas');
-      setReclamos(res.data || []);
+      const data = res.data || [];
+      setReclamos(data);
+      setSoporte(data);
     } catch (error) {
-      notify(error.response?.data?.detail || 'No se pudieron cargar los reclamos', 'error');
+      console.error('Error cargando solicitudes admin:', error);
     }
-  };
+  }, []);
 
-  const cargarSoporte = async () => {
-    try {
-      const res = await api.get('/quejas/admin/todas');
-      setSoporte(res.data || []);
-    } catch (error) {
-      notify(error.response?.data?.detail || 'No se pudieron cargar los tickets de soporte', 'error');
-    }
-  };
+  const cargarReclamos = cargarSolicitudes;
+  const cargarSoporte = cargarSolicitudes;
 
-  useEffect(() => {
-    if (activeSection === 'reclamos') void cargarReclamos();
-    if (activeSection === 'soporte') void cargarSoporte();
-    if (activeSection === 'dashboard') { void cargarReclamos(); void cargarSoporte(); }
-  }, [activeSection]);
-
+  // Sincronización en segundo plano sin interrumpir ni recargar al cambiar secciones
   useEffect(() => {
     const refrescar = () => {
-      if (activeSection === 'reclamos') void cargarReclamos();
-      if (activeSection === 'soporte') void cargarSoporte();
-      if (activeSection === 'dashboard') { void cargarReclamos(); void cargarSoporte(); }
+      void cargarSolicitudes();
     };
     window.addEventListener('bookyhome-complaint-updated', refrescar);
-    const intervalId = window.setInterval(refrescar, 10000);
+    const intervalId = window.setInterval(refrescar, 30000);
     return () => {
       window.removeEventListener('bookyhome-complaint-updated', refrescar);
       window.clearInterval(intervalId);
     };
-  }, [activeSection]);
+  }, [cargarSolicitudes]);
 
   const abrirModal = (reclamo, estado) => {
     if (!reclamo) return;
@@ -261,8 +896,7 @@ export default function AdminDashboard() {
       setModalOpen(false);
       setModalReclamo(null);
       setModalRespuesta('');
-      void cargarReclamos();
-      void cargarSoporte();
+      void cargarSolicitudes();
     } catch (error) {
       notify(error.response?.data?.detail || error.message || 'No se pudo resolver la solicitud', 'error');
     }
@@ -277,21 +911,30 @@ export default function AdminDashboard() {
 
     const cargarDatos = async () => {
       try {
-        const [usuariosRes, librosRes, ordenesRes, tiendasRes] = await Promise.all([
+        const [usuariosRes, librosRes, ordenesRes, tiendasRes, quejasRes] = await Promise.all([
           api.get('/usuarios'),
           api.get('/api/stored/libros'),
           api.get('/api/v1/admin/orders'),
           api.get('/tiendas'),
+          api.get('/quejas/admin/todas'),
         ]);
-        setUsuarios(usuariosRes.data);
-        setLibros(librosRes.data);
-        setOrdenes(ordenesRes.data);
-        setTiendas(tiendasRes.data);
+        const usrData = usuariosRes.data || [];
+        const libData = librosRes.data || [];
+        const ordData = ordenesRes.data || [];
+        const tieData = tiendasRes.data || [];
+        const quejasData = quejasRes.data || [];
+
+        setUsuarios(usrData);
+        setLibros(libData);
+        setOrdenes(ordData);
+        setTiendas(tieData);
+        setReclamos(quejasData);
+        setSoporte(quejasData);
         setStats({
-          usuarios: usuariosRes.data.length,
-          libros: librosRes.data.length,
-          ordenes: ordenesRes.data.length,
-          tiendas: tiendasRes.data.length,
+          usuarios: usrData.length,
+          libros: libData.length,
+          ordenes: ordData.length,
+          tiendas: tieData.length,
         });
       } catch (error) {
         console.error('Error cargando datos admin:', error);
@@ -463,38 +1106,63 @@ export default function AdminDashboard() {
     setTimeout(() => setCopiadoId(null), 2000);
   };
 
-  if (loading) return <div style={{ padding: '40px', textAlign: 'center', fontFamily: "'Montserrat', sans-serif" }}>Cargando panel admin...</div>;
+  const categoriaCount = useMemo(() => {
+    return libros.reduce((acc, l) => {
+      const cat = l.nombre_categoria || 'Sin categoría';
+      acc[cat] = (acc[cat] || 0) + 1;
+      return acc;
+    }, {});
+  }, [libros]);
 
-  const categoriaCount = libros.reduce((acc, l) => {
-    const cat = l.nombre_categoria || 'Sin categoría';
-    acc[cat] = (acc[cat] || 0) + 1;
-    return acc;
-  }, {});
+  const hoyStr = useMemo(() => new Date().toLocaleDateString('es-CO'), []);
 
-  const ordenesHoy = ordenes.filter((o) => {
-    if (!o.fecha) return false;
-    const hoy = new Date().toLocaleDateString('es-CO');
-    return new Date(o.fecha).toLocaleDateString('es-CO') === hoy;
-  }).length;
+  const ordenesHoy = useMemo(() => {
+    return ordenes.filter((o) => {
+      if (!o.fecha) return false;
+      return new Date(o.fecha).toLocaleDateString('es-CO') === hoyStr;
+    }).length;
+  }, [ordenes, hoyStr]);
 
-  const compradoresCount = usuarios.filter(u => (u.rol || '').toLowerCase() === 'comprador').length;
-  const vendedoresCount = usuarios.filter(u => (u.rol || '').toLowerCase() === 'vendedor').length;
-  const adminsCount = usuarios.filter(u => (u.rol || '').toLowerCase() === 'admin' || (u.rol || '').toLowerCase() === 'administrador').length;
+  const { compradoresCount, vendedoresCount, adminsCount } = useMemo(() => {
+    let comp = 0, vend = 0, adm = 0;
+    for (const u of usuarios) {
+      const r = (u.rol || '').toLowerCase();
+      if (r === 'admin' || r === 'administrador') adm++;
+      else if (r.includes('vend')) vend++;
+      else comp++;
+    }
+    return { compradoresCount: comp, vendedoresCount: vend, adminsCount: adm };
+  }, [usuarios]);
 
-  const tiendasActivasCount = tiendas.filter(t => ['activa', 'activo', 'habilitada', 'habilitado', 'aprobada', 'aprobado'].includes((t.estado_tienda || '').toLowerCase().trim())).length;
-  const tiendasPendientesCount = tiendas.filter(t => ['pendiente', 'en revision', 'en revisión', 'por revisar'].includes((t.estado_tienda || '').toLowerCase().trim())).length;
-  const tiendasSuspendidasCount = tiendas.filter(t => ['suspendida', 'suspendido', 'inactiva', 'inactivo', 'pausada', 'pausado'].includes((t.estado_tienda || '').toLowerCase().trim())).length;
+  const { tiendasActivasCount, tiendasPendientesCount, tiendasSuspendidasCount } = useMemo(() => {
+    let act = 0, pend = 0, susp = 0;
+    for (const t of tiendas) {
+      const e = (t.estado_tienda || '').toLowerCase().trim();
+      if (['activa', 'activo', 'habilitada', 'habilitado', 'aprobada', 'aprobado'].includes(e)) act++;
+      else if (['pendiente', 'en revision', 'en revisión', 'por revisar'].includes(e)) pend++;
+      else if (['suspendida', 'suspendido', 'inactiva', 'inactivo', 'pausada', 'pausado'].includes(e)) susp++;
+    }
+    return { tiendasActivasCount: act, tiendasPendientesCount: pend, tiendasSuspendidasCount: susp };
+  }, [tiendas]);
 
-  const librosActivosCount = libros.filter(l => !l.oculto).length;
-  const totalCategorias = Object.keys(categoriaCount).length;
+  const librosActivosCount = useMemo(() => libros.filter(l => !l.oculto).length, [libros]);
+  const totalCategorias = useMemo(() => Object.keys(categoriaCount).length, [categoriaCount]);
 
-  const estaPendienteSolicitud = (estado) => ['abierto', 'en revision', 'en revisión'].includes((estado || '').toLowerCase().trim());
-  const esReclamoTipo = (tipo) => ['reclamo', 'queja', 'quejas'].includes((tipo || '').toLowerCase().trim());
-  const reclamosPendientes = reclamos.filter(r => esReclamoTipo(r.tipo_solicitud) && estaPendienteSolicitud(r.estado));
-  const reclamosPendientesCount = reclamosPendientes.length;
-  const soportePendientesCountDash = reclamos.filter(r => !esReclamoTipo(r.tipo_solicitud) && estaPendienteSolicitud(r.estado)).length;
+  const { reclamosPendientes, reclamosPendientesCount, soportePendientesCountDash } = useMemo(() => {
+    const estaPendiente = (estado) => ['abierto', 'en revision', 'en revisión'].includes((estado || '').toLowerCase().trim());
+    const esReclamo = (tipo) => ['reclamo', 'queja', 'quejas'].includes((tipo || '').toLowerCase().trim());
+    const recPend = reclamos.filter(r => esReclamo(r.tipo_solicitud) && estaPendiente(r.estado));
+    const sopPend = reclamos.filter(r => !esReclamo(r.tipo_solicitud) && estaPendiente(r.estado)).length;
+    return {
+      reclamosPendientes: recPend,
+      reclamosPendientesCount: recPend.length,
+      soportePendientesCountDash: sopPend
+    };
+  }, [reclamos]);
 
-  const ordenesCompletadas = ordenes.filter(o => ['completada', 'entregado', 'finalizada'].includes((o.estado || '').toLowerCase())).length;
+  const ordenesCompletadas = useMemo(() => {
+    return ordenes.filter(o => ['completada', 'entregado', 'finalizada'].includes((o.estado || '').toLowerCase())).length;
+  }, [ordenes]);
 
   const getIniciales = (nombre) => {
     if (!nombre) return 'US';
@@ -549,77 +1217,6 @@ export default function AdminDashboard() {
     return { bg: '#FDF2F4', color: '#7A1E3A', border: '#F8D2DA', dot: '#9B2C4E', label: 'Inactiva' };
   };
 
-  const BarraProgreso = ({ label, value, max, color }) => {
-    const pct = max > 0 ? Math.round((value / max) * 100) : 0;
-    return (
-      <div style={{ marginBottom: '14px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-          <span style={{ fontWeight: 600, fontSize: '0.88rem', color: '#444', textTransform: 'capitalize' }}>{label}</span>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ fontSize: '0.75rem', color: '#aaa', fontWeight: 500 }}>{pct}%</span>
-            <span style={{ fontWeight: 800, color, fontSize: '1rem', minWidth: 24, textAlign: 'right' }}>{value}</span>
-          </div>
-        </div>
-        <div style={{ background: '#f0ece9', borderRadius: '20px', height: '8px', overflow: 'hidden' }}>
-          <div style={{
-            background: `linear-gradient(90deg, ${color}, ${color}cc)`,
-            borderRadius: '20px', height: '8px',
-            width: `${pct}%`, transition: 'width 0.6s cubic-bezier(0.4,0,0.2,1)',
-            boxShadow: `0 2px 6px ${color}55`,
-          }} />
-        </div>
-      </div>
-    );
-  };
-
-  const AvatarUsuario = ({ usuario, size = 38, fontSize = '0.95rem', border, background, shadow }) => {
-    const [imgError, setImgError] = useState(false);
-    const nombre = usuario?.nombre_usuario || 'Usuario';
-    const inicial = nombre.charAt(0).toUpperCase();
-    const rolKey = (usuario?.rol || 'comprador').toLowerCase().trim();
-    const defaultBg = rolKey === 'vendedor' ? '#D97706' : rolKey.includes('admin') ? '#7A1E3A' : '#047857';
-
-    const rawFoto = usuario?.foto_perfil || usuario?.foto;
-    const fotoUrl = rawFoto && !imgError
-      ? (rawFoto.startsWith('http://') || rawFoto.startsWith('https://') ? rawFoto : `${getApiBaseUrl()}/${rawFoto.replace(/^\//, '')}`)
-      : null;
-
-    return (
-      <div
-        style={{
-          width: size,
-          height: size,
-          minWidth: size,
-          minHeight: size,
-          borderRadius: '50%',
-          background: background || `linear-gradient(135deg, ${defaultBg} 0%, ${defaultBg}cc 100%)`,
-          color: WHITE,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontWeight: 900,
-          fontSize: fontSize,
-          flexShrink: 0,
-          overflow: 'hidden',
-          border: border || 'none',
-          boxShadow: shadow || `0 2px 6px ${defaultBg}40`,
-          position: 'relative',
-        }}
-      >
-        {fotoUrl ? (
-          <img
-            src={fotoUrl}
-            alt={nombre}
-            onError={() => setImgError(true)}
-            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-          />
-        ) : (
-          <span>{inicial}</span>
-        )}
-      </div>
-    );
-  };
-
   const sectionTitles = {
     dashboard: 'Dashboard Global',
     reportes: 'Sistema de Reportes',
@@ -632,72 +1229,193 @@ export default function AdminDashboard() {
     soporte: 'Soporte Técnico',
   };
   const ActiveIcon = NAV_ITEMS.find((i) => i.id === activeSection)?.Icon;
-  const reclamosClientes = reclamos.filter((item) => item.tipo_solicitud === 'reclamo');
-  const soporteCompradores = soporte.filter((item) => item.tipo_solicitud === 'soporte' && (item.rol_usuario || '').toLowerCase() === 'comprador');
-  const soporteVendedores = soporte.filter((item) => item.tipo_solicitud === 'soporte' && (item.rol_usuario || '').toLowerCase() === 'vendedor');
+  const reclamosClientes = useMemo(() => reclamos.filter((item) => item.tipo_solicitud === 'reclamo'), [reclamos]);
+  const soporteCompradores = useMemo(() => soporte.filter((item) => item.tipo_solicitud === 'soporte' && (item.rol_usuario || '').toLowerCase() === 'comprador'), [soporte]);
+  const soporteVendedores = useMemo(() => soporte.filter((item) => item.tipo_solicitud === 'soporte' && (item.rol_usuario || '').toLowerCase() === 'vendedor'), [soporte]);
   const soporteMostrado = vistaSoporte === 'compradores' ? soporteCompradores : soporteVendedores;
 
-  // USUARIOS
-  const usuariosFiltrados = usuarios.filter((u) => {
-    // Filtro por rol
-    const r = (u.rol || '').toLowerCase();
-    const cumpleRol =
-      filtroRol === 'todos' ||
-      (filtroRol === 'admin' && (r === 'admin' || r === 'administrador')) ||
-      (filtroRol === 'vendedor' && r.includes('vend')) ||
-      (filtroRol === 'comprador' && r.includes('comp'));
-
-    // Filtro por estado
-    const estado = (u.estado_usuario || 'Activo').toLowerCase();
-    const cumpleEstado =
-      filtroEstadoUsuario === 'todos' ||
-      (filtroEstadoUsuario === 'Activo' && estado === 'activo') ||
-      (filtroEstadoUsuario === 'Bloqueado' && estado === 'bloqueado');
-
-    // Búsqueda en nombre, correo, teléfono e ID
+  // USUARIOS MEMOIZADOS
+  const usuariosFiltrados = useMemo(() => {
     const q = (busquedaUsuarios || '').toLowerCase().trim();
-    const cumpleBusqueda =
-      !q ||
-      (u.nombre_usuario || '').toLowerCase().includes(q) ||
-      (u.correo_usuario || '').toLowerCase().includes(q) ||
-      String(u.id_usuario).includes(q) ||
-      (u.telefono || '').toLowerCase().includes(q);
+    return usuarios.filter((u) => {
+      const r = (u.rol || '').toLowerCase();
+      const cumpleRol =
+        filtroRol === 'todos' ||
+        (filtroRol === 'admin' && (r === 'admin' || r === 'administrador')) ||
+        (filtroRol === 'vendedor' && r.includes('vend')) ||
+        (filtroRol === 'comprador' && r.includes('comp'));
 
-    return cumpleRol && cumpleEstado && cumpleBusqueda;
-  });
+      const estado = (u.estado_usuario || 'Activo').toLowerCase();
+      const cumpleEstado =
+        filtroEstadoUsuario === 'todos' ||
+        (filtroEstadoUsuario === 'Activo' && estado === 'activo') ||
+        (filtroEstadoUsuario === 'Bloqueado' && estado === 'bloqueado');
 
-  const totalPaginasUsuarios = Math.ceil(
-    usuariosFiltrados.length / registrosPorPagina
-  ) || 1;
+      const cumpleBusqueda =
+        !q ||
+        (u.nombre_usuario || '').toLowerCase().includes(q) ||
+        (u.correo_usuario || '').toLowerCase().includes(q) ||
+        String(u.id_usuario).includes(q) ||
+        (u.telefono || '').toLowerCase().includes(q);
 
-  const usuariosPaginados = usuariosFiltrados.slice(
-    (paginaUsuarios - 1) * registrosPorPagina,
-    paginaUsuarios * registrosPorPagina
-  );
+      return cumpleRol && cumpleEstado && cumpleBusqueda;
+    });
+  }, [usuarios, filtroRol, filtroEstadoUsuario, busquedaUsuarios]);
 
-  // LIBROS
-  const librosFiltrados = libros.filter(
-    l => filtroCategoria === 'todas' || l.nombre_categoria === filtroCategoria
-  );
+  const totalPaginasUsuarios = useMemo(() => {
+    return Math.ceil(usuariosFiltrados.length / registrosPorPagina) || 1;
+  }, [usuariosFiltrados.length]);
 
-  const totalPaginasLibros = Math.ceil(
-    librosFiltrados.length / registrosPorPagina
-  );
+  const usuariosPaginados = useMemo(() => {
+    return usuariosFiltrados.slice(
+      (paginaUsuarios - 1) * registrosPorPagina,
+      paginaUsuarios * registrosPorPagina
+    );
+  }, [usuariosFiltrados, paginaUsuarios]);
 
-  const librosPaginados = librosFiltrados.slice(
-    (paginaLibros - 1) * registrosPorPagina,
-    paginaLibros * registrosPorPagina
-  );
+  // LIBROS MEMOIZADOS
+  const librosFiltrados = useMemo(() => {
+    return libros.filter(
+      l => filtroCategoria === 'todas' || l.nombre_categoria === filtroCategoria
+    );
+  }, [libros, filtroCategoria]);
 
-  // TIENDAS
-  const totalPaginasTiendas = Math.ceil(
-    tiendas.length / registrosPorPagina
-  );
+  const totalPaginasLibros = useMemo(() => {
+    return Math.ceil(librosFiltrados.length / registrosPorPagina) || 1;
+  }, [librosFiltrados.length]);
 
-  const tiendasPaginadas = tiendas.slice(
-    (paginaTiendas - 1) * registrosPorPagina,
-    paginaTiendas * registrosPorPagina
-  );
+  const librosPaginados = useMemo(() => {
+    return librosFiltrados.slice(
+      (paginaLibros - 1) * registrosPorPagina,
+      paginaLibros * registrosPorPagina
+    );
+  }, [librosFiltrados, paginaLibros]);
+
+  // TIENDAS MEMOIZADAS (con búsqueda y filtro)
+  const tiendasFiltradas = useMemo(() => {
+    const q = (busquedaTiendas || '').toLowerCase().trim();
+    return tiendas.filter((t) => {
+      const cumpleEstado = filtroEstadoTienda === 'todos' || (t.estado_tienda || '').toLowerCase() === filtroEstadoTienda;
+      if (!q) return cumpleEstado;
+      const matchTexto =
+        (t.nombre_tienda || '').toLowerCase().includes(q) ||
+        (t.direccion || '').toLowerCase().includes(q) ||
+        (t.telefono || '').toLowerCase().includes(q) ||
+        String(t.id_tienda || '').includes(q);
+      return cumpleEstado && matchTexto;
+    });
+  }, [tiendas, busquedaTiendas, filtroEstadoTienda]);
+
+  const totalPaginasTiendas = useMemo(() => {
+    return Math.ceil(tiendasFiltradas.length / registrosPorPagina) || 1;
+  }, [tiendasFiltradas.length]);
+
+  const tiendasPaginadas = useMemo(() => {
+    return tiendasFiltradas.slice(
+      (paginaTiendas - 1) * registrosPorPagina,
+      paginaTiendas * registrosPorPagina
+    );
+  }, [tiendasFiltradas, paginaTiendas]);
+
+  // RECLAMOS MEMOIZADOS
+  const reclamosFiltrados = useMemo(() => {
+    const q = (busquedaReclamos || '').toLowerCase().trim();
+    return reclamosClientes.filter((r) => {
+      const matchEstado = filtroEstadoReclamos === 'Todos' || r.estado === filtroEstadoReclamos;
+      if (!q) return matchEstado;
+      const matchTexto =
+        (r.comprador || '').toLowerCase().includes(q) ||
+        (r.nombre_tienda || '').toLowerCase().includes(q) ||
+        (r.asunto || '').toLowerCase().includes(q) ||
+        (r.descripcion || '').toLowerCase().includes(q) ||
+        String(r.id_solicitud || '').includes(q) ||
+        String(r.id_orden || '').includes(q) ||
+        (r.titulo_libro || '').toLowerCase().includes(q);
+      return matchEstado && matchTexto;
+    });
+  }, [reclamosClientes, filtroEstadoReclamos, busquedaReclamos]);
+
+  const conteoReclamosPorEstado = useMemo(() => {
+    let abiertos = 0, enRevision = 0, resueltos = 0, rechazados = 0;
+    for (const r of reclamosClientes) {
+      if (r.estado === 'Abierto') abiertos++;
+      else if (r.estado === 'En revisión' || r.estado === 'En revision') enRevision++;
+      else if (r.estado === 'Resuelto') resueltos++;
+      else if (r.estado === 'Rechazado') rechazados++;
+    }
+    return {
+      Todos: reclamosClientes.length,
+      Abierto: abiertos,
+      'En revisión': enRevision,
+      Resuelto: resueltos,
+      Rechazado: rechazados,
+    };
+  }, [reclamosClientes]);
+
+  const totalPaginasReclamos = useMemo(() => {
+    return Math.ceil(reclamosFiltrados.length / registrosPorPagina) || 1;
+  }, [reclamosFiltrados.length]);
+
+  const reclamosPaginados = useMemo(() => {
+    return reclamosFiltrados.slice(
+      (paginaReclamos - 1) * registrosPorPagina,
+      paginaReclamos * registrosPorPagina
+    );
+  }, [reclamosFiltrados, paginaReclamos]);
+
+  // SOPORTE MEMOIZADO Y PAGINADO
+  const totalPaginasSoporte = useMemo(() => {
+    return Math.ceil(soporteMostrado.length / registrosPorPagina) || 1;
+  }, [soporteMostrado.length]);
+
+  const soportePaginado = useMemo(() => {
+    return soporteMostrado.slice(
+      (paginaSoporte - 1) * registrosPorPagina,
+      paginaSoporte * registrosPorPagina
+    );
+  }, [soporteMostrado, paginaSoporte]);
+
+  // ÓRDENES MEMOIZADAS (con búsqueda y filtro)
+  const ESTADOS_ORDEN = useMemo(() => [
+    { value: 'pagado',      label: 'Pagado',      color: '#047857', bg: '#ecfdf5', border: '#a7f3d0' },
+    { value: 'entregada',   label: 'Entregada',   color: '#D97706', bg: '#fffbeb', border: '#fde68a' },
+    { value: 'enviado',     label: 'Enviado',     color: '#ea580c', bg: '#fff7ed', border: '#fdba74' },
+    { value: 'cancelada',   label: 'Cancelada',   color: '#B91C1C', bg: '#fef2f2', border: '#fecaca' },
+    { value: 'completada',  label: 'Completada',  color: '#1d4ed8', bg: '#eff6ff', border: '#93c5fd' },
+    { value: 'finalizada',  label: 'Finalizada',  color: '#6d28d9', bg: '#f5f3ff', border: '#c4b5fd' },
+  ], []);
+
+  const ordenesFiltradas = useMemo(() => {
+    const q = (busquedaOrdenes || '').toLowerCase().trim();
+    return ordenes.filter((o) => {
+      const estadoNorm = (o.estado || '').toLowerCase();
+      const cumpleEstado = filtroEstadoOrden === 'todos' || estadoNorm === filtroEstadoOrden;
+      if (!q) return cumpleEstado;
+      const matchTexto =
+        String(o.id_orden || '').includes(q) ||
+        estadoNorm.includes(q) ||
+        String(o.total || '').includes(q) ||
+        (o.comprador || o.nombre_usuario || '').toLowerCase().includes(q);
+      return cumpleEstado && matchTexto;
+    });
+  }, [ordenes, busquedaOrdenes, filtroEstadoOrden]);
+
+  const totalPaginasOrdenes = useMemo(() => Math.ceil(ordenesFiltradas.length / registrosPorPagina) || 1, [ordenesFiltradas.length]);
+
+  const ordenesPaginadas = useMemo(() => {
+    return ordenesFiltradas.slice(
+      (paginaOrdenes - 1) * registrosPorPagina,
+      paginaOrdenes * registrosPorPagina
+    );
+  }, [ordenesFiltradas, paginaOrdenes]);
+
+  if (loading) {
+    return (
+      <div style={{ padding: '40px', textAlign: 'center', fontFamily: "'Montserrat', sans-serif" }}>
+        Cargando panel admin...
+      </div>
+    );
+  }
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', fontFamily: "'Montserrat', sans-serif", background: BEIGE }}>
@@ -866,32 +1584,6 @@ export default function AdminDashboard() {
             {sectionTitles[activeSection]}
           </h1>
         </div>
-
-        {/* ESTILOS SCOPED PARA EL DASHBOARD */}
-        <style>{`
-          .admin-kpi-card {
-            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
-          }
-          .admin-kpi-card:hover {
-            transform: translateY(-4px) !important;
-            box-shadow: 0 16px 32px rgba(122, 30, 58, 0.08), 0 4px 12px rgba(0,0,0,0.04) !important;
-            border-color: #D4C3BA !important;
-          }
-          .admin-hero-btn {
-            transition: all 0.2s ease !important;
-          }
-          .admin-hero-btn:hover {
-            transform: translateY(-2px) !important;
-            filter: brightness(1.06) !important;
-            box-shadow: 0 6px 16px rgba(0,0,0,0.18) !important;
-          }
-          .admin-table-row {
-            transition: background-color 0.15s ease !important;
-          }
-          .admin-table-row:hover {
-            background-color: #FAF5EE !important;
-          }
-        `}</style>
 
         {/* DASHBOARD REESTRUCTURADO Y PREMIUM */}
         {activeSection === 'dashboard' && (
@@ -2911,163 +3603,324 @@ export default function AdminDashboard() {
 
         {/* TIENDAS */}
         {activeSection === 'tiendas' && (
-          <div style={{ background: WHITE, borderRadius: '14px', overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.06)', border: `1px solid ${BORDER}`, padding: '16px' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr style={{ background: VINOTINTO, color: WHITE }}>
-                  <th style={{ padding: '14px 16px', textAlign: 'left' }}>ID</th>
-                  <th style={{ padding: '14px 16px', textAlign: 'left' }}>Nombre</th>
-                  <th style={{ padding: '14px 16px', textAlign: 'left' }}>Dirección</th>
-                  <th style={{ padding: '14px 16px', textAlign: 'left' }}>Teléfono</th>
-                  <th style={{ padding: '14px 16px', textAlign: 'left' }}>Fecha Registro</th>
-                  <th style={{ padding: '14px 16px', textAlign: 'left' }}>Estado</th>
-                  <th style={{ padding: '14px 16px', textAlign: 'center' }}>Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {tiendasPaginadas.map((t, i) => (
-                  <tr key={t.id_tienda} style={{ borderBottom: '1px solid #FAF8F5', background: i % 2 === 0 ? '#fafafa' : WHITE }}>
-                    <td style={{ padding: '12px 16px', fontWeight: 600 }}>{t.id_tienda}</td>
-                    <td style={{ padding: '12px 16px', fontWeight: 600 }}>{t.nombre_tienda}</td>
-                    <td style={{ padding: '12px 16px', color: '#555' }}>{t.direccion}</td>
-                    <td style={{ padding: '12px 16px', color: '#555' }}>{t.telefono}</td>
-                    <td style={{ padding: '12px 16px', color: '#777', fontSize: '0.9rem' }}>{t.fecha_creacion}</td>
+          <div style={{ display: 'grid', gap: 20 }}>
 
-                    <td style={{ padding: '12px 16px' }}>
-                      {(() => {
-                        const cfg = ESTADOS_TIENDA.find(e => e.value === (t.estado_tienda || '').toLowerCase()) || ESTADOS_TIENDA[4];
-                        return (
-                          <span style={{
-                            background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}`,
-                            padding: '4px 12px', borderRadius: '20px', fontSize: '0.78rem', fontWeight: 700,
-                            display: 'inline-flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap',
-                          }}>
+            {/* KPI Cards de tiendas */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 14 }}>
+              {[
+                { label: 'Total', value: tiendas.length, color: VINOTINTO, bg: '#fdf2f4', border: '#f0dde4', icon: <IconStore width={22} height={22} /> },
+                { label: 'Activas', value: tiendas.filter(t => (t.estado_tienda || '').toLowerCase() === 'activa').length, color: '#047857', bg: '#ecfdf5', border: '#a7f3d0', icon: <IconCheck width={22} height={22} strokeWidth={2.5} /> },
+                { label: 'Pendientes', value: tiendas.filter(t => (t.estado_tienda || '').toLowerCase() === 'pendiente').length, color: '#B45309', bg: '#fffbeb', border: '#fde68a', icon: <IconAlertTriangle width={22} height={22} strokeWidth={2} /> },
+                { label: 'Suspendidas', value: tiendas.filter(t => (t.estado_tienda || '').toLowerCase() === 'suspendida').length, color: '#B91C1C', bg: '#fef2f2', border: '#fecaca', icon: <IconBan width={22} height={22} /> },
+              ].map((kpi) => (
+                <div key={kpi.label} style={{
+                  background: WHITE, borderRadius: 14, padding: '16px 18px',
+                  border: `1px solid ${BORDER}`, boxShadow: '0 2px 10px rgba(0,0,0,0.03)',
+                  display: 'flex', alignItems: 'center', gap: 14,
+                }}>
+                  <div style={{
+                    width: 44, height: 44, borderRadius: 12,
+                    background: kpi.bg, color: kpi.color,
+                    display: 'grid', placeItems: 'center', flexShrink: 0,
+                    border: `1px solid ${kpi.border}`,
+                  }}>
+                    {kpi.icon}
+                  </div>
+                  <div>
+                    <p style={{ margin: 0, fontSize: '0.76rem', color: GRAY, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{kpi.label}</p>
+                    <h3 style={{ margin: '2px 0 0', fontSize: '1.6rem', fontWeight: 800, color: kpi.color }}>{kpi.value}</h3>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Barra de búsqueda y filtros */}
+            <div style={{
+              background: WHITE, borderRadius: 14, padding: '14px 18px',
+              border: `1px solid ${BORDER}`, boxShadow: '0 2px 10px rgba(0,0,0,0.03)',
+              display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'center',
+            }}>
+              {/* Búsqueda */}
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 10, flex: 1,
+                minWidth: 240, background: '#fafafa',
+                border: `1px solid ${BORDER}`, borderRadius: 10, padding: '8px 14px',
+              }}>
+                <IconSearch width={17} height={17} style={{ color: GRAY }} />
+                <input
+                  type="text"
+                  value={busquedaTiendas}
+                  onChange={(e) => { setBusquedaTiendas(e.target.value); setPaginaTiendas(1); }}
+                  placeholder="Buscar por nombre, dirección, teléfono o ID..."
+                  style={{ border: 'none', background: 'transparent', outline: 'none', width: '100%', fontSize: '0.88rem', fontFamily: 'inherit', color: CARBON }}
+                />
+                {busquedaTiendas && (
+                  <button onClick={() => { setBusquedaTiendas(''); setPaginaTiendas(1); }} style={{ border: 0, background: 'none', cursor: 'pointer', color: GRAY, padding: 0 }}>
+                    <IconClose width={15} height={15} />
+                  </button>
+                )}
+              </div>
+
+              {/* Filtros de estado */}
+              <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap', alignItems: 'center' }}>
+                {[
+                  { value: 'todos', label: 'Todas' },
+                  ...ESTADOS_TIENDA,
+                ].map((est) => {
+                  const activo = filtroEstadoTienda === est.value;
+                  return (
+                    <button
+                      key={est.value}
+                      onClick={() => { setFiltroEstadoTienda(est.value); setPaginaTiendas(1); }}
+                      style={{
+                        padding: '6px 14px', borderRadius: 20, cursor: 'pointer',
+                        fontWeight: 700, fontSize: '0.8rem', fontFamily: 'inherit',
+                        display: 'inline-flex', alignItems: 'center', gap: 6,
+                        border: activo ? `1.5px solid ${est.color || VINOTINTO}` : `1px solid ${BORDER}`,
+                        background: activo ? (est.bg || '#fdf2f4') : WHITE,
+                        color: activo ? (est.color || VINOTINTO) : GRAY,
+                        boxShadow: activo ? '0 2px 8px rgba(0,0,0,0.08)' : 'none',
+                        transition: 'all 0.15s',
+                      }}
+                    >
+                      {est.value !== 'todos' && (
+                        <span style={{ width: 7, height: 7, borderRadius: '50%', background: est.color || VINOTINTO, display: 'inline-block' }} />
+                      )}
+                      {est.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Tabla rediseñada */}
+            <div style={{
+              background: WHITE, borderRadius: 16, overflow: 'hidden',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.05)', border: `1px solid ${BORDER}`,
+            }}>
+              {/* Cabecera */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: '56px 1fr 1.4fr 140px 130px 140px 160px',
+                background: `linear-gradient(135deg, ${VINOTINTO} 0%, #9b2c4e 100%)`,
+                padding: '0 8px',
+              }}>
+                {['#', 'Nombre de la tienda', 'Dirección', 'Teléfono', 'Registro', 'Estado', 'Acciones'].map((h, i) => (
+                  <div key={h} style={{
+                    padding: '14px 12px',
+                    color: 'rgba(255,255,255,0.9)',
+                    fontSize: '0.76rem', fontWeight: 700,
+                    textTransform: 'uppercase', letterSpacing: '0.06em',
+                    textAlign: i === 6 ? 'center' : 'left',
+                  }}>
+                    {h}
+                  </div>
+                ))}
+              </div>
+
+              {/* Filas */}
+              {tiendasFiltradas.length === 0 ? (
+                <div style={{ padding: '48px 24px', textAlign: 'center', color: GRAY }}>
+                  <div style={{ fontSize: '2.2rem', marginBottom: 10 }}>🏪</div>
+                  <p style={{ margin: 0, fontWeight: 600, color: CARBON, fontSize: '1rem' }}>No se encontraron tiendas</p>
+                  <p style={{ margin: '4px 0 0', fontSize: '0.86rem' }}>Prueba cambiando el filtro o el término de búsqueda.</p>
+                </div>
+              ) : (
+                tiendasPaginadas.map((t, i) => {
+                  const estadoActual = (t.estado_tienda || '').toLowerCase();
+                  const cfg = ESTADOS_TIENDA.find(e => e.value === estadoActual) || ESTADOS_TIENDA[4];
+                  const abierto = dropdownTiendaAbierto === t.id_tienda;
+                  const fechaFormateada = t.fecha_creacion
+                    ? new Date(t.fecha_creacion).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' })
+                    : '—';
+                  const inicial = (t.nombre_tienda || '?').charAt(0).toUpperCase();
+
+                  return (
+                    <div
+                      key={t.id_tienda}
+                      style={{
+                        display: 'grid',
+                        gridTemplateColumns: '56px 1fr 1.4fr 140px 130px 140px 160px',
+                        padding: '0 8px',
+                        borderBottom: i < tiendasPaginadas.length - 1 ? `1px solid ${BORDER}` : 'none',
+                        background: i % 2 === 0 ? WHITE : '#fdfcfc',
+                        transition: 'background 0.15s',
+                      }}
+                      onMouseEnter={e => e.currentTarget.style.background = '#fdf8f9'}
+                      onMouseLeave={e => e.currentTarget.style.background = i % 2 === 0 ? WHITE : '#fdfcfc'}
+                    >
+                      {/* ID */}
+                      <div style={{ padding: '14px 12px', display: 'flex', alignItems: 'center' }}>
+                        <span style={{
+                          fontSize: '0.78rem', fontWeight: 700, color: GRAY,
+                          background: '#f5f5f5', borderRadius: 6, padding: '3px 7px',
+                        }}>
+                          #{t.id_tienda}
+                        </span>
+                      </div>
+
+                      {/* Nombre */}
+                      <div style={{ padding: '14px 12px', display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+                        <div style={{
+                          width: 36, height: 36, borderRadius: 10, flexShrink: 0,
+                          background: `linear-gradient(135deg, ${VINOTINTO} 0%, #9b2c4e 100%)`,
+                          color: WHITE, display: 'grid', placeItems: 'center',
+                          fontSize: '0.9rem', fontWeight: 800, boxShadow: '0 2px 8px rgba(122,30,58,0.2)',
+                        }}>
+                          {inicial}
+                        </div>
+                        <div style={{ minWidth: 0 }}>
+                          <p style={{ margin: 0, fontWeight: 700, color: CARBON, fontSize: '0.9rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {t.nombre_tienda || '—'}
+                          </p>
+                          {t.correo_tienda && (
+                            <p style={{ margin: '1px 0 0', fontSize: '0.76rem', color: GRAY, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              {t.correo_tienda}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Dirección */}
+                      <div style={{ padding: '14px 12px', display: 'flex', alignItems: 'center' }}>
+                        <span style={{ fontSize: '0.84rem', color: '#555', lineHeight: 1.4 }}>
+                          {t.direccion || '—'}
+                        </span>
+                      </div>
+
+                      {/* Teléfono */}
+                      <div style={{ padding: '14px 12px', display: 'flex', alignItems: 'center' }}>
+                        <span style={{ fontSize: '0.84rem', color: '#555', fontFamily: 'monospace' }}>
+                          {t.telefono || '—'}
+                        </span>
+                      </div>
+
+                      {/* Fecha registro */}
+                      <div style={{ padding: '14px 12px', display: 'flex', alignItems: 'center' }}>
+                        <span style={{ fontSize: '0.8rem', color: GRAY, fontWeight: 600 }}>
+                          {fechaFormateada}
+                        </span>
+                      </div>
+
+                      {/* Estado (badge) */}
+                      <div style={{ padding: '14px 12px', display: 'flex', alignItems: 'center' }}>
+                        <span style={{
+                          background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}`,
+                          padding: '5px 12px', borderRadius: 20, fontSize: '0.78rem', fontWeight: 700,
+                          display: 'inline-flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap',
+                        }}>
+                          <span style={{ width: 7, height: 7, borderRadius: '50%', background: cfg.color, flexShrink: 0 }} />
+                          {cfg.label}
+                        </span>
+                      </div>
+
+                      {/* Acciones (dropdown) */}
+                      <div style={{ padding: '14px 12px', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+                        <div style={{ position: 'relative', display: 'inline-block' }}>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setDropdownTiendaAbierto(abierto ? null : t.id_tienda); }}
+                            style={{
+                              display: 'inline-flex', alignItems: 'center', gap: 7,
+                              background: cfg.bg, color: cfg.color,
+                              border: `1.5px solid ${cfg.border}`,
+                              padding: '7px 13px', borderRadius: 20,
+                              fontSize: '0.8rem', fontWeight: 700,
+                              cursor: 'pointer', fontFamily: 'inherit',
+                              whiteSpace: 'nowrap', boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+                              transition: 'all 0.15s',
+                            }}
+                          >
                             <span style={{ width: 7, height: 7, borderRadius: '50%', background: cfg.color, flexShrink: 0 }} />
                             {cfg.label}
-                          </span>
-                        );
-                      })()}
-                    </td>
-                    <td style={{ padding: '12px 16px', position: 'relative' }}>
-                      {/* Dropdown personalizado con colores por estado */}
-                      {(() => {
-                        const estadoActual = (t.estado_tienda || '').toLowerCase();
-                        const cfg = ESTADOS_TIENDA.find(e => e.value === estadoActual) || ESTADOS_TIENDA[4];
-                        const abierto = dropdownTiendaAbierto === t.id_tienda;
-                        return (
-                          <div style={{ position: 'relative', display: 'inline-block' }}>
-                            {/* Botón trigger */}
-                            <button
-                              onClick={(e) => { e.stopPropagation(); setDropdownTiendaAbierto(abierto ? null : t.id_tienda); }}
-                              style={{
-                                display: 'inline-flex', alignItems: 'center', gap: 7,
-                                background: cfg.bg, color: cfg.color,
-                                border: `1.5px solid ${cfg.border}`,
-                                padding: '6px 12px', borderRadius: 20,
-                                fontSize: '0.8rem', fontWeight: 700,
-                                cursor: 'pointer', fontFamily: 'inherit',
-                                whiteSpace: 'nowrap',
-                              }}
-                            >
-                              <span style={{ width: 7, height: 7, borderRadius: '50%', background: cfg.color, flexShrink: 0 }} />
-                              {cfg.label}
-                              <span style={{ fontSize: '0.65rem', opacity: 0.6, marginLeft: 2 }}>▾</span>
-                            </button>
+                            <span style={{ fontSize: '0.65rem', opacity: 0.6 }}>▾</span>
+                          </button>
 
-                            {/* Menú desplegable */}
-                            {abierto && (
-                              <div style={{
-                                position: 'absolute', top: 'calc(100% + 4px)', left: 0,
-                                background: WHITE, border: `1px solid ${BORDER}`,
-                                borderRadius: 12, boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
-                                zIndex: 1000, minWidth: 160, overflow: 'hidden',
-                              }}>
-                                {ESTADOS_TIENDA.map(est => (
-                                  <button
-                                    key={est.value}
-                                    onClick={() => {
-                                      setDropdownTiendaAbierto(null);
-                                      if (est.value !== estadoActual) manejarEstadoTienda(t.id_tienda, est.value, t.nombre_tienda);
-                                    }}
-                                    style={{
-                                      display: 'flex', alignItems: 'center', gap: 10,
-                                      width: '100%', padding: '9px 14px',
-                                      background: est.value === estadoActual ? est.bg : 'transparent',
-                                      border: 'none', cursor: 'pointer',
-                                      fontFamily: 'inherit', fontSize: '0.84rem',
-                                      fontWeight: est.value === estadoActual ? 700 : 500,
-                                      color: est.value === estadoActual ? est.color : CARBON,
-                                      textAlign: 'left',
-                                      transition: 'background 0.15s',
-                                    }}
-                                    onMouseEnter={e => { if (est.value !== estadoActual) e.currentTarget.style.background = est.bg; }}
-                                    onMouseLeave={e => { if (est.value !== estadoActual) e.currentTarget.style.background = 'transparent'; }}
-                                  >
-                                    <span style={{ width: 10, height: 10, borderRadius: '50%', background: est.color, flexShrink: 0 }} />
-                                    <span style={{ color: est.value === estadoActual ? est.color : CARBON }}>{est.label}</span>
-                                    {est.value === estadoActual && <span style={{ marginLeft: 'auto', color: est.color, fontSize: '0.75rem' }}>✓</span>}
-                                  </button>
-                                ))}
+                          {abierto && (
+                            <div style={{
+                              position: 'absolute', top: 'calc(100% + 6px)', right: 0,
+                              background: WHITE, border: `1px solid ${BORDER}`,
+                              borderRadius: 14, boxShadow: '0 12px 32px rgba(0,0,0,0.14)',
+                              zIndex: 1000, minWidth: 170, overflow: 'hidden',
+                            }}>
+                              <div style={{ padding: '8px 14px 6px', borderBottom: `1px solid ${BORDER}`, marginBottom: 4 }}>
+                                <span style={{ fontSize: '0.72rem', fontWeight: 700, color: GRAY, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                  Cambiar estado
+                                </span>
                               </div>
-                            )}
-                          </div>
-                        );
-                      })()}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                              {ESTADOS_TIENDA.map(est => (
+                                <button
+                                  key={est.value}
+                                  onClick={() => {
+                                    setDropdownTiendaAbierto(null);
+                                    if (est.value !== estadoActual) manejarEstadoTienda(t.id_tienda, est.value, t.nombre_tienda);
+                                  }}
+                                  style={{
+                                    display: 'flex', alignItems: 'center', gap: 10,
+                                    width: '100%', padding: '9px 14px',
+                                    background: est.value === estadoActual ? est.bg : 'transparent',
+                                    border: 'none', cursor: est.value === estadoActual ? 'default' : 'pointer',
+                                    fontFamily: 'inherit', fontSize: '0.84rem',
+                                    fontWeight: est.value === estadoActual ? 700 : 500,
+                                    color: est.value === estadoActual ? est.color : CARBON,
+                                    textAlign: 'left', transition: 'background 0.15s',
+                                  }}
+                                  onMouseEnter={e => { if (est.value !== estadoActual) e.currentTarget.style.background = est.bg; }}
+                                  onMouseLeave={e => { if (est.value !== estadoActual) e.currentTarget.style.background = 'transparent'; }}
+                                >
+                                  <span style={{ width: 10, height: 10, borderRadius: '50%', background: est.color, flexShrink: 0 }} />
+                                  <span>{est.label}</span>
+                                  {est.value === estadoActual && <span style={{ marginLeft: 'auto', color: est.color, fontSize: '0.75rem' }}>✓</span>}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
 
-            {tiendas.length > registrosPorPagina && (
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  paddingTop: '20px'
-                }}
-              >
-                <span>
-                  Mostrando {(paginaTiendas - 1) * registrosPorPagina + 1}-{Math.min(paginaTiendas * registrosPorPagina, tiendas.length)} de {tiendas.length} tiendas
+            {/* Paginación */}
+            {tiendasFiltradas.length > registrosPorPagina && (
+              <div style={{
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                background: WHITE, borderRadius: 14, padding: '12px 20px',
+                border: `1px solid ${BORDER}`, boxShadow: '0 2px 10px rgba(0,0,0,0.03)',
+                flexWrap: 'wrap', gap: 10,
+              }}>
+                <span style={{ fontSize: '0.84rem', color: GRAY, fontWeight: 600 }}>
+                  Mostrando {(paginaTiendas - 1) * registrosPorPagina + 1}–{Math.min(paginaTiendas * registrosPorPagina, tiendasFiltradas.length)} de {tiendasFiltradas.length} tiendas
                 </span>
-
-                <div style={{ display: 'flex', gap: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <button
-                    onClick={() => setPaginaTiendas(paginaTiendas - 1)}
+                    onClick={() => setPaginaTiendas(prev => Math.max(prev - 1, 1))}
                     disabled={paginaTiendas === 1}
                     style={{
-                      padding: '8px 12px',
-                      borderRadius: '6px',
-                      border: 'none',
-                      background: paginaTiendas === 1 ? '#ccc' : VINOTINTO,
-                      color: WHITE,
-                      cursor: 'pointer'
+                      padding: '7px 16px', borderRadius: 8, fontWeight: 700, fontSize: '0.82rem', cursor: paginaTiendas === 1 ? 'not-allowed' : 'pointer',
+                      border: `1.5px solid ${BORDER}`, background: paginaTiendas === 1 ? '#F3F4F6' : WHITE,
+                      color: paginaTiendas === 1 ? '#9CA3AF' : CARBON, fontFamily: 'inherit',
                     }}
                   >
-                    Anterior
+                    ← Anterior
                   </button>
-
-                  <span style={{ padding: '8px 12px', fontWeight: 600 }}>
+                  <span style={{
+                    padding: '7px 16px', borderRadius: 8, fontWeight: 800, fontSize: '0.82rem',
+                    background: VINOTINTO, color: WHITE,
+                  }}>
                     {paginaTiendas} / {totalPaginasTiendas}
                   </span>
-
                   <button
-                    onClick={() => setPaginaTiendas(paginaTiendas + 1)}
+                    onClick={() => setPaginaTiendas(prev => Math.min(prev + 1, totalPaginasTiendas))}
                     disabled={paginaTiendas === totalPaginasTiendas}
                     style={{
-                      padding: '8px 12px',
-                      borderRadius: '6px',
-                      border: 'none',
-                      background:
-                        paginaTiendas === totalPaginasTiendas
-                          ? '#ccc'
-                          : VINOTINTO,
-                      color: WHITE,
-                      cursor: 'pointer'
+                      padding: '7px 16px', borderRadius: 8, fontWeight: 700, fontSize: '0.82rem', cursor: paginaTiendas === totalPaginasTiendas ? 'not-allowed' : 'pointer',
+                      border: `1.5px solid ${BORDER}`, background: paginaTiendas === totalPaginasTiendas ? '#F3F4F6' : WHITE,
+                      color: paginaTiendas === totalPaginasTiendas ? '#9CA3AF' : CARBON, fontFamily: 'inherit',
                     }}
                   >
-                    Siguiente
+                    Siguiente →
                   </button>
                 </div>
               </div>
@@ -3076,483 +3929,225 @@ export default function AdminDashboard() {
         )}
 
         {/* QUEJAS Y RECLAMOS */}
-        {activeSection === 'reclamos' && (() => {
-          const reclamosFiltrados = reclamosClientes.filter((r) => {
-            const matchEstado = filtroEstadoReclamos === 'Todos' || r.estado === filtroEstadoReclamos;
-            const q = busquedaReclamos.toLowerCase().trim();
-            if (!q) return matchEstado;
-            const matchTexto =
-              (r.comprador || '').toLowerCase().includes(q) ||
-              (r.nombre_tienda || '').toLowerCase().includes(q) ||
-              (r.asunto || '').toLowerCase().includes(q) ||
-              (r.descripcion || '').toLowerCase().includes(q) ||
-              String(r.id_solicitud || '').includes(q) ||
-              String(r.id_orden || '').includes(q) ||
-              (r.titulo_libro || '').toLowerCase().includes(q);
-            return matchEstado && matchTexto;
-          });
-
-          const totalAbiertos = reclamosClientes.filter(r => r.estado === 'Abierto').length;
-          const totalEnRevision = reclamosClientes.filter(r => r.estado === 'En revisión' || r.estado === 'En revision').length;
-          const totalResueltos = reclamosClientes.filter(r => r.estado === 'Resuelto').length;
-          return (
-            <div style={{ display: 'grid', gap: '20px' }}>
-              {/* STATS HEADER CARDS */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
-                <div style={{ background: WHITE, borderRadius: 16, padding: '20px', border: `1px solid ${BORDER}`, boxShadow: '0 2px 10px rgba(0,0,0,0.03)', display: 'flex', alignItems: 'center', gap: 16 }}>
-                  <div style={{ width: 48, height: 48, borderRadius: 12, background: '#fdf2f4', display: 'grid', placeItems: 'center', color: VINOTINTO }}>
-                    <IconAlertTriangle width={24} height={24} strokeWidth={2} />
-                  </div>
-                  <div>
-                    <p style={{ margin: 0, fontSize: '0.8rem', color: GRAY, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Reclamos</p>
-                    <h3 style={{ margin: '4px 0 0', fontSize: '1.6rem', fontWeight: 800, color: CARBON }}>{reclamosClientes.length}</h3>
-                  </div>
+        {activeSection === 'reclamos' && (
+          <div style={{ display: 'grid', gap: '20px' }}>
+            {/* STATS HEADER CARDS */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+              <div style={{ background: WHITE, borderRadius: 16, padding: '20px', border: `1px solid ${BORDER}`, boxShadow: '0 2px 10px rgba(0,0,0,0.03)', display: 'flex', alignItems: 'center', gap: 16 }}>
+                <div style={{ width: 48, height: 48, borderRadius: 12, background: '#fdf2f4', display: 'grid', placeItems: 'center', color: VINOTINTO }}>
+                  <IconAlertTriangle width={24} height={24} strokeWidth={2} />
                 </div>
-
-                <div style={{ background: WHITE, borderRadius: 16, padding: '20px', border: totalAbiertos > 0 ? '1.5px solid #93c5fd' : `1px solid ${BORDER}`, boxShadow: '0 2px 10px rgba(0,0,0,0.03)', display: 'flex', alignItems: 'center', gap: 16 }}>
-                  <div style={{ width: 48, height: 48, borderRadius: 12, background: '#eff6ff', display: 'grid', placeItems: 'center', color: '#1e40af' }}>
-                    <span style={{ fontSize: '1.2rem', fontWeight: 900 }}>!</span>
-                  </div>
-                  <div>
-                    <p style={{ margin: 0, fontSize: '0.8rem', color: '#1e40af', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Abiertos (Pendientes)</p>
-                    <h3 style={{ margin: '4px 0 0', fontSize: '1.6rem', fontWeight: 800, color: '#1e40af' }}>{totalAbiertos}</h3>
-                  </div>
-                </div>
-
-                <div style={{ background: WHITE, borderRadius: 16, padding: '20px', border: `1px solid ${BORDER}`, boxShadow: '0 2px 10px rgba(0,0,0,0.03)', display: 'flex', alignItems: 'center', gap: 16 }}>
-                  <div style={{ width: 48, height: 48, borderRadius: 12, background: '#fff7ed', display: 'grid', placeItems: 'center', color: '#ea580c' }}>
-                    <IconTool width={24} height={24} strokeWidth={2} />
-                  </div>
-                  <div>
-                    <p style={{ margin: 0, fontSize: '0.8rem', color: '#ea580c', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>En Revisión</p>
-                    <h3 style={{ margin: '4px 0 0', fontSize: '1.6rem', fontWeight: 800, color: '#ea580c' }}>{totalEnRevision}</h3>
-                  </div>
-                </div>
-
-                <div style={{ background: WHITE, borderRadius: 16, padding: '20px', border: `1px solid ${BORDER}`, boxShadow: '0 2px 10px rgba(0,0,0,0.03)', display: 'flex', alignItems: 'center', gap: 16 }}>
-                  <div style={{ width: 48, height: 48, borderRadius: 12, background: '#dcfce7', display: 'grid', placeItems: 'center', color: '#16a34a' }}>
-                    <IconCheck width={24} height={24} strokeWidth={2.5} />
-                  </div>
-                  <div>
-                    <p style={{ margin: 0, fontSize: '0.8rem', color: '#166534', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Resueltos</p>
-                    <h3 style={{ margin: '4px 0 0', fontSize: '1.6rem', fontWeight: 800, color: '#166534' }}>{totalResueltos}</h3>
-                  </div>
+                <div>
+                  <p style={{ margin: 0, fontSize: '0.8rem', color: GRAY, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Reclamos</p>
+                  <h3 style={{ margin: '4px 0 0', fontSize: '1.6rem', fontWeight: 800, color: CARBON }}>{conteoReclamosPorEstado.Todos}</h3>
                 </div>
               </div>
 
-              {/* SEARCH & FILTERS BAR */}
-              <div style={{ background: WHITE, borderRadius: 16, padding: '16px 20px', border: `1px solid ${BORDER}`, display: 'flex', flexWrap: 'wrap', gap: 14, alignItems: 'center', justifyContent: 'space-between', boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
-                {/* Search */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 260, background: '#fafafa', border: `1px solid ${BORDER}`, borderRadius: 10, padding: '8px 14px' }}>
-                  <IconSearch width={18} height={18} style={{ color: GRAY }} />
-                  <input
-                    type="text"
-                    value={busquedaReclamos}
-                    onChange={(e) => setBusquedaReclamos(e.target.value)}
-                    placeholder="Buscar por comprador, tienda, orden o ID..."
-                    style={{ border: 'none', background: 'transparent', outline: 'none', width: '100%', fontSize: '0.9rem', fontFamily: 'inherit', color: CARBON }}
-                  />
-                  {busquedaReclamos && (
-                    <button onClick={() => setBusquedaReclamos('')} style={{ border: 0, background: 'none', cursor: 'pointer', color: GRAY, padding: 0 }}>
-                      <IconClose width={16} height={16} />
-                    </button>
-                  )}
+              <div style={{ background: WHITE, borderRadius: 16, padding: '20px', border: conteoReclamosPorEstado.Abierto > 0 ? '1.5px solid #93c5fd' : `1px solid ${BORDER}`, boxShadow: '0 2px 10px rgba(0,0,0,0.03)', display: 'flex', alignItems: 'center', gap: 16 }}>
+                <div style={{ width: 48, height: 48, borderRadius: 12, background: '#eff6ff', display: 'grid', placeItems: 'center', color: '#1e40af' }}>
+                  <span style={{ fontSize: '1.2rem', fontWeight: 900 }}>!</span>
                 </div>
-
-                {/* Filter Pills */}
-                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-                  {[
-                    { id: 'Todos', label: 'Todos', activeBg: VINOTINTO, activeBorder: VINOTINTO, inactiveBg: '#fdf8f9', inactiveBorder: '#f0dde4', inactiveColor: VINOTINTO, dot: VINOTINTO },
-                    { id: 'Abierto', label: 'Abierto', activeBg: '#2563eb', activeBorder: '#2563eb', inactiveBg: '#eff6ff', inactiveBorder: '#bfdbfe', inactiveColor: '#1e40af', dot: '#3b82f6' },
-                    { id: 'En revisión', label: 'En revisión', activeBg: '#ea580c', activeBorder: '#ea580c', inactiveBg: '#fff7ed', inactiveBorder: '#fed7aa', inactiveColor: '#c2410c', dot: '#ea580c' },
-                    { id: 'Resuelto', label: 'Resuelto', activeBg: '#16a34a', activeBorder: '#16a34a', inactiveBg: '#f0fdf4', inactiveBorder: '#bbf7d0', inactiveColor: '#15803d', dot: '#16a34a' },
-                    { id: 'Rechazado', label: 'Rechazado', activeBg: '#dc2626', activeBorder: '#dc2626', inactiveBg: '#fef2f2', inactiveBorder: '#fecaca', inactiveColor: '#b91c1c', dot: '#ef4444' },
-                  ].map((p) => {
-                    const activo = filtroEstadoReclamos === p.id;
-                    const count = p.id === 'Todos' ? reclamosClientes.length : reclamosClientes.filter(r => r.estado === p.id || (p.id === 'En revisión' && r.estado === 'En revision')).length;
-                    return (
-                      <button
-                        key={p.id}
-                        onClick={() => setFiltroEstadoReclamos(p.id)}
-                        style={{
-                          padding: '7px 14px',
-                          borderRadius: 20,
-                          border: `1.5px solid ${activo ? p.activeBorder : p.inactiveBorder}`,
-                          background: activo ? p.activeBg : p.inactiveBg,
-                          color: activo ? WHITE : p.inactiveColor,
-                          fontWeight: 700,
-                          fontSize: '0.83rem',
-                          cursor: 'pointer',
-                          fontFamily: 'inherit',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: 7,
-                          boxShadow: activo ? '0 2px 8px rgba(0,0,0,0.12)' : 'none',
-                          transition: 'all 0.2s',
-                        }}
-                      >
-                        <span style={{
-                          width: 7,
-                          height: 7,
-                          borderRadius: '50%',
-                          background: activo ? WHITE : p.dot,
-                          display: 'inline-block',
-                        }} />
-                        {p.label}
-                        <span style={{
-                          padding: '2px 7px',
-                          borderRadius: 10,
-                          fontSize: '0.72rem',
-                          fontWeight: 800,
-                          background: activo ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.06)',
-                          color: activo ? WHITE : p.inactiveColor,
-                        }}>
-                          {count}
-                        </span>
-                      </button>
-                    );
-                  })}
+                <div>
+                  <p style={{ margin: 0, fontSize: '0.8rem', color: '#1e40af', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Abiertos (Pendientes)</p>
+                  <h3 style={{ margin: '4px 0 0', fontSize: '1.6rem', fontWeight: 800, color: '#1e40af' }}>{conteoReclamosPorEstado.Abierto}</h3>
                 </div>
               </div>
 
-              {/* LIST OF COMPLAINTS */}
-              {reclamosFiltrados.length === 0 ? (
-                <div style={{ background: WHITE, borderRadius: 16, padding: '48px 24px', textAlign: 'center', color: GRAY, border: `1px solid ${BORDER}`, boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
-                  <div style={{ fontSize: '2.5rem', marginBottom: 12 }}>📋</div>
-                  <p style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600, color: CARBON }}>No hay quejas ni reclamos que coincidan con la búsqueda.</p>
-                  <p style={{ margin: '6px 0 0', fontSize: '0.9rem', color: GRAY }}>Prueba cambiando el filtro o término de búsqueda.</p>
+              <div style={{ background: WHITE, borderRadius: 16, padding: '20px', border: `1px solid ${BORDER}`, boxShadow: '0 2px 10px rgba(0,0,0,0.03)', display: 'flex', alignItems: 'center', gap: 16 }}>
+                <div style={{ width: 48, height: 48, borderRadius: 12, background: '#fff7ed', display: 'grid', placeItems: 'center', color: '#ea580c' }}>
+                  <IconTool width={24} height={24} strokeWidth={2} />
                 </div>
-              ) : (
-                reclamosFiltrados.map((reclamo) => {
-                  const cfg = ESTADO_CONFIG_ADMIN[reclamo.estado] || ESTADO_CONFIG_ADMIN['Cerrado'];
-                  const motivoIcon = MOTIVO_ICON_MAP_ADMIN[reclamo.asunto] || MOTIVO_ICON_MAP_ADMIN['Otro'];
-                  const fechaStr = reclamo.fecha_creacion
-                    ? new Date(reclamo.fecha_creacion).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' })
-                    : null;
-                  const tiempoStr = tiempoTranscurridoAdmin(reclamo.fecha_creacion);
-                  const imgSrc = reclamo.imagen_libro
-                    ? (reclamo.imagen_libro.startsWith('http') ? reclamo.imagen_libro : `${getApiBaseUrl()}${reclamo.imagen_libro}`)
-                    : null;
+                <div>
+                  <p style={{ margin: 0, fontSize: '0.8rem', color: '#ea580c', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>En Revisión</p>
+                  <h3 style={{ margin: '4px 0 0', fontSize: '1.6rem', fontWeight: 800, color: '#ea580c' }}>{conteoReclamosPorEstado['En revisión']}</h3>
+                </div>
+              </div>
 
+              <div style={{ background: WHITE, borderRadius: 16, padding: '20px', border: `1px solid ${BORDER}`, boxShadow: '0 2px 10px rgba(0,0,0,0.03)', display: 'flex', alignItems: 'center', gap: 16 }}>
+                <div style={{ width: 48, height: 48, borderRadius: 12, background: '#dcfce7', display: 'grid', placeItems: 'center', color: '#16a34a' }}>
+                  <IconCheck width={24} height={24} strokeWidth={2.5} />
+                </div>
+                <div>
+                  <p style={{ margin: 0, fontSize: '0.8rem', color: '#166534', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Resueltos</p>
+                  <h3 style={{ margin: '4px 0 0', fontSize: '1.6rem', fontWeight: 800, color: '#166534' }}>{conteoReclamosPorEstado.Resuelto}</h3>
+                </div>
+              </div>
+            </div>
+
+            {/* SEARCH & FILTERS BAR */}
+            <div style={{ background: WHITE, borderRadius: 16, padding: '16px 20px', border: `1px solid ${BORDER}`, display: 'flex', flexWrap: 'wrap', gap: 14, alignItems: 'center', justifyContent: 'space-between', boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
+              {/* Search */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 260, background: '#fafafa', border: `1px solid ${BORDER}`, borderRadius: 10, padding: '8px 14px' }}>
+                <IconSearch width={18} height={18} style={{ color: GRAY }} />
+                <input
+                  type="text"
+                  value={busquedaReclamos}
+                  onChange={(e) => {
+                    setBusquedaReclamos(e.target.value);
+                    setPaginaReclamos(1);
+                  }}
+                  placeholder="Buscar por comprador, tienda, orden o ID..."
+                  style={{ border: 'none', background: 'transparent', outline: 'none', width: '100%', fontSize: '0.9rem', fontFamily: 'inherit', color: CARBON }}
+                />
+                {busquedaReclamos && (
+                  <button onClick={() => { setBusquedaReclamos(''); setPaginaReclamos(1); }} style={{ border: 0, background: 'none', cursor: 'pointer', color: GRAY, padding: 0 }}>
+                    <IconClose width={16} height={16} />
+                  </button>
+                )}
+              </div>
+
+              {/* Filter Pills */}
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                {[
+                  { id: 'Todos', label: 'Todos', activeBg: VINOTINTO, activeBorder: VINOTINTO, inactiveBg: '#fdf8f9', inactiveBorder: '#f0dde4', inactiveColor: VINOTINTO, dot: VINOTINTO },
+                  { id: 'Abierto', label: 'Abierto', activeBg: '#2563eb', activeBorder: '#2563eb', inactiveBg: '#eff6ff', inactiveBorder: '#bfdbfe', inactiveColor: '#1e40af', dot: '#3b82f6' },
+                  { id: 'En revisión', label: 'En revisión', activeBg: '#ea580c', activeBorder: '#ea580c', inactiveBg: '#fff7ed', inactiveBorder: '#fed7aa', inactiveColor: '#c2410c', dot: '#ea580c' },
+                  { id: 'Resuelto', label: 'Resuelto', activeBg: '#16a34a', activeBorder: '#16a34a', inactiveBg: '#f0fdf4', inactiveBorder: '#bbf7d0', inactiveColor: '#15803d', dot: '#16a34a' },
+                  { id: 'Rechazado', label: 'Rechazado', activeBg: '#dc2626', activeBorder: '#dc2626', inactiveBg: '#fef2f2', inactiveBorder: '#fecaca', inactiveColor: '#b91c1c', dot: '#ef4444' },
+                ].map((p) => {
+                  const activo = filtroEstadoReclamos === p.id;
+                  const count = conteoReclamosPorEstado[p.id] || 0;
                   return (
-                    <article
-                      key={reclamo.id_solicitud}
+                    <button
+                      key={p.id}
+                      onClick={() => {
+                        setFiltroEstadoReclamos(p.id);
+                        setPaginaReclamos(1);
+                      }}
                       style={{
-                        background: WHITE,
-                        border: `1.5px solid ${BORDER}`,
-                        borderRadius: 16,
-                        overflow: 'hidden',
-                        boxShadow: '0 3px 14px rgba(0,0,0,0.04)',
-                        transition: 'box-shadow 0.2s',
+                        padding: '7px 14px',
+                        borderRadius: 20,
+                        border: `1.5px solid ${activo ? p.activeBorder : p.inactiveBorder}`,
+                        background: activo ? p.activeBg : p.inactiveBg,
+                        color: activo ? WHITE : p.inactiveColor,
+                        fontWeight: 700,
+                        fontSize: '0.83rem',
+                        cursor: 'pointer',
+                        fontFamily: 'inherit',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 7,
+                        boxShadow: activo ? '0 2px 8px rgba(0,0,0,0.12)' : 'none',
+                        transition: 'all 0.15s',
                       }}
                     >
-                      {/* HEADER BANNER */}
-                      <div style={{
-                        background: 'linear-gradient(135deg, #fdf8f9 0%, #f9f0f3 100%)',
-                        padding: '16px 20px',
-                        borderBottom: `1.5px solid ${BORDER}`,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        flexWrap: 'wrap',
-                        gap: 12,
+                      <span style={{
+                        width: 7,
+                        height: 7,
+                        borderRadius: '50%',
+                        background: activo ? WHITE : p.dot,
+                        display: 'inline-block',
+                      }} />
+                      {p.label}
+                      <span style={{
+                        padding: '2px 7px',
+                        borderRadius: 10,
+                        fontSize: '0.72rem',
+                        fontWeight: 800,
+                        background: activo ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.06)',
+                        color: activo ? WHITE : p.inactiveColor,
                       }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                          {/* Image or ID Box */}
-                          {imgSrc ? (
-                            <img
-                              src={imgSrc}
-                              alt="Libro"
-                              style={{ width: 50, height: 50, borderRadius: 10, objectFit: 'cover', flexShrink: 0, border: '1px solid #f0dde4', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}
-                            />
-                          ) : (
-                            <div style={{
-                              width: 50, height: 50, borderRadius: 10, flexShrink: 0,
-                              background: VINOTINTO, color: WHITE,
-                              display: 'grid', placeItems: 'center',
-                              fontSize: '0.78rem', fontWeight: 800,
-                              boxShadow: '0 2px 8px rgba(122,30,58,0.2)',
-                            }}>
-                              #{reclamo.numero || reclamo.id_solicitud}
-                            </div>
-                          )}
-
-                          <div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 2 }}>
-                              <span style={{ fontSize: '0.78rem', color: '#888', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                                Reclamo #{reclamo.numero || reclamo.id_solicitud}
-                              </span>
-                              {reclamo.id_orden && (
-                                <span style={{ background: '#f7e9ee', color: VINOTINTO, padding: '2px 8px', borderRadius: 8, fontSize: '0.76rem', fontWeight: 700 }}>
-                                  Orden #{reclamo.id_orden}
-                                </span>
-                              )}
-                            </div>
-                            <strong style={{ fontSize: '1rem', color: CARBON, display: 'block' }}>
-                              {reclamo.titulo_libro || `Orden #${reclamo.id_orden || reclamo.id_solicitud}`}
-                              {reclamo.total_items > 1 && (
-                                <span style={{ fontWeight: 500, color: GRAY, fontSize: '0.85rem' }}> +{reclamo.total_items - 1} más</span>
-                              )}
-                            </strong>
-                            <p style={{ margin: '2px 0 0', fontSize: '0.84rem', color: GRAY }}>
-                              Comprador: <strong style={{ color: CARBON }}>{reclamo.comprador}</strong>
-                              {reclamo.correo_comprador ? ` (${reclamo.correo_comprador})` : ''} · Tienda: <strong style={{ color: VINOTINTO }}>{reclamo.nombre_tienda || 'BookyHome'}</strong>
-                            </p>
-                          </div>
-                        </div>
-
-                        {/* Status Badge */}
-                        <div style={{
-                          display: 'inline-flex', alignItems: 'center', gap: 6,
-                          background: cfg.bg, color: cfg.color,
-                          border: `1px solid ${cfg.border}`,
-                          padding: '6px 14px', borderRadius: 20,
-                          fontSize: '0.82rem', fontWeight: 800,
-                          whiteSpace: 'nowrap',
-                        }}>
-                          <span style={{ width: 8, height: 8, borderRadius: '50%', background: cfg.dot, display: 'inline-block' }} />
-                          {reclamo.estado}
-                        </div>
-                      </div>
-
-                      {/* BODY CONTENT */}
-                      <div style={{ padding: '20px', display: 'grid', gap: 16 }}>
-                        {/* Metadata Tags Row */}
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center', justifyContent: 'space-between' }}>
-                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
-                            {/* Motivo Chip */}
-                            <div style={{
-                              display: 'inline-flex', alignItems: 'center', gap: 6,
-                              background: '#fdf2f4', border: '1px solid #f0dde4',
-                              borderRadius: 20, padding: '5px 12px',
-                              color: VINOTINTO, fontSize: '0.82rem', fontWeight: 700,
-                            }}>
-                              {motivoIcon}
-                              {reclamo.asunto}
-                            </div>
-
-                            {/* Tienda Chip */}
-                            <div style={{
-                              display: 'inline-flex', alignItems: 'center', gap: 6,
-                              background: '#f0f9ff', border: '1px solid #bae6fd',
-                              borderRadius: 20, padding: '5px 12px',
-                              color: '#0369a1', fontSize: '0.82rem', fontWeight: 700,
-                            }}>
-                              <IconStoreAlt width={14} height={14} strokeWidth={1.5} />
-                              {reclamo.nombre_tienda || 'BookyHome'}
-                            </div>
-
-                            {/* Total Orden (if exists) */}
-                            {reclamo.total_orden && (
-                              <div style={{
-                                display: 'inline-flex', alignItems: 'center', gap: 5,
-                                background: '#f0fdf4', border: '1px solid #bbf7d0',
-                                borderRadius: 20, padding: '5px 12px',
-                                color: '#166534', fontSize: '0.82rem', fontWeight: 700,
-                              }}>
-                                <IconDollar width={13} height={13} strokeWidth={2} />
-                                ${Number(reclamo.total_orden).toLocaleString('es-CO')}
-                              </div>
-                            )}
-
-                            {/* Fecha */}
-                            {fechaStr && (
-                              <div style={{
-                                display: 'inline-flex', alignItems: 'center', gap: 5,
-                                background: '#fafafa', border: `1px solid ${BORDER}`,
-                                borderRadius: 20, padding: '5px 12px',
-                                color: GRAY, fontSize: '0.8rem', fontWeight: 600,
-                              }}>
-                                📅 {fechaStr}
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Relative Time */}
-                          {tiempoStr && (
-                            <span style={{ fontSize: '0.78rem', color: '#999', fontWeight: 600 }}>
-                              {tiempoStr}
-                            </span>
-                          )}
-                        </div>
-
-                        {/* Customer Description */}
-                        {reclamo.descripcion && (
-                          <div style={{ background: '#fafafa', border: `1px solid ${BORDER}`, borderRadius: 12, padding: '14px 16px' }}>
-                            <p style={{ margin: '0 0 4px', fontSize: '0.78rem', fontWeight: 700, color: GRAY, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                              Detalle del reclamo por el cliente:
-                            </p>
-                            <p style={{ margin: 0, color: CARBON, fontSize: '0.94rem', lineHeight: 1.6 }}>
-                              {reclamo.descripcion}
-                            </p>
-                          </div>
-                        )}
-
-                        {/* Evidencia Adjunta */}
-                        {reclamo.evidencia_url && (
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 14, background: '#fdf8f9', border: '1px solid #f0dde4', borderRadius: 12, padding: '12px 16px' }}>
-                            <img
-                              src={`${getApiBaseUrl()}${reclamo.evidencia_url}`}
-                              alt="Evidencia thumbnail"
-                              onClick={() => setEvidenciaPreview(`${getApiBaseUrl()}${reclamo.evidencia_url}`)}
-                              style={{ width: 56, height: 56, borderRadius: 8, objectFit: 'cover', cursor: 'pointer', border: '1px solid #f0dde4', boxShadow: '0 2px 6px rgba(0,0,0,0.08)' }}
-                            />
-                            <div style={{ flex: 1 }}>
-                              <strong style={{ fontSize: '0.88rem', color: VINOTINTO, display: 'block' }}>Evidencia gráfica adjunta</strong>
-                              <span style={{ fontSize: '0.8rem', color: GRAY }}>Haz clic para ampliar la imagen adjunta por el usuario.</span>
-                            </div>
-                            <button
-                              onClick={() => setEvidenciaPreview(`${getApiBaseUrl()}${reclamo.evidencia_url}`)}
-                              style={{
-                                display: 'inline-flex', alignItems: 'center', gap: 6,
-                                background: WHITE, border: '1.5px solid #f0dde4',
-                                color: VINOTINTO, padding: '7px 14px', borderRadius: 8,
-                                fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer',
-                                transition: 'all 0.2s',
-                              }}
-                              onMouseEnter={e => { e.currentTarget.style.background = '#fdf2f4'; e.currentTarget.style.borderColor = VINOTINTO; }}
-                              onMouseLeave={e => { e.currentTarget.style.background = WHITE; e.currentTarget.style.borderColor = '#f0dde4'; }}
-                            >
-                              <IconEye width={15} height={15} /> Ver evidencia
-                            </button>
-                          </div>
-                        )}
-
-                        {/* Admin Previous Response (if exists) */}
-                        {reclamo.respuesta && (
-                          <div style={{
-                            padding: '14px 18px',
-                            background: 'linear-gradient(135deg, #fdf8f9 0%, #f9f0f3 100%)',
-                            borderRadius: 12,
-                            borderLeft: `4px solid ${VINOTINTO}`,
-                            borderTop: '1px solid #f0dde4',
-                            borderRight: '1px solid #f0dde4',
-                            borderBottom: '1px solid #f0dde4',
-                          }}>
-                            <strong style={{ color: VINOTINTO, display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.82rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>
-                              <IconMessage width={15} height={15} /> Respuesta actual del administrador:
-                            </strong>
-                            <p style={{ margin: 0, color: '#444', lineHeight: 1.6, fontSize: '0.92rem' }}>
-                              {reclamo.respuesta}
-                            </p>
-                          </div>
-                        )}
-
-                        {/* ACTION FOOTER BUTTONS */}
-                        <div style={{
-                          display: 'flex',
-                          flexWrap: 'wrap',
-                          gap: 10,
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                          paddingTop: 16,
-                          borderTop: `1px solid ${BORDER}`,
-                        }}>
-                          {/* Botón de Contacto / Chat con la tienda */}
-                          <button
-                            onClick={() => abrirChatReclamo(reclamo)}
-                            style={{
-                              border: '1.5px solid #7A1E3A',
-                              background: '#fdf8f9',
-                              color: VINOTINTO,
-                              borderRadius: 10,
-                              padding: '10px 18px',
-                              cursor: 'pointer',
-                              fontWeight: 700,
-                              fontSize: '0.88rem',
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: 8,
-                              boxShadow: '0 2px 8px rgba(122,30,58,0.06)',
-                              transition: 'all 0.2s',
-                            }}
-                            onMouseEnter={e => { e.currentTarget.style.background = '#f7e9ee'; e.currentTarget.style.borderColor = VINOTINTO_DARK; }}
-                            onMouseLeave={e => { e.currentTarget.style.background = '#fdf8f9'; e.currentTarget.style.borderColor = VINOTINTO; }}
-                          >
-                            <IconStoreAlt width={17} height={17} strokeWidth={1.8} />
-                            Contactar / Chat con la tienda
-                          </button>
-
-                          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                          <button
-                            onClick={() => abrirModal(reclamo, 'En revisión')}
-                            style={{
-                              border: '1.5px solid #fdba74',
-                              background: '#fff7ed',
-                              color: '#ea580c',
-                              borderRadius: 10,
-                              padding: '10px 18px',
-                              cursor: 'pointer',
-                              fontWeight: 700,
-                              fontSize: '0.88rem',
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: 6,
-                              transition: 'all 0.2s',
-                            }}
-                            onMouseEnter={e => { e.currentTarget.style.background = '#ffedd5'; }}
-                            onMouseLeave={e => { e.currentTarget.style.background = '#fff7ed'; }}
-                          >
-                            <IconTool width={16} height={16} />
-                            Marcar En revisión
-                          </button>
-
-                          <button
-                            onClick={() => abrirModal(reclamo, 'Rechazado')}
-                            style={{
-                              border: '1.5px solid #fca5a5',
-                              background: '#fef2f2',
-                              color: '#dc2626',
-                              borderRadius: 10,
-                              padding: '10px 18px',
-                              cursor: 'pointer',
-                              fontWeight: 700,
-                              fontSize: '0.88rem',
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: 6,
-                              transition: 'all 0.2s',
-                            }}
-                            onMouseEnter={e => { e.currentTarget.style.background = '#fee2e2'; }}
-                            onMouseLeave={e => { e.currentTarget.style.background = '#fef2f2'; }}
-                          >
-                            <IconBan width={16} height={16} />
-                            Rechazar reclamo
-                          </button>
-
-                          <button
-                            onClick={() => abrirModal(reclamo, 'Resuelto')}
-                            style={{
-                              border: 'none',
-                              background: VINOTINTO,
-                              color: WHITE,
-                              borderRadius: 10,
-                              padding: '10px 22px',
-                              cursor: 'pointer',
-                              fontWeight: 700,
-                              fontSize: '0.88rem',
-                              boxShadow: '0 4px 14px rgba(122,30,58,0.25)',
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: 6,
-                              transition: 'all 0.2s',
-                            }}
-                            onMouseEnter={e => { e.currentTarget.style.background = VINOTINTO_DARK; }}
-                            onMouseLeave={e => { e.currentTarget.style.background = VINOTINTO; }}
-                          >
-                            <IconCheck width={16} height={16} strokeWidth={2.5} />
-                            Resolver y notificar
-                          </button>
-                          </div>
-                        </div>
-                      </div>
-                    </article>
+                        {count}
+                      </span>
+                    </button>
                   );
-                })
-              )}
+                })}
+              </div>
             </div>
-          );
-        })()}
+
+            {/* LIST OF COMPLAINTS */}
+            {reclamosFiltrados.length === 0 ? (
+              <div style={{ background: WHITE, borderRadius: 16, padding: '48px 24px', textAlign: 'center', color: GRAY, border: `1px solid ${BORDER}`, boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
+                <div style={{ fontSize: '2.5rem', marginBottom: 12 }}>📋</div>
+                <p style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600, color: CARBON }}>No hay quejas ni reclamos que coincidan con la búsqueda.</p>
+                <p style={{ margin: '6px 0 0', fontSize: '0.9rem', color: GRAY }}>Prueba cambiando el filtro o término de búsqueda.</p>
+              </div>
+            ) : (
+              <>
+                <div style={{ display: 'grid', gap: '16px' }}>
+                  {reclamosPaginados.map((reclamo) => (
+                    <CardReclamoAdmin
+                      key={reclamo.id_solicitud}
+                      reclamo={reclamo}
+                      onAbrirChat={handleAbrirChat}
+                      onAbrirModal={handleAbrirModal}
+                      onVerEvidencia={handleVerEvidencia}
+                    />
+                  ))}
+                </div>
+
+                {/* PAGINACIÓN DE RECLAMOS */}
+                {reclamosFiltrados.length > 0 && (
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    background: WHITE,
+                    borderRadius: 14,
+                    padding: '12px 20px',
+                    border: `1px solid ${BORDER}`,
+                    boxShadow: '0 2px 10px rgba(0,0,0,0.03)',
+                    flexWrap: 'wrap',
+                    gap: 10,
+                  }}>
+                    <span style={{ fontSize: '0.84rem', color: GRAY, fontWeight: 600 }}>
+                      Mostrando {((paginaReclamos - 1) * registrosPorPagina) + 1}–{Math.min(paginaReclamos * registrosPorPagina, reclamosFiltrados.length)} de {reclamosFiltrados.length} reclamos
+                    </span>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <button
+                        onClick={() => setPaginaReclamos(prev => Math.max(prev - 1, 1))}
+                        disabled={paginaReclamos === 1}
+                        style={{
+                          padding: '7px 16px',
+                          borderRadius: 8,
+                          border: `1.5px solid ${BORDER}`,
+                          background: paginaReclamos === 1 ? '#F3F4F6' : WHITE,
+                          color: paginaReclamos === 1 ? '#9CA3AF' : CARBON,
+                          fontSize: '0.82rem',
+                          fontWeight: 700,
+                          cursor: paginaReclamos === 1 ? 'not-allowed' : 'pointer',
+                          fontFamily: 'inherit'
+                        }}
+                      >
+                        ← Anterior
+                      </button>
+
+                      <span style={{
+                        padding: '7px 16px',
+                        borderRadius: 8,
+                        fontWeight: 800,
+                        fontSize: '0.82rem',
+                        background: VINOTINTO,
+                        color: WHITE,
+                      }}>
+                        {paginaReclamos} / {totalPaginasReclamos}
+                      </span>
+
+                      <button
+                        onClick={() => setPaginaReclamos(prev => Math.min(prev + 1, totalPaginasReclamos))}
+                        disabled={paginaReclamos === totalPaginasReclamos}
+                        style={{
+                          padding: '7px 16px',
+                          borderRadius: 8,
+                          border: `1.5px solid ${BORDER}`,
+                          background: paginaReclamos === totalPaginasReclamos ? '#F3F4F6' : WHITE,
+                          color: paginaReclamos === totalPaginasReclamos ? '#9CA3AF' : CARBON,
+                          fontSize: '0.82rem',
+                          fontWeight: 700,
+                          cursor: paginaReclamos === totalPaginasReclamos ? 'not-allowed' : 'pointer',
+                          fontFamily: 'inherit'
+                        }}
+                      >
+                        Siguiente →
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        )}
 
         {/* SOPORTE TÉCNICO */}
         {activeSection === 'soporte' && (
@@ -3564,15 +4159,22 @@ export default function AdminDashboard() {
               ].map((v) => {
                 const activo = vistaSoporte === v.id;
                 return (
-                  <button key={v.id} onClick={() => setVistaSoporte(v.id)} style={{
-                    display: 'inline-flex', alignItems: 'center', gap: 8,
-                    border: activo ? `2px solid ${VINOTINTO}` : `1.5px solid ${BORDER}`,
-                    background: activo ? `linear-gradient(135deg, ${VINOTINTO} 0%, #9b2c4e 100%)` : WHITE,
-                    color: activo ? WHITE : VINOTINTO,
-                    borderRadius: 999, padding: '10px 20px', cursor: 'pointer',
-                    fontWeight: 700, fontSize: '0.9rem', transition: 'all 0.2s',
-                    boxShadow: activo ? '0 4px 14px rgba(122,30,58,0.25)' : 'none',
-                  }}>
+                  <button
+                    key={v.id}
+                    onClick={() => {
+                      setVistaSoporte(v.id);
+                      setPaginaSoporte(1);
+                    }}
+                    style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 8,
+                      border: activo ? `2px solid ${VINOTINTO}` : `1.5px solid ${BORDER}`,
+                      background: activo ? `linear-gradient(135deg, ${VINOTINTO} 0%, #9b2c4e 100%)` : WHITE,
+                      color: activo ? WHITE : VINOTINTO,
+                      borderRadius: 999, padding: '10px 20px', cursor: 'pointer',
+                      fontWeight: 700, fontSize: '0.9rem', transition: 'all 0.2s',
+                      boxShadow: activo ? '0 4px 14px rgba(122,30,58,0.25)' : 'none',
+                    }}
+                  >
                     <IconTool width={16} height={16} strokeWidth={2} />
                     {v.label}
                     <span style={{ background: activo ? 'rgba(255,255,255,0.25)' : '#f7e9ee', borderRadius: 999, padding: '1px 9px', fontSize: '0.78rem', fontWeight: 800 }}>
@@ -3594,244 +4196,269 @@ export default function AdminDashboard() {
                 </p>
               </div>
             ) : (
-              soporteMostrado.map((ticket) => {
-                const estadoCfg = ESTADO_CONFIG_ADMIN[ticket.estado] || ESTADO_CONFIG_ADMIN['Cerrado'];
-                const fechaStr = ticket.fecha_creacion
-                  ? new Date(ticket.fecha_creacion).toLocaleDateString('es-CO', { day: '2-digit', month: 'long', year: 'numeric' })
-                  : null;
-                return (
-                <article key={ticket.id_solicitud} style={{
-                  borderRadius: 16,
-                  border: '1.5px solid #eee3e9',
-                  borderLeft: `6px solid ${estadoCfg.dot}`,
-                  overflow: 'hidden',
-                  background: WHITE,
-                  boxShadow: '0 3px 14px rgba(122,30,58,0.09)',
-                  transition: 'box-shadow 0.2s ease, transform 0.2s ease',
-                }}
-                  onMouseEnter={(e) => { e.currentTarget.style.boxShadow = '0 10px 30px rgba(122,30,58,0.16)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.boxShadow = '0 3px 14px rgba(122,30,58,0.09)'; e.currentTarget.style.transform = 'translateY(0)'; }}
+              <>
+                <div
+                  className="admin-soporte-grid"
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+                    gap: '16px',
+                    alignItems: 'start',
+                  }}
                 >
-                  {/* Header de la card */}
+                  {soportePaginado.map((ticket) => (
+                    <CardSoporteAdmin
+                      key={ticket.id_solicitud}
+                      ticket={ticket}
+                      onAbrirModal={handleAbrirModal}
+                    />
+                  ))}
+                </div>
+
+                {/* PAGINACIÓN DE SOPORTE */}
+                {soporteMostrado.length > 0 && (
                   <div style={{
-                    background: 'linear-gradient(135deg, #fdf8f9 0%, #f9f0f3 100%)',
-                    padding: '16px 20px',
-                    borderBottom: '1.5px solid #f0e8ec',
-                    display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    background: WHITE,
+                    borderRadius: 14,
+                    padding: '12px 20px',
+                    border: `1px solid ${BORDER}`,
+                    boxShadow: '0 2px 10px rgba(0,0,0,0.03)',
+                    flexWrap: 'wrap',
+                    gap: 10,
                   }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 14, minWidth: 0 }}>
-                      <div style={{
-                        position: 'relative',
-                        width: 54, height: 54, borderRadius: '50%', flexShrink: 0,
-                        background: 'linear-gradient(135deg, #7A1E3A 0%, #9b2c4e 100%)', color: WHITE,
-                        display: 'grid', placeItems: 'center',
-                        fontSize: '0.85rem', fontWeight: 800,
-                        border: '2px solid #fff',
-                        boxShadow: '0 0 0 1.5px #ecdce3, 0 4px 12px rgba(122,30,58,0.22)',
-                      }}>
-                        {(ticket.comprador || '?').charAt(0).toUpperCase()}
-                        {ticket.foto_comprador && (
-                          <img
-                            src={ticket.foto_comprador.startsWith('http') ? ticket.foto_comprador : `${getApiBaseUrl()}/${ticket.foto_comprador.replace(/^\//, '')}`}
-                            alt={ticket.comprador || 'Usuario'}
-                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }}
-                          />
-                        )}
-                      </div>
-                      <div style={{ minWidth: 0 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, flexWrap: 'wrap' }}>
-                          <span style={{
-                            background: 'linear-gradient(135deg, #7A1E3A 0%, #9b2c4e 100%)', color: WHITE,
-                            borderRadius: 7, padding: '3px 11px',
-                            fontSize: '0.73rem', fontWeight: 800, letterSpacing: '0.04em',
-                            boxShadow: '0 2px 8px rgba(122,30,58,0.3)',
-                            whiteSpace: 'nowrap',
-                          }}>
-                            TICKET #{ticket.numero || ticket.id_solicitud}
-                          </span>
-                          <span style={{
-                            display: 'inline-flex', alignItems: 'center', gap: 5,
-                            background: WHITE, border: '1.5px solid #ecdce3', color: VINOTINTO,
-                            borderRadius: 7, padding: '2px 10px',
-                            fontSize: '0.73rem', fontWeight: 700,
-                            whiteSpace: 'nowrap',
-                          }}>
-                            <IconUser width={12} height={12} strokeWidth={2} />
-                            {(ticket.rol_usuario || '').toLowerCase() === 'vendedor' ? 'Vendedor' : 'Comprador'}
-                          </span>
-                        </div>
-                        <strong style={{ fontSize: '1.02rem', color: CARBON, fontWeight: 800, display: 'block', lineHeight: 1.35 }}>
-                          {ticket.comprador}
-                        </strong>
-                      </div>
-                    </div>
-                    <span style={{
-                      display: 'inline-flex', alignItems: 'center', gap: 6,
-                      background: estadoCfg.bg, color: estadoCfg.color,
-                      border: `1px solid ${estadoCfg.border}`,
-                      padding: '5px 12px', borderRadius: 20,
-                      fontSize: '0.78rem', fontWeight: 700, whiteSpace: 'nowrap',
-                    }}>
-                      <span style={{ width: 7, height: 7, borderRadius: '50%', background: estadoCfg.dot, display: 'inline-block' }} />
-                      {ticket.estado}
+                    <span style={{ fontSize: '0.84rem', color: GRAY, fontWeight: 600 }}>
+                      Mostrando {((paginaSoporte - 1) * registrosPorPagina) + 1}–{Math.min(paginaSoporte * registrosPorPagina, soporteMostrado.length)} de {soporteMostrado.length} tickets
                     </span>
-                  </div>
 
-                  {/* Cuerpo */}
-                  <div style={{ padding: '16px 20px', display: 'grid', gap: 14 }}>
-                    {/* Metadata */}
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
-                      <div style={{
-                        display: 'inline-flex', alignItems: 'center', gap: 6,
-                        background: '#fdf2f4', border: '1px solid #f0dde4',
-                        borderRadius: 20, padding: '5px 12px',
-                        color: VINOTINTO, fontSize: '0.8rem', fontWeight: 700,
-                      }}>
-                        <IconTool width={13} height={13} />
-                        {ticket.categoria || 'Soporte'}
-                      </div>
-                      {ticket.correo_comprador && (
-                        <div style={{
-                          display: 'inline-flex', alignItems: 'center', gap: 5,
-                          background: '#f0f9ff', border: '1px solid #bae6fd',
-                          borderRadius: 20, padding: '5px 12px',
-                          color: '#0369a1', fontSize: '0.78rem', fontWeight: 600,
-                        }}>
-                          <IconMail width={13} height={13} />
-                          {ticket.correo_comprador}
-                        </div>
-                      )}
-                      {fechaStr && (
-                        <div style={{
-                          display: 'inline-flex', alignItems: 'center', gap: 5,
-                          background: '#f9fafb', border: '1px solid #e5e7eb',
-                          borderRadius: 20, padding: '5px 12px',
-                          color: '#6b7280', fontSize: '0.78rem', fontWeight: 600,
-                        }}>
-                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" width={13} height={13}>
-                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
-                          </svg>
-                          {fechaStr}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Asunto y descripción */}
-                    <div style={{ padding: '12px 14px', background: '#fafafa', borderRadius: 10, border: '1px solid #f0f0f0' }}>
-                      <p style={{ margin: 0, color: '#555', lineHeight: 1.65, fontSize: '0.92rem' }}>
-                        <span style={{ fontWeight: 700, color: CARBON, display: 'block', marginBottom: 4, fontSize: '0.82rem' }}>
-                          {ticket.asunto}
-                        </span>
-                        {ticket.descripcion}
-                      </p>
-                    </div>
-
-                    {/* Respuesta del admin */}
-                    {ticket.respuesta && (
-                      <div style={{
-                        padding: '14px 16px',
-                        background: 'linear-gradient(135deg, #fdf8f9 0%, #f9f0f3 100%)',
-                        borderRadius: 12, borderLeft: '4px solid #7A1E3A',
-                      }}>
-                        <p style={{ margin: '0 0 6px', color: VINOTINTO, display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.78rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                          <IconMessage width={14} height={14} />
-                          Respuesta del administrador
-                        </p>
-                        <p style={{ margin: 0, color: '#444', lineHeight: 1.65, fontSize: '0.92rem' }}>{ticket.respuesta}</p>
-                      </div>
-                    )}
-
-                    {/* Acciones */}
-                    <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', paddingTop: 4 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                       <button
-                        onClick={() => abrirModal(ticket, 'En revisión')}
+                        onClick={() => setPaginaSoporte(prev => Math.max(prev - 1, 1))}
+                        disabled={paginaSoporte === 1}
                         style={{
-                          display: 'inline-flex', alignItems: 'center', gap: 6,
-                          border: '1.5px solid #fdba74', background: WHITE, color: '#c2410c',
-                          borderRadius: 8, padding: '10px 18px', cursor: 'pointer',
-                          fontWeight: 700, fontSize: '0.88rem', transition: 'all 0.2s',
+                          padding: '7px 16px',
+                          borderRadius: 8,
+                          border: `1.5px solid ${BORDER}`,
+                          background: paginaSoporte === 1 ? '#F3F4F6' : WHITE,
+                          color: paginaSoporte === 1 ? '#9CA3AF' : CARBON,
+                          fontSize: '0.82rem',
+                          fontWeight: 700,
+                          cursor: paginaSoporte === 1 ? 'not-allowed' : 'pointer',
+                          fontFamily: 'inherit'
                         }}
-                        onMouseEnter={(e) => { e.currentTarget.style.background = '#fff7ed'; e.currentTarget.style.borderColor = '#ea580c'; }}
-                        onMouseLeave={(e) => { e.currentTarget.style.background = WHITE; e.currentTarget.style.borderColor = '#fdba74'; }}
                       >
-                        <IconEye width={15} height={15} />
-                        Marcar en revisión
+                        ← Anterior
                       </button>
+
+                      <span style={{
+                        padding: '7px 16px',
+                        borderRadius: 8,
+                        fontWeight: 800,
+                        fontSize: '0.82rem',
+                        background: VINOTINTO,
+                        color: WHITE,
+                      }}>
+                        {paginaSoporte} / {totalPaginasSoporte}
+                      </span>
+
                       <button
-                        onClick={() => abrirModal(ticket, 'Rechazado')}
+                        onClick={() => setPaginaSoporte(prev => Math.min(prev + 1, totalPaginasSoporte))}
+                        disabled={paginaSoporte === totalPaginasSoporte}
                         style={{
-                          display: 'inline-flex', alignItems: 'center', gap: 6,
-                          border: '1.5px solid #fca5a5', background: '#fef2f2', color: '#dc2626',
-                          borderRadius: 8, padding: '10px 18px', cursor: 'pointer',
-                          fontWeight: 700, fontSize: '0.88rem', transition: 'all 0.2s',
+                          padding: '7px 16px',
+                          borderRadius: 8,
+                          border: `1.5px solid ${BORDER}`,
+                          background: paginaSoporte === totalPaginasSoporte ? '#F3F4F6' : WHITE,
+                          color: paginaSoporte === totalPaginasSoporte ? '#9CA3AF' : CARBON,
+                          fontSize: '0.82rem',
+                          fontWeight: 700,
+                          cursor: paginaSoporte === totalPaginasSoporte ? 'not-allowed' : 'pointer',
+                          fontFamily: 'inherit'
                         }}
-                        onMouseEnter={(e) => { e.currentTarget.style.background = '#fee2e2'; e.currentTarget.style.borderColor = '#ef4444'; }}
-                        onMouseLeave={(e) => { e.currentTarget.style.background = '#fef2f2'; e.currentTarget.style.borderColor = '#fca5a5'; }}
                       >
-                        <IconBan width={15} height={15} />
-                        Rechazar ticket
-                      </button>
-                      <button
-                        onClick={() => abrirModal(ticket, 'Resuelto')}
-                        style={{
-                          display: 'inline-flex', alignItems: 'center', gap: 6,
-                          border: 'none',
-                          background: `linear-gradient(135deg, ${VINOTINTO} 0%, #9b2c4e 100%)`,
-                          color: WHITE, borderRadius: 8, padding: '10px 22px', cursor: 'pointer',
-                          fontWeight: 700, fontSize: '0.88rem',
-                          boxShadow: '0 4px 14px rgba(122,30,58,0.25)', transition: 'all 0.2s',
-                        }}
-                        onMouseEnter={(e) => { e.currentTarget.style.background = VINOTINTO_DARK; }}
-                        onMouseLeave={(e) => { e.currentTarget.style.background = `linear-gradient(135deg, ${VINOTINTO} 0%, #9b2c4e 100%)`; }}
-                      >
-                        <IconCheck width={15} height={15} strokeWidth={2.5} />
-                        Resolver y notificar
+                        Siguiente →
                       </button>
                     </div>
                   </div>
-                </article>
-                );
-              })
+                )}
+              </>
             )}
           </div>
         )}
 
         {/* ÓRDENES */}
         {activeSection === 'ordenes' && (
-          <div style={{ background: WHITE, borderRadius: '14px', overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.06)', border: `1px solid ${BORDER}` }}>
-            {ordenes.length === 0 ? (
-              <p style={{ padding: '30px', color: GRAY }}>No hay órdenes registradas.</p>
-            ) : (
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead>
-                  <tr style={{ background: VINOTINTO, color: WHITE }}>
-                    <th style={{ padding: '14px 16px', textAlign: 'left' }}>ID Orden</th>
-                    <th style={{ padding: '14px 16px', textAlign: 'left' }}>Estado</th>
-                    <th style={{ padding: '14px 16px', textAlign: 'left' }}>Total</th>
-                    <th style={{ padding: '14px 16px', textAlign: 'left' }}>Fecha</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {ordenes.map((o, i) => (
-                    <tr key={`${o.id_orden}-${i}`} style={{ background: i % 2 === 0 ? '#fafafa' : WHITE }}>
-                      <td style={{ padding: '12px 16px' }}>#{o.id_orden}</td>
-                      <td style={{ padding: '12px 16px' }}>
-                        <span style={{
-                          background: o.estado === 'pagado' ? GREEN : ORANGE,
-                          color: WHITE, padding: '4px 10px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 600
-                        }}>
-                          {o.estado}
-                        </span>
-                      </td>
-                      <td style={{ padding: '12px 16px' }}>${Number(o.total || 0).toLocaleString('es-CO')}</td>
-                      <td style={{ padding: '12px 16px' }}>
-                        {o.fecha ? new Date(o.fecha).toLocaleDateString('es-CO') : '-'}
-                      </td>
+          <div style={{ display: 'grid', gap: 20 }}>
+
+            {/* KPI Cards */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(155px, 1fr))', gap: 14 }}>
+              {[
+                { label: 'Total órdenes', value: ordenes.length,                                                                                   color: VINOTINTO, bg: '#fdf2f4', border: '#f0dde4', icon: <IconPackage width={22} height={22} /> },
+                { label: 'Pagadas',       value: ordenes.filter(o => (o.estado||'').toLowerCase() === 'pagado').length,                            color: '#047857',  bg: '#ecfdf5', border: '#a7f3d0', icon: <IconDollar width={22} height={22} /> },
+                { label: 'Entregadas',    value: ordenes.filter(o => ['entregada','entregado'].includes((o.estado||'').toLowerCase())).length,     color: '#D97706',  bg: '#fffbeb', border: '#fde68a', icon: <IconCheck width={22} height={22} strokeWidth={2.5} /> },
+                { label: 'Enviadas',      value: ordenes.filter(o => (o.estado||'').toLowerCase() === 'enviado').length,                           color: '#ea580c',  bg: '#fff7ed', border: '#fdba74', icon: <IconTruck width={22} height={22} /> },
+                { label: 'Canceladas',    value: ordenes.filter(o => (o.estado||'').toLowerCase() === 'cancelada').length,                         color: '#B91C1C',  bg: '#fef2f2', border: '#fecaca', icon: <IconBan width={22} height={22} /> },
+              ].map((kpi) => (
+                <div key={kpi.label} style={{
+                  background: WHITE, borderRadius: 14, padding: '16px 18px',
+                  border: `1px solid ${BORDER}`, boxShadow: '0 2px 10px rgba(0,0,0,0.03)',
+                  display: 'flex', alignItems: 'center', gap: 14,
+                }}>
+                  <div style={{ width: 44, height: 44, borderRadius: 12, background: kpi.bg, color: kpi.color, display: 'grid', placeItems: 'center', flexShrink: 0, border: `1px solid ${kpi.border}` }}>
+                    {kpi.icon}
+                  </div>
+                  <div>
+                    <p style={{ margin: 0, fontSize: '0.73rem', color: GRAY, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{kpi.label}</p>
+                    <h3 style={{ margin: '2px 0 0', fontSize: '1.5rem', fontWeight: 800, color: kpi.color }}>{kpi.value}</h3>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Barra de búsqueda y filtros */}
+            <div style={{
+              background: WHITE, borderRadius: 14, padding: '14px 18px',
+              border: `1px solid ${BORDER}`, boxShadow: '0 2px 10px rgba(0,0,0,0.03)',
+              display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'center',
+            }}>
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 240,
+                background: '#fafafa', border: `1px solid ${BORDER}`, borderRadius: 10, padding: '8px 14px',
+              }}>
+                <IconSearch width={17} height={17} style={{ color: GRAY }} />
+                <input
+                  type="text"
+                  value={busquedaOrdenes}
+                  onChange={(e) => { setBusquedaOrdenes(e.target.value); setPaginaOrdenes(1); }}
+                  placeholder="Buscar por ID orden o estado..."
+                  style={{ border: 'none', background: 'transparent', outline: 'none', width: '100%', fontSize: '0.88rem', fontFamily: 'inherit', color: CARBON }}
+                />
+                {busquedaOrdenes && (
+                  <button onClick={() => { setBusquedaOrdenes(''); setPaginaOrdenes(1); }} style={{ border: 0, background: 'none', cursor: 'pointer', color: GRAY, padding: 0 }}>
+                    <IconClose width={15} height={15} />
+                  </button>
+                )}
+              </div>
+              <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap', alignItems: 'center' }}>
+                {[{ value: 'todos', label: 'Todas', color: VINOTINTO, bg: '#fdf2f4', border: '#f0dde4' }, ...ESTADOS_ORDEN].map((est) => {
+                  const activo = filtroEstadoOrden === est.value;
+                  return (
+                    <button key={est.value} onClick={() => { setFiltroEstadoOrden(est.value); setPaginaOrdenes(1); }} style={{
+                      padding: '6px 14px', borderRadius: 20, cursor: 'pointer', fontWeight: 700, fontSize: '0.79rem', fontFamily: 'inherit',
+                      display: 'inline-flex', alignItems: 'center', gap: 6,
+                      border: activo ? `1.5px solid ${est.color}` : `1px solid ${BORDER}`,
+                      background: activo ? est.bg : WHITE, color: activo ? est.color : GRAY,
+                      boxShadow: activo ? '0 2px 8px rgba(0,0,0,0.08)' : 'none', transition: 'all 0.15s',
+                    }}>
+                      {est.value !== 'todos' && <span style={{ width: 7, height: 7, borderRadius: '50%', background: est.color, display: 'inline-block' }} />}
+                      {est.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Tabla con columnas reales */}
+            <div style={{ background: WHITE, borderRadius: 16, overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', border: `1px solid ${BORDER}` }}>
+              {ordenesFiltradas.length === 0 ? (
+                <div style={{ padding: '48px 24px', textAlign: 'center', color: GRAY }}>
+                  <div style={{ fontSize: '2.2rem', marginBottom: 10 }}>📦</div>
+                  <p style={{ margin: 0, fontWeight: 600, color: CARBON, fontSize: '1rem' }}>No se encontraron órdenes</p>
+                  <p style={{ margin: '4px 0 0', fontSize: '0.86rem' }}>Prueba cambiando el filtro o el término de búsqueda.</p>
+                </div>
+              ) : (
+                <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
+                  <thead>
+                    <tr style={{ background: `linear-gradient(135deg, ${VINOTINTO} 0%, #9b2c4e 100%)` }}>
+                      <th style={{ padding: '15px 24px', textAlign: 'left', color: 'rgba(255,255,255,0.95)', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', width: '25%' }}>ID Orden</th>
+                      <th style={{ padding: '15px 16px', textAlign: 'center', color: 'rgba(255,255,255,0.95)', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', width: '25%' }}>Estado</th>
+                      <th style={{ padding: '15px 16px', textAlign: 'center', color: 'rgba(255,255,255,0.95)', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', width: '25%' }}>Total</th>
+                      <th style={{ padding: '15px 16px', textAlign: 'center', color: 'rgba(255,255,255,0.95)', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', width: '25%' }}>Fecha</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {ordenesPaginadas.map((o, i) => {
+                      const estadoNorm = (o.estado || '').toLowerCase();
+                      const cfgEstado = ESTADOS_ORDEN.find(e => e.value === estadoNorm)
+                        || (estadoNorm.includes('entr') ? ESTADOS_ORDEN[1]
+                        : estadoNorm.includes('comp') || estadoNorm.includes('final') ? ESTADOS_ORDEN[4]
+                        : { color: GRAY, bg: '#f9fafb', border: '#e5e7eb' });
+                      const fechaStr = o.fecha
+                        ? new Date(o.fecha).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' })
+                        : '—';
+                      return (
+                        <tr
+                          key={`${o.id_orden}-${i}`}
+                          style={{ background: i % 2 === 0 ? WHITE : '#fdfcfc', borderBottom: `1px solid ${BORDER}`, transition: 'background 0.15s' }}
+                          onMouseEnter={e => e.currentTarget.style.background = '#fdf8f9'}
+                          onMouseLeave={e => e.currentTarget.style.background = i % 2 === 0 ? WHITE : '#fdfcfc'}
+                        >
+                          <td style={{ padding: '15px 24px', verticalAlign: 'middle', textAlign: 'left' }}>
+                            <span style={{
+                              fontSize: '0.84rem', fontWeight: 800, color: VINOTINTO,
+                              background: '#fdf2f4', borderRadius: 8, padding: '5px 12px',
+                              border: '1px solid #f0dde4', display: 'inline-block',
+                            }}>
+                              #{o.id_orden}
+                            </span>
+                          </td>
+                          <td style={{ padding: '15px 16px', verticalAlign: 'middle', textAlign: 'center' }}>
+                            <span style={{
+                              background: cfgEstado.bg, color: cfgEstado.color,
+                              border: `1px solid ${cfgEstado.border}`,
+                              padding: '5px 14px', borderRadius: 20,
+                              fontSize: '0.8rem', fontWeight: 700,
+                              display: 'inline-flex', alignItems: 'center', gap: 6,
+                            }}>
+                              <span style={{ width: 7, height: 7, borderRadius: '50%', background: cfgEstado.color, flexShrink: 0 }} />
+                              {o.estado}
+                            </span>
+                          </td>
+                          <td style={{ padding: '15px 16px', verticalAlign: 'middle', textAlign: 'center' }}>
+                            <span style={{ fontSize: '0.92rem', fontWeight: 800, color: CARBON }}>
+                              ${Number(o.total || 0).toLocaleString('es-CO')}
+                            </span>
+                          </td>
+                          <td style={{ padding: '15px 16px', verticalAlign: 'middle', textAlign: 'center' }}>
+                            <span style={{ fontSize: '0.84rem', color: GRAY, fontWeight: 600 }}>
+                              {fechaStr}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              )}
+            </div>
+
+            {/* Paginación */}
+            {ordenesFiltradas.length > registrosPorPagina && (
+              <div style={{
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                background: WHITE, borderRadius: 14, padding: '12px 20px',
+                border: `1px solid ${BORDER}`, boxShadow: '0 2px 10px rgba(0,0,0,0.03)',
+                flexWrap: 'wrap', gap: 10,
+              }}>
+                <span style={{ fontSize: '0.84rem', color: GRAY, fontWeight: 600 }}>
+                  Mostrando {(paginaOrdenes - 1) * registrosPorPagina + 1}–{Math.min(paginaOrdenes * registrosPorPagina, ordenesFiltradas.length)} de {ordenesFiltradas.length} órdenes
+                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <button onClick={() => setPaginaOrdenes(prev => Math.max(prev - 1, 1))} disabled={paginaOrdenes === 1}
+                    style={{ padding: '7px 16px', borderRadius: 8, fontWeight: 700, fontSize: '0.82rem', cursor: paginaOrdenes === 1 ? 'not-allowed' : 'pointer', border: `1.5px solid ${BORDER}`, background: paginaOrdenes === 1 ? '#F3F4F6' : WHITE, color: paginaOrdenes === 1 ? '#9CA3AF' : CARBON, fontFamily: 'inherit' }}>
+                    ← Anterior
+                  </button>
+                  <span style={{ padding: '7px 16px', borderRadius: 8, fontWeight: 800, fontSize: '0.82rem', background: VINOTINTO, color: WHITE }}>
+                    {paginaOrdenes} / {totalPaginasOrdenes}
+                  </span>
+                  <button onClick={() => setPaginaOrdenes(prev => Math.min(prev + 1, totalPaginasOrdenes))} disabled={paginaOrdenes === totalPaginasOrdenes}
+                    style={{ padding: '7px 16px', borderRadius: 8, fontWeight: 700, fontSize: '0.82rem', cursor: paginaOrdenes === totalPaginasOrdenes ? 'not-allowed' : 'pointer', border: `1.5px solid ${BORDER}`, background: paginaOrdenes === totalPaginasOrdenes ? '#F3F4F6' : WHITE, color: paginaOrdenes === totalPaginasOrdenes ? '#9CA3AF' : CARBON, fontFamily: 'inherit' }}>
+                    Siguiente →
+                  </button>
+                </div>
+              </div>
             )}
           </div>
         )}
@@ -3942,7 +4569,15 @@ export default function AdminDashboard() {
         )}
 
         {activeSection === 'perfil' && (
-          <SeccionPerfilAdmin stats={stats} />
+          <SeccionPerfilAdmin
+            stats={stats}
+            gestionProp={{
+              reclamos: reclamosClientes.length,
+              soporte: soporte.filter(s => s.tipo_solicitud !== 'reclamo').length,
+              resueltos: reclamos.filter(s => s.estado === 'Resuelto').length,
+              pendientes: reclamos.filter(s => ['Abierto', 'En revisión', 'En revision'].includes(s.estado)).length,
+            }}
+          />
         )}
 
         {/* MODAL CONFIRMAR CAMBIO DE ESTADO DE TIENDA */}

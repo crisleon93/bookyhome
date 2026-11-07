@@ -59,8 +59,8 @@ function MainLayout() {
     window.addEventListener('storage', checkToken);
     window.addEventListener('auth-change', checkToken);
     
-    // Verificar periódicamente por si el token se estableció
-    const interval = setInterval(checkToken, 1000);
+    // Verificar periódicamente por si el token cambió en otra pestaña
+    const tokenIntervalId = setInterval(checkToken, 5000);
     
     // Manejar cambio de autenticación para modo oscuro
     const handleAuthChange = (e) => {
@@ -82,7 +82,7 @@ function MainLayout() {
       window.removeEventListener('storage', checkToken);
       window.removeEventListener('auth-change', checkToken);
       window.removeEventListener('auth-change', handleAuthChange);
-      clearInterval(interval);
+      clearInterval(tokenIntervalId);
     };
   }, []);
 

@@ -505,15 +505,17 @@ export const IconLayoutDashboard = ({ className = "", width = 20, height = 20, s
 
 
 export const IconChevronLeft = ({ className = "", width = 20, height = 20, strokeWidth = 2, ...props }) => (
-
   <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-
     fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" width={width} height={height} {...props}>
-
     <polyline points="15 18 9 12 15 6"/>
-
   </svg>
+);
 
+export const IconChevronDown = ({ className = "", width = 20, height = 20, strokeWidth = 2, ...props }) => (
+  <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+    fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" width={width} height={height} {...props}>
+    <polyline points="6 9 12 15 18 9"/>
+  </svg>
 );
 
 
