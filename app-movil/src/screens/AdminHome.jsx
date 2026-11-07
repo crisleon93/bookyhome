@@ -2,10 +2,11 @@ import React, {
   useCallback, useContext, useEffect, useMemo, useRef, useState,
 } from 'react';
 import {
-  ActivityIndicator, FlatList, Modal,
+  ActivityIndicator, FlatList, Image, Modal,
   Platform, RefreshControl, ScrollView,
   StyleSheet, Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
+import Svg, { Circle, Path } from 'react-native-svg';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AuthContext } from '../context/AuthContext';
 import SidebarAdmin from '../components/SidebarAdmin';
@@ -15,10 +16,11 @@ import AdminProfile from './AdminProfile';
 import {
   IconAlertTriangle, IconBook, IconCheck,
   IconEye, IconEyeOff, IconLock, IconMenu,
-  IconPackage, IconStore, IconTrash, IconUnlock, IconUser,
-  IconSettings, IconTool,
+  IconPackage, IconStore, IconTrash, IconUnlock, IconUser, IconUsers,
+  IconCart, IconClose, IconFilter, IconMail, IconPhone, IconSearch, IconShield, IconSettings, IconTool,
 } from '../components/Icons';
 import {
+  getApiBaseUrl,
   bloquearUsuario, cambiarEstadoTienda, eliminarLibroAdmin,
   getAdminLibros, getAdminOrdenes, getAdminSolicitudes,
   getAdminTiendas, getAdminUsuarios, ocultarLibroAdmin,
@@ -92,6 +94,65 @@ const SECTION_CONFIG = {
 
 const PER_PAGE = 10;
 
+function UserAvatar({ photo, name, color, borderColor, showPreview }) {
+  const [imageError, setImageError] = useState(false);
+  const imageUri = photo
+    ? (/^https?:\/\//i.test(photo)
+      ? photo
+      : `${getApiBaseUrl()}/${String(photo).replace(/^\/+/, '')}`)
+    : null;
+
+  return (
+    <View style={[s.avatar, s.userAvatar, { backgroundColor: WHITE, borderColor }]}>
+      {imageUri && !imageError ? (
+        <Image
+          source={{ uri: imageUri }}
+          style={s.userAvatarImage}
+          resizeMode="cover"
+          onError={() => setImageError(true)}
+          accessibilityLabel={`Foto de perfil de ${name || 'usuario'}`}
+        />
+      ) : showPreview ? (
+        <Svg width="100%" height="100%" viewBox="0 0 88 88" accessibilityLabel="Ilustración de avatar de muestra">
+          <Circle cx="44" cy="44" r="44" fill="#DBEAFE" />
+          <Path d="M17 88c2-19 12-29 27-29s25 10 27 29" fill="#7A1E3A" />
+          <Circle cx="44" cy="35" r="17" fill="#D9A17B" />
+          <Path d="M27 34c0-14 8-22 18-22 11 0 18 8 18 21-4-3-7-8-8-13-6 7-16 11-28 11v3Z" fill="#35251F" />
+          <Path d="M37 39h1m12 0h1" stroke="#35251F" strokeWidth="2.5" strokeLinecap="round" />
+          <Path d="M39 48c3 2 7 2 10 0" fill="none" stroke="#9D5E4A" strokeWidth="2" strokeLinecap="round" />
+        </Svg>
+      ) : (
+        <Text style={[s.avatarTxt, { color }]}>{initials(name)}</Text>
+      )}
+    </View>
+  );
+}
+
+function BookCover({ image, title }) {
+  const [imageError, setImageError] = useState(false);
+  const imageUri = image
+    ? (/^https?:\/\//i.test(image)
+      ? image
+      : `${getApiBaseUrl()}/${String(image).replace(/^\/+/, '')}`)
+    : null;
+
+  return (
+    <View style={[s.avatar, s.bookCover, { backgroundColor: '#F4EDE2' }]}>
+      {imageUri && !imageError ? (
+        <Image
+          source={{ uri: imageUri }}
+          style={s.bookCoverImage}
+          resizeMode="cover"
+          onError={() => setImageError(true)}
+          accessibilityLabel={`Portada de ${title || 'libro'}`}
+        />
+      ) : (
+        <IconBook size={18} color={VINOTINTO} />
+      )}
+    </View>
+  );
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const initials = (name) =>
   (name || '?').trim().split(/\s+/).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
@@ -102,6 +163,12 @@ const isPendingStore = (s) => ['pendiente', 'en revision', 'en revisión', 'por 
 const isSuspendedStore = (s) => ['suspendida', 'suspendido', 'inactiva', 'inactivo', 'pausada', 'pausado'].includes((s || '').toLowerCase().trim());
 const isVacationStore = (s) => ['vacaciones', 'en vacaciones'].includes((s || '').toLowerCase().trim());
 const getRolColors   = (rol) => ROL_COLORS[(rol || '').toLowerCase()] || { bg: '#F3F4F6', color: GRAY, border: '#D1D5DB' };
+const normalizeUserRoleFilter = (rol) => {
+  const rolNormalizado = (rol || '').toLowerCase().trim();
+  return rolNormalizado === 'admin' || rolNormalizado === 'administrador'
+    ? 'admin'
+    : rolNormalizado;
+};
 const getStoreColors = (estado) => {
   const state = (estado || '').toLowerCase().trim();
   if (isActiveStore(state)) return COLORS.active;
@@ -418,6 +485,8 @@ export default function AdminHome() {
   // ── Vista activa: 'dashboard' o id de sección ─────────────────────────────
   const [activeSection, setActiveSection] = useState('dashboard');
   const [menuVisible,   setMenuVisible]   = useState(false);
+  const [adminProfilePhoto, setAdminProfilePhoto] = useState(null);
+  const [adminProfileName, setAdminProfileName] = useState(null);
 
   // ── Datos globales (cargados una vez) ─────────────────────────────────────
   const [data, setData] = useState({
@@ -428,6 +497,8 @@ export default function AdminHome() {
   const [error,      setError]      = useState('');
   const [solicitudesLoading, setSolicitudesLoading] = useState(false);
   const [solicitudesError, setSolicitudesError] = useState('');
+  const solicitudesLoaded = useRef(false);
+  const solicitudesRequest = useRef(null);
 
   // ── Estado del modal de confirmación ─────────────────────────────────────
   const [modal, setModal] = useState({ visible: false, title: '', message: '', confirmText: '', confirmColor: RED, onConfirm: null });
@@ -447,7 +518,10 @@ export default function AdminHome() {
   // ── Filtros por sección ───────────────────────────────────────────────────
   const [filtroRol,          setFiltroRol]          = useState('todos');
   const [filtroEstadoUsuario, setFiltroEstadoUsuario] = useState('todos'); // 'todos' | 'Activo' | 'Bloqueado'
+  const [filtroEstadoOrden, setFiltroEstadoOrden] = useState('todos');
   const [filtroCategoria,    setFiltroCategoria]    = useState('todas');
+  const [modalCategoriasVisible, setModalCategoriasVisible] = useState(false);
+  const [busquedaCategoria, setBusquedaCategoria] = useState('');
   const [busqueda,           setBusqueda]           = useState('');
   const [pagina,             setPagina]             = useState(1);
 
@@ -462,6 +536,7 @@ export default function AdminHome() {
   const [expandedLibro,  setExpandedLibro]  = useState(null);
   // Tienda expandida (acordeón)
   const [expandedTienda, setExpandedTienda] = useState(null);
+  const [expandedOrden, setExpandedOrden] = useState(null);
 
   // Previene doble tap en acciones
   const actionInProgress = useRef({});
@@ -498,25 +573,34 @@ export default function AdminHome() {
     }
   }, []);
 
-  const loadSolicitudes = useCallback(async () => {
+  const loadSolicitudes = useCallback((force = false) => {
+    if (solicitudesRequest.current) return solicitudesRequest.current;
+    if (solicitudesLoaded.current && !force) return Promise.resolve();
+
     setSolicitudesLoading(true);
     setSolicitudesError('');
-    try {
-      const response = await getAdminSolicitudes();
-      setData((current) => ({
-        ...current,
-        solicitudes: Array.isArray(response.data) ? response.data : [],
-      }));
-    } catch (requestError) {
-      setSolicitudesError(
-        requestError.response?.data?.detail ||
-        (requestError.code === 'ECONNABORTED'
-          ? 'La carga de solicitudes tardó demasiado. Intenta actualizar.'
-          : 'No se pudieron cargar las solicitudes. Revisa la conexión e intenta actualizar.')
-      );
-    } finally {
-      setSolicitudesLoading(false);
-    }
+    const request = (async () => {
+      try {
+        const response = await getAdminSolicitudes();
+        setData((current) => ({
+          ...current,
+          solicitudes: Array.isArray(response.data) ? response.data : [],
+        }));
+        solicitudesLoaded.current = true;
+      } catch (requestError) {
+        setSolicitudesError(
+          requestError.response?.data?.detail ||
+          (requestError.code === 'ECONNABORTED'
+            ? 'La carga de solicitudes tardó demasiado. Intenta actualizar.'
+            : 'No se pudieron cargar las solicitudes. Revisa la conexión e intenta actualizar.')
+        );
+      } finally {
+        solicitudesRequest.current = null;
+        setSolicitudesLoading(false);
+      }
+    })();
+    solicitudesRequest.current = request;
+    return request;
   }, []);
 
   useEffect(() => { load(); }, [load]);
@@ -533,9 +617,13 @@ export default function AdminHome() {
     setPagina(1);
     setFiltroRol('todos');
     setFiltroEstadoUsuario('todos');
+    setFiltroEstadoOrden('todos');
     setFiltroCategoria('todas');
+    setBusquedaCategoria('');
+    setModalCategoriasVisible(false);
     setExpandedLibro(null);
     setExpandedTienda(null);
+    setExpandedOrden(null);
   }, [activeSection]);
 
   // ── Stats del dashboard ───────────────────────────────────────────────────
@@ -569,9 +657,17 @@ export default function AdminHome() {
 
   // ── Categorías únicas para filtro de libros ───────────────────────────────
   const categorias = useMemo(() => {
-    const cats = new Set(data.libros.map((l) => l.nombre_categoria).filter(Boolean));
+    const cats = new Set(data.libros.map((l) => l.nombre_categoria || 'Sin categoría'));
     return ['todas', ...Array.from(cats).sort()];
   }, [data.libros]);
+  const librosPorCategoria = useMemo(() => data.libros.reduce((counts, libro) => {
+    const categoria = libro.nombre_categoria || 'Sin categoría';
+    counts[categoria] = (counts[categoria] || 0) + 1;
+    return counts;
+  }, {}), [data.libros]);
+  const estadosOrden = useMemo(() => Array.from(new Set(
+    data.ordenes.map((orden) => (orden.estado || '').trim().toLowerCase()).filter(Boolean)
+  )).sort((a, b) => getOrdenEstado(a).label.localeCompare(getOrdenEstado(b).label, 'es')), [data.ordenes]);
 
   // ── Filtrado y paginación por sección ─────────────────────────────────────
   const sectionItems = useMemo(() => {
@@ -589,7 +685,7 @@ export default function AdminHome() {
              : [];
 
     if (activeSection === 'usuarios') {
-      if (filtroRol !== 'todos') list = list.filter((u) => (u.rol || '').toLowerCase() === filtroRol);
+      if (filtroRol !== 'todos') list = list.filter((u) => normalizeUserRoleFilter(u.rol) === filtroRol);
       if (filtroEstadoUsuario !== 'todos') {
         list = list.filter((u) => {
           const estado = (u.estado_usuario || 'Activo').toLowerCase();
@@ -604,7 +700,7 @@ export default function AdminHome() {
         (u.correo_usuario || '').toLowerCase().includes(q));
     }
     if (activeSection === 'libros') {
-      if (filtroCategoria !== 'todas') list = list.filter((l) => l.nombre_categoria === filtroCategoria);
+      if (filtroCategoria !== 'todas') list = list.filter((l) => (l.nombre_categoria || 'Sin categoría') === filtroCategoria);
       if (q) list = list.filter((l) =>
         (l.titulo || l.nombre_libro || '').toLowerCase().includes(q) ||
         (l.autor_libro || '').toLowerCase().includes(q) ||
@@ -618,9 +714,11 @@ export default function AdminHome() {
       list = list.filter((o) =>
         String(o.id_orden || '').includes(q) ||
         (o.estado || '').toLowerCase().includes(q));
+    if (activeSection === 'ordenes' && filtroEstadoOrden !== 'todos')
+      list = list.filter((o) => (o.estado || '').trim().toLowerCase() === filtroEstadoOrden);
 
     return list;
-  }, [activeSection, data, busqueda, filtroRol, filtroEstadoUsuario, filtroCategoria]);
+  }, [activeSection, data, busqueda, filtroRol, filtroEstadoUsuario, filtroCategoria, filtroEstadoOrden]);
 
   const totalPages = Math.ceil(sectionItems.length / PER_PAGE) || 1;
   const pageSafe   = Math.min(pagina, totalPages);
@@ -750,35 +848,46 @@ export default function AdminHome() {
   // ─────────────────────────────────────────────────────────────────────────
 
   // ── Tarjeta Usuario ───────────────────────────────────────────────────────
-  const renderUsuario = useCallback(({ item: u }) => {
+  const renderUsuario = useCallback(({ item: u, index }) => {
     const bloqueado = u.estado_usuario === 'Bloqueado';
     const rc        = getRolColors(u.rol);
     return (
-      <View style={[s.card, bloqueado && s.cardBloqueado]}>
+      <View style={[
+        s.card,
+        s.userCard,
+        { backgroundColor: rc.bg, borderColor: bloqueado ? '#FECACA' : rc.border, borderLeftColor: rc.color },
+      ]}>
         <View style={s.cardTop}>
-          <View style={[s.avatar, { backgroundColor: bloqueado ? '#FEF2F2' : '#FDF2F4' }]}>
-            <Text style={[s.avatarTxt, { color: bloqueado ? RED : VINOTINTO }]}>{initials(u.nombre_usuario)}</Text>
+          <View style={s.userAvatarHalf}>
+            <UserAvatar photo={u.foto_perfil} name={u.nombre_usuario} color={rc.color} borderColor={rc.border} showPreview={index === 0} />
           </View>
-          <View style={s.cardMid}>
+          <View style={s.userInfoHalf}>
             <Text style={s.cardName} numberOfLines={1}>{u.nombre_usuario || 'Usuario'}</Text>
-            <Text style={s.cardSub}  numberOfLines={1}>{u.correo_usuario || u.correo || u.email || 'Sin correo'}</Text>
+            <View style={s.userContactRow}>
+              <IconMail size={13} color={rc.color} />
+              <Text style={s.userContactText} numberOfLines={1}>
+                {u.correo_usuario || u.correo || u.email || 'Sin correo'}
+              </Text>
+            </View>
             {!!(u.telefono || u.phone) && (
-              <Text style={[s.cardSub, { marginTop: 1 }]} numberOfLines={1}>📞 {u.telefono || u.phone}</Text>
+              <View style={s.userContactRow}>
+                <IconPhone size={13} color={rc.color} />
+                <Text style={s.userContactText} numberOfLines={1}>{u.telefono || u.phone}</Text>
+              </View>
             )}
-          </View>
-        </View>
-        {/* Badges */}
-        <View style={s.badgeRow}>
-          <View style={[s.badge, { backgroundColor: rc.bg, borderColor: rc.border }]}>
-            <Text style={[s.badgeTxt, { color: rc.color }]}>{u.rol || 'usuario'}</Text>
-          </View>
-          <View style={[s.badge, { backgroundColor: bloqueado ? '#FEF2F2' : '#ECFDF5', borderColor: bloqueado ? '#FECACA' : '#A7F3D0' }]}>
-            {bloqueado
-              ? <IconLock  size={11} color={RED}   />
-              : <IconCheck size={11} color={GREEN}  />}
-            <Text style={[s.badgeTxt, { color: bloqueado ? RED : GREEN, marginLeft: 3 }]}>
-              {bloqueado ? 'Bloqueado' : 'Activo'}
-            </Text>
+            <View style={s.userInfoBadges}>
+              <View style={[s.badge, s.userRoleBadge, { backgroundColor: WHITE, borderColor: rc.border }]}>
+                <Text style={[s.badgeTxt, { color: rc.color }]}>{u.rol || 'usuario'}</Text>
+              </View>
+              <View style={[s.badge, { backgroundColor: bloqueado ? '#FEF2F2' : '#ECFDF5', borderColor: bloqueado ? '#FECACA' : '#A7F3D0' }]}>
+                {bloqueado
+                  ? <IconLock size={11} color={RED} />
+                  : <IconCheck size={11} color={GREEN} />}
+                <Text style={[s.badgeTxt, { color: bloqueado ? RED : GREEN, marginLeft: 3 }]}>
+                  {bloqueado ? 'Bloqueado' : 'Activo'}
+                </Text>
+              </View>
+            </View>
           </View>
         </View>
         {/* Acciones: Ver Ficha + Bloquear/Desbloquear */}
@@ -816,20 +925,19 @@ export default function AdminHome() {
     return (
       <View style={[s.card, oculto && s.cardOculto]}>
         {/* Fila principal siempre visible */}
-        <TouchableOpacity
-          style={s.cardTop}
-          onPress={() => setExpandedLibro(expanded ? null : l.id_libro)}
-          activeOpacity={0.8}
-        >
-          <View style={[s.avatar, { backgroundColor: '#F3E8FF' }]}>
-            <IconBook size={18} color="#7E22CE" />
-          </View>
-          <View style={s.cardMid}>
-            <Text style={s.cardName} numberOfLines={1}>{l.titulo || l.nombre_libro || 'Libro sin título'}</Text>
-            <Text style={s.cardSub}  numberOfLines={1}>{l.autor_libro || 'Autor desconocido'}</Text>
-          </View>
-          {/* Badge visible/oculto + chevron */}
-          <View style={{ alignItems: 'flex-end', gap: 4 }}>
+        <View style={s.cardTop}>
+          <TouchableOpacity
+            style={s.bookMainPress}
+            onPress={() => setExpandedLibro(expanded ? null : l.id_libro)}
+            activeOpacity={0.8}
+          >
+            <BookCover image={l.imagen} title={l.titulo || l.nombre_libro} />
+            <View style={s.cardMid}>
+              <Text style={s.cardName} numberOfLines={1}>{l.titulo || l.nombre_libro || 'Libro sin título'}</Text>
+              <Text style={s.cardSub}  numberOfLines={1}>{l.autor_libro || 'Autor desconocido'}</Text>
+            </View>
+          </TouchableOpacity>
+          <View style={s.bookCardActions}>
             <View style={[s.badge, { backgroundColor: oculto ? '#FEF2F2' : '#ECFDF5', borderColor: oculto ? '#FECACA' : '#A7F3D0' }]}>
               {oculto
                 ? <IconEyeOff size={11} color="#991B1B" />
@@ -838,11 +946,17 @@ export default function AdminHome() {
                 {oculto ? 'Oculto' : 'Visible'}
               </Text>
             </View>
-            <View style={s.chevronWrap}>
-              <Text style={s.chevronTxt}>{expanded ? '▲' : '▼'}</Text>
-            </View>
+            <TouchableOpacity
+              style={[s.detailsToggle, expanded && s.detailsToggleExpanded]}
+              onPress={() => setExpandedLibro(expanded ? null : l.id_libro)}
+              activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel={expanded ? 'Ocultar detalles' : 'Ver detalles'}
+            >
+              <Text style={s.detailsToggleText}>{expanded ? 'Ocultar detalles' : 'Ver detalles'}</Text>
+            </TouchableOpacity>
           </View>
-        </TouchableOpacity>
+        </View>
 
         {/* Detalles expandibles */}
         {expanded && (
@@ -926,31 +1040,38 @@ export default function AdminHome() {
     return (
       <View style={s.card}>
         {/* Fila principal — siempre visible, toca para expandir */}
-        <TouchableOpacity
-          style={s.cardTop}
-          onPress={() => setExpandedTienda(expanded ? null : t.id_tienda)}
-          activeOpacity={0.8}
-        >
-          <View style={[s.avatar, { backgroundColor: '#ECFDF5' }]}>
-            <IconStore size={18} color="#047857" />
-          </View>
-          <View style={s.cardMid}>
-            <Text style={s.cardName} numberOfLines={1}>{t.nombre_tienda || 'Librería'}</Text>
-            <Text style={s.cardSub}  numberOfLines={1}>
-              {t.telefono || t.direccion || fecha}
-            </Text>
-          </View>
-          {/* Badge estado + chevron */}
-          <View style={{ alignItems: 'flex-end', gap: 4 }}>
+        <View style={s.cardTop}>
+          <TouchableOpacity
+            style={s.storeMainPress}
+            onPress={() => setExpandedTienda(expanded ? null : t.id_tienda)}
+            activeOpacity={0.8}
+          >
+            <View style={[s.avatar, { backgroundColor: '#ECFDF5' }]}>
+              <IconStore size={18} color="#047857" />
+            </View>
+            <View style={s.cardMid}>
+              <Text style={s.cardName} numberOfLines={1}>{t.nombre_tienda || 'Librería'}</Text>
+              <Text style={s.cardSub}  numberOfLines={1}>
+                {t.telefono || t.direccion || fecha}
+              </Text>
+            </View>
+          </TouchableOpacity>
+          <View style={s.bookCardActions}>
             <View style={[s.badge, { backgroundColor: estadoConfig.bg, borderColor: estadoConfig.border }]}>
               <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: estadoConfig.color, marginRight: 4 }} />
               <Text style={[s.badgeTxt, { color: estadoConfig.color }]}>{estadoConfig.label}</Text>
             </View>
-            <View style={s.chevronWrap}>
-              <Text style={s.chevronTxt}>{expanded ? '▲' : '▼'}</Text>
-            </View>
+            <TouchableOpacity
+              style={[s.detailsToggle, expanded && s.detailsToggleExpanded]}
+              onPress={() => setExpandedTienda(expanded ? null : t.id_tienda)}
+              activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel={expanded ? 'Ocultar detalles' : 'Ver detalles'}
+            >
+              <Text style={s.detailsToggleText}>{expanded ? 'Ocultar detalles' : 'Ver detalles'}</Text>
+            </TouchableOpacity>
           </View>
-        </TouchableOpacity>
+        </View>
 
         {/* Detalles expandibles */}
         {expanded && (
@@ -1005,8 +1126,12 @@ export default function AdminHome() {
   // ── Tarjeta Orden ─────────────────────────────────────────────────────────
   const renderOrden = useCallback(({ item: o }) => {
     const ec = getOrdenEstado(o.estado);
+    const expanded = expandedOrden === o.id_orden;
+    const items = Array.isArray(o.items) ? o.items : [];
+    const comprador = data.usuarios.find((u) => String(u.id_usuario) === String(o.id_usuario_propietario));
+    const tipoEntrega = o.tipo_entrega === 'retiro_tienda' ? 'Retiro en tienda' : o.tipo_entrega === 'domicilio' ? 'Domicilio' : 'No especificado';
     return (
-      <View style={s.card}>
+      <View style={[s.card, s.orderCard, { backgroundColor: ec.bg, borderColor: ec.border, borderLeftColor: ec.color }]}>
         <View style={s.cardTop}>
           <View style={[s.avatar, { backgroundColor: '#EFF6FF' }]}>
             <IconPackage size={18} color="#1D4ED8" />
@@ -1016,22 +1141,63 @@ export default function AdminHome() {
             <Text style={s.cardSub}>
               {o.fecha ? new Date(o.fecha).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Sin fecha'}
             </Text>
+            {!!o.codigo_compra && <Text style={s.orderCode}>{o.codigo_compra}</Text>}
           </View>
-          {/* Precio destacado */}
-          <View style={s.priceBadge}>
-            <Text style={s.priceTxt}>{fmtPrice(o.total)}</Text>
+          <View style={s.orderSummary}>
+            <View style={s.priceBadge}>
+              <Text style={s.priceTxt}>{fmtPrice(o.total)}</Text>
+            </View>
+            <View style={[s.badge, s.orderStatusBadge, { backgroundColor: ec.bg, borderColor: ec.border }]}>
+              <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: ec.dot, marginRight: 5 }} />
+              <Text style={[s.badgeTxt, { color: ec.color }]}>{ec.label}</Text>
+            </View>
+            <TouchableOpacity
+              style={[s.detailsToggle, expanded && s.detailsToggleExpanded]}
+              onPress={() => setExpandedOrden(expanded ? null : o.id_orden)}
+              activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel={expanded ? 'Ocultar detalles' : 'Ver detalles'}
+            >
+              <Text style={s.detailsToggleText}>{expanded ? 'Ocultar detalles' : 'Ver detalles'}</Text>
+            </TouchableOpacity>
           </View>
         </View>
-        {/* Badge de estado con color semántico */}
-        <View style={s.badgeRow}>
-          <View style={[s.badge, { backgroundColor: ec.bg, borderColor: ec.border }]}>
-            <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: ec.dot, marginRight: 5 }} />
-            <Text style={[s.badgeTxt, { color: ec.color }]}>{ec.label}</Text>
+        {expanded && <View style={s.orderInfo}>
+          <View style={s.orderBuyerRow}>
+            <Text style={s.orderInfoLabel}>COMPRADOR</Text>
+            <Text style={s.orderInfoValue} numberOfLines={1}>
+              {comprador?.nombre_usuario || (o.id_usuario_propietario ? `#${o.id_usuario_propietario}` : 'No disponible')}
+            </Text>
           </View>
-        </View>
+          <View style={s.orderItemsSection}>
+            <View style={s.orderItemsHeading}>
+              <Text style={s.orderItemsTitle}>Artículos</Text>
+              <Text style={s.orderItemsCount}>{items.length}</Text>
+            </View>
+            {items.length > 0 ? items.slice(0, 2).map((item, index) => (
+              <View style={s.orderItemRow} key={`${item.id_libro || item.titulo || 'item'}-${index}`}>
+                <Text style={s.orderItemName} numberOfLines={1}>{item.titulo || 'Libro sin título'}</Text>
+                <Text style={s.orderItemMeta}>×{item.cantidad || 1}</Text>
+              </View>
+            )) : (
+              <Text style={s.orderItemEmpty}>No hay artículos disponibles</Text>
+            )}
+            {items.length > 2 && <Text style={s.orderItemMore}>y {items.length - 2} más</Text>}
+          </View>
+          <View style={s.orderMetaGrid}>
+            <View style={s.orderMetaCell}>
+              <Text style={s.orderInfoLabel}>PAGO</Text>
+              <Text style={s.orderInfoValue} numberOfLines={1}>{o.metodo_pago || 'No especificado'}</Text>
+            </View>
+            <View style={s.orderMetaCell}>
+              <Text style={s.orderInfoLabel}>ENTREGA</Text>
+              <Text style={s.orderInfoValue}>{tipoEntrega}</Text>
+            </View>
+          </View>
+        </View>}
       </View>
     );
-  }, []);
+  }, [data.usuarios, expandedOrden]);
 
   const renderItem = useCallback((args) => {
     if (activeSection === 'usuarios') return renderUsuario(args);
@@ -1047,6 +1213,16 @@ export default function AdminHome() {
   //  HEADER DE SECCIÓN (filtros + búsqueda)
   // ─────────────────────────────────────────────────────────────────────────
   const cfg = SECTION_CONFIG[activeSection];
+  const isSectionFiltered = Boolean(
+    busqueda ||
+    filtroRol !== 'todos' ||
+    (filtroEstadoUsuario !== 'todos' && filtroEstadoUsuario) ||
+    filtroCategoria !== 'todas' ||
+    (activeSection === 'ordenes' && filtroEstadoOrden !== 'todos')
+  );
+  const sectionCountLabel =
+    `${sectionItems.length} ${activeSection} encontrado${sectionItems.length !== 1 ? 's' : ''}` +
+    (isSectionFiltered ? ' (filtrado)' : '');
 
   // KPI cards de la sección usuarios (calculadas fuera del useMemo para depender de data)
   const usuariosKpi = useMemo(() => {
@@ -1191,72 +1367,226 @@ export default function AdminHome() {
 
       {/* Pills rol (solo usuarios) */}
       {activeSection === 'usuarios' && (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 8 }} contentContainerStyle={{ gap: 7 }}>
-          {['todos', 'comprador', 'vendedor', 'admin'].map((r) => (
+        <View style={s.userRoleFilters}>
+          {[
+            { id: 'todos', label: 'Todos', Icon: IconUsers },
+            { id: 'comprador', label: 'Comprador', Icon: IconCart },
+            { id: 'vendedor', label: 'Vendedor', Icon: IconStore },
+            { id: 'admin', label: 'Admin', Icon: IconShield },
+          ].map(({ id, label, Icon }) => (
             <TouchableOpacity
-              key={r}
-              style={[s.pill, filtroRol === r && s.pillActive]}
-              onPress={() => { setFiltroRol(r); setPagina(1); }}
+              key={id}
+              style={[s.pill, s.rolePill, filtroRol === id && s.pillActive]}
+              onPress={() => { setFiltroRol(id); setPagina(1); }}
+              accessibilityRole="button"
+              accessibilityState={{ selected: filtroRol === id }}
             >
-              <Text style={[s.pillTxt, filtroRol === r && s.pillTxtActive]}>
-                {r === 'todos' ? '👥 Todos' : r === 'comprador' ? '🛒 Comprador' : r === 'vendedor' ? '🏪 Vendedor' : '🛡️ Admin'}
-              </Text>
+              <Icon size={14} color={filtroRol === id ? WHITE : VINOTINTO} />
+              <Text style={[s.pillTxt, filtroRol === id && s.pillTxtActive]}>{label}</Text>
             </TouchableOpacity>
           ))}
-        </ScrollView>
+        </View>
       )}
 
       {/* Pills estado (solo usuarios) */}
       {activeSection === 'usuarios' && (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 8 }} contentContainerStyle={{ gap: 7 }}>
-          {['Activo', 'Bloqueado'].map((e) => (
+        <View style={s.userStatusFilters}>
+          {[
+            { id: 'Activo', label: 'Solo activos', Icon: IconCheck },
+            { id: 'Bloqueado', label: 'Solo bloqueados', Icon: IconLock },
+          ].map(({ id, label, Icon }) => {
+            const selected = filtroEstadoUsuario === id;
+            const isActiveFilter = id === 'Activo';
+            return (
             <TouchableOpacity
-              key={e}
-              style={[s.pill, filtroEstadoUsuario === e && s.pillActive]}
-              onPress={() => { setFiltroEstadoUsuario(e); setPagina(1); }}
+              key={id}
+              style={[
+                s.userStatusFilter,
+                isActiveFilter ? s.userStatusActive : s.userStatusBlocked,
+                selected && (isActiveFilter ? s.userStatusActiveSelected : s.userStatusBlockedSelected),
+              ]}
+              onPress={() => { setFiltroEstadoUsuario(selected ? 'todos' : id); setPagina(1); }}
+              accessibilityRole="button"
+              accessibilityState={{ selected }}
             >
-              <Text style={[s.pillTxt, filtroEstadoUsuario === e && s.pillTxtActive]}>
-                {e === 'Activo' ? '✅ Solo Activos' : '🚫 Solo Bloqueados'}
-              </Text>
+              <Icon size={16} color={selected ? WHITE : (isActiveFilter ? '#166534' : '#991B1B')} />
+              <Text style={[
+                s.userStatusFilterText,
+                selected && s.userStatusFilterTextSelected,
+                !selected && (isActiveFilter ? s.userStatusActiveText : s.userStatusBlockedText),
+              ]}>{label}</Text>
             </TouchableOpacity>
-          ))}
-        </ScrollView>
+          ); })}
+        </View>
       )}
 
-      {/* Limpiar filtros (solo usuarios, si hay algo activo) */}
-      {activeSection === 'usuarios' && (busqueda || filtroRol !== 'todos' || (filtroEstadoUsuario !== 'todos' && filtroEstadoUsuario)) && (
+      {activeSection === 'ordenes' && (
+        <View style={s.orderStatusFilterSection}>
+          <Text style={s.orderStatusFilterLabel}>Filtrar por estado</Text>
+          <View style={s.orderStatusFilters}>
+            {[{ value: 'todos', label: 'Todos' }, ...estadosOrden.map((value) => ({
+              value,
+              label: getOrdenEstado(value).label,
+            }))].map(({ value, label }) => {
+              const selected = filtroEstadoOrden === value;
+              const estado = value === 'todos' ? { color: '#1D4ED8', bg: '#EFF6FF', border: '#BFDBFE' } : getOrdenEstado(value);
+              return (
+                <TouchableOpacity
+                  key={value}
+                  style={[
+                    s.orderStatusFilter,
+                    { backgroundColor: selected ? estado.bg : WHITE, borderColor: selected ? estado.border : BORDER },
+                  ]}
+                  onPress={() => { setFiltroEstadoOrden(value); setPagina(1); }}
+                  activeOpacity={0.75}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected }}
+                >
+                  <Text style={[s.orderStatusFilterText, { color: selected ? estado.color : GRAY }]}>
+                    {label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>
+      )}
+
+      {/* Limpiar filtros */}
+      {((activeSection === 'usuarios' && (busqueda || filtroRol !== 'todos' || filtroEstadoUsuario !== 'todos')) ||
+        (activeSection === 'libros' && (busqueda || filtroCategoria !== 'todas')) ||
+        (activeSection === 'ordenes' && (busqueda || filtroEstadoOrden !== 'todos'))) && (
         <TouchableOpacity
           style={s.clearFiltersBtn}
-          onPress={() => { setBusqueda(''); setFiltroRol('todos'); setFiltroEstadoUsuario('todos'); setPagina(1); }}
+          onPress={() => {
+            setBusqueda('');
+            setFiltroRol('todos');
+            setFiltroEstadoUsuario('todos');
+            setFiltroCategoria('todas');
+            setFiltroEstadoOrden('todos');
+            setPagina(1);
+          }}
           activeOpacity={0.8}
         >
-          <Text style={s.clearFiltersTxt}>↺ Limpiar filtros</Text>
+          <IconClose size={14} color={VINOTINTO} />
+          <Text style={s.clearFiltersTxt}>Limpiar filtros</Text>
         </TouchableOpacity>
       )}
 
-      {/* Pills categoría (solo libros) */}
-      {activeSection === 'libros' && categorias.length > 1 && (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 10 }} contentContainerStyle={{ gap: 7 }}>
-          {categorias.map((c) => (
-            <TouchableOpacity
-              key={c}
-              style={[s.pill, filtroCategoria === c && s.pillActive]}
-              onPress={() => { setFiltroCategoria(c); setPagina(1); }}
-            >
-              <Text style={[s.pillTxt, filtroCategoria === c && s.pillTxtActive]} numberOfLines={1}>
-                {c === 'todas' ? 'Todas' : c}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+      {/* Selector de categoría para libros */}
+      {activeSection === 'libros' && (
+        <View style={s.categoryFilter}>
+          <View style={s.categoryFilterHeading}>
+            <View style={s.categoryFilterLabel}>
+              <IconFilter size={15} color={VINOTINTO} />
+              <Text style={s.categoryFilterTitle}>Categoría</Text>
+            </View>
+            <Text style={s.categoryFilterCount}>{Math.max(categorias.length - 1, 0)} disponibles</Text>
+          </View>
+          <TouchableOpacity
+            style={s.categorySelector}
+            onPress={() => { setBusquedaCategoria(''); setModalCategoriasVisible(true); }}
+            accessibilityRole="button"
+            accessibilityLabel={`Elegir categoría. Seleccionada: ${filtroCategoria === 'todas' ? 'Todas las categorías' : filtroCategoria}`}
+          >
+            <Text style={[s.categorySelectorText, filtroCategoria !== 'todas' && s.categorySelectorTextSelected]} numberOfLines={1}>
+              {filtroCategoria === 'todas' ? 'Todas las categorías' : filtroCategoria}
+            </Text>
+            <Text style={s.categorySelectorAction}>Cambiar  ›</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {activeSection === 'libros' && (
+        <Modal
+          visible={modalCategoriasVisible}
+          transparent
+          animationType="fade"
+          statusBarTranslucent
+          onRequestClose={() => setModalCategoriasVisible(false)}
+        >
+          <View style={s.categoryModalOverlay}>
+            <View style={s.categoryModal}>
+              <View style={s.categoryModalHeader}>
+                <View style={{ flex: 1 }}>
+                  <Text style={s.categoryModalTitle}>Filtrar por categoría</Text>
+                  <Text style={s.categoryModalSubtitle}>{Math.max(categorias.length - 1, 0)} categorías disponibles</Text>
+                </View>
+                <TouchableOpacity
+                  style={s.categoryModalClose}
+                  onPress={() => setModalCategoriasVisible(false)}
+                  accessibilityRole="button"
+                  accessibilityLabel="Cerrar categorías"
+                >
+                  <IconClose size={18} color={CARBON} />
+                </TouchableOpacity>
+              </View>
+              <View style={s.categorySearch}>
+                <IconSearch size={17} color={GRAY} />
+                <TextInput
+                  style={s.categorySearchInput}
+                  value={busquedaCategoria}
+                  onChangeText={setBusquedaCategoria}
+                  placeholder="Buscar categoría..."
+                  placeholderTextColor="#9CA3AF"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  accessibilityLabel="Buscar categoría"
+                />
+                {!!busquedaCategoria && (
+                  <TouchableOpacity onPress={() => setBusquedaCategoria('')} accessibilityLabel="Limpiar búsqueda de categoría">
+                    <IconClose size={16} color={GRAY} />
+                  </TouchableOpacity>
+                )}
+              </View>
+              <ScrollView style={s.categoryOptions} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator>
+                {categorias
+                  .filter((category) => category === 'todas' || category.toLowerCase().includes(busquedaCategoria.trim().toLowerCase()))
+                  .map((category) => {
+                    const selected = filtroCategoria === category;
+                    const count = category === 'todas' ? data.libros.length : librosPorCategoria[category] || 0;
+                    return (
+                      <TouchableOpacity
+                        key={category}
+                        style={[s.categoryOption, selected && s.categoryOptionSelected]}
+                        onPress={() => {
+                          setFiltroCategoria(category);
+                          setPagina(1);
+                          setModalCategoriasVisible(false);
+                        }}
+                        accessibilityRole="button"
+                        accessibilityState={{ selected }}
+                      >
+                        <View style={s.categoryOptionInfo}>
+                          <Text style={[s.categoryOptionName, selected && s.categoryOptionNameSelected]}>
+                            {category === 'todas' ? 'Todas las categorías' : category}
+                          </Text>
+                          <Text style={s.categoryOptionCount}>{count} {count === 1 ? 'libro' : 'libros'}</Text>
+                        </View>
+                        {selected && <IconCheck size={17} color={VINOTINTO} />}
+                      </TouchableOpacity>
+                    );
+                  })}
+                {Boolean(busquedaCategoria.trim()) && !categorias.some((category) => category !== 'todas' && category.toLowerCase().includes(busquedaCategoria.trim().toLowerCase())) && (
+                  <Text style={s.categoryEmpty}>No se encontraron categorías.</Text>
+                )}
+              </ScrollView>
+              <TouchableOpacity
+                style={s.categoryModalDone}
+                onPress={() => setModalCategoriasVisible(false)}
+              >
+                <Text style={s.categoryModalDoneText}>Listo</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
       )}
 
       <Text style={s.counter}>
-        {sectionItems.length} {activeSection} encontrado{sectionItems.length !== 1 ? 's' : ''}
-        {busqueda || filtroRol !== 'todos' || (filtroEstadoUsuario !== 'todos' && filtroEstadoUsuario) || filtroCategoria !== 'todas' ? ' (filtrado)' : ''}
+        {sectionCountLabel}
       </Text>
     </View>
-  ), [activeSection, busqueda, filtroRol, filtroEstadoUsuario, filtroCategoria, categorias, sectionItems.length, usuariosKpi]);
+  ), [activeSection, busqueda, busquedaCategoria, filtroRol, filtroEstadoUsuario, filtroCategoria, filtroEstadoOrden, estadosOrden, modalCategoriasVisible, categorias, librosPorCategoria, data.libros.length, sectionItems.length, usuariosKpi]);
 
   // ── Paginación ────────────────────────────────────────────────────────────
   const SectionListFooter = useMemo(() => {
@@ -1461,13 +1791,13 @@ export default function AdminHome() {
               linkText={`Ver todos (${data.usuarios.length}) →`}
               onLink={() => setActiveSection('usuarios')}
             />
-            <ScrollView horizontal showsHorizontalScrollIndicator persistentScrollbar style={s.tableScroll}>
-              <View style={{ width: 500 }}>
+            <View style={s.tableScroll}>
+              <View style={s.tableContent}>
                 <View style={[s.tableHead, { backgroundColor: VINOTINTO }]}>
-                  <Text style={[s.th, { width: 130 }]}>Usuario</Text>
-                  <Text style={[s.th, { width: 170 }]}>Correo</Text>
-                  <Text style={[s.th, { width: 88 }]}>Rol</Text>
-                  <Text style={[s.th, { width: 80, textAlign: 'right' }]}>Estado</Text>
+                  <Text style={[s.th, s.userNameColumn]}>Usuario</Text>
+                  <Text style={[s.th, s.userEmailColumn]}>Correo</Text>
+                  <Text style={[s.th, s.userRoleColumn]}>Rol</Text>
+                  <Text style={[s.th, s.userStatusColumn, s.thRight]}>Estado</Text>
                 </View>
                 {lastUsers.map((item, i) => {
                   const rc = getRolColors(item.rol);
@@ -1475,19 +1805,19 @@ export default function AdminHome() {
                   const bloq = item.estado_usuario === 'Bloqueado';
                   return (
                     <View key={item.id_usuario} style={[s.tableRow, { backgroundColor: i % 2 === 0 ? '#fafafa' : WHITE }]}>
-                      <View style={[s.td, { width: 130, flexDirection: 'row', alignItems: 'center', gap: 7 }]}>
+                      <View style={[s.td, s.userNameColumn, { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start', gap: 7 }]}>
                         <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: rc.bg, alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                           <Text style={{ color: rc.color, fontSize: 10, fontWeight: '800' }}>{ini}</Text>
                         </View>
                         <Text style={{ color: CARBON, fontSize: 12, fontWeight: '700', flexShrink: 1 }} numberOfLines={1}>{item.nombre_usuario || 'Usuario'}</Text>
                       </View>
-                      <View style={[s.td, { width: 170 }]}><Text style={{ color: GRAY, fontSize: 11 }} numberOfLines={1}>{item.correo_usuario || '—'}</Text></View>
-                      <View style={[s.td, { width: 88 }]}>
+                      <View style={[s.td, s.userEmailColumn]}><Text style={{ color: GRAY, fontSize: 11 }} numberOfLines={1}>{item.correo_usuario || '—'}</Text></View>
+                      <View style={[s.td, s.userRoleColumn]}>
                         <View style={{ backgroundColor: rc.bg, borderColor: rc.border, borderWidth: 1, borderRadius: 12, paddingHorizontal: 7, paddingVertical: 2, alignSelf: 'flex-start' }}>
                           <Text style={{ color: rc.color, fontSize: 10, fontWeight: '700', textTransform: 'capitalize' }} numberOfLines={1}>{item.rol || 'usuario'}</Text>
                         </View>
                       </View>
-                      <View style={[s.td, { width: 80, alignItems: 'flex-end' }]}>
+                      <View style={[s.td, s.userStatusColumn, { alignItems: 'flex-end' }]}>
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: bloq ? '#FEF2F2' : '#ECFDF5', borderColor: bloq ? '#FECACA' : '#A7F3D0', borderWidth: 1, borderRadius: 10, paddingHorizontal: 6, paddingVertical: 2 }}>
                           <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: bloq ? '#ef4444' : '#16a34a' }} />
                           <Text style={{ color: bloq ? '#991b1b' : '#166534', fontSize: 9, fontWeight: '700' }}>{bloq ? 'Bloqueado' : 'Activo'}</Text>
@@ -1498,8 +1828,7 @@ export default function AdminHome() {
                 })}
                 {lastUsers.length === 0 && <Text style={s.emptyTxt}>No hay usuarios registrados aún.</Text>}
               </View>
-            </ScrollView>
-            <Text style={s.scrollHint}>← Desliza para ver más →</Text>
+            </View>
           </View>
 
           {/* Últimas tiendas */}
@@ -1511,28 +1840,28 @@ export default function AdminHome() {
               linkText={`Gestionar todas (${data.tiendas.length}) →`}
               onLink={() => setActiveSection('tiendas')}
             />
-            <ScrollView horizontal showsHorizontalScrollIndicator persistentScrollbar style={s.tableScroll}>
-              <View style={{ width: 520 }}>
+            <View style={s.tableScroll}>
+              <View style={s.tableContent}>
                 <View style={[s.tableHead, { backgroundColor: VINOTINTO }]}>
-                  <Text style={[s.th, { width: 140 }]}>Librería</Text>
-                  <Text style={[s.th, { width: 110 }]}>Teléfono</Text>
-                  <Text style={[s.th, { width: 110 }]}>Registro</Text>
-                  <Text style={[s.th, { width: 100, textAlign: 'right' }]}>Estado</Text>
+                  <Text style={[s.th, s.storeNameColumn]}>Librería</Text>
+                  <Text style={[s.th, s.storePhoneColumn]}>Teléfono</Text>
+                  <Text style={[s.th, s.storeDateColumn]}>Registro</Text>
+                  <Text style={[s.th, s.storeStatusColumn, s.thRight]}>Estado</Text>
                 </View>
                 {lastStores.map((item, i) => {
                   const sc = getStoreColors(item.estado_tienda);
                   const fecha = item.fecha_creacion ? new Date(item.fecha_creacion).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
                   return (
                     <View key={item.id_tienda} style={[s.tableRow, { backgroundColor: i % 2 === 0 ? '#fafafa' : WHITE }]}>
-                      <View style={[s.td, { width: 140, flexDirection: 'row', alignItems: 'center', gap: 7 }]}>
+                      <View style={[s.td, s.storeNameColumn, { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start', gap: 7 }]}>
                         <View style={{ width: 28, height: 28, borderRadius: 8, backgroundColor: COLORS.tiendas.soft, alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                           <IconStore size={15} color={COLORS.tiendas.main} />
                         </View>
                         <Text style={{ color: VINOTINTO, fontSize: 12, fontWeight: '700', flexShrink: 1 }} numberOfLines={1}>{item.nombre_tienda || 'Librería'}</Text>
                       </View>
-                      <View style={[s.td, { width: 110 }]}><Text style={{ color: GRAY, fontSize: 11 }} numberOfLines={1}>{item.telefono || '—'}</Text></View>
-                      <View style={[s.td, { width: 110 }]}><Text style={{ color: GRAY, fontSize: 11 }} numberOfLines={1}>{fecha}</Text></View>
-                      <View style={[s.td, { width: 100, alignItems: 'flex-end' }]}>
+                      <View style={[s.td, s.storePhoneColumn]}><Text style={{ color: GRAY, fontSize: 11 }} numberOfLines={1}>{item.telefono || '—'}</Text></View>
+                      <View style={[s.td, s.storeDateColumn]}><Text style={{ color: GRAY, fontSize: 11 }} numberOfLines={1}>{fecha}</Text></View>
+                      <View style={[s.td, s.storeStatusColumn, { alignItems: 'flex-end' }]}>
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: sc.bg, borderColor: sc.border, borderWidth: 1, borderRadius: 12, paddingHorizontal: 8, paddingVertical: 3 }}>
                           <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: sc.color }} />
                           <Text style={{ color: sc.color, fontSize: 10, fontWeight: '700' }} numberOfLines={1}>{item.estado_tienda || 'Pendiente'}</Text>
@@ -1543,8 +1872,7 @@ export default function AdminHome() {
                 })}
                 {lastStores.length === 0 && <Text style={s.emptyTxt}>No hay tiendas registradas aún.</Text>}
               </View>
-            </ScrollView>
-            <Text style={s.scrollHint}>← Desliza para ver más →</Text>
+            </View>
           </View>
 
         </ScrollView>
@@ -1562,7 +1890,7 @@ export default function AdminHome() {
           loading={solicitudesLoading}
           refreshing={solicitudesLoading}
           error={solicitudesError}
-          onRefresh={loadSolicitudes}
+          onRefresh={() => loadSolicitudes(true)}
         />
 
       ) : activeSection === 'perfil' ? (
@@ -1574,6 +1902,8 @@ export default function AdminHome() {
             tiendas: data.tiendas.length,
           }}
           solicitudes={data.solicitudes}
+          onProfilePhotoChange={setAdminProfilePhoto}
+          onProfileNameChange={setAdminProfileName}
         />
 
       ) : (
@@ -1603,7 +1933,11 @@ export default function AdminHome() {
       <SidebarAdmin
         visible={menuVisible}
         onClose={() => setMenuVisible(false)}
-        user={user}
+        user={{
+          ...user,
+          nombre: adminProfileName || user?.nombre,
+          foto_perfil: adminProfilePhoto || user?.foto_perfil,
+        }}
         activeSection={activeSection}
         onSignOut={signOut}
         onSelectDashboard={() => { setActiveSection('dashboard'); }}
@@ -1930,11 +2264,21 @@ const s = StyleSheet.create({
   legendItem:   { flexDirection: 'row', alignItems: 'center', gap: 5 },
   legendDot:    { width: 8, height: 8, borderRadius: 4 },
   smallIcon:    { width: 34, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  tableScroll:  { marginTop: 8, borderRadius: 10, overflow: 'hidden' },
+  tableScroll:  { width: '100%', alignSelf: 'stretch', marginTop: 8, borderRadius: 10, overflow: 'hidden' },
+  tableContent: { width: '100%' },
   tableHead:    { flexDirection: 'row', paddingVertical: 9, paddingHorizontal: 6 },
   th:           { color: WHITE, fontSize: 10, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.4 },
+  thRight:      { textAlign: 'right' },
   tableRow:     { flexDirection: 'row', paddingVertical: 10, paddingHorizontal: 6, borderTopWidth: 1, borderTopColor: '#F4EDE2' },
   td:           { justifyContent: 'center', paddingRight: 6 },
+  userNameColumn:   { flex: 1.45, minWidth: 0 },
+  userEmailColumn:  { flex: 1.75, minWidth: 0 },
+  userRoleColumn:   { flex: 1, minWidth: 0 },
+  userStatusColumn: { flex: 1.1, minWidth: 0 },
+  storeNameColumn:   { flex: 1.6, minWidth: 0 },
+  storePhoneColumn:  { flex: 1.1, minWidth: 0 },
+  storeDateColumn:   { flex: 1.2, minWidth: 0 },
+  storeStatusColumn: { flex: 1.2, minWidth: 0 },
   scrollHint:   { textAlign: 'center', color: GRAY, fontSize: 10, marginTop: 8, fontWeight: '600', letterSpacing: 0.5 },
 
   // Sección FlatList
@@ -1945,9 +2289,55 @@ const s = StyleSheet.create({
   // Búsqueda + pills
   searchInput:  { backgroundColor: WHITE, borderWidth: 1, borderColor: BORDER, borderRadius: 12, paddingHorizontal: 14, paddingVertical: Platform.OS === 'ios' ? 11 : 8, fontSize: 13, color: CARBON, marginBottom: 10 },
   pill:         { paddingHorizontal: 13, paddingVertical: 6, borderRadius: 20, backgroundColor: WHITE, borderWidth: 1, borderColor: BORDER },
+  userRoleFilters: { flexDirection: 'row', gap: 7, marginBottom: 8 },
+  rolePill:     { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, paddingHorizontal: 6 },
   pillActive:   { backgroundColor: VINOTINTO, borderColor: VINOTINTO },
   pillTxt:      { fontSize: 12, fontWeight: '700', color: GRAY },
   pillTxtActive:{ color: WHITE },
+  userStatusFilters: { flexDirection: 'row', gap: 8, marginBottom: 8 },
+  userStatusFilter: { flex: 1, minWidth: 0, minHeight: 40, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingHorizontal: 8, paddingVertical: 8, borderWidth: 1, borderRadius: 10 },
+  userStatusActive: { backgroundColor: '#ECFDF5', borderColor: '#A7F3D0' },
+  userStatusBlocked: { backgroundColor: '#FEF2F2', borderColor: '#FECACA' },
+  userStatusActiveSelected: { backgroundColor: '#15803D', borderColor: '#15803D' },
+  userStatusBlockedSelected: { backgroundColor: '#B91C1C', borderColor: '#B91C1C' },
+  userStatusFilterText: { fontSize: 12, fontWeight: '700', textAlign: 'center', flexShrink: 1 },
+  userStatusFilterTextSelected: { color: WHITE },
+  userStatusActiveText: { color: '#166534' },
+  userStatusBlockedText: { color: '#991B1B' },
+  orderStatusFilterSection: { marginBottom: 8 },
+  orderStatusFilterLabel: { color: GRAY, fontSize: 11, fontWeight: '700', marginBottom: 6 },
+  orderStatusFilters: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  orderStatusFilter: { minHeight: 30, justifyContent: 'center', paddingHorizontal: 10, paddingVertical: 5, borderWidth: 1, borderRadius: 16 },
+  orderStatusFilterText: { fontSize: 10, fontWeight: '700' },
+  clearFiltersBtn: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', gap: 5, marginBottom: 8, paddingVertical: 5, paddingHorizontal: 2 },
+  clearFiltersTxt: { color: VINOTINTO, fontSize: 12, fontWeight: '700' },
+  categoryFilter: { backgroundColor: WHITE, borderWidth: 1, borderColor: BORDER, borderRadius: 12, padding: 11, marginBottom: 8 },
+  categoryFilterHeading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
+  categoryFilterLabel: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  categoryFilterTitle: { color: CARBON, fontSize: 12, fontWeight: '800' },
+  categoryFilterCount: { color: GRAY, fontSize: 10, fontWeight: '600' },
+  categorySelector: { minHeight: 42, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, borderWidth: 1, borderColor: BORDER, borderRadius: 9, backgroundColor: '#FAFAF9', paddingHorizontal: 11, paddingVertical: 8 },
+  categorySelectorText: { color: GRAY, fontSize: 12, fontWeight: '700', flex: 1 },
+  categorySelectorTextSelected: { color: VINOTINTO },
+  categorySelectorAction: { color: VINOTINTO, fontSize: 11, fontWeight: '800' },
+  categoryModalOverlay: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.55)', padding: 20 },
+  categoryModal: { width: '100%', maxWidth: 480, maxHeight: '85%', backgroundColor: WHITE, borderRadius: 18, padding: 16, elevation: 20 },
+  categoryModalHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
+  categoryModalTitle: { color: CARBON, fontSize: 17, fontWeight: '800' },
+  categoryModalSubtitle: { color: GRAY, fontSize: 11, marginTop: 3 },
+  categoryModalClose: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center', borderRadius: 17, backgroundColor: '#F3F4F6' },
+  categorySearch: { minHeight: 42, flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1, borderColor: BORDER, borderRadius: 10, paddingHorizontal: 10, marginBottom: 10 },
+  categorySearchInput: { flex: 1, minWidth: 0, color: CARBON, fontSize: 13, paddingVertical: 8, outlineStyle: 'none' },
+  categoryOptions: { flexGrow: 0, maxHeight: 360 },
+  categoryOption: { minHeight: 52, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 10, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#F3F4F6' },
+  categoryOptionSelected: { backgroundColor: '#FDF2F4', borderRadius: 9 },
+  categoryOptionInfo: { flex: 1, minWidth: 0 },
+  categoryOptionName: { color: CARBON, fontSize: 12, fontWeight: '700' },
+  categoryOptionNameSelected: { color: VINOTINTO },
+  categoryOptionCount: { color: GRAY, fontSize: 10, marginTop: 3 },
+  categoryEmpty: { color: GRAY, textAlign: 'center', fontSize: 12, paddingVertical: 22 },
+  categoryModalDone: { minHeight: 40, alignItems: 'center', justifyContent: 'center', backgroundColor: VINOTINTO, borderRadius: 10, marginTop: 12 },
+  categoryModalDoneText: { color: WHITE, fontSize: 13, fontWeight: '800' },
   counter:      { color: GRAY, fontSize: 11, marginBottom: 6, marginLeft: 2 },
 
   // KPI cards de usuarios (estilo web)
@@ -1959,10 +2349,20 @@ const s = StyleSheet.create({
 
   // Tarjeta de ítem
   card:         { backgroundColor: WHITE, borderWidth: 1, borderColor: BORDER, borderRadius: 16, padding: 14, marginBottom: 10 },
+  userCard:     { borderLeftWidth: 4, paddingLeft: 11 },
   cardBloqueado:{ borderColor: '#FECACA' },
   cardOculto:   { borderColor: '#E9D5FF', opacity: 0.85 },
+  orderCard:    { borderLeftWidth: 4, paddingLeft: 11 },
   cardTop:      { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
+  bookMainPress: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center' },
+  storeMainPress: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center' },
+  bookCardActions: { alignItems: 'flex-end', gap: 5, marginLeft: 8 },
+  detailsToggle: { minHeight: 24, justifyContent: 'center', paddingVertical: 3, paddingHorizontal: 7, borderRadius: 6, backgroundColor: '#FDF2F4' },
+  detailsToggleExpanded: { backgroundColor: '#F8E7EB' },
+  detailsToggleText: { color: VINOTINTO, fontSize: 11, fontWeight: '700' },
   avatar:       { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginRight: 11 },
+  bookCover:    { overflow: 'hidden', backgroundColor: '#F4EDE2' },
+  bookCoverImage: { width: '100%', height: '100%' },
   avatarTxt:    { fontWeight: '800', fontSize: 14 },
   cardMid:      { flex: 1, marginRight: 8 },
   cardName:     { color: CARBON, fontSize: 14, fontWeight: '800' },
@@ -1972,6 +2372,33 @@ const s = StyleSheet.create({
   badgeRow:     { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 10 },
   badge:        { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderRadius: 10, paddingHorizontal: 8, paddingVertical: 3 },
   badgeTxt:     { fontSize: 11, fontWeight: '700', textTransform: 'capitalize' },
+  orderCode:    { color: GRAY, fontSize: 10, fontWeight: '600', marginTop: 3 },
+  orderSummary: { alignItems: 'flex-end', gap: 6 },
+  orderStatusBadge: { alignSelf: 'flex-end' },
+  orderInfo:    { backgroundColor: '#FAF8F5', borderRadius: 12, padding: 11, gap: 10 },
+  orderBuyerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, paddingBottom: 9, borderBottomWidth: 1, borderBottomColor: BORDER },
+  orderInfoLabel: { color: GRAY, fontSize: 9, fontWeight: '800', letterSpacing: 0.5 },
+  orderInfoValue: { color: CARBON, fontSize: 11, fontWeight: '700', flexShrink: 1, textAlign: 'right' },
+  orderItemsSection: { gap: 6 },
+  orderItemsHeading: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 1 },
+  orderItemsTitle: { color: CARBON, fontSize: 11, fontWeight: '800' },
+  orderItemsCount: { minWidth: 17, height: 17, lineHeight: 17, borderRadius: 9, overflow: 'hidden', textAlign: 'center', backgroundColor: '#E8EEF8', color: '#365D96', fontSize: 10, fontWeight: '800' },
+  orderItemRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 5, paddingHorizontal: 8, borderRadius: 7, backgroundColor: WHITE },
+  orderItemName: { flex: 1, minWidth: 0, color: CARBON, fontSize: 11 },
+  orderItemMeta: { color: GRAY, fontSize: 11, fontWeight: '700' },
+  orderItemMore: { color: GRAY, fontSize: 10, paddingLeft: 8 },
+  orderItemEmpty: { color: GRAY, fontSize: 11, fontStyle: 'italic', paddingLeft: 2 },
+  orderMetaGrid: { flexDirection: 'row', gap: 8 },
+  orderMetaCell: { flex: 1, minWidth: 0, gap: 4, padding: 8, borderRadius: 8, backgroundColor: WHITE },
+  userAvatarHalf: { flex: 1, minWidth: 0, minHeight: 124, alignItems: 'center', justifyContent: 'center', paddingRight: 8 },
+  userAvatar: { width: 88, height: 88, marginRight: 0, borderWidth: 2, borderRadius: 44, overflow: 'hidden' },
+  userAvatarImage: { width: '100%', height: '100%' },
+  userInfoHalf: { flex: 1, minWidth: 0, justifyContent: 'center', gap: 6, paddingLeft: 12 },
+  userContactRow: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 18 },
+  userContactText: { color: GRAY, fontSize: 11, flex: 1, minWidth: 0 },
+  userInfoBadges: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 5, marginTop: 2 },
+  userRoleBadge: { alignSelf: 'flex-start' },
+  userStatusRow: { alignItems: 'center', marginBottom: 10 },
 
   // Acordeón libro
   expandBox:    { borderTopWidth: 1, borderTopColor: BEIGE, marginTop: 4, paddingTop: 14 },

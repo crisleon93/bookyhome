@@ -553,6 +553,9 @@ def todas_las_quejas(user=Depends(current_user)):
         raise HTTPException(status_code=403, detail="Solo el administrador puede ver los reclamos")
     db = get_db(); cursor = db.cursor(dictionary=True)
     try:
+        from app.models.payments import ORDER_FILE, _load_store
+
+        orders_by_user = _load_store(ORDER_FILE)
         cursor.execute("""
             SELECT s.id_solicitud, s.id_usuario, s.id_orden, s.id_tienda, s.asunto, s.descripcion, s.categoria, s.tipo_solicitud, s.estado,
                    s.respuesta, s.evidencia_url, s.fecha_creacion,
@@ -561,29 +564,56 @@ def todas_las_quejas(user=Depends(current_user)):
                    u.foto_perfil AS foto_comprador,
                    u.correo_usuario AS correo_comprador, u.rol AS rol_usuario, t.nombre_tienda, t.id_usuario AS id_vendedor,
                    t.telefono AS telefono_tienda, t.direccion AS direccion_tienda,
-                   uv.nombre_usuario AS nombre_vendedor, uv.correo_usuario AS correo_vendedor
+                   uv.nombre_usuario AS nombre_vendedor, uv.correo_usuario AS correo_vendedor,
+                   order_book.titulo AS titulo_libro,
+                   (SELECT il.url_imagen
+                    FROM imagenes_libro il
+                    WHERE il.id_libro = order_book.id_libro
+                    ORDER BY il.es_principal DESC, il.id_imagen ASC
+                    LIMIT 1) AS imagen_libro,
+                   order_items.total_items, order_header.total AS total_orden
             FROM solicitudes_soporte s
             JOIN usuarios u ON u.id_usuario = s.id_usuario
             LEFT JOIN tiendas t ON t.id_tienda = s.id_tienda
             LEFT JOIN usuarios uv ON uv.id_usuario = t.id_usuario
+            LEFT JOIN (
+                SELECT id_orden, COUNT(*) AS total_items, MIN(id_detalle) AS first_detail_id
+                FROM detalle_orden
+                WHERE id_orden IN (
+                    SELECT id_orden
+                    FROM solicitudes_soporte
+                    WHERE tipo_solicitud IN ('reclamo', 'soporte') AND id_orden IS NOT NULL
+                )
+                GROUP BY id_orden
+            ) order_items ON order_items.id_orden = s.id_orden
+            LEFT JOIN detalle_orden first_item ON first_item.id_detalle = order_items.first_detail_id
+            LEFT JOIN libros order_book ON order_book.id_libro = first_item.id_libro
+            LEFT JOIN ordenes_compra order_header
+                ON order_header.id_orden = s.id_orden AND order_header.id_usuario = s.id_usuario
             WHERE s.tipo_solicitud IN ('reclamo', 'soporte')
             ORDER BY s.fecha_creacion DESC
         """)
         rows = cursor.fetchall()
 
-        from app.models.payments import obtener_orden
         for row in rows:
-            try:
-                if row.get("id_orden") and row.get("id_usuario"):
-                    orden = obtener_orden(int(row["id_usuario"]), int(row["id_orden"]))
-                    if orden and orden.get("items"):
-                        item0 = orden["items"][0]
-                        row["imagen_libro"] = item0.get("imagen_url") or item0.get("imagen")
-                        row["titulo_libro"] = item0.get("titulo") or item0.get("nombre_libro")
-                        row["total_items"] = len(orden["items"])
-                        row["total_orden"] = orden.get("total")
-            except Exception:
-                pass
+            if not row.get("id_orden") or not row.get("id_usuario"):
+                continue
+            user_orders = orders_by_user.get(str(row["id_usuario"]), [])
+            order = next(
+                (
+                    candidate for candidate in user_orders
+                    if str(candidate.get("id_orden")) == str(row["id_orden"])
+                    or str(candidate.get("id_orden_db")) == str(row["id_orden"])
+                ),
+                None,
+            )
+            items = order.get("items", []) if order else []
+            if items:
+                first_item = items[0]
+                row["titulo_libro"] = row.get("titulo_libro") or first_item.get("titulo") or first_item.get("nombre_libro")
+                row["imagen_libro"] = row.get("imagen_libro") or first_item.get("imagen_url") or first_item.get("imagen")
+                row["total_items"] = row.get("total_items") or len(items)
+                row["total_orden"] = row.get("total_orden") if row.get("total_orden") is not None else order.get("total")
 
         return rows
     finally:
@@ -647,4 +677,3 @@ def resolver_queja(id_solicitud: int, data: Resolucion, user=Depends(current_use
         return {"ok": True}
     finally:
         cursor.close(); db.close()
-
