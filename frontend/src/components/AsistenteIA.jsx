@@ -131,19 +131,43 @@ function renderInlineMarkdown(text) {
   });
 }
 
+function parseListContent(text, prefixEnd) {
+  let contentStart = prefixEnd;
+  while (text[contentStart] === ' ' || text[contentStart] === '\t') contentStart += 1;
+  if (contentStart === prefixEnd) return null;
+  if (contentStart === text.length) {
+    return contentStart - prefixEnd > 1 ? text.slice(contentStart - 1) : null;
+  }
+  return text.slice(contentStart);
+}
+
+function parseListItem(line) {
+  const text = line.trimStart();
+  if (text[0] === '-' || text[0] === '*') {
+    const content = parseListContent(text, 1);
+    if (content !== null) return { type: 'bullet', content };
+  }
+
+  const period = text.indexOf('.');
+  if (period < 1) return null;
+  for (let index = 0; index < period; index += 1) {
+    if (text[index] < '0' || text[index] > '9') return null;
+  }
+  const content = parseListContent(text, period + 1);
+  return content === null ? null : { type: 'numbered', number: text.slice(0, period), content };
+}
+
 function MessageContent({ text }) {
   return (
     <div>
       {text.split('\n').map((line, index) => {
-        const listLine = line.trimStart();
-        const bullet = listLine.match(/^[-*][ \t]+(.+)$/);
-        const numbered = listLine.match(/^(\d+)\.[ \t]+(.+)$/);
+        const listItem = parseListItem(line);
 
-        if (bullet) {
-          return <div key={index} style={{ display: 'flex', gap: 7, marginTop: index ? 5 : 0 }}><span aria-hidden="true">•</span><span>{renderInlineMarkdown(bullet[1])}</span></div>;
+        if (listItem?.type === 'bullet') {
+          return <div key={index} style={{ display: 'flex', gap: 7, marginTop: index ? 5 : 0 }}><span aria-hidden="true">•</span><span>{renderInlineMarkdown(listItem.content)}</span></div>;
         }
-        if (numbered) {
-          return <div key={index} style={{ display: 'flex', gap: 7, marginTop: index ? 5 : 0 }}><strong>{numbered[1]}.</strong><span>{renderInlineMarkdown(numbered[2])}</span></div>;
+        if (listItem?.type === 'numbered') {
+          return <div key={index} style={{ display: 'flex', gap: 7, marginTop: index ? 5 : 0 }}><strong>{listItem.number}.</strong><span>{renderInlineMarkdown(listItem.content)}</span></div>;
         }
         return line ? <div key={index} style={{ marginTop: index ? 5 : 0 }}>{renderInlineMarkdown(line)}</div> : <div key={index} style={{ height: 6 }} />;
       })}
