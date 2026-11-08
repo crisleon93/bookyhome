@@ -442,8 +442,9 @@ function ReactionPickerModal({ idMensaje, onClose, onSelectEmoji }) {
     : EMOJI_CATEGORIES;
 
   return (
-    <div className="reaction-modal-backdrop" onClick={onClose}>
-      <div className="reaction-modal-content" onClick={(e) => e.stopPropagation()}>
+    <div className="reaction-modal-backdrop" role="dialog" aria-modal="true" aria-label="Seleccionar reacción">
+      <button type="button" className="reaction-modal-dismiss" aria-label="Cerrar selector de reacciones" onClick={onClose} />
+      <div className="reaction-modal-content">
         {/* Barra superior de pestañas */}
         <div className="reaction-modal-tabs">
           <button
@@ -481,7 +482,6 @@ function ReactionPickerModal({ idMensaje, onClose, onSelectEmoji }) {
             placeholder="Busca una reacción"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            autoFocus
           />
           {searchTerm && (
             <button type="button" className="reaction-search-clear" onClick={() => setSearchTerm("")}>
@@ -612,7 +612,6 @@ function ChatEmojiPickerTray({ onSelectEmoji, onClose, config }) {
   return (
     <div
       className={`chat-emoji-tray theme-bubble-${bubbleTheme} theme-fondo-${fondoTheme}`}
-      onClick={(e) => e.stopPropagation()}
     >
       {/* 1. Barra superior de categorías (solo en modo Emojis) */}
       {activeBottomTab === "emojis" && (
@@ -682,8 +681,9 @@ function ChatEmojiPickerTray({ onSelectEmoji, onClose, config }) {
         {activeBottomTab === "gifs" && (
           <div className="chat-emoji-tray-gifs-grid">
             {sampleGifs.map((g) => (
-              <div
+              <button
                 key={g.id}
+                type="button"
                 className="chat-emoji-tray-gif-card"
                 onClick={() => {
                   onSelectEmoji(`[GIF: ${g.url}]`);
@@ -692,7 +692,7 @@ function ChatEmojiPickerTray({ onSelectEmoji, onClose, config }) {
               >
                 <img src={g.url} alt={g.title} loading="lazy" />
                 <span>{g.title}</span>
-              </div>
+              </button>
             ))}
           </div>
         )}
@@ -856,15 +856,16 @@ function ChatSettingsModal({ config, setConfig, onClose }) {
   };
 
   return (
-    <div role="presentation" className="bkh-config-modal-overlay" onClick={onClose}>
-      <div role="dialog" aria-modal="true" className="bkh-config-modal-card" onClick={(e) => e.stopPropagation()}>
+    <div role="dialog" aria-modal="true" aria-labelledby="chat-settings-title" className="bkh-config-modal-overlay">
+      <button type="button" className="bkh-config-modal-dismiss" aria-label="Cerrar configuración del chat" onClick={onClose} />
+      <div className="bkh-config-modal-card">
         <div className="bkh-config-modal-header">
           <div className="bkh-config-modal-header-title">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
               <circle cx="12" cy="12" r="3" />
             </svg>
-            <h3>Configuración y Apariencia del Chat</h3>
+            <h3 id="chat-settings-title">Configuración y Apariencia del Chat</h3>
           </div>
           <button type="button" className="bkh-config-modal-close" onClick={onClose} title="Cerrar">
             ✕
@@ -933,13 +934,22 @@ function ChatSettingsModal({ config, setConfig, onClose }) {
                   🌙 El modo oscuro global está activo. El fondo del chat se controla desde Configuración general.
                 </div>
               )}
-              <div className="bkh-config-wallpapers-grid">
+              <div className="bkh-config-wallpapers-grid" role="radiogroup" aria-label="Fondo del chat">
                 {fondos.map((f) => (
                   <div
                     key={f.id}
                     className={`bkh-wallpaper-card ${config.fondo === f.id ? "selected" : ""} ${modoOscuroGlobal ? "disabled" : ""}`}
+                    role="radio"
+                    tabIndex={modoOscuroGlobal ? -1 : 0}
+                    aria-checked={config.fondo === f.id}
                     aria-disabled={modoOscuroGlobal}
-                    onClick={() => handleUpdate("fondo", f.id)}
+                    onClick={() => !modoOscuroGlobal && handleUpdate("fondo", f.id)}
+                    onKeyDown={(event) => {
+                      if ((event.key === "Enter" || event.key === " ") && !modoOscuroGlobal) {
+                        event.preventDefault();
+                        handleUpdate("fondo", f.id);
+                      }
+                    }}
                   >
                     <div className="bkh-wallpaper-preview" style={{ backgroundColor: f.color }}>
                       {f.id === "beige_dots" && <span className="bkh-preview-dots">•••</span>}
@@ -959,6 +969,7 @@ function ChatSettingsModal({ config, setConfig, onClose }) {
                   <p>Muestra u oculta la sutil textura de fondo en el área de mensajes.</p>
                 </div>
                 <label className="bkh-switch">
+                  <span className="chat-sr-only">Textura de fondo (Patrón punteado)</span>
                   <input
                     type="checkbox"
                     checked={config.patronVisible}
@@ -975,14 +986,23 @@ function ChatSettingsModal({ config, setConfig, onClose }) {
           {activeTab === "salas" && (
             <div className="bkh-config-section">
               <h4 className="bkh-config-subtitle">Elige el estilo visual de la lista de conversaciones</h4>
-              <div className="bkh-salas-designs-grid">
+              <div className="bkh-salas-designs-grid" role="radiogroup" aria-label="Diseño de lista de conversaciones">
                 {disenosSalas.map((d) => {
                   const isSelected = (config.disenoSalas || "clasico") === d.id;
                   return (
                     <div
                       key={d.id}
                       className={`bkh-sala-design-card ${isSelected ? "selected" : ""}`}
+                      role="radio"
+                      tabIndex={0}
+                      aria-checked={isSelected}
                       onClick={() => handleUpdate("disenoSalas", d.id)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" || event.key === " ") {
+                          event.preventDefault();
+                          handleUpdate("disenoSalas", d.id);
+                        }
+                      }}
                     >
                       {/* Vista previa de cada diseño */}
                       <div className={`bkh-sala-preview bkh-sala-preview--${d.id}`}>
@@ -1019,12 +1039,21 @@ function ChatSettingsModal({ config, setConfig, onClose }) {
           {activeTab === "burbujas" && (
             <div className="bkh-config-section">
               <h4 className="bkh-config-subtitle">Combinación de colores para mensajes enviados y recibidos</h4>
-              <div className="bkh-config-bubbles-grid">
+              <div className="bkh-config-bubbles-grid" role="radiogroup" aria-label="Tema de burbujas">
                 {temasBurbujas.map((t) => (
                   <div
                     key={t.id}
                     className={`bkh-bubble-theme-card ${config.temaBurbujas === t.id ? "selected" : ""}`}
+                    role="radio"
+                    tabIndex={0}
+                    aria-checked={config.temaBurbujas === t.id}
                     onClick={() => handleUpdate("temaBurbujas", t.id)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        handleUpdate("temaBurbujas", t.id);
+                      }
+                    }}
                   >
                     <div className="bkh-bubble-preview-row">
                       <div className="bkh-preview-msg incoming" style={{ backgroundColor: t.otroBg, color: t.id === "whatsapp" || t.id === "monochrome" ? "#111827" : "#3B0B1A" }}>
@@ -1089,6 +1118,7 @@ function ChatSettingsModal({ config, setConfig, onClose }) {
                   <p>Si está activo, al pulsar Enter se enviará el mensaje. Con Shift + Enter se hace un salto de línea.</p>
                 </div>
                 <label className="bkh-switch">
+                  <span className="chat-sr-only">Enviar al presionar Enter</span>
                   <input
                     type="checkbox"
                     checked={config.enterParaEnviar}
@@ -1104,6 +1134,7 @@ function ChatSettingsModal({ config, setConfig, onClose }) {
                   <p>Reproducir un tono sutil al enviar o recibir mensajes en el chat.</p>
                 </div>
                 <label className="bkh-switch">
+                  <span className="chat-sr-only">Sonidos de notificación</span>
                   <input
                     type="checkbox"
                     checked={config.sonidoNotificaciones}
@@ -1265,7 +1296,7 @@ export default function Chat({
       if (contextMenu.visible) {
         setContextMenu({ visible: false, x: 0, y: 0, sala: null });
       }
-      if (msgMenu.visible && !e?.target?.closest(".chat-msg-context-menu") && !e?.target?.closest(".chat-msg-reactions-pill")) {
+      if (msgMenu.visible && !e?.target?.closest(".chat-msg-menu-container")) {
         setMsgMenu({ visible: false, x: 0, y: 0, msg: null, soloReacciones: false });
       }
       if (!e?.target?.closest(".chat-input-capsule") && !e?.target?.closest(".chat-attach-popover") && !e?.target?.closest(".chat-emojis-popover") && !e?.target?.closest(".chat-emoji-tray")) {
@@ -1307,7 +1338,7 @@ export default function Chat({
   const formatHora = (fechaStr) => {
     if (!fechaStr) return '';
     const date = new Date(fechaStr.replace(' ', 'T'));
-    if (isNaN(date.getTime())) return '';
+    if (Number.isNaN(date.getTime())) return '';
     return date.toLocaleTimeString('es-CO', {
       hour: 'numeric',
       minute: '2-digit',
@@ -1318,7 +1349,7 @@ export default function Chat({
   const formatHoraSala = (fechaStr) => {
     if (!fechaStr) return '';
     const date = new Date(fechaStr.replace(' ', 'T'));
-    if (isNaN(date.getTime())) return '';
+    if (Number.isNaN(date.getTime())) return '';
     const hoy = new Date();
     const ayer = new Date();
     ayer.setDate(hoy.getDate() - 1);
@@ -1363,7 +1394,7 @@ export default function Chat({
     if (token) {
       try {
         const decoded = jwtDecode(token);
-        setUsuarioActual({ id_usuario: parseInt(decoded.sub) });
+        setUsuarioActual({ id_usuario: Number.parseInt(decoded.sub, 10) });
       } catch {
         console.error("Error decodificando token");
       }
@@ -1427,7 +1458,7 @@ export default function Chat({
       return;
     }
 
-    cargarSalas();
+    void cargarSalas();
   }, [token, navigate, cargarSalas]);
 
   // ==========================
@@ -1455,7 +1486,7 @@ export default function Chat({
     };
 
     if (token) {
-      obtenerUsuarioActual();
+      void obtenerUsuarioActual();
     }
   }, [token]);
 
@@ -1595,7 +1626,7 @@ export default function Chat({
   useEffect(() => {
     if (!selectedSala) return;
 
-    cargarMensajes();
+    void cargarMensajes();
   }, [selectedSala, cargarMensajes]);
 
   // Scroll automático: mueve solo el panel de mensajes, no la página entera
@@ -1686,6 +1717,7 @@ export default function Chat({
       } else {
         await cargarMensajes();
       }
+      notify("Nota de voz enviada ✓", "success");
     } catch (err) {
       console.error("Error enviando nota de voz:", err);
       notify("Error al enviar la nota de voz. Sin conexión.", "error");
@@ -1946,9 +1978,7 @@ export default function Chat({
           const base64Audio = reader.result;
           const payload = `[AUDIO]${JSON.stringify({ duracion: durTexto, url: base64Audio, seg: durSeg })}`;
           // IMPORTANTE: siempre por REST (el WebSocket tiene límite de ~1MB y el audio base64 puede ser mayor)
-          enviarPayloadREST(payload).then(() => {
-            notify("Nota de voz enviada ✓", "success");
-          });
+          void enviarPayloadREST(payload);
         };
         reader.onerror = () => {
           notify("Error al procesar el audio. Intenta de nuevo.", "error");
@@ -2314,7 +2344,16 @@ export default function Chat({
                     className={`sala-item ${
                       selectedSala === sala.id_sala ? "active" : ""
                     } ${tieneNoLeidos ? "tiene-no-leidos" : ""}`}
+                    role="button"
+                    tabIndex={0}
+                    aria-pressed={selectedSala === sala.id_sala}
                     onClick={() => handleSeleccionarSala(sala)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        handleSeleccionarSala(sala);
+                      }
+                    }}
                     onContextMenu={(e) => handleContextMenu(e, sala)}
                     onTouchStart={(e) => handleTouchStart(e, sala)}
                     onTouchEnd={handleTouchEnd}
@@ -2375,7 +2414,6 @@ export default function Chat({
             <div
               className="whatsapp-context-menu"
               style={{ top: contextMenu.y, left: contextMenu.x }}
-              onClick={(e) => e.stopPropagation()}
             >
               {/* Archivar chat */}
               <button
@@ -2512,7 +2550,16 @@ export default function Chat({
               <div className="chat-header">
                 <div
                   className="chat-header-clickable-area"
+                  role="button"
+                  tabIndex={0}
+                  aria-expanded={mostrarInfoContacto}
                   onClick={() => setMostrarInfoContacto((prev) => !prev)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      setMostrarInfoContacto((prev) => !prev);
+                    }
+                  }}
                   title="Ver información del contacto"
                 >
                   <div className="chat-header-avatar">
@@ -2776,7 +2823,6 @@ export default function Chat({
                     placeholder="Buscar en esta conversación..."
                     value={busquedaMensajesTerm}
                     onChange={(e) => setBusquedaMensajesTerm(e.target.value)}
-                    autoFocus
                   />
                   {busquedaMensajesTerm && (
                     <span className="chat-search-matches-count">
@@ -2830,7 +2876,7 @@ export default function Chat({
                         const matchDur = msg.mensaje?.match(/\((\d+:\d+)\)/);
                         duracionTexto = matchDur ? matchDur[1] : '0:05';
                         const durParts = duracionTexto.split(':');
-                        durSegundos = parseInt(durParts[0], 10) * 60 + parseInt(durParts[1], 10) || 5;
+                        durSegundos = Number.parseInt(durParts[0], 10) * 60 + Number.parseInt(durParts[1], 10) || 5;
                       }
                     }
 
@@ -2906,8 +2952,10 @@ export default function Chat({
                               )}
 
                                   {reacciones[msg.id_mensaje]?.length > 0 && (
-                                    <div
+                                    <button
+                                      type="button"
                                       className="mensaje-reactions-badge"
+                                      aria-label={`Ver ${reacciones[msg.id_mensaje].length} reacciones`}
                                       onClick={(e) => handleAbrirMenuMensaje(e, msg, true)}
                                       title="Ver reacciones"
                                     >
@@ -2916,7 +2964,7 @@ export default function Chat({
                                           <RenderEmoji emoji={emoji} size={15} />
                                         </span>
                                       ))}
-                                    </div>
+                                    </button>
                                   )}
                             </div>
                           </div>
@@ -3043,7 +3091,7 @@ export default function Chat({
 
                     {/* Popover Menú de Adjuntos estilo WhatsApp */}
                     {mostrarAdjuntos && (
-                      <div className="chat-attach-popover" onClick={(e) => e.stopPropagation()}>
+                      <div className="chat-attach-popover">
                         {/* 1. Documento */}
                         <button
                           type="button"
@@ -3299,7 +3347,6 @@ export default function Chat({
                 <div
                   className={`chat-msg-menu-container ${msgMenu.alignRight ? "align-right" : "align-left"}`}
                   style={{ top: msgMenu.y, left: msgMenu.x }}
-                  onClick={(e) => e.stopPropagation()}
                 >
                   {/* Barra superior de emojis rápidos (👍 ❤️ 😂 😮 😢 🙏 ➕) */}
                   <div className="chat-msg-reactions-pill">
@@ -3647,15 +3694,16 @@ export default function Chat({
 
       {/* Modal interactivo de Llamada / Videollamada estilo WhatsApp */}
       {llamadaActiva && (
-        <div className="whatsapp-call-modal-overlay" onClick={() => setLlamadaActiva(null)}>
-          <div className="whatsapp-call-modal-card" onClick={(e) => e.stopPropagation()}>
+        <div className="whatsapp-call-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="call-user-name">
+          <button type="button" className="whatsapp-call-modal-dismiss" aria-label="Cerrar llamada" onClick={() => setLlamadaActiva(null)} />
+          <div className="whatsapp-call-modal-card">
             <div className="call-avatar-wrap">
               <div className="call-avatar-pulse"></div>
               <div className="call-avatar-img">
                 {getIniciales(nombreSalaActiva)}
               </div>
             </div>
-            <h3 className="call-user-name">{nombreSalaActiva}</h3>
+            <h3 id="call-user-name" className="call-user-name">{nombreSalaActiva}</h3>
             <p className="call-status-label">
               {llamadaActiva.tipo === "video" ? "Videollamada de BookyHome..." : "Llamada de voz de BookyHome..."}
             </p>

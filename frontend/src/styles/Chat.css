@@ -138,6 +138,9 @@
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
+  color: inherit;
+  font: inherit;
+  text-align: left;
   white-space: nowrap;
   transition: all 0.15s ease;
   display: inline-flex;
@@ -1177,7 +1180,19 @@
   animation: fadeIn 0.15s ease-out;
 }
 
+.whatsapp-call-modal-dismiss {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
 .whatsapp-call-modal-card {
+  position: relative;
+  z-index: 1;
   width: 360px;
   background: #111B21;
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -2136,6 +2151,12 @@
   overflow: hidden;
   cursor: pointer;
   height: 110px;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  text-align: left;
   background: #202C33;
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
@@ -2832,7 +2853,19 @@
   animation: fadeIn 0.15s ease-out;
 }
 
+.reaction-modal-dismiss {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
 .reaction-modal-content {
+  position: relative;
+  z-index: 1;
   width: 400px;
   max-width: calc(100vw - 32px);
   height: 460px;
@@ -3315,12 +3348,24 @@
   animation: bkhFadeIn 0.2s ease-out;
 }
 
+.bkh-config-modal-dismiss {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
 @keyframes bkhFadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
 }
 
 .bkh-config-modal-card {
+  position: relative;
+  z-index: 1;
   background: #FFFFFF;
   width: 100%;
   max-width: 580px;
@@ -3696,6 +3741,18 @@
 }
 
 /* Switch styling */
+.chat-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .bkh-switch {
   position: relative;
   display: inline-block;
