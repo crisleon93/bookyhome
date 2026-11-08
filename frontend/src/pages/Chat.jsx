@@ -856,8 +856,8 @@ function ChatSettingsModal({ config, setConfig, onClose }) {
   };
 
   return (
-    <div className="bkh-config-modal-overlay" onClick={onClose}>
-      <div className="bkh-config-modal-card" onClick={(e) => e.stopPropagation()}>
+    <div role="presentation" className="bkh-config-modal-overlay" onClick={onClose}>
+      <div role="dialog" aria-modal="true" className="bkh-config-modal-card" onClick={(e) => e.stopPropagation()}>
         <div className="bkh-config-modal-header">
           <div className="bkh-config-modal-header-title">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -1291,7 +1291,7 @@ export default function Chat({
   const formatFechaSeparador = (fechaStr) => {
     if (!fechaStr) return '';
     const date = new Date(fechaStr.replace(' ', 'T'));
-    if (isNaN(date.getTime())) return '';
+    if (Number.isNaN(date.getTime())) return '';
     const hoy = new Date();
     const ayer = new Date();
     ayer.setDate(hoy.getDate() - 1);

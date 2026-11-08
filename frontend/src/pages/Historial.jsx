@@ -200,8 +200,11 @@ export default function Historial() {
             historial.map((item) => (
               <div
                 key={item.id_interaccion}
+                role="button"
+                tabIndex={0}
                 className="hist-item"
                 onClick={() => handleClickLibro(item)}
+                onKeyDown={e => e.key === 'Enter' && handleClickLibro(item)}
               >
                 <div className="hist-icono">
                   <span>{getIconoTipo(item.tipo)}</span>

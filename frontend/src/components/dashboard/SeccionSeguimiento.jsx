@@ -357,7 +357,7 @@ export default function SeccionSeguimiento({ userId }) {
         </>
       )}
       {detalleAbierto && (
-        <div role="dialog" aria-modal="true" aria-label={esDetalleEntregado ? "Información de entrega" : "Información del envío"} onClick={() => setDetalleAbierto(null)} style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(36, 20, 27, 0.52)", display: "grid", placeItems: "center", padding: "20px" }}>
+        <div role="presentation" onClick={() => setDetalleAbierto(null)} style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(36, 20, 27, 0.52)", display: "grid", placeItems: "center", padding: "20px" }}>
           <section className="pl-card seguimiento-detail-modal" onClick={(event) => event.stopPropagation()} style={{ width: "min(580px, 100%)", padding: 0, overflow: "hidden", boxSizing: "border-box", boxShadow: "0 24px 70px rgba(36, 20, 27, 0.24)", borderRadius: "16px" }}>
             <header style={{ padding: "28px 30px 24px", background: esDetalleEntregado ? "linear-gradient(135deg, #14532d, #15803d)" : "linear-gradient(135deg, #173f8a, #2563eb)", color: "white", display: "flex", justifyContent: "space-between", gap: "20px", alignItems: "flex-start" }}>
               <div>

@@ -257,7 +257,7 @@ function Home() {
         try {
           const payload = jwtDecode(token)
           setUserName(payload.nombre || 'Usuario')
-          const id = parseInt(payload.sub)
+          const id = Number.parseInt(payload.sub, 10)
           setUserId(id)
           setIsAuthenticated(true)
           // Cargar email, foto y banner desde el endpoint de perfil propio

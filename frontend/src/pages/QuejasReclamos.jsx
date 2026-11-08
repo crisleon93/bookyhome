@@ -914,8 +914,8 @@ export default function QuejasReclamos() {
       )}
 
       {modalDetalles && (
-        <div onClick={() => setModalDetalles(null)} style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}>
-          <div onClick={e => e.stopPropagation()} style={{ background: t.modalBg, borderRadius: 20, width: "100%", maxWidth: 520, maxHeight: "85vh", overflowY: "auto", boxShadow: "0 24px 64px rgba(0,0,0,0.3)", position: "relative" }}>
+        <div role="presentation" onClick={() => setModalDetalles(null)} style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}>
+          <div role="dialog" aria-modal="true" onClick={e => e.stopPropagation()} style={{ background: t.modalBg, borderRadius: 20, width: "100%", maxWidth: 520, maxHeight: "85vh", overflowY: "auto", boxShadow: "0 24px 64px rgba(0,0,0,0.3)", position: "relative" }}>
             <div style={{ background: "#7A1E3A", padding: "20px 24px", borderRadius: "20px 20px 0 0", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <div>
                 <h3 style={{ margin: 0, color: "#fff", fontSize: "1.15rem", fontWeight: 800 }}>Orden #{modalDetalles.id_orden}</h3>

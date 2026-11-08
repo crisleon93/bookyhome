@@ -1032,7 +1032,7 @@ function Header({ variant, hasSidebar }) {
 
     let valid = true;
     if (!loginForm.email.trim()) { setLoginEmailErr('Este campo es obligatorio'); valid = false; }
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(loginForm.email)) { setLoginEmailErr('Ingresa un email válido'); valid = false; }
+    else if (!/^[^\s@]{1,64}@[^\s@]{1,255}\.[^\s@]{2,}$/.test(loginForm.email)) { setLoginEmailErr('Ingresa un email válido'); valid = false; }
     if (!loginForm.password.trim()) { setLoginPassErr('Este campo es obligatorio'); valid = false; }
     if (!valid) return;
 

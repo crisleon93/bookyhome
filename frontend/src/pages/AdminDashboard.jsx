@@ -1103,7 +1103,7 @@ export default function AdminDashboard() {
 
   const copiarTexto = (texto, id) => {
     if (!texto) return;
-    navigator.clipboard.writeText(texto);
+    void navigator.clipboard.writeText(texto);
     setCopiadoId(id);
     notify('Correo copiado al portapapeles', 'info');
     setTimeout(() => setCopiadoId(null), 2000);
@@ -4490,8 +4490,8 @@ export default function AdminDashboard() {
 
         {/* Modal para respuesta */}
         {modalOpen && modalReclamo && (
-          <div onClick={() => { setModalOpen(false); setModalReclamo(null); }} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 4000, display: 'grid', placeItems: 'center', padding: 24 }}>
-            <div onClick={(e) => e.stopPropagation()} style={{ background: WHITE, borderRadius: 20, padding: 32, maxWidth: 520, width: '100%', boxShadow: '0 20px 60px rgba(0,0,0,0.25)' }}>
+          <div role="presentation" onClick={() => { setModalOpen(false); setModalReclamo(null); }} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 4000, display: 'grid', placeItems: 'center', padding: 24 }}>
+            <div role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()} style={{ background: WHITE, borderRadius: 20, padding: 32, maxWidth: 520, width: '100%', boxShadow: '0 20px 60px rgba(0,0,0,0.25)' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
                 <h2 style={{ margin: 0, color: modalReclamo?.estado === 'Rechazado' ? '#dc2626' : modalReclamo?.estado === 'En revisión' ? '#ea580c' : VINOTINTO, fontSize: '1.35rem', fontWeight: 800 }}>
                   {modalReclamo?.estado === 'En revisión'

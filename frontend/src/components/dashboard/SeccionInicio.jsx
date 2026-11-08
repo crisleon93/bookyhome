@@ -257,7 +257,10 @@ export default function SeccionInicio({ userName, onSelectSeccion, onVerDetalleL
               return (
                 <div 
                   key={i} 
+                  role="button"
+                  tabIndex={0}
                   onClick={() => onSelectSeccion('Mis Compras')}
+                  onKeyDown={e => e.key === 'Enter' && onSelectSeccion('Mis Compras')}
                   style={{
                     background: darkMode ? '#252525' : 'white', 
                     borderRadius: '12px', 

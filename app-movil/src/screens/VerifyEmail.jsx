@@ -17,7 +17,7 @@ export default function VerifyEmail({ route, navigation }) {
       setMensajeError('No se encontró un token de verificación. El enlace puede ser inválido.');
       return;
     }
-    verificar();
+    void verificar();
   }, [token]);
 
   const verificar = async () => {

@@ -171,7 +171,7 @@ function CustomDateTimePicker({ value, onChange, minDate, label, placeholder, al
     const m = String(dayObj.getMonth() + 1).padStart(2, "0");
     const d = String(dayObj.getDate()).padStart(2, "0");
     const h = String(hNum).padStart(2, "0");
-    const min = String(parseInt(mStr, 10) || 0).padStart(2, "0");
+    const min = String(Number.parseInt(mStr, 10) || 0).padStart(2, "0");
     
     const isoString = `${y}-${m}-${d}T${h}:${min}`;
     onChange(isoString);
@@ -1285,7 +1285,7 @@ function TarjetaOferta({ oferta, onEditar, onEliminar, darkMode = false }) {
           fontSize: "0.78rem", color: mutedColor,
           marginBottom: "14px", flexWrap: "nowrap"
         }}>
-          <IconCalendar width={13} height={13} strokeWidth={2} style={{ color: darkMode ? '#9ca3af' : '#9ca3af', flexShrink: 0 }} />
+          <IconCalendar width={13} height={13} strokeWidth={2} style={{ color: '#9ca3af', flexShrink: 0 }} />
           <span style={{ whiteSpace: "nowrap" }}>{formatFecha(oferta.fecha_inicio)}</span>
           <span style={{ color: "#d1d5db", flexShrink: 0 }}>→</span>
           <span style={{ whiteSpace: "nowrap" }}>{formatFecha(oferta.fecha_fin)}</span>

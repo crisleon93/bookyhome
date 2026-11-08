@@ -261,7 +261,7 @@ const LibroCard = ({ libro, onVerDetalles }) => {
 
         {/* Botón favoritos superpuesto */}
         <button
-          onClick={(e) => { e.stopPropagation(); toggleListaDeseos(); }}
+          onClick={(e) => { e.stopPropagation(); void toggleListaDeseos(); }}
           disabled={wishlistLoading}
           style={{
             position: 'absolute',

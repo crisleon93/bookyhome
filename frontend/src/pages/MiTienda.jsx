@@ -1938,7 +1938,7 @@ export default function MiTienda() {
       default:
         break;
     }
-    handleMarcarLeida(notif.id_notificacion);
+    void handleMarcarLeida(notif.id_notificacion);
   };
 
   const getIconoTipo = (tipo) => {
@@ -2439,7 +2439,7 @@ export default function MiTienda() {
         <div className="seller-kpi-card" onClick={() => {
           const el = document.getElementById("inventory-health-section");
           if (el) el.scrollIntoView({ behavior: "smooth" });
-        }}>
+        }} role="button" tabIndex={0} onKeyDown={e => e.key === 'Enter' && document.getElementById("inventory-health-section")?.scrollIntoView({ behavior: "smooth" })}>
           <div className="kpi-header">
             <span className="kpi-label">Salud de Inventario</span>
             <div className={`kpi-icon-pill ${alertasStock.length > 0 ? "kpi-icon-red" : "kpi-icon-green"}`}>
@@ -4350,8 +4350,9 @@ export default function MiTienda() {
               </div>
               <div style={sectionBody}>
                 <div style={field}>
-                  <label style={lbl}>Describe tu tienda</label>
+                  <label htmlFor="tienda-descripcion" style={lbl}>Describe tu tienda</label>
                   <textarea
+                    id="tienda-descripcion"
                     style={{ ...inpTA, minHeight: '110px' }}
                     placeholder="Cuéntales a tus compradores qué hace especial a tu librería: géneros, servicios, historia..."
                     value={configForm.descripcion || ''}
@@ -5598,6 +5599,7 @@ export default function MiTienda() {
               padding: "20px"
             }}
             onClick={() => !actualizandoRetiro && setModalConfirmarEntrega(null)}
+            role="presentation"
           >
             <div
               className="modal-box"
@@ -5805,6 +5807,7 @@ export default function MiTienda() {
               padding: "20px"
             }}
             onClick={() => !actualizandoRetiro && setModalHabilitarPago(null)}
+            role="presentation"
           >
             <div
               className="modal-box"

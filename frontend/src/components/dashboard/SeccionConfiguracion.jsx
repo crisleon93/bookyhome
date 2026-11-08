@@ -259,7 +259,7 @@ export default function SeccionConfiguracion({ userId }) {
             borderRadius: "10px", border: darkMode ? "1px solid #3a3a3a" : "1px solid #e8e4e0", 
             alignItems: "center", transition: "all 0.3s ease",
             boxShadow: darkMode ? "none" : "0 2px 8px rgba(0,0,0,0.06)",
-            borderLeft: darkMode ? "4px solid #7A1E3A" : "4px solid #7A1E3A"
+            borderLeft: "4px solid #7A1E3A"
           }}>
             <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
               <div style={{ 
@@ -277,7 +277,7 @@ export default function SeccionConfiguracion({ userId }) {
               </div>
             </div>
             <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-              <label style={{ 
+              <label aria-label="Activar o desactivar" style={{ 
                 position: "relative", display: "inline-block", width: "48px", height: "26px",
                 cursor: loading ? "not-allowed" : "pointer"
               }}>
@@ -304,7 +304,7 @@ export default function SeccionConfiguracion({ userId }) {
               </label>
             </div>
             <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-              <label style={{ 
+              <label aria-label="Activar o desactivar" style={{ 
                 position: "relative", display: "inline-block", width: "48px", height: "26px",
                 cursor: loading ? "not-allowed" : "pointer"
               }}>
@@ -339,7 +339,7 @@ export default function SeccionConfiguracion({ userId }) {
             borderRadius: "10px", border: darkMode ? "1px solid #3a3a3a" : "1px solid #e8e4e0", 
             alignItems: "center", transition: "all 0.3s ease",
             boxShadow: darkMode ? "none" : "0 2px 8px rgba(0,0,0,0.06)",
-            borderLeft: darkMode ? "4px solid #7A1E3A" : "4px solid #7A1E3A"
+            borderLeft: "4px solid #7A1E3A"
           }}>
             <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
               <div style={{ 
@@ -357,7 +357,7 @@ export default function SeccionConfiguracion({ userId }) {
               </div>
             </div>
             <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-              <label style={{ 
+              <label aria-label="Activar o desactivar" style={{ 
                 position: "relative", display: "inline-block", width: "48px", height: "26px",
                 cursor: loading ? "not-allowed" : "pointer"
               }}>
@@ -384,7 +384,7 @@ export default function SeccionConfiguracion({ userId }) {
               </label>
             </div>
             <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-              <label style={{ 
+              <label aria-label="Activar o desactivar" style={{ 
                 position: "relative", display: "inline-block", width: "48px", height: "26px",
                 cursor: loading ? "not-allowed" : "pointer"
               }}>
@@ -419,7 +419,7 @@ export default function SeccionConfiguracion({ userId }) {
             borderRadius: "10px", border: darkMode ? "1px solid #3a3a3a" : "1px solid #e8e4e0", 
             alignItems: "center", transition: "all 0.3s ease",
             boxShadow: darkMode ? "none" : "0 2px 8px rgba(0,0,0,0.06)",
-            borderLeft: darkMode ? "4px solid #7A1E3A" : "4px solid #7A1E3A"
+            borderLeft: "4px solid #7A1E3A"
           }}>
             <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
               <div style={{ 
@@ -438,7 +438,7 @@ export default function SeccionConfiguracion({ userId }) {
               </div>
             </div>
             <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-              <label style={{ 
+              <label aria-label="Activar o desactivar" style={{ 
                 position: "relative", display: "inline-block", width: "48px", height: "26px",
                 cursor: loading ? "not-allowed" : "pointer"
               }}>
@@ -465,7 +465,7 @@ export default function SeccionConfiguracion({ userId }) {
               </label>
             </div>
             <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-              <label style={{ 
+              <label aria-label="Activar o desactivar" style={{ 
                 position: "relative", display: "inline-block", width: "48px", height: "26px",
                 cursor: loading ? "not-allowed" : "pointer"
               }}>
@@ -500,7 +500,7 @@ export default function SeccionConfiguracion({ userId }) {
             borderRadius: "10px", border: darkMode ? "1px solid #3a3a3a" : "1px solid #e8e4e0", 
             alignItems: "center", transition: "all 0.3s ease",
             boxShadow: darkMode ? "none" : "0 2px 8px rgba(0,0,0,0.06)",
-            borderLeft: darkMode ? "4px solid #7A1E3A" : "4px solid #7A1E3A"
+            borderLeft: "4px solid #7A1E3A"
           }}>
             <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
               <div style={{ 
@@ -520,7 +520,7 @@ export default function SeccionConfiguracion({ userId }) {
               </div>
             </div>
             <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-              <label style={{ 
+              <label aria-label="Activar o desactivar" style={{ 
                 position: "relative", display: "inline-block", width: "48px", height: "26px",
                 cursor: loading ? "not-allowed" : "pointer"
               }}>
@@ -547,7 +547,7 @@ export default function SeccionConfiguracion({ userId }) {
               </label>
             </div>
             <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-              <label style={{ 
+              <label aria-label="Activar o desactivar" style={{ 
                 position: "relative", display: "inline-block", width: "48px", height: "26px",
                 cursor: loading ? "not-allowed" : "pointer"
               }}>
@@ -582,7 +582,7 @@ export default function SeccionConfiguracion({ userId }) {
             borderRadius: "10px", border: darkMode ? "1px solid #3a3a3a" : "1px solid #e8e4e0", 
             alignItems: "center", transition: "all 0.3s ease",
             boxShadow: darkMode ? "none" : "0 2px 8px rgba(0,0,0,0.06)",
-            borderLeft: darkMode ? "4px solid #7A1E3A" : "4px solid #7A1E3A"
+            borderLeft: "4px solid #7A1E3A"
           }}>
             <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
               <div style={{ 
@@ -603,7 +603,7 @@ export default function SeccionConfiguracion({ userId }) {
               </div>
             </div>
             <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-              <label style={{ 
+              <label aria-label="Activar o desactivar" style={{ 
                 position: "relative", display: "inline-block", width: "48px", height: "26px",
                 cursor: loading ? "not-allowed" : "pointer"
               }}>
@@ -630,7 +630,7 @@ export default function SeccionConfiguracion({ userId }) {
               </label>
             </div>
             <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-              <label style={{ 
+              <label aria-label="Activar o desactivar" style={{ 
                 position: "relative", display: "inline-block", width: "48px", height: "26px",
                 cursor: loading ? "not-allowed" : "pointer"
               }}>
@@ -665,7 +665,7 @@ export default function SeccionConfiguracion({ userId }) {
             borderRadius: "10px", border: darkMode ? "1px solid #3a3a3a" : "1px solid #e8e4e0", 
             alignItems: "center", transition: "all 0.3s ease",
             boxShadow: darkMode ? "none" : "0 2px 8px rgba(0,0,0,0.06)",
-            borderLeft: darkMode ? "4px solid #7A1E3A" : "4px solid #7A1E3A"
+            borderLeft: "4px solid #7A1E3A"
           }}>
             <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
               <div style={{ 
@@ -684,7 +684,7 @@ export default function SeccionConfiguracion({ userId }) {
               </div>
             </div>
             <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-              <label style={{ 
+              <label aria-label="Activar o desactivar" style={{ 
                 position: "relative", display: "inline-block", width: "48px", height: "26px",
                 cursor: loading ? "not-allowed" : "pointer"
               }}>
@@ -711,7 +711,7 @@ export default function SeccionConfiguracion({ userId }) {
               </label>
             </div>
             <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-              <label style={{ 
+              <label aria-label="Activar o desactivar" style={{ 
                 position: "relative", display: "inline-block", width: "48px", height: "26px",
                 cursor: loading ? "not-allowed" : "pointer"
               }}>
@@ -746,7 +746,7 @@ export default function SeccionConfiguracion({ userId }) {
             borderRadius: "10px", border: darkMode ? "1px solid #3a3a3a" : "1px solid #e8e4e0", 
             alignItems: "center", transition: "all 0.3s ease",
             boxShadow: darkMode ? "none" : "0 2px 8px rgba(0,0,0,0.06)",
-            borderLeft: darkMode ? "4px solid #7A1E3A" : "4px solid #7A1E3A"
+            borderLeft: "4px solid #7A1E3A"
           }}>
             <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
               <div style={{ 
@@ -765,7 +765,7 @@ export default function SeccionConfiguracion({ userId }) {
               </div>
             </div>
             <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-              <label style={{ 
+              <label aria-label="Activar o desactivar" style={{ 
                 position: "relative", display: "inline-block", width: "48px", height: "26px",
                 cursor: loading ? "not-allowed" : "pointer"
               }}>
@@ -792,7 +792,7 @@ export default function SeccionConfiguracion({ userId }) {
               </label>
             </div>
             <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-              <label style={{ 
+              <label aria-label="Activar o desactivar" style={{ 
                 position: "relative", display: "inline-block", width: "48px", height: "26px",
                 cursor: loading ? "not-allowed" : "pointer"
               }}>

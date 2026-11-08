@@ -579,6 +579,7 @@ export default function SeccionCuponesVendedor({ tiendaId, darkMode = false }) {
       {/* Modal Crear / Editar */}
       {showModal && (
         <div
+          role="presentation"
           onClick={() => setShowModal(false)}
           style={{
             position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)",
@@ -587,6 +588,8 @@ export default function SeccionCuponesVendedor({ tiendaId, darkMode = false }) {
           }}
         >
           <div
+            role="dialog"
+            aria-modal="true"
             onClick={(e) => e.stopPropagation()}
             style={{
               background: modalBg, borderRadius: "16px",
@@ -772,8 +775,9 @@ export default function SeccionCuponesVendedor({ tiendaId, darkMode = false }) {
                 {/* Mínimo + usos */}
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px", marginBottom: "18px" }}>
                   <div>
-                    <label style={labelStyle}>Compra mínima</label>
+                    <label htmlFor="cupon-minimo-compra" style={labelStyle}>Compra mínima</label>
                     <input
+                      id="cupon-minimo-compra"
                       type="number"
                       value={form.minimo_compra}
                       onChange={(e) => setForm({ ...form, minimo_compra: e.target.value })}

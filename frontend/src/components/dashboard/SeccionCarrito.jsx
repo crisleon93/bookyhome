@@ -476,7 +476,7 @@ export default function SeccionCarrito({ userId }) {
   };
   const handleDaviplataRedirect = () => {
     if (metodoEntrega === 'retiro_tienda') {
-      processPaymentApi("Daviplata");
+      void processPaymentApi("Daviplata");
       return;
     }
     window.location.href = `daviplata://pagar?valor=${order?.total}&referencia=${order?.id_orden}`;
