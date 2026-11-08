@@ -25,8 +25,9 @@ const ESTADO_COLORS = {
 };
 
 const fmt = (val) =>
-  val == null ? '$0 COP'
-  : '$' + Math.floor(val).toLocaleString('es-CO') + ' COP';
+  val == null
+    ? '$0 COP'
+    : new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(Math.floor(val));
 
 const nivelesFidelizacion = {
   Bronce: 'Bronce',

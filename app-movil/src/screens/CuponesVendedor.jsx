@@ -49,8 +49,7 @@ const BORDER   = '#e5e7eb';
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const formatPrecio = (v) => {
   const num = Number.parseInt(v || 0, 10);
-  // toLocaleString evita la regex con backtracking para separadores de miles
-  return '$' + num.toLocaleString('es-CO') + ' COP';
+  return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(num);
 };
 
 const formatFecha = (f) => {
