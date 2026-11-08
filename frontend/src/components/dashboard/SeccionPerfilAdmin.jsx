@@ -314,21 +314,21 @@ export default function SeccionPerfilAdmin({ stats, gestionProp }) {
           <div style={{ display: "flex", flexDirection: "column", gap: "16px", maxWidth: "500px" }}>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
               <div>
-                <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>Nombres</label>
-                <input type="text" value={userName} onChange={onUserNameChange} style={{ width: "100%", padding: "10px 14px", borderRadius: "8px", border: "1px solid #ddd", fontSize: "0.95rem" }} />
+                <label htmlFor="admin-profile-first-name" style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>Nombres</label>
+                <input id="admin-profile-first-name" type="text" value={userName} onChange={onUserNameChange} style={{ width: "100%", padding: "10px 14px", borderRadius: "8px", border: "1px solid #ddd", fontSize: "0.95rem" }} />
               </div>
               <div>
-                <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>Apellidos</label>
-                <input type="text" value={userSurname} onChange={onUserSurnameChange} style={{ width: "100%", padding: "10px 14px", borderRadius: "8px", border: "1px solid #ddd", fontSize: "0.95rem" }} />
+                <label htmlFor="admin-profile-last-name" style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>Apellidos</label>
+                <input id="admin-profile-last-name" type="text" value={userSurname} onChange={onUserSurnameChange} style={{ width: "100%", padding: "10px 14px", borderRadius: "8px", border: "1px solid #ddd", fontSize: "0.95rem" }} />
               </div>
             </div>
             <div>
-              <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>Correo electrónico</label>
-              <input type="email" value={userEmail} readOnly style={{ width: "100%", padding: "10px 14px", borderRadius: "8px", border: "1px solid #ddd", fontSize: "0.95rem", background: "#f5f5f5", color: "#888" }} />
+              <label htmlFor="admin-profile-email" style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>Correo electrónico</label>
+              <input id="admin-profile-email" type="email" value={userEmail} readOnly style={{ width: "100%", padding: "10px 14px", borderRadius: "8px", border: "1px solid #ddd", fontSize: "0.95rem", background: "#f5f5f5", color: "#888" }} />
             </div>
             <div>
-              <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>Celular</label>
-              <input type="tel" value={userPhone} onChange={onUserPhoneChange} style={{ width: "100%", padding: "10px 14px", borderRadius: "8px", border: "1px solid #ddd", fontSize: "0.95rem" }} />
+              <label htmlFor="admin-profile-phone" style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>Celular</label>
+              <input id="admin-profile-phone" type="tel" value={userPhone} onChange={onUserPhoneChange} style={{ width: "100%", padding: "10px 14px", borderRadius: "8px", border: "1px solid #ddd", fontSize: "0.95rem" }} />
             </div>
             <button onClick={onActualizarPerfil} style={{ background: "var(--vinotinto)", color: "white", border: "none", padding: "12px 24px", borderRadius: "8px", fontWeight: 700, fontSize: "0.95rem", cursor: "pointer", marginTop: "8px" }}>
               Guardar cambios
@@ -464,9 +464,10 @@ export default function SeccionPerfilAdmin({ stats, gestionProp }) {
             <h4 style={{ margin: "0 0 0.3rem 0", color: "#2a2a2a", fontSize: "1rem" }}>Modo Oscuro</h4>
             <p style={{ margin: 0, color: "#666", fontSize: "0.85rem" }}>Cambia el tema de la aplicación a modo oscuro</p>
           </div>
-          <label style={{ position: 'relative', display: 'inline-block', width: '48px', height: '26px', cursor: 'pointer' }}>
+          <div style={{ position: 'relative', display: 'inline-block', width: '48px', height: '26px', cursor: 'pointer' }}>
             <input 
               type="checkbox" 
+              aria-label="Activar modo oscuro"
               checked={darkMode}
               onChange={() => {
                 const newMode = !darkMode;
@@ -493,7 +494,7 @@ export default function SeccionPerfilAdmin({ stats, gestionProp }) {
               transition: '0.3s', borderRadius: '50%', 
               transform: darkMode ? 'translateX(22px)' : 'translateX(0)' 
             }}></span>
-          </label>
+          </div>
         </div>
       </div>
     </>

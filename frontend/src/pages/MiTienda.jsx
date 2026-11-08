@@ -5505,6 +5505,8 @@ export default function MiTienda() {
         {pedidoEnvio && (
           <div role="presentation" className="modal-overlay open" onClick={() => !guardandoEnvio && setPedidoEnvio(null)}>
             <div
+              role="dialog"
+              aria-modal="true"
               className="modal-box"
               onClick={(e) => e.stopPropagation()}
               style={{
