@@ -102,7 +102,7 @@ export default function ConfiguracionTienda({ navigation }) {
     try {
       await updateConfigLibreria({
         ...config,
-        tiempo_despacho_dias: parseInt(config.tiempo_despacho_dias) || 2
+        tiempo_despacho_dias: Number.parseInt(config.tiempo_despacho_dias, 10) || 2
       });
       Alert.alert('Éxito', 'Configuración guardada correctamente.');
       navigation.goBack();

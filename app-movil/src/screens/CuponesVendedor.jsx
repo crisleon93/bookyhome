@@ -47,8 +47,11 @@ const MUTED    = '#6b7280';
 const BORDER   = '#e5e7eb';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-const formatPrecio = (v) =>
-  '$' + String(parseInt(v || 0)).replace(/\B(?=(\d{3})+(?!\d))/g, '.') + ' COP';
+const formatPrecio = (v) => {
+  const num = Number.parseInt(v || 0, 10);
+  // toLocaleString evita la regex con backtracking para separadores de miles
+  return '$' + num.toLocaleString('es-CO') + ' COP';
+};
 
 const formatFecha = (f) => {
   if (!f) return '—';
@@ -64,7 +67,7 @@ const parseDate = (f) => {
   // Normaliza "YYYY-MM-DD HH:MM:SS" → "YYYY-MM-DDTHH:MM:SS" para mayor compatibilidad
   const iso = String(f).replace(' ', 'T');
   const d = new Date(iso);
-  return isNaN(d.getTime()) ? null : d;
+  return Number.isNaN(d.getTime()) ? null : d;
 };
 
 const calcEstado = (c) => {

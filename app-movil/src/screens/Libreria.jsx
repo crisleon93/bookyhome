@@ -26,7 +26,7 @@ const ESTADO_COLORS = {
 
 const fmt = (val) =>
   val == null ? '$0 COP'
-  : '$' + String(Math.floor(val)).replace(/\B(?=(\d{3})+(?!\d))/g, '.') + ' COP';
+  : '$' + Math.floor(val).toLocaleString('es-CO') + ' COP';
 
 const nivelesFidelizacion = {
   Bronce: 'Bronce',
