@@ -135,8 +135,8 @@ function MessageContent({ text }) {
   return (
     <div>
       {text.split('\n').map((line, index) => {
-        const bullet = line.match(/^\s*[-*]\s+(.+)$/);
-        const numbered = line.match(/^\s*(\d+)\.\s+(.+)$/);
+        const bullet = line.match(/^\s*[-*]\s+([^\n]+)$/);
+        const numbered = line.match(/^\s*(\d+)\.\s+([^\n]+)$/);
 
         if (bullet) {
           return <div key={index} style={{ display: 'flex', gap: 7, marginTop: index ? 5 : 0 }}><span aria-hidden="true">•</span><span>{renderInlineMarkdown(bullet[1])}</span></div>;

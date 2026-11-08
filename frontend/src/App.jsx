@@ -143,8 +143,6 @@ function MainLayout() {
               <Navigate to="/mi-tienda" replace />
             ) : (userRole === 'admin' || userRole === 'administrador') ? (
               <Navigate to="/admin" replace />
-            ) : (userRole === 'usuario' || userRole === 'comprador') ? (
-              <Navigate to="/" replace />
             ) : (
               <Navigate to="/" replace />
             )

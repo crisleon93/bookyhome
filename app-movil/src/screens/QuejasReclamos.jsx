@@ -527,8 +527,8 @@ export default function QuejasReclamos({ navigation }) {
                           <Text style={styles.storeTagText}>{tienda}</Text>
                         </View>
                       )}
-                      {fechaTexto && <Text style={styles.ticketDate}>{fechaTexto}</Text>}
-                      {tiempoTexto && <Text style={styles.ticketElapsed}>{tiempoTexto}</Text>}
+                      {!!fechaTexto && <Text style={styles.ticketDate}>{fechaTexto}</Text>}
+                      {!!tiempoTexto && <Text style={styles.ticketElapsed}>{tiempoTexto}</Text>}
                     </View>
 
                     {queja.descripcion ? (

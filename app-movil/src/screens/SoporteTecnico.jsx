@@ -110,7 +110,7 @@ export default function SoporteTecnico() {
   };
 
   useEffect(() => {
-    cargar();
+    void cargar();
   }, []);
 
   const enviarTicket = async () => {

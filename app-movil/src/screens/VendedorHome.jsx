@@ -27,7 +27,7 @@ const WARNING   = '#D97706';
 const fmt = (val) =>
   val == null
     ? '$0 COP'
-    : '$' + String(Math.floor(val)).replace(/\B(?=(\d{3})+(?!\d))/g, '.') + ' COP';
+    : new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(Math.floor(val));
 
 const RANK_COLORS = ['#F59E0B', '#94A3B8', '#CD7C2F'];
 

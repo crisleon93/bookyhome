@@ -207,7 +207,7 @@ export default function SuscripcionesVendedor({ navigation }) {
             {modal?.type === 'change' || modal?.type === 'cancel' ? (
               <View style={styles.modalActions}>
                 <TouchableOpacity disabled={procesando} style={styles.modalSecondary} onPress={() => setModal(null)}><Text style={styles.modalSecondaryText}>Volver</Text></TouchableOpacity>
-                <TouchableOpacity disabled={procesando} style={[styles.modalPrimary, modal?.type === 'cancel' && styles.modalDanger, procesando && styles.disabled]} onPress={() => { const accion = modal.type === 'change' ? () => cambiarPlan(modal.plan) : cancelarPlan; setModal(null); accion(); }}><Text style={styles.modalPrimaryText}>{procesando ? 'Procesando…' : modal?.type === 'cancel' ? 'Sí, cancelar' : 'Confirmar cambio'}</Text></TouchableOpacity>
+                <TouchableOpacity disabled={procesando} style={[styles.modalPrimary, modal?.type === 'cancel' && styles.modalDanger, procesando && styles.disabled]} onPress={() => { const accion = modal.type === 'change' ? () => cambiarPlan(modal.plan) : cancelarPlan; setModal(null); void accion(); }}><Text style={styles.modalPrimaryText}>{procesando ? 'Procesando…' : modal?.type === 'cancel' ? 'Sí, cancelar' : 'Confirmar cambio'}</Text></TouchableOpacity>
               </View>
             ) : (
               <TouchableOpacity style={styles.modalPrimary} onPress={() => setModal(null)}><Text style={styles.modalPrimaryText}>Entendido</Text></TouchableOpacity>
