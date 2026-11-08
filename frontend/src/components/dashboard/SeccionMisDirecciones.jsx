@@ -101,7 +101,7 @@ export default function SeccionMisDirecciones() {
   };
 
   const onSetPrincipalDireccion = async (id) => {
-    const idSeguro = parseInt(id, 10);
+    const idSeguro = Number.parseInt(id, 10);
     if (!idSeguro || idSeguro <= 0) return;
     try {
       await api.put(`/perfil/direcciones/${idSeguro}`, { es_principal: true });
@@ -113,7 +113,7 @@ export default function SeccionMisDirecciones() {
   };
 
   const onDeleteDireccion = async (id) => {
-    const idSeguro = parseInt(id, 10);
+    const idSeguro = Number.parseInt(id, 10);
     if (!idSeguro || idSeguro <= 0) return;
     try {
       await api.delete(`/perfil/direcciones/${idSeguro}`);

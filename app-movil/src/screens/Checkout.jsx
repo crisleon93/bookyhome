@@ -306,7 +306,7 @@ export default function Checkout({ route, navigation }) {
       return;
     }
     if (isPickup && order?.estado_retiro !== 'habilitado_pago') {
-      confirmarReservaRetiro(metodo);
+      void confirmarReservaRetiro(metodo);
       return;
     }
     setPaymentProcessing(true);
@@ -695,7 +695,7 @@ export default function Checkout({ route, navigation }) {
         <TouchableOpacity
           style={[styles.deliveryOption, isPickup && styles.deliveryOptionActive, !pickupAvailable && styles.deliveryOptionDisabled]}
           disabled={!pickupAvailable}
-          onPress={() => { setPaymentMethod('efectivo_tienda'); actualizarEntrega('retiro_tienda'); }}
+          onPress={() => { setPaymentMethod('efectivo_tienda'); void actualizarEntrega('retiro_tienda'); }}
         >
           <View style={styles.deliveryOptionTop}>
             <Text style={styles.deliveryIcon}>🏪</Text>

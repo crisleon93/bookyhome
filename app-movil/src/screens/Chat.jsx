@@ -944,7 +944,7 @@ export default function Chat() {
             <TouchableOpacity style={styles.attachmentOption} onPress={() => mostrarAvisoAdjunto('Evento', 'Crear evento en calendario.')}>
               <AttachmentIcon type="event" /><Text style={styles.attachmentLabel}>Evento</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.attachmentOption} onPress={() => { setMostrarAdjuntos(false); adjuntarImagen(); }}>
+            <TouchableOpacity style={styles.attachmentOption} onPress={() => { setMostrarAdjuntos(false); void adjuntarImagen(); }}>
               <AttachmentIcon type="sticker" /><Text style={styles.attachmentLabel}>Nuevo sticker</Text>
             </TouchableOpacity>
           </LinearGradient>

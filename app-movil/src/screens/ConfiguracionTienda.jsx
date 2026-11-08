@@ -28,7 +28,7 @@ export default function ConfiguracionTienda({ navigation }) {
   });
 
   useEffect(() => {
-    cargarConfiguracion();
+    void cargarConfiguracion();
   }, []);
 
   const cargarConfiguracion = async () => {

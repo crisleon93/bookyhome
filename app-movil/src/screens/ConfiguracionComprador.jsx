@@ -125,7 +125,7 @@ export default function ConfiguracionComprador() {
       }
     };
 
-    loadSettings();
+    void loadSettings();
   }, []);
 
   const colors = {
