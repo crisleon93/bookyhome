@@ -409,21 +409,21 @@ export default function SeccionMiPerfil({ userId }) {
           <div style={{ display: "flex", flexDirection: "column", gap: "16px", width: "100%" }}>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
               <div>
-                <label style={{ fontWeight: 600, color: t.labelColor, display: "block", marginBottom: "6px" }}>Nombres</label>
-                <input type="text" value={userName} onChange={onUserNameChange} style={{ width: "100%", height: "52px", padding: "10px 14px", borderRadius: "10px", border: `1px solid ${t.inputBorder}`, background: t.inputBg, color: t.inputColor, fontSize: "1rem", boxSizing: "border-box" }} />
+                <label htmlFor="profile-first-name" style={{ fontWeight: 600, color: t.labelColor, display: "block", marginBottom: "6px" }}>Nombres</label>
+                <input id="profile-first-name" type="text" value={userName} onChange={onUserNameChange} style={{ width: "100%", height: "52px", padding: "10px 14px", borderRadius: "10px", border: `1px solid ${t.inputBorder}`, background: t.inputBg, color: t.inputColor, fontSize: "1rem", boxSizing: "border-box" }} />
               </div>
               <div>
-                <label style={{ fontWeight: 600, color: t.labelColor, display: "block", marginBottom: "6px" }}>Apellidos</label>
-                <input type="text" value={userSurname} onChange={onUserSurnameChange} style={{ width: "100%", height: "52px", padding: "10px 14px", borderRadius: "10px", border: `1px solid ${t.inputBorder}`, background: t.inputBg, color: t.inputColor, fontSize: "1rem", boxSizing: "border-box" }} />
+                <label htmlFor="profile-last-name" style={{ fontWeight: 600, color: t.labelColor, display: "block", marginBottom: "6px" }}>Apellidos</label>
+                <input id="profile-last-name" type="text" value={userSurname} onChange={onUserSurnameChange} style={{ width: "100%", height: "52px", padding: "10px 14px", borderRadius: "10px", border: `1px solid ${t.inputBorder}`, background: t.inputBg, color: t.inputColor, fontSize: "1rem", boxSizing: "border-box" }} />
               </div>
             </div>
             <div>
-              <label style={{ fontWeight: 600, color: t.labelColor, display: "block", marginBottom: "6px" }}>Correo electrónico</label>
-              <input type="email" value={userEmail} readOnly style={{ width: "100%", height: "52px", padding: "10px 14px", borderRadius: "10px", border: `1px solid ${t.inputBorder}`, background: t.inputBg, color: t.inputColorDisabled, fontSize: "1rem", boxSizing: "border-box" }} />
+              <label htmlFor="profile-email" style={{ fontWeight: 600, color: t.labelColor, display: "block", marginBottom: "6px" }}>Correo electrónico</label>
+              <input id="profile-email" type="email" value={userEmail} readOnly style={{ width: "100%", height: "52px", padding: "10px 14px", borderRadius: "10px", border: `1px solid ${t.inputBorder}`, background: t.inputBg, color: t.inputColorDisabled, fontSize: "1rem", boxSizing: "border-box" }} />
             </div>
             <div>
-              <label style={{ fontWeight: 600, color: t.labelColor, display: "block", marginBottom: "6px" }}>Celular</label>
-              <input type="tel" value={userPhone} onChange={onUserPhoneChange} style={{ width: "100%", height: "52px", padding: "10px 14px", borderRadius: "10px", border: `1px solid ${t.inputBorder}`, background: t.inputBg, color: t.inputColor, fontSize: "1rem", boxSizing: "border-box" }} />
+              <label htmlFor="profile-phone" style={{ fontWeight: 600, color: t.labelColor, display: "block", marginBottom: "6px" }}>Celular</label>
+              <input id="profile-phone" type="tel" value={userPhone} onChange={onUserPhoneChange} style={{ width: "100%", height: "52px", padding: "10px 14px", borderRadius: "10px", border: `1px solid ${t.inputBorder}`, background: t.inputBg, color: t.inputColor, fontSize: "1rem", boxSizing: "border-box" }} />
             </div>
             <button onClick={onActualizarPerfil} style={{ background: "#7A1E3A", color: "white", border: "none", padding: "14px 24px", borderRadius: "10px", fontWeight: 700, fontSize: "1rem", cursor: "pointer", marginTop: "8px", width: "100%" }}>
               Guardar cambios
@@ -527,7 +527,9 @@ export default function SeccionMiPerfil({ userId }) {
 
       {mostrarDetallesFidelizacion && (
         <div
-          onClick={() => setMostrarDetallesFidelizacion(false)}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="loyalty-details-title"
           style={{
             position: "fixed",
             inset: 0,
@@ -539,8 +541,22 @@ export default function SeccionMiPerfil({ userId }) {
             padding: "1.5rem"
           }}
         >
+          <button
+            type="button"
+            aria-label="Cerrar detalles de fidelización"
+            onClick={() => setMostrarDetallesFidelizacion(false)}
+            style={{
+              position: "absolute",
+              inset: 0,
+              width: "100%",
+              height: "100%",
+              padding: 0,
+              border: 0,
+              background: "transparent",
+              cursor: "default"
+            }}
+          />
           <div
-            onClick={(event) => event.stopPropagation()}
             style={{
               width: "min(760px, 100%)",
               maxHeight: "80vh",
@@ -549,12 +565,14 @@ export default function SeccionMiPerfil({ userId }) {
               border: `1px solid ${darkMode ? 'rgba(255,255,255,0.12)' : '#e0dbd4'}`,
               borderRadius: "18px",
               boxShadow: "0 30px 80px rgba(0,0,0,0.56)",
-              color: darkMode ? '#f3f4f6' : '#1a1a1a'
+              color: darkMode ? '#f3f4f6' : '#1a1a1a',
+              position: "relative",
+              zIndex: 1
             }}
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "1.2rem 1.4rem", borderBottom: `1px solid ${darkMode ? 'rgba(255,255,255,0.08)' : '#e0dbd4'}` }}>
-              <h4 style={{ margin: 0, fontSize: "1.15rem", fontWeight: 700, color: darkMode ? '#f5f5f5' : '#1a1a1a' }}>Escala de fidelización</h4>
-              <button type="button" onClick={() => setMostrarDetallesFidelizacion(false)}
+              <h4 id="loyalty-details-title" style={{ margin: 0, fontSize: "1.15rem", fontWeight: 700, color: darkMode ? '#f5f5f5' : '#1a1a1a' }}>Escala de fidelización</h4>
+              <button type="button" aria-label="Cerrar detalles de fidelización" onClick={() => setMostrarDetallesFidelizacion(false)}
                 style={{ background: "transparent", border: "none", color: darkMode ? '#d4d4d8' : '#666', fontSize: "1.5rem", cursor: "pointer", lineHeight: 1 }}>
                 ×
               </button>
