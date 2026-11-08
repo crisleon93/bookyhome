@@ -779,7 +779,7 @@ export default function AdminDashboard() {
         console.error('Error cargando perfil del sidebar:', error);
       }
     };
-    cargarPerfilSidebar();
+    void cargarPerfilSidebar();
 
     const handlePhotoUpdate = (e) => {
       if (e.detail?.url) setPerfilSidebar(p => ({ ...p, foto: e.detail.url }));
@@ -823,7 +823,7 @@ export default function AdminDashboard() {
       const res = await api.get(`/quejas/${chatModalReclamo.id_solicitud}/mensajes`);
       setChatMensajes(res.data || []);
       notify('Mensaje enviado a la tienda y comprador', 'success');
-      cargarReclamos();
+      void cargarReclamos();
     } catch (err) {
       notify(err.response?.data?.detail || 'No se pudo enviar el mensaje', 'error');
     } finally {
@@ -3016,8 +3016,9 @@ export default function AdminDashboard() {
 
                   {/* Filtro por Estado */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <label style={{ fontSize: '0.82rem', fontWeight: 700, color: '#4B5563' }}>Estado:</label>
+                    <label htmlFor="admin-user-status-filter" style={{ fontSize: '0.82rem', fontWeight: 700, color: '#4B5563' }}>Estado:</label>
                     <select
+                      id="admin-user-status-filter"
                       value={filtroEstadoUsuario}
                       onChange={(e) => {
                         setFiltroEstadoUsuario(e.target.value);
@@ -3472,8 +3473,9 @@ export default function AdminDashboard() {
           <div style={{ background: WHITE, borderRadius: '14px', overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.06)', border: `1px solid ${BORDER}`, padding: '16px' }}>
 
             <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '10px' }}>
-              <label style={{ fontWeight: 600, fontSize: '0.9rem', color: '#555' }}>Filtrar por Categoría:</label>
+              <label htmlFor="admin-book-category-filter" style={{ fontWeight: 600, fontSize: '0.9rem', color: '#555' }}>Filtrar por Categoría:</label>
               <select
+                id="admin-book-category-filter"
                 value={filtroCategoria}
                 onChange={(e) => {
                   setFiltroCategoria(e.target.value);
@@ -4483,17 +4485,19 @@ export default function AdminDashboard() {
         )}
 
         {evidenciaPreview && (
-          <div onClick={() => setEvidenciaPreview(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.7)', zIndex: 3000, display: 'grid', placeItems: 'center', padding: 24 }}>
-            <img onClick={(e) => e.stopPropagation()} src={evidenciaPreview} alt="Evidencia del reclamo" style={{ maxWidth: '90vw', maxHeight: '85vh', borderRadius: 10, background: WHITE }} />
+          <div role="dialog" aria-modal="true" aria-label="Evidencia del reclamo" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.7)', zIndex: 3000, display: 'grid', placeItems: 'center', padding: 24 }}>
+            <button type="button" aria-label="Cerrar evidencia del reclamo" onClick={() => setEvidenciaPreview(null)} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', padding: 0, border: 0, background: 'transparent', cursor: 'default' }} />
+            <img src={evidenciaPreview} alt="Evidencia del reclamo" style={{ position: 'relative', zIndex: 1, maxWidth: '90vw', maxHeight: '85vh', borderRadius: 10, background: WHITE }} />
           </div>
         )}
 
         {/* Modal para respuesta */}
         {modalOpen && modalReclamo && (
-          <div role="presentation" onClick={() => { setModalOpen(false); setModalReclamo(null); }} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 4000, display: 'grid', placeItems: 'center', padding: 24 }}>
-            <div role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()} style={{ background: WHITE, borderRadius: 20, padding: 32, maxWidth: 520, width: '100%', boxShadow: '0 20px 60px rgba(0,0,0,0.25)' }}>
+          <div role="dialog" aria-modal="true" aria-labelledby="complaint-response-title" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 4000, display: 'grid', placeItems: 'center', padding: 24 }}>
+            <button type="button" aria-label="Cerrar respuesta del reclamo" onClick={() => { setModalOpen(false); setModalReclamo(null); }} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', padding: 0, border: 0, background: 'transparent', cursor: 'default' }} />
+            <div style={{ position: 'relative', zIndex: 1, background: WHITE, borderRadius: 20, padding: 32, maxWidth: 520, width: '100%', boxShadow: '0 20px 60px rgba(0,0,0,0.25)' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                <h2 style={{ margin: 0, color: modalReclamo?.estado === 'Rechazado' ? '#dc2626' : modalReclamo?.estado === 'En revisión' ? '#ea580c' : VINOTINTO, fontSize: '1.35rem', fontWeight: 800 }}>
+                <h2 id="complaint-response-title" style={{ margin: 0, color: modalReclamo?.estado === 'Rechazado' ? '#dc2626' : modalReclamo?.estado === 'En revisión' ? '#ea580c' : VINOTINTO, fontSize: '1.35rem', fontWeight: 800 }}>
                   {modalReclamo?.estado === 'En revisión'
                     ? 'Marcar como En revisión'
                     : modalReclamo?.estado === 'Rechazado'
@@ -4515,10 +4519,11 @@ export default function AdminDashboard() {
                 </p>
               </div>
 
-              <label style={{ display: 'block', marginBottom: 8, fontWeight: 700, color: CARBON, fontSize: '0.9rem' }}>
+              <label htmlFor="complaint-response" style={{ display: 'block', marginBottom: 8, fontWeight: 700, color: CARBON, fontSize: '0.9rem' }}>
                 Respuesta o resolución para el usuario:
               </label>
               <textarea
+                id="complaint-response"
                 value={modalRespuesta}
                 onChange={(e) => setModalRespuesta(e.target.value)}
                 placeholder="Escribe aquí la respuesta o solución que recibirá el usuario por correo y en su panel..."
@@ -4614,11 +4619,19 @@ export default function AdminDashboard() {
 
           return (
             <div
-              onClick={() => { if (!guardandoEstadoTienda) setModalConfirmEstado(null); }}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Confirmar cambio de estado de tienda"
               style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 5000, display: 'grid', placeItems: 'center', padding: 20 }}
             >
+              <button
+                type="button"
+                aria-label="Cerrar confirmación de estado"
+                disabled={guardandoEstadoTienda}
+                onClick={() => setModalConfirmEstado(null)}
+                style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', padding: 0, border: 0, background: 'transparent', cursor: 'default' }}
+              />
               <div
-                onClick={e => e.stopPropagation()}
                 style={{
                   background: WHITE,
                   borderRadius: 20,
@@ -4630,6 +4643,8 @@ export default function AdminDashboard() {
                   overflow: 'hidden',
                   boxShadow: '0 24px 64px rgba(0,0,0,0.28)',
                   animation: 'fadeIn 0.2s ease',
+                  position: 'relative',
+                  zIndex: 1,
                 }}
               >
                 {/* Header con color del estado */}
@@ -4728,9 +4743,9 @@ export default function AdminDashboard() {
                       </div>
 
                       {/* Motivos frecuentes / Chips */}
-                      <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#374151', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 8 }}>
+                      <p style={{ margin: '0 0 8px', fontSize: '0.78rem', fontWeight: 700, color: '#374151', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                         Motivos frecuentes (haz clic para seleccionar):
-                      </label>
+                      </p>
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
                         {MOTIVOS_SUSPENSION_PREDEFINIDOS.map((motivo, idx) => {
                           const seleccionado = motivoSuspension === motivo;
@@ -4764,7 +4779,7 @@ export default function AdminDashboard() {
 
                       {/* Campo de texto para el motivo */}
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                        <label style={{ fontSize: '0.8rem', fontWeight: 700, color: '#1F2937' }}>
+                        <label htmlFor="store-suspension-reason" style={{ fontSize: '0.8rem', fontWeight: 700, color: '#1F2937' }}>
                           Explicación detallada del motivo *
                         </label>
                         <span style={{ fontSize: '0.72rem', color: motivoSuspension.length > 400 ? '#DC2626' : '#9CA3AF', fontWeight: 600 }}>
@@ -4773,6 +4788,7 @@ export default function AdminDashboard() {
                       </div>
 
                       <textarea
+                        id="store-suspension-reason"
                         value={motivoSuspension}
                         onChange={(e) => {
                           setMotivoSuspension(e.target.value);
@@ -4868,7 +4884,9 @@ export default function AdminDashboard() {
 
           return (
             <div
-              onClick={() => { if (!bloqueandoUsuario) setModalConfirmBloqueo(null); }}
+              role="dialog"
+              aria-modal="true"
+              aria-label={bloqueado ? 'Confirmar bloqueo de usuario' : 'Confirmar reactivación de usuario'}
               style={{
                 position: 'fixed',
                 inset: 0,
@@ -4879,8 +4897,14 @@ export default function AdminDashboard() {
                 padding: 20
               }}
             >
+              <button
+                type="button"
+                aria-label="Cerrar confirmación de usuario"
+                disabled={bloqueandoUsuario}
+                onClick={() => setModalConfirmBloqueo(null)}
+                style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', padding: 0, border: 0, background: 'transparent', cursor: 'default' }}
+              />
               <div
-                onClick={(e) => e.stopPropagation()}
                 style={{
                   background: WHITE,
                   borderRadius: 20,
@@ -4888,7 +4912,9 @@ export default function AdminDashboard() {
                   maxWidth: 480,
                   overflow: 'hidden',
                   boxShadow: '0 24px 64px rgba(0,0,0,0.3)',
-                  border: `1px solid ${bloqueado ? '#FECACA' : '#A7F3D0'}`
+                  border: `1px solid ${bloqueado ? '#FECACA' : '#A7F3D0'}`,
+                  position: 'relative',
+                  zIndex: 1,
                 }}
               >
                 {/* Header Modal */}
@@ -5057,7 +5083,9 @@ export default function AdminDashboard() {
 
           return (
             <div
-              onClick={() => setModalDetalleUsuario(null)}
+              role="dialog"
+              aria-modal="true"
+              aria-label={`Detalles del usuario ${u.nombre_usuario || ''}`}
               style={{
                 position: 'fixed',
                 inset: 0,
@@ -5068,8 +5096,13 @@ export default function AdminDashboard() {
                 padding: 20
               }}
             >
+              <button
+                type="button"
+                aria-label="Cerrar detalles de usuario"
+                onClick={() => setModalDetalleUsuario(null)}
+                style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', padding: 0, border: 0, background: 'transparent', cursor: 'default' }}
+              />
               <div
-                onClick={(e) => e.stopPropagation()}
                 style={{
                   background: WHITE,
                   borderRadius: 20,
@@ -5077,7 +5110,9 @@ export default function AdminDashboard() {
                   maxWidth: 520,
                   overflow: 'hidden',
                   boxShadow: '0 24px 64px rgba(0,0,0,0.3)',
-                  border: `1px solid ${BORDER}`
+                  border: `1px solid ${BORDER}`,
+                  position: 'relative',
+                  zIndex: 1,
                 }}
               >
                 {/* Header */}
@@ -5250,8 +5285,9 @@ export default function AdminDashboard() {
 
         {/* MODAL DE CHAT Y CONTACTO CON LA TIENDA */}
         {chatModalReclamo && (
-          <div onClick={() => { setChatModalReclamo(null); setChatEnvio(null); }} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 4500, display: 'grid', placeItems: 'center', padding: 20 }}>
-            <div onClick={(e) => e.stopPropagation()} style={{ background: WHITE, borderRadius: 20, width: '100%', maxWidth: 650, maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: '0 24px 64px rgba(0,0,0,0.3)' }}>
+          <div role="dialog" aria-modal="true" aria-label="Chat y contacto con la tienda" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 4500, display: 'grid', placeItems: 'center', padding: 20 }}>
+            <button type="button" aria-label="Cerrar chat con la tienda" onClick={() => { setChatModalReclamo(null); setChatEnvio(null); }} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', padding: 0, border: 0, background: 'transparent', cursor: 'default' }} />
+            <div style={{ position: 'relative', zIndex: 1, background: WHITE, borderRadius: 20, width: '100%', maxWidth: 650, maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: '0 24px 64px rgba(0,0,0,0.3)' }}>
               {/* MODAL HEADER */}
               <div style={{ background: 'linear-gradient(135deg, #7A1E3A 0%, #9b2c4e 100%)', padding: '18px 24px', color: WHITE, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
