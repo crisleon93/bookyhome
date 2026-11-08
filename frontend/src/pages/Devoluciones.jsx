@@ -338,8 +338,9 @@ export default function Devoluciones({ embedded = false }) {
           </>
         )}
         {evidenciaPreview && (
-          <div onClick={() => setEvidenciaPreview(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.7)', zIndex: 3000, display: 'grid', placeItems: 'center', padding: 24 }}>
-            <img onClick={(e) => e.stopPropagation()} src={evidenciaPreview} alt="Evidencia del reclamo" style={{ maxWidth: '90vw', maxHeight: '85vh', borderRadius: 10, background: '#fff' }} />
+          <div role="dialog" aria-modal="true" aria-label="Evidencia del reclamo" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.7)', zIndex: 3000, display: 'grid', placeItems: 'center', padding: 24 }}>
+            <button type="button" aria-label="Cerrar evidencia del reclamo" onClick={() => setEvidenciaPreview(null)} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', padding: 0, border: 0, background: 'transparent', cursor: 'default' }} />
+            <img src={evidenciaPreview} alt="Evidencia del reclamo" style={{ position: 'relative', zIndex: 1, maxWidth: '90vw', maxHeight: '85vh', borderRadius: 10, background: '#fff' }} />
           </div>
         )}
       </div>

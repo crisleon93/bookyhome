@@ -218,7 +218,7 @@ function Home() {
     if (!token) return { isAuthenticated: false, userName: '', userId: null }
     try {
       const payload = jwtDecode(token)
-      return { isAuthenticated: true, userName: payload.nombre || 'Usuario', userId: parseInt(payload.sub) }
+      return { isAuthenticated: true, userName: payload.nombre || 'Usuario', userId: Number.parseInt(payload.sub, 10) }
     } catch {
       return { isAuthenticated: false, userName: '', userId: null }
     }

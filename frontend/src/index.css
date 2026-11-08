@@ -3690,6 +3690,13 @@ body.auth-page {
   color: var(--gris-carbon);
   margin-bottom: 4px;
 }
+.auth-field-label-spacer {
+  display: block;
+  font-size: 0.82rem;
+  height: 1.22em;
+  margin-bottom: 4px;
+  visibility: hidden;
+}
 
 .auth-input-wrapper {
   position: relative;

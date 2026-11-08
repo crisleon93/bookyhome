@@ -282,7 +282,7 @@ function Libreria({ isModal = false, onSuccess }) {
           </div>
 
           <div className="auth-field">
-            <label>&nbsp;</label>
+            <span className="auth-field-label-spacer" aria-hidden="true">&nbsp;</span>
             <button
               type="button"
               onClick={() => setMapaOpen(true)}
