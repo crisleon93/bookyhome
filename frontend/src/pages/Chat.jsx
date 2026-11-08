@@ -2742,11 +2742,17 @@ export default function Chat({
                         <button
                           type="button"
                           className="header-dropdown-item"
-                          onClick={() => {
+                          onClick={async () => {
                             const enlace = `${window.location.origin}/chat?sala=${selectedSala}&call=1`;
-                            navigator.clipboard.writeText(enlace);
-                            alert("¡Enlace de videollamada copiado al portapapeles!");
-                            setMostrarMenuHeader(false);
+                            try {
+                              await navigator.clipboard.writeText(enlace);
+                              notify("¡Enlace de videollamada copiado al portapapeles!", "success");
+                            } catch (error) {
+                              console.error("Error copiando enlace de videollamada:", error);
+                              notify("No se pudo copiar el enlace de videollamada", "error");
+                            } finally {
+                              setMostrarMenuHeader(false);
+                            }
                           }}
                         >
                           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
