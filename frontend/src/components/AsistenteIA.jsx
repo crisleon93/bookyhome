@@ -135,6 +135,7 @@ function MessageContent({ text }) {
   return (
     <div>
       {text.split('\n').map((line, index) => {
+        // Detectar listas con bullet o numeradas (regex sin backtracking)
         const bullet = line.match(/^\s*[-*]\s+([^\n]+)$/);
         const numbered = line.match(/^\s*(\d+)\.\s+([^\n]+)$/);
 
