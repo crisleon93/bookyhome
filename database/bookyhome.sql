@@ -99,6 +99,7 @@ CREATE TABLE libros (
     id_categoria INT NOT NULL,
     titulo VARCHAR(100) NOT NULL,
     autor_libro VARCHAR(50) NOT NULL,
+    isbn VARCHAR(20) NULL,
     descripcion_libro VARCHAR(300),
     precio_libro DECIMAL(10, 2) NOT NULL,
     stock INT NOT NULL DEFAULT 0,
