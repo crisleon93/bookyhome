@@ -44,6 +44,8 @@ check() {
 
   if [ "$response" != "$expected_code" ]; then
     log_fail "$description — esperado HTTP $expected_code, obtuvo HTTP $response | URL: $url"
+    # Mostrar primeras 200 chars del body para debug
+    echo "    body: $(echo "$body" | head -c 200)"
     return
   fi
 

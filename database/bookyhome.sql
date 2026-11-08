@@ -2020,6 +2020,7 @@ CREATE TABLE IF NOT EXISTS tienda_configuracion (
     acepta_negociacion BOOLEAN DEFAULT FALSE,
     email_publico VARCHAR(100) DEFAULT NULL,
     redes_sociales VARCHAR(500) DEFAULT NULL,
+    tarifa_envio DECIMAL(10,2) NOT NULL DEFAULT 0 COMMENT 'Tarifa fija de envío a domicilio en COP. 0 = envío gratuito.',
     fecha_actualizacion DATETIME DEFAULT NOW(),
     FOREIGN KEY (id_tienda) REFERENCES tiendas(id_tienda)
 );
@@ -3046,9 +3047,9 @@ SET FOREIGN_KEY_CHECKS = 1;
 SELECT '=== BooKyHome LISTA PARA USAR ===' AS '';
 select * from usuarios;
 
--- Agregar la columna oculto a la tabla libros
+-- Agregar la columna oculto a la tabla libros (idempotente)
 ALTER TABLE libros 
-ADD COLUMN oculto TINYINT(1) NOT NULL DEFAULT 0;
+ADD COLUMN IF NOT EXISTS oculto TINYINT(1) NOT NULL DEFAULT 0;
 
 -- Modificar el rol de usuarios por comprador
 SET SQL_SAFE_UPDATES = 0;
