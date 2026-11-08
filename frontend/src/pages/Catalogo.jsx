@@ -138,7 +138,7 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
       categoria_id: searchParams.get('categoria_id') ? Number.parseInt(searchParams.get('categoria_id'), 10) : null,
       precio_min: searchParams.get('precio_min') ? Number.parseInt(searchParams.get('precio_min'), 10) : 0,
       precio_max: searchParams.get('precio_max') ? Number.parseInt(searchParams.get('precio_max'), 10) : 1000000,
-      calificacion_min: searchParams.get('calificacion_min') ? parseInt(searchParams.get('calificacion_min')) : 0,
+      calificacion_min: searchParams.get('calificacion_min') ? Number.parseInt(searchParams.get('calificacion_min'), 10) : 0,
       disponible: searchParams.get('disponible') === 'true',
       ordenar_por: searchParams.get('ordenar_por') || 'relevancia',
       categoria_nombre: searchParams.get('categoria') || null
@@ -484,7 +484,7 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
           // Cargar las calificaciones de la tienda para encontrar la del usuario
           const calificacionesResponse = await getCalificacionesTienda(libroSeleccionado.id_tienda);
           const tokenDecoded = JSON.parse(atob(token.split('.')[1]));
-          const userId = parseInt(tokenDecoded.sub); // Convertir a número
+          const userId = Number.parseInt(tokenDecoded.sub, 10); // Convertir a número
           const miCalificacion = calificacionesResponse.data.calificaciones?.find(c => {
             return c.id_usuario === userId;
           });
@@ -508,7 +508,7 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
       }
     };
 
-    verificarPermiso();
+    void verificarPermiso();
   }, [libroSeleccionado?.id_tienda]);
 
   const librosRelacionados = libros.filter((libro) => libro.id_libro !== libroSeleccionado?.id_libro);
@@ -990,10 +990,10 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
               ) : mostrarCalificacionTienda ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: '600', color: dm.textPrimary, marginBottom: '8px' }}>Tu calificación:</label>
-                    <div style={{ display: 'flex', gap: '8px' }}>
+                    <span id="store-rating-label" style={{ display: 'block', fontSize: '0.9rem', fontWeight: '600', color: dm.textPrimary, marginBottom: '8px' }}>Tu calificación:</span>
+                    <div role="group" aria-labelledby="store-rating-label" style={{ display: 'flex', gap: '8px' }}>
                       {[1, 2, 3, 4, 5].map((star) => (
-                        <button key={star} onClick={() => setCalificacionForm({ ...calificacionForm, calificacion: star })} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px' }}>
+                        <button key={star} type="button" aria-label={`${star} de 5 estrellas`} aria-pressed={calificacionForm.calificacion === star} onClick={() => setCalificacionForm({ ...calificacionForm, calificacion: star })} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px' }}>
                           <svg width="32" height="32" viewBox="0 0 24 24" fill={star <= calificacionForm.calificacion ? '#ffc107' : (darkMode ? '#444' : '#e0e0e0')} stroke="none" style={{ transition: 'all 0.2s ease' }}>
                             <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
                           </svg>
@@ -1002,8 +1002,8 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
                     </div>
                   </div>
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: '600', color: dm.textPrimary, marginBottom: '8px' }}>Comentario (opcional):</label>
-                    <textarea value={calificacionForm.comentario} onChange={(e) => setCalificacionForm({ ...calificacionForm, comentario: e.target.value })}
+                    <label htmlFor="store-rating-comment" style={{ display: 'block', fontSize: '0.9rem', fontWeight: '600', color: dm.textPrimary, marginBottom: '8px' }}>Comentario (opcional):</label>
+                    <textarea id="store-rating-comment" value={calificacionForm.comentario} onChange={(e) => setCalificacionForm({ ...calificacionForm, comentario: e.target.value })}
                       placeholder="Comparte tu experiencia con esta tienda..."
                       style={{ width: '100%', padding: '12px', border: `1px solid ${dm.inputBorder}`, borderRadius: '8px', fontSize: '1rem', fontFamily: 'inherit', resize: 'vertical', minHeight: '80px', background: dm.inputBg, color: dm.inputColor }}
                       maxLength={500} />
