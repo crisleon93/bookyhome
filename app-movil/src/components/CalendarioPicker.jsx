@@ -199,10 +199,10 @@ export default function CalendarioPicker({ label, value, onChange, minDate, plac
 
   const confirmar = () => {
     if (!selDay) return;
-    const h12 = parseInt(HORAS_LIST[horaIdx], 10);
+    const h12 = Number.parseInt(HORAS_LIST[horaIdx], 10);
     let   h24 = h12 % 12;
     if (ampmIdx === 1) h24 += 12;
-    const minVal = parseInt(MINUTOS_LIST[minIdx], 10);
+    const minVal = Number.parseInt(MINUTOS_LIST[minIdx], 10);
     const d = new Date(viewYear, viewMonth, selDay, h24, minVal, 0);
     onChange(dateToIso(d));
     setAbierto(false);

@@ -1,3 +1,4 @@
+import anyio
 from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Form, Body # ⬅️ ASEGÚRATE DE QUE 'Body' ESTÉ AQUÍ
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from typing import List, Optional
@@ -34,6 +35,12 @@ UPLOAD_DIR = "uploads/libros"
 UPLOAD_DIGITAL_DIR = "uploads/libros_digitales"
 os.makedirs(UPLOAD_DIGITAL_DIR, exist_ok=True)
 os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+
+async def _guardar_upload(file: UploadFile, filepath: str) -> None:
+    async with await anyio.open_file(filepath, "wb") as destination:
+        while chunk := await file.read(1024 * 1024):
+            await destination.write(chunk)
 
 NIVELES_FIDELIZACION = (
     "Bronce", "Plata", "Oro", "Zafiro", "Rubi", "Esmeralda",
@@ -531,8 +538,7 @@ async def subir_archivo_digital(
         filename = f"{uuid.uuid4()}.{ext}"
         filepath = os.path.join(UPLOAD_DIGITAL_DIR, filename)
         
-        with open(filepath, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
+        await _guardar_upload(file, filepath)
             
         # Actualizar base de datos
         archivo_url = f"/static_digital/{filename}"

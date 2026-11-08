@@ -1,3 +1,4 @@
+import anyio
 from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Form
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel, EmailStr, Field, field_validator
@@ -6,10 +7,17 @@ from app.auth import verify_token
 import os
 import json
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 
 router = APIRouter(prefix="/perfil", tags=["Perfil Usuario"])
 security = HTTPBearer(auto_error=False)
+
+
+async def _guardar_upload(file: UploadFile, filepath: str) -> None:
+    async with await anyio.open_file(filepath, "wb") as destination:
+        while chunk := await file.read(1024 * 1024):
+            await destination.write(chunk)
+
 
 class ActualizarEstadoOrden(BaseModel):
     estado: str = Field(..., description="Nuevo estado de la orden (pagado, enviado, entregada, cancelada)")
@@ -421,9 +429,7 @@ async def subir_banner_perfil(file: UploadFile = File(...), user_id: int = Depen
         os.makedirs("uploads/banners", exist_ok=True)
         filename = f"banner_{user_id}_{datetime.now().timestamp()}.jpg"
         filepath = f"uploads/banners/{filename}"
-        with open(filepath, "wb") as f:
-            contents = await file.read()
-            f.write(contents)
+        await _guardar_upload(file, filepath)
         db = get_db()
         cursor = db.cursor()
         try:
@@ -467,9 +473,7 @@ async def subir_foto_perfil(file: UploadFile = File(...), user_id: int = Depends
         filename = f"usuario_{user_id}_{datetime.now().timestamp()}.jpg"
         filepath = f"uploads/perfiles/{filename}"
         
-        with open(filepath, "wb") as f:
-            contents = await file.read()
-            f.write(contents)
+        await _guardar_upload(file, filepath)
         
         # Actualizar la URL en la base de datos
         db = get_db()
@@ -732,7 +736,7 @@ def confirmar_entrega(id_orden: int, user_id: int = Depends(get_current_user)):
         cursor.close()
         db.close()
 
-    fecha_confirmacion = datetime.utcnow().isoformat() + "Z"
+    fecha_confirmacion = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
     # Mantener el historial mostrado al comprador sincronizado con MySQL.
     try:
         storage_dir = os.path.join(os.path.dirname(__file__), '..', 'data')
