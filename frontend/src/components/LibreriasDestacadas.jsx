@@ -21,11 +21,30 @@ function leerCacheTiendas() {
   return null;
 }
 
+function sanitizarTienda(t) {
+  // Validar explícitamente cada campo antes de persistir en sessionStorage
+  // para satisfacer la regla de Browser Storage Poisoning de SonarCloud
+  if (!t || typeof t !== 'object') return null;
+  return {
+    id_tienda:       Number(t.id_tienda)       || 0,
+    nombre_tienda:   String(t.nombre_tienda    || ''),
+    descripcion:     String(t.descripcion      || ''),
+    ciudad_origen:   String(t.ciudad_origen    || ''),
+    direccion:       String(t.direccion        || ''),
+    logo_url:        String(t.logo_url         || ''),
+    banner_url:      String(t.banner_url       || ''),
+    total_libros:    Number(t.total_libros)    || 0,
+    calificacion:    Number(t.calificacion)    || 0,
+    total_opiniones: Number(t.total_opiniones) || 0,
+    id_usuario:      Number(t.id_usuario)      || 0,
+  };
+}
+
 function guardarCacheTiendas(tiendas) {
   try {
-    // Serializar y volver a parsear para descartar prototipos no seguros
-    // antes de escribir en sessionStorage (evita Browser Storage Poisoning)
-    const sanitized = JSON.parse(JSON.stringify(tiendas));
+    const sanitized = Array.isArray(tiendas)
+      ? tiendas.map(sanitizarTienda).filter(Boolean)
+      : [];
     sessionStorage.setItem(CACHE_KEY, JSON.stringify({ guardadoEn: Date.now(), tiendas: sanitized }));
   } catch {
     // La caché es opcional; la sección funciona incluso si el navegador la bloquea.

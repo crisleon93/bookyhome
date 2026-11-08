@@ -923,16 +923,16 @@ export default function Chat() {
             style={styles.attachmentMenu}
             onStartShouldSetResponder={() => true}
           >
-            <TouchableOpacity style={styles.attachmentOption} onPress={() => { setMostrarAdjuntos(false); adjuntarDocumento(); }}>
+            <TouchableOpacity style={styles.attachmentOption} onPress={() => { setMostrarAdjuntos(false); void adjuntarDocumento(); }}>
               <AttachmentIcon type="document" /><Text style={styles.attachmentLabel}>Documento</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.attachmentOption} onPress={() => { setMostrarAdjuntos(false); adjuntarImagen(); }}>
+            <TouchableOpacity style={styles.attachmentOption} onPress={() => { setMostrarAdjuntos(false); void adjuntarImagen(); }}>
               <AttachmentIcon type="media" /><Text style={styles.attachmentLabel}>Fotos y videos</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.attachmentOption} onPress={() => { setMostrarAdjuntos(false); abrirCamara(); }}>
+            <TouchableOpacity style={styles.attachmentOption} onPress={() => { setMostrarAdjuntos(false); void abrirCamara(); }}>
               <AttachmentIcon type="camera" /><Text style={styles.attachmentLabel}>Cámara</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.attachmentOption} onPress={() => { setMostrarAdjuntos(false); adjuntarAudio(); }}>
+            <TouchableOpacity style={styles.attachmentOption} onPress={() => { setMostrarAdjuntos(false); void adjuntarAudio(); }}>
               <AttachmentIcon type="audio" /><Text style={styles.attachmentLabel}>Audio</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.attachmentOption} onPress={() => mostrarAvisoAdjunto('Contacto', 'Tarjeta de contacto compartida.')}>
