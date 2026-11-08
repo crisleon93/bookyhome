@@ -108,13 +108,20 @@ def upload_tienda_image(
     if tipo not in ('logo', 'banner'):
         raise HTTPException(status_code=400, detail="Tipo de imagen inválido. Debe ser 'logo' o 'banner'.")
 
-    original_filename = (file.filename or "").replace("\\", "/").rsplit("/", 1)[-1]
+    # Extraer solo el nombre base del archivo (evita path traversal)
+    original_filename = os.path.basename((file.filename or "").replace("\\", "/"))
     ext = os.path.splitext(original_filename)[1].lower()
     if ext not in {".jpg", ".jpeg", ".png", ".gif", ".webp"}:
         raise HTTPException(status_code=400, detail="Formato de imagen no permitido.")
 
+    # Nombre generado internamente — nunca usa datos del usuario en el path
     filename = f"tienda_{id_tienda}_{tipo}_{int(time.time())}{ext}"
-    filepath = os.path.join(UPLOAD_TIENDAS_DIR, filename)
+    upload_dir = os.path.realpath(UPLOAD_TIENDAS_DIR)
+    filepath = os.path.realpath(os.path.join(upload_dir, filename))
+
+    # Verificar que el path resultante esté dentro del directorio permitido
+    if not filepath.startswith(upload_dir + os.sep) and filepath != upload_dir:
+        raise HTTPException(status_code=400, detail="Ruta de archivo inválida.")
 
     with open(filepath, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)

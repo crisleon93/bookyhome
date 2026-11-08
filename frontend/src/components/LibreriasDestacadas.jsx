@@ -20,7 +20,10 @@ function leerCacheTiendas() {
 
 function guardarCacheTiendas(tiendas) {
   try {
-    sessionStorage.setItem(CACHE_KEY, JSON.stringify({ guardadoEn: Date.now(), tiendas }));
+    // Serializar y volver a parsear para descartar prototipos no seguros
+    // antes de escribir en sessionStorage (evita Browser Storage Poisoning)
+    const sanitized = JSON.parse(JSON.stringify(tiendas));
+    sessionStorage.setItem(CACHE_KEY, JSON.stringify({ guardadoEn: Date.now(), tiendas: sanitized }));
   } catch {
     // La caché es opcional; la sección funciona incluso si el navegador la bloquea.
   }

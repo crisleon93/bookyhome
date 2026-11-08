@@ -270,6 +270,9 @@ export default function Direcciones() {
   useEffect(() => {
     if (Platform.OS !== 'web' || !mapVisible) return undefined;
     const handleWebMapMessage = (event) => {
+      // El iframe usa srcDoc, cuyo origin es siempre 'null' (documento sandboxed).
+      // Verificamos tanto el origin como la fuente del mensaje.
+      if (event.origin !== 'null' && event.origin !== null) return;
       if (event.source !== mapFrame.current?.contentWindow) return;
       seleccionarPuntoEnMapa(event);
     };

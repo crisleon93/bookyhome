@@ -105,12 +105,15 @@ export default function Librerias() {
   }, []);
 
   const conteosCiudades = useMemo(() => {
-    const counts = { 'Todas': tiendas.length };
+    // Usar Map en lugar de objeto plano para evitar prototype pollution
+    // con claves provenientes de datos externos
+    const countsMap = new Map();
+    countsMap.set('Todas', tiendas.length);
     tiendas.forEach(t => {
       const { ciudad: c } = parseTiendaInfo(t);
-      counts[c] = (counts[c] || 0) + 1;
+      countsMap.set(c, (countsMap.get(c) || 0) + 1);
     });
-    return counts;
+    return Object.fromEntries(countsMap);
   }, [tiendas]);
 
   const scrollCiudades = (dir) => {
