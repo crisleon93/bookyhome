@@ -102,6 +102,7 @@ CREATE TABLE libros (
     descripcion_libro VARCHAR(300),
     precio_libro DECIMAL(10, 2) NOT NULL,
     stock INT NOT NULL DEFAULT 0,
+    oculto TINYINT(1) NOT NULL DEFAULT 0,
     estado_libro VARCHAR(50),
     fecha_publicacion DATE,
     fecha_listado DATE,
@@ -3046,10 +3047,6 @@ SET FOREIGN_KEY_CHECKS = 1;
 
 SELECT '=== BooKyHome LISTA PARA USAR ===' AS '';
 select * from usuarios;
-
--- Agregar la columna oculto a la tabla libros (idempotente)
-ALTER TABLE libros 
-ADD COLUMN IF NOT EXISTS oculto TINYINT(1) NOT NULL DEFAULT 0;
 
 -- Modificar el rol de usuarios por comprador
 SET SQL_SAFE_UPDATES = 0;
