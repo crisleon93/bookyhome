@@ -142,8 +142,8 @@ export default function SeccionMiPerfil({ userId }) {
 
   useEffect(() => {
     if (userId) {
-      cargarDatosPerfil();
-      cargarPerfil();
+      void cargarDatosPerfil();
+      void cargarPerfil();
     }
   }, [userId, cargarDatosPerfil, cargarPerfil]);
 

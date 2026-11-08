@@ -60,7 +60,7 @@ export default function SeccionConfiguracion({ userId }) {
         setLoading(false);
       }
     };
-    cargarPreferencias();
+    void cargarPreferencias();
     
     // Cargar estado de modo oscuro
     const savedDarkMode = localStorage.getItem('darkMode') === 'true';
