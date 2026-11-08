@@ -55,7 +55,7 @@ const BORDER    = '#e5e7eb';
 // ── Helpers ──────────────────────────────────────────────────────────────────
 const formatPrecio = (v) => {
   if (v == null) return '—';
-  return '$' + String(parseInt(v)).replace(/\B(?=(\d{3})+(?!\d))/g, '.') + ' COP';
+  return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(Number.parseInt(v, 10));
 };
 
 const formatFecha = (f) => {

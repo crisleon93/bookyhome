@@ -187,7 +187,7 @@ export default function ListaDeseos({ navigation }) {
     const mensaje = `¿Eliminar "${lista.nombre_lista}" y los libros que contiene?`;
     if (Platform.OS === 'web') {
       if (typeof window !== 'undefined' && window.confirm(mensaje)) {
-        handleEliminarLista(lista);
+        void handleEliminarLista(lista);
       }
       return;
     }
@@ -224,7 +224,7 @@ export default function ListaDeseos({ navigation }) {
     const mensaje = '¿Quieres quitar este libro de la lista?';
     if (Platform.OS === 'web') {
       if (typeof window !== 'undefined' && window.confirm(mensaje)) {
-        handleEliminarLibro(libro);
+        void handleEliminarLibro(libro);
       }
       return;
     }

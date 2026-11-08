@@ -96,7 +96,7 @@ export default function Login({ navigation }) {
       }
     };
 
-    checkSupport();
+    void checkSupport();
   }, []);
 
   useEffect(() => {
@@ -111,7 +111,7 @@ export default function Login({ navigation }) {
       setBiometricLoading(false);
     };
 
-    runPrompt();
+    void runPrompt();
   }, [biometricAvailable, biometricLocked, pendingToken, unlockWithBiometrics]);
 
   const showBiometricError = (result) => {
