@@ -403,26 +403,26 @@ export default function SeccionMisCompras({ userId }) {
 
         {/* Mini KPIs */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: "12px", borderTop: `1px solid ${t.kpiDivider}`, paddingTop: "16px" }}>
-          <div onClick={() => { setFiltroEstado('todos'); setPaginaActual(1); }} style={{ background: filtroEstado === 'todos' ? t.kpiTodosActivoBg : t.kpiBg, border: `1.5px solid ${filtroEstado === 'todos' ? t.kpiTodosActivoBorder : t.kpiBorder}`, borderRadius: 12, padding: "10px 14px", cursor: "pointer", transition: "all 0.2s ease" }}>
+          <button type="button" aria-pressed={filtroEstado === 'todos'} onClick={() => { setFiltroEstado('todos'); setPaginaActual(1); }} style={{ width: "100%", minWidth: 0, textAlign: "left", fontFamily: "inherit", color: "inherit", background: filtroEstado === 'todos' ? t.kpiTodosActivoBg : t.kpiBg, border: `1.5px solid ${filtroEstado === 'todos' ? t.kpiTodosActivoBorder : t.kpiBorder}`, borderRadius: 12, padding: "10px 14px", cursor: "pointer", transition: "all 0.2s ease" }}>
             <span style={{ fontSize: "0.74rem", color: t.textMuted, fontWeight: 700, textTransform: "uppercase" }}>Total</span>
-            <div style={{ fontSize: "1.2rem", fontWeight: 800, color: t.textPrimary, marginTop: 2 }}>{totalCompras}</div>
-          </div>
-          <div onClick={() => { setFiltroEstado('entregado'); setPaginaActual(1); }} style={{ background: filtroEstado === 'entregado' ? t.kpiEntActivoBg : t.kpiBg, border: `1.5px solid ${filtroEstado === 'entregado' ? t.kpiEntActivoBorder : t.kpiBorder}`, borderRadius: 12, padding: "10px 14px", cursor: "pointer", transition: "all 0.2s ease" }}>
+            <span style={{ display: "block", fontSize: "1.2rem", fontWeight: 800, color: t.textPrimary, marginTop: 2 }}>{totalCompras}</span>
+          </button>
+          <button type="button" aria-pressed={filtroEstado === 'entregado'} onClick={() => { setFiltroEstado('entregado'); setPaginaActual(1); }} style={{ width: "100%", minWidth: 0, textAlign: "left", fontFamily: "inherit", color: "inherit", background: filtroEstado === 'entregado' ? t.kpiEntActivoBg : t.kpiBg, border: `1.5px solid ${filtroEstado === 'entregado' ? t.kpiEntActivoBorder : t.kpiBorder}`, borderRadius: 12, padding: "10px 14px", cursor: "pointer", transition: "all 0.2s ease" }}>
             <span style={{ fontSize: "0.74rem", color: darkMode ? '#4ade80' : '#047857', fontWeight: 700, textTransform: "uppercase" }}>✓ Entregadas</span>
-            <div style={{ fontSize: "1.2rem", fontWeight: 800, color: darkMode ? '#4ade80' : '#047857', marginTop: 2 }}>{totalEntregadas}</div>
-          </div>
-          <div onClick={() => { setFiltroEstado('camino'); setPaginaActual(1); }} style={{ background: filtroEstado === 'camino' ? t.kpiCamActivoBg : t.kpiBg, border: `1.5px solid ${filtroEstado === 'camino' ? t.kpiCamActivoBorder : t.kpiBorder}`, borderRadius: 12, padding: "10px 14px", cursor: "pointer", transition: "all 0.2s ease" }}>
+            <span style={{ display: "block", fontSize: "1.2rem", fontWeight: 800, color: darkMode ? '#4ade80' : '#047857', marginTop: 2 }}>{totalEntregadas}</span>
+          </button>
+          <button type="button" aria-pressed={filtroEstado === 'camino'} onClick={() => { setFiltroEstado('camino'); setPaginaActual(1); }} style={{ width: "100%", minWidth: 0, textAlign: "left", fontFamily: "inherit", color: "inherit", background: filtroEstado === 'camino' ? t.kpiCamActivoBg : t.kpiBg, border: `1.5px solid ${filtroEstado === 'camino' ? t.kpiCamActivoBorder : t.kpiBorder}`, borderRadius: 12, padding: "10px 14px", cursor: "pointer", transition: "all 0.2s ease" }}>
             <span style={{ fontSize: "0.74rem", color: darkMode ? '#60a5fa' : '#2563EB', fontWeight: 700, textTransform: "uppercase" }}>🚚 En camino</span>
-            <div style={{ fontSize: "1.2rem", fontWeight: 800, color: darkMode ? '#60a5fa' : '#2563EB', marginTop: 2 }}>{totalEnCamino}</div>
-          </div>
-          <div onClick={() => { setFiltroEstado('pendiente'); setPaginaActual(1); }} style={{ background: filtroEstado === 'pendiente' ? t.kpiPendActivoBg : t.kpiBg, border: `1.5px solid ${filtroEstado === 'pendiente' ? t.kpiPendActivoBorder : t.kpiBorder}`, borderRadius: 12, padding: "10px 14px", cursor: "pointer", transition: "all 0.2s ease" }}>
+            <span style={{ display: "block", fontSize: "1.2rem", fontWeight: 800, color: darkMode ? '#60a5fa' : '#2563EB', marginTop: 2 }}>{totalEnCamino}</span>
+          </button>
+          <button type="button" aria-pressed={filtroEstado === 'pendiente'} onClick={() => { setFiltroEstado('pendiente'); setPaginaActual(1); }} style={{ width: "100%", minWidth: 0, textAlign: "left", fontFamily: "inherit", color: "inherit", background: filtroEstado === 'pendiente' ? t.kpiPendActivoBg : t.kpiBg, border: `1.5px solid ${filtroEstado === 'pendiente' ? t.kpiPendActivoBorder : t.kpiBorder}`, borderRadius: 12, padding: "10px 14px", cursor: "pointer", transition: "all 0.2s ease" }}>
             <span style={{ fontSize: "0.74rem", color: darkMode ? '#fb923c' : '#B45309', fontWeight: 700, textTransform: "uppercase" }}>⏱️ Por Pagar</span>
-            <div style={{ fontSize: "1.2rem", fontWeight: 800, color: darkMode ? '#fb923c' : '#B45309', marginTop: 2 }}>{totalPendientes}</div>
-          </div>
-          <div onClick={() => { setFiltroEstado('cancelado'); setPaginaActual(1); }} style={{ background: filtroEstado === 'cancelado' ? t.kpiCanActivoBg : t.kpiBg, border: `1.5px solid ${filtroEstado === 'cancelado' ? t.kpiCanActivoBorder : t.kpiBorder}`, borderRadius: 12, padding: "10px 14px", cursor: "pointer", transition: "all 0.2s ease" }}>
+            <span style={{ display: "block", fontSize: "1.2rem", fontWeight: 800, color: darkMode ? '#fb923c' : '#B45309', marginTop: 2 }}>{totalPendientes}</span>
+          </button>
+          <button type="button" aria-pressed={filtroEstado === 'cancelado'} onClick={() => { setFiltroEstado('cancelado'); setPaginaActual(1); }} style={{ width: "100%", minWidth: 0, textAlign: "left", fontFamily: "inherit", color: "inherit", background: filtroEstado === 'cancelado' ? t.kpiCanActivoBg : t.kpiBg, border: `1.5px solid ${filtroEstado === 'cancelado' ? t.kpiCanActivoBorder : t.kpiBorder}`, borderRadius: 12, padding: "10px 14px", cursor: "pointer", transition: "all 0.2s ease" }}>
             <span style={{ fontSize: "0.74rem", color: darkMode ? '#f87171' : '#DC2626', fontWeight: 700, textTransform: "uppercase" }}>❌ Canceladas</span>
-            <div style={{ fontSize: "1.2rem", fontWeight: 800, color: darkMode ? '#f87171' : '#DC2626', marginTop: 2 }}>{totalCanceladas}</div>
-          </div>
+            <span style={{ display: "block", fontSize: "1.2rem", fontWeight: 800, color: darkMode ? '#f87171' : '#DC2626', marginTop: 2 }}>{totalCanceladas}</span>
+          </button>
         </div>
       </div>
 
@@ -696,13 +696,14 @@ export default function SeccionMisCompras({ userId }) {
 
       {/* ── MODAL VER DETALLES DE LA ORDEN ── */}
       {modalDetalleOrden && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(15, 23, 42, 0.6)", backdropFilter: "blur(4px)", zIndex: 1999, display: "flex", justifyContent: "center", alignItems: "center", padding: "20px" }} onClick={handleCerrarDetalle}>
-          <div style={{ background: darkMode ? '#1e1e1e' : '#FFFFFF', maxWidth: "600px", width: "100%", borderRadius: "16px", padding: "28px 32px", boxShadow: "0 20px 50px rgba(0,0,0,0.25)", maxHeight: "90vh", overflowY: "auto", position: "relative", border: `1px solid ${darkMode ? '#333' : '#E2E8F0'}` }} onClick={(e) => e.stopPropagation()}>
+        <div role="dialog" aria-modal="true" aria-labelledby="order-details-title" style={{ position: "fixed", inset: 0, background: "rgba(15, 23, 42, 0.6)", backdropFilter: "blur(4px)", zIndex: 1999, display: "flex", justifyContent: "center", alignItems: "center", padding: "20px" }}>
+          <button type="button" aria-label="Cerrar detalles de la orden" onClick={handleCerrarDetalle} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", padding: 0, border: 0, background: "transparent", cursor: "default" }} />
+          <div style={{ background: darkMode ? '#1e1e1e' : '#FFFFFF', maxWidth: "600px", width: "100%", borderRadius: "16px", padding: "28px 32px", boxShadow: "0 20px 50px rgba(0,0,0,0.25)", maxHeight: "90vh", overflowY: "auto", position: "relative", zIndex: 1, border: `1px solid ${darkMode ? '#333' : '#E2E8F0'}` }}>
             {/* Header */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", borderBottom: `1px solid ${darkMode ? '#333' : '#E2E8F0'}`, paddingBottom: "16px", marginBottom: "20px" }}>
               <div>
                 <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
-                  <h2 style={{ margin: 0, fontSize: "1.35rem", fontWeight: 800, color: darkMode ? '#ececec' : '#0F172A' }}>Orden #{idVisible(modalDetalleOrden)}</h2>
+                  <h2 id="order-details-title" style={{ margin: 0, fontSize: "1.35rem", fontWeight: 800, color: darkMode ? '#ececec' : '#0F172A' }}>Orden #{idVisible(modalDetalleOrden)}</h2>
                   <span style={{ fontSize: "0.78rem", fontWeight: 800, padding: "3px 12px", borderRadius: "999px", background: estiloEstadoOrden(modalDetalleOrden.estado || modalDetalleOrden.estado_orden).fondo, color: estiloEstadoOrden(modalDetalleOrden.estado || modalDetalleOrden.estado_orden).color, border: `1px solid ${estiloEstadoOrden(modalDetalleOrden.estado || modalDetalleOrden.estado_orden).borde}` }}>
                     {estiloEstadoOrden(modalDetalleOrden.estado || modalDetalleOrden.estado_orden).etiqueta}
                   </span>
@@ -745,7 +746,7 @@ export default function SeccionMisCompras({ userId }) {
                     )}
                   </div>
                   {modalDetalleOrden.estado_retiro === "reservado" && modalDetalleOrden.estado !== "pagado" && modalDetalleOrden.estado_orden !== "pagado" && (
-                    <button onClick={async () => { await handleLlegadaTienda(modalDetalleOrden.id_orden_db || modalDetalleOrden.id_orden); handleAbrirDetalle(modalDetalleOrden); }} disabled={notificandoId === (modalDetalleOrden.id_orden_db || modalDetalleOrden.id_orden)} style={{ padding: "6px 12px", fontSize: "0.78rem", borderRadius: "6px", background: "#16A34A", color: "#fff", border: "none", fontWeight: 700, cursor: "pointer" }}>📍 Notificar llegada</button>
+                    <button onClick={async () => { await handleLlegadaTienda(modalDetalleOrden.id_orden_db || modalDetalleOrden.id_orden); void handleAbrirDetalle(modalDetalleOrden); }} disabled={notificandoId === (modalDetalleOrden.id_orden_db || modalDetalleOrden.id_orden)} style={{ padding: "6px 12px", fontSize: "0.78rem", borderRadius: "6px", background: "#16A34A", color: "#fff", border: "none", fontWeight: 700, cursor: "pointer" }}>📍 Notificar llegada</button>
                   )}
                   {modalDetalleOrden.estado_retiro === "habilitado_pago" && modalDetalleOrden.estado !== "pagado" && modalDetalleOrden.estado_orden !== "pagado" && (
                     <button onClick={() => { handleCerrarDetalle(); const targetId = modalDetalleOrden.id_orden_db || modalDetalleOrden.id_orden; navigate(`/?seccion=Carrito&pagarOrden=${targetId}&metodo=${encodeURIComponent(modalDetalleOrden.metodo_pago || 'nequi')}&entrega=retiro_tienda`, { state: { autoPayOrderId: targetId, autoPayMethod: modalDetalleOrden.metodo_pago, autoPayEntrega: 'retiro_tienda', ordenObj: modalDetalleOrden } }); }} style={{ padding: "6px 14px", fontSize: "0.8rem", borderRadius: "6px", background: "#7A1E3A", color: "#fff", border: "none", fontWeight: 800, cursor: "pointer" }}>💳 Pagar Ahora</button>
@@ -815,14 +816,22 @@ export default function SeccionMisCompras({ userId }) {
       {mostrarBaucher && (
         <div
           className="baucher-print-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="receipt-title"
           style={{
             position: "fixed", inset: 0,
             background: "rgba(0,0,0,0.6)", zIndex: 2000,
             display: "flex", justifyContent: "center", alignItems: "center",
             padding: "20px"
           }}
-          onClick={handleCerrarBaucher}
         >
+          <button
+            type="button"
+            aria-label="Cerrar comprobante"
+            onClick={handleCerrarBaucher}
+            style={{ position: "absolute", inset: 0, width: "100%", height: "100%", padding: 0, border: 0, background: "transparent", cursor: "default" }}
+          />
           <div
             className="baucher-modal"
             style={{
@@ -831,9 +840,9 @@ export default function SeccionMisCompras({ userId }) {
               borderRadius: "16px", padding: "24px 28px",
               boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
               maxHeight: "calc(100vh - 24px)", overflowY: "auto",
-              scrollbarWidth: "none", msOverflowStyle: "none"
+              scrollbarWidth: "none", msOverflowStyle: "none",
+              position: "relative", zIndex: 1
             }}
-            onClick={(e) => e.stopPropagation()}
           >
             {baucherLoading ? (
               <div style={{ textAlign: "center", padding: "40px" }}>
@@ -856,7 +865,7 @@ export default function SeccionMisCompras({ userId }) {
                       <polyline points="22 4 12 14.01 9 11.01"></polyline>
                     </svg>
                   </div>
-                  <h2 style={{ fontWeight: 800, color: "#7A1E3A", margin: "0 0 8px", fontSize: "1.6rem" }}>¡Compra Exitosa!</h2>
+                  <h2 id="receipt-title" style={{ fontWeight: 800, color: "#7A1E3A", margin: "0 0 8px", fontSize: "1.6rem" }}>¡Compra Exitosa!</h2>
                   <p style={{ color: darkMode ? '#999' : '#666', margin: 0, fontSize: "0.95rem" }}>Gracias por tu compra en BookyHome</p>
                 </div>
 
