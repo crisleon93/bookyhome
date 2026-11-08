@@ -274,10 +274,10 @@ function Register({ isModal = false, onSuccess }) {
     }
 
     // Verificar inmediatamente
-    checkVerification()
+    void checkVerification()
 
     // Luego verificar cada 3 segundos
-    const interval = setInterval(checkVerification, 3000)
+    const interval = setInterval(() => { void checkVerification() }, 3000)
 
     return () => clearInterval(interval)
   }, [polling, email, isModal, onSuccess])

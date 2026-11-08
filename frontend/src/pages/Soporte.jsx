@@ -288,10 +288,11 @@ export default function Soporte() {
           </div>
 
           <div>
-            <label style={{ display: 'block', fontWeight: 600, fontSize: '0.75rem', color: t.textSecondary, marginBottom: 4 }}>
+            <label htmlFor="soporte-asunto" style={{ display: 'block', fontWeight: 600, fontSize: '0.75rem', color: t.textSecondary, marginBottom: 4 }}>
               Asunto
             </label>
             <input
+              id="soporte-asunto"
               value={asunto}
               onChange={(e) => setAsunto(e.target.value)}
               placeholder="Ej: No puedo pagar"
@@ -304,10 +305,11 @@ export default function Soporte() {
           </div>
 
           <div>
-            <label style={{ display: 'block', fontWeight: 600, fontSize: '0.75rem', color: t.textSecondary, marginBottom: 4 }}>
+            <label htmlFor="soporte-descripcion" style={{ display: 'block', fontWeight: 600, fontSize: '0.75rem', color: t.textSecondary, marginBottom: 4 }}>
               Descripción
             </label>
             <textarea
+              id="soporte-descripcion"
               value={descripcion}
               onChange={(e) => setDescripcion(e.target.value)}
               placeholder="Describe el problema..."
@@ -322,6 +324,7 @@ export default function Soporte() {
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 32 }}>
             <button
+              type="submit"
               disabled={enviando}
               className="btn btn-vinotinto"
               style={{ padding: '10px 24px', borderRadius: 8, fontSize: '0.85rem', fontWeight: 700, boxShadow: '0 2px 8px rgba(122,30,58,0.2)', opacity: enviando ? 0.7 : 1, transition: 'all 0.2s' }}
@@ -423,6 +426,15 @@ export default function Soporte() {
                     cursor: 'pointer',
                   }}
                     onClick={() => setTicketColapsado(prev => ({ ...prev, [ticket.id_solicitud]: !prev[ticket.id_solicitud] }))}
+                    role="button"
+                    tabIndex={0}
+                    aria-expanded={!ticketColapsado[ticket.id_solicitud]}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        setTicketColapsado(prev => ({ ...prev, [ticket.id_solicitud]: !prev[ticket.id_solicitud] }));
+                      }
+                    }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
                       <div style={{
@@ -455,20 +467,18 @@ export default function Soporte() {
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                       <EstadoBadge estado={ticket.estado} darkMode={darkMode} />
-                      <button
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); setTicketColapsado(prev => ({ ...prev, [ticket.id_solicitud]: !prev[ticket.id_solicitud] })); }}
+                      <span
+                        aria-hidden="true"
                         style={{
-                          background: 'transparent', border: 'none',
                           color: darkMode ? '#e05a7a' : '#7A1E3A',
-                          cursor: 'pointer', padding: 2, borderRadius: 4, transition: 'transform 0.2s',
+                          padding: 2, borderRadius: 4, transition: 'transform 0.2s',
                           transform: ticketColapsado[ticket.id_solicitud] ? 'rotate(-90deg)' : 'rotate(0deg)',
                         }}
                       >
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" width={18} height={18}>
                           <polyline points="6 9 12 15 18 9"/>
                         </svg>
-                      </button>
+                      </span>
                     </div>
                   </div>
 

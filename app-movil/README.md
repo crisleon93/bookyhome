@@ -60,6 +60,9 @@ Por ejemplo:
 EXPO_PUBLIC_API_URL=http://192.168.0.5:8000
 ```
 
+Las URLs HTTP son solo para desarrollo local. En producción, configura
+`EXPO_PUBLIC_API_URL` con una URL HTTPS del backend.
+
 El archivo `.env.local` esta excluido de Git, por lo que cada integrante puede
 usar su propia IP sin modificar `src/services/api.js` ni generar conflictos.
 
