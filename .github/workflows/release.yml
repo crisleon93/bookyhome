@@ -77,6 +77,16 @@ jobs:
             docker compose -f docker-compose.ci.yml ps mysql | grep -q healthy && break
             sleep 3
           done
+          echo "Verificando esquema base..."
+          TABLAS=$(docker compose -f docker-compose.ci.yml exec -T mysql \
+            mysql -uroot -proot bookyhome -sN -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='bookyhome' AND table_name='libros';" 2>/dev/null || echo "0")
+          if [ "$TABLAS" = "0" ]; then
+            echo "Esquema base no detectado, aplicando database/bookyhome.sql..."
+            docker compose -f docker-compose.ci.yml exec -T mysql \
+              mysql -uroot -proot bookyhome < database/bookyhome.sql
+          else
+            echo "Esquema base presente ($TABLAS tabla 'libros')"
+          fi
           for f in database/migrations/*.sql; do
             docker compose -f docker-compose.ci.yml exec -T mysql \
               mysql -uroot -proot bookyhome < "$f" 2>&1 | tail -1 || true

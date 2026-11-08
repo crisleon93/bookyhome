@@ -1,5 +1,5 @@
 -- DROP DATABASE bookyhome;
-CREATE DATABASE bookyhome;
+CREATE DATABASE IF NOT EXISTS bookyhome;
 USE bookyhome;
 
 -- =====================================================
