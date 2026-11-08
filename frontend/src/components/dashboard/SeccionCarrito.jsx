@@ -1566,10 +1566,10 @@ export default function SeccionCarrito({ userId }) {
             {metodoEntrega === 'domicilio' ? (
               <div className="checkout-detail" style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: "14px", padding: "16px 18px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px", flexWrap: "wrap", gap: "8px" }}>
-                  <label aria-label="Dirección de entrega de tu pedido" style={{ fontWeight: 800, fontSize: "0.85rem", color: "#334155", display: "flex", alignItems: "center", gap: "6px" }}>
+                  <p style={{ margin: 0, fontWeight: 800, fontSize: "0.85rem", color: "#334155", display: "flex", alignItems: "center", gap: "6px" }}>
                     <span>📍</span>
                     <span>Dirección de entrega de tu pedido:</span>
-                  </label>
+                  </p>
                   <button
                     className="checkout-manage-addresses"
                     type="button"
@@ -3062,9 +3062,9 @@ export default function SeccionCarrito({ userId }) {
                   {/* Acceso Rápido: Bancos más utilizados */}
                   <div>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
-                      <label aria-label="Bancos frecuentes en Colombia" style={{ fontSize: "0.85rem", fontWeight: 700, color: "#334155" }}>
+                      <p style={{ margin: 0, fontSize: "0.85rem", fontWeight: 700, color: "#334155" }}>
                         Bancos frecuentes en Colombia
-                      </label>
+                      </p>
                       <span style={{ fontSize: "0.74rem", color: "#64748B" }}>Selección rápida con 1 clic</span>
                     </div>
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: "10px" }}>
@@ -3119,7 +3119,7 @@ export default function SeccionCarrito({ userId }) {
 
                   {/* Selector Completo de Bancos */}
                   <div>
-                    <label htmlFor="pse-banco-select" style={{ display: "block", fontSize: "0.85rem", fontWeight: 700, color: "#334155", marginBottom: "8px" }}>
+                    <label htmlFor="pse-checkout-bank-select" style={{ display: "block", fontSize: "0.85rem", fontWeight: 700, color: "#334155", marginBottom: "8px" }}>
                       O selecciona tu entidad financiera en la lista completa:
                     </label>
                     <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
@@ -3128,7 +3128,7 @@ export default function SeccionCarrito({ userId }) {
                           <path d="M3 21h18"/><path d="M3 10h18"/><path d="M5 6l7-3 7 3"/><path d="M4 10v11"/><path d="M20 10v11"/><path d="M8 14v4"/><path d="M12 14v4"/><path d="M16 14v4"/>
                         </svg>
                       </span>
-                      <select id="pse-banco-select" className="pse-bank-select"
+                      <select id="pse-checkout-bank-select" className="pse-bank-select"
                         value={pseBanco}
                         onChange={(e) => setPseBanco(e.target.value)}
                         style={{
@@ -4260,11 +4260,12 @@ export default function SeccionCarrito({ userId }) {
 
                   <form onSubmit={handlePaypalSubmit} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
                     <div>
-                      <label aria-label="✉️                         Correo electrónico de PayPal" style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "0.82rem", fontWeight: 700, color: "#334155", marginBottom: "6px" }}>
+                      <label htmlFor="paypal-email" aria-label="Correo electrónico de PayPal" style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "0.82rem", fontWeight: 700, color: "#334155", marginBottom: "6px" }}>
                         <span>✉️</span>
                         <span>Correo electrónico de PayPal</span>
                       </label>
                       <input
+                        id="paypal-email"
                         type="email"
                         value={paypalEmail}
                         onChange={(e) => {
@@ -4295,11 +4296,12 @@ export default function SeccionCarrito({ userId }) {
                     </div>
 
                     <div>
-                      <label aria-label="🔒                         Contraseña Sandbox" style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "0.82rem", fontWeight: 700, color: "#334155", marginBottom: "6px" }}>
+                      <label htmlFor="paypal-password" aria-label="Contraseña Sandbox" style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "0.82rem", fontWeight: 700, color: "#334155", marginBottom: "6px" }}>
                         <span>🔒</span>
                         <span>Contraseña Sandbox</span>
                       </label>
                       <input
+                        id="paypal-password"
                         type="password"
                         value={paypalPassword}
                         onChange={(e) => {
@@ -4623,9 +4625,9 @@ export default function SeccionCarrito({ userId }) {
                       <form onSubmit={handlePseModalNext} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
                         {/* Selector Tipo de Cliente */}
                         <div>
-                          <label aria-label="Tipo de Cliente" style={{ display: "block", fontSize: "0.8rem", fontWeight: 700, color: "#334155", marginBottom: "6px" }}>
+                          <p style={{ margin: "0 0 6px 0", fontSize: "0.8rem", fontWeight: 700, color: "#334155" }}>
                             Tipo de Cliente
-                          </label>
+                          </p>
                           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
                             {[
                               { id: "natural", label: "👤 Persona Natural" },
@@ -4655,10 +4657,11 @@ export default function SeccionCarrito({ userId }) {
 
                         {/* Banco Seleccionado */}
                         <div>
-                          <label aria-label="Entidad Financiera (Banco)" style={{ display: "block", fontSize: "0.8rem", fontWeight: 700, color: "#334155", marginBottom: "6px" }}>
+                          <label htmlFor="pse-modal-bank-select" aria-label="Entidad Financiera (Banco)" style={{ display: "block", fontSize: "0.8rem", fontWeight: 700, color: "#334155", marginBottom: "6px" }}>
                             Entidad Financiera (Banco)
                           </label>
                           <select
+                            id="pse-modal-bank-select"
                             className="pse-bank-select"
                             value={pseBanco}
                             onChange={(e) => setPseBanco(e.target.value)}
@@ -4682,11 +4685,12 @@ export default function SeccionCarrito({ userId }) {
 
                         {/* Correo Electrónico Registrado en PSE */}
                         <div>
-                          <label aria-label="Correo electrónico registrado en PSE                             Usuario PSE" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.8rem", fontWeight: 700, color: "#334155", marginBottom: "6px" }}>
+                          <label htmlFor="pse-email" aria-label="Correo electrónico registrado en PSE" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.8rem", fontWeight: 700, color: "#334155", marginBottom: "6px" }}>
                             <span>Correo electrónico registrado en PSE</span>
                             <span style={{ fontSize: "0.72rem", color: "#2563EB", fontWeight: 600 }}>Usuario PSE</span>
                           </label>
                           <input
+                            id="pse-email"
                             type="email"
                             value={pseEmail}
                             onChange={(e) => setPseEmail(e.target.value)}
@@ -4705,10 +4709,11 @@ export default function SeccionCarrito({ userId }) {
 
                         {/* Documento de Identidad */}
                         <div>
-                          <label aria-label="Número de Documento / C.C." style={{ display: "block", fontSize: "0.8rem", fontWeight: 700, color: "#334155", marginBottom: "6px" }}>
+                          <label htmlFor="pse-doc-numero" aria-label="Número de Documento / C.C." style={{ display: "block", fontSize: "0.8rem", fontWeight: 700, color: "#334155", marginBottom: "6px" }}>
                             Número de Documento / C.C.
                           </label>
                           <input
+                            id="pse-doc-numero"
                             type="text"
                             value={pseDocNumero}
                             onChange={(e) => setPseDocNumero(e.target.value)}
@@ -4838,13 +4843,14 @@ export default function SeccionCarrito({ userId }) {
 
                         {/* Clave dinámica simulada */}
                         <div>
-                          <label aria-label="Clave Dinámica / Token Virtual de Seguridad" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.8rem", fontWeight: 700, color: "#334155", marginBottom: "6px" }}>
+                          <label htmlFor="pse-clave-dinamica" aria-label="Clave Dinámica / Token Virtual de Seguridad" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.8rem", fontWeight: 700, color: "#334155", marginBottom: "6px" }}>
                             <span>Clave Dinámica / Token Virtual de Seguridad</span>
                             <span style={{ background: "#DCFCE7", color: "#15803D", padding: "1px 6px", borderRadius: "4px", fontSize: "0.7rem", fontWeight: 700 }}>
                               Generado en App móvil
                             </span>
                           </label>
                           <input
+                            id="pse-clave-dinamica"
                             type="text"
                             value={pseOtp}
                             onChange={(e) => setPseOtp(e.target.value)}
@@ -5510,11 +5516,24 @@ export default function SeccionCarrito({ userId }) {
           aria-modal="true"
           aria-label="Confirmar cancelación de orden"
           className="modal-overlay open"
-          onClick={(e) => {
-            if (e.target === e.currentTarget && !cancelandoOrden) setOrdenACancelar(null);
-          }}
           style={{ zIndex: 1100 }}
         >
+          <button
+            type="button"
+            aria-label="Cerrar confirmación de cancelación"
+            disabled={cancelandoOrden}
+            onClick={() => setOrdenACancelar(null)}
+            style={{
+              position: "absolute",
+              inset: 0,
+              width: "100%",
+              height: "100%",
+              padding: 0,
+              border: 0,
+              background: "transparent",
+              cursor: "default"
+            }}
+          />
           <div
             className="pl-card"
             style={{
@@ -5524,11 +5543,11 @@ export default function SeccionCarrito({ userId }) {
               boxShadow: "0 20px 50px rgba(0,0,0,0.25)",
               textAlign: "center",
               position: "relative",
+              zIndex: 1,
               background: "#fff",
               boxSizing: "border-box",
               animation: "slideUp 0.2s ease"
             }}
-            onClick={(e) => e.stopPropagation()}
           >
             <button
               className="modal-close"
@@ -5630,9 +5649,23 @@ export default function SeccionCarrito({ userId }) {
           aria-modal="true"
           aria-label="Detalles de orden pendiente"
           className="modal-overlay open"
-          onClick={(e) => { if (e.target === e.currentTarget) setOrdenDetalleModal(null); }}
           style={{ zIndex: 1100 }}
         >
+          <button
+            type="button"
+            aria-label="Cerrar detalles de orden"
+            onClick={() => setOrdenDetalleModal(null)}
+            style={{
+              position: "absolute",
+              inset: 0,
+              width: "100%",
+              height: "100%",
+              padding: 0,
+              border: 0,
+              background: "transparent",
+              cursor: "default"
+            }}
+          />
           <div
             className="pending-order-modal"
             style={{
@@ -5643,9 +5676,9 @@ export default function SeccionCarrito({ userId }) {
               background: "#FFFFFF",
               boxShadow: "0 24px 60px rgba(0,0,0,0.22)",
               position: "relative",
+              zIndex: 1,
               animation: "slideUp 0.22s ease"
             }}
-            onClick={(e) => e.stopPropagation()}
           >
             {/* Header del modal */}
             <div className="pending-order-modal-header" style={{
@@ -5796,4 +5829,3 @@ export default function SeccionCarrito({ userId }) {
     </div>
   );
 }
-
