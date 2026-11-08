@@ -178,7 +178,7 @@ export default function AdminSection({ route, navigation }) {
   const categorias = useMemo(() => {
     if (section !== 'libros') return [];
     const cats = new Set(items.map((l) => l.nombre_categoria).filter(Boolean));
-    return ['todas', ...Array.from(cats).sort()];
+    return ['todas', ...Array.from(cats).sort((a, b) => a.localeCompare(b, 'es'))];
   }, [items, section]);
 
   // ─── Filtrado y paginación ────────────────────────────────────────────────

@@ -658,7 +658,7 @@ export default function AdminHome() {
   // ── Categorías únicas para filtro de libros ───────────────────────────────
   const categorias = useMemo(() => {
     const cats = new Set(data.libros.map((l) => l.nombre_categoria || 'Sin categoría'));
-    return ['todas', ...Array.from(cats).sort()];
+    return ['todas', ...Array.from(cats).sort((a, b) => a.localeCompare(b, 'es'))];
   }, [data.libros]);
   const librosPorCategoria = useMemo(() => data.libros.reduce((counts, libro) => {
     const categoria = libro.nombre_categoria || 'Sin categoría';

@@ -2,7 +2,7 @@ import json
 import os
 import secrets
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from app.database import get_db
 
 STORAGE_DIR = os.path.join(os.path.dirname(__file__), '..', 'data')
@@ -32,7 +32,7 @@ def _crear_datos_retiro(tipo_entrega):
         return None, None, None
 
     pin_retiro = str(secrets.randbelow(9000) + 1000)
-    fecha_limite = (datetime.utcnow() + timedelta(hours=48)).isoformat() + 'Z'
+    fecha_limite = (datetime.now(timezone.utc) + timedelta(hours=48)).isoformat().replace('+00:00', 'Z')
     return pin_retiro, 'reservado', fecha_limite
 
 
@@ -184,7 +184,7 @@ def checkout_carrito(id_usuario, id_direccion=None, tipo_entrega='domicilio'):
     order = {
         'id_orden': order_id,
         'codigo_compra': f"BH-{uuid.uuid4().hex[:10].upper()}",
-        'fecha': datetime.utcnow().isoformat() + 'Z',
+        'fecha': datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'),
         'items': cart,
         'subtotal': subtotal,
         'costo_envio': costo_envio,
@@ -290,7 +290,7 @@ def crear_orden_directa(id_usuario, item_libro, id_direccion=None, tipo_entrega=
     order = {
         'id_orden': order_id,
         'codigo_compra': f"BH-{uuid.uuid4().hex[:10].upper()}",
-        'fecha': datetime.utcnow().isoformat() + 'Z',
+        'fecha': datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'),
         'items': [item],
         'subtotal': subtotal,
         'costo_envio': costo_envio,

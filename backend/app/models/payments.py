@@ -1,7 +1,7 @@
 import json
 import os
 import secrets
-from datetime import datetime
+from datetime import datetime, timezone
 
 STORAGE_DIR = os.path.join(os.path.dirname(__file__), '..', 'data')
 ORDER_FILE = os.path.join(STORAGE_DIR, 'orders.json')
@@ -543,7 +543,7 @@ def registrar_pago(id_usuario, id_orden, amount, payment_method, coupon_code=Non
         'id_orden': id_orden,
         'monto': amount_paid,
         'metodo_pago': payment_method,
-        'fecha_pago': datetime.utcnow().isoformat() + 'Z',
+        'fecha_pago': datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'),
         'estado': 'aprobado'
     }
     
@@ -617,9 +617,9 @@ def reservar_retiro(id_usuario, id_orden, metodo_pago="Efectivo en Tienda"):
             break
 
     pin = target.get("pin_retiro") if target and target.get("pin_retiro") else str(secrets.randbelow(9000) + 1000)
-    ahora = datetime.utcnow()
+    ahora = datetime.now(timezone.utc)
     limite = ahora + timedelta(hours=48)
-    limite_str = limite.isoformat() + "Z"
+    limite_str = limite.isoformat().replace("+00:00", "Z")
 
     if target:
         target["tipo_entrega"] = "retiro_tienda"
