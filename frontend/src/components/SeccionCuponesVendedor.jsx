@@ -22,7 +22,7 @@ const formatoPrecio = (v) => {
 const formatoFecha = (f) => {
   if (!f) return "Sin límite";
   const d = new Date(f);
-  if (isNaN(d.getTime())) return "Sin límite";
+  if (Number.isNaN(d.getTime())) return "Sin límite";
   return d.toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" });
 };
 
@@ -179,7 +179,7 @@ function TarjetaCupon({ coupon, onEditar, onEliminar, onToggle, darkMode = false
         ) : (
           <div style={{ marginBottom: "14px", fontSize: "0.78rem", color: mutedColor, display: "flex", alignItems: "center", gap: "6px" }}>
             <span>{usosActuales} usos realizados</span>
-            <span style={{ color: darkMode ? "#9ca3af" : "#9ca3af" }}>·</span>
+            <span style={{ color: '#9ca3af' }}>·</span>
             <span style={{ fontWeight: 700 }}>Usos ilimitados</span>
           </div>
         )}
@@ -647,9 +647,10 @@ export default function SeccionCuponesVendedor({ tiendaId, darkMode = false }) {
               <div style={{ flex: "1 1 380px", minWidth: 0 }}>
                 {/* Código */}
                 <div style={{ marginBottom: "18px" }}>
-                  <label style={labelStyle}>Código del cupón *</label>
+                  <label htmlFor="cupon-codigo" style={labelStyle}>Código del cupón *</label>
                   <div style={{ display: "flex", gap: "8px" }}>
                     <input
+                      id="cupon-codigo"
                       type="text"
                       value={form.codigo_cupon}
                       onChange={(e) => setForm({ ...form, codigo_cupon: e.target.value })}
@@ -691,7 +692,10 @@ export default function SeccionCuponesVendedor({ tiendaId, darkMode = false }) {
                       return (
                         <div
                           key={t.tipo}
+                          role="button"
+                          tabIndex={0}
                           onClick={() => setForm({ ...form, tipo_descuento: t.tipo, valor_descuento: "" })}
+                          onKeyDown={e => e.key === 'Enter' && setForm({ ...form, tipo_descuento: t.tipo, valor_descuento: "" })}
                           style={{
                             padding: "13px 15px", borderRadius: "12px", cursor: "pointer",
                             border: seleccionado ? `2px solid ${darkMode ? "#ff4f83" : "#7A1E3A"}` : `1.5px solid ${modalBorder}`,
@@ -789,8 +793,9 @@ export default function SeccionCuponesVendedor({ tiendaId, darkMode = false }) {
                     />
                   </div>
                   <div>
-                    <label style={labelStyle}>Usos máximos</label>
+                    <label htmlFor="cupon-usos-maximos" style={labelStyle}>Usos máximos</label>
                     <input
+                      id="cupon-usos-maximos"
                       type="number"
                       value={form.usos_maximos}
                       onChange={(e) => setForm({ ...form, usos_maximos: e.target.value })}
@@ -823,8 +828,9 @@ export default function SeccionCuponesVendedor({ tiendaId, darkMode = false }) {
                   </div>
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: "12px", minWidth: 0 }}>
                     <div style={{ minWidth: 0 }}>
-                      <label style={labelStyle}>Inicio</label>
+                      <label htmlFor="cupon-fecha-inicio" style={labelStyle}>Inicio</label>
                       <input
+                        id="cupon-fecha-inicio"
                         type="datetime-local"
                         value={form.fecha_inicio}
                         onChange={(e) => setForm({ ...form, fecha_inicio: e.target.value })}
@@ -832,8 +838,9 @@ export default function SeccionCuponesVendedor({ tiendaId, darkMode = false }) {
                       />
                     </div>
                     <div style={{ minWidth: 0 }}>
-                      <label style={labelStyle}>Fin</label>
+                      <label htmlFor="cupon-fecha-fin" style={labelStyle}>Fin</label>
                       <input
+                        id="cupon-fecha-fin"
                         type="datetime-local"
                         value={form.fecha_fin}
                         onChange={(e) => setForm({ ...form, fecha_fin: e.target.value })}

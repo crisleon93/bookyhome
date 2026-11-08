@@ -263,8 +263,8 @@ export default function LeafletAddressPickerModal({ isOpen, onClose, onSelect, o
   if (!isOpen) return null;
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '1rem' }} onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div style={{ width: '100%', maxWidth: '760px', background: '#fff', borderRadius: '16px', boxShadow: '0 18px 48px rgba(0,0,0,0.22)', padding: '1.25rem', position: 'relative' }} onMouseDown={(evt) => evt.stopPropagation()}>
+    <div role="presentation" style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '1rem' }} onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <div role="dialog" aria-modal="true" style={{ width: '100%', maxWidth: '760px', background: '#fff', borderRadius: '16px', boxShadow: '0 18px 48px rgba(0,0,0,0.22)', padding: '1.25rem', position: 'relative' }} onMouseDown={(evt) => evt.stopPropagation()}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
           <div>
             <h3 style={{ margin: 0, color: '#7A1E3A', fontSize: '1.05rem' }}>Elegir dirección</h3>
@@ -274,9 +274,9 @@ export default function LeafletAddressPickerModal({ isOpen, onClose, onSelect, o
         </div>
 
         <div style={{ display: 'grid', gap: '10px', marginBottom: '12px' }}>
-          <label style={{ display: 'grid', gap: '6px' }}>
+          <label htmlFor="leaflet-address-input" style={{ display: 'grid', gap: '6px' }}>
             <span style={{ fontSize: '0.9rem', color: '#444', fontWeight: 600 }}>Dirección</span>
-            <input value={addressText} onChange={(e) => setAddressText(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleUseManualAddress(); } }} placeholder="Ej. Carrera 7 # 45-67, Bogotá" style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #d7d2c7' }} />
+            <input id="leaflet-address-input" value={addressText} onChange={(e) => setAddressText(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); void handleUseManualAddress(); } }} placeholder="Ej. Carrera 7 # 45-67, Bogotá" style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #d7d2c7' }} />
           </label>
           <div style={{ display: 'grid', gap: '10px', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}>
             <label style={{ display: 'grid', gap: '6px' }}>

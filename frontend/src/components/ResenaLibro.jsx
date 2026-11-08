@@ -43,7 +43,7 @@ function ResenaLibro({ idLibro, idUsuario }) {
   }, [idLibro, idUsuario]);
 
   useEffect(() => {
-    cargarResenas();
+    void cargarResenas();
   }, [cargarResenas]);
 
   useEffect(() => {

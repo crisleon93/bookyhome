@@ -147,7 +147,7 @@ const LibroCard = ({ libro, onVerDetalles }) => {
       }
     };
 
-    cargarEstado();
+    void cargarEstado();
   }, [libro]);
 
   const agregarAFavoritos = async () => {
@@ -361,7 +361,7 @@ const LibroCard = ({ libro, onVerDetalles }) => {
                 <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
               </svg>
               {calificacionTienda.toFixed(1)}
-              {totalOpinionesTienda > 0 && <span style={{ fontSize: '0.65rem', color: darkMode ? '#999' : '#999' }}>({totalOpinionesTienda})</span>}
+              {totalOpinionesTienda > 0 && <span style={{ fontSize: '0.65rem', color: '#999' }}>({totalOpinionesTienda})</span>}
             </span>
           )}
           <span style={{ display: 'flex', alignItems: 'center', gap: '2px', fontSize: '0.65rem', fontWeight: 600, color: outOfStock ? '#f87171' : (darkMode ? '#4ade80' : '#16a34a') }}>

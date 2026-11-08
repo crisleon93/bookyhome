@@ -1458,6 +1458,8 @@ function Header({ variant, hasSidebar }) {
             onMouseDown={() => setLocationOpen(false)}
           >
             <div
+              role="dialog"
+              aria-modal="true"
               style={{ background: '#fff', borderRadius: '16px', width: '100%', maxWidth: '460px', position: 'relative', boxShadow: '0 32px 72px rgba(0,0,0,0.28)', margin: '0 16px', overflow: 'hidden', animation: 'legalModalIn 0.22s cubic-bezier(0.22,1,0.36,1) both' }}
               onMouseDown={e => e.stopPropagation()}
             >
@@ -1601,6 +1603,8 @@ function Header({ variant, hasSidebar }) {
                 overflow: 'hidden',
                 animation: 'fadeScaleIn 0.22s cubic-bezier(0.4,0,0.2,1)'
               }}
+              role="dialog"
+              aria-modal="true"
               onMouseDown={e => e.stopPropagation()}
             >
               {/* Header con gradiente vinotinto */}
