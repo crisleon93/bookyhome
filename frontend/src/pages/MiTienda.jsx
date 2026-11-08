@@ -6867,16 +6867,17 @@ export default function MiTienda() {
         {/* ── MODAL ELIMINAR MENSAJES ── */}
         {showNotifDeleteModal && (
           <div
+            role="presentation"
             style={{
               position: "fixed", inset: 0, zIndex: 2000,
               background: "rgba(15,23,42,0.55)", backdropFilter: "blur(3px)",
               display: "flex", alignItems: "center", justifyContent: "center", padding: 20,
             }}
-            onClick={(e) => { if (e.target === e.currentTarget) setShowNotifDeleteModal(false); }}
           >
+            <button type="button" className="seller-modal-backdrop" aria-label="Cerrar eliminación de notificaciones" onClick={() => setShowNotifDeleteModal(false)} />
             <div style={{
               background: "#fff", borderRadius: 16, width: "100%", maxWidth: 420,
-              padding: 28, boxShadow: "0 20px 60px rgba(0,0,0,0.18)",
+              padding: 28, boxShadow: "0 20px 60px rgba(0,0,0,0.18)", position: "relative", zIndex: 1,
             }}>
               <h2 style={{ margin: "0 0 6px", fontSize: "1.15rem", fontWeight: 800, color: "#1F2937" }}>
                 🗑️ Eliminar notificaciones

@@ -306,7 +306,9 @@ export default function QuejasReclamos() {
       setMensajeChatInput(prev => ({ ...prev, [id_solicitud]: "" }));
       const res = await getMensajesReclamo(id_solicitud);
       setMensajesChat(prev => ({ ...prev, [id_solicitud]: res.data || [] }));
-    } catch { /* silencioso */ }
+    } catch (error) {
+      console.error("Error enviando mensaje del reclamo:", error);
+    }
     finally { setEnviandoMensaje(null); }
   };
 
@@ -502,9 +504,9 @@ export default function QuejasReclamos() {
               )}
 
               <div style={{ display: "grid", gap: 8 }}>
-                <label style={{ display: "block", fontWeight: 600, fontSize: "0.75rem", color: t.textSecondary, marginBottom: 4 }}>
+                <div style={{ display: "block", fontWeight: 600, fontSize: "0.75rem", color: t.textSecondary, marginBottom: 4 }}>
                   Evidencia <span style={{ color: t.textMuted, fontWeight: 400 }}>(opcional)</span>
-                </label>
+                </div>
                 <label style={{
                   display: "flex", alignItems: "center", gap: 10,
                   padding: "8px 12px", border: `1.5px dashed ${darkMode ? "#4a4a4a" : "#d1d5db"}`,
@@ -527,10 +529,10 @@ export default function QuejasReclamos() {
               </div>
 
               <div>
-                <label style={{ display: "block", fontWeight: 600, fontSize: "0.75rem", color: t.textSecondary, marginBottom: 4 }}>
+                <label htmlFor="queja-descripcion" style={{ display: "block", fontWeight: 600, fontSize: "0.75rem", color: t.textSecondary, marginBottom: 4 }}>
                   Descripción <span style={{ color: t.textMuted, fontWeight: 400 }}>(opcional)</span>
                 </label>
-                <textarea value={descripcion} onChange={(e) => setDescripcion(e.target.value)}
+                <textarea id="queja-descripcion" value={descripcion} onChange={(e) => setDescripcion(e.target.value)}
                   rows={3} placeholder="Describe el problema..."
                   style={{ ...fieldStyle, padding: "10px 12px", fontSize: "0.85rem", lineHeight: 1.4, resize: "vertical", background: t.inputBg, border: `1.5px solid ${t.inputBorder}`, color: t.inputColor }}
                   onFocus={e => { e.target.style.borderColor = "#7A1E3A"; e.target.style.boxShadow = "0 0 0 2px rgba(122,30,58,0.1)"; }}
@@ -540,7 +542,7 @@ export default function QuejasReclamos() {
             </div>
 
             <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 48 }}>
-              <button disabled={enviando} className="btn btn-vinotinto"
+              <button type="submit" disabled={enviando} className="btn btn-vinotinto"
                 style={{ padding: "10px 24px", borderRadius: 8, fontSize: "0.85rem", fontWeight: 700, boxShadow: "0 2px 8px rgba(122,30,58,0.2)", opacity: enviando ? 0.7 : 1, transition: "all 0.2s" }}>
                 {enviando ? "Enviando..." : "Enviar"}
               </button>
@@ -629,7 +631,16 @@ export default function QuejasReclamos() {
                   borderBottom: tarjetaColapsada[queja.id_solicitud] ? "none" : `1px solid ${t.ticketHeaderBorder}`,
                   display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, cursor: "pointer",
                 }}
+                  role="button"
+                  tabIndex={0}
+                  aria-expanded={!tarjetaColapsada[queja.id_solicitud]}
                   onClick={() => setTarjetaColapsada(prev => ({ ...prev, [queja.id_solicitud]: !prev[queja.id_solicitud] }))}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      setTarjetaColapsada(prev => ({ ...prev, [queja.id_solicitud]: !prev[queja.id_solicitud] }));
+                    }
+                  }}
                 >
                   <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
                     {imgSrc ? (
@@ -665,12 +676,11 @@ export default function QuejasReclamos() {
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                     <EstadoBadge estado={queja.estado} size="small" variant="solid" darkMode={darkMode} />
-                    <button type="button"
-                      onClick={(e) => { e.stopPropagation(); setTarjetaColapsada(prev => ({ ...prev, [queja.id_solicitud]: !prev[queja.id_solicitud] })); }}
-                      style={{ background: "transparent", border: "none", color: t.vinoLabel, cursor: "pointer", padding: 2, borderRadius: 4, transition: "transform 0.2s", transform: tarjetaColapsada[queja.id_solicitud] ? "rotate(-90deg)" : "rotate(0deg)" }}
+                    <span aria-hidden="true"
+                      style={{ color: t.vinoLabel, padding: 2, borderRadius: 4, transition: "transform 0.2s", transform: tarjetaColapsada[queja.id_solicitud] ? "rotate(-90deg)" : "rotate(0deg)" }}
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" width={18} height={18}><polyline points="6 9 12 15 18 9"/></svg>
-                    </button>
+                    </span>
                   </div>
                 </div>
 
@@ -802,13 +812,13 @@ export default function QuejasReclamos() {
                             <input
                               value={mensajeChatInput[queja.id_solicitud] || ""}
                               onChange={e => setMensajeChatInput(prev => ({ ...prev, [queja.id_solicitud]: e.target.value }))}
-                              onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleEnviarMensaje(queja.id_solicitud); } }}
+                              onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void handleEnviarMensaje(queja.id_solicitud); } }}
                               placeholder="Escribe..."
                               style={{ flex: 1, padding: "6px 10px", borderRadius: 6, border: `1px solid ${t.chatInputBorder}`, fontSize: "0.8rem", fontFamily: "inherit", outline: "none", background: t.inputBg, color: t.inputColor, transition: "border-color 0.2s" }}
                               onFocus={e => e.target.style.borderColor = "#7A1E3A"}
                               onBlur={e => e.target.style.borderColor = t.chatInputBorder}
                             />
-                            <button onClick={() => handleEnviarMensaje(queja.id_solicitud)}
+                            <button type="button" onClick={() => { void handleEnviarMensaje(queja.id_solicitud); }}
                               disabled={enviandoMensaje === queja.id_solicitud || !mensajeChatInput[queja.id_solicitud]?.trim()}
                               style={{
                                 padding: "6px 12px", background: (enviandoMensaje === queja.id_solicitud || !mensajeChatInput[queja.id_solicitud]?.trim()) ? (darkMode ? "#3a2a2e" : "#d1c0c5") : "#7A1E3A",
@@ -895,21 +905,24 @@ export default function QuejasReclamos() {
       )}
       {vistaEvidencia && (
         <div
-          onClick={() => setVistaEvidencia(null)}
+          role="presentation"
           style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.85)", display: "grid", placeItems: "center", padding: 32 }}
         >
-          <img
-            onClick={(e) => e.stopPropagation()}
-            src={vistaEvidencia}
-            alt="Evidencia"
-            style={{ maxWidth: "90vw", maxHeight: "85vh", borderRadius: 16, boxShadow: "0 8px 48px rgba(0,0,0,0.4)" }}
-          />
-          <button
-            onClick={() => setVistaEvidencia(null)}
-            style={{ position: "fixed", top: 20, right: 24, background: "rgba(255,255,255,0.15)", border: "none", color: "#fff", borderRadius: "50%", width: 40, height: 40, fontSize: "1.2rem", cursor: "pointer", display: "grid", placeItems: "center" }}
-          >
-            X
-          </button>
+          <button type="button" aria-label="Cerrar vista de evidencia" onClick={() => setVistaEvidencia(null)} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: 0, background: "transparent", cursor: "pointer" }} />
+          <div role="dialog" aria-modal="true" aria-label="Vista de evidencia" style={{ position: "relative", zIndex: 1 }}>
+            <img
+              src={vistaEvidencia}
+              alt="Evidencia"
+              style={{ maxWidth: "90vw", maxHeight: "85vh", borderRadius: 16, boxShadow: "0 8px 48px rgba(0,0,0,0.4)" }}
+            />
+            <button
+              type="button"
+              onClick={() => setVistaEvidencia(null)}
+              style={{ position: "fixed", top: 20, right: 24, background: "rgba(255,255,255,0.15)", border: "none", color: "#fff", borderRadius: "50%", width: 40, height: 40, fontSize: "1.2rem", cursor: "pointer", display: "grid", placeItems: "center" }}
+            >
+              X
+            </button>
+          </div>
         </div>
       )}
 
