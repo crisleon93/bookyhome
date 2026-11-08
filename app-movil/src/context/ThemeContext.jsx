@@ -70,14 +70,14 @@ function parseColor(value) {
 
   if (shortHex) {
     return {
-      channels: shortHex[1].split('').map((channel) => parseInt(channel + channel, 16)),
+      channels: shortHex[1].split('').map((channel) => Number.parseInt(channel + channel, 16)),
       alpha: 1,
       format: 'hex',
     };
   }
   if (fullHex) {
     return {
-      channels: [0, 2, 4].map((index) => parseInt(fullHex[1].slice(index, index + 2), 16)),
+      channels: [0, 2, 4].map((index) => Number.parseInt(fullHex[1].slice(index, index + 2), 16)),
       alpha: 1,
       format: 'hex',
     };

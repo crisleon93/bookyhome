@@ -411,7 +411,7 @@ export default function FiltrosBusqueda({
                               <TextInput
                                 style={[s.input, { paddingLeft: 22 }]}
                                 value={String(filtros.precio_min)}
-                                onChangeText={v => { const n = parseInt(v)||0; if (n <= filtros.precio_max) set('precio_min', n); }}
+                                onChangeText={v => { const n = Number.parseInt(v)||0; if (n <= filtros.precio_max) set('precio_min', n); }}
                                 keyboardType="numeric"
                                 placeholder="0"
                                 placeholderTextColor="#bbb"
@@ -423,7 +423,7 @@ export default function FiltrosBusqueda({
                               <TextInput
                                 style={[s.input, { paddingLeft: 22 }]}
                                 value={String(filtros.precio_max)}
-                                onChangeText={v => { const n = parseInt(v)||opciones.precio_max; if (n >= filtros.precio_min) set('precio_max', n); }}
+                                onChangeText={v => { const n = Number.parseInt(v)||opciones.precio_max; if (n >= filtros.precio_min) set('precio_max', n); }}
                                 keyboardType="numeric"
                                 placeholder={String(opciones.precio_max)}
                                 placeholderTextColor="#bbb"

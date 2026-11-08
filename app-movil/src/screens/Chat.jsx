@@ -269,14 +269,20 @@ export default function Chat() {
       if (!montadoRef.current) return;
       setSilenciado(silencio?.[1] === '1');
       setFavorito(favoritoGuardado?.[1] === '1');
+    }).catch((error) => {
+      if (montadoRef.current) console.error('Error cargando preferencias del chat:', error);
     });
     AsyncStorage.getItem(`chat_reacciones_${id_sala}`).then((guardado) => {
       if (montadoRef.current && guardado) setReacciones(JSON.parse(guardado));
+    }).catch((error) => {
+      if (montadoRef.current) console.error('Error cargando reacciones del chat:', error);
     });
     AsyncStorage.multiGet([`chat_temporales_${id_sala}`, `chat_bloqueado_${id_sala}`]).then(([temporales, bloqueadoGuardado]) => {
       if (!montadoRef.current) return;
       setMensajesTemporales(temporales?.[1] === '1');
       setBloqueado(bloqueadoGuardado?.[1] === '1');
+    }).catch((error) => {
+      if (montadoRef.current) console.error('Error cargando configuración del chat:', error);
     });
     return () => {
       montadoRef.current = false;
