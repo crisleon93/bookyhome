@@ -357,12 +357,13 @@ export default function SeccionSeguimiento({ userId }) {
         </>
       )}
       {detalleAbierto && (
-        <div role="presentation" onClick={() => setDetalleAbierto(null)} style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(36, 20, 27, 0.52)", display: "grid", placeItems: "center", padding: "20px" }}>
-          <section className="pl-card seguimiento-detail-modal" onClick={(event) => event.stopPropagation()} style={{ width: "min(580px, 100%)", padding: 0, overflow: "hidden", boxSizing: "border-box", boxShadow: "0 24px 70px rgba(36, 20, 27, 0.24)", borderRadius: "16px" }}>
+        <div role="dialog" aria-modal="true" aria-labelledby="seguimiento-detail-title" style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(36, 20, 27, 0.52)", display: "grid", placeItems: "center", padding: "20px" }}>
+          <button type="button" aria-label="Cerrar detalle del envío" onClick={() => setDetalleAbierto(null)} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", padding: 0, border: 0, background: "transparent", cursor: "default" }} />
+          <section className="pl-card seguimiento-detail-modal" style={{ position: "relative", zIndex: 1, width: "min(580px, 100%)", padding: 0, overflow: "hidden", boxSizing: "border-box", boxShadow: "0 24px 70px rgba(36, 20, 27, 0.24)", borderRadius: "16px" }}>
             <header style={{ padding: "28px 30px 24px", background: esDetalleEntregado ? "linear-gradient(135deg, #14532d, #15803d)" : "linear-gradient(135deg, #173f8a, #2563eb)", color: "white", display: "flex", justifyContent: "space-between", gap: "20px", alignItems: "flex-start" }}>
               <div>
                 <span style={{ fontSize: "0.82rem", fontWeight: 700, letterSpacing: "0.08em", opacity: 0.9 }}>{esDetalleEntregado ? "COMPROBANTE DE ENTREGA" : "DETALLE DEL ENVÍO"}</span>
-                <h3 style={{ margin: "8px 0 0", fontSize: "1.45rem" }}>{esDetalleEntregado ? "Pedido entregado" : "Pedido en camino"}</h3>
+                <h3 id="seguimiento-detail-title" style={{ margin: "8px 0 0", fontSize: "1.45rem" }}>{esDetalleEntregado ? "Pedido entregado" : "Pedido en camino"}</h3>
                 <p style={{ margin: "6px 0 0", opacity: 0.9, fontSize: "0.95rem" }}>Pedido #{idVisible(detalleAbierto)}</p>
               </div>
               <button type="button" aria-label="Cerrar" onClick={() => setDetalleAbierto(null)} style={{ width: "38px", height: "38px", border: "1px solid rgba(255,255,255,.45)", borderRadius: "50%", background: "rgba(255,255,255,.1)", color: "white", fontSize: "1.45rem", lineHeight: 1, cursor: "pointer", transition: "all 0.2s" }}>×</button>
@@ -388,9 +389,46 @@ export default function SeccionSeguimiento({ userId }) {
           </section>
         </div>
       )}
-      {confirmacionPendiente && <div role="dialog" aria-modal="true" aria-label="Confirmar entrega" onClick={() => setConfirmacionPendiente(null)} style={{ position: "fixed", inset: 0, zIndex: 1001, background: "rgba(36, 20, 27, 0.45)", display: "grid", placeItems: "center", padding: "20px" }}><div className="pl-card" onClick={(event) => event.stopPropagation()} style={{ width: "min(460px, 100%)", padding: "28px", boxSizing: "border-box", borderRadius: "16px" }}><h3 style={{ margin: 0 }}>¿Recibiste tu pedido?</h3><p style={{ color: "#666", lineHeight: 1.5 }}>Al confirmar, el pedido #{idVisible(confirmacionPendiente)} pasará a “Entregado”.</p><div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "20px" }}><button type="button" onClick={() => setConfirmacionPendiente(null)} style={{ padding: "9px 14px", borderRadius: "6px", border: "1px solid #ccc", background: "white", cursor: "pointer" }}>Cancelar</button><button className="btn btn-vinotinto" type="button" onClick={confirmarRecepcion} style={{ width: "auto", padding: "9px 14px" }}>Sí, confirmar entrega</button></div></div></div>}
-      {cancelacionPendiente && <div role="dialog" aria-modal="true" aria-label="Cancelar pedido" onClick={() => !cancelando && setCancelacionPendiente(null)} style={{ position: "fixed", inset: 0, zIndex: 1001, background: "rgba(36, 20, 27, 0.45)", display: "grid", placeItems: "center", padding: "20px" }}><div className="pl-card" onClick={(event) => event.stopPropagation()} style={{ width: "min(500px, 100%)", padding: "28px", boxSizing: "border-box", borderRadius: "16px" }}><h3 style={{ margin: 0, color: "#b42318" }}>Cancelar pedido #{idVisible(cancelacionPendiente)}</h3><p style={{ color: "#666", lineHeight: 1.5 }}>Indica el motivo de la cancelación. Esta acción actualizará el pedido para el comprador y el vendedor.</p><label htmlFor="motivo-cancelacion" style={{ display: "block", fontWeight: 700, marginBottom: "6px" }}>Motivo</label><textarea id="motivo-cancelacion" value={motivoCancelacion} onChange={(event) => setMotivoCancelacion(event.target.value)} placeholder="Ej. Ya no necesito el pedido" maxLength={500} rows={4} style={{ width: "100%", boxSizing: "border-box", resize: "vertical", padding: "10px", border: "1px solid #d1d5db", borderRadius: "7px", fontFamily: "inherit" }} /><div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "20px" }}><button type="button" onClick={() => setCancelacionPendiente(null)} disabled={cancelando} style={{ padding: "9px 14px", borderRadius: "6px", border: "1px solid #ccc", background: "white", cursor: "pointer" }}>Volver</button><button type="button" onClick={cancelarPedido} disabled={cancelando || motivoCancelacion.trim().length < 5} style={{ padding: "9px 14px", borderRadius: "6px", border: "none", background: "#b42318", color: "white", cursor: "pointer", fontWeight: 700, opacity: cancelando || motivoCancelacion.trim().length < 5 ? 0.55 : 1 }}>{cancelando ? "Cancelando..." : "Confirmar cancelación"}</button></div></div></div>}
-      {aviso && <div role="dialog" aria-modal="true" aria-label="Resultado de la entrega" onClick={() => setAviso(null)} style={{ position: "fixed", inset: 0, zIndex: 1002, background: "rgba(36, 20, 27, 0.45)", display: "grid", placeItems: "center", padding: "20px" }}><div className="pl-card" onClick={(event) => event.stopPropagation()} style={{ width: "min(420px, 100%)", padding: "24px", boxSizing: "border-box" }}><h3 style={{ margin: 0, color: aviso.tipo === "exito" ? "#166534" : "#b42318" }}>{aviso.tipo === "exito" ? "Entrega confirmada" : "No fue posible confirmar"}</h3><p style={{ color: "#555", lineHeight: 1.5 }}>{aviso.texto}</p><div style={{ display: "flex", justifyContent: "flex-end", marginTop: "20px" }}><button className="btn btn-vinotinto" type="button" onClick={() => setAviso(null)} style={{ width: "auto", padding: "9px 14px" }}>Entendido</button></div></div></div>}
+      {confirmacionPendiente && (
+        <div role="dialog" aria-modal="true" aria-labelledby="confirm-delivery-title" style={{ position: "fixed", inset: 0, zIndex: 1001, background: "rgba(36, 20, 27, 0.45)", display: "grid", placeItems: "center", padding: "20px" }}>
+          <button type="button" aria-label="Cerrar confirmación de entrega" onClick={() => setConfirmacionPendiente(null)} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", padding: 0, border: 0, background: "transparent", cursor: "default" }} />
+          <div className="pl-card" style={{ position: "relative", zIndex: 1, width: "min(460px, 100%)", padding: "28px", boxSizing: "border-box", borderRadius: "16px" }}>
+            <h3 id="confirm-delivery-title" style={{ margin: 0 }}>¿Recibiste tu pedido?</h3>
+            <p style={{ color: "#666", lineHeight: 1.5 }}>Al confirmar, el pedido #{idVisible(confirmacionPendiente)} pasará a “Entregado”.</p>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "20px" }}>
+              <button type="button" onClick={() => setConfirmacionPendiente(null)} style={{ padding: "9px 14px", borderRadius: "6px", border: "1px solid #ccc", background: "white", cursor: "pointer" }}>Cancelar</button>
+              <button className="btn btn-vinotinto" type="button" onClick={confirmarRecepcion} style={{ width: "auto", padding: "9px 14px" }}>Sí, confirmar entrega</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {cancelacionPendiente && (
+        <div role="dialog" aria-modal="true" aria-labelledby="cancel-order-title" style={{ position: "fixed", inset: 0, zIndex: 1001, background: "rgba(36, 20, 27, 0.45)", display: "grid", placeItems: "center", padding: "20px" }}>
+          <button type="button" aria-label="Cerrar cancelación de pedido" disabled={cancelando} onClick={() => setCancelacionPendiente(null)} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", padding: 0, border: 0, background: "transparent", cursor: cancelando ? "default" : "pointer" }} />
+          <div className="pl-card" style={{ position: "relative", zIndex: 1, width: "min(500px, 100%)", padding: "28px", boxSizing: "border-box", borderRadius: "16px" }}>
+            <h3 id="cancel-order-title" style={{ margin: 0, color: "#b42318" }}>Cancelar pedido #{idVisible(cancelacionPendiente)}</h3>
+            <p style={{ color: "#666", lineHeight: 1.5 }}>Indica el motivo de la cancelación. Esta acción actualizará el pedido para el comprador y el vendedor.</p>
+            <label htmlFor="motivo-cancelacion" style={{ display: "block", fontWeight: 700, marginBottom: "6px" }}>Motivo</label>
+            <textarea id="motivo-cancelacion" value={motivoCancelacion} onChange={(event) => setMotivoCancelacion(event.target.value)} placeholder="Ej. Ya no necesito el pedido" maxLength={500} rows={4} style={{ width: "100%", boxSizing: "border-box", resize: "vertical", padding: "10px", border: "1px solid #d1d5db", borderRadius: "7px", fontFamily: "inherit" }} />
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "20px" }}>
+              <button type="button" onClick={() => setCancelacionPendiente(null)} disabled={cancelando} style={{ padding: "9px 14px", borderRadius: "6px", border: "1px solid #ccc", background: "white", cursor: "pointer" }}>Volver</button>
+              <button type="button" onClick={cancelarPedido} disabled={cancelando || motivoCancelacion.trim().length < 5} style={{ padding: "9px 14px", borderRadius: "6px", border: "none", background: "#b42318", color: "white", cursor: "pointer", fontWeight: 700, opacity: cancelando || motivoCancelacion.trim().length < 5 ? 0.55 : 1 }}>{cancelando ? "Cancelando..." : "Confirmar cancelación"}</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {aviso && (
+        <div role="dialog" aria-modal="true" aria-labelledby="delivery-notice-title" style={{ position: "fixed", inset: 0, zIndex: 1002, background: "rgba(36, 20, 27, 0.45)", display: "grid", placeItems: "center", padding: "20px" }}>
+          <button type="button" aria-label="Cerrar aviso de entrega" onClick={() => setAviso(null)} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", padding: 0, border: 0, background: "transparent", cursor: "default" }} />
+          <div className="pl-card" style={{ position: "relative", zIndex: 1, width: "min(420px, 100%)", padding: "24px", boxSizing: "border-box" }}>
+            <h3 id="delivery-notice-title" style={{ margin: 0, color: aviso.tipo === "exito" ? "#166534" : "#b42318" }}>{aviso.tipo === "exito" ? "Entrega confirmada" : "No fue posible confirmar"}</h3>
+            <p style={{ color: "#555", lineHeight: 1.5 }}>{aviso.texto}</p>
+            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "20px" }}>
+              <button className="btn btn-vinotinto" type="button" onClick={() => setAviso(null)} style={{ width: "auto", padding: "9px 14px" }}>Entendido</button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

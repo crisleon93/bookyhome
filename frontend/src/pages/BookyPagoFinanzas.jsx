@@ -112,7 +112,7 @@ function EstadisticasTab({ estadisticas, historial, balance }) {
       if (filtro !== 'todo' && ing.tipo !== filtro) return;
       const key = (ing.fecha || '').slice(0, 10);
       if (mapa[key]) {
-        mapa[key].valor += parseFloat(ing.comision ?? ing.monto ?? 0);
+        mapa[key].valor += Number.parseFloat(ing.comision ?? ing.monto ?? 0);
         mapa[key].count += 1;
       }
     });
@@ -807,17 +807,17 @@ export default function BookyPagoFinanzas({ defaultTab = 'balance' }) {
                 {cuentasBancarias[selectedVendedor].map(cuenta => {
                   const sel = selectedCuentaId === cuenta.id_metodo;
                   return (
-                    <div key={cuenta.id_metodo} onClick={() => setSelectedCuentaId(cuenta.id_metodo)}
-                      style={{ padding:16, border:`${sel ? 2 : 1.5}px solid ${sel ? VINOTINTO : BORDER}`, borderRadius:12, background: sel ? '#fdf2f4' : WHITE, cursor:'pointer', transition:'all 0.2s' }}>
-                      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-                        <div>
-                          <div style={{ fontWeight:800, color:CARBON, marginBottom:3 }}>{cuenta.banco}</div>
-                          <div style={{ fontSize:'0.82rem', color:GRAY }}>{cuenta.tipo_cuenta} · N.º {cuenta.numero_cuenta}</div>
-                          <div style={{ fontSize:'0.76rem', color:GRAY, marginTop:2 }}>Titular: {cuenta.nombre_titular}{cuenta.cedula_titular ? ` · CC ${cuenta.cedula_titular}` : ''}</div>
-                        </div>
+                    <button key={cuenta.id_metodo} type="button" aria-pressed={sel} onClick={() => setSelectedCuentaId(cuenta.id_metodo)}
+                      style={{ width:'100%', padding:16, border:`${sel ? 2 : 1.5}px solid ${sel ? VINOTINTO : BORDER}`, borderRadius:12, background: sel ? '#fdf2f4' : WHITE, cursor:'pointer', transition:'all 0.2s', textAlign:'left', color:'inherit', font:'inherit' }}>
+                      <span style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+                        <span>
+                          <span style={{ display:'block', fontWeight:800, color:CARBON, marginBottom:3 }}>{cuenta.banco}</span>
+                          <span style={{ display:'block', fontSize:'0.82rem', color:GRAY }}>{cuenta.tipo_cuenta} · N.º {cuenta.numero_cuenta}</span>
+                          <span style={{ display:'block', fontSize:'0.76rem', color:GRAY, marginTop:2 }}>Titular: {cuenta.nombre_titular}{cuenta.cedula_titular ? ` · CC ${cuenta.cedula_titular}` : ''}</span>
+                        </span>
                         {cuenta.es_principal && <span style={{ background:VINOTINTO, color:WHITE, borderRadius:20, padding:'3px 10px', fontSize:'0.73rem', fontWeight:700 }}>Principal</span>}
-                      </div>
-                    </div>
+                      </span>
+                    </button>
                   );
                 })}
               </div>
