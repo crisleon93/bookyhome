@@ -685,7 +685,7 @@ export default function SeccionCuponesVendedor({ tiendaId, darkMode = false }) {
 
                 {/* Tipo de descuento (tarjetas) */}
                 <div style={{ marginBottom: "18px" }}>
-                  <label id="cupon-tipo-descuento-label" style={labelStyle}>Tipo de descuento *</label>
+                  <p id="cupon-tipo-descuento-label" style={labelStyle}>Tipo de descuento *</p>
                   <div role="group" aria-labelledby="cupon-tipo-descuento-label" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
                     {tiposDescuento.map((t) => {
                       const seleccionado = form.tipo_descuento === t.tipo;
@@ -728,11 +728,12 @@ export default function SeccionCuponesVendedor({ tiendaId, darkMode = false }) {
 
                 {/* Valor */}
                 <div style={{ marginBottom: "18px" }}>
-                  <label style={labelStyle}>
+                  <label htmlFor="cupon-valor-descuento" style={labelStyle}>
                     {form.tipo_descuento === "porcentaje" ? "Valor del descuento (%) *" : "Valor del descuento (COP) *"}
                   </label>
                   <div style={{ position: "relative" }}>
                     <input
+                      id="cupon-valor-descuento"
                       type="number"
                       value={form.valor_descuento}
                       onChange={(e) => setForm({ ...form, valor_descuento: e.target.value })}
