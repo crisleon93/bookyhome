@@ -244,7 +244,10 @@ export default function CouponsList({ initialCoupons, darkMode = false }) {
 
                 {/* Código de Cupón para copiar */}
                 <div
+                  role="button"
+                  tabIndex={0}
                   onClick={() => handleCopy(coupon.codigo_cupon)}
+                  onKeyDown={e => e.key === 'Enter' && handleCopy(coupon.codigo_cupon)}
                   style={{
                     background: darkMode ? "#303030" : "#F4EDE6",
                     border: `1px solid ${darkMode ? "#606060" : "#D2C7BC"}`,

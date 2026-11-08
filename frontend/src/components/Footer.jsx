@@ -47,11 +47,7 @@ function Footer({ hasSidebar = false }) {
     const hasToken = !!localStorage.getItem('token');
 
     if (!hasToken) {
-      if (target === 'join') {
-        openAuthModal('join');
-      } else {
-        openAuthModal('join');
-      }
+      openAuthModal('join');
       return;
     }
 
@@ -93,7 +89,7 @@ function Footer({ hasSidebar = false }) {
         marginLeft: hasSidebar ? 'var(--dashboard-sidebar-width, 250px)' : 0,
         width: hasSidebar ? 'calc(100% - var(--dashboard-sidebar-width, 250px))' : '100%',
         backgroundColor: darkMode ? '#1a1a1a' : 'var(--gris-carbon)',
-        color: darkMode ? '#b0b0b0' : '#b0b0b0'
+        color: '#b0b0b0'
       }}>
 
         <div className="footer-container">
@@ -151,7 +147,7 @@ function Footer({ hasSidebar = false }) {
       </footer>
 
       {activeLegal && (
-        <div className="legal-modal-backdrop" onClick={(e) => {
+        <div role="presentation" className="legal-modal-backdrop" onClick={(e) => {
           if (e.target === e.currentTarget) setActiveLegal(null);
         }}>
           <div className="legal-modal" role="dialog" aria-modal="true" aria-labelledby="legal-modal-title">

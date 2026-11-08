@@ -275,7 +275,7 @@ function FiltrosHeader({ onApply, initialSearchTerm }) {
               <div style={{ position: 'relative' }}>
                 <select
                   value={filtros.categoria_id || ''}
-                  onChange={(e) => handleFiltroChange('categoria_id', e.target.value ? parseInt(e.target.value) : null)}
+                  onChange={(e) => handleFiltroChange('categoria_id', e.target.value ? Number.parseInt(e.target.value, 10) : null)}
                   style={{ ...inputStyle, paddingRight: '2.2rem', appearance: 'none', cursor: 'pointer', fontWeight: filtros.categoria_id ? 600 : 400 }}
                   onFocus={(e) => { e.target.style.borderColor = 'var(--vinotinto)'; e.target.style.boxShadow = '0 0 0 3px rgba(122,30,58,0.1)'; }}
                   onBlur={(e) => { e.target.style.borderColor = '#e8e2db'; e.target.style.boxShadow = 'none'; }}
@@ -315,7 +315,7 @@ function FiltrosHeader({ onApply, initialSearchTerm }) {
                     min={opciones.precio_min}
                     max={opciones.precio_max}
                     value={filtros.precio_min}
-                    onChange={(e) => { const v = parseInt(e.target.value) || 0; if (v <= filtros.precio_max) handleFiltroChange('precio_min', v); }}
+                    onChange={(e) => { const v = Number.parseInt(e.target.value, 10) || 0; if (v <= filtros.precio_max) handleFiltroChange('precio_min', v); }}
                     style={{ ...inputStyle, paddingLeft: '1.55rem', padding: '0.55rem 0.6rem 0.55rem 1.55rem' }}
                     onFocus={(e) => { e.target.style.borderColor = 'var(--vinotinto)'; e.target.style.boxShadow = '0 0 0 3px rgba(122,30,58,0.1)'; }}
                     onBlur={(e) => { e.target.style.borderColor = '#e8e2db'; e.target.style.boxShadow = 'none'; }}
@@ -329,7 +329,7 @@ function FiltrosHeader({ onApply, initialSearchTerm }) {
                     min={opciones.precio_min}
                     max={opciones.precio_max}
                     value={filtros.precio_max}
-                    onChange={(e) => { const v = parseInt(e.target.value) || opciones.precio_max; if (v >= filtros.precio_min) handleFiltroChange('precio_max', v); }}
+                    onChange={(e) => { const v = Number.parseInt(e.target.value, 10) || opciones.precio_max; if (v >= filtros.precio_min) handleFiltroChange('precio_max', v); }}
                     style={{ ...inputStyle, paddingLeft: '1.55rem', padding: '0.55rem 0.6rem 0.55rem 1.55rem' }}
                     onFocus={(e) => { e.target.style.borderColor = 'var(--vinotinto)'; e.target.style.boxShadow = '0 0 0 3px rgba(122,30,58,0.1)'; }}
                     onBlur={(e) => { e.target.style.borderColor = '#e8e2db'; e.target.style.boxShadow = 'none'; }}
@@ -1125,7 +1125,7 @@ function Header({ variant, hasSidebar }) {
         {isHome && (
           <div className="top-bar">
             <div className="layout-container" style={{ display: 'flex', alignItems: 'center', minHeight: '32px' }}>
-              <div className="location" style={{ cursor: 'pointer', userSelect: 'none' }} onClick={(e) => { e.stopPropagation(); setLocationOpen(prev => !prev); }}>
+              <div role="button" tabIndex={0} className="location" style={{ cursor: 'pointer', userSelect: 'none' }} onClick={(e) => { e.stopPropagation(); setLocationOpen(prev => !prev); }} onKeyDown={e => e.key === 'Enter' && setLocationOpen(prev => !prev)}>
                 <IconLocation />
                 <span>Envíos a {selectedLocation === 'Colombia' ? 'Colombia' : `${selectedLocation}, Colombia`}</span>
                 <span style={{ fontSize: '10px', marginLeft: '6px' }}>▼</span>
@@ -1184,8 +1184,11 @@ function Header({ variant, hasSidebar }) {
                     searchSuggestions.map((sugerencia) => (
                       <div
                         key={`${sugerencia.id_libro}-${sugerencia.nombre_tienda || 'sin-tienda'}`}
+                        role="button"
+                        tabIndex={0}
                         className="suggestion-item"
                         onClick={() => handleSuggestionClick(sugerencia)}
+                        onKeyDown={e => e.key === 'Enter' && handleSuggestionClick(sugerencia)}
                       >
                         <div className="suggestion-icon">
                           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -1352,7 +1355,7 @@ function Header({ variant, hasSidebar }) {
             )}
             <form onSubmit={handleLoginSubmit} noValidate>
               <div className="form-group">
-                <label>Email</label>
+                <label htmlFor="login-email">Email</label>
                 <input
                   id="login-email"
                   name="email"
@@ -1365,7 +1368,7 @@ function Header({ variant, hasSidebar }) {
                 {loginEmailErr && <span className="error-msg">{loginEmailErr}</span>}
               </div>
               <div className="form-group">
-                <label>Contraseña</label>
+                <label htmlFor="login-password">Contraseña</label>
                 <div className="password-input">
                   <input
                     id="login-password"
@@ -1400,7 +1403,7 @@ function Header({ variant, hasSidebar }) {
       )}
 
       {forgotPasswordOpen && (
-        <div className="modal-overlay open" onClick={e => { if (e.target === e.currentTarget) setForgotPasswordOpen(false) }}>
+        <div className="modal-overlay open" role="presentation" onClick={e => { if (e.target === e.currentTarget) setForgotPasswordOpen(false) }}>
           <div className="modal-card">
             <button className="modal-close" aria-label="Cerrar" onClick={() => setForgotPasswordOpen(false)}>
               <IconClose />
@@ -1451,6 +1454,7 @@ function Header({ variant, hasSidebar }) {
         locationOpen ? (
           <div
             style={{ position: 'fixed', inset: 0, background: 'rgba(10,10,10,0.6)', backdropFilter: 'blur(3px)', WebkitBackdropFilter: 'blur(3px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 99999 }}
+            role="presentation"
             onMouseDown={() => setLocationOpen(false)}
           >
             <div
@@ -1579,6 +1583,7 @@ function Header({ variant, hasSidebar }) {
               zIndex: 99999,
               padding: '20px'
             }}
+            role="presentation"
             onMouseDown={() => setFiltrosOpen(false)}
           >
             <div

@@ -29,7 +29,7 @@ def _normalizar_estado(estado):
         'Cancelada': 'cancelada',
         'Procesando': 'pagado',
     }
-    return mapa.get(estado, estado.lower() if estado else None)
+    return mapa.get(estado, estado.lower())
 
 
 def _load_store(path):

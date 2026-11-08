@@ -311,10 +311,10 @@ export default function CarruselPublico({ onVerDetalles }) {
 
   useEffect(() => {
     queueMicrotask(() => {
-      fetchSeccion('recientes',   { ordenar_por: 'recientes',   pagina: 1 });
-      fetchSeccion('populares',   { ordenar_por: 'relevancia',  pagina: 1 });
-      fetchSeccion('calificados', { ordenar_por: 'calificacion',pagina: 1 });
-      fetchSeccion('economicos',  { ordenar_por: 'precio_asc',  pagina: 1 });
+      void fetchSeccion('recientes',   { ordenar_por: 'recientes',   pagina: 1 });
+      void fetchSeccion('populares',   { ordenar_por: 'relevancia',  pagina: 1 });
+      void fetchSeccion('calificados', { ordenar_por: 'calificacion',pagina: 1 });
+      void fetchSeccion('economicos',  { ordenar_por: 'precio_asc',  pagina: 1 });
     });
   }, [fetchSeccion]);
 
