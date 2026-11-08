@@ -101,8 +101,10 @@ export default function SeccionMisDirecciones() {
   };
 
   const onSetPrincipalDireccion = async (id) => {
+    const idSeguro = parseInt(id, 10);
+    if (!idSeguro || idSeguro <= 0) return;
     try {
-      await api.put(`/perfil/direcciones/${id}`, { es_principal: true });
+      await api.put(`/perfil/direcciones/${idSeguro}`, { es_principal: true });
       await cargarDirecciones();
       notify('Dirección marcada como principal', 'success');
     } catch (error) {
@@ -111,8 +113,10 @@ export default function SeccionMisDirecciones() {
   };
 
   const onDeleteDireccion = async (id) => {
+    const idSeguro = parseInt(id, 10);
+    if (!idSeguro || idSeguro <= 0) return;
     try {
-      await api.delete(`/perfil/direcciones/${id}`);
+      await api.delete(`/perfil/direcciones/${idSeguro}`);
       await cargarDirecciones();
       notify('Dirección eliminada', 'success');
     } catch (error) {

@@ -8,7 +8,10 @@ const CACHE_TTL_MS = 5 * 60 * 1000;
 
 function leerCacheTiendas() {
   try {
-    const cache = JSON.parse(sessionStorage.getItem(CACHE_KEY) || 'null');
+    const raw = sessionStorage.getItem(CACHE_KEY);
+    if (!raw) return null;
+    // Re-parsear para descartar cualquier prototipo no seguro al leer (evita Storage Poisoning)
+    const cache = JSON.parse(JSON.stringify(JSON.parse(raw)));
     if (cache?.guardadoEn && Date.now() - cache.guardadoEn < CACHE_TTL_MS && Array.isArray(cache.tiendas)) {
       return cache.tiendas;
     }
