@@ -21,7 +21,7 @@ export default defineConfig({
       // Solo medir cobertura de la lógica de negocio (pages + components)
       include: ['src/pages/**', 'src/components/**', 'src/context/**', 'src/services/**'],
       exclude: ['src/assets/**', 'src/styles/**'],
-      reporter: ['text', 'html'],
+      reporter: ['text', 'html', 'lcov'],
       thresholds: {
         // Se activa en semana 7 cuando se alcance el 80%
         // lines: 80,

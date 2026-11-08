@@ -74,8 +74,8 @@ export default function SeccionPerfilAdmin({ stats, gestionProp }) {
   }, []);
 
   useEffect(() => {
-    cargarPerfil();
-    cargarGestion();
+    void cargarPerfil();
+    void cargarGestion();
   }, [cargarPerfil, cargarGestion]);
 
   useEffect(() => {

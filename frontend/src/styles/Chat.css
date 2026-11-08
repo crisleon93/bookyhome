@@ -3207,7 +3207,8 @@
   gap: 8px;
 }
 
-.drawer-info-block label {
+.drawer-info-block label,
+.drawer-info-block .drawer-info-label {
   display: block;
   font-size: 11.5px;
   color: #667781;
@@ -3896,7 +3897,8 @@ html.dark .chat-container .drawer-user-name {
 }
 
 html.dark .chat-container .drawer-user-handle,
-html.dark .chat-container .drawer-info-block label {
+html.dark .chat-container .drawer-info-block label,
+html.dark .chat-container .drawer-info-block .drawer-info-label {
   color: #aeb8c4 !important;
 }
 

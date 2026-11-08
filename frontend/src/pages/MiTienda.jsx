@@ -293,7 +293,8 @@ function AlertaStock({ alertas, umbral }) {
   const subtitleColor = darkMode ? "#d4a517" : "#854d0e";
 
   return (
-    <div style={{
+    <div
+      style={{
       ...containerStyle,
       borderRadius: "10px",
       padding: "14px 18px", marginBottom: "20px", display: "flex", alignItems: "flex-start", gap: "12px",
@@ -688,7 +689,17 @@ function ModalVentaFisica({ libro: libroInicial, libros = [], onClose, onVendido
 
               {/* Botón trigger del selector */}
               <div
+                role="button"
+                tabIndex={0}
+                aria-haspopup="listbox"
+                aria-expanded={dropdownAbierto}
                 onClick={() => setDropdownAbierto(prev => !prev)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    setDropdownAbierto(prev => !prev);
+                  }
+                }}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -771,7 +782,11 @@ function ModalVentaFisica({ libro: libroInicial, libros = [], onClose, onVendido
                   </div>
 
                   {/* Lista de libros */}
-                  <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                  <div
+                    role="listbox"
+                    aria-label="Libros disponibles"
+                    style={{ maxHeight: '200px', overflowY: 'auto' }}
+                  >
                     {librosFiltrados.length === 0 ? (
                       <div style={{ padding: '20px 14px', textAlign: 'center', color: '#8c857b', fontSize: '0.84rem' }}>
                         No se encontraron libros con ese término
@@ -785,12 +800,25 @@ function ModalVentaFisica({ libro: libroInicial, libros = [], onClose, onVendido
                         return (
                           <div
                             key={l.id_libro}
+                            role="option"
+                            aria-selected={isSelected}
+                            aria-disabled={isOut}
+                            tabIndex={isOut ? -1 : 0}
                             onClick={() => {
                               if (isOut) return;
                               setSelectedLibroId(l.id_libro);
                               setDropdownAbierto(false);
                               setCantidad(1);
                               setError("");
+                            }}
+                            onKeyDown={(e) => {
+                              if (!isOut && (e.key === 'Enter' || e.key === ' ')) {
+                                e.preventDefault();
+                                setSelectedLibroId(l.id_libro);
+                                setDropdownAbierto(false);
+                                setCantidad(1);
+                                setError("");
+                              }
                             }}
                             style={{
                               display: 'flex',
@@ -4002,9 +4030,9 @@ export default function MiTienda() {
                     <div style={{ background: darkMode ? '#2a2a2a' : '#f9f7f4', borderRadius: '10px', padding: '1rem', border: darkMode ? '1px solid #3a3a3a' : '1px solid #e0dbd4' }}>
                       <div style={{ marginBottom: '1rem' }}>
                         <p style={{ margin: '0 0 8px 0', fontWeight: 600, fontSize: '0.9rem', color: darkMode ? '#c8c8c8' : '#444' }}>Subir imagen</p>
-                        <label style={{ background: darkMode ? '#e05a7a' : PRIMARY, color: 'white', padding: '8px 16px', borderRadius: '6px', fontSize: '0.85rem', cursor: 'pointer', display: 'inline-block', opacity: perfilBannerUploading ? 0.7 : 1 }}>
+                        <label htmlFor="perfil-banner-upload" style={{ background: darkMode ? '#e05a7a' : PRIMARY, color: 'white', padding: '8px 16px', borderRadius: '6px', fontSize: '0.85rem', cursor: 'pointer', display: 'inline-block', opacity: perfilBannerUploading ? 0.7 : 1 }}>
                           {perfilBannerUploading ? 'Subiendo...' : '📁 Elegir imagen'}
-                          <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleBannerUpload} disabled={perfilBannerUploading} />
+                          <input id="perfil-banner-upload" type="file" accept="image/*" style={{ display: 'none' }} onChange={handleBannerUpload} disabled={perfilBannerUploading} />
                         </label>
                       </div>
                       <div style={{ marginBottom: '0.75rem' }}>
@@ -4035,17 +4063,17 @@ export default function MiTienda() {
               <div style={card}>
                 <p style={cardTitle}>Datos de contacto</p>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '14px' }}>
-                  <div><label style={lbl}>Nombre</label><input style={inp} value={perfilName} onChange={e => setPerfilName(e.target.value)} placeholder="Nombre" /></div>
-                  <div><label style={lbl}>Apellidos</label><input style={inp} value={perfilSurname} onChange={e => setPerfilSurname(e.target.value)} placeholder="Apellidos" /></div>
+                  <div><label htmlFor="perfil-nombre" style={lbl}>Nombre</label><input id="perfil-nombre" style={inp} value={perfilName} onChange={e => setPerfilName(e.target.value)} placeholder="Nombre" /></div>
+                  <div><label htmlFor="perfil-apellidos" style={lbl}>Apellidos</label><input id="perfil-apellidos" style={inp} value={perfilSurname} onChange={e => setPerfilSurname(e.target.value)} placeholder="Apellidos" /></div>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '14px' }}>
-                  <div><label style={lbl}>Telefono</label><input style={inp} value={perfilPhone} onChange={e => setPerfilPhone(e.target.value)} placeholder="Telefono" /></div>
-                  <div><label style={lbl}>Ciudad</label><input style={inp} value={perfilCity} onChange={e => setPerfilCity(e.target.value)} placeholder="Ciudad" /></div>
+                  <div><label htmlFor="perfil-telefono" style={lbl}>Telefono</label><input id="perfil-telefono" style={inp} value={perfilPhone} onChange={e => setPerfilPhone(e.target.value)} placeholder="Telefono" /></div>
+                  <div><label htmlFor="perfil-ciudad" style={lbl}>Ciudad</label><input id="perfil-ciudad" style={inp} value={perfilCity} onChange={e => setPerfilCity(e.target.value)} placeholder="Ciudad" /></div>
                 </div>
-                <div><label style={lbl}>Direccion</label><input style={inp} value={perfilAddress} onChange={e => setPerfilAddress(e.target.value)} placeholder="Direccion" /></div>
+                <div><label htmlFor="perfil-direccion" style={lbl}>Direccion</label><input id="perfil-direccion" style={inp} value={perfilAddress} onChange={e => setPerfilAddress(e.target.value)} placeholder="Direccion" /></div>
                 <div style={{ marginTop: '14px' }}>
-                  <label style={lbl}>Correo electronico</label>
-                  <input style={{ ...inp, background: darkMode ? '#2a2a2a' : '#f0f0f0', color: darkMode ? '#888' : '#888', cursor: 'not-allowed' }} value={perfilEmail} readOnly placeholder="Cargando..." />
+                  <label htmlFor="perfil-correo" style={lbl}>Correo electronico</label>
+                  <input id="perfil-correo" style={{ ...inp, background: darkMode ? '#2a2a2a' : '#f0f0f0', color: darkMode ? '#888' : '#888', cursor: 'not-allowed' }} value={perfilEmail} readOnly placeholder="Cargando..." />
                 </div>
               </div>
 
@@ -5486,8 +5514,9 @@ export default function MiTienda() {
               </div>
               <div style={{ padding: "24px 26px", background: darkMode ? '#171717' : '#ffffff' }}>
                 <p className="envios-modal__nota" style={{ background: darkMode ? '#201b1e' : '#f8f6f2', borderColor: darkMode ? '#3a3a3a' : '#ddd2c7', color: darkMode ? '#f3f4f6' : '#5b5650' }}>Elige la transportadora acordada e ingresa el número de Guía que ella te entregó. BookyHome no realiza ni controla el transporte.</p>
-                <label style={{ display: "block", fontWeight: 700, color: darkMode ? "#ffbfd2" : "#4b2733", fontSize: "0.88rem" }}>Empresa de mensajería</label>
+                <label htmlFor="empresa-mensajeria" style={{ display: "block", fontWeight: 700, color: darkMode ? "#ffbfd2" : "#4b2733", fontSize: "0.88rem" }}>Empresa de mensajería</label>
                 <select
+                  id="empresa-mensajeria"
                   value={envioForm.id_empresa}
                   onChange={(e) => setEnvioForm({ ...envioForm, id_empresa: e.target.value })}
                   style={{
@@ -5507,8 +5536,9 @@ export default function MiTienda() {
                   <option value="" style={{ background: darkMode ? '#1f1f1f' : '#ffffff', color: darkMode ? '#f3f4f6' : '#1f2937' }}>Selecciona una empresa</option>
                   {empresasMensajeria.map((empresa) => <option key={empresa.id_empresa} value={empresa.id_empresa} style={{ background: darkMode ? '#1f1f1f' : '#ffffff', color: darkMode ? '#f3f4f6' : '#1f2937' }}>{empresa.nombre_empresa}</option>)}
                 </select>
-                <label style={{ display: "block", fontWeight: 700, color: darkMode ? "#ffbfd2" : "#4b2733", fontSize: "0.88rem", marginTop: "16px" }}>Número de Guía</label>
+                <label htmlFor="numero-guia-envio" style={{ display: "block", fontWeight: 700, color: darkMode ? "#ffbfd2" : "#4b2733", fontSize: "0.88rem", marginTop: "16px" }}>Número de Guía</label>
                 <input
+                  id="numero-guia-envio"
                   value={envioForm.numero_guia}
                   onChange={(e) => setEnvioForm({ ...envioForm, numero_guia: e.target.value })}
                   maxLength={80}

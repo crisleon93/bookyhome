@@ -111,17 +111,17 @@ function CustomDateTimePicker({ value, onChange, minDate, label, placeholder, al
   const pinkSoft = darkMode ? "rgba(255, 79, 131, 0.14)" : "rgba(122, 30, 58, 0.10)";
 
   const getInitialHours12 = () => {
-    if (!parsedDate || isNaN(parsedDate.getTime())) return "12";
+    if (!parsedDate || Number.isNaN(parsedDate.getTime())) return "12";
     const h = parsedDate.getHours();
     const h12 = h % 12 || 12;
     return String(h12).padStart(2, "0");
   };
   const getInitialMinutes = () => {
-    if (!parsedDate || isNaN(parsedDate.getTime())) return "00";
+    if (!parsedDate || Number.isNaN(parsedDate.getTime())) return "00";
     return String(parsedDate.getMinutes()).padStart(2, "0");
   };
   const getInitialAmPm = () => {
-    if (!parsedDate || isNaN(parsedDate.getTime())) return "PM";
+    if (!parsedDate || Number.isNaN(parsedDate.getTime())) return "PM";
     return parsedDate.getHours() >= 12 ? "PM" : "AM";
   };
 
@@ -132,7 +132,7 @@ function CustomDateTimePicker({ value, onChange, minDate, label, placeholder, al
 
   const sincronizarDesdeValue = () => {
     const d = value ? new Date(value) : null;
-    if (d && !isNaN(d.getTime())) {
+    if (d && !Number.isNaN(d.getTime())) {
       setSelectedDay(d);
       setViewDate(d);
       const h = d.getHours();
@@ -220,7 +220,7 @@ function CustomDateTimePicker({ value, onChange, minDate, label, placeholder, al
   const formatDisplay = () => {
     if (!value) return null;
     const d = new Date(value);
-    if (isNaN(d.getTime())) return null;
+    if (Number.isNaN(d.getTime())) return null;
     const fecha = d.toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" });
     const hora = d.toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit", hour12: true });
     return `${fecha} · ${hora}`;
@@ -236,17 +236,21 @@ function CustomDateTimePicker({ value, onChange, minDate, label, placeholder, al
   return (
     <div ref={containerRef} style={{ position: "relative" }}>
       {label && (
-        <label style={{
+        <span id="fecha-hora-oferta-label" style={{
           display: "block", marginBottom: "7px",
           fontSize: "0.78rem", fontWeight: 700,
           color: darkMode ? "#f3f4f6" : "#374151", textTransform: "uppercase", letterSpacing: "0.04em"
         }}>
           {label}
-        </label>
+        </span>
       )}
 
       {/* Input / Trigger */}
-      <div
+      <button
+        type="button"
+        aria-labelledby={label ? "fecha-hora-oferta-label" : undefined}
+        aria-haspopup="dialog"
+        aria-expanded={abierto}
         onClick={() => {
           if (!abierto) sincronizarDesdeValue();
           setAbierto(!abierto);
@@ -255,34 +259,38 @@ function CustomDateTimePicker({ value, onChange, minDate, label, placeholder, al
           display: "flex", alignItems: "center", justifyContent: "space-between",
           padding: "11px 14px", borderRadius: "10px",
           border: `1.5px solid ${abierto ? pinkAccent : borderColor}`,
-          background: surface, cursor: "pointer",
+          background: surface, cursor: "pointer", width: "100%", textAlign: "left",
+          font: "inherit",
           boxShadow: abierto ? `0 0 0 3px ${pinkSoft}` : "none",
           transition: "all 0.15s ease"
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: "9px" }}>
-          <div style={{
+        <span style={{ display: "flex", alignItems: "center", gap: "9px" }}>
+          <span style={{
             width: "28px", height: "28px", borderRadius: "7px",
             background: pinkSoft, display: "flex", alignItems: "center",
             justifyContent: "center", color: pinkAccent
           }}>
             <IconCalendar width={15} height={15} strokeWidth={2.2} />
-          </div>
+          </span>
           <span style={{
             fontSize: "0.88rem", fontWeight: value ? 700 : 500,
             color: value ? (darkMode ? "#f3f4f6" : "#1f2937") : (darkMode ? "#d1d5db" : "#9ca3af")
           }}>
             {formatDisplay() || placeholder || "Seleccionar fecha y hora..."}
           </span>
-        </div>
+        </span>
         <span style={{ fontSize: "0.72rem", color: "#9ca3af", transform: abierto ? "rotate(180deg)" : "none", transition: "transform 0.15s" }}>
           ▼
         </span>
-      </div>
+      </button>
 
       {/* Popup Calendario Elegante */}
       {abierto && (
-        <div style={{
+        <div
+          role="dialog"
+          aria-label="Seleccionar fecha y hora"
+          style={{
           position: "absolute", top: "calc(100% + 8px)",
           ...(alignRight ? { right: 0 } : { left: 0 }),
           zIndex: 9999, background: surface, borderRadius: "16px",
@@ -378,17 +386,23 @@ function CustomDateTimePicker({ value, onChange, minDate, label, placeholder, al
               const disabled = esDeshabilitado(diaNum);
 
               return (
-                <div
+                <button
+                  type="button"
                   key={diaNum}
+                  disabled={disabled}
+                  aria-label={`${diaNum} de ${meses[month]} de ${year}`}
+                  aria-pressed={Boolean(esSeleccionado)}
                   onClick={() => !disabled && seleccionarDia(new Date(year, month, diaNum))}
                   style={{
                     height: "30px", borderRadius: "8px",
+                    padding: 0,
                     display: "flex", alignItems: "center", justifyContent: "center",
                     fontSize: "0.8rem", fontWeight: esSeleccionado || esHoy ? 800 : 500,
                     cursor: disabled ? "not-allowed" : "pointer",
+                    fontFamily: "inherit",
                     background: esSeleccionado ? `linear-gradient(135deg, ${pinkAccent} 0%, ${darkMode ? '#e05a7a' : '#9B2C4E'} 100%)` : "transparent",
                     color: esSeleccionado ? "white" : disabled ? calendarDayMuted : esHoy ? pinkAccent : calendarDayColor,
-                    border: esHoy && !esSeleccionado ? `1.5px solid ${pinkAccent}` : "none",
+                    border: esHoy && !esSeleccionado ? `1.5px solid ${pinkAccent}` : "1px solid transparent",
                     boxShadow: esSeleccionado ? `0 2px 8px ${darkMode ? 'rgba(255,79,131,0.35)' : 'rgba(122,30,58,0.22)'}` : "none",
                     transition: "all 0.1s ease"
                   }}
@@ -400,7 +414,7 @@ function CustomDateTimePicker({ value, onChange, minDate, label, placeholder, al
                   }}
                 >
                   {diaNum}
-                </div>
+                </button>
               );
             })}
           </div>
@@ -667,8 +681,9 @@ function FormOferta({ libros, ofertaEditar, onGuardado, onCancelar, darkMode = f
       <div style={{ padding: "28px" }}>
         {/* Nombre de la oferta */}
         <div style={{ marginBottom: "20px" }}>
-          <label style={labelStyle}>Nombre de la oferta *</label>
+          <label htmlFor="oferta-nombre" style={labelStyle}>Nombre de la oferta *</label>
           <input
+            id="oferta-nombre"
             style={inputStyle}
             value={form.nombre_oferta}
             maxLength={100}
@@ -681,18 +696,22 @@ function FormOferta({ libros, ofertaEditar, onGuardado, onCancelar, darkMode = f
 
         {/* Tipo de Descuento (Tarjetas Interactivas) */}
         <div style={{ marginBottom: "22px" }}>
-          <label style={labelStyle}>Tipo de descuento *</label>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "12px" }}>
+          <span id="tipo-descuento-label" style={labelStyle}>Tipo de descuento *</span>
+          <div role="group" aria-labelledby="tipo-descuento-label" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "12px" }}>
             {opcionesDescuento.map((opc) => {
               const seleccionado = form.tipo_descuento === opc.tipo;
               return (
-                <div
+                <button
+                  type="button"
                   key={opc.tipo}
+                  aria-pressed={seleccionado}
                   onClick={() => setForm({ ...form, tipo_descuento: opc.tipo, valor_descuento: "" })}
                   style={{
                     padding: "14px 16px",
                     borderRadius: "12px",
                     cursor: "pointer",
+                    textAlign: "left",
+                    font: "inherit",
                     border: seleccionado ? `2px solid ${pinkAccent}` : `1.5px solid ${borderColor}`,
                     background: seleccionado ? (darkMode ? "#2a1a24" : "#fdf7f8") : (darkMode ? "#242424" : "#fafafa"),
                     boxShadow: seleccionado ? `0 4px 14px ${darkMode ? 'rgba(255,79,131,0.18)' : 'rgba(122,30,58,0.12)'}` : "none",
@@ -709,7 +728,7 @@ function FormOferta({ libros, ofertaEditar, onGuardado, onCancelar, darkMode = f
                     if (!seleccionado) e.currentTarget.style.borderColor = "#e5e7eb";
                   }}
                 >
-                  <div style={{
+                  <span style={{
                     width: "36px", height: "36px", borderRadius: "10px",
                     background: seleccionado ? pinkAccent : opc.badgeBg,
                     color: seleccionado ? "white" : opc.badgeColor,
@@ -718,30 +737,30 @@ function FormOferta({ libros, ofertaEditar, onGuardado, onCancelar, darkMode = f
                     transition: "all 0.18s ease"
                   }}>
                     {opc.icon}
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{
+                  </span>
+                  <span style={{ flex: 1, minWidth: 0 }}>
+                    <span style={{
                       fontWeight: 800, fontSize: "0.92rem",
                       color: seleccionado ? "#7A1E3A" : textColor,
                       marginBottom: "2px"
                     }}>
                       {opc.label}
-                    </div>
-                    <div style={{ fontSize: "0.75rem", color: mutedColor, lineHeight: 1.2 }}>
+                    </span>
+                    <span style={{ display: "block", fontSize: "0.75rem", color: mutedColor, lineHeight: 1.2 }}>
                       {opc.desc}
-                    </div>
-                  </div>
+                    </span>
+                  </span>
                   {seleccionado && (
-                    <div style={{
+                    <span style={{
                       width: "18px", height: "18px", borderRadius: "50%",
                       background: pinkAccent, color: "white",
                       display: "flex", alignItems: "center", justifyContent: "center",
                       fontSize: "0.68rem", fontWeight: 900
                     }}>
                       ✓
-                    </div>
+                    </span>
                   )}
-                </div>
+                </button>
               );
             })}
           </div>
@@ -750,11 +769,12 @@ function FormOferta({ libros, ofertaEditar, onGuardado, onCancelar, darkMode = f
         {/* Valor a descontar (si no es especial) */}
         {form.tipo_descuento !== "especial" && (
           <div style={{ marginBottom: "20px" }}>
-            <label style={labelStyle}>
+            <label htmlFor="oferta-valor-descuento" style={labelStyle}>
               {form.tipo_descuento === "porcentaje" ? "Porcentaje de descuento (%) *" : "Monto de descuento (COP) *"}
             </label>
             <div style={{ position: "relative", maxWidth: "340px" }}>
               <input
+                id="oferta-valor-descuento"
                 type="number"
                 min="1"
                 max={form.tipo_descuento === "porcentaje" ? 100 : undefined}

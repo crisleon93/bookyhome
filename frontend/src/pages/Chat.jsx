@@ -3528,7 +3528,7 @@ export default function Chat({
                 <div className="drawer-section-card">
                   {salaActiva?.telefono_tienda && (
                     <div className="drawer-info-block">
-                      <label>Número de teléfono</label>
+                      <span className="drawer-info-label">Número de teléfono</span>
                       <p>{salaActiva.telefono_tienda}</p>
                     </div>
                   )}
@@ -3536,7 +3536,7 @@ export default function Chat({
                     <>
                       {salaActiva?.telefono_tienda && <div className="drawer-divider-line" />}
                       <div className="drawer-info-block">
-                        <label>Correo electrónico</label>
+                        <span className="drawer-info-label">Correo electrónico</span>
                         <p>{salaActiva.correo_tienda}</p>
                       </div>
                     </>

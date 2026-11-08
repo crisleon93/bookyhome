@@ -104,8 +104,9 @@ export default function ResetPassword() {
 
         <form onSubmit={handleSubmit}>
           <div style={styles.field}>
-            <label style={styles.label}>Nueva contraseña</label>
+            <label htmlFor="nueva-contrasena" style={styles.label}>Nueva contraseña</label>
             <input
+              id="nueva-contrasena"
               type="password"
               placeholder="Mínimo 8 caracteres"
               value={password}
@@ -117,8 +118,9 @@ export default function ResetPassword() {
           </div>
 
           <div style={styles.field}>
-            <label style={styles.label}>Confirmar contraseña</label>
+            <label htmlFor="confirmar-contrasena" style={styles.label}>Confirmar contraseña</label>
             <input
+              id="confirmar-contrasena"
               type="password"
               placeholder="Repite la contraseña"
               value={confirmar}

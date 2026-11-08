@@ -144,8 +144,9 @@ export default function SeccionMisDirecciones() {
             </h4>
             <div style={{ display: "flex", flexDirection: "column", gap: "16px", maxWidth: "500px" }}>
               <div>
-                <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>Alias</label>
+                <label htmlFor="direccion-alias" style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>Alias</label>
                 <input
+                  id="direccion-alias"
                   type="text"
                   value={direccionForm.alias_direccion}
                   onChange={(e) => onDireccionFormChange({ alias_direccion: e.target.value })}
@@ -154,8 +155,9 @@ export default function SeccionMisDirecciones() {
                 />
               </div>
               <div>
-                <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>Dirección</label>
+                <label htmlFor="direccion-calle" style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>Dirección</label>
                 <input
+                  id="direccion-calle"
                   type="text"
                   value={direccionForm.direccion}
                   onChange={(e) => onDireccionFormChange({ direccion: e.target.value })}
@@ -163,8 +165,9 @@ export default function SeccionMisDirecciones() {
                 />
               </div>
               <div>
-                <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>Ciudad</label>
+                <label htmlFor="direccion-ciudad" style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>Ciudad</label>
                 <input
+                  id="direccion-ciudad"
                   type="text"
                   value={direccionForm.ciudad}
                   onChange={(e) => onDireccionFormChange({ ciudad: e.target.value })}
@@ -172,8 +175,9 @@ export default function SeccionMisDirecciones() {
                 />
               </div>
               <div>
-                <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>Departamento</label>
+                <label htmlFor="direccion-departamento" style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>Departamento</label>
                 <input
+                  id="direccion-departamento"
                   type="text"
                   value={direccionForm.departamento}
                   onChange={(e) => onDireccionFormChange({ departamento: e.target.value })}
@@ -181,8 +185,9 @@ export default function SeccionMisDirecciones() {
                 />
               </div>
               <div>
-                <label style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>Código postal</label>
+                <label htmlFor="direccion-codigo-postal" style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>Código postal</label>
                 <input
+                  id="direccion-codigo-postal"
                   type="text"
                   value={direccionForm.codigo_postal}
                   onChange={(e) => onDireccionFormChange({ codigo_postal: e.target.value })}
@@ -191,11 +196,12 @@ export default function SeccionMisDirecciones() {
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                 <input
+                  id="direccion-principal"
                   type="checkbox"
                   checked={direccionForm.es_principal}
                   onChange={(e) => onDireccionFormChange({ es_principal: e.target.checked })}
                 />
-                <label style={{ fontWeight: 600, color: "#444", margin: 0 }}>Marcar como dirección principal</label>
+                <label htmlFor="direccion-principal" style={{ fontWeight: 600, color: "#444", margin: 0 }}>Marcar como dirección principal</label>
               </div>
               {direccionError && <p style={{ color: '#b42318', margin: 0 }}>{direccionError}</p>}
               <div style={{ display: "flex", gap: "12px", marginTop: "8px" }}>

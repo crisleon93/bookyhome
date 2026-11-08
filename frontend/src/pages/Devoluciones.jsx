@@ -197,8 +197,9 @@ export default function Devoluciones({ embedded = false }) {
               ) : (
                 <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                   <div>
-                    <label style={{ display: 'block', fontWeight: 600, marginBottom: 6, color: '#444' }}>Pedido</label>
+                    <label htmlFor="devolucion-pedido" style={{ display: 'block', fontWeight: 600, marginBottom: 6, color: '#444' }}>Pedido</label>
                     <select
+                      id="devolucion-pedido"
                       value={ordenSeleccionada}
                       onChange={(e) => setOrdenSeleccionada(e.target.value)}
                       style={{ width: '100%', padding: '12px', borderRadius: 8, border: '1px solid #ddd', fontFamily: 'Montserrat, sans-serif' }}
@@ -213,8 +214,9 @@ export default function Devoluciones({ embedded = false }) {
                   </div>
 
                   <div>
-                    <label style={{ display: 'block', fontWeight: 600, marginBottom: 6, color: '#444' }}>Motivo</label>
+                    <label htmlFor="devolucion-motivo" style={{ display: 'block', fontWeight: 600, marginBottom: 6, color: '#444' }}>Motivo</label>
                     <select
+                      id="devolucion-motivo"
                       value={motivo}
                       onChange={(e) => setMotivo(e.target.value)}
                       style={{ width: '100%', padding: '12px', borderRadius: 8, border: '1px solid #ddd', fontFamily: 'Montserrat, sans-serif' }}
@@ -227,8 +229,9 @@ export default function Devoluciones({ embedded = false }) {
                   </div>
 
                   <div>
-                    <label style={{ display: 'block', fontWeight: 600, marginBottom: 6, color: '#444' }}>Comentarios (opcional)</label>
+                    <label htmlFor="devolucion-comentarios" style={{ display: 'block', fontWeight: 600, marginBottom: 6, color: '#444' }}>Comentarios (opcional)</label>
                     <textarea
+                      id="devolucion-comentarios"
                       value={comentarios}
                       onChange={(e) => setComentarios(e.target.value)}
                       rows={4}

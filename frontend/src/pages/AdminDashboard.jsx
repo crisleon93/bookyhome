@@ -171,7 +171,16 @@ const CardReclamoAdmin = React.memo(function CardReclamoAdmin({ reclamo, onAbrir
     >
       {/* HEADER BANNER - CLICKABLE PARA DESPLEGAR / ENCOGER */}
       <div
+        role="button"
+        tabIndex={0}
+        aria-expanded={expandido}
         onClick={() => setExpandido(prev => !prev)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            setExpandido(prev => !prev);
+          }
+        }}
         style={{
           background: 'linear-gradient(135deg, #fdf8f9 0%, #f9f0f3 100%)',
           padding: '16px 20px',
@@ -243,13 +252,8 @@ const CardReclamoAdmin = React.memo(function CardReclamoAdmin({ reclamo, onAbrir
             {reclamo.estado}
           </div>
 
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              setExpandido(prev => !prev);
-            }}
-            title={expandido ? 'Plegar / Recoger' : 'Desplegar / Ver detalles'}
+          <span
+            aria-hidden="true"
             style={{
               background: expandido ? '#fdf2f4' : WHITE,
               border: `1.5px solid ${expandido ? VINOTINTO : BORDER}`,
@@ -258,7 +262,6 @@ const CardReclamoAdmin = React.memo(function CardReclamoAdmin({ reclamo, onAbrir
               padding: '6px 14px',
               fontSize: '0.82rem',
               fontWeight: 700,
-              cursor: 'pointer',
               display: 'inline-flex',
               alignItems: 'center',
               gap: 6,
@@ -276,7 +279,7 @@ const CardReclamoAdmin = React.memo(function CardReclamoAdmin({ reclamo, onAbrir
                 transition: 'transform 0.25s ease',
               }}
             />
-          </button>
+          </span>
         </div>
       </div>
 
@@ -1667,7 +1670,8 @@ export default function AdminDashboard() {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px' }}>
 
               {/* KPI 1: USUARIOS */}
-              <div
+              <button
+                type="button"
                 onClick={() => setActiveSection('usuarios')}
                 className="admin-kpi-card"
                 style={{
@@ -1680,6 +1684,9 @@ export default function AdminDashboard() {
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'space-between',
+                  textAlign: 'left',
+                  font: 'inherit',
+                  color: 'inherit',
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '14px' }}>
@@ -1715,10 +1722,11 @@ export default function AdminDashboard() {
                     {vendedoresCount} vendedores
                   </span>
                 </div>
-              </div>
+              </button>
 
               {/* KPI 2: LIBROS */}
-              <div
+              <button
+                type="button"
                 onClick={() => setActiveSection('libros')}
                 className="admin-kpi-card"
                 style={{
@@ -1731,6 +1739,9 @@ export default function AdminDashboard() {
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'space-between',
+                  textAlign: 'left',
+                  font: 'inherit',
+                  color: 'inherit',
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '14px' }}>
@@ -1766,10 +1777,11 @@ export default function AdminDashboard() {
                     {totalCategorias} categorías
                   </span>
                 </div>
-              </div>
+              </button>
 
               {/* KPI 3: TIENDAS */}
-              <div
+              <button
+                type="button"
                 onClick={() => setActiveSection('tiendas')}
                 className="admin-kpi-card"
                 style={{
@@ -1782,6 +1794,9 @@ export default function AdminDashboard() {
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'space-between',
+                  textAlign: 'left',
+                  font: 'inherit',
+                  color: 'inherit',
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '14px' }}>
@@ -1823,10 +1838,11 @@ export default function AdminDashboard() {
                     </span>
                   )}
                 </div>
-              </div>
+              </button>
 
               {/* KPI 4: ÓRDENES & TRANSACCIONES */}
-              <div
+              <button
+                type="button"
                 onClick={() => setActiveSection('ordenes')}
                 className="admin-kpi-card"
                 style={{
@@ -1839,6 +1855,9 @@ export default function AdminDashboard() {
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'space-between',
+                  textAlign: 'left',
+                  font: 'inherit',
+                  color: 'inherit',
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '14px' }}>
@@ -1874,7 +1893,7 @@ export default function AdminDashboard() {
                     {ordenesCompletadas} entregadas
                   </span>
                 </div>
-              </div>
+              </button>
 
             </div>
 

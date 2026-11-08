@@ -83,7 +83,7 @@ function FiltrosHeader({ onApply, initialSearchTerm }) {
       }
     };
 
-    cargarOpciones();
+    void cargarOpciones();
     return () => {
       mounted = false;
     };
@@ -922,8 +922,8 @@ function Header({ variant, hasSidebar }) {
       }
     };
     
-    cargarContadores();
-    const iv = setInterval(cargarContadores, 10000);
+    void cargarContadores();
+    const iv = setInterval(() => { void cargarContadores(); }, 10000);
     return () => { mounted = false; clearInterval(iv); };
   }, [isLoggedIn]);
 

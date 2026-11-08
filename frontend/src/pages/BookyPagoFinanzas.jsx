@@ -414,7 +414,7 @@ export default function BookyPagoFinanzas({ defaultTab = 'balance' }) {
 
   const cargarNomina = async () => {
     try { const r = await api.get('/api/v1/bookypago-finanzas/nomina'); setNomina(r.data.nomina); }
-    catch {}
+    catch (e) { notify(e.response?.data?.detail || 'Error cargando nómina', 'error'); }
   };
 
   const confirmarProcesarNomina = async () => {
@@ -425,13 +425,14 @@ export default function BookyPagoFinanzas({ defaultTab = 'balance' }) {
         setCuentaExito(r.data.cuenta_bancaria || null);
         setShowPaymentModal(false); setSelectedVendedor(null); setSelectedCuentaId(null);
         setMostrarExitoPago(true);
-        cargarNomina(); cargarTodo();
+        void cargarNomina();
+        void cargarTodo();
         setTimeout(() => { setMostrarExitoPago(false); setCuentaExito(null); }, 5000);
       }
     } catch (e) { notify(e.response?.data?.detail || 'Error procesando nómina', 'error'); }
   };
 
-  useEffect(() => { cargarTodo(); }, []);
+  useEffect(() => { void cargarTodo(); }, []);
 
   const TABS = [
     { id: 'balance',      label: 'Balance',      icon: IconWallet   },

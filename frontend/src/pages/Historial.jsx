@@ -234,7 +234,7 @@ export default function Historial() {
                     className="btn-eliminar"
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleEliminar(item.id_interaccion);
+                      void handleEliminar(item.id_interaccion);
                     }}
                   >
                     ✕
