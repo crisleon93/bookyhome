@@ -4565,7 +4565,7 @@ export default function MiTienda() {
                     <h4 style={{ margin: '0 0 0.3rem 0', color: darkMode ? '#ececec' : '#2a2a2a', fontSize: '1rem' }}>Modo Oscuro</h4>
                     <p style={{ margin: 0, color: darkMode ? '#c8c8c8' : '#666', fontSize: '0.85rem' }}>Cambia el tema de la aplicación a modo oscuro</p>
                   </div>
-                  <label aria-label="{                         const newMode = !darkMode;                         set" style={{ position: 'relative', display: 'inline-block', width: '48px', height: '26px', cursor: 'pointer' }}>
+                  <label aria-label="Activar modo oscuro" style={{ position: 'relative', display: 'inline-block', width: '48px', height: '26px', cursor: 'pointer' }}>
                     <input
                       type="checkbox"
                       checked={darkMode}
@@ -4635,6 +4635,7 @@ export default function MiTienda() {
             <h4 style={{ margin: '0 0 16px 0', color: darkMode ? '#f3f4f6' : '#2A2A2A' }}>Agregar Nueva Cuenta</h4>
             <div style={{ display: 'grid', gap: '12px' }}>
               <select
+                aria-label="Tipo de cuenta bancaria"
                 value={cuentaForm.tipo_cuenta}
                 onChange={(e) => setCuentaForm({...cuentaForm, tipo_cuenta: e.target.value})}
                 style={{ padding: '10px', border: `1px solid ${darkMode ? '#4a4a4a' : '#ddd'}`, borderRadius: '6px', background: darkMode ? '#1f1f1f' : '#fff', color: darkMode ? '#f3f4f6' : '#2A2A2A' }}
@@ -4646,6 +4647,7 @@ export default function MiTienda() {
                 <option value="Daviplata">Daviplata</option>
               </select>
               <select
+                aria-label="Banco"
                 value={cuentaForm.banco}
                 onChange={(e) => setCuentaForm({...cuentaForm, banco: e.target.value})}
                 style={{ padding: '10px', border: `1px solid ${darkMode ? '#4a4a4a' : '#ddd'}`, borderRadius: '6px', background: darkMode ? '#1f1f1f' : '#fff', color: darkMode ? '#f3f4f6' : '#2A2A2A' }}
@@ -4683,6 +4685,7 @@ export default function MiTienda() {
                 <option value="Otro">Otro banco</option>
               </select>
               <input
+                aria-label="Número de cuenta"
                 type="text"
                 placeholder="Número de cuenta"
                 value={cuentaForm.numero_cuenta}
@@ -4703,7 +4706,7 @@ export default function MiTienda() {
                 onChange={(e) => setCuentaForm({...cuentaForm, cedula_titular: e.target.value})}
                 style={{ padding: '10px', border: `1px solid ${darkMode ? '#4a4a4a' : '#ddd'}`, borderRadius: '6px', background: darkMode ? '#1f1f1f' : '#fff', color: darkMode ? '#f3f4f6' : '#2A2A2A' }}
               />
-              <label aria-label="setCuentaForm({...cuentaForm, es_principal: e.target.checked})}" style={{ display: 'flex', alignItems: 'center', gap: '8px', color: darkMode ? '#d1d5db' : '#2A2A2A' }}>
+              <label aria-label="Marcar como cuenta principal" style={{ display: 'flex', alignItems: 'center', gap: '8px', color: darkMode ? '#d1d5db' : '#2A2A2A' }}>
                 <input
                   type="checkbox"
                   checked={cuentaForm.es_principal}
@@ -5500,7 +5503,7 @@ export default function MiTienda() {
           </div>
         )}
         {pedidoEnvio && (
-          <div className="modal-overlay open" onClick={() => !guardandoEnvio && setPedidoEnvio(null)}>
+          <div role="presentation" className="modal-overlay open" onClick={() => !guardandoEnvio && setPedidoEnvio(null)}>
             <div
               className="modal-box"
               onClick={(e) => e.stopPropagation()}
@@ -6855,7 +6858,7 @@ export default function MiTienda() {
 
               <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 24 }}>
                 {OPCIONES_ELIMINAR_V.map((op) => (
-                  <label aria-label="setNotifDeleteFilter(op.value)}                       style={{ accentColor: '#7A" key={op.value} style={{
+                  <label aria-label="Filtro de notificaciones" key={op.value} style={{
                     display: "flex", alignItems: "center", gap: 10,
                     padding: "10px 14px", borderRadius: 10, cursor: "pointer",
                     border: `1.5px solid ${notifDeleteFilter === op.value ? "#7A1E3A" : "#E5E7EB"}`,
