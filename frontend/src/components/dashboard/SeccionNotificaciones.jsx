@@ -110,7 +110,7 @@ export default function SeccionNotificaciones() {
     }
   }, [generarNotificacionesOrdenes]);
 
-  useEffect(() => { cargarNotificaciones(); }, [cargarNotificaciones]);
+  useEffect(() => { void cargarNotificaciones(); }, [cargarNotificaciones]);
 
   // ── Filtro por categoría ──────────────────────────────────────────────────
   const FILTROS = {
@@ -318,30 +318,36 @@ export default function SeccionNotificaciones() {
               <div
                 key={notif.id_notificacion}
                 className={`notif-item ${notif.leida ? "" : "no-leida"}`}
-                onClick={() => handleClickNotificacion(notif)}
               >
-                <div className="notif-icono"><span>{getIconoTipo(notif.tipo)}</span></div>
-                <div className="notif-contenido">
-                  <h3>{notif.titulo}</h3>
-                  <p>{notif.descripcion || notif.cuerpo}</p>
-                  <small>
-                    {notif.fecha_creacion
-                      ? new Date(notif.fecha_creacion).toLocaleString("es-CO", {
-                          year: "numeric", month: "short", day: "numeric",
-                          hour: "2-digit", minute: "2-digit",
-                        })
-                      : "Ahora"}
-                  </small>
-                </div>
+                <button
+                  type="button"
+                  className="notif-item-open"
+                  aria-label={`Abrir notificación: ${notif.titulo}`}
+                  onClick={() => { void handleClickNotificacion(notif); }}
+                >
+                  <div className="notif-icono"><span>{getIconoTipo(notif.tipo)}</span></div>
+                  <div className="notif-contenido">
+                    <h3>{notif.titulo}</h3>
+                    <p>{notif.descripcion || notif.cuerpo}</p>
+                    <small>
+                      {notif.fecha_creacion
+                        ? new Date(notif.fecha_creacion).toLocaleString("es-CO", {
+                            year: "numeric", month: "short", day: "numeric",
+                            hour: "2-digit", minute: "2-digit",
+                          })
+                        : "Ahora"}
+                    </small>
+                  </div>
+                </button>
                 <div className="notif-acciones">
                   {!notif.leida && (
                     <button className="btn-marcar" title="Marcar como leída"
-                      onClick={(e) => { e.stopPropagation(); handleMarcarLeida(notif.id_notificacion); }}>
+                      onClick={() => { void handleMarcarLeida(notif.id_notificacion); }}>
                       ✓
                     </button>
                   )}
                   <button className="btn-eliminar" title="Eliminar"
-                    onClick={(e) => { e.stopPropagation(); handleEliminar(notif.id_notificacion); }}>
+                    onClick={() => { void handleEliminar(notif.id_notificacion); }}>
                     ✕
                   </button>
                 </div>
@@ -413,18 +419,26 @@ export default function SeccionNotificaciones() {
       {/* ── MODAL ELIMINAR MENSAJES ── */}
       {showDeleteModal && (
         <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="delete-notifications-title"
           style={{
             position: "fixed", inset: 0, zIndex: 2000,
             background: "rgba(15,23,42,0.55)", backdropFilter: "blur(3px)",
             display: "flex", alignItems: "center", justifyContent: "center", padding: 20,
           }}
-          onClick={(e) => { if (e.target === e.currentTarget) setShowDeleteModal(false); }}
         >
+          <button
+            type="button"
+            aria-label="Cerrar diálogo de eliminación"
+            onClick={() => setShowDeleteModal(false)}
+            style={{ position: "absolute", inset: 0, width: "100%", height: "100%", padding: 0, border: 0, background: "transparent", cursor: "default" }}
+          />
           <div className="notificaciones-delete-modal" style={{
             background: "#fff", borderRadius: 16, width: "100%", maxWidth: 420,
-            padding: 28, boxShadow: "0 20px 60px rgba(0,0,0,0.18)",
+            padding: 28, boxShadow: "0 20px 60px rgba(0,0,0,0.18)", position: "relative", zIndex: 1,
           }}>
-            <h2 className="notificaciones-delete-modal-title" style={{ margin: "0 0 6px", fontSize: "1.15rem", fontWeight: 800, color: "#1F2937" }}>
+            <h2 id="delete-notifications-title" className="notificaciones-delete-modal-title" style={{ margin: "0 0 6px", fontSize: "1.15rem", fontWeight: 800, color: "#1F2937" }}>
               🗑️ Eliminar notificaciones
             </h2>
             <p className="notificaciones-delete-modal-description" style={{ margin: "0 0 20px", fontSize: "0.86rem", color: "#6B7280" }}>

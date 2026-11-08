@@ -196,17 +196,40 @@
 
 .notif-item {
   display: flex;
+  align-items: center;
   gap: 18px;
   padding: 24px;
   background: white;
   border-radius: 16px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
   transition: all 0.3s ease;
-  cursor: pointer;
   border: 1px solid #e8e4df;
   border-left: 5px solid transparent;
   position: relative;
   overflow: hidden;
+}
+
+.notif-item-open {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  position: relative;
+  z-index: 1;
+}
+
+.notif-item-open:focus-visible {
+  outline: 2px solid var(--vinotinto);
+  outline-offset: 3px;
+  border-radius: 8px;
 }
 
 .notif-item::before {
@@ -585,6 +608,10 @@
     flex-wrap: wrap;
   }
 
+  .notif-item-open {
+    flex-basis: 100%;
+  }
+
   .notif-acciones {
     width: 100%;
     justify-content: flex-start;
@@ -612,6 +639,10 @@
 
   .notif-item {
     padding: 15px;
+    gap: 12px;
+  }
+
+  .notif-item-open {
     gap: 12px;
   }
 

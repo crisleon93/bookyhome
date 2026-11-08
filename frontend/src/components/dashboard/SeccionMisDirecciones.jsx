@@ -31,7 +31,7 @@ export default function SeccionMisDirecciones() {
   }, []);
 
   useEffect(() => {
-    cargarDirecciones();
+    void cargarDirecciones();
   }, [cargarDirecciones]);
 
   const onResetDireccionForm = () => {
