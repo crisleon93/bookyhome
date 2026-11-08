@@ -685,8 +685,8 @@ export default function SeccionCuponesVendedor({ tiendaId, darkMode = false }) {
 
                 {/* Tipo de descuento (tarjetas) */}
                 <div style={{ marginBottom: "18px" }}>
-                  <label style={labelStyle}>Tipo de descuento *</label>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                  <label id="cupon-tipo-descuento-label" style={labelStyle}>Tipo de descuento *</label>
+                  <div role="group" aria-labelledby="cupon-tipo-descuento-label" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
                     {tiposDescuento.map((t) => {
                       const seleccionado = form.tipo_descuento === t.tipo;
                       return (

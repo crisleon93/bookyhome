@@ -15,7 +15,7 @@ const ESTADO_COLOR = {
 };
 
 function formatPrecio(valor) {
-  return `$${parseFloat(valor).toLocaleString("es-CO")}`;
+  return `$${Number.parseFloat(valor).toLocaleString("es-CO")}`;
 }
 
 export default function SeccionImpulsos({ tiendaId, onNavegar, darkMode = false }) {
@@ -115,7 +115,7 @@ export default function SeccionImpulsos({ tiendaId, onNavegar, darkMode = false 
       setLibros(resLibros.data || []);
       const sus = resSuscripcion.data;
       if (sus?.activa && sus?.suscripcion?.impulsos_con_descuento) {
-        setDescuentoPlan(parseFloat(sus.suscripcion.impulsos_con_descuento));
+        setDescuentoPlan(Number.parseFloat(sus.suscripcion.impulsos_con_descuento));
       }
     } catch (err) {
       console.error("Error al cargar datos de impulsos:", err);
@@ -130,8 +130,8 @@ export default function SeccionImpulsos({ tiendaId, onNavegar, darkMode = false 
   }, [tiendaId, cargarDatos]);
 
   const precioConDescuento = (precio) => {
-    if (!descuentoPlan) return parseFloat(precio);
-    return parseFloat(precio) * (1 - descuentoPlan / 100);
+    if (!descuentoPlan) return Number.parseFloat(precio);
+    return Number.parseFloat(precio) * (1 - descuentoPlan / 100);
   };
 
   const handleContratar = async () => {
@@ -146,7 +146,7 @@ export default function SeccionImpulsos({ tiendaId, onNavegar, darkMode = false 
     setMensaje("");
     try {
       const payload = { id_tipo_impulso: tipoSeleccionado };
-      if (libroSeleccionado) payload.id_libro = parseInt(libroSeleccionado);
+      if (libroSeleccionado) payload.id_libro = Number.parseInt(libroSeleccionado, 10);
       await api.post("/impulsos/contratar", payload);
       setMensaje("¡Impulso contratado con éxito! Tu libro ya tiene mayor visibilidad.");
       setTipoSeleccionado(null);
@@ -265,7 +265,10 @@ export default function SeccionImpulsos({ tiendaId, onNavegar, darkMode = false 
               return (
                 <div
                   key={tipo.id_tipo_impulso}
+                  role="button"
+                  tabIndex={0}
                   onClick={() => { setTipoSeleccionado(tipo.id_tipo_impulso); setLibroSeleccionado(""); setError(""); }}
+                  onKeyDown={e => e.key === 'Enter' && (setTipoSeleccionado(tipo.id_tipo_impulso), setLibroSeleccionado(""), setError(""))}
                   style={{
                     flex: "1 1 220px",
                     maxWidth: "280px",
