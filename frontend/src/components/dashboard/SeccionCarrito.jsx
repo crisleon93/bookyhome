@@ -292,7 +292,7 @@ export default function SeccionCarrito({ userId }) {
       }
     };
 
-    refreshOrder();
+    void refreshOrder();
     intervalId = window.setInterval(refreshOrder, 3000);
     return () => {
       mounted = false;
@@ -468,7 +468,7 @@ export default function SeccionCarrito({ userId }) {
   const generarCodigoPago = () => setSucursalCodigo(Math.random().toString(36).substring(2, 12).toUpperCase());
   const handleNequiRedirect = () => {
     if (metodoEntrega === 'retiro_tienda') {
-      processPaymentApi("Nequi");
+      void processPaymentApi("Nequi");
       return;
     }
     window.location.href = `nequi://pagar?valor=${order?.total}&referencia=${order?.id_orden}`;
@@ -486,7 +486,7 @@ export default function SeccionCarrito({ userId }) {
     setTimeout(() => {
       setSucursalPagoConfirmado(true);
       setSucursalEsperandoConfirmacion(false);
-      processPaymentApi("Pago en Efecty");
+      void processPaymentApi("Pago en Efecty");
     }, 1200);
   };
   const handleSucursalPago = () => {
@@ -541,7 +541,7 @@ export default function SeccionCarrito({ userId }) {
     setTimeout(() => {
       setPseProcessing(false);
       setShowPseModal(false);
-      processPaymentApi("PSE");
+      void processPaymentApi("PSE");
     }, 2000);
   };
   const handlePaypalSubmit = (e) => {
@@ -552,7 +552,7 @@ export default function SeccionCarrito({ userId }) {
     setTimeout(() => {
       setPaypalProcessing(false);
       setShowPaypalModal(false);
-      processPaymentApi("PayPal");
+      void processPaymentApi("PayPal");
     }, 2000);
   };
 
@@ -577,7 +577,7 @@ export default function SeccionCarrito({ userId }) {
   const handleCopiarTexto = (texto, campo) => {
     if (!texto) return;
     try {
-      navigator.clipboard.writeText(String(texto).trim());
+      void navigator.clipboard.writeText(String(texto).trim());
       setCopiadoCampo(campo);
       setTimeout(() => setCopiadoCampo(""), 2200);
       notify("Copiado al portapapeles", "success");
@@ -682,7 +682,7 @@ export default function SeccionCarrito({ userId }) {
     // FLUJO DE RETIRO EN TIENDA: Si no está aún habilitado para cobro directo en tienda, se crea/confirma la reserva
     if (metodoEntrega === 'retiro_tienda' && order?.estado_retiro !== 'habilitado_pago') {
       try {
-        const resReserva = await reservarRetiroEnTienda(parseInt(activeOrderId), method);
+        const resReserva = await reservarRetiroEnTienda(Number.parseInt(activeOrderId, 10), method);
         if (resReserva.data && resReserva.data.ok) {
           setReservaConfirmada(true);
           setDatosReserva({
@@ -713,8 +713,8 @@ export default function SeccionCarrito({ userId }) {
       const baseTotal = totalFresco ?? (Number(order?.total || 0) || totalCarrito);
       const amountToCharge = Math.max(0, baseTotal - discountAmount);
       const payload = {
-        order_id: parseInt(activeOrderId),
-        amount: parseFloat(amountToCharge),
+        order_id: Number.parseInt(activeOrderId, 10),
+        amount: Number.parseFloat(amountToCharge),
         payment_method: method,
         tipo_entrega: metodoEntrega,
         ...(metodoEntrega === 'domicilio' && direccionSeleccionadaId ? { id_direccion: Number(direccionSeleccionadaId) } : {}),
@@ -724,7 +724,7 @@ export default function SeccionCarrito({ userId }) {
       if (res.data && res.data.ok) {
         if (couponCode.trim() && discountAmount > 0) {
           try {
-            await aplicarCupon({ codigo: couponCode.trim(), id_orden: parseInt(activeOrderId), total: baseTotal });
+            await aplicarCupon({ codigo: couponCode.trim(), id_orden: Number.parseInt(activeOrderId, 10), total: baseTotal });
           } catch (e) { console.warn(e); }
         }
         try {
@@ -786,7 +786,7 @@ export default function SeccionCarrito({ userId }) {
     if (!validateCardForm()) return;
     setPaymentProcessing(true);
     setTimeout(() => {
-      processPaymentApi("Tarjeta de Crédito");
+      void processPaymentApi("Tarjeta de Crédito");
     }, 2000);
   };
 
@@ -900,7 +900,10 @@ export default function SeccionCarrito({ userId }) {
           {/* Paso 1: Carrito */}
           <div
             className={mostrarCheckout ? "checkout-step-inactive" : ""}
+            role={mostrarCheckout ? "button" : undefined}
+            tabIndex={mostrarCheckout ? 0 : undefined}
             onClick={mostrarCheckout ? () => onVolverCarrito() : undefined}
+            onKeyDown={mostrarCheckout ? (e) => e.key === 'Enter' && onVolverCarrito() : undefined}
             style={{
               display: "flex",
               alignItems: "center",
@@ -1563,7 +1566,7 @@ export default function SeccionCarrito({ userId }) {
             {metodoEntrega === 'domicilio' ? (
               <div className="checkout-detail" style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: "14px", padding: "16px 18px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px", flexWrap: "wrap", gap: "8px" }}>
-                  <label style={{ fontWeight: 800, fontSize: "0.85rem", color: "#334155", display: "flex", alignItems: "center", gap: "6px" }}>
+                  <label aria-label="Dirección de entrega de tu pedido" style={{ fontWeight: 800, fontSize: "0.85rem", color: "#334155", display: "flex", alignItems: "center", gap: "6px" }}>
                     <span>📍</span>
                     <span>Dirección de entrega de tu pedido:</span>
                   </label>
@@ -2202,7 +2205,7 @@ export default function SeccionCarrito({ userId }) {
                     {/* Campo Número de Tarjeta */}
                     <div>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
-                        <label style={{ fontWeight: 700, fontSize: "0.84rem", color: "#374151" }}>
+                        <label htmlFor="card-number" style={{ fontWeight: 700, fontSize: "0.84rem", color: "#374151" }}>
                           Número de Tarjeta
                         </label>
                         <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
@@ -2219,6 +2222,7 @@ export default function SeccionCarrito({ userId }) {
                           </svg>
                         </span>
                         <input
+                          id="card-number"
                           type="text"
                           value={cardNumber}
                           onChange={e => {
@@ -2257,7 +2261,7 @@ export default function SeccionCarrito({ userId }) {
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
                       {/* Vencimiento */}
                       <div>
-                        <label style={{ display: "block", marginBottom: "6px", fontWeight: 700, fontSize: "0.84rem", color: "#374151" }}>
+                        <label htmlFor="card-expiry" style={{ display: "block", marginBottom: "6px", fontWeight: 700, fontSize: "0.84rem", color: "#374151" }}>
                           Vencimiento (MM/AA)
                         </label>
                         <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
@@ -2267,6 +2271,7 @@ export default function SeccionCarrito({ userId }) {
                             </svg>
                           </span>
                           <input
+                            id="card-expiry"
                             type="text"
                             value={cardExpiry}
                             onChange={e => {
@@ -2303,7 +2308,7 @@ export default function SeccionCarrito({ userId }) {
                       {/* CVV */}
                       <div>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
-                          <label style={{ fontWeight: 700, fontSize: "0.84rem", color: "#374151" }}>
+                          <label htmlFor="card-cvv" style={{ fontWeight: 700, fontSize: "0.84rem", color: "#374151" }}>
                             Código CVV
                           </label>
                           <span style={{ fontSize: "0.72rem", color: "#6B7280" }}>3 dígitos</span>
@@ -2315,6 +2320,7 @@ export default function SeccionCarrito({ userId }) {
                             </svg>
                           </span>
                           <input
+                            id="card-cvv"
                             type="password"
                             maxLength={4}
                             value={cardCvv}
@@ -2349,7 +2355,7 @@ export default function SeccionCarrito({ userId }) {
 
                     {/* Campo Nombre del Titular */}
                     <div>
-                      <label style={{ display: "block", marginBottom: "6px", fontWeight: 700, fontSize: "0.84rem", color: "#374151" }}>
+                      <label htmlFor="card-name" style={{ display: "block", marginBottom: "6px", fontWeight: 700, fontSize: "0.84rem", color: "#374151" }}>
                         Nombre del Titular (como aparece en la tarjeta)
                       </label>
                       <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
@@ -2359,6 +2365,7 @@ export default function SeccionCarrito({ userId }) {
                           </svg>
                         </span>
                         <input
+                          id="card-name"
                           type="text"
                           value={cardName}
                           onChange={e => setCardName(e.target.value)}
@@ -3055,7 +3062,7 @@ export default function SeccionCarrito({ userId }) {
                   {/* Acceso Rápido: Bancos más utilizados */}
                   <div>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
-                      <label style={{ fontSize: "0.85rem", fontWeight: 700, color: "#334155" }}>
+                      <label aria-label="Bancos frecuentes en Colombia" style={{ fontSize: "0.85rem", fontWeight: 700, color: "#334155" }}>
                         Bancos frecuentes en Colombia
                       </label>
                       <span style={{ fontSize: "0.74rem", color: "#64748B" }}>Selección rápida con 1 clic</span>
@@ -3112,7 +3119,7 @@ export default function SeccionCarrito({ userId }) {
 
                   {/* Selector Completo de Bancos */}
                   <div>
-                    <label style={{ display: "block", fontSize: "0.85rem", fontWeight: 700, color: "#334155", marginBottom: "8px" }}>
+                    <label htmlFor="pse-banco-select" style={{ display: "block", fontSize: "0.85rem", fontWeight: 700, color: "#334155", marginBottom: "8px" }}>
                       O selecciona tu entidad financiera en la lista completa:
                     </label>
                     <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
@@ -3121,7 +3128,7 @@ export default function SeccionCarrito({ userId }) {
                           <path d="M3 21h18"/><path d="M3 10h18"/><path d="M5 6l7-3 7 3"/><path d="M4 10v11"/><path d="M20 10v11"/><path d="M8 14v4"/><path d="M12 14v4"/><path d="M16 14v4"/>
                         </svg>
                       </span>
-                      <select className="pse-bank-select"
+                      <select id="pse-banco-select" className="pse-bank-select"
                         value={pseBanco}
                         onChange={(e) => setPseBanco(e.target.value)}
                         style={{
@@ -4253,7 +4260,7 @@ export default function SeccionCarrito({ userId }) {
 
                   <form onSubmit={handlePaypalSubmit} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
                     <div>
-                      <label style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "0.82rem", fontWeight: 700, color: "#334155", marginBottom: "6px" }}>
+                      <label aria-label="✉️                         Correo electrónico de PayPal" style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "0.82rem", fontWeight: 700, color: "#334155", marginBottom: "6px" }}>
                         <span>✉️</span>
                         <span>Correo electrónico de PayPal</span>
                       </label>
@@ -4288,7 +4295,7 @@ export default function SeccionCarrito({ userId }) {
                     </div>
 
                     <div>
-                      <label style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "0.82rem", fontWeight: 700, color: "#334155", marginBottom: "6px" }}>
+                      <label aria-label="🔒                         Contraseña Sandbox" style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "0.82rem", fontWeight: 700, color: "#334155", marginBottom: "6px" }}>
                         <span>🔒</span>
                         <span>Contraseña Sandbox</span>
                       </label>
@@ -4616,7 +4623,7 @@ export default function SeccionCarrito({ userId }) {
                       <form onSubmit={handlePseModalNext} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
                         {/* Selector Tipo de Cliente */}
                         <div>
-                          <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 700, color: "#334155", marginBottom: "6px" }}>
+                          <label aria-label="Tipo de Cliente" style={{ display: "block", fontSize: "0.8rem", fontWeight: 700, color: "#334155", marginBottom: "6px" }}>
                             Tipo de Cliente
                           </label>
                           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
@@ -4648,7 +4655,7 @@ export default function SeccionCarrito({ userId }) {
 
                         {/* Banco Seleccionado */}
                         <div>
-                          <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 700, color: "#334155", marginBottom: "6px" }}>
+                          <label aria-label="Entidad Financiera (Banco)" style={{ display: "block", fontSize: "0.8rem", fontWeight: 700, color: "#334155", marginBottom: "6px" }}>
                             Entidad Financiera (Banco)
                           </label>
                           <select
@@ -4675,7 +4682,7 @@ export default function SeccionCarrito({ userId }) {
 
                         {/* Correo Electrónico Registrado en PSE */}
                         <div>
-                          <label style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.8rem", fontWeight: 700, color: "#334155", marginBottom: "6px" }}>
+                          <label aria-label="Correo electrónico registrado en PSE                             Usuario PSE" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.8rem", fontWeight: 700, color: "#334155", marginBottom: "6px" }}>
                             <span>Correo electrónico registrado en PSE</span>
                             <span style={{ fontSize: "0.72rem", color: "#2563EB", fontWeight: 600 }}>Usuario PSE</span>
                           </label>
@@ -4698,7 +4705,7 @@ export default function SeccionCarrito({ userId }) {
 
                         {/* Documento de Identidad */}
                         <div>
-                          <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 700, color: "#334155", marginBottom: "6px" }}>
+                          <label aria-label="Número de Documento / C.C." style={{ display: "block", fontSize: "0.8rem", fontWeight: 700, color: "#334155", marginBottom: "6px" }}>
                             Número de Documento / C.C.
                           </label>
                           <input
@@ -4831,7 +4838,7 @@ export default function SeccionCarrito({ userId }) {
 
                         {/* Clave dinámica simulada */}
                         <div>
-                          <label style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.8rem", fontWeight: 700, color: "#334155", marginBottom: "6px" }}>
+                          <label aria-label="Clave Dinámica / Token Virtual de Seguridad" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.8rem", fontWeight: 700, color: "#334155", marginBottom: "6px" }}>
                             <span>Clave Dinámica / Token Virtual de Seguridad</span>
                             <span style={{ background: "#DCFCE7", color: "#15803D", padding: "1px 6px", borderRadius: "4px", fontSize: "0.7rem", fontWeight: 700 }}>
                               Generado en App móvil

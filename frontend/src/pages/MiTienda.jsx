@@ -392,43 +392,43 @@ function ModalEditarLibro({ libro, categorias, onClose, onGuardado }) {
         <form onSubmit={handleSubmit} className="modal-form">
           <div className="modal-grid">
             <div className="form-group">
-              <label>Título *</label>
-              <input name="titulo" value={form.titulo} onChange={handleChange} maxLength={100} />
+              <label htmlFor="libro-titulo">Título *</label>
+              <input id="libro-titulo" name="titulo" value={form.titulo} onChange={handleChange} maxLength={100} />
             </div>
             <div className="form-group">
-              <label>Autor *</label>
-              <input name="autor_libro" value={form.autor_libro} onChange={handleChange} maxLength={50} />
+              <label htmlFor="libro-autor">Autor *</label>
+              <input id="libro-autor" name="autor_libro" value={form.autor_libro} onChange={handleChange} maxLength={50} />
             </div>
             <div className="form-group">
-              <label>Categoría *</label>
-              <select name="id_categoria" value={form.id_categoria} onChange={handleChange}>
+              <label htmlFor="libro-categoria">Categoría *</label>
+              <select id="libro-categoria" name="id_categoria" value={form.id_categoria} onChange={handleChange}>
                 {categorias.map((c) => (
                   <option key={c.id_categoria} value={c.id_categoria}>{c.nombre_categoria}</option>
                 ))}
               </select>
             </div>
             <div className="form-group">
-              <label>Estado *</label>
-              <select name="estado_libro" value={form.estado_libro} onChange={handleChange}>
+              <label htmlFor="libro-estado">Estado *</label>
+              <select id="libro-estado" name="estado_libro" value={form.estado_libro} onChange={handleChange}>
                 {ESTADOS.map((e) => <option key={e.value} value={e.value}>{e.label}</option>)}
               </select>
             </div>
             <div className="form-group">
-              <label>Precio (COP) *</label>
-              <input name="precio_libro" type="number" min="1" value={form.precio_libro} onChange={handleChange} />
+              <label htmlFor="libro-precio">Precio (COP) *</label>
+              <input id="libro-precio" name="precio_libro" type="number" min="1" value={form.precio_libro} onChange={handleChange} />
             </div>
             <div className="form-group">
-              <label>Stock *</label>
-              <input name="stock" type="number" min="0" value={form.stock} onChange={handleChange} />
+              <label htmlFor="libro-stock">Stock *</label>
+              <input id="libro-stock" name="stock" type="number" min="0" value={form.stock} onChange={handleChange} />
             </div>
           </div>
           <div className="form-group">
-            <label>Descripción *
+            <label htmlFor="libro-descripcion">Descripción *
               <span style={{ float: "right", color: "#bbb", fontWeight: 500, fontSize: "0.78rem" }}>
                 {form.descripcion_libro.length}/300
               </span>
             </label>
-            <textarea name="descripcion_libro" maxLength={300} rows={3}
+            <textarea id="libro-descripcion" name="descripcion_libro" maxLength={300} rows={3}
               value={form.descripcion_libro} onChange={handleChange} />
           </div>
           <div className="acceso-anticipado-config" style={{ border: "1px solid #eadde1", borderRadius: "10px", padding: "16px", marginBottom: "16px" }}>
@@ -436,7 +436,7 @@ function ModalEditarLibro({ libro, categorias, onClose, onGuardado }) {
             <p style={{ color: "#777", fontSize: "0.85rem", margin: "0 0 14px" }}>
               Prepara este libro para el programa: el nivel elegido podrá verlo 24 horas antes de su disponibilidad pública.
             </p>
-            <label style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "14px" }}>
+            <label aria-label="Preparar acceso anticipado para este libro" style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "14px" }}>
               <input
                 type="checkbox"
                 name="acceso_anticipado"
@@ -673,7 +673,7 @@ function ModalVentaFisica({ libro: libroInicial, libros = [], onClose, onVendido
             {/* Selector de libro */}
             <div style={{ marginBottom: '18px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                <label style={{ fontSize: '0.84rem', fontWeight: 700, color: '#57534e' }}>
+                <label aria-label="Libro a vender" style={{ fontSize: '0.84rem', fontWeight: 700, color: '#57534e' }}>
                   Libro a vender *
                 </label>
                 {libroActual && (
@@ -889,10 +889,10 @@ function ModalVentaFisica({ libro: libroInicial, libros = [], onClose, onVendido
               <div style={{ marginTop: 'auto' }}>
                 {/* Cantidad a vender */}
                 <div style={{ marginBottom: '14px' }}>
-                  <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#57534e', marginBottom: '6px' }}>Cantidad vendida *</label>
+                  <label htmlFor="venta-cantidad" style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#57534e', marginBottom: '6px' }}>Cantidad vendida *</label>
                   <div className="stock-control">
                     <button className="stock-btn" onClick={() => setCantidad(Math.max(1, cantidad - 1))}>−</button>
-                    <input type="number" min="1" max={maxVenta} value={cantidad}
+                    <input id="venta-cantidad" type="number" min="1" max={maxVenta} value={cantidad}
                       onChange={(e) => setCantidad(Math.min(maxVenta, Math.max(1, Number(e.target.value))))} className="stock-input" />
                     <button className="stock-btn" onClick={() => setCantidad(Math.min(maxVenta, cantidad + 1))}>+</button>
                   </div>
@@ -903,16 +903,16 @@ function ModalVentaFisica({ libro: libroInicial, libros = [], onClose, onVendido
 
                 {/* Comprador (opcional) */}
                 <div style={{ marginBottom: '12px' }}>
-                  <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#57534e', marginBottom: '6px' }}>Nombre del comprador <span style={{ fontWeight: 500, color: '#a8a29e' }}>(opcional)</span></label>
-                  <input type="text" value={comprador} onChange={(e) => setComprador(e.target.value)}
+                  <label htmlFor="venta-comprador" style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#57534e', marginBottom: '6px' }}>Nombre del comprador <span style={{ fontWeight: 500, color: '#a8a29e' }}>(opcional)</span></label>
+                  <input id="venta-comprador" type="text" value={comprador} onChange={(e) => setComprador(e.target.value)}
                     placeholder="Ej: Juan Pérez" maxLength={80}
                     style={{ width: '100%', padding: '9px 12px', border: '1px solid #e0dad1', borderRadius: '10px', fontSize: '0.84rem', fontFamily: 'inherit', boxSizing: 'border-box' }} />
                 </div>
 
                 {/* Nota (opcional) */}
                 <div style={{ marginBottom: '12px' }}>
-                  <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#57534e', marginBottom: '6px' }}>Nota interna <span style={{ fontWeight: 500, color: '#a8a29e' }}>(opcional)</span></label>
-                  <input type="text" value={nota} onChange={(e) => setNota(e.target.value)}
+                  <label htmlFor="venta-nota" style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#57534e', marginBottom: '6px' }}>Nota interna <span style={{ fontWeight: 500, color: '#a8a29e' }}>(opcional)</span></label>
+                  <input id="venta-nota" type="text" value={nota} onChange={(e) => setNota(e.target.value)}
                     placeholder="Ej: Pagó en efectivo" maxLength={120}
                     style={{ width: '100%', padding: '9px 12px', border: '1px solid #e0dad1', borderRadius: '10px', fontSize: '0.84rem', fontFamily: 'inherit', boxSizing: 'border-box' }} />
                 </div>
@@ -1117,16 +1117,16 @@ function ModalRetiroTienda({ libro, onClose, onConfirmado }) {
             ) : (
               <>
                 <div style={{ marginBottom: '14px' }}>
-                  <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#57534e', marginBottom: '6px' }}>Nombre del cliente que recoge *</label>
-                  <input type="text" value={nombreCliente} onChange={(e) => { setNombreCliente(e.target.value); setError(""); }}
+                  <label htmlFor="reserva-nombre-cliente" style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#57534e', marginBottom: '6px' }}>Nombre del cliente que recoge *</label>
+                  <input id="reserva-nombre-cliente" type="text" value={nombreCliente} onChange={(e) => { setNombreCliente(e.target.value); setError(""); }}
                     placeholder="Ej: María García" maxLength={80} autoFocus
                     style={{ width: '100%', padding: '9px 12px', border: '1px solid #e0dad1', borderRadius: '10px', fontSize: '0.84rem', fontFamily: 'inherit', boxSizing: 'border-box' }} />
                 </div>
                 <div style={{ marginBottom: '16px' }}>
-                  <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#57534e', marginBottom: '6px' }}>Unidades a entregar</label>
+                  <label htmlFor="reserva-unidades" style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#57534e', marginBottom: '6px' }}>Unidades a entregar</label>
                   <div className="stock-control">
                     <button className="stock-btn" onClick={() => setCantidadReserva(Math.max(1, cantidadReserva - 1))}>−</button>
-                    <input type="number" min="1" max={stockActual} value={cantidadReserva}
+                    <input id="reserva-unidades" type="number" min="1" max={stockActual} value={cantidadReserva}
                       onChange={(e) => setCantidadReserva(Math.min(stockActual, Math.max(1, Number(e.target.value))))} className="stock-input" />
                     <button className="stock-btn" onClick={() => setCantidadReserva(Math.min(stockActual, cantidadReserva + 1))}>+</button>
                   </div>
@@ -4007,7 +4007,7 @@ export default function MiTienda() {
                       ✏️ Editar banner
                     </button>
                     <div style={{ position: 'absolute', left: 24, bottom: -48, zIndex: 3 }}>
-                      <label className="perfil-avatar-editable" title="Cambiar foto de perfil">
+                      <label aria-label="{(profilePhotoUrl || userPhotoUrl) ? (" className="perfil-avatar-editable" title="Cambiar foto de perfil">
                         {(profilePhotoUrl || userPhotoUrl) ? (
                           <img src={profilePhotoUrl || userPhotoUrl} alt="Foto de perfil" />
                         ) : (
@@ -4263,8 +4263,9 @@ export default function MiTienda() {
               <div style={sectionBody}>
                 <div style={{ ...row, gridTemplateColumns: '1fr 1fr' }}>
                   <div style={field}>
-                    <label style={lbl}>Nombre de la tienda <span style={{ color: '#DC2626' }}>*</span></label>
+                    <label htmlFor="cfg-nombre-tienda" style={lbl}>Nombre de la tienda <span style={{ color: '#DC2626' }}>*</span></label>
                     <input
+                      id="cfg-nombre-tienda"
                       style={inp}
                       value={tiendaForm.nombre_tienda}
                       onChange={e => setTiendaForm({ ...tiendaForm, nombre_tienda: e.target.value })}
@@ -4274,8 +4275,9 @@ export default function MiTienda() {
                     />
                   </div>
                   <div style={field}>
-                    <label style={lbl}>Teléfono de contacto</label>
+                    <label htmlFor="cfg-telefono" style={lbl}>Teléfono de contacto</label>
                     <input
+                      id="cfg-telefono"
                       style={inp}
                       value={tiendaForm.telefono}
                       onChange={e => setTiendaForm({ ...tiendaForm, telefono: e.target.value })}
@@ -4287,8 +4289,9 @@ export default function MiTienda() {
                 </div>
                 <div style={{ ...row, gridTemplateColumns: '1fr 1fr' }}>
                   <div style={field}>
-                    <label style={lbl}>Dirección física</label>
+                    <label htmlFor="cfg-direccion" style={lbl}>Dirección física</label>
                     <input
+                      id="cfg-direccion"
                       style={inp}
                       value={tiendaForm.direccion}
                       onChange={e => setTiendaForm({ ...tiendaForm, direccion: e.target.value })}
@@ -4298,8 +4301,9 @@ export default function MiTienda() {
                     />
                   </div>
                   <div style={field}>
-                    <label style={lbl}>Ciudad de origen</label>
+                    <label htmlFor="cfg-ciudad" style={lbl}>Ciudad de origen</label>
                     <input
+                      id="cfg-ciudad"
                       style={inp}
                       value={configForm.ciudad_origen || ''}
                       onChange={e => setConfigForm({ ...configForm, ciudad_origen: e.target.value })}
@@ -4311,8 +4315,9 @@ export default function MiTienda() {
                 </div>
                 <div style={{ ...row, gridTemplateColumns: '1fr 1fr', marginBottom: 0 }}>
                   <div style={field}>
-                    <label style={lbl}>Email público</label>
+                    <label htmlFor="cfg-email-publico" style={lbl}>Email público</label>
                     <input
+                      id="cfg-email-publico"
                       style={inp}
                       type="email"
                       value={configForm.email_publico || ''}
@@ -4323,8 +4328,9 @@ export default function MiTienda() {
                     />
                   </div>
                   <div style={field}>
-                    <label style={lbl}>Horario de atención</label>
+                    <label htmlFor="cfg-horario" style={lbl}>Horario de atención</label>
                     <input
+                      id="cfg-horario"
                       style={inp}
                       value={configForm.horario_atencion}
                       onChange={e => setConfigForm({ ...configForm, horario_atencion: e.target.value })}
@@ -4378,9 +4384,10 @@ export default function MiTienda() {
                   {/* ── Columna izquierda: Días + alerta retiro + Política envíos ── */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                     <div style={field}>
-                      <label style={lbl}>Días promedio de despacho</label>
+                      <label htmlFor="cfg-dias-despacho" style={lbl}>Días promedio de despacho</label>
                       <div style={{ position: 'relative' }}>
                         <input
+                          id="cfg-dias-despacho"
                           style={{ ...inp, paddingRight: 60 }}
                           type="number"
                           min="1"
@@ -4404,8 +4411,9 @@ export default function MiTienda() {
                     </div>
 
                     <div style={field}>
-                      <label style={lbl}>Política de envíos</label>
+                      <label htmlFor="cfg-politica-envios" style={lbl}>Política de envíos</label>
                       <textarea
+                        id="cfg-politica-envios"
                         style={inpTA}
                         placeholder="Describe tus condiciones de envío: transportadoras, zonas de cobertura, tiempos estimados..."
                         value={configForm.politica_envios}
@@ -4459,8 +4467,9 @@ export default function MiTienda() {
                     </div>
 
                     <div style={field}>
-                      <label style={lbl}>Política de devoluciones</label>
+                      <label htmlFor="cfg-politica-devoluciones" style={lbl}>Política de devoluciones</label>
                       <textarea
+                        id="cfg-politica-devoluciones"
                         style={inpTA}
                         placeholder="Condiciones para devoluciones, cambios y garantías de tus libros..."
                         value={configForm.politica_devoluciones}
@@ -4556,7 +4565,7 @@ export default function MiTienda() {
                     <h4 style={{ margin: '0 0 0.3rem 0', color: darkMode ? '#ececec' : '#2a2a2a', fontSize: '1rem' }}>Modo Oscuro</h4>
                     <p style={{ margin: 0, color: darkMode ? '#c8c8c8' : '#666', fontSize: '0.85rem' }}>Cambia el tema de la aplicación a modo oscuro</p>
                   </div>
-                  <label style={{ position: 'relative', display: 'inline-block', width: '48px', height: '26px', cursor: 'pointer' }}>
+                  <label aria-label="{                         const newMode = !darkMode;                         set" style={{ position: 'relative', display: 'inline-block', width: '48px', height: '26px', cursor: 'pointer' }}>
                     <input
                       type="checkbox"
                       checked={darkMode}
@@ -4694,7 +4703,7 @@ export default function MiTienda() {
                 onChange={(e) => setCuentaForm({...cuentaForm, cedula_titular: e.target.value})}
                 style={{ padding: '10px', border: `1px solid ${darkMode ? '#4a4a4a' : '#ddd'}`, borderRadius: '6px', background: darkMode ? '#1f1f1f' : '#fff', color: darkMode ? '#f3f4f6' : '#2A2A2A' }}
               />
-              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', color: darkMode ? '#d1d5db' : '#2A2A2A' }}>
+              <label aria-label="setCuentaForm({...cuentaForm, es_principal: e.target.checked})}" style={{ display: 'flex', alignItems: 'center', gap: '8px', color: darkMode ? '#d1d5db' : '#2A2A2A' }}>
                 <input
                   type="checkbox"
                   checked={cuentaForm.es_principal}
@@ -6846,7 +6855,7 @@ export default function MiTienda() {
 
               <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 24 }}>
                 {OPCIONES_ELIMINAR_V.map((op) => (
-                  <label key={op.value} style={{
+                  <label aria-label="setNotifDeleteFilter(op.value)}                       style={{ accentColor: '#7A" key={op.value} style={{
                     display: "flex", alignItems: "center", gap: 10,
                     padding: "10px 14px", borderRadius: 10, cursor: "pointer",
                     border: `1.5px solid ${notifDeleteFilter === op.value ? "#7A1E3A" : "#E5E7EB"}`,
