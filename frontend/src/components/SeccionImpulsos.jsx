@@ -315,10 +315,11 @@ export default function SeccionImpulsos({ tiendaId, onNavegar, darkMode = false 
                 </h4>
                 {requiereLibro && (
                   <div style={{ marginBottom: "12px" }}>
-                    <label style={{ fontSize: "0.9rem", color: t.labelColor, fontWeight: 600, display: "block", marginBottom: "6px" }}>
+                    <label htmlFor="impulso-libro-select" style={{ fontSize: "0.9rem", color: t.labelColor, fontWeight: 600, display: "block", marginBottom: "6px" }}>
                       Selecciona el libro a impulsar *
                     </label>
                     <select
+                      id="impulso-libro-select"
                       value={libroSeleccionado}
                       onChange={(e) => setLibroSeleccionado(e.target.value)}
                       style={{ width: "100%", maxWidth: "400px", padding: "10px", borderRadius: "8px", border: t.selectBorder, background: t.selectBg, color: t.selectColor, fontFamily: "Montserrat, sans-serif", fontSize: "0.9rem" }}

@@ -163,7 +163,7 @@ function CustomDateTimePicker({ value, onChange, minDate, label, placeholder, al
 
   const emitDate = (dayObj, hStr, mStr, apStr) => {
     if (!dayObj) return;
-    let hNum = parseInt(hStr, 10) || 12;
+    let hNum = Number.parseInt(hStr, 10) || 12;
     if (apStr === "PM" && hNum < 12) hNum += 12;
     if (apStr === "AM" && hNum === 12) hNum = 0;
     
@@ -1130,6 +1130,7 @@ function ModalEliminarOferta({ oferta, onClose, onEliminado, darkMode = false })
 
   return (
     <div
+      role="presentation"
       onClick={onClose}
       style={{
         position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)",
@@ -1138,6 +1139,8 @@ function ModalEliminarOferta({ oferta, onClose, onEliminado, darkMode = false })
       }}
     >
       <div
+        role="dialog"
+        aria-modal="true"
         onClick={(e) => e.stopPropagation()}
         style={{
           background: panelBg, borderRadius: "16px", padding: "28px",
@@ -1157,7 +1160,7 @@ function ModalEliminarOferta({ oferta, onClose, onEliminado, darkMode = false })
         <p style={{ color: textSecondary, marginBottom: "6px", fontSize: "0.92rem" }}>
           ¿Eliminar <strong style={{ color: textPrimary }}>"{oferta.nombre_oferta}"</strong>?
         </p>
-        <p style={{ fontSize: "0.82rem", color: darkMode ? '#9ca3af' : '#9ca3af', marginBottom: "20px" }}>
+        <p style={{ fontSize: "0.82rem", color: '#9ca3af', marginBottom: "20px" }}>
           Esta acción no se puede deshacer.
         </p>
         {error && (
@@ -1322,7 +1325,7 @@ function TarjetaOferta({ oferta, onEditar, onEliminar, darkMode = false }) {
               style={{
                 display: "flex", alignItems: "center", gap: "4px",
                 padding: "6px 12px", borderRadius: "8px",
-                background: darkMode ? '#fff1f5' : '#fff1f5', border: `1px solid ${darkMode ? '#f9a8d4' : '#f9a8d4'}`,
+                background: '#fff1f5', border: `1px solid #f9a8d4`,
                 color: '#be185d', fontWeight: 700, cursor: "pointer",
                 fontSize: "0.78rem", transition: "background 0.15s"
               }}
