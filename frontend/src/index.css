@@ -4183,6 +4183,22 @@ body.auth-page {
   visibility: visible;
 }
 
+.seller-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.seller-modal-dialog {
+  position: relative;
+  z-index: 1;
+}
+
 .modal-card {
   background: var(--blanco);
   border-radius: 12px;
@@ -5641,6 +5657,10 @@ body.auth-page {
   flex-direction: column;
   justify-content: space-between;
   cursor: pointer;
+  appearance: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
   transition: all 0.22s ease;
   position: relative;
   overflow: hidden;
@@ -6445,6 +6465,10 @@ body.auth-page {
   border: 1px solid #f0eae2;
   border-radius: 12px;
   cursor: pointer;
+  appearance: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
   transition: all 0.15s ease;
 }
 

@@ -84,7 +84,7 @@ import "../styles/Notificaciones.css";
 // ========================
 const formatPrecio = (valor) => {
   if (!valor && valor !== 0) return "$0 COP";
-  return "$" + String(Math.floor(valor)).replace(/\B(?=(\d{3})+(?!\d))/g, ".") + " COP";
+  return `$${new Intl.NumberFormat("es-CO", { maximumFractionDigits: 0 }).format(Math.floor(valor))} COP`;
 };
 
 const normalizarEstado = (estado) => {
@@ -118,7 +118,7 @@ const parseFechaPedido = (d) => {
     return new Date(y, m - 1, dd);
   }
   const dt = new Date(d);
-  return isNaN(dt.getTime()) ? new Date() : dt;
+  return Number.isNaN(dt.getTime()) ? new Date() : dt;
 };
 
 const infoEstadoEnvio = (pedido) => {
@@ -634,10 +634,13 @@ function ModalVentaFisica({ libro: libroInicial, libros = [], onClose, onVendido
   };
 
   return (
-    <div className="modal-overlay open" onClick={onClose}>
+    <div className="modal-overlay open" role="presentation">
+      <button type="button" className="seller-modal-backdrop" aria-label="Cerrar venta presencial" onClick={onClose} />
       <div
-        className="modal-box"
-        onClick={(e) => e.stopPropagation()}
+        className="modal-box seller-modal-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modal-venta-presencial-titulo"
         style={{
           maxWidth: '560px',
           width: '94%',
@@ -651,7 +654,7 @@ function ModalVentaFisica({ libro: libroInicial, libros = [], onClose, onVendido
         }}
       >
         <div className="modal-header" style={{ marginBottom: '20px' }}>
-          <h2 style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '1.3rem' }}>
+          <h2 id="modal-venta-presencial-titulo" style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '1.3rem' }}>
             <IconShoppingBag width={24} height={24} strokeWidth={2.2} style={{ color: '#7A1E3A' }} />
             Registrar Venta Presencial
           </h2>
@@ -673,7 +676,7 @@ function ModalVentaFisica({ libro: libroInicial, libros = [], onClose, onVendido
             {/* Selector de libro */}
             <div style={{ marginBottom: '18px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                <label aria-label="Libro a vender" style={{ fontSize: '0.84rem', fontWeight: 700, color: '#57534e' }}>
+                <label htmlFor="venta-presencial-libro" style={{ fontSize: '0.84rem', fontWeight: 700, color: '#57534e' }}>
                   Libro a vender *
                 </label>
                 {libroActual && (
@@ -688,18 +691,12 @@ function ModalVentaFisica({ libro: libroInicial, libros = [], onClose, onVendido
               </div>
 
               {/* Botón trigger del selector */}
-              <div
-                role="button"
-                tabIndex={0}
+              <button
+                type="button"
+                id="venta-presencial-libro"
                 aria-haspopup="listbox"
                 aria-expanded={dropdownAbierto}
                 onClick={() => setDropdownAbierto(prev => !prev)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    setDropdownAbierto(prev => !prev);
-                  }
-                }}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -710,7 +707,10 @@ function ModalVentaFisica({ libro: libroInicial, libros = [], onClose, onVendido
                   borderRadius: '12px',
                   cursor: 'pointer',
                   transition: 'all 0.2s ease',
-                  boxShadow: dropdownAbierto ? '0 0 0 3px rgba(122, 30, 58, 0.1)' : 'none'
+                  boxShadow: dropdownAbierto ? '0 0 0 3px rgba(122, 30, 58, 0.1)' : 'none',
+                  width: '100%',
+                  textAlign: 'left',
+                  font: 'inherit'
                 }}
               >
                 {libroActual ? (
@@ -738,7 +738,7 @@ function ModalVentaFisica({ libro: libroInicial, libros = [], onClose, onVendido
                 <span style={{ fontSize: '0.8rem', color: '#78716c', marginLeft: '8px' }}>
                   {dropdownAbierto ? '▲' : '▼'}
                 </span>
-              </div>
+              </button>
 
               {/* Lista Desplegable integrada */}
               {dropdownAbierto && (
@@ -759,7 +759,6 @@ function ModalVentaFisica({ libro: libroInicial, libros = [], onClose, onVendido
                       value={busqueda}
                       onChange={(e) => setBusqueda(e.target.value)}
                       onClick={(e) => e.stopPropagation()}
-                      autoFocus
                       style={{
                         width: '100%',
                         border: 'none',
@@ -967,10 +966,11 @@ function ModalCodigoLibro({ libro, onClose }) {
   const barras = generarBarras(codigoId);
 
   return (
-    <div className="modal-overlay open" onClick={onClose}>
-      <div className="modal-box modal-box--sm" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '400px' }}>
+    <div className="modal-overlay open" role="presentation">
+      <button type="button" className="seller-modal-backdrop" aria-label="Cerrar código del libro" onClick={onClose} />
+      <div className="modal-box modal-box--sm seller-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="modal-codigo-libro-titulo" style={{ maxWidth: '400px' }}>
         <div className="modal-header">
-          <h2 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <h2 id="modal-codigo-libro-titulo" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <IconSearch width={20} height={20} strokeWidth={2} style={{ color: '#7A1E3A' }} />
             Código del Libro
           </h2>
@@ -1024,9 +1024,17 @@ function ModalCodigoLibro({ libro, onClose }) {
           <button className="btn-outline" onClick={onClose}>Cerrar</button>
           <button
             className="btn btn-vinotinto"
-            onClick={() => {
-              navigator.clipboard?.writeText(codigoId);
-              alert(`Código electrónico ${codigoId} copiado al portapapeles`);
+            onClick={async () => {
+              try {
+                if (!navigator.clipboard?.writeText) {
+                  throw new Error("El portapapeles no está disponible");
+                }
+                await navigator.clipboard.writeText(codigoId);
+                alert(`Código electrónico ${codigoId} copiado al portapapeles`);
+              } catch (error) {
+                console.error("Error copiando el código del libro:", error);
+                alert(`No se pudo copiar el código. Puedes copiarlo manualmente: ${codigoId}`);
+              }
             }}
             style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
           >
@@ -1067,10 +1075,11 @@ function ModalRetiroTienda({ libro, onClose, onConfirmado }) {
   };
 
   return (
-    <div className="modal-overlay open" onClick={onClose}>
-      <div className="modal-box modal-box--sm" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '440px' }}>
+    <div className="modal-overlay open" role="presentation">
+      <button type="button" className="seller-modal-backdrop" aria-label="Cerrar retiro en tienda" onClick={onClose} />
+      <div className="modal-box modal-box--sm seller-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="modal-retiro-tienda-titulo" style={{ maxWidth: '440px' }}>
         <div className="modal-header">
-          <h2 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <h2 id="modal-retiro-tienda-titulo" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <IconPackage width={22} height={22} strokeWidth={2} style={{ color: '#7A1E3A' }} />
             Retiro en Tienda
           </h2>
@@ -1119,7 +1128,7 @@ function ModalRetiroTienda({ libro, onClose, onConfirmado }) {
                 <div style={{ marginBottom: '14px' }}>
                   <label htmlFor="reserva-nombre-cliente" style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#57534e', marginBottom: '6px' }}>Nombre del cliente que recoge *</label>
                   <input id="reserva-nombre-cliente" type="text" value={nombreCliente} onChange={(e) => { setNombreCliente(e.target.value); setError(""); }}
-                    placeholder="Ej: María García" maxLength={80} autoFocus
+                    placeholder="Ej: María García" maxLength={80}
                     style={{ width: '100%', padding: '9px 12px', border: '1px solid #e0dad1', borderRadius: '10px', fontSize: '0.84rem', fontFamily: 'inherit', boxSizing: 'border-box' }} />
                 </div>
                 <div style={{ marginBottom: '16px' }}>
@@ -1196,7 +1205,7 @@ function SeccionCalificacionesVendedor({ tiendaId, darkMode = false }) {
         if (activo) setLoading(false);
       }
     };
-    cargarCalificaciones();
+    void cargarCalificaciones();
     return () => { activo = false; };
   }, [tiendaId]);
 
@@ -1800,7 +1809,7 @@ export default function MiTienda() {
         es_principal: false
       });
       setMostrarExitoCuenta(true);
-      cargarCuentasBancarias();
+      await cargarCuentasBancarias();
       
       // Cerrar el modal de éxito automáticamente después de 3 segundos
       setTimeout(() => setMostrarExitoCuenta(false), 3000);
@@ -1817,7 +1826,7 @@ export default function MiTienda() {
       
       await api.put(`/api/v1/bookypago-finanzas/cuentas-bancarias/${userId}/principal/${idCuenta}`);
       alert('Cuenta principal actualizada');
-      cargarCuentasBancarias();
+      await cargarCuentasBancarias();
     } catch (error) {
       alert('Error actualizando cuenta principal: ' + (error.response?.data?.detail || error.message));
     }
@@ -1831,7 +1840,7 @@ export default function MiTienda() {
       
       await api.delete(`/api/v1/bookypago-finanzas/cuentas-bancarias/${userId}/${idCuenta}`);
       setCuentaAEliminar(null);
-      cargarCuentasBancarias();
+      await cargarCuentasBancarias();
     } catch (error) {
       alert('Error eliminando cuenta bancaria: ' + (error.response?.data?.detail || error.message));
     }
@@ -1848,14 +1857,19 @@ export default function MiTienda() {
   };
 
   useEffect(() => {
-    cargarCuentasBancarias();
+    void cargarCuentasBancarias();
   }, []);
 
   useEffect(() => {
     if (activeSide === 'Perfil' && activeProfileTab === 'cobro') {
       setLoadingNomina(true);
-      Promise.all([cargarPagosPendientes(), cargarHistorialPagos()])
-        .finally(() => setLoadingNomina(false));
+      void Promise.all([cargarPagosPendientes(), cargarHistorialPagos()]).then(
+        () => setLoadingNomina(false),
+        (error) => {
+          console.error("Error cargando la información de cobros:", error);
+          setLoadingNomina(false);
+        }
+      );
     }
   }, [activeSide, activeProfileTab]);
 
@@ -2064,7 +2078,7 @@ export default function MiTienda() {
 
   useEffect(() => {
     if (activeSide === "Notificaciones") {
-      cargarNotificaciones(false);
+      void cargarNotificaciones(false);
     }
   }, [activeSide, cargarNotificaciones]);
 
@@ -2377,7 +2391,7 @@ export default function MiTienda() {
       {/* ── 4 Tarjetas KPI Unificadas ── */}
       <div className="seller-kpis-grid">
         {/* KPI 1: Ingresos / Ventas */}
-        <div className="seller-kpi-card" onClick={() => cambiarSeccion("Ventas")}>
+        <button type="button" className="seller-kpi-card" onClick={() => cambiarSeccion("Ventas")}>
           <div className="kpi-header">
             <span className="kpi-label">Ventas este Mes</span>
             <div className="kpi-icon-pill kpi-icon-vinotinto">
@@ -2393,10 +2407,10 @@ export default function MiTienda() {
             </span>
             <span className="kpi-arrow-link">Ver ventas →</span>
           </div>
-        </div>
+        </button>
 
         {/* KPI 2: Pedidos / Órdenes */}
-        <div className="seller-kpi-card" onClick={() => cambiarSeccion("Pedidos")}>
+        <button type="button" className="seller-kpi-card" onClick={() => cambiarSeccion("Pedidos")}>
           <div className="kpi-header">
             <span className="kpi-label">Órdenes este Mes</span>
             <div className="kpi-icon-pill kpi-icon-amber">
@@ -2413,10 +2427,10 @@ export default function MiTienda() {
             </span>
             <span className="kpi-arrow-link">Ver pedidos →</span>
           </div>
-        </div>
+        </button>
 
         {/* KPI 3: Catálogo Activo */}
-        <div className="seller-kpi-card" onClick={() => cambiarSeccion("Mis Libros")}>
+        <button type="button" className="seller-kpi-card" onClick={() => cambiarSeccion("Mis Libros")}>
           <div className="kpi-header">
             <span className="kpi-label">Libros en Catálogo</span>
             <div className="kpi-icon-pill kpi-icon-blue">
@@ -2433,13 +2447,13 @@ export default function MiTienda() {
             </span>
             <span className="kpi-arrow-link">Gestionar →</span>
           </div>
-        </div>
+        </button>
 
         {/* KPI 4: Estado del Inventario */}
-        <div className="seller-kpi-card" onClick={() => {
+        <button type="button" className="seller-kpi-card" onClick={() => {
           const el = document.getElementById("inventory-health-section");
           if (el) el.scrollIntoView({ behavior: "smooth" });
-        }} role="button" tabIndex={0} onKeyDown={e => e.key === 'Enter' && document.getElementById("inventory-health-section")?.scrollIntoView({ behavior: "smooth" })}>
+        }}>
           <div className="kpi-header">
             <span className="kpi-label">Salud de Inventario</span>
             <div className={`kpi-icon-pill ${alertasStock.length > 0 ? "kpi-icon-red" : "kpi-icon-green"}`}>
@@ -2459,7 +2473,7 @@ export default function MiTienda() {
             </span>
             <span className="kpi-arrow-link">Revisar ↓</span>
           </div>
-        </div>
+        </button>
       </div>
 
       {/* ── Bento Grid: Contenido Principal y Lateral ── */}
@@ -3306,7 +3320,8 @@ export default function MiTienda() {
             {notificaciones && notificaciones.length > 0 ? (
               <div className="recent-activity-list">
                 {notificaciones.slice(0, 4).map((notif) => (
-                  <div 
+                  <button
+                    type="button"
                     key={notif.id_notificacion} 
                     className={`activity-item-card ${!notif.leida ? "activity-unread" : ""}`}
                     onClick={() => handleClickNotificacion(notif)}
@@ -3319,7 +3334,7 @@ export default function MiTienda() {
                       <p className="activity-desc">{notif.descripcion || notif.cuerpo}</p>
                       <span className="activity-time">{new Date(notif.fecha_creacion).toLocaleDateString("es-CO", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</span>
                     </div>
-                  </div>
+                  </button>
                 ))}
               </div>
             ) : (
@@ -4073,7 +4088,7 @@ export default function MiTienda() {
                 <div><label htmlFor="perfil-direccion" style={lbl}>Direccion</label><input id="perfil-direccion" style={inp} value={perfilAddress} onChange={e => setPerfilAddress(e.target.value)} placeholder="Direccion" /></div>
                 <div style={{ marginTop: '14px' }}>
                   <label htmlFor="perfil-correo" style={lbl}>Correo electronico</label>
-                  <input id="perfil-correo" style={{ ...inp, background: darkMode ? '#2a2a2a' : '#f0f0f0', color: darkMode ? '#888' : '#888', cursor: 'not-allowed' }} value={perfilEmail} readOnly placeholder="Cargando..." />
+                  <input id="perfil-correo" style={{ ...inp, background: darkMode ? '#2a2a2a' : '#f0f0f0', color: darkMode ? '#aaa' : '#888', cursor: 'not-allowed' }} value={perfilEmail} readOnly placeholder="Cargando..." />
                 </div>
               </div>
 
@@ -4393,7 +4408,7 @@ export default function MiTienda() {
                           min="1"
                           max="30"
                           value={configForm.tiempo_despacho_dias}
-                          onChange={e => setConfigForm({ ...configForm, tiempo_despacho_dias: parseInt(e.target.value) || 2 })}
+                          onChange={e => setConfigForm({ ...configForm, tiempo_despacho_dias: Number.parseInt(e.target.value) || 2 })}
                           onFocus={e => e.target.style.borderColor = t.vino}
                           onBlur={e => e.target.style.borderColor = t.inputBorder}
                         />
@@ -4448,11 +4463,11 @@ export default function MiTienda() {
                           value={configForm.tarifa_envio === undefined || configForm.tarifa_envio === null ? '' : configForm.tarifa_envio}
                           onChange={e => {
                             const raw = e.target.value;
-                            setConfigForm({ ...configForm, tarifa_envio: raw === '' ? 0 : parseFloat(raw) });
+                            setConfigForm({ ...configForm, tarifa_envio: raw === '' ? 0 : Number.parseFloat(raw) });
                           }}
                           onBlur={e => {
-                            const val = parseFloat(e.target.value);
-                            setConfigForm(prev => ({ ...prev, tarifa_envio: isNaN(val) ? 0 : Math.max(0, val) }));
+                            const val = Number.parseFloat(e.target.value);
+                            setConfigForm(prev => ({ ...prev, tarifa_envio: Number.isNaN(val) ? 0 : Math.max(0, val) }));
                           }}
                           onFocus={e => e.target.style.borderColor = t.vino}
                           placeholder="0"
@@ -5422,11 +5437,12 @@ export default function MiTienda() {
           )}
         </div>
         {detallePedido && (
-          <div className="modal-overlay open" onClick={() => setDetallePedido(null)}>
-            <div className="modal-box ventas-modal" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-overlay open" role="presentation">
+            <button type="button" className="seller-modal-backdrop" aria-label="Cerrar detalle de la orden" onClick={() => setDetallePedido(null)} />
+            <div className="modal-box ventas-modal seller-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="modal-detalle-pedido-titulo">
               <div className="ventas-modal__header">
                 <div>
-                  <h2 className="ventas-modal__title">Detalle de la orden #{detallePedido.id_orden}</h2>
+                  <h2 id="modal-detalle-pedido-titulo" className="ventas-modal__title">Detalle de la orden #{detallePedido.id_orden}</h2>
                   <p className="ventas-modal__sub">
                     {detallePedido.cliente}
                     {detallePedido.fecha ? ` · ${new Date(detallePedido.fecha).toLocaleDateString("es-CO")}` : " · Reciente"}
@@ -5493,8 +5509,9 @@ export default function MiTienda() {
           </div>
         )}
         {fotoCliente && (
-          <div className="modal-overlay open pedidos-foto-cerrar" onClick={() => setFotoCliente(null)}>
-            <div className="pedidos-foto-card" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-overlay open pedidos-foto-cerrar" role="presentation">
+            <button type="button" className="seller-modal-backdrop" aria-label="Cerrar foto de perfil" onClick={() => setFotoCliente(null)} />
+            <div className="pedidos-foto-card seller-modal-dialog" role="dialog" aria-modal="true" aria-label="Foto de perfil del cliente">
               <button type="button" onClick={() => setFotoCliente(null)} aria-label="Cerrar foto de perfil" className="ventas-modal__close">×</button>
               <img className="pedidos-foto-card__img" src={fotoCliente.url} alt="Foto de perfil" />
               {fotoCliente.nombre && <span className="pedidos-foto-card__nombre">{fotoCliente.nombre}</span>}
@@ -5612,11 +5629,14 @@ export default function MiTienda() {
               alignItems: "center",
               padding: "20px"
             }}
-            onClick={() => !actualizandoRetiro && setModalConfirmarEntrega(null)}
             role="presentation"
           >
+            <button type="button" className="seller-modal-backdrop" aria-label="Cerrar confirmación de entrega" onClick={() => !actualizandoRetiro && setModalConfirmarEntrega(null)} disabled={Boolean(actualizandoRetiro)} />
             <div
-              className="modal-box"
+              className="modal-box seller-modal-dialog"
+              role="dialog"
+              aria-modal="true"
+              aria-label="Confirmar entrega en tienda"
               style={{
                 background: "#FFFFFF",
                 maxWidth: "480px",
@@ -5626,7 +5646,6 @@ export default function MiTienda() {
                 boxShadow: "0 25px 60px rgba(0,0,0,0.25)",
                 border: "1px solid #E2E8F0"
               }}
-              onClick={(e) => e.stopPropagation()}
             >
               {modalConfirmarEntrega.exito ? (
                 <div style={{ textAlign: "center", padding: "20px 10px" }}>
@@ -5820,11 +5839,14 @@ export default function MiTienda() {
               alignItems: "center",
               padding: "20px"
             }}
-            onClick={() => !actualizandoRetiro && setModalHabilitarPago(null)}
             role="presentation"
           >
+            <button type="button" className="seller-modal-backdrop" aria-label="Cerrar configuración de pagos" onClick={() => !actualizandoRetiro && setModalHabilitarPago(null)} disabled={Boolean(actualizandoRetiro)} />
             <div
-              className="modal-box"
+              className="modal-box seller-modal-dialog"
+              role="dialog"
+              aria-modal="true"
+              aria-label="Habilitar pagos en tienda"
               style={{
                 background: "#FFFFFF",
                 maxWidth: "460px",
@@ -5834,7 +5856,6 @@ export default function MiTienda() {
                 boxShadow: "0 25px 60px rgba(0,0,0,0.25)",
                 border: "1px solid #E2E8F0"
               }}
-              onClick={(e) => e.stopPropagation()}
             >
               {modalHabilitarPago.exito ? (
                 <div style={{ textAlign: "center", padding: "16px 10px" }}>
@@ -6198,7 +6219,7 @@ export default function MiTienda() {
     const formatearFecha = (f) => {
       if (!f) return { corta: "Reciente", detalle: "" };
       const d = new Date(f);
-      if (isNaN(d.getTime())) return { corta: "Reciente", detalle: "" };
+      if (Number.isNaN(d.getTime())) return { corta: "Reciente", detalle: "" };
       const hoy = new Date();
       const inicioHoy = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
       const inicioDia = new Date(d.getFullYear(), d.getMonth(), d.getDate());
@@ -6514,15 +6535,19 @@ export default function MiTienda() {
       {/* Modal detalle de orden */}
       {detalleVenta && (
         <div
-          onClick={() => setDetalleVenta(null)}
+          role="presentation"
           style={{
             position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)",
             display: "flex", alignItems: "center", justifyContent: "center",
             zIndex: 1000, backdropFilter: "blur(4px)", padding: "20px"
           }}
         >
+          <button type="button" className="seller-modal-backdrop" aria-label="Cerrar detalle de venta" onClick={() => setDetalleVenta(null)} />
           <div
-            onClick={(event) => event.stopPropagation()}
+            className="seller-modal-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Detalle de la venta"
             style={{
               background: "white", borderRadius: "16px",
               width: "min(600px, 100%)", maxHeight: "90vh",
@@ -6746,29 +6771,31 @@ export default function MiTienda() {
               notifPag.map((notif) => (
                 <div key={notif.id_notificacion}
                   className={`notif-item ${notif.leida ? "" : "no-leida"}`}
-                  onClick={() => handleClickNotificacion(notif)}>
-                  <div className="notif-icono"><span>{getIconoTipo(notif.tipo)}</span></div>
-                  <div className="notif-contenido">
-                    <h3>{notif.titulo}</h3>
-                    <p>{notif.descripcion || notif.cuerpo}</p>
-                    <small>
-                      {notif.fecha_creacion
-                        ? new Date(notif.fecha_creacion).toLocaleString("es-CO", {
-                            year: "numeric", month: "short", day: "numeric",
-                            hour: "2-digit", minute: "2-digit",
-                          })
-                        : "Ahora"}
-                    </small>
-                  </div>
+                >
+                  <button type="button" className="notif-item-open" onClick={() => handleClickNotificacion(notif)}>
+                    <div className="notif-icono"><span>{getIconoTipo(notif.tipo)}</span></div>
+                    <div className="notif-contenido">
+                      <h3>{notif.titulo}</h3>
+                      <p>{notif.descripcion || notif.cuerpo}</p>
+                      <small>
+                        {notif.fecha_creacion
+                          ? new Date(notif.fecha_creacion).toLocaleString("es-CO", {
+                              year: "numeric", month: "short", day: "numeric",
+                              hour: "2-digit", minute: "2-digit",
+                            })
+                          : "Ahora"}
+                      </small>
+                    </div>
+                  </button>
                   <div className="notif-acciones">
                     {!notif.leida && (
                       <button className="btn-marcar"
-                        onClick={(e) => { e.stopPropagation(); handleMarcarLeida(notif.id_notificacion); }}>
+                        onClick={() => { void handleMarcarLeida(notif.id_notificacion); }}>
                         ✓
                       </button>
                     )}
                     <button className="btn-eliminar"
-                      onClick={(e) => { e.stopPropagation(); handleEliminar(notif.id_notificacion); }}>
+                      onClick={() => { void handleEliminar(notif.id_notificacion); }}>
                       ✕
                     </button>
                   </div>
