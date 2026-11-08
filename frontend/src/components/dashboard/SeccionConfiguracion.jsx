@@ -861,11 +861,12 @@ export default function SeccionConfiguracion({ userId }) {
             ) : (
               <form onSubmit={cambiarPassword} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
                 <div>
-                  <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: 600, color: darkMode ? "#e0e0e0" : "#2a2a2a", fontSize: "0.9rem" }}>
+                  <label htmlFor="current-password" style={{ display: "block", marginBottom: "0.5rem", fontWeight: 600, color: darkMode ? "#e0e0e0" : "#2a2a2a", fontSize: "0.9rem" }}>
                     Contraseña Actual
                   </label>
                   <div style={{ position: "relative" }}>
                     <input
+                      id="current-password"
                       type={showCurrentPassword ? "text" : "password"}
                       value={passwordForm.password_actual}
                       onChange={(e) => setPasswordForm({...passwordForm, password_actual: e.target.value})}
@@ -888,11 +889,12 @@ export default function SeccionConfiguracion({ userId }) {
                   </div>
                 </div>
                 <div>
-                  <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: 600, color: darkMode ? "#e0e0e0" : "#2a2a2a", fontSize: "0.9rem" }}>
+                  <label htmlFor="new-password" style={{ display: "block", marginBottom: "0.5rem", fontWeight: 600, color: darkMode ? "#e0e0e0" : "#2a2a2a", fontSize: "0.9rem" }}>
                     Nueva Contraseña
                   </label>
                   <div style={{ position: "relative" }}>
                     <input
+                      id="new-password"
                       type={showNewPassword ? "text" : "password"}
                       value={passwordForm.password_nueva}
                       onChange={(e) => setPasswordForm({...passwordForm, password_nueva: e.target.value})}
@@ -918,11 +920,12 @@ export default function SeccionConfiguracion({ userId }) {
                   </p>
                 </div>
                 <div>
-                  <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: 600, color: darkMode ? "#e0e0e0" : "#2a2a2a", fontSize: "0.9rem" }}>
+                  <label htmlFor="confirm-new-password" style={{ display: "block", marginBottom: "0.5rem", fontWeight: 600, color: darkMode ? "#e0e0e0" : "#2a2a2a", fontSize: "0.9rem" }}>
                     Confirmar Nueva Contraseña
                   </label>
                   <div style={{ position: "relative" }}>
                     <input
+                      id="confirm-new-password"
                       type={showConfirmPassword ? "text" : "password"}
                       value={passwordForm.password_confirmar}
                       onChange={(e) => setPasswordForm({...passwordForm, password_confirmar: e.target.value})}
@@ -990,16 +993,17 @@ export default function SeccionConfiguracion({ userId }) {
               <h4 style={{ margin: "0 0 0.3rem 0", color: darkMode ? "#ececec" : "#2a2a2a", fontSize: "1rem" }}>Modo Oscuro</h4>
               <p style={{ margin: 0, color: darkMode ? "#c8c8c8" : "#666", fontSize: "0.85rem" }}>Cambia el tema de la aplicacion a modo oscuro</p>
             </div>
-            <label style={{ position: "relative", display: "inline-block", width: "50px", height: "26px", flexShrink: 0 }}>
+            <div style={{ position: "relative", display: "inline-block", width: "50px", height: "26px", flexShrink: 0 }}>
               <input 
                 type="checkbox" 
+                aria-label="Activar modo oscuro"
                 checked={darkMode}
                 onChange={toggleDarkMode}
                 style={{ opacity: 0, width: 0, height: 0 }} 
               />
               <span style={{ position: "absolute", cursor: "pointer", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: darkMode ? "var(--vinotinto)" : "#ccc", transition: "0.3s", borderRadius: "26px" }}></span>
               <span style={{ position: "absolute", content: "", height: "20px", width: "20px", left: "3px", bottom: "3px", backgroundColor: "white", transition: "0.3s", borderRadius: "50%", transform: darkMode ? "translateX(24px)" : "translateX(0)" }}></span>
-            </label>
+            </div>
           </div>
         </div>
       </div>
@@ -1008,15 +1012,15 @@ export default function SeccionConfiguracion({ userId }) {
         <h3 style={{ margin: "0 0 1rem 0", color: darkMode ? "#e05a7a" : "var(--vinotinto)", fontSize: "1.2rem" }}>Información de la Cuenta</h3>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "1rem" }}>
           <div style={{ padding: "1rem", background: darkMode ? "#303030" : "#faf8f6", borderRadius: "8px", border: darkMode ? "1px solid #3a3a3a" : undefined }}>
-            <label style={{ fontWeight: 700, color: darkMode ? "#e05a7a" : "var(--vinotinto)", display: "block", marginBottom: "0.5rem", fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "1px" }}>Rol</label>
+            <p style={{ margin: "0 0 0.5rem", fontWeight: 700, color: darkMode ? "#e05a7a" : "var(--vinotinto)", display: "block", fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "1px" }}>Rol</p>
             <p style={{ margin: 0, color: darkMode ? "#ececec" : "#2a2a2a", fontSize: "1rem", fontWeight: 500 }}>Usuario</p>
           </div>
           <div style={{ padding: "1rem", background: darkMode ? "#303030" : "#faf8f6", borderRadius: "8px", border: darkMode ? "1px solid #3a3a3a" : undefined }}>
-            <label style={{ fontWeight: 700, color: darkMode ? "#e05a7a" : "var(--vinotinto)", display: "block", marginBottom: "0.5rem", fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "1px" }}>Estado</label>
+            <p style={{ margin: "0 0 0.5rem", fontWeight: 700, color: darkMode ? "#e05a7a" : "var(--vinotinto)", display: "block", fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "1px" }}>Estado</p>
             <p style={{ margin: 0, color: darkMode ? "#ececec" : "#2a2a2a", fontSize: "1rem", fontWeight: 500 }}>Activo</p>
           </div>
           <div style={{ padding: "1rem", background: darkMode ? "#303030" : "#faf8f6", borderRadius: "8px", border: darkMode ? "1px solid #3a3a3a" : undefined }}>
-            <label style={{ fontWeight: 700, color: darkMode ? "#e05a7a" : "var(--vinotinto)", display: "block", marginBottom: "0.5rem", fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "1px" }}>ID de Usuario</label>
+            <p style={{ margin: "0 0 0.5rem", fontWeight: 700, color: darkMode ? "#e05a7a" : "var(--vinotinto)", display: "block", fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "1px" }}>ID de Usuario</p>
             <p style={{ margin: 0, color: darkMode ? "#ececec" : "#2a2a2a", fontSize: "1rem", fontWeight: 500 }}>#{userId || 'N/A'}</p>
           </div>
         </div>
