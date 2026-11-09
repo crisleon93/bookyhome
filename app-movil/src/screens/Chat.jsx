@@ -24,7 +24,7 @@ import * as FileSystem from 'expo-file-system/legacy';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
 import * as Clipboard from 'expo-clipboard';
-import Svg, { Path, Circle, Line, Rect, Polygon, SvgUri } from 'react-native-svg';
+import Svg, { Path, Circle, Rect, Polygon, SvgUri } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
 import { AuthContext } from '../context/AuthContext';
 import { useAppTheme, useThemedStyles } from '../context/ThemeContext';
@@ -74,6 +74,39 @@ const formatFechaSeparador = (fechaStr) => {
   if (esMismoDia(date, hoy)) return 'Hoy';
   if (esMismoDia(date, ayer)) return 'Ayer';
   return date.toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' });
+};
+
+const buildEmojiSections = (categories, query) => categories
+  .map((category) => {
+    const emojis = category.emojis.filter((emoji) => !query || emoji.includes(query));
+    const rows = [];
+    for (let index = 0; index < emojis.length; index += 8) rows.push(emojis.slice(index, index + 8));
+    return { id: category.id, title: category.name, data: rows };
+  })
+  .filter((section) => section.data.length > 0);
+
+const getSearchMatch = (messages, term) => {
+  if (!term) return null;
+  const index = messages.findIndex((message) => String(message.mensaje || '').toLowerCase().includes(term));
+  return index < 0 ? null : { index, id: messages[index].id_mensaje };
+};
+
+const encodeChatPayload = (type, payload) => `[${type}]${JSON.stringify(payload)}`;
+const createDataUri = (mime, base64) => `data:${mime};base64,${base64}`;
+const formatRecordingDuration = (seconds) => `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
+const getMediaSearchPlaceholder = (tab) => {
+  if (tab === 'emojis') return 'Buscar emoji';
+  if (tab === 'gifs') return 'Buscar GIF...';
+  return 'Buscar sticker...';
+};
+
+const parseSpecialMessage = (message) => {
+  try {
+    return JSON.parse(message.replace(/^\[(AUDIO|FILE)\]/, ''));
+  } catch (error) {
+    console.warn('No se pudo interpretar el adjunto del mensaje:', error);
+    return null;
+  }
 };
 
 const IconPhone = ({ size = 20, color = PRIMARY_DARK }) => (
@@ -152,7 +185,7 @@ const EmojiGraphic = ({ emoji, size = 26 }) => {
 
   if (imageError) return <Text style={{ fontSize: size }}>{emoji}</Text>;
   if (isFlag) {
-    const countryCode = codePoints.map((codePoint) => String.fromCharCode(codePoint - 0x1F1E6 + 65)).join('').toLowerCase();
+    const countryCode = codePoints.map((codePoint) => String.fromCodePoint(codePoint - 0x1F1E6 + 65)).join('').toLowerCase();
     return <Image source={{ uri: `https://flagcdn.com/w40/${countryCode}.png` }} style={{ width: Math.round(size * 1.15), height: Math.round(size * 0.8), borderRadius: 2 }} onError={() => setImageError(true)} />;
   }
 
@@ -184,6 +217,171 @@ const IconReaction = ({ size = 18, color = PRIMARY_DARK }) => (
     <Circle cx="12" cy="12" r="9" />
     <Path d="M8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01" />
   </Svg>
+);
+
+const MessageContent = ({ isAudio, isFile, details, isOwn, message, isPlaying, styles }) => {
+  const textStyle = isOwn ? styles.textoPropio : styles.textoAjeno;
+
+  if (isAudio) {
+    return (
+      <View style={styles.audioMensaje}>
+        <View style={styles.audioPlayButton}>
+          {isPlaying ? <Text style={styles.audioPauseText}>||</Text> : <IconPlay size={16} />}
+        </View>
+        <View style={styles.audioWaveFake}>
+          {Array.from({ length: 18 }).map((_, index) => (
+            <View key={index} style={[styles.audioBar, index < 8 && styles.audioBarActive, { height: 5 + ((index * 7) % 14) }]} />
+          ))}
+        </View>
+        <Text style={textStyle}>{details?.duracion || '0:01'}</Text>
+      </View>
+    );
+  }
+
+  if (isFile) {
+    const isImage = details?.tipo?.startsWith('image/') && details?.url;
+    return (
+      <View style={styles.archivoMensaje}>
+        {isImage ? <Image source={{ uri: details.url }} style={styles.imagenAdjunta} /> : null}
+        <Text style={textStyle}>📎 {details?.nombre || 'Archivo adjunto'}</Text>
+      </View>
+    );
+  }
+
+  return <Text style={textStyle}>{message}</Text>;
+};
+
+const MediaPickerModal = ({
+  visible,
+  onClose,
+  tab,
+  setTab,
+  selectedCategory,
+  setSelectedCategory,
+  query,
+  setQuery,
+  sections,
+  sectionListRef,
+  setMessageText,
+  sendMedia,
+  styles,
+}) => (
+  <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+    <TouchableOpacity style={styles.emojiBackdrop} activeOpacity={1} onPress={onClose}>
+      <View style={styles.emojiPicker}>
+        {tab === 'emojis' && (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.emojiCategoryTabs}>
+            {EMOJI_CATEGORIES.map((category) => (
+              <TouchableOpacity
+                key={category.id}
+                style={[styles.emojiCategoryTab, selectedCategory === category.id && styles.emojiCategoryTabActive]}
+                onPress={() => {
+                  setTab('emojis');
+                  setSelectedCategory(category.id);
+                  setQuery('');
+                  requestAnimationFrame(() => sectionListRef.current?.scrollToLocation({
+                    sectionIndex: EMOJI_CATEGORIES.findIndex((item) => item.id === category.id),
+                    itemIndex: 0,
+                    animated: true,
+                    viewPosition: 0,
+                  }));
+                }}
+                accessibilityLabel={category.name}
+              >
+                <EmojiGraphic emoji={category.icon} size={20} />
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        )}
+        <View style={styles.emojiSearchBox}>
+          <IconSearchAction size={16} color="#9BA6AE" />
+          <TextInput
+            value={query}
+            onChangeText={setQuery}
+            placeholder={getMediaSearchPlaceholder(tab)}
+            placeholderTextColor="#9BA6AE"
+            style={styles.emojiSearchInput}
+          />
+        </View>
+        {tab === 'emojis' && (
+          <SectionList
+            ref={sectionListRef}
+            sections={sections}
+            keyExtractor={(row) => row.join('-')}
+            renderSectionHeader={({ section }) => <Text style={styles.emojiSectionTitle}>{section.title}</Text>}
+            renderItem={({ item: row }) => (
+              <View style={styles.emojiGridRow}>
+                {row.map((emoji, index) => (
+                  <TouchableOpacity
+                    key={`${emoji}-${index}`}
+                    style={styles.emojiButton}
+                    onPress={() => setMessageText((previous) => `${previous}${emoji}`)}
+                  >
+                    <EmojiGraphic emoji={emoji} size={26} />
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+            contentContainerStyle={styles.emojiGrid}
+            stickySectionHeadersEnabled={false}
+          />
+        )}
+        {tab === 'gifs' && (
+          <FlatList
+            data={GIF_OPTIONS.filter((item) => !query.trim() || item.title.toLowerCase().includes(query.toLowerCase()))}
+            keyExtractor={(item) => item.id}
+            numColumns={2}
+            contentContainerStyle={styles.mediaGrid}
+            renderItem={({ item }) => (
+              <TouchableOpacity style={styles.gifCard} onPress={() => sendMedia(item)}>
+                <Image source={{ uri: item.url }} style={styles.gifImage} />
+                <Text style={styles.mediaLabel}>{item.title}</Text>
+              </TouchableOpacity>
+            )}
+          />
+        )}
+        {tab === 'stickers' && (
+          <FlatList
+            data={STICKER_OPTIONS.filter((item) => !query.trim() || item.label.toLowerCase().includes(query.toLowerCase()))}
+            keyExtractor={(item) => item.id}
+            numColumns={4}
+            contentContainerStyle={styles.mediaGrid}
+            renderItem={({ item }) => (
+              <TouchableOpacity style={styles.stickerCard} onPress={() => sendMedia(item, true)}>
+                <EmojiGraphic emoji={item.emoji} size={46} />
+                <Text style={styles.mediaLabel}>{item.label}</Text>
+              </TouchableOpacity>
+            )}
+          />
+        )}
+        <View style={styles.emojiPickerFooter}>
+          <TouchableOpacity
+            style={[styles.footerTab, tab === 'emojis' && styles.footerTabActive]}
+            onPress={() => setTab('emojis')}
+            accessibilityLabel="Emojis"
+          >
+            <IconSmile size={18} color={tab === 'emojis' ? PRIMARY : '#8696A0'} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.footerTab, tab === 'gifs' && styles.footerTabActive]}
+            onPress={() => setTab('gifs')}
+          >
+            <Text style={styles.footerTabText}>GIF</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.footerTab, tab === 'stickers' && styles.footerTabActive]}
+            onPress={() => setTab('stickers')}
+            accessibilityLabel="Stickers"
+          >
+            <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={tab === 'stickers' ? PRIMARY : '#8696A0'} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <Path d="M5 3h9l5 5v12H5z" />
+              <Path d="M14 3v5h5" />
+            </Svg>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </TouchableOpacity>
+  </Modal>
 );
 
 export default function Chat() {
@@ -226,26 +424,17 @@ export default function Chat() {
   const recordingRef = useRef(null);
   const recordingTimerRef = useRef(null);
   const soundRef = useRef(null);
-  const emojiSections = EMOJI_CATEGORIES.map((categoria) => {
-    const emojis = categoria.emojis.filter((emoji) => !busquedaEmoji.trim() || emoji.includes(busquedaEmoji.trim()));
-    const filas = [];
-    for (let index = 0; index < emojis.length; index += 8) filas.push(emojis.slice(index, index + 8));
-    return { id: categoria.id, title: categoria.name, data: filas };
-  }).filter((seccion) => seccion.data.length > 0);
+  const emojiSections = buildEmojiSections(EMOJI_CATEGORIES, busquedaEmoji.trim());
 
   useEffect(() => {
     const termino = busquedaMensajes.trim().toLowerCase();
-    if (!termino) {
+    const coincidencia = getSearchMatch(mensajes, termino);
+    if (!coincidencia) {
       setMensajeEncontrado(null);
       return;
     }
-    const indice = mensajes.findIndex((mensaje) => String(mensaje.mensaje || '').toLowerCase().includes(termino));
-    if (indice < 0) {
-      setMensajeEncontrado(null);
-      return;
-    }
-    setMensajeEncontrado(mensajes[indice].id_mensaje);
-    requestAnimationFrame(() => flatListRef.current?.scrollToIndex({ index: indice, animated: true, viewPosition: 0.45 }));
+    setMensajeEncontrado(coincidencia.id);
+    requestAnimationFrame(() => flatListRef.current?.scrollToIndex({ index: coincidencia.index, animated: true, viewPosition: 0.45 }));
   }, [busquedaMensajes, mensajes]);
 
   const nombreContacto = user?.rol === 'vendedor'
@@ -375,7 +564,8 @@ export default function Chat() {
       setSegundosGrabacion(0);
       setGrabandoAudio(true);
       recordingTimerRef.current = setInterval(() => setSegundosGrabacion((prev) => prev + 1), 1000);
-    } catch (e) {
+    } catch (error) {
+      console.error('Error iniciando grabación de audio:', error);
       Alert.alert('No se pudo grabar', 'Verifica el permiso del micrófono e inténtalo de nuevo.');
     }
   };
@@ -393,8 +583,13 @@ export default function Chat() {
       const uri = grabacion.getURI();
       if (!enviar || !uri) return;
       const base64 = await FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.Base64 });
-      await enviarPayloadREST(`[AUDIO]${JSON.stringify({ duracion: `${Math.floor(duracion / 60)}:${String(duracion % 60).padStart(2, '0')}`, seg: duracion, url: `data:audio/mp4;base64,${base64}` })}`);
-    } catch (e) {
+      await enviarPayloadREST(encodeChatPayload('AUDIO', {
+        duracion: formatRecordingDuration(duracion),
+        seg: duracion,
+        url: createDataUri('audio/mp4', base64),
+      }));
+    } catch (error) {
+      console.error('Error deteniendo o enviando grabación de audio:', error);
       Alert.alert('No se pudo enviar el audio', 'Inténtalo de nuevo.');
     }
   };
@@ -414,7 +609,11 @@ export default function Chat() {
     const archivo = resultado.assets[0];
     const mime = archivo.mimeType || 'image/jpeg';
     const base64 = archivo.base64 || await FileSystem.readAsStringAsync(archivo.uri, { encoding: FileSystem.EncodingType.Base64 });
-    await enviarPayloadREST(`[FILE]${JSON.stringify({ nombre: archivo.fileName || 'imagen.jpg', tipo: mime, url: `data:${mime};base64,${base64}` })}`);
+    await enviarPayloadREST(encodeChatPayload('FILE', {
+      nombre: archivo.fileName || 'imagen.jpg',
+      tipo: mime,
+      url: createDataUri(mime, base64),
+    }));
   };
 
   const adjuntarDocumento = async () => {
@@ -422,7 +621,12 @@ export default function Chat() {
     if (resultado.canceled || !resultado.assets?.[0]) return;
     const archivo = resultado.assets[0];
     const base64 = await FileSystem.readAsStringAsync(archivo.uri, { encoding: FileSystem.EncodingType.Base64 });
-    await enviarPayloadREST(`[FILE]${JSON.stringify({ nombre: archivo.name, tipo: archivo.mimeType || 'application/octet-stream', url: `data:${archivo.mimeType || 'application/octet-stream'};base64,${base64}` })}`);
+    const mime = archivo.mimeType || 'application/octet-stream';
+    await enviarPayloadREST(encodeChatPayload('FILE', {
+      nombre: archivo.name,
+      tipo: mime,
+      url: createDataUri(mime, base64),
+    }));
     setMostrarAdjuntos(false);
   };
 
@@ -432,7 +636,10 @@ export default function Chat() {
     const archivo = resultado.assets[0];
     const mime = archivo.mimeType || 'audio/mpeg';
     const base64 = await FileSystem.readAsStringAsync(archivo.uri, { encoding: FileSystem.EncodingType.Base64 });
-    await enviarPayloadREST(`[AUDIO]${JSON.stringify({ duracion: 'Audio adjunto', url: `data:${mime};base64,${base64}` })}`);
+    await enviarPayloadREST(encodeChatPayload('AUDIO', {
+      duracion: 'Audio adjunto',
+      url: createDataUri(mime, base64),
+    }));
     setMostrarAdjuntos(false);
   };
 
@@ -452,7 +659,11 @@ export default function Chat() {
     const archivo = resultado.assets[0];
     const mime = archivo.mimeType || 'image/jpeg';
     const base64 = archivo.base64 || await FileSystem.readAsStringAsync(archivo.uri, { encoding: FileSystem.EncodingType.Base64 });
-    await enviarPayloadREST(`[FILE]${JSON.stringify({ nombre: 'foto.jpg', tipo: mime, url: `data:${mime};base64,${base64}` })}`);
+    await enviarPayloadREST(encodeChatPayload('FILE', {
+      nombre: 'foto.jpg',
+      tipo: mime,
+      url: createDataUri(mime, base64),
+    }));
     setMostrarAdjuntos(false);
   };
 
@@ -465,11 +676,17 @@ export default function Chat() {
   const elegirReaccion = async (idMensaje, emoji) => {
     setReacciones((prev) => {
       const actuales = prev[idMensaje] || [];
-      const siguiente = actuales.includes(emoji) ? actuales.filter((item) => item !== emoji) : [...actuales, emoji];
-      const nuevoEstado = { ...prev, [idMensaje]: siguiente };
-      AsyncStorage.setItem(`chat_reacciones_${id_sala}`, JSON.stringify(nuevoEstado));
-      return nuevoEstado;
-    });
+        let siguiente;
+        if (actuales.includes(emoji)) {
+          siguiente = actuales.filter((item) => item !== emoji);
+        } else {
+          siguiente = [...actuales, emoji];
+        }
+        const nuevoEstado = { ...prev, [idMensaje]: siguiente };
+        AsyncStorage.setItem(`chat_reacciones_${id_sala}`, JSON.stringify(nuevoEstado))
+          .catch((error) => console.error('Error guardando reacciones del chat:', error));
+        return nuevoEstado;
+      });
     setMostrarReacciones(false);
     setMensajeActivo(null);
   };
@@ -500,14 +717,18 @@ export default function Chat() {
       sound.setOnPlaybackStatusUpdate((status) => {
         if (status.didJustFinish) setAudioReproduciendo(null);
       });
-    } catch (e) {
+    } catch (error) {
+      console.error('Error reproduciendo audio del chat:', error);
       Alert.alert('Audio no disponible', 'No se pudo reproducir esta nota de voz.');
     }
   };
 
   const copiarMensaje = async () => {
     if (!mensajeActivo) return;
-    await Clipboard.setStringAsync(mensajeActivo.mensaje?.startsWith('[AUDIO]') ? 'Nota de voz' : mensajeActivo.mensaje || '');
+    const textoCopiado = mensajeActivo.mensaje?.startsWith('[AUDIO]')
+      ? 'Nota de voz'
+      : mensajeActivo.mensaje || '';
+    await Clipboard.setStringAsync(textoCopiado);
     setMensajeActivo(null);
   };
 
@@ -522,15 +743,11 @@ export default function Chat() {
   const renderItem = ({ item, index }) => {
     const esPropio = Number(item.id_remitente) === Number(user?.sub);
     const anterior = mensajes[index - 1];
-    const mostrarFecha =
-      !anterior ||
-      formatFechaSeparador(anterior.enviado_en) !== formatFechaSeparador(item.enviado_en);
+    const mostrarFecha = !anterior
+      || formatFechaSeparador(anterior.enviado_en) !== formatFechaSeparador(item.enviado_en);
     const esAudio = String(item.mensaje || '').startsWith('[AUDIO]');
     const esArchivo = String(item.mensaje || '').startsWith('[FILE]');
-    let datosEspeciales = null;
-    if (esAudio || esArchivo) {
-      try { datosEspeciales = JSON.parse(item.mensaje.replace(/^\[(AUDIO|FILE)\]/, '')); } catch (_) { datosEspeciales = null; }
-    }
+    const datosEspeciales = esAudio || esArchivo ? parseSpecialMessage(item.mensaje) : null;
 
     return (
       <View>
@@ -540,31 +757,27 @@ export default function Chat() {
           </View>
         )}
 
-          <TouchableOpacity
+        <TouchableOpacity
           activeOpacity={0.9}
           onLongPress={() => abrirAccionesMensaje(item)}
-          onPress={() => (esAudio ? reproducirAudio(item) : null)}
-            style={[styles.burbuja, esPropio ? styles.burbujaPropia : styles.burbujaAjena, mensajeEncontrado === item.id_mensaje && styles.burbujaEncontrada, mensajesSeleccionados.includes(item.id_mensaje) && styles.burbujaSeleccionada]}
+          onPress={esAudio ? () => reproducirAudio(item) : undefined}
+          style={[
+            styles.burbuja,
+            esPropio ? styles.burbujaPropia : styles.burbujaAjena,
+            mensajeEncontrado === item.id_mensaje && styles.burbujaEncontrada,
+            mensajesSeleccionados.includes(item.id_mensaje) && styles.burbujaSeleccionada,
+          ]}
         >
           {!esPropio && <Text style={styles.nombreRemitente}>{item.nombre_remitente || nombreContacto}</Text>}
-          {esAudio ? (
-            <View style={styles.audioMensaje}>
-              <View style={styles.audioPlayButton}>
-                {audioReproduciendo === item.id_mensaje ? <Text style={styles.audioPauseText}>||</Text> : <IconPlay size={16} />}
-              </View>
-              <View style={styles.audioWaveFake}>
-                {Array.from({ length: 18 }).map((_, indice) => <View key={indice} style={[styles.audioBar, indice < 8 && styles.audioBarActive, { height: 5 + ((indice * 7) % 14) }]} />)}
-              </View>
-              <Text style={esPropio ? styles.textoPropio : styles.textoAjeno}>{datosEspeciales?.duracion || '0:01'}</Text>
-            </View>
-          ) : esArchivo ? (
-            <View style={styles.archivoMensaje}>
-              {datosEspeciales?.tipo?.startsWith('image/') && datosEspeciales?.url ? <Image source={{ uri: datosEspeciales.url }} style={styles.imagenAdjunta} /> : null}
-              <Text style={esPropio ? styles.textoPropio : styles.textoAjeno}>📎 {datosEspeciales?.nombre || 'Archivo adjunto'}</Text>
-            </View>
-          ) : (
-            <Text style={esPropio ? styles.textoPropio : styles.textoAjeno}>{item.mensaje}</Text>
-          )}
+          <MessageContent
+            isAudio={esAudio}
+            isFile={esArchivo}
+            details={datosEspeciales}
+            isOwn={esPropio}
+            message={item.mensaje}
+            isPlaying={audioReproduciendo === item.id_mensaje}
+            styles={styles}
+          />
           <Text style={[styles.hora, esPropio ? styles.horaPropia : styles.horaAjena]}>{formatHora(item.enviado_en)}</Text>
           {reacciones[item.id_mensaje]?.length > 0 && <Text style={styles.reaccionesBadge}>{reacciones[item.id_mensaje].join(' ')}</Text>}
           <TouchableOpacity style={styles.reactionTrigger} onPress={() => abrirAccionesMensaje(item)} accessibilityLabel="Reaccionar al mensaje">
@@ -596,7 +809,8 @@ export default function Chat() {
       await vaciarSalaChat(id_sala);
       setMensajes([]);
       setMostrarMenuHeader(false);
-    } catch (e) {
+    } catch (error) {
+      console.error('Error vaciando la conversación:', error);
       Alert.alert('No se pudo vaciar', 'Inténtalo de nuevo.');
     }
   };
@@ -612,7 +826,8 @@ export default function Chat() {
             await eliminarSalaChat(id_sala);
             setMostrarMenuHeader(false);
             navigation.goBack();
-          } catch (e) {
+          } catch (error) {
+            console.error('Error eliminando la conversación:', error);
             Alert.alert('No se pudo eliminar', 'Inténtalo de nuevo.');
           }
         },
@@ -630,6 +845,9 @@ export default function Chat() {
     Share.share({
       title: `Chat de ${nombreContacto}`,
       message: contenido,
+    }).catch((error) => {
+      console.error('Error compartiendo la conversación:', error);
+      Alert.alert('No se pudo compartir', 'Inténtalo de nuevo.');
     });
   };
 
@@ -638,6 +856,9 @@ export default function Chat() {
     Share.share({
       title: 'Enlace de videollamada',
       message: `Únete a la videollamada de BookyHome con ${nombreContacto}. Sala: ${id_sala}`,
+    }).catch((error) => {
+      console.error('Error compartiendo el enlace de videollamada:', error);
+      Alert.alert('No se pudo compartir', 'Inténtalo de nuevo.');
     });
   };
 
@@ -855,66 +1076,21 @@ export default function Chat() {
         )}
       </View>
 
-      <Modal visible={mostrarEmojis} transparent animationType="slide" onRequestClose={() => setMostrarEmojis(false)}>
-        <TouchableOpacity style={styles.emojiBackdrop} activeOpacity={1} onPress={() => setMostrarEmojis(false)}>
-          <View style={styles.emojiPicker}>
-            {pestanaMultimedia === 'emojis' && (
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.emojiCategoryTabs}>
-                {EMOJI_CATEGORIES.map((categoria) => (
-                  <TouchableOpacity
-                    key={categoria.id}
-                    style={[styles.emojiCategoryTab, categoriaEmoji === categoria.id && styles.emojiCategoryTabActive]}
-                    onPress={() => {
-                      setPestanaMultimedia('emojis');
-                      setCategoriaEmoji(categoria.id);
-                      setBusquedaEmoji('');
-                      requestAnimationFrame(() => sectionListRef.current?.scrollToLocation({ sectionIndex: EMOJI_CATEGORIES.findIndex((item) => item.id === categoria.id), itemIndex: 0, animated: true, viewPosition: 0 }));
-                    }}
-                    accessibilityLabel={categoria.name}
-                  >
-                    <EmojiGraphic emoji={categoria.icon} size={20} />
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            )}
-            <View style={styles.emojiSearchBox}>
-              <IconSearchAction size={16} color="#9BA6AE" />
-              <TextInput value={busquedaEmoji} onChangeText={setBusquedaEmoji} placeholder={pestanaMultimedia === 'emojis' ? 'Buscar emoji' : pestanaMultimedia === 'gifs' ? 'Buscar GIF...' : 'Buscar sticker...'} placeholderTextColor="#9BA6AE" style={styles.emojiSearchInput} />
-            </View>
-            {pestanaMultimedia === 'emojis' && (
-              <SectionList
-                ref={sectionListRef}
-                sections={emojiSections}
-                keyExtractor={(fila) => fila.join('-')}
-                renderSectionHeader={({ section }) => <Text style={styles.emojiSectionTitle}>{section.title}</Text>}
-                renderItem={({ item: fila }) => (
-                  <View style={styles.emojiGridRow}>
-                    {fila.map((emoji, index) => (
-                      <TouchableOpacity key={`${emoji}-${index}`} style={styles.emojiButton} onPress={() => setTexto((prev) => `${prev}${emoji}`)}>
-                        <EmojiGraphic emoji={emoji} size={26} />
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                )}
-                contentContainerStyle={styles.emojiGrid}
-                stickySectionHeadersEnabled={false}
-              />
-            )}
-            {pestanaMultimedia === 'gifs' && <FlatList data={GIF_OPTIONS.filter((item) => !busquedaEmoji.trim() || item.title.toLowerCase().includes(busquedaEmoji.toLowerCase()))} keyExtractor={(item) => item.id} numColumns={2} contentContainerStyle={styles.mediaGrid} renderItem={({ item }) => <TouchableOpacity style={styles.gifCard} onPress={() => enviarMultimedia(item)}><Image source={{ uri: item.url }} style={styles.gifImage} /><Text style={styles.mediaLabel}>{item.title}</Text></TouchableOpacity>} />}
-            {pestanaMultimedia === 'stickers' && <FlatList data={STICKER_OPTIONS.filter((item) => !busquedaEmoji.trim() || item.label.toLowerCase().includes(busquedaEmoji.toLowerCase()))} keyExtractor={(item) => item.id} numColumns={4} contentContainerStyle={styles.mediaGrid} renderItem={({ item }) => <TouchableOpacity style={styles.stickerCard} onPress={() => enviarMultimedia(item, true)}><EmojiGraphic emoji={item.emoji} size={46} /><Text style={styles.mediaLabel}>{item.label}</Text></TouchableOpacity>} />}
-            <View style={styles.emojiPickerFooter}>
-              <TouchableOpacity style={[styles.footerTab, pestanaMultimedia === 'emojis' && styles.footerTabActive]} onPress={() => setPestanaMultimedia('emojis')} accessibilityLabel="Emojis"><IconSmile size={18} color={pestanaMultimedia === 'emojis' ? PRIMARY : '#8696A0'} /></TouchableOpacity>
-              <TouchableOpacity style={[styles.footerTab, pestanaMultimedia === 'gifs' && styles.footerTabActive]} onPress={() => setPestanaMultimedia('gifs')}><Text style={styles.footerTabText}>GIF</Text></TouchableOpacity>
-              <TouchableOpacity style={[styles.footerTab, pestanaMultimedia === 'stickers' && styles.footerTabActive]} onPress={() => setPestanaMultimedia('stickers')} accessibilityLabel="Stickers">
-                <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={pestanaMultimedia === 'stickers' ? PRIMARY : '#8696A0'} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                  <Path d="M5 3h9l5 5v12H5z" />
-                  <Path d="M14 3v5h5" />
-                </Svg>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </TouchableOpacity>
-      </Modal>
+      <MediaPickerModal
+        visible={mostrarEmojis}
+        onClose={() => setMostrarEmojis(false)}
+        tab={pestanaMultimedia}
+        setTab={setPestanaMultimedia}
+        selectedCategory={categoriaEmoji}
+        setSelectedCategory={setCategoriaEmoji}
+        query={busquedaEmoji}
+        setQuery={setBusquedaEmoji}
+        sections={emojiSections}
+        sectionListRef={sectionListRef}
+        setMessageText={setTexto}
+        sendMedia={enviarMultimedia}
+        styles={styles}
+      />
 
       <Modal visible={mostrarAdjuntos} transparent animationType="fade" onRequestClose={() => setMostrarAdjuntos(false)}>
         <TouchableOpacity style={styles.attachmentBackdrop} activeOpacity={1} onPress={() => setMostrarAdjuntos(false)}>

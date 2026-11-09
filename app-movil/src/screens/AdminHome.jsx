@@ -94,61 +94,71 @@ const SECTION_CONFIG = {
 
 const PER_PAGE = 10;
 
+const getImageUri = (path) => {
+  if (!path) return null;
+  if (/^https?:\/\//i.test(path)) return path;
+  return `${getApiBaseUrl()}/${String(path).replace(/^\/+/, '')}`;
+};
+
 function UserAvatar({ photo, name, color, borderColor, showPreview }) {
   const [imageError, setImageError] = useState(false);
-  const imageUri = photo
-    ? (/^https?:\/\//i.test(photo)
-      ? photo
-      : `${getApiBaseUrl()}/${String(photo).replace(/^\/+/, '')}`)
-    : null;
+  const imageUri = getImageUri(photo);
+  let content;
+
+  if (imageUri && !imageError) {
+    content = (
+      <Image
+        source={{ uri: imageUri }}
+        style={s.userAvatarImage}
+        resizeMode="cover"
+        onError={() => setImageError(true)}
+        accessibilityLabel={`Foto de perfil de ${name || 'usuario'}`}
+      />
+    );
+  } else if (showPreview) {
+    content = (
+      <Svg width="100%" height="100%" viewBox="0 0 88 88" accessibilityLabel="Ilustración de avatar de muestra">
+        <Circle cx="44" cy="44" r="44" fill="#DBEAFE" />
+        <Path d="M17 88c2-19 12-29 27-29s25 10 27 29" fill="#7A1E3A" />
+        <Circle cx="44" cy="35" r="17" fill="#D9A17B" />
+        <Path d="M27 34c0-14 8-22 18-22 11 0 18 8 18 21-4-3-7-8-8-13-6 7-16 11-28 11v3Z" fill="#35251F" />
+        <Path d="M37 39h1m12 0h1" stroke="#35251F" strokeWidth="2.5" strokeLinecap="round" />
+        <Path d="M39 48c3 2 7 2 10 0" fill="none" stroke="#9D5E4A" strokeWidth="2" strokeLinecap="round" />
+      </Svg>
+    );
+  } else {
+    content = <Text style={[s.avatarTxt, { color }]}>{initials(name)}</Text>;
+  }
 
   return (
     <View style={[s.avatar, s.userAvatar, { backgroundColor: WHITE, borderColor }]}>
-      {imageUri && !imageError ? (
-        <Image
-          source={{ uri: imageUri }}
-          style={s.userAvatarImage}
-          resizeMode="cover"
-          onError={() => setImageError(true)}
-          accessibilityLabel={`Foto de perfil de ${name || 'usuario'}`}
-        />
-      ) : showPreview ? (
-        <Svg width="100%" height="100%" viewBox="0 0 88 88" accessibilityLabel="Ilustración de avatar de muestra">
-          <Circle cx="44" cy="44" r="44" fill="#DBEAFE" />
-          <Path d="M17 88c2-19 12-29 27-29s25 10 27 29" fill="#7A1E3A" />
-          <Circle cx="44" cy="35" r="17" fill="#D9A17B" />
-          <Path d="M27 34c0-14 8-22 18-22 11 0 18 8 18 21-4-3-7-8-8-13-6 7-16 11-28 11v3Z" fill="#35251F" />
-          <Path d="M37 39h1m12 0h1" stroke="#35251F" strokeWidth="2.5" strokeLinecap="round" />
-          <Path d="M39 48c3 2 7 2 10 0" fill="none" stroke="#9D5E4A" strokeWidth="2" strokeLinecap="round" />
-        </Svg>
-      ) : (
-        <Text style={[s.avatarTxt, { color }]}>{initials(name)}</Text>
-      )}
+      {content}
     </View>
   );
 }
 
 function BookCover({ image, title }) {
   const [imageError, setImageError] = useState(false);
-  const imageUri = image
-    ? (/^https?:\/\//i.test(image)
-      ? image
-      : `${getApiBaseUrl()}/${String(image).replace(/^\/+/, '')}`)
-    : null;
+  const imageUri = getImageUri(image);
+  let content;
+
+  if (imageUri && !imageError) {
+    content = (
+      <Image
+        source={{ uri: imageUri }}
+        style={s.bookCoverImage}
+        resizeMode="cover"
+        onError={() => setImageError(true)}
+        accessibilityLabel={`Portada de ${title || 'libro'}`}
+      />
+    );
+  } else {
+    content = <IconBook size={18} color={VINOTINTO} />;
+  }
 
   return (
     <View style={[s.avatar, s.bookCover, { backgroundColor: '#F4EDE2' }]}>
-      {imageUri && !imageError ? (
-        <Image
-          source={{ uri: imageUri }}
-          style={s.bookCoverImage}
-          resizeMode="cover"
-          onError={() => setImageError(true)}
-          accessibilityLabel={`Portada de ${title || 'libro'}`}
-        />
-      ) : (
-        <IconBook size={18} color={VINOTINTO} />
-      )}
+      {content}
     </View>
   );
 }
@@ -336,25 +346,176 @@ function PanelHeader({ iconNode, title, subtitle, extra, linkText, onLink }) {
   );
 }
 
+const CATEGORY_THEMES = [
+  [(text) => text.includes('ficcion') && !text.includes('cientifica'), { color: '#B91C1C', bg: '#FEF2F2', border: '#FECACA', icon: '\u{1F4D6}' }],
+  [(text) => text.includes('fantasia'), { color: '#4338CA', bg: '#EEF2FF', border: '#C7D2FE', icon: '\u{1F9D9}' }],
+  [(text) => text.includes('terror'), { color: '#6B21A8', bg: '#FAF5FF', border: '#E9D5FF', icon: '\u{1F47B}' }],
+  [(text) => text.includes('juvenil'), { color: '#D97706', bg: '#FFFBEB', border: '#FDE68A', icon: '\u{1F392}' }],
+  [(text) => text.includes('ciencia') || text.includes('cientifica'), { color: '#047857', bg: '#ECFDF5', border: '#A7F3D0', icon: '\u{1F52C}' }],
+  [(text) => text.includes('romance'), { color: '#DB2777', bg: '#FDF2F8', border: '#FBCFE8', icon: '\u{1F496}' }],
+  [(text) => text.includes('aventura'), { color: '#EA580C', bg: '#FFF7ED', border: '#FFEDD5', icon: '\u{1F5FA}\uFE0F' }],
+  [(text) => text.includes('historia'), { color: '#92400E', bg: '#FEF3C7', border: '#FDE68A', icon: '\u{1F3DB}\uFE0F' }],
+  [(text) => text.includes('tecnologia'), { color: '#0E7490', bg: '#ECFEFF', border: '#A5F3FC', icon: '\u{1F4BB}' }],
+  [(text) => text.includes('infantil'), { color: '#0284C7', bg: '#F0F9FF', border: '#BAE6FD', icon: '\u{1F9F8}' }],
+  [(text) => text.includes('arte'), { color: '#9333EA', bg: '#FAF5FF', border: '#F3E8FF', icon: '\u{1F3A8}' }],
+  [(text) => text.includes('biografia'), { color: '#1E40AF', bg: '#EFF6FF', border: '#BFDBFE', icon: '\u{1F464}' }],
+  [(text) => text.includes('educacion'), { color: '#15803D', bg: '#F0FDF4', border: '#BBF7D0', icon: '\u{1F393}' }],
+  [(text) => text.includes('poesia'), { color: '#BE185D', bg: '#FDF2F8', border: '#FCE7F3', icon: '\u270D\uFE0F' }],
+  [(text) => text.includes('filosofia'), { color: '#475569', bg: '#F8FAFC', border: '#E2E8F0', icon: '\u{1F9E0}' }],
+];
+
 const categoryTheme = (name) => {
   const text = (name || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-  if (text.includes('ficcion') && !text.includes('cientifica')) return { color: '#B91C1C', bg: '#FEF2F2', border: '#FECACA', icon: '📖' };
-  if (text.includes('fantasia')) return { color: '#4338CA', bg: '#EEF2FF', border: '#C7D2FE', icon: '🧙' };
-  if (text.includes('terror')) return { color: '#6B21A8', bg: '#FAF5FF', border: '#E9D5FF', icon: '👻' };
-  if (text.includes('juvenil')) return { color: '#D97706', bg: '#FFFBEB', border: '#FDE68A', icon: '🎒' };
-  if (text.includes('ciencia') || text.includes('cientifica')) return { color: '#047857', bg: '#ECFDF5', border: '#A7F3D0', icon: '🔬' };
-  if (text.includes('romance')) return { color: '#DB2777', bg: '#FDF2F8', border: '#FBCFE8', icon: '💖' };
-  if (text.includes('aventura')) return { color: '#EA580C', bg: '#FFF7ED', border: '#FFEDD5', icon: '🗺️' };
-  if (text.includes('historia')) return { color: '#92400E', bg: '#FEF3C7', border: '#FDE68A', icon: '🏛️' };
-  if (text.includes('tecnologia')) return { color: '#0E7490', bg: '#ECFEFF', border: '#A5F3FC', icon: '💻' };
-  if (text.includes('infantil')) return { color: '#0284C7', bg: '#F0F9FF', border: '#BAE6FD', icon: '🧸' };
-  if (text.includes('arte')) return { color: '#9333EA', bg: '#FAF5FF', border: '#F3E8FF', icon: '🎨' };
-  if (text.includes('biografia')) return { color: '#1E40AF', bg: '#EFF6FF', border: '#BFDBFE', icon: '👤' };
-  if (text.includes('educacion')) return { color: '#15803D', bg: '#F0FDF4', border: '#BBF7D0', icon: '🎓' };
-  if (text.includes('poesia')) return { color: '#BE185D', bg: '#FDF2F8', border: '#FCE7F3', icon: '✍️' };
-  if (text.includes('filosofia')) return { color: '#475569', bg: '#F8FAFC', border: '#E2E8F0', icon: '🧠' };
-  return { color: VINOTINTO, bg: '#FDF2F4', border: '#F8D2DA', icon: '📚' };
+  const match = CATEGORY_THEMES.find(([matches]) => matches(text));
+  return match?.[1] || { color: VINOTINTO, bg: '#FDF2F4', border: '#F8D2DA', icon: '\u{1F4DA}' };
 };
+
+const getStoreReportKey = (state) => {
+  if (isActiveStore(state)) return 'activa';
+  if (['vacaciones', 'en vacaciones', 'pausada', 'pausado'].includes(state)) return 'vacaciones';
+  if (isPendingStore(state)) return 'pendiente';
+  if (['suspendida', 'suspendido'].includes(state)) return 'suspendida';
+  return 'inactiva';
+};
+
+const getOrderReportKey = (state) => {
+  const statesByReportKey = [
+    [['pagado', 'pagada', 'pago confirmado', 'aprobada', 'aprobado'], 'pagada'],
+    [['entregado', 'entregada', 'completada', 'finalizada'], 'entregada'],
+    [['enviado', 'enviada', 'despachado', 'en camino'], 'enviada'],
+    [['procesando', 'en proceso', 'preparando'], 'procesando'],
+    [['cancelado', 'cancelada', 'anulado', 'rechazada'], 'cancelada'],
+  ];
+  return statesByReportKey.find(([states]) => states.includes(state))?.[1] || 'pendiente';
+};
+
+const matchesSearch = (query, ...values) =>
+  !query || values.some((value) => String(value || '').toLowerCase().includes(query));
+
+const filterUsers = (users, query, role, status) => users.filter((user) => {
+  const matchesRole = role === 'todos' || normalizeUserRoleFilter(user.rol) === role;
+  const userStatus = (user.estado_usuario || 'Activo').toLowerCase();
+  const matchesStatus = status === 'todos' ||
+    (status === 'Activo' && userStatus === 'activo') ||
+    (status === 'Bloqueado' && userStatus === 'bloqueado');
+  return matchesRole && matchesStatus &&
+    matchesSearch(query, user.nombre_usuario, user.correo_usuario);
+});
+
+const filterBooks = (books, query, category) => books.filter((book) =>
+  (category === 'todas' || (book.nombre_categoria || 'Sin categoría') === category) &&
+  matchesSearch(query, book.titulo || book.nombre_libro, book.autor_libro, book.nombre_tienda)
+);
+
+const filterStores = (stores, query) => stores.filter((store) =>
+  matchesSearch(query, store.nombre_tienda, store.estado_tienda)
+);
+
+const sortOrders = (orders) => orders.slice().sort((a, b) => {
+  const dateA = a.fecha ? new Date(a.fecha).getTime() : 0;
+  const dateB = b.fecha ? new Date(b.fecha).getTime() : 0;
+  if (dateB !== dateA) return dateB - dateA;
+  return (b.id_orden || 0) - (a.id_orden || 0);
+});
+
+const filterOrders = (orders, query, status) => orders.filter((order) =>
+  matchesSearch(query, order.id_orden, order.estado) &&
+  (status === 'todos' || (order.estado || '').trim().toLowerCase() === status)
+);
+
+const getSectionItems = ({ activeSection, data, query, role, userStatus, category, orderStatus }) => {
+  if (activeSection === 'usuarios') {
+    return filterUsers(data.usuarios, query, role, userStatus);
+  }
+  if (activeSection === 'libros') {
+    return filterBooks(data.libros.slice().reverse(), query, category);
+  }
+  if (activeSection === 'tiendas') {
+    return filterStores(data.tiendas.slice().reverse(), query);
+  }
+  if (activeSection === 'ordenes') {
+    return filterOrders(sortOrders(data.ordenes), query, orderStatus);
+  }
+  return [];
+};
+
+const getSearchPlaceholder = (section) => ({
+  usuarios: 'Buscar por nombre o correo…',
+  libros: 'Buscar por título, autor o tienda…',
+  tiendas: 'Buscar por nombre o estado…',
+  ordenes: 'Buscar por ID o estado…',
+}[section] || 'Buscar…');
+
+const getUserRolePresentation = (role) => {
+  if (role.includes('admin')) return { emoji: '🛡️', label: 'Administrador' };
+  if (role === 'vendedor') return { emoji: '🏪', label: 'Vendedor' };
+  return { emoji: '🛒', label: 'Comprador' };
+};
+
+function BookExpandedDetails({ book, hidden, onToggleHidden, onDelete }) {
+  const visibilityColor = hidden ? '#991B1B' : '#047857';
+  const visibilityBackground = hidden ? '#FEF2F2' : '#ECFDF5';
+  const visibilityBorder = hidden ? '#FECACA' : '#A7F3D0';
+
+  return (
+    <View style={s.expandBox}>
+      <View style={s.detailRow}>
+        <Text style={s.detailLabel}>Precio</Text>
+        <View style={s.priceBadge}>
+          <Text style={s.priceTxt}>{fmtPrice(book.precio_libro)}</Text>
+        </View>
+      </View>
+      <View style={s.detailRow}>
+        <Text style={s.detailLabel}>Tienda</Text>
+        <Text style={[s.detailValue, { color: VINOTINTO, fontWeight: '700' }]} numberOfLines={1}>
+          {book.nombre_tienda || '—'}
+        </Text>
+      </View>
+      <View style={s.detailRow}>
+        <Text style={s.detailLabel}>Categoría</Text>
+        <View style={[s.badge, { backgroundColor: '#F3E8FF', borderColor: '#E9D5FF' }]}>
+          <Text style={[s.badgeTxt, { color: '#7E22CE' }]}>{book.nombre_categoria || 'Sin categoría'}</Text>
+        </View>
+      </View>
+      <View style={[s.detailRow, { marginBottom: 14 }]}>
+        <Text style={s.detailLabel}>Estado</Text>
+        <View style={[s.badge, { backgroundColor: visibilityBackground, borderColor: visibilityBorder }]}>
+          {hidden
+            ? <IconEyeOff size={11} color={visibilityColor} />
+            : <IconEye size={11} color={visibilityColor} />}
+          <Text style={[s.badgeTxt, { color: visibilityColor, marginLeft: 3 }]}>
+            {hidden ? 'Oculto en catálogo' : 'Visible en catálogo'}
+          </Text>
+        </View>
+      </View>
+      <View style={s.actionRow}>
+        <TouchableOpacity
+          style={[s.actionBtn, s.actionHalf, {
+            backgroundColor: hidden ? '#ECFDF5' : '#FFFBEB',
+            borderColor: hidden ? '#A7F3D0' : '#FDE68A',
+          }]}
+          onPress={onToggleHidden}
+          activeOpacity={0.75}
+        >
+          {hidden
+            ? <IconEye size={13} color="#047857" />
+            : <IconEyeOff size={13} color="#B45309" />}
+          <Text style={[s.actionTxt, { color: hidden ? '#047857' : '#B45309' }]}>
+            {hidden ? 'Mostrar' : 'Ocultar'}
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[s.actionBtn, s.actionHalf, { backgroundColor: '#FEF2F2', borderColor: '#FECACA' }]}
+          onPress={onDelete}
+          activeOpacity={0.75}
+        >
+          <IconTrash size={13} color={RED} />
+          <Text style={[s.actionTxt, { color: RED }]}>Eliminar</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+}
 
 function ReportKpi({ title, value, badge, sub, color, bg, border, Icon }) {
   return <View style={[rs.kpi, { borderColor: border }]}>
@@ -376,7 +537,14 @@ function AdminReports({ data, stats }) {
     { key: 'comprador', label: 'Compradores', icon: '🛒', color: '#047857', bg: '#ECFDF5', border: '#A7F3D0', desc: 'Usuarios lectores y clientes' },
     { key: 'vendedor', label: 'Vendedores', icon: '🏪', color: '#D97706', bg: '#FFFBEB', border: '#FDE68A', desc: 'Librerías y tiendas asociadas' },
     { key: 'administrador', label: 'Administradores', icon: '🛡️', color: VINOTINTO, bg: '#FDF2F4', border: '#F8D2DA', desc: 'Gestión total de la plataforma' },
-  ].map((item) => ({ ...item, count: item.key === 'comprador' ? stats.buyers : item.key === 'vendedor' ? stats.sellers : stats.admins }));
+  ].map((item) => ({
+    ...item,
+    count: {
+      comprador: stats.buyers,
+      vendedor: stats.sellers,
+      administrador: stats.admins,
+    }[item.key],
+  }));
   const categories = Object.entries(stats.categories).sort(([, a], [, b]) => b - a).slice(0, 8);
   const storeItems = [
     { key: 'activa', label: 'Activas / Operativas', icon: '🟢', color: '#047857', desc: 'Visibles en el catálogo y vendiendo' },
@@ -395,20 +563,13 @@ function AdminReports({ data, stats }) {
   ];
   const storeCounts = data.tiendas.reduce((acc, store) => {
     const state = (store.estado_tienda || '').toLowerCase().trim();
-    const key = isActiveStore(state) ? 'activa' :
-                ['vacaciones', 'en vacaciones', 'pausada', 'pausado'].includes(state) ? 'vacaciones' :
-                isPendingStore(state) ? 'pendiente' :
-                ['suspendida', 'suspendido'].includes(state) ? 'suspendida' : 'inactiva';
+    const key = getStoreReportKey(state);
     acc[key] = (acc[key] || 0) + 1;
     return acc;
   }, {});
   const orderCounts = data.ordenes.reduce((acc, order) => {
     const state = (order.estado || '').toLowerCase().trim();
-    const key = ['pagado', 'pagada', 'pago confirmado', 'aprobada', 'aprobado'].includes(state) ? 'pagada' :
-                ['entregado', 'entregada', 'completada', 'finalizada'].includes(state) ? 'entregada' :
-                ['enviado', 'enviada', 'despachado', 'en camino'].includes(state) ? 'enviada' :
-                ['procesando', 'en proceso', 'preparando'].includes(state) ? 'procesando' :
-                ['cancelado', 'cancelada', 'anulado', 'rechazada'].includes(state) ? 'cancelada' : 'pendiente';
+    const key = getOrderReportKey(state);
     acc[key] = (acc[key] || 0) + 1;
     return acc;
   }, {});
@@ -479,6 +640,598 @@ function AdminReports({ data, stats }) {
 // ─────────────────────────────────────────────────────────────────────────────
 //  COMPONENTE PRINCIPAL
 // ─────────────────────────────────────────────────────────────────────────────
+function StoreStateModal({
+  modalState,
+  saving,
+  reason,
+  reasonError,
+  onClose,
+  onSelect,
+  onReasonChange,
+  onConfirm,
+  onClearReasonError,
+}) {
+  if (!modalState) return null;
+
+  const { tienda, nuevoEstado } = modalState;
+  const estadoActual = (tienda.estado_tienda || 'pendiente').toLowerCase();
+  const cfgEstado = ESTADOS_TIENDA.find((estado) => estado.value === nuevoEstado);
+  const esSuspension = nuevoEstado === 'suspendida';
+  const info = MENSAJES_ESTADO_TIENDA[nuevoEstado];
+  let confirmLabel = 'Confirmar';
+  if (saving) confirmLabel = 'Procesando...';
+  else if (esSuspension) confirmLabel = '🚫 Suspender y Notificar';
+  const cerrar = () => {
+    if (!saving) onClose();
+  };
+
+  if (!nuevoEstado) {
+    const currentLabel = ESTADOS_TIENDA.find((estado) => estado.value === estadoActual)?.label || estadoActual;
+    return (
+      <Modal visible transparent animationType="fade" statusBarTranslucent onRequestClose={cerrar}>
+        <View style={tm.overlay}>
+          <View style={tm.card}>
+            <View style={[tm.header, { backgroundColor: VINOTINTO }]}>
+              <View style={tm.headerIcon}><IconStore size={24} color={WHITE} /></View>
+              <View style={{ flex: 1 }}>
+                <Text style={tm.headerEyebrow}>Cambiar estado</Text>
+                <Text style={tm.headerTitle}>Selecciona un estado</Text>
+              </View>
+              <TouchableOpacity style={tm.close} onPress={cerrar}><Text style={tm.closeText}>✕</Text></TouchableOpacity>
+            </View>
+            <View style={tm.body}>
+              <Text style={tm.storeLabel}>LIBRERÍA A MODIFICAR</Text>
+              <Text style={tm.storeName}>{tienda.nombre_tienda || `ID #${tienda.id_tienda}`}</Text>
+              <Text style={tm.storeId}>ID #{tienda.id_tienda} · Estado actual: {currentLabel}</Text>
+              <Text style={tm.chooseLabel}>Selecciona el nuevo estado</Text>
+              {ESTADOS_TIENDA.map((estado) => {
+                const actual = estado.value === estadoActual;
+                return (
+                  <TouchableOpacity
+                    key={estado.value}
+                    style={[tm.statusOption, { backgroundColor: estado.bg, borderColor: estado.border }, actual && tm.statusOptionDisabled]}
+                    onPress={() => onSelect(estado.value)}
+                    disabled={actual}
+                    activeOpacity={0.75}
+                  >
+                    <View style={[tm.statusDot, { backgroundColor: estado.color }]} />
+                    <Text style={[tm.statusOptionText, { color: estado.color }]}>{estado.label}</Text>
+                    <Text style={[tm.statusCurrent, { color: estado.color }]}>{actual ? 'Estado actual' : '›'}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
+        </View>
+      </Modal>
+    );
+  }
+
+  return (
+    <Modal visible transparent animationType="fade" statusBarTranslucent onRequestClose={cerrar}>
+      <View style={tm.overlay}>
+        <View style={tm.card}>
+          <View style={[tm.header, { backgroundColor: esSuspension ? '#B91C1C' : cfgEstado.color }]}>
+            <View style={tm.headerEmoji}><Text style={{ fontSize: 24 }}>{info.icon}</Text></View>
+            <View style={{ flex: 1 }}>
+              <Text style={tm.headerEyebrow}>{esSuspension ? 'Acción Disciplinaria' : 'Cambiar estado'}</Text>
+              <Text style={tm.headerTitle}>{esSuspension ? 'Suspender Librería' : `Marcar como ${cfgEstado.label}`}</Text>
+            </View>
+            <TouchableOpacity style={tm.close} onPress={cerrar} disabled={saving}><Text style={tm.closeText}>✕</Text></TouchableOpacity>
+          </View>
+          <ScrollView contentContainerStyle={tm.body} keyboardShouldPersistTaps="handled">
+            <View style={[tm.storeBox, { backgroundColor: cfgEstado.bg, borderColor: cfgEstado.border }]}>
+              <View style={{ flex: 1 }}>
+                <Text style={[tm.storeLabel, { color: cfgEstado.color }]}>LIBRERÍA A MODIFICAR</Text>
+                <Text style={[tm.storeName, { color: cfgEstado.color }]}>{tienda.nombre_tienda || `ID #${tienda.id_tienda}`}</Text>
+              </View>
+              <View style={[tm.idBadge, { backgroundColor: cfgEstado.color }]}><Text style={tm.idBadgeText}>ID #{tienda.id_tienda}</Text></View>
+            </View>
+            <Text style={tm.description}>{info.desc}</Text>
+
+            {esSuspension && (
+              <View>
+                <View style={tm.notice}>
+                  <Text style={tm.noticeText}>💬  <Text style={{ fontWeight: '800' }}>Notificación formal al vendedor:</Text> El motivo ingresado se enviará inmediatamente como mensaje en la sección de Chat del vendedor.</Text>
+                </View>
+                <Text style={tm.reasonLabel}>MOTIVOS FRECUENTES (TOCA PARA SELECCIONAR)</Text>
+                <View style={tm.reasonChips}>
+                  {MOTIVOS_SUSPENSION_PREDEFINIDOS.map((motivo) => {
+                    const seleccionado = reason === motivo;
+                    return (
+                      <TouchableOpacity
+                        key={motivo}
+                        style={[tm.reasonChip, seleccionado && tm.reasonChipSelected]}
+                        onPress={() => { onReasonChange(motivo); onClearReasonError(); }}
+                      >
+                        <Text style={[tm.reasonChipText, seleccionado && tm.reasonChipTextSelected]}>
+                          {seleccionado ? '✓ ' : '+ '}{motivo}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+                <View style={tm.reasonHeading}>
+                  <Text style={tm.reasonFieldLabel}>Explicación detallada del motivo *</Text>
+                  <Text style={[tm.count, reason.length > 400 && tm.countWarning]}>{reason.length} / 450</Text>
+                </View>
+                <TextInput
+                  value={reason}
+                  onChangeText={(text) => {
+                    onReasonChange(text);
+                    if (text.trim()) onClearReasonError();
+                  }}
+                  placeholder="Escribe detalladamente las razones por las cuales se suspende la librería..."
+                  placeholderTextColor="#9CA3AF"
+                  multiline
+                  maxLength={450}
+                  textAlignVertical="top"
+                  style={[tm.reasonInput, reasonError && tm.reasonInputError]}
+                />
+                {!!reasonError && <Text style={tm.reasonError}>⚠️ {reasonError}</Text>}
+              </View>
+            )}
+            <View style={tm.actions}>
+              <TouchableOpacity style={tm.cancelButton} onPress={cerrar} disabled={saving}>
+                <Text style={tm.cancelButtonText}>Cancelar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[tm.confirmButton, { backgroundColor: esSuspension ? '#B91C1C' : cfgEstado.color }, saving && tm.buttonDisabled]}
+                onPress={onConfirm}
+                disabled={saving}
+              >
+                <Text style={tm.confirmButtonText}>{confirmLabel}</Text>
+              </TouchableOpacity>
+            </View>
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+function AdminDashboardContent({
+  user,
+  error,
+  onRetry,
+  refreshing,
+  onRefresh,
+  data,
+  stats,
+  totalCats,
+  topCats,
+  lastUsers,
+  lastStores,
+  onSelectSection,
+}) {
+  const alertMessages = [
+    stats.claims > 0 ? `Tienes ${stats.claims} queja(s) o reclamo(s) abierta(s). ` : '',
+    stats.support > 0 ? `Hay ${stats.support} ticket(s) de soporte sin resolver. ` : '',
+    stats.pendingStores > 0 ? `Hay ${stats.pendingStores} librería(s) pendiente(s) de revisión.` : '',
+  ].join('');
+
+  return (
+    <ScrollView
+      style={{ flex: 1 }}
+      contentContainerStyle={s.content}
+      showsVerticalScrollIndicator={false}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[VINOTINTO]} tintColor={VINOTINTO} />}
+    >
+      <Text style={s.greeting}>Hola, {user?.nombre || 'Administrador'} 👋</Text>
+      <Text style={s.intro}>Este es el estado actual de BookyHome.</Text>
+
+      {!!error && (
+        <View style={s.errorBox}>
+          <Text style={{ color: '#991B1B', fontSize: 13, flex: 1 }}>{error}</Text>
+          <TouchableOpacity onPress={onRetry}>
+            <Text style={{ color: VINOTINTO, fontWeight: '800', marginLeft: 10, fontSize: 13 }}>Reintentar</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {(stats.claims > 0 || stats.support > 0 || stats.pendingStores > 0) && (
+        <View style={s.alert}>
+          <View style={s.alertIconBox}><IconAlertTriangle size={22} color="#D97706" /></View>
+          <View style={{ flex: 1 }}>
+            <Text style={s.alertTitle}>Atención requerida del Administrador</Text>
+            <Text style={s.alertBody}>{alertMessages}</Text>
+          </View>
+        </View>
+      )}
+
+      <View style={{ marginHorizontal: -6, marginBottom: 8 }}>
+        <View style={{ flexDirection: 'row' }}>
+          <KpiCard
+            title="Usuarios Totales" value={data.usuarios.length} valueColor={VINOTINTO}
+            tagLabel="Ecosistema" tagBg="#FDF2F4" tagColor={VINOTINTO} tagBorder="#F8D2DA"
+            iconBg="#FDF2F4" iconColor={VINOTINTO} cardBorder="#F8D2DA" Icon={IconUser}
+            onPress={() => onSelectSection('usuarios')}
+            details={<>
+              <Chip text={`${stats.buyers} compradores`} bg="#ECFDF5" color="#047857" border="#A7F3D0" />
+              <Chip text={`${stats.sellers} vendedores`} bg="#FFFBEB" color="#B45309" border="#FDE68A" />
+            </>}
+          />
+          <KpiCard
+            title="Libros Publicados" value={data.libros.length} valueColor="#581C87"
+            tagLabel="Catálogo" tagBg="#F3E8FF" tagColor="#7E22CE" tagBorder="#E9D5FF"
+            iconBg="#F3E8FF" iconColor="#7E22CE" cardBorder="#E9D5FF" Icon={IconBook}
+            onPress={() => onSelectSection('libros')}
+            details={<>
+              <Chip text={`${stats.activeBooks} disponibles`} bg="#FAF5FF" color="#6B21A8" border="#E9D5FF" />
+              <Chip text={`${totalCats} categorías`} bg="#F3F4F6" color="#4B5563" border="#D1D5DB" />
+            </>}
+          />
+        </View>
+        <View style={{ flexDirection: 'row' }}>
+          <KpiCard
+            title="Librerías & Tiendas" value={data.tiendas.length} valueColor="#064E3B"
+            tagLabel={`${stats.activeStores} Activas`} tagBg="#ECFDF5" tagColor="#047857" tagBorder="#A7F3D0"
+            iconBg="#ECFDF5" iconColor="#047857" cardBorder="#A7F3D0" Icon={IconStore}
+            onPress={() => onSelectSection('tiendas')}
+            details={<>
+              <Chip text={`${stats.activeStores} verificadas`} bg="#ECFDF5" color="#047857" border="#A7F3D0" />
+              <Chip
+                text={stats.pendingStores ? `${stats.pendingStores} pendientes` : 'Al día'}
+                bg={stats.pendingStores ? '#FEF3C7' : '#F3F4F6'}
+                color={stats.pendingStores ? '#B45309' : '#4B5563'}
+                border={stats.pendingStores ? '#FDE68A' : '#D1D5DB'}
+              />
+            </>}
+          />
+          <KpiCard
+            title="Órdenes Procesadas" value={data.ordenes.length} valueColor="#1E3A8A"
+            tagLabel="Transacciones" tagBg="#EFF6FF" tagColor="#1D4ED8" tagBorder="#BFDBFE"
+            iconBg="#EFF6FF" iconColor="#1D4ED8" cardBorder="#BFDBFE" Icon={IconPackage}
+            onPress={() => onSelectSection('ordenes')}
+            details={<>
+              <Chip text={`${stats.ordersToday} creadas hoy`} bg="#EFF6FF" color="#1D4ED8" border="#BFDBFE" />
+              <Chip text={`${stats.completed} entregadas`} bg="#ECFDF5" color="#047857" border="#A7F3D0" />
+            </>}
+          />
+        </View>
+      </View>
+
+      <View style={s.panel}>
+        <PanelHeader iconNode={<IconUser size={20} color={VINOTINTO} />} title="Distribución de la comunidad" extra={`${data.usuarios.length} miembros en total`} />
+        <RoleRow label="Compradores" count={stats.buyers} total={data.usuarios.length} dotColor="#10B981" pctBg="#ECFDF5" pctColor="#047857" pctBorder="#A7F3D0" />
+        <RoleRow label="Vendedores / Librerías" count={stats.sellers} total={data.usuarios.length} dotColor="#F59E0B" pctBg="#FFFBEB" pctColor="#B45309" pctBorder="#FDE68A" />
+        <RoleRow label="Administradores" count={stats.admins} total={data.usuarios.length} dotColor={VINOTINTO} pctBg="#FDF2F4" pctColor={VINOTINTO} pctBorder="#F8D2DA" />
+      </View>
+
+      <View style={s.panel}>
+        <PanelHeader
+          iconNode={<IconBook size={20} color={VINOTINTO} />}
+          title="Categorías más populares"
+          linkText="Explorar catálogo →"
+          onLink={() => onSelectSection('libros')}
+        />
+        {topCats.length ? (
+          <View style={s.cats}>
+            {topCats.map(([name, count]) => (
+              <View key={name} style={s.cat}>
+                <Text style={s.catName} numberOfLines={1}>{name}</Text>
+                <View style={s.catBadge}><Text style={s.catCount}>{count}</Text></View>
+              </View>
+            ))}
+          </View>
+        ) : <Text style={s.emptyTxt}>No hay libros categorizados aún.</Text>}
+
+        <View style={s.storeStatus}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <Text style={{ color: CARBON, fontSize: 12, fontWeight: '700', flex: 1 }}>Estado operativo de librerías</Text>
+            <Text style={{ color: '#166534', fontSize: 11, fontWeight: '800' }}>{stats.activeStores} de {data.tiendas.length} operando</Text>
+          </View>
+          <View style={s.legend}>
+            <View style={s.legendItem}><View style={[s.legendDot, { backgroundColor: '#16a34a' }]} /><Text style={{ color: '#166534', fontSize: 11, fontWeight: '700' }}>{stats.activeStores} Activas</Text></View>
+            <View style={s.legendItem}><View style={[s.legendDot, { backgroundColor: '#ea580c' }]} /><Text style={{ color: '#9a3412', fontSize: 11, fontWeight: '700' }}>{stats.pendingStores} Pendientes</Text></View>
+            <View style={s.legendItem}><View style={[s.legendDot, { backgroundColor: '#ef4444' }]} /><Text style={{ color: '#991b1b', fontSize: 11, fontWeight: '700' }}>{stats.suspendedStores} Suspendidas/Inactivas</Text></View>
+          </View>
+        </View>
+      </View>
+
+      <RecentUsersPanel users={lastUsers} total={data.usuarios.length} onSelectSection={onSelectSection} />
+      <RecentStoresPanel stores={lastStores} total={data.tiendas.length} onSelectSection={onSelectSection} />
+    </ScrollView>
+  );
+}
+
+function RecentUsersPanel({ users, total, onSelectSection }) {
+  return (
+    <View style={s.panel}>
+      <PanelHeader
+        iconNode={<View style={[s.smallIcon, { backgroundColor: COLORS.usuarios.soft }]}><IconUser size={16} color={VINOTINTO} /></View>}
+        title="Últimos usuarios registrados"
+        subtitle="Nuevos registros en la plataforma"
+        linkText={`Ver todos (${total}) →`}
+        onLink={() => onSelectSection('usuarios')}
+      />
+      <View style={s.tableScroll}>
+        <View style={s.tableContent}>
+          <View style={[s.tableHead, { backgroundColor: VINOTINTO }]}>
+            <Text style={[s.th, s.userNameColumn]}>Usuario</Text>
+            <Text style={[s.th, s.userEmailColumn]}>Correo</Text>
+            <Text style={[s.th, s.userRoleColumn]}>Rol</Text>
+            <Text style={[s.th, s.userStatusColumn, s.thRight]}>Estado</Text>
+          </View>
+          {users.map((item, index) => {
+            const roleColors = getRolColors(item.rol);
+            const initialsText = (item.nombre_usuario || 'U').trim().split(/\s+/).map((word) => word[0]).join('').slice(0, 2).toUpperCase();
+            const blocked = item.estado_usuario === 'Bloqueado';
+            return (
+              <View key={item.id_usuario} style={[s.tableRow, { backgroundColor: index % 2 === 0 ? '#fafafa' : WHITE }]}>
+                <View style={[s.td, s.userNameColumn, { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start', gap: 7 }]}>
+                  <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: roleColors.bg, alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <Text style={{ color: roleColors.color, fontSize: 10, fontWeight: '800' }}>{initialsText}</Text>
+                  </View>
+                  <Text style={{ color: CARBON, fontSize: 12, fontWeight: '700', flexShrink: 1 }} numberOfLines={1}>{item.nombre_usuario || 'Usuario'}</Text>
+                </View>
+                <View style={[s.td, s.userEmailColumn]}><Text style={{ color: GRAY, fontSize: 11 }} numberOfLines={1}>{item.correo_usuario || '—'}</Text></View>
+                <View style={[s.td, s.userRoleColumn]}>
+                  <View style={{ backgroundColor: roleColors.bg, borderColor: roleColors.border, borderWidth: 1, borderRadius: 12, paddingHorizontal: 7, paddingVertical: 2, alignSelf: 'flex-start' }}>
+                    <Text style={{ color: roleColors.color, fontSize: 10, fontWeight: '700', textTransform: 'capitalize' }} numberOfLines={1}>{item.rol || 'usuario'}</Text>
+                  </View>
+                </View>
+                <View style={[s.td, s.userStatusColumn, { alignItems: 'flex-end' }]}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: blocked ? '#FEF2F2' : '#ECFDF5', borderColor: blocked ? '#FECACA' : '#A7F3D0', borderWidth: 1, borderRadius: 10, paddingHorizontal: 6, paddingVertical: 2 }}>
+                    <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: blocked ? '#ef4444' : '#16a34a' }} />
+                    <Text style={{ color: blocked ? '#991b1b' : '#166534', fontSize: 9, fontWeight: '700' }}>{blocked ? 'Bloqueado' : 'Activo'}</Text>
+                  </View>
+                </View>
+              </View>
+            );
+          })}
+          {users.length === 0 && <Text style={s.emptyTxt}>No hay usuarios registrados aún.</Text>}
+        </View>
+      </View>
+    </View>
+  );
+}
+
+function RecentStoresPanel({ stores, total, onSelectSection }) {
+  return (
+    <View style={s.panel}>
+      <PanelHeader
+        iconNode={<View style={[s.smallIcon, { backgroundColor: COLORS.tiendas.soft }]}><IconStore size={16} color={COLORS.tiendas.main} /></View>}
+        title="Últimas tiendas creadas"
+        subtitle="Librerías y vendedores asociados"
+        linkText={`Gestionar todas (${total}) →`}
+        onLink={() => onSelectSection('tiendas')}
+      />
+      <View style={s.tableScroll}>
+        <View style={s.tableContent}>
+          <View style={[s.tableHead, { backgroundColor: VINOTINTO }]}>
+            <Text style={[s.th, s.storeNameColumn]}>Librería</Text>
+            <Text style={[s.th, s.storePhoneColumn]}>Teléfono</Text>
+            <Text style={[s.th, s.storeDateColumn]}>Registro</Text>
+            <Text style={[s.th, s.storeStatusColumn, s.thRight]}>Estado</Text>
+          </View>
+          {stores.map((item, index) => {
+            const storeColors = getStoreColors(item.estado_tienda);
+            const createdAt = item.fecha_creacion
+              ? new Date(item.fecha_creacion).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' })
+              : '—';
+            return (
+              <View key={item.id_tienda} style={[s.tableRow, { backgroundColor: index % 2 === 0 ? '#fafafa' : WHITE }]}>
+                <View style={[s.td, s.storeNameColumn, { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start', gap: 7 }]}>
+                  <View style={{ width: 28, height: 28, borderRadius: 8, backgroundColor: COLORS.tiendas.soft, alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <IconStore size={15} color={COLORS.tiendas.main} />
+                  </View>
+                  <Text style={{ color: VINOTINTO, fontSize: 12, fontWeight: '700', flexShrink: 1 }} numberOfLines={1}>{item.nombre_tienda || 'Librería'}</Text>
+                </View>
+                <View style={[s.td, s.storePhoneColumn]}><Text style={{ color: GRAY, fontSize: 11 }} numberOfLines={1}>{item.telefono || '—'}</Text></View>
+                <View style={[s.td, s.storeDateColumn]}><Text style={{ color: GRAY, fontSize: 11 }} numberOfLines={1}>{createdAt}</Text></View>
+                <View style={[s.td, s.storeStatusColumn, { alignItems: 'flex-end' }]}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: storeColors.bg, borderColor: storeColors.border, borderWidth: 1, borderRadius: 12, paddingHorizontal: 8, paddingVertical: 3 }}>
+                    <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: storeColors.color }} />
+                    <Text style={{ color: storeColors.color, fontSize: 10, fontWeight: '700' }} numberOfLines={1}>{item.estado_tienda || 'Pendiente'}</Text>
+                  </View>
+                </View>
+              </View>
+            );
+          })}
+          {stores.length === 0 && <Text style={s.emptyTxt}>No hay tiendas registradas aún.</Text>}
+        </View>
+      </View>
+    </View>
+  );
+}
+
+function AdminSectionContent({
+  activeSection,
+  data,
+  stats,
+  solicitudesLoading,
+  solicitudesError,
+  onRefreshSolicitudes,
+  onProfilePhotoChange,
+  onProfileNameChange,
+  pageItems,
+  keyExtractor,
+  renderItem,
+  sectionHeader,
+  sectionFooter,
+  refreshing,
+  onRefresh,
+  sectionColor,
+  busqueda,
+  filtroRol,
+  filtroCategoria,
+}) {
+  if (activeSection === 'reportes') return <AdminReports data={data} stats={stats} />;
+  if (activeSection === 'finanzas') return <FinanzasAdmin />;
+  if (activeSection === 'reclamos' || activeSection === 'soporte') {
+    return (
+      <AdminRequests
+        type={activeSection}
+        solicitudes={data.solicitudes}
+        loading={solicitudesLoading}
+        refreshing={solicitudesLoading}
+        error={solicitudesError}
+        onRefresh={onRefreshSolicitudes}
+      />
+    );
+  }
+  if (activeSection === 'perfil') {
+    return (
+      <AdminProfile
+        stats={{
+          usuarios: data.usuarios.length,
+          libros: data.libros.length,
+          ordenes: data.ordenes.length,
+          tiendas: data.tiendas.length,
+        }}
+        solicitudes={data.solicitudes}
+        onProfilePhotoChange={onProfilePhotoChange}
+        onProfileNameChange={onProfileNameChange}
+      />
+    );
+  }
+  const hasFilters = Boolean(busqueda) || filtroRol !== 'todos' || filtroCategoria !== 'todas';
+  return (
+    <FlatList
+      data={pageItems}
+      keyExtractor={keyExtractor}
+      renderItem={renderItem}
+      contentContainerStyle={s.sectionContent}
+      ListHeaderComponent={sectionHeader}
+      ListFooterComponent={sectionFooter}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[sectionColor]} tintColor={sectionColor} />
+      }
+      ListEmptyComponent={
+        <Text style={s.emptySection}>
+          {hasFilters ? 'Sin resultados para los filtros aplicados.' : 'No hay registros todavía.'}
+        </Text>
+      }
+      keyboardShouldPersistTaps="handled"
+    />
+  );
+}
+
+function AdminHeaderContent({ isDashboard, sectionConfig, onOpenMenu }) {
+  const title = isDashboard ? 'Dashboard Global' : sectionConfig.title;
+  const subtitle = isDashboard ? 'Administración' : sectionConfig.subtitle;
+  return (
+    <>
+      <TouchableOpacity style={s.menuBtn} onPress={onOpenMenu}>
+        <IconMenu size={24} color={WHITE} />
+      </TouchableOpacity>
+      <View style={{ flex: 1 }}>
+        <Text style={s.headTitle}>{title}</Text>
+        <Text style={s.headSub}>{subtitle}</Text>
+      </View>
+    </>
+  );
+}
+
+function UserProfileModal({ user, store, onClose, onToggleUser }) {
+  if (!user) return null;
+
+  const isBlocked = (user.estado_usuario || '').toLowerCase() === 'bloqueado';
+  const roleKey = (user.rol || 'comprador').toLowerCase().trim();
+  const rolePresentation = getUserRolePresentation(roleKey);
+  const closeAndToggle = () => {
+    onClose();
+    onToggleUser(user);
+  };
+  const emailColor = user.email_verificado ? '#047857' : '#D97706';
+
+  return (
+    <Modal visible transparent animationType="fade" statusBarTranslucent onRequestClose={onClose}>
+      <TouchableOpacity style={fm.overlay} activeOpacity={1} onPress={onClose}>
+        <View style={fm.card} onStartShouldSetResponder={() => true}>
+          <View style={fm.header}>
+            <View style={fm.headerAvatar}>
+              <Text style={fm.headerAvatarTxt}>{initials(user.nombre_usuario)}</Text>
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={fm.headerName} numberOfLines={1}>{user.nombre_usuario || 'Usuario'}</Text>
+              <Text style={fm.headerSub}>Ficha de Usuario · ID #{user.id_usuario}</Text>
+            </View>
+            <TouchableOpacity style={fm.closeBtn} onPress={onClose} activeOpacity={0.8}>
+              <Text style={fm.closeBtnTxt}>✕</Text>
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView
+            style={{ flexGrow: 0 }}
+            contentContainerStyle={fm.body}
+            showsVerticalScrollIndicator={false}
+            bounces={false}
+          >
+            <View style={fm.grid2}>
+              <View style={fm.infoBox}>
+                <Text style={fm.infoBoxLabel}>ROL DE CUENTA</Text>
+                <Text style={fm.infoBoxValue}>{rolePresentation.emoji} {rolePresentation.label}</Text>
+              </View>
+              <View style={fm.infoBox}>
+                <Text style={fm.infoBoxLabel}>ESTADO ACTUAL</Text>
+                <Text style={[fm.infoBoxValue, { color: isBlocked ? RED : '#047857' }]}>
+                  {isBlocked ? '🔒 Bloqueado' : '🟢 Activo'}
+                </Text>
+              </View>
+            </View>
+
+            <View style={fm.section}>
+              <Text style={fm.sectionTitle}>INFORMACIÓN DE CONTACTO Y CUENTA</Text>
+              <View style={fm.dataRow}>
+                <Text style={fm.dataLabel}>Correo Electrónico:</Text>
+                <Text style={fm.dataValue} numberOfLines={1}>{user.correo_usuario || '—'}</Text>
+              </View>
+              <View style={fm.dataRow}>
+                <Text style={fm.dataLabel}>Teléfono:</Text>
+                <Text style={fm.dataValue}>{user.telefono || 'No registrado'}</Text>
+              </View>
+              <View style={fm.dataRow}>
+                <Text style={fm.dataLabel}>Fecha de Registro:</Text>
+                <Text style={fm.dataValue}>{user.fecha_registro || 'N/A'}</Text>
+              </View>
+              <View style={[fm.dataRow, { borderBottomWidth: 0 }]}>
+                <Text style={fm.dataLabel}>Verificación Email:</Text>
+                <Text style={[fm.dataValue, { color: emailColor }]}>
+                  {user.email_verificado ? '✓ Verificado' : '⏳ Pendiente'}
+                </Text>
+              </View>
+            </View>
+
+            {store && (
+              <View style={fm.tiendaBox}>
+                <Text style={fm.tiendaTitle}>🏪 LIBRERÍA VINCULADA</Text>
+                <View style={fm.tiendaRow}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={fm.tiendaNombre}>{store.nombre_tienda}</Text>
+                    <Text style={fm.tiendaId}>ID Tienda: #{store.id_tienda}</Text>
+                  </View>
+                  <View style={[fm.tiendaEstadoBadge, {
+                    backgroundColor: isActiveStore(store.estado_tienda) ? '#047857' : RED,
+                  }]}>
+                    <Text style={fm.tiendaEstadoTxt}>{store.estado_tienda || 'Activa'}</Text>
+                  </View>
+                </View>
+              </View>
+            )}
+          </ScrollView>
+
+          <View style={fm.footer}>
+            <TouchableOpacity style={fm.footerBtnSecondary} onPress={onClose} activeOpacity={0.8}>
+              <Text style={fm.footerBtnSecondaryTxt}>Cerrar</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[fm.footerBtnPrimary, { backgroundColor: isBlocked ? GREEN : RED }]}
+              onPress={closeAndToggle}
+              activeOpacity={0.8}
+            >
+              <Text style={fm.footerBtnPrimaryTxt}>
+                {isBlocked ? '🔓 Desbloquear' : '🔒 Bloquear'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </TouchableOpacity>
+    </Modal>
+  );
+}
+
 export default function AdminHome() {
   const { user, signOut } = useContext(AuthContext);
 
@@ -671,53 +1424,15 @@ export default function AdminHome() {
 
   // ── Filtrado y paginación por sección ─────────────────────────────────────
   const sectionItems = useMemo(() => {
-    const q = busqueda.trim().toLowerCase();
-    let list = activeSection === 'usuarios' ? data.usuarios.slice() // Sin reverse, orden igual a la web
-             : activeSection === 'libros'   ? data.libros.slice().reverse()
-             : activeSection === 'tiendas'  ? data.tiendas.slice().reverse()
-             : activeSection === 'ordenes'  ? data.ordenes.slice().sort((a, b) => {
-               // Más recientes primero: ordena por fecha descendente, luego por id descendente como fallback
-               const fa = a.fecha ? new Date(a.fecha).getTime() : 0;
-               const fb = b.fecha ? new Date(b.fecha).getTime() : 0;
-               if (fb !== fa) return fb - fa;
-               return (b.id_orden || 0) - (a.id_orden || 0);
-             })
-             : [];
-
-    if (activeSection === 'usuarios') {
-      if (filtroRol !== 'todos') list = list.filter((u) => normalizeUserRoleFilter(u.rol) === filtroRol);
-      if (filtroEstadoUsuario !== 'todos') {
-        list = list.filter((u) => {
-          const estado = (u.estado_usuario || 'Activo').toLowerCase();
-          return (
-            (filtroEstadoUsuario === 'Activo' && estado === 'activo') ||
-            (filtroEstadoUsuario === 'Bloqueado' && estado === 'bloqueado')
-          );
-        });
-      }
-      if (q) list = list.filter((u) =>
-        (u.nombre_usuario || '').toLowerCase().includes(q) ||
-        (u.correo_usuario || '').toLowerCase().includes(q));
-    }
-    if (activeSection === 'libros') {
-      if (filtroCategoria !== 'todas') list = list.filter((l) => (l.nombre_categoria || 'Sin categoría') === filtroCategoria);
-      if (q) list = list.filter((l) =>
-        (l.titulo || l.nombre_libro || '').toLowerCase().includes(q) ||
-        (l.autor_libro || '').toLowerCase().includes(q) ||
-        (l.nombre_tienda || '').toLowerCase().includes(q));
-    }
-    if (activeSection === 'tiendas' && q)
-      list = list.filter((t) =>
-        (t.nombre_tienda || '').toLowerCase().includes(q) ||
-        (t.estado_tienda || '').toLowerCase().includes(q));
-    if (activeSection === 'ordenes' && q)
-      list = list.filter((o) =>
-        String(o.id_orden || '').includes(q) ||
-        (o.estado || '').toLowerCase().includes(q));
-    if (activeSection === 'ordenes' && filtroEstadoOrden !== 'todos')
-      list = list.filter((o) => (o.estado || '').trim().toLowerCase() === filtroEstadoOrden);
-
-    return list;
+    return getSectionItems({
+      activeSection,
+      data,
+      query: busqueda.trim().toLowerCase(),
+      role: filtroRol,
+      userStatus: filtroEstadoUsuario,
+      category: filtroCategoria,
+      orderStatus: filtroEstadoOrden,
+    });
   }, [activeSection, data, busqueda, filtroRol, filtroEstadoUsuario, filtroCategoria, filtroEstadoOrden]);
 
   const totalPages = Math.ceil(sectionItems.length / PER_PAGE) || 1;
@@ -738,11 +1453,12 @@ export default function AdminHome() {
         hideConfirm();
         try {
           await bloquearUsuario(u.id_usuario, bloqueado);
+          const estadoUsuario = bloqueado ? 'Bloqueado' : 'Activo';
           setData((prev) => ({
             ...prev,
             usuarios: prev.usuarios.map((x) =>
               x.id_usuario === u.id_usuario
-                ? { ...x, estado_usuario: bloqueado ? 'Bloqueado' : 'Activo' }
+                ? { ...x, estado_usuario: estadoUsuario }
                 : x),
           }));
         } catch (e) {
@@ -960,69 +1676,12 @@ export default function AdminHome() {
 
         {/* Detalles expandibles */}
         {expanded && (
-          <View style={s.expandBox}>
-            {/* Precio */}
-            <View style={s.detailRow}>
-              <Text style={s.detailLabel}>Precio</Text>
-              <View style={s.priceBadge}>
-                <Text style={s.priceTxt}>{fmtPrice(l.precio_libro)}</Text>
-              </View>
-            </View>
-            {/* Tienda */}
-            <View style={s.detailRow}>
-              <Text style={s.detailLabel}>Tienda</Text>
-              <Text style={[s.detailValue, { color: VINOTINTO, fontWeight: '700' }]} numberOfLines={1}>
-                {l.nombre_tienda || '—'}
-              </Text>
-            </View>
-            {/* Categoría */}
-            <View style={s.detailRow}>
-              <Text style={s.detailLabel}>Categoría</Text>
-              <View style={[s.badge, { backgroundColor: '#F3E8FF', borderColor: '#E9D5FF' }]}>
-                <Text style={[s.badgeTxt, { color: '#7E22CE' }]}>{l.nombre_categoria || 'Sin categoría'}</Text>
-              </View>
-            </View>
-            {/* Stock eliminado — no aparece en el dashboard web */}
-            {/* Estado */}
-            <View style={[s.detailRow, { marginBottom: 14 }]}>
-              <Text style={s.detailLabel}>Estado</Text>
-              <View style={[s.badge, { backgroundColor: oculto ? '#FEF2F2' : '#ECFDF5', borderColor: oculto ? '#FECACA' : '#A7F3D0' }]}>
-                {oculto
-                  ? <IconEyeOff size={11} color="#991B1B" />
-                  : <IconEye    size={11} color="#047857" />}
-                <Text style={[s.badgeTxt, { color: oculto ? '#991B1B' : '#047857', marginLeft: 3 }]}>
-                  {oculto ? 'Oculto en catálogo' : 'Visible en catálogo'}
-                </Text>
-              </View>
-            </View>
-
-            {/* Acciones */}
-            <View style={s.actionRow}>
-              <TouchableOpacity
-                style={[s.actionBtn, s.actionHalf, {
-                  backgroundColor: oculto ? '#ECFDF5' : '#FFFBEB',
-                  borderColor:     oculto ? '#A7F3D0' : '#FDE68A',
-                }]}
-                onPress={() => handleOcultar(l)}
-                activeOpacity={0.75}
-              >
-                {oculto
-                  ? <IconEye    size={13} color="#047857" />
-                  : <IconEyeOff size={13} color="#B45309" />}
-                <Text style={[s.actionTxt, { color: oculto ? '#047857' : '#B45309' }]}>
-                  {oculto ? 'Mostrar' : 'Ocultar'}
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[s.actionBtn, s.actionHalf, { backgroundColor: '#FEF2F2', borderColor: '#FECACA' }]}
-                onPress={() => handleEliminar(l)}
-                activeOpacity={0.75}
-              >
-                <IconTrash size={13} color={RED} />
-                <Text style={[s.actionTxt, { color: RED }]}>Eliminar</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+          <BookExpandedDetails
+            book={l}
+            hidden={oculto}
+            onToggleHidden={() => handleOcultar(l)}
+            onDelete={() => handleEliminar(l)}
+          />
         )}
       </View>
     );
@@ -1129,7 +1788,10 @@ export default function AdminHome() {
     const expanded = expandedOrden === o.id_orden;
     const items = Array.isArray(o.items) ? o.items : [];
     const comprador = data.usuarios.find((u) => String(u.id_usuario) === String(o.id_usuario_propietario));
-    const tipoEntrega = o.tipo_entrega === 'retiro_tienda' ? 'Retiro en tienda' : o.tipo_entrega === 'domicilio' ? 'Domicilio' : 'No especificado';
+    const tipoEntrega = {
+      retiro_tienda: 'Retiro en tienda',
+      domicilio: 'Domicilio',
+    }[o.tipo_entrega] || 'No especificado';
     return (
       <View style={[s.card, s.orderCard, { backgroundColor: ec.bg, borderColor: ec.border, borderLeftColor: ec.color }]}>
         <View style={s.cardTop}>
@@ -1351,12 +2013,7 @@ export default function AdminHome() {
       {/* Buscador */}
       <TextInput
         style={s.searchInput}
-        placeholder={
-          activeSection === 'usuarios' ? 'Buscar por nombre o correo…'
-          : activeSection === 'libros'  ? 'Buscar por título, autor o tienda…'
-          : activeSection === 'tiendas' ? 'Buscar por nombre o estado…'
-          : 'Buscar por ID o estado…'
-        }
+        placeholder={getSearchPlaceholder(activeSection)}
         placeholderTextColor="#AAA"
         value={busqueda}
         onChangeText={(t) => { setBusqueda(t); setPagina(1); }}
@@ -1397,6 +2054,9 @@ export default function AdminHome() {
           ].map(({ id, label, Icon }) => {
             const selected = filtroEstadoUsuario === id;
             const isActiveFilter = id === 'Activo';
+            let iconColor = '#991B1B';
+            if (isActiveFilter) iconColor = '#166534';
+            if (selected) iconColor = WHITE;
             return (
             <TouchableOpacity
               key={id}
@@ -1409,7 +2069,7 @@ export default function AdminHome() {
               accessibilityRole="button"
               accessibilityState={{ selected }}
             >
-              <Icon size={16} color={selected ? WHITE : (isActiveFilter ? '#166534' : '#991B1B')} />
+              <Icon size={16} color={iconColor} />
               <Text style={[
                 s.userStatusFilterText,
                 selected && s.userStatusFilterTextSelected,
@@ -1617,28 +2277,6 @@ export default function AdminHome() {
   // ─────────────────────────────────────────────────────────────────────────
   const isDashboard = activeSection === 'dashboard';
 
-  const headerContent = isDashboard ? (
-    <>
-      <TouchableOpacity style={s.menuBtn} onPress={() => setMenuVisible(true)}>
-        <IconMenu size={24} color={WHITE} />
-      </TouchableOpacity>
-      <View style={{ flex: 1 }}>
-        <Text style={s.headTitle}>Dashboard Global</Text>
-        <Text style={s.headSub}>Administración</Text>
-      </View>
-    </>
-  ) : (
-    <>
-      <TouchableOpacity style={s.menuBtn} onPress={() => setMenuVisible(true)}>
-        <IconMenu size={24} color={WHITE} />
-      </TouchableOpacity>
-      <View style={{ flex: 1 }}>
-        <Text style={s.headTitle}>{cfg.title}</Text>
-        <Text style={s.headSub}>{cfg.subtitle}</Text>
-      </View>
-    </>
-  );
-
   // ─────────────────────────────────────────────────────────────────────────
   //  RENDER PRINCIPAL
   // ─────────────────────────────────────────────────────────────────────────
@@ -1646,7 +2284,13 @@ export default function AdminHome() {
     <SafeAreaView style={s.safe}>
 
       {/* Header */}
-      <View style={s.header}>{headerContent}</View>
+      <View style={s.header}>
+        <AdminHeaderContent
+          isDashboard={isDashboard}
+          sectionConfig={cfg}
+          onOpenMenu={() => setMenuVisible(true)}
+        />
+      </View>
 
       {loading ? (
         <View style={s.loadingBox}>
@@ -1655,277 +2299,41 @@ export default function AdminHome() {
         </View>
 
       ) : isDashboard ? (
-        /* ══════════════ DASHBOARD ══════════════ */
-        <ScrollView
-          style={{ flex: 1 }}
-          contentContainerStyle={s.content}
-          showsVerticalScrollIndicator={false}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} colors={[VINOTINTO]} tintColor={VINOTINTO} />}
-        >
-          <Text style={s.greeting}>Hola, {user?.nombre || 'Administrador'} 👋</Text>
-          <Text style={s.intro}>Este es el estado actual de BookyHome.</Text>
-
-          {!!error && (
-            <View style={s.errorBox}>
-              <Text style={{ color: '#991B1B', fontSize: 13, flex: 1 }}>{error}</Text>
-              <TouchableOpacity onPress={() => load(true)}>
-                <Text style={{ color: VINOTINTO, fontWeight: '800', marginLeft: 10, fontSize: 13 }}>Reintentar</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-
-          {/* Alerta de atención */}
-          {(stats.claims > 0 || stats.support > 0 || stats.pendingStores > 0) && (
-            <View style={s.alert}>
-              <View style={s.alertIconBox}><IconAlertTriangle size={22} color="#D97706" /></View>
-              <View style={{ flex: 1 }}>
-                <Text style={s.alertTitle}>Atención requerida del Administrador</Text>
-                <Text style={s.alertBody}>
-                  {stats.claims > 0        ? `Tienes ${stats.claims} queja(s) o reclamo(s) abierta(s). ` : ''}
-                  {stats.support > 0       ? `Hay ${stats.support} ticket(s) de soporte sin resolver. ` : ''}
-                  {stats.pendingStores > 0 ? `Hay ${stats.pendingStores} librería(s) pendiente(s) de revisión.` : ''}
-                </Text>
-              </View>
-            </View>
-          )}
-
-          {/* KPIs 2×2 */}
-          <View style={{ marginHorizontal: -6, marginBottom: 8 }}>
-            <View style={{ flexDirection: 'row' }}>
-              <KpiCard
-                title="Usuarios Totales" value={data.usuarios.length} valueColor={VINOTINTO}
-                tagLabel="Ecosistema" tagBg="#FDF2F4" tagColor={VINOTINTO} tagBorder="#F8D2DA"
-                iconBg="#FDF2F4" iconColor={VINOTINTO} cardBorder="#F8D2DA" Icon={IconUser}
-                onPress={() => setActiveSection('usuarios')}
-                details={<>
-                  <Chip text={`${stats.buyers} compradores`} bg="#ECFDF5" color="#047857" border="#A7F3D0" />
-                  <Chip text={`${stats.sellers} vendedores`} bg="#FFFBEB" color="#B45309" border="#FDE68A" />
-                </>}
-              />
-              <KpiCard
-                title="Libros Publicados" value={data.libros.length} valueColor="#581C87"
-                tagLabel="Catálogo" tagBg="#F3E8FF" tagColor="#7E22CE" tagBorder="#E9D5FF"
-                iconBg="#F3E8FF" iconColor="#7E22CE" cardBorder="#E9D5FF" Icon={IconBook}
-                onPress={() => setActiveSection('libros')}
-                details={<>
-                  <Chip text={`${stats.activeBooks} disponibles`} bg="#FAF5FF" color="#6B21A8" border="#E9D5FF" />
-                  <Chip text={`${totalCats} categorías`}          bg="#F3F4F6" color="#4B5563" border="#D1D5DB" />
-                </>}
-              />
-            </View>
-            <View style={{ flexDirection: 'row' }}>
-              <KpiCard
-                title="Librerías & Tiendas" value={data.tiendas.length} valueColor="#064E3B"
-                tagLabel={`${stats.activeStores} Activas`} tagBg="#ECFDF5" tagColor="#047857" tagBorder="#A7F3D0"
-                iconBg="#ECFDF5" iconColor="#047857" cardBorder="#A7F3D0" Icon={IconStore}
-                onPress={() => setActiveSection('tiendas')}
-                details={<>
-                  <Chip text={`${stats.activeStores} verificadas`} bg="#ECFDF5" color="#047857" border="#A7F3D0" />
-                  <Chip
-                    text={stats.pendingStores ? `${stats.pendingStores} pendientes` : 'Al día'}
-                    bg={stats.pendingStores ? '#FEF3C7' : '#F3F4F6'}
-                    color={stats.pendingStores ? '#B45309' : '#4B5563'}
-                    border={stats.pendingStores ? '#FDE68A' : '#D1D5DB'}
-                  />
-                </>}
-              />
-              <KpiCard
-                title="Órdenes Procesadas" value={data.ordenes.length} valueColor="#1E3A8A"
-                tagLabel="Transacciones" tagBg="#EFF6FF" tagColor="#1D4ED8" tagBorder="#BFDBFE"
-                iconBg="#EFF6FF" iconColor="#1D4ED8" cardBorder="#BFDBFE" Icon={IconPackage}
-                onPress={() => setActiveSection('ordenes')}
-                details={<>
-                  <Chip text={`${stats.ordersToday} creadas hoy`} bg="#EFF6FF" color="#1D4ED8" border="#BFDBFE" />
-                  <Chip text={`${stats.completed} entregadas`}    bg="#ECFDF5" color="#047857" border="#A7F3D0" />
-                </>}
-              />
-            </View>
-          </View>
-
-          {/* Distribución de la comunidad */}
-          <View style={s.panel}>
-            <PanelHeader iconNode={<IconUser size={20} color={VINOTINTO} />} title="Distribución de la comunidad" extra={`${data.usuarios.length} miembros en total`} />
-            <RoleRow label="Compradores"            count={stats.buyers}  total={data.usuarios.length} dotColor="#10B981" pctBg="#ECFDF5" pctColor="#047857" pctBorder="#A7F3D0" />
-            <RoleRow label="Vendedores / Librerías"  count={stats.sellers} total={data.usuarios.length} dotColor="#F59E0B" pctBg="#FFFBEB" pctColor="#B45309" pctBorder="#FDE68A" />
-            <RoleRow label="Administradores"         count={stats.admins}  total={data.usuarios.length} dotColor={VINOTINTO} pctBg="#FDF2F4" pctColor={VINOTINTO} pctBorder="#F8D2DA" />
-          </View>
-
-          {/* Categorías más populares */}
-          <View style={s.panel}>
-            <PanelHeader
-              iconNode={<IconBook size={20} color={VINOTINTO} />}
-              title="Categorías más populares"
-              linkText="Explorar catálogo →"
-              onLink={() => setActiveSection('libros')}
-            />
-            {topCats.length ? (
-              <View style={s.cats}>
-                {topCats.map(([name, cnt]) => (
-                  <View key={name} style={s.cat}>
-                    <Text style={s.catName} numberOfLines={1}>{name}</Text>
-                    <View style={s.catBadge}><Text style={s.catCount}>{cnt}</Text></View>
-                  </View>
-                ))}
-              </View>
-            ) : <Text style={s.emptyTxt}>No hay libros categorizados aún.</Text>}
-
-            <View style={s.storeStatus}>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <Text style={{ color: CARBON, fontSize: 12, fontWeight: '700', flex: 1 }}>Estado operativo de librerías</Text>
-                <Text style={{ color: '#166534', fontSize: 11, fontWeight: '800' }}>{stats.activeStores} de {data.tiendas.length} operando</Text>
-              </View>
-              <View style={s.legend}>
-                <View style={s.legendItem}><View style={[s.legendDot, { backgroundColor: '#16a34a' }]} /><Text style={{ color: '#166534', fontSize: 11, fontWeight: '700' }}>{stats.activeStores} Activas</Text></View>
-                <View style={s.legendItem}><View style={[s.legendDot, { backgroundColor: '#ea580c' }]} /><Text style={{ color: '#9a3412', fontSize: 11, fontWeight: '700' }}>{stats.pendingStores} Pendientes</Text></View>
-                <View style={s.legendItem}><View style={[s.legendDot, { backgroundColor: '#ef4444' }]} /><Text style={{ color: '#991b1b', fontSize: 11, fontWeight: '700' }}>{stats.suspendedStores} Suspendidas/Inactivas</Text></View>
-              </View>
-            </View>
-          </View>
-
-          {/* Últimos usuarios */}
-          <View style={s.panel}>
-            <PanelHeader
-              iconNode={<View style={[s.smallIcon, { backgroundColor: COLORS.usuarios.soft }]}><IconUser size={16} color={VINOTINTO} /></View>}
-              title="Últimos usuarios registrados"
-              subtitle="Nuevos registros en la plataforma"
-              linkText={`Ver todos (${data.usuarios.length}) →`}
-              onLink={() => setActiveSection('usuarios')}
-            />
-            <View style={s.tableScroll}>
-              <View style={s.tableContent}>
-                <View style={[s.tableHead, { backgroundColor: VINOTINTO }]}>
-                  <Text style={[s.th, s.userNameColumn]}>Usuario</Text>
-                  <Text style={[s.th, s.userEmailColumn]}>Correo</Text>
-                  <Text style={[s.th, s.userRoleColumn]}>Rol</Text>
-                  <Text style={[s.th, s.userStatusColumn, s.thRight]}>Estado</Text>
-                </View>
-                {lastUsers.map((item, i) => {
-                  const rc = getRolColors(item.rol);
-                  const ini = (item.nombre_usuario || 'U').trim().split(/\s+/).map((w) => w[0]).join('').slice(0, 2).toUpperCase();
-                  const bloq = item.estado_usuario === 'Bloqueado';
-                  return (
-                    <View key={item.id_usuario} style={[s.tableRow, { backgroundColor: i % 2 === 0 ? '#fafafa' : WHITE }]}>
-                      <View style={[s.td, s.userNameColumn, { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start', gap: 7 }]}>
-                        <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: rc.bg, alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                          <Text style={{ color: rc.color, fontSize: 10, fontWeight: '800' }}>{ini}</Text>
-                        </View>
-                        <Text style={{ color: CARBON, fontSize: 12, fontWeight: '700', flexShrink: 1 }} numberOfLines={1}>{item.nombre_usuario || 'Usuario'}</Text>
-                      </View>
-                      <View style={[s.td, s.userEmailColumn]}><Text style={{ color: GRAY, fontSize: 11 }} numberOfLines={1}>{item.correo_usuario || '—'}</Text></View>
-                      <View style={[s.td, s.userRoleColumn]}>
-                        <View style={{ backgroundColor: rc.bg, borderColor: rc.border, borderWidth: 1, borderRadius: 12, paddingHorizontal: 7, paddingVertical: 2, alignSelf: 'flex-start' }}>
-                          <Text style={{ color: rc.color, fontSize: 10, fontWeight: '700', textTransform: 'capitalize' }} numberOfLines={1}>{item.rol || 'usuario'}</Text>
-                        </View>
-                      </View>
-                      <View style={[s.td, s.userStatusColumn, { alignItems: 'flex-end' }]}>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: bloq ? '#FEF2F2' : '#ECFDF5', borderColor: bloq ? '#FECACA' : '#A7F3D0', borderWidth: 1, borderRadius: 10, paddingHorizontal: 6, paddingVertical: 2 }}>
-                          <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: bloq ? '#ef4444' : '#16a34a' }} />
-                          <Text style={{ color: bloq ? '#991b1b' : '#166534', fontSize: 9, fontWeight: '700' }}>{bloq ? 'Bloqueado' : 'Activo'}</Text>
-                        </View>
-                      </View>
-                    </View>
-                  );
-                })}
-                {lastUsers.length === 0 && <Text style={s.emptyTxt}>No hay usuarios registrados aún.</Text>}
-              </View>
-            </View>
-          </View>
-
-          {/* Últimas tiendas */}
-          <View style={s.panel}>
-            <PanelHeader
-              iconNode={<View style={[s.smallIcon, { backgroundColor: COLORS.tiendas.soft }]}><IconStore size={16} color={COLORS.tiendas.main} /></View>}
-              title="Últimas tiendas creadas"
-              subtitle="Librerías y vendedores asociados"
-              linkText={`Gestionar todas (${data.tiendas.length}) →`}
-              onLink={() => setActiveSection('tiendas')}
-            />
-            <View style={s.tableScroll}>
-              <View style={s.tableContent}>
-                <View style={[s.tableHead, { backgroundColor: VINOTINTO }]}>
-                  <Text style={[s.th, s.storeNameColumn]}>Librería</Text>
-                  <Text style={[s.th, s.storePhoneColumn]}>Teléfono</Text>
-                  <Text style={[s.th, s.storeDateColumn]}>Registro</Text>
-                  <Text style={[s.th, s.storeStatusColumn, s.thRight]}>Estado</Text>
-                </View>
-                {lastStores.map((item, i) => {
-                  const sc = getStoreColors(item.estado_tienda);
-                  const fecha = item.fecha_creacion ? new Date(item.fecha_creacion).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
-                  return (
-                    <View key={item.id_tienda} style={[s.tableRow, { backgroundColor: i % 2 === 0 ? '#fafafa' : WHITE }]}>
-                      <View style={[s.td, s.storeNameColumn, { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start', gap: 7 }]}>
-                        <View style={{ width: 28, height: 28, borderRadius: 8, backgroundColor: COLORS.tiendas.soft, alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                          <IconStore size={15} color={COLORS.tiendas.main} />
-                        </View>
-                        <Text style={{ color: VINOTINTO, fontSize: 12, fontWeight: '700', flexShrink: 1 }} numberOfLines={1}>{item.nombre_tienda || 'Librería'}</Text>
-                      </View>
-                      <View style={[s.td, s.storePhoneColumn]}><Text style={{ color: GRAY, fontSize: 11 }} numberOfLines={1}>{item.telefono || '—'}</Text></View>
-                      <View style={[s.td, s.storeDateColumn]}><Text style={{ color: GRAY, fontSize: 11 }} numberOfLines={1}>{fecha}</Text></View>
-                      <View style={[s.td, s.storeStatusColumn, { alignItems: 'flex-end' }]}>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: sc.bg, borderColor: sc.border, borderWidth: 1, borderRadius: 12, paddingHorizontal: 8, paddingVertical: 3 }}>
-                          <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: sc.color }} />
-                          <Text style={{ color: sc.color, fontSize: 10, fontWeight: '700' }} numberOfLines={1}>{item.estado_tienda || 'Pendiente'}</Text>
-                        </View>
-                      </View>
-                    </View>
-                  );
-                })}
-                {lastStores.length === 0 && <Text style={s.emptyTxt}>No hay tiendas registradas aún.</Text>}
-              </View>
-            </View>
-          </View>
-
-        </ScrollView>
-
-      ) : activeSection === 'reportes' ? (
-        <AdminReports data={data} stats={stats} />
-
-      ) : activeSection === 'finanzas' ? (
-        <FinanzasAdmin />
-
-      ) : activeSection === 'reclamos' || activeSection === 'soporte' ? (
-        <AdminRequests
-          type={activeSection}
-          solicitudes={data.solicitudes}
-          loading={solicitudesLoading}
-          refreshing={solicitudesLoading}
-          error={solicitudesError}
-          onRefresh={() => loadSolicitudes(true)}
+        <AdminDashboardContent
+          user={user}
+          error={error}
+          onRetry={() => load(true)}
+          refreshing={refreshing}
+          onRefresh={() => load(true)}
+          data={data}
+          stats={stats}
+          totalCats={totalCats}
+          topCats={topCats}
+          lastUsers={lastUsers}
+          lastStores={lastStores}
+          onSelectSection={setActiveSection}
         />
-
-      ) : activeSection === 'perfil' ? (
-        <AdminProfile
-          stats={{
-            usuarios: data.usuarios.length,
-            libros: data.libros.length,
-            ordenes: data.ordenes.length,
-            tiendas: data.tiendas.length,
-          }}
-          solicitudes={data.solicitudes}
+      ) : (
+        <AdminSectionContent
+          activeSection={activeSection}
+          data={data}
+          stats={stats}
+          solicitudesLoading={solicitudesLoading}
+          solicitudesError={solicitudesError}
+          onRefreshSolicitudes={() => loadSolicitudes(true)}
           onProfilePhotoChange={setAdminProfilePhoto}
           onProfileNameChange={setAdminProfileName}
-        />
-
-      ) : (
-        /* ══════════════ SECCIÓN ══════════════ */
-        <FlatList
-          data={pageItems}
+          pageItems={pageItems}
           keyExtractor={keyExtractor}
           renderItem={renderItem}
-          contentContainerStyle={s.sectionContent}
-          ListHeaderComponent={SectionListHeader}
-          ListFooterComponent={SectionListFooter}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={() => load(true)} colors={[cfg.color]} tintColor={cfg.color} />
-          }
-          ListEmptyComponent={
-            <Text style={s.emptySection}>
-              {busqueda || filtroRol !== 'todos' || filtroCategoria !== 'todas'
-                ? 'Sin resultados para los filtros aplicados.'
-                : 'No hay registros todavía.'}
-            </Text>
-          }
-          keyboardShouldPersistTaps="handled"
+          sectionHeader={SectionListHeader}
+          sectionFooter={SectionListFooter}
+          refreshing={refreshing}
+          onRefresh={() => load(true)}
+          sectionColor={cfg.color}
+          busqueda={busqueda}
+          filtroRol={filtroRol}
+          filtroCategoria={filtroCategoria}
         />
       )}
 
@@ -1944,255 +2352,26 @@ export default function AdminHome() {
         onSelectSection={(sec) => { setActiveSection(sec); }}
       />
 
-      {/* ── Modal Ficha de Usuario ─────────────────────────────────────────── */}
-      {fichaUsuario != null && (() => {
-        const u           = fichaUsuario;
-        const esBloqueado = (u.estado_usuario || '').toLowerCase() === 'bloqueado';
-        const rolKey      = (u.rol || 'comprador').toLowerCase().trim();
-        const tiendaVinculada = data.tiendas.find(
-          (t) => Number(t.id_usuario) === Number(u.id_usuario)
-        );
-        const rolEmoji = rolKey.includes('admin') ? '🛡️' : rolKey === 'vendedor' ? '🏪' : '🛒';
-        const rolLabel = rolKey.includes('admin') ? 'Administrador' : rolKey === 'vendedor' ? 'Vendedor' : 'Comprador';
+      <UserProfileModal
+        user={fichaUsuario}
+        store={fichaUsuario ? data.tiendas.find(
+          (store) => Number(store.id_usuario) === Number(fichaUsuario.id_usuario)
+        ) || null : null}
+        onClose={() => setFichaUsuarioId(null)}
+        onToggleUser={handleBloqueo}
+      />
 
-        return (
-          <Modal
-            visible
-            transparent
-            animationType="fade"
-            statusBarTranslucent
-            onRequestClose={() => setFichaUsuarioId(null)}
-          >
-            {/* fondo oscuro: toca fuera para cerrar */}
-            <TouchableOpacity
-              style={fm.overlay}
-              activeOpacity={1}
-              onPress={() => setFichaUsuarioId(null)}
-            >
-              {/* la tarjeta no propaga el toque al overlay */}
-              <View style={fm.card} onStartShouldSetResponder={() => true}>
-
-                {/* ── Header vinotinto ── */}
-                <View style={fm.header}>
-                  <View style={fm.headerAvatar}>
-                    <Text style={fm.headerAvatarTxt}>{initials(u.nombre_usuario)}</Text>
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={fm.headerName} numberOfLines={1}>{u.nombre_usuario || 'Usuario'}</Text>
-                    <Text style={fm.headerSub}>Ficha de Usuario · ID #{u.id_usuario}</Text>
-                  </View>
-                  <TouchableOpacity style={fm.closeBtn} onPress={() => setFichaUsuarioId(null)} activeOpacity={0.8}>
-                    <Text style={fm.closeBtnTxt}>✕</Text>
-                  </TouchableOpacity>
-                </View>
-
-                {/* ── Cuerpo scrolleable ── */}
-                <ScrollView
-                  style={{ flexGrow: 0 }}
-                  contentContainerStyle={fm.body}
-                  showsVerticalScrollIndicator={false}
-                  bounces={false}
-                >
-                  {/* Grid 2 cols: Rol + Estado */}
-                  <View style={fm.grid2}>
-                    <View style={fm.infoBox}>
-                      <Text style={fm.infoBoxLabel}>ROL DE CUENTA</Text>
-                      <Text style={fm.infoBoxValue}>{rolEmoji} {rolLabel}</Text>
-                    </View>
-                    <View style={fm.infoBox}>
-                      <Text style={fm.infoBoxLabel}>ESTADO ACTUAL</Text>
-                      <Text style={[fm.infoBoxValue, { color: esBloqueado ? RED : '#047857' }]}>
-                        {esBloqueado ? '🔒 Bloqueado' : '🟢 Activo'}
-                      </Text>
-                    </View>
-                  </View>
-
-                  {/* Información de Contacto y Cuenta */}
-                  <View style={fm.section}>
-                    <Text style={fm.sectionTitle}>INFORMACIÓN DE CONTACTO Y CUENTA</Text>
-
-                    <View style={fm.dataRow}>
-                      <Text style={fm.dataLabel}>Correo Electrónico:</Text>
-                      <Text style={fm.dataValue} numberOfLines={1}>{u.correo_usuario || '—'}</Text>
-                    </View>
-                    <View style={fm.dataRow}>
-                      <Text style={fm.dataLabel}>Teléfono:</Text>
-                      <Text style={fm.dataValue}>{u.telefono || 'No registrado'}</Text>
-                    </View>
-                    <View style={fm.dataRow}>
-                      <Text style={fm.dataLabel}>Fecha de Registro:</Text>
-                      <Text style={fm.dataValue}>{u.fecha_registro || 'N/A'}</Text>
-                    </View>
-                    <View style={[fm.dataRow, { borderBottomWidth: 0 }]}>
-                      <Text style={fm.dataLabel}>Verificación Email:</Text>
-                      <Text style={[fm.dataValue, { color: u.email_verificado ? '#047857' : '#D97706' }]}>
-                        {u.email_verificado ? '✓ Verificado' : '⏳ Pendiente'}
-                      </Text>
-                    </View>
-                  </View>
-
-                  {/* Librería vinculada (solo vendedores) */}
-                  {tiendaVinculada && (
-                    <View style={fm.tiendaBox}>
-                      <Text style={fm.tiendaTitle}>🏪 LIBRERÍA VINCULADA</Text>
-                      <View style={fm.tiendaRow}>
-                        <View style={{ flex: 1 }}>
-                          <Text style={fm.tiendaNombre}>{tiendaVinculada.nombre_tienda}</Text>
-                          <Text style={fm.tiendaId}>ID Tienda: #{tiendaVinculada.id_tienda}</Text>
-                        </View>
-                        <View style={[fm.tiendaEstadoBadge, {
-                          backgroundColor: isActiveStore(tiendaVinculada.estado_tienda) ? '#047857' : RED,
-                        }]}>
-                          <Text style={fm.tiendaEstadoTxt}>
-                            {tiendaVinculada.estado_tienda || 'Activa'}
-                          </Text>
-                        </View>
-                      </View>
-                    </View>
-                  )}
-                </ScrollView>
-
-                {/* ── Footer: Cerrar + Bloquear ── */}
-                <View style={fm.footer}>
-                  <TouchableOpacity
-                    style={fm.footerBtnSecondary}
-                    onPress={() => setFichaUsuarioId(null)}
-                    activeOpacity={0.8}
-                  >
-                    <Text style={fm.footerBtnSecondaryTxt}>Cerrar</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[fm.footerBtnPrimary, { backgroundColor: esBloqueado ? GREEN : RED }]}
-                    onPress={() => {
-                      setFichaUsuarioId(null);
-                      handleBloqueo(u);
-                    }}
-                    activeOpacity={0.8}
-                  >
-                    <Text style={fm.footerBtnPrimaryTxt}>
-                      {esBloqueado ? '🔓 Desbloquear' : '🔒 Bloquear'}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-
-              </View>
-            </TouchableOpacity>
-          </Modal>
-        );
-      })()}
-
-      {/* Modal de estado de tienda: mismos estados, mensajes y colores de la web */}
-      {modalEstadoTienda && (() => {
-        const { tienda, nuevoEstado } = modalEstadoTienda;
-        const estadoActual = (tienda.estado_tienda || 'pendiente').toLowerCase();
-        const cfgEstado = ESTADOS_TIENDA.find((estado) => estado.value === nuevoEstado);
-        const esSuspension = nuevoEstado === 'suspendida';
-        const info = MENSAJES_ESTADO_TIENDA[nuevoEstado];
-        const cerrar = () => {
-          if (!guardandoEstadoTienda) setModalEstadoTienda(null);
-        };
-
-        return (
-          <Modal visible transparent animationType="fade" statusBarTranslucent onRequestClose={cerrar}>
-            <View style={tm.overlay}>
-              <View style={tm.card}>
-                {!nuevoEstado ? (
-                  <>
-                    <View style={[tm.header, { backgroundColor: VINOTINTO }]}>
-                      <View style={tm.headerIcon}><IconStore size={24} color={WHITE} /></View>
-                      <View style={{ flex: 1 }}>
-                        <Text style={tm.headerEyebrow}>Cambiar estado</Text>
-                        <Text style={tm.headerTitle}>Selecciona un estado</Text>
-                      </View>
-                      <TouchableOpacity style={tm.close} onPress={cerrar}><Text style={tm.closeText}>✕</Text></TouchableOpacity>
-                    </View>
-                    <View style={tm.body}>
-                      <Text style={tm.storeLabel}>LIBRERÍA A MODIFICAR</Text>
-                      <Text style={tm.storeName}>{tienda.nombre_tienda || `ID #${tienda.id_tienda}`}</Text>
-                      <Text style={tm.storeId}>ID #{tienda.id_tienda} · Estado actual: {ESTADOS_TIENDA.find((e) => e.value === estadoActual)?.label || estadoActual}</Text>
-                      <Text style={tm.chooseLabel}>Selecciona el nuevo estado</Text>
-                      {ESTADOS_TIENDA.map((estado) => {
-                        const actual = estado.value === estadoActual;
-                        return (
-                          <TouchableOpacity
-                            key={estado.value}
-                            style={[tm.statusOption, { backgroundColor: estado.bg, borderColor: estado.border }, actual && tm.statusOptionDisabled]}
-                            onPress={() => seleccionarEstadoTienda(estado.value)}
-                            disabled={actual}
-                            activeOpacity={0.75}
-                          >
-                            <View style={[tm.statusDot, { backgroundColor: estado.color }]} />
-                            <Text style={[tm.statusOptionText, { color: estado.color }]}>{estado.label}</Text>
-                            <Text style={[tm.statusCurrent, { color: estado.color }]}>{actual ? 'Estado actual' : '›'}</Text>
-                          </TouchableOpacity>
-                        );
-                      })}
-                    </View>
-                  </>
-                ) : (
-                  <>
-                    <View style={[tm.header, { backgroundColor: esSuspension ? '#B91C1C' : cfgEstado.color }]}>
-                      <View style={tm.headerEmoji}><Text style={{ fontSize: 24 }}>{info.icon}</Text></View>
-                      <View style={{ flex: 1 }}>
-                        <Text style={tm.headerEyebrow}>{esSuspension ? 'Acción Disciplinaria' : 'Cambiar estado'}</Text>
-                        <Text style={tm.headerTitle}>{esSuspension ? 'Suspender Librería' : `Marcar como ${cfgEstado.label}`}</Text>
-                      </View>
-                      <TouchableOpacity style={tm.close} onPress={cerrar} disabled={guardandoEstadoTienda}><Text style={tm.closeText}>✕</Text></TouchableOpacity>
-                    </View>
-                    <ScrollView contentContainerStyle={tm.body} keyboardShouldPersistTaps="handled">
-                      <View style={[tm.storeBox, { backgroundColor: cfgEstado.bg, borderColor: cfgEstado.border }]}>
-                        <View style={{ flex: 1 }}>
-                          <Text style={[tm.storeLabel, { color: cfgEstado.color }]}>LIBRERÍA A MODIFICAR</Text>
-                          <Text style={[tm.storeName, { color: cfgEstado.color }]}>{tienda.nombre_tienda || `ID #${tienda.id_tienda}`}</Text>
-                        </View>
-                        <View style={[tm.idBadge, { backgroundColor: cfgEstado.color }]}><Text style={tm.idBadgeText}>ID #{tienda.id_tienda}</Text></View>
-                      </View>
-                      <Text style={tm.description}>{info.desc}</Text>
-
-                      {esSuspension && (
-                        <View>
-                          <View style={tm.notice}>
-                            <Text style={tm.noticeText}>💬  <Text style={{ fontWeight: '800' }}>Notificación formal al vendedor:</Text> El motivo ingresado se enviará inmediatamente como mensaje en la sección de Chat del vendedor.</Text>
-                          </View>
-                          <Text style={tm.reasonLabel}>MOTIVOS FRECUENTES (TOCA PARA SELECCIONAR)</Text>
-                          <View style={tm.reasonChips}>
-                            {MOTIVOS_SUSPENSION_PREDEFINIDOS.map((motivo) => {
-                              const seleccionado = motivoSuspension === motivo;
-                              return (
-                                <TouchableOpacity key={motivo} style={[tm.reasonChip, seleccionado && tm.reasonChipSelected]} onPress={() => { setMotivoSuspension(motivo); setErrorMotivoSuspension(''); }}>
-                                  <Text style={[tm.reasonChipText, seleccionado && tm.reasonChipTextSelected]}>{seleccionado ? '✓ ' : '+ '}{motivo}</Text>
-                                </TouchableOpacity>
-                              );
-                            })}
-                          </View>
-                          <View style={tm.reasonHeading}><Text style={tm.reasonFieldLabel}>Explicación detallada del motivo *</Text><Text style={[tm.count, motivoSuspension.length > 400 && tm.countWarning]}>{motivoSuspension.length} / 450</Text></View>
-                          <TextInput
-                            value={motivoSuspension}
-                            onChangeText={(texto) => { setMotivoSuspension(texto); if (texto.trim()) setErrorMotivoSuspension(''); }}
-                            placeholder="Escribe detalladamente las razones por las cuales se suspende la librería..."
-                            placeholderTextColor="#9CA3AF"
-                            multiline
-                            maxLength={450}
-                            textAlignVertical="top"
-                            style={[tm.reasonInput, errorMotivoSuspension && tm.reasonInputError]}
-                          />
-                          {!!errorMotivoSuspension && <Text style={tm.reasonError}>⚠️ {errorMotivoSuspension}</Text>}
-                        </View>
-                      )}
-                      <View style={tm.actions}>
-                        <TouchableOpacity style={tm.cancelButton} onPress={cerrar} disabled={guardandoEstadoTienda}><Text style={tm.cancelButtonText}>Cancelar</Text></TouchableOpacity>
-                        <TouchableOpacity style={[tm.confirmButton, { backgroundColor: esSuspension ? '#B91C1C' : cfgEstado.color }, guardandoEstadoTienda && tm.buttonDisabled]} onPress={confirmarEstadoTienda} disabled={guardandoEstadoTienda}>
-                          <Text style={tm.confirmButtonText}>{guardandoEstadoTienda ? 'Procesando...' : esSuspension ? '🚫 Suspender y Notificar' : 'Confirmar'}</Text>
-                        </TouchableOpacity>
-                      </View>
-                    </ScrollView>
-                  </>
-                )}
-              </View>
-            </View>
-          </Modal>
-        );
-      })()}
+      <StoreStateModal
+        modalState={modalEstadoTienda}
+        saving={guardandoEstadoTienda}
+        reason={motivoSuspension}
+        reasonError={errorMotivoSuspension}
+        onClose={() => setModalEstadoTienda(null)}
+        onSelect={seleccionarEstadoTienda}
+        onReasonChange={setMotivoSuspension}
+        onClearReasonError={() => setErrorMotivoSuspension('')}
+        onConfirm={confirmarEstadoTienda}
+      />
 
       {/* Modal de confirmación */}
       <ConfirmModal

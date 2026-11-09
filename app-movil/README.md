@@ -127,6 +127,22 @@ pnpm ios
 pnpm web
 ```
 
+## Pruebas y cobertura
+
+Ejecutar las pruebas unitarias de la app movil:
+
+```bash
+pnpm test
+```
+
+Para generar el reporte de cobertura que consume SonarCloud:
+
+```bash
+pnpm test:coverage
+```
+
+El reporte LCOV se guarda en `coverage/lcov.info`.
+
 ## Notas importantes
 
 - El backend debe estar corriendo antes de abrir la app.
