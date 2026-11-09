@@ -630,7 +630,16 @@ export default function QuejasVendedor() {
                 return (
                   <div
                     key={queja.id_solicitud}
+                    role="button"
+                    tabIndex={0}
+                    aria-pressed={esActivo}
                     onClick={() => setSeleccionada(queja)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        setSeleccionada(queja);
+                      }
+                    }}
                     style={{
                       padding: '12px 14px',
                       borderRadius: 12,
@@ -1057,7 +1066,7 @@ export default function QuejasVendedor() {
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' && !e.shiftKey) {
                         e.preventDefault();
-                        responder();
+                        void responder();
                       }
                     }}
                     placeholder="Escribe tu mensaje o solución para el cliente y el administrador (Presiona Enter para enviar)..."
@@ -1126,7 +1135,7 @@ export default function QuejasVendedor() {
       {/* ==================== MODAL LIGHTBOX DE EVIDENCIA ==================== */}
       {evidenciaModalUrl && (
         <div
-          onClick={() => setEvidenciaModalUrl(null)}
+          role="presentation"
           style={{
             position: 'fixed',
             inset: 0,
@@ -1137,8 +1146,16 @@ export default function QuejasVendedor() {
             padding: 20,
           }}
         >
+          <button
+            type="button"
+            aria-label="Cerrar evidencia"
+            onClick={() => setEvidenciaModalUrl(null)}
+            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 0, background: 'transparent', cursor: 'pointer' }}
+          />
           <div
-            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Evidencia fotográfica adjunta"
             style={{
               background: t.modalBg,
               borderRadius: 16,
@@ -1148,6 +1165,8 @@ export default function QuejasVendedor() {
               boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
               display: 'flex',
               flexDirection: 'column',
+              position: 'relative',
+              zIndex: 1,
             }}
           >
             <div
@@ -1162,6 +1181,7 @@ export default function QuejasVendedor() {
             >
               <strong style={{ fontSize: '0.95rem' }}>Evidencia fotográfica adjunta</strong>
               <button
+                type="button"
                 onClick={() => setEvidenciaModalUrl(null)}
                 style={{
                   background: 'rgba(255,255,255,0.2)',

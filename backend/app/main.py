@@ -116,7 +116,6 @@ origins = [
     "http://127.0.0.1:8081",
     "http://localhost:8082",       # Expo web (puerto alternativo)
     "http://127.0.0.1:8082",
-    "http://192.168.0.5:8081",    # Expo web desde la IP local
 ]
 
 app.add_middleware(

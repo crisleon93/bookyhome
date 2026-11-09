@@ -62,7 +62,7 @@ export default function PerfilTienda() {
     cardBorder:    darkMode ? '1px solid #3a3a3a' : '1px solid #ede8e1',
     textPrimary:   darkMode ? '#ececec' : 'var(--gris-carbon)',
     textSecondary: darkMode ? '#c8c8c8' : '#888',
-    textMuted:     darkMode ? '#999' : '#999',
+    textMuted:     '#999',
     vino:          darkMode ? '#e05a7a' : 'var(--vinotinto)',
     vinoGradient:  darkMode ? 'linear-gradient(135deg, #e05a7a 0%, #c5425a 100%)' : 'linear-gradient(135deg, var(--vinotinto) 0%, #a32d52 100%)',
     icon:          darkMode ? '#e05a7a' : 'var(--vinotinto)',

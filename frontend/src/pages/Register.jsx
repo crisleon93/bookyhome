@@ -10,7 +10,16 @@ import { IconUser, IconMail, IconPhone, IconLock, IconEyeOpen, IconEyeClosed, Ic
 
 import { LegalModal, Terminos, Privacidad } from '../components/Legal'
 
-
+const isValidEmail = (value) => {
+  const email = value.trim()
+  const atIndex = email.indexOf('@')
+  const dotIndex = email.lastIndexOf('.')
+  return atIndex > 0 &&
+    atIndex === email.lastIndexOf('@') &&
+    dotIndex > atIndex + 1 &&
+    dotIndex < email.length - 1 &&
+    !/\s/.test(email)
+}
 
 function Register({ isModal = false, onSuccess }) {
 
@@ -86,7 +95,7 @@ function Register({ isModal = false, onSuccess }) {
 
     apellidos.trim() &&
 
-    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) &&
+    isValidEmail(email) &&
 
     /^\d{7,15}$/.test(telefono.trim()) &&
 
@@ -126,7 +135,7 @@ function Register({ isModal = false, onSuccess }) {
 
     }
 
-    if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    if (!isValidEmail(email)) {
 
       notify('Ingresa un email válido', 'error')
 
@@ -265,10 +274,10 @@ function Register({ isModal = false, onSuccess }) {
     }
 
     // Verificar inmediatamente
-    checkVerification()
+    void checkVerification()
 
     // Luego verificar cada 3 segundos
-    const interval = setInterval(checkVerification, 3000)
+    const interval = setInterval(() => { void checkVerification() }, 3000)
 
     return () => clearInterval(interval)
   }, [polling, email, isModal, onSuccess])

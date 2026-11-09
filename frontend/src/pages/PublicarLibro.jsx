@@ -561,33 +561,34 @@ export default function PublicarLibro() {
             {/* Form nueva variante */}
             <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'12px',marginBottom:'12px'}}>
               <div className="form-group">
-                <label>Tipo</label>
-                <select value={varianteForm.tipo_tapa} onChange={e => setVarianteForm(p => ({...p, tipo_tapa: e.target.value}))}>
+                <label htmlFor="variante-tipo-tapa">Tipo</label>
+                <select id="variante-tipo-tapa" value={varianteForm.tipo_tapa} onChange={e => setVarianteForm(p => ({...p, tipo_tapa: e.target.value}))}>
                   {TIPOS_TAPA.map(t => <option key={t} value={t}>{t}</option>)}
                 </select>
               </div>
               <div className="form-group">
-                <label>Idioma</label>
-                <select value={varianteForm.idioma} onChange={e => setVarianteForm(p => ({...p, idioma: e.target.value}))}>
+                <label htmlFor="variante-idioma">Idioma</label>
+                <select id="variante-idioma" value={varianteForm.idioma} onChange={e => setVarianteForm(p => ({...p, idioma: e.target.value}))}>
                   {IDIOMAS.map(i => <option key={i} value={i}>{i}</option>)}
                 </select>
               </div>
               <div className="form-group">
-                <label>Edición</label>
-                <input type="text" placeholder="1ra Edición" value={varianteForm.edicion} onChange={e => setVarianteForm(p => ({...p, edicion: e.target.value}))} />
+                <label htmlFor="variante-edicion">Edición</label>
+                <input id="variante-edicion" type="text" placeholder="1ra Edición" value={varianteForm.edicion} onChange={e => setVarianteForm(p => ({...p, edicion: e.target.value}))} />
               </div>
               <div className="form-group">
-                <label>Precio (COP)</label>
-                <input type="number" min="0" placeholder="25000" value={varianteForm.precio_variante} onChange={e => setVarianteForm(p => ({...p, precio_variante: e.target.value}))} />
+                <label htmlFor="variante-precio">Precio (COP)</label>
+                <input id="variante-precio" type="number" min="0" placeholder="25000" value={varianteForm.precio_variante} onChange={e => setVarianteForm(p => ({...p, precio_variante: e.target.value}))} />
               </div>
               <div className="form-group">
-                <label>Stock</label>
-                <input type="number" min="0" placeholder={varianteForm.tipo_tapa === 'Digital' ? '999' : '5'} value={varianteForm.stock_variante} onChange={e => setVarianteForm(p => ({...p, stock_variante: e.target.value}))} />
+                <label htmlFor="variante-stock">Stock</label>
+                <input id="variante-stock" type="number" min="0" placeholder={varianteForm.tipo_tapa === 'Digital' ? '999' : '5'} value={varianteForm.stock_variante} onChange={e => setVarianteForm(p => ({...p, stock_variante: e.target.value}))} />
               </div>
               {varianteForm.tipo_tapa === 'Digital' && (
                 <div className="form-group">
-                  <label>Archivo PDF / EPUB</label>
+                  <label htmlFor="variante-archivo-digital">Archivo PDF / EPUB</label>
                   <input
+                    id="variante-archivo-digital"
                     type="file"
                     accept=".pdf,.epub"
                     onChange={e => setVarianteForm(p => ({...p, archivo_digital: e.target.files[0] || null}))}

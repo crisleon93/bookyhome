@@ -472,7 +472,7 @@ export default function SeccionCarrito({ userId }) {
       return;
     }
     window.location.href = `nequi://pagar?valor=${order?.total}&referencia=${order?.id_orden}`;
-    setTimeout(() => { if (!nequiSelected) window.open('https://www.nequi.com.co', '_blank'); }, 2000);
+    setTimeout(() => { if (!nequiSelected) window.open('https://www.nequi.com.co', '_blank', 'noopener,noreferrer'); }, 2000);
   };
   const handleDaviplataRedirect = () => {
     if (metodoEntrega === 'retiro_tienda') {
@@ -480,7 +480,7 @@ export default function SeccionCarrito({ userId }) {
       return;
     }
     window.location.href = `daviplata://pagar?valor=${order?.total}&referencia=${order?.id_orden}`;
-    setTimeout(() => { if (!nequiSelected) window.open('https://www.daviplata.com', '_blank'); }, 2000);
+    setTimeout(() => { if (!nequiSelected) window.open('https://www.daviplata.com', '_blank', 'noopener,noreferrer'); }, 2000);
   };
   const verificarPagoEfecty = () => {
     setTimeout(() => {

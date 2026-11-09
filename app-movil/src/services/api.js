@@ -1,7 +1,16 @@
 import axios from 'axios';
 
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://192.168.137.218:8000';
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL?.trim();
+
+if (!API_BASE_URL) {
+  throw new Error('Configura EXPO_PUBLIC_API_URL para conectar la app con el backend.');
+}
+
+const API_URL = new URL(API_BASE_URL);
+if (process.env.NODE_ENV === 'production' && API_URL.protocol !== 'https:') {
+  throw new Error('EXPO_PUBLIC_API_URL debe usar HTTPS en producción.');
+}
 
 const api = axios.create({
   baseURL: API_BASE_URL,

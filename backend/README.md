@@ -118,6 +118,17 @@ La API queda disponible en:
 http://localhost:8000
 ```
 
+## Pruebas y cobertura
+
+Instala las dependencias de desarrollo y ejecuta las pruebas con cobertura:
+
+```bash
+uv sync --locked --group dev
+uv run pytest tests/ --cov=app --cov-report=term-missing --cov-report=xml:coverage/coverage.xml
+```
+
+El reporte XML se guarda en `coverage/coverage.xml` y lo importa SonarCloud.
+
 ## Ejecutar localmente
 
 Si se desea ejecutar el backend sin Docker:

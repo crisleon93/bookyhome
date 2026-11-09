@@ -60,6 +60,9 @@ Por ejemplo:
 EXPO_PUBLIC_API_URL=http://192.168.0.5:8000
 ```
 
+Las URLs HTTP son solo para desarrollo local. En producción, configura
+`EXPO_PUBLIC_API_URL` con una URL HTTPS del backend.
+
 El archivo `.env.local` esta excluido de Git, por lo que cada integrante puede
 usar su propia IP sin modificar `src/services/api.js` ni generar conflictos.
 
@@ -123,6 +126,22 @@ pnpm android
 pnpm ios
 pnpm web
 ```
+
+## Pruebas y cobertura
+
+Ejecutar las pruebas unitarias de la app movil:
+
+```bash
+pnpm test
+```
+
+Para generar el reporte de cobertura que consume SonarCloud:
+
+```bash
+pnpm test:coverage
+```
+
+El reporte LCOV se guarda en `coverage/lcov.info`.
 
 ## Notas importantes
 
