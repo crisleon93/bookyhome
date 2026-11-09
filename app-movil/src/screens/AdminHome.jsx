@@ -1212,38 +1212,52 @@ export default function AdminHome() {
     const comprador = data.usuarios.find((u) => String(u.id_usuario) === String(o.id_usuario_propietario));
     const tipoEntrega = o.tipo_entrega === 'retiro_tienda' ? 'Retiro en tienda' : o.tipo_entrega === 'domicilio' ? 'Domicilio' : 'No especificado';
     return (
-      <View style={[s.card, s.orderCard, { backgroundColor: ec.bg, borderColor: ec.border, borderLeftColor: ec.color }]}>
-        <View style={s.cardTop}>
-          <View style={[s.avatar, { backgroundColor: '#EFF6FF' }]}>
-            <IconPackage size={18} color="#1D4ED8" />
+      <View style={[s.requestStyleOrderCard, { borderLeftColor: ec.color }]}>
+        <TouchableOpacity
+          style={[s.requestStyleOrderHeader, expanded && s.requestStyleOrderHeaderExpanded]}
+          onPress={() => setExpandedOrden(expanded ? null : o.id_orden)}
+          activeOpacity={0.85}
+          accessibilityRole="button"
+          accessibilityLabel={expanded ? 'Ocultar detalles de la orden' : 'Ver detalles de la orden'}
+          accessibilityState={{ expanded }}
+        >
+          <View style={s.requestStyleOrderIcon}>
+            <IconPackage size={20} color="#1D4ED8" />
           </View>
-          <View style={s.cardMid}>
-            <Text style={s.cardName}>Orden #{o.id_orden || '—'}</Text>
-            <Text style={s.cardSub}>
-              {o.fecha ? new Date(o.fecha).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Sin fecha'}
+          <View style={s.requestStyleOrderMain}>
+            <View style={s.requestStyleOrderEyebrow}>
+              <Text style={s.requestStyleOrderNumber}>Orden #{o.id_orden || '—'}</Text>
+              <View style={s.requestStyleOrderRight}>
+                <View style={[s.requestStyleOrderStatus, { backgroundColor: ec.bg, borderColor: ec.border }]}>
+                  <View style={[s.statusDot, { backgroundColor: ec.dot }]} />
+                  <Text style={[s.requestStyleOrderStatusText, { color: ec.color }]} numberOfLines={1}>{ec.label}</Text>
+                </View>
+                <View style={s.requestStyleExpandIcon}>
+                  {expanded ? <IconEyeOff size={16} color={VINOTINTO} /> : <IconEye size={16} color={VINOTINTO} />}
+                </View>
+              </View>
+            </View>
+            <Text style={s.requestStyleOrderTitle} numberOfLines={1}>
+              {items[0]?.titulo || 'Orden de compra'}
+              {items.length > 1 ? <Text style={s.requestStyleOrderAdditional}> +{items.length - 1} más</Text> : null}
             </Text>
-            {!!o.codigo_compra && <Text style={s.orderCode}>{o.codigo_compra}</Text>}
-          </View>
-          <View style={s.orderSummary}>
-            <View style={s.priceBadge}>
-              <Text style={s.priceTxt}>{fmtPrice(o.total)}</Text>
+            <Text style={s.requestStyleOrderBuyer} numberOfLines={1}>
+              Comprador: <Text style={s.requestStyleOrderBuyerStrong}>{comprador?.nombre_usuario || (o.id_usuario_propietario ? `#${o.id_usuario_propietario}` : 'No disponible')}</Text>
+            </Text>
+            <View style={s.requestStyleOrderMeta}>
+              <Text style={s.requestStyleOrderDateText}>
+                {o.fecha ? new Date(o.fecha).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Sin fecha'}
+              </Text>
+              {!!o.codigo_compra && <Text style={s.requestStyleOrderCode}>{o.codigo_compra}</Text>}
+              <View style={s.priceBadge}>
+                <Text style={s.priceTxt} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
+                  {fmtPrice(o.total)}
+                </Text>
+              </View>
             </View>
-            <View style={[s.badge, s.orderStatusBadge, { backgroundColor: ec.bg, borderColor: ec.border }]}>
-              <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: ec.dot, marginRight: 5 }} />
-              <Text style={[s.badgeTxt, { color: ec.color }]}>{ec.label}</Text>
-            </View>
-            <TouchableOpacity
-              style={[s.detailsToggle, expanded && s.detailsToggleExpanded]}
-              onPress={() => setExpandedOrden(expanded ? null : o.id_orden)}
-              activeOpacity={0.7}
-              accessibilityRole="button"
-              accessibilityLabel={expanded ? 'Ocultar detalles' : 'Ver detalles'}
-            >
-              <Text style={s.detailsToggleText}>{expanded ? 'Ocultar detalles' : 'Ver detalles'}</Text>
-            </TouchableOpacity>
           </View>
-        </View>
-        {expanded && <View style={s.orderInfo}>
+        </TouchableOpacity>
+        {expanded && <View style={s.requestStyleOrderDetails}>
           <View style={s.orderBuyerRow}>
             <Text style={s.orderInfoLabel}>COMPRADOR</Text>
             <Text style={s.orderInfoValue} numberOfLines={1}>
@@ -1863,7 +1877,7 @@ export default function AdminHome() {
           )}
 
           {/* Alerta de atención */}
-          {(stats.claims > 0 || stats.support > 0 || stats.pendingStores > 0) && (
+          {(stats.claims > 0 || stats.support > 0) && (
             <View style={s.alert}>
               <View style={s.alertIconBox}><IconAlertTriangle size={22} color="#D97706" /></View>
               <View style={{ flex: 1 }}>
@@ -1871,7 +1885,6 @@ export default function AdminHome() {
                 <Text style={s.alertBody}>
                   {stats.claims > 0        ? `Tienes ${stats.claims} queja(s) o reclamo(s) abierta(s). ` : ''}
                   {stats.support > 0       ? `Hay ${stats.support} ticket(s) de soporte sin resolver. ` : ''}
-                  {stats.pendingStores > 0 ? `Hay ${stats.pendingStores} librería(s) pendiente(s) de revisión.` : ''}
                 </Text>
                 <View style={s.alertActions}>
                   {stats.claims > 0 && (
@@ -1880,16 +1893,7 @@ export default function AdminHome() {
                       onPress={() => setActiveSection('reclamos')}
                       activeOpacity={0.8}
                     >
-                      <Text style={s.alertActionText}>Resolver Reclamos →</Text>
-                    </TouchableOpacity>
-                  )}
-                  {stats.pendingStores > 0 && (
-                    <TouchableOpacity
-                      style={[s.alertActionButton, { backgroundColor: '#047857' }]}
-                      onPress={() => setActiveSection('tiendas')}
-                      activeOpacity={0.8}
-                    >
-                      <Text style={s.alertActionText}>Revisar Tiendas →</Text>
+                      <Text style={s.alertActionText}>Resolver{'\n'}reclamos →</Text>
                     </TouchableOpacity>
                   )}
                   {stats.support > 0 && (
@@ -1898,7 +1902,7 @@ export default function AdminHome() {
                       onPress={() => setActiveSection('soporte')}
                       activeOpacity={0.8}
                     >
-                      <Text style={s.alertActionText}>Atender Soporte →</Text>
+                      <Text style={s.alertActionText}>Atender{'\n'}soporte →</Text>
                     </TouchableOpacity>
                   )}
                 </View>
@@ -2470,9 +2474,9 @@ const s = StyleSheet.create({
   alertIconBox: { width: 42, height: 42, borderRadius: 12, backgroundColor: '#FEF3C7', alignItems: 'center', justifyContent: 'center', marginRight: 14, flexShrink: 0 },
   alertTitle:   { color: '#92400E', fontSize: 14, fontWeight: '800' },
   alertBody:    { color: '#B45309', fontSize: 12, lineHeight: 18, marginTop: 3 },
-  alertActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10 },
-  alertActionButton: { minHeight: 36, justifyContent: 'center', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8 },
-  alertActionText: { color: WHITE, fontSize: 12, fontWeight: '700' },
+  alertActions: { flexDirection: 'row', justifyContent: 'space-between', gap: 10, marginTop: 12 },
+  alertActionButton: { flex: 1, minWidth: 0, minHeight: 46, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6, paddingVertical: 7, borderRadius: 10 },
+  alertActionText: { color: WHITE, fontSize: 12, lineHeight: 15, fontWeight: '700', textAlign: 'center' },
 
   // KPI
   kpiCard:      { flex: 1, backgroundColor: WHITE, borderWidth: 1, borderRadius: 16, padding: 14, margin: 6, elevation: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.04, shadowRadius: 20 },
@@ -2602,6 +2606,25 @@ const s = StyleSheet.create({
   cardBloqueado:{ borderColor: '#FECACA' },
   cardOculto:   { borderColor: '#E9D5FF', opacity: 0.85 },
   orderCard:    { borderLeftWidth: 4, paddingLeft: 11 },
+  requestStyleOrderCard: { backgroundColor: WHITE, borderWidth: 1.5, borderColor: '#B9A99A', borderLeftWidth: 4, borderRadius: 15, marginBottom: 12, elevation: 2, overflow: 'hidden' },
+  requestStyleOrderHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, padding: 13 },
+  requestStyleOrderHeaderExpanded: { borderBottomWidth: 1, borderBottomColor: BORDER, backgroundColor: '#FFFCFA' },
+  requestStyleOrderIcon: { width: 48, height: 56, alignItems: 'center', justifyContent: 'center', borderRadius: 9, backgroundColor: '#EFF6FF' },
+  requestStyleOrderMain: { flex: 1, minWidth: 0 },
+  requestStyleOrderEyebrow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 3 },
+  requestStyleOrderNumber: { color: GRAY, fontSize: 10, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.3 },
+  requestStyleOrderRight: { flexDirection: 'row', alignItems: 'center', gap: 4, marginLeft: 'auto' },
+  requestStyleOrderStatus: { minHeight: 22, maxWidth: 105, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, borderWidth: 1, borderRadius: 12, paddingHorizontal: 6, paddingVertical: 3 },
+  requestStyleOrderStatusText: { fontSize: 9, fontWeight: '800' },
+  requestStyleExpandIcon: { width: 24, height: 24, borderRadius: 12, borderWidth: 1, borderColor: '#F0DDE4', backgroundColor: '#FDF2F4', alignItems: 'center', justifyContent: 'center' },
+  requestStyleOrderTitle: { color: CARBON, fontSize: 14, lineHeight: 19, fontWeight: '800' },
+  requestStyleOrderAdditional: { color: GRAY, fontSize: 12, fontWeight: '500' },
+  requestStyleOrderBuyer: { color: GRAY, fontSize: 11, marginTop: 3 },
+  requestStyleOrderBuyerStrong: { color: CARBON, fontWeight: '700' },
+  requestStyleOrderMeta: { alignItems: 'flex-start', gap: 2, marginTop: 4 },
+  requestStyleOrderDateText: { color: GRAY, fontSize: 10, fontWeight: '600' },
+  requestStyleOrderCode: { color: GRAY, fontSize: 10, fontWeight: '700' },
+  requestStyleOrderDetails: { padding: 13, gap: 11, backgroundColor: WHITE },
   cardTop:      { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
   bookMainPress: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center' },
   storeMainPress: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center' },
@@ -2626,8 +2649,7 @@ const s = StyleSheet.create({
   badge:        { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderRadius: 10, paddingHorizontal: 8, paddingVertical: 3 },
   badgeTxt:     { fontSize: 11, fontWeight: '700', textTransform: 'capitalize' },
   orderCode:    { color: GRAY, fontSize: 10, fontWeight: '600', marginTop: 3 },
-  orderSummary: { alignItems: 'flex-end', gap: 6 },
-  orderStatusBadge: { alignSelf: 'flex-end' },
+  orderSummary: { width: 118, alignItems: 'stretch', gap: 6, marginLeft: 8 },
   orderInfo:    { backgroundColor: '#FAF8F5', borderRadius: 12, padding: 11, gap: 10 },
   orderBuyerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, paddingBottom: 9, borderBottomWidth: 1, borderBottomColor: BORDER },
   orderInfoLabel: { color: GRAY, fontSize: 9, fontWeight: '800', letterSpacing: 0.5 },
@@ -2669,8 +2691,8 @@ const s = StyleSheet.create({
   storeDetailValue: { color: CARBON, fontSize: 12, fontWeight: '800', flexShrink: 1 },
   storeDetailStatus: { alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: WHITE, borderWidth: 1.5, borderRadius: 12, paddingHorizontal: 10, paddingVertical: 5 },
   storeDetailAction: { flex: 1, minWidth: 0, minHeight: 58, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderRadius: 10, paddingHorizontal: 8, paddingVertical: 8 },
-  priceBadge:   { backgroundColor: VINOTINTO, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 4 },
-  priceTxt:     { color: WHITE, fontWeight: '800', fontSize: 13 },
+  priceBadge:   { alignSelf: 'flex-start', marginTop: 5, backgroundColor: '#FDF2F4', borderColor: '#F5C6D2', borderWidth: 1, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4 },
+  priceTxt:     { color: VINOTINTO, fontWeight: '800', fontSize: 12, textAlign: 'left' },
   chevronWrap:  { alignSelf: 'center' },
   chevronTxt:   { color: GRAY, fontSize: 10, fontWeight: '800' },
 

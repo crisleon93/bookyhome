@@ -197,6 +197,7 @@ function RequestCard({ item, isSupport, onOpenChat, onSetResolution }) {
 }
 
 function SupportRequestCard({ item, onSetResolution }) {
+  const [expanded, setExpanded] = useState(false);
   const status = stateStyle(item.estado);
   const photoPath = item.foto_comprador;
   const photoUri = photoPath
@@ -207,7 +208,14 @@ function SupportRequestCard({ item, onSetResolution }) {
 
   return (
     <View style={[styles.supportCard, { borderLeftColor: status.color }]}>
-      <View style={styles.supportHeader}>
+      <TouchableOpacity
+        style={[styles.supportHeader, expanded && styles.supportHeaderExpanded]}
+        onPress={() => setExpanded((value) => !value)}
+        activeOpacity={0.85}
+        accessibilityRole="button"
+        accessibilityLabel={expanded ? 'Ocultar detalles del ticket' : 'Ver detalles del ticket'}
+        accessibilityState={{ expanded }}
+      >
         <View style={styles.supportIdentity}>
           <View style={styles.supportAvatar}>
             <Text style={styles.supportAvatarInitial}>{userName.charAt(0).toUpperCase()}</Text>
@@ -222,15 +230,21 @@ function SupportRequestCard({ item, onSetResolution }) {
               </View>
             </View>
             <Text style={styles.supportName} numberOfLines={1}>{userName}</Text>
+            <Text style={styles.supportSubjectPreview} numberOfLines={1}>{item.asunto || 'Solicitud de soporte'}</Text>
           </View>
         </View>
-        <View style={[styles.supportStatus, { backgroundColor: status.bg, borderColor: status.border }]}>
-          <View style={[styles.statusDot, { backgroundColor: status.color }]} />
-          <Text style={[styles.supportStatusText, { color: status.color }]} numberOfLines={1}>{item.estado || 'Abierto'}</Text>
+        <View style={styles.supportHeaderActions}>
+          <View style={[styles.supportStatus, { backgroundColor: status.bg, borderColor: status.border }]}>
+            <View style={[styles.statusDot, { backgroundColor: status.color }]} />
+            <Text style={[styles.supportStatusText, { color: status.color }]} numberOfLines={1}>{item.estado || 'Abierto'}</Text>
+          </View>
+          <View style={styles.expandIcon}>
+            {expanded ? <IconEyeOff size={16} color={PRIMARY} /> : <IconEye size={16} color={PRIMARY} />}
+          </View>
         </View>
-      </View>
+      </TouchableOpacity>
 
-      <View style={styles.supportDetails}>
+      {expanded && <View style={styles.supportDetails}>
         <View style={styles.supportMetadata}>
           <View style={styles.supportCategory}>
             <IconTool size={14} color={PRIMARY} />
@@ -284,7 +298,7 @@ function SupportRequestCard({ item, onSetResolution }) {
             onPress={() => onSetResolution(item, 'Resuelto')}
           />
         </View>
-      </View>
+      </View>}
     </View>
   );
 }
@@ -652,7 +666,9 @@ const styles = StyleSheet.create({
   pageButtonTextDisabled: { color: '#A8A29E' },
   pageIndicator: { color: '#222', fontSize: 11, fontWeight: '800', minWidth: 38, textAlign: 'center' },
   supportCard: { backgroundColor: '#fff', borderRadius: 15, borderWidth: 1.5, borderColor: '#EEE3E9', borderLeftWidth: 5, marginBottom: 12, elevation: 2, overflow: 'hidden' },
-  supportHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: 12, backgroundColor: '#FCF7F9', borderBottomWidth: 1, borderBottomColor: '#F0E8EC' },
+  supportHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: 12, backgroundColor: '#FCF7F9' },
+  supportHeaderExpanded: { borderBottomWidth: 1, borderBottomColor: '#F0E8EC' },
+  supportHeaderActions: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   supportIdentity: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 10 },
   supportAvatar: { width: 44, height: 44, borderRadius: 22, backgroundColor: PRIMARY, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#fff', elevation: 2, overflow: 'hidden' },
   supportAvatarInitial: { color: '#fff', fontSize: 16, fontWeight: '800' },
@@ -663,6 +679,7 @@ const styles = StyleSheet.create({
   supportRole: { flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: '#fff', borderWidth: 1, borderColor: '#ECDCE3', borderRadius: 6, paddingHorizontal: 6, paddingVertical: 3 },
   supportRoleText: { color: PRIMARY, fontSize: 9, fontWeight: '700' },
   supportName: { color: '#252525', fontSize: 13, fontWeight: '800' },
+  supportSubjectPreview: { color: GRAY, fontSize: 11, marginTop: 2 },
   supportStatus: { flexDirection: 'row', alignItems: 'center', gap: 5, borderWidth: 1, borderRadius: 14, paddingHorizontal: 7, paddingVertical: 5 },
   supportStatusText: { fontSize: 9, fontWeight: '800' },
   supportDetails: { padding: 12, gap: 10 },
