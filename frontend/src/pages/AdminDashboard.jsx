@@ -1593,7 +1593,7 @@ export default function AdminDashboard() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
 
             {/* ALERTA DE ATENCIÓN PRIORITARIA */}
-            {(reclamosPendientesCount > 0 || soportePendientesCountDash > 0 || tiendasPendientesCount > 0) && (
+            {(reclamosPendientesCount > 0 || soportePendientesCountDash > 0) && (
               <div style={{
                 background: '#FFFBEB',
                 border: '1.5px solid #FCD34D',
@@ -1621,7 +1621,6 @@ export default function AdminDashboard() {
                     <div style={{ color: '#B45309', fontSize: '0.86rem', marginTop: '2px' }}>
                       {reclamosPendientesCount > 0 && `Tienes ${reclamosPendientesCount} queja(s) o reclamo(s) abierta(s) para responder. `}
                       {soportePendientesCountDash > 0 && `Hay ${soportePendientesCountDash} ticket(s) de soporte técnico sin resolver. `}
-                      {tiendasPendientesCount > 0 && `Hay ${tiendasPendientesCount} librería(s) pendiente(s) de revisión y aprobación.`}
                     </div>
                   </div>
                 </div>
@@ -1636,18 +1635,6 @@ export default function AdminDashboard() {
                       }}
                     >
                       Resolver Reclamos →
-                    </button>
-                  )}
-                  {tiendasPendientesCount > 0 && (
-                    <button
-                      onClick={() => setActiveSection('tiendas')}
-                      style={{
-                        background: '#047857', color: WHITE, border: 'none',
-                        padding: '8px 16px', borderRadius: '8px', fontWeight: 700,
-                        fontSize: '0.84rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px'
-                      }}
-                    >
-                      Revisar Tiendas →
                     </button>
                   )}
                   {soportePendientesCountDash > 0 && (
