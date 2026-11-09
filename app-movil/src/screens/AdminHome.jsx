@@ -2280,25 +2280,18 @@ export default function AdminHome() {
   // ─────────────────────────────────────────────────────────────────────────
   //  RENDER PRINCIPAL
   // ─────────────────────────────────────────────────────────────────────────
-  return (
-    <SafeAreaView style={s.safe}>
 
-      {/* Header */}
-      <View style={s.header}>
-        <AdminHeaderContent
-          isDashboard={isDashboard}
-          sectionConfig={cfg}
-          onOpenMenu={() => setMenuVisible(true)}
-        />
-      </View>
-
-      {loading ? (
+  const renderMainContent = () => {
+    if (loading) {
+      return (
         <View style={s.loadingBox}>
           <ActivityIndicator size="large" color={VINOTINTO} />
           <Text style={{ color: GRAY, marginTop: 12 }}>Cargando panel...</Text>
         </View>
-
-      ) : isDashboard ? (
+      );
+    }
+    if (isDashboard) {
+      return (
         <AdminDashboardContent
           user={user}
           error={error}
@@ -2313,29 +2306,46 @@ export default function AdminHome() {
           lastStores={lastStores}
           onSelectSection={setActiveSection}
         />
-      ) : (
-        <AdminSectionContent
-          activeSection={activeSection}
-          data={data}
-          stats={stats}
-          solicitudesLoading={solicitudesLoading}
-          solicitudesError={solicitudesError}
-          onRefreshSolicitudes={() => loadSolicitudes(true)}
-          onProfilePhotoChange={setAdminProfilePhoto}
-          onProfileNameChange={setAdminProfileName}
-          pageItems={pageItems}
-          keyExtractor={keyExtractor}
-          renderItem={renderItem}
-          sectionHeader={SectionListHeader}
-          sectionFooter={SectionListFooter}
-          refreshing={refreshing}
-          onRefresh={() => load(true)}
-          sectionColor={cfg.color}
-          busqueda={busqueda}
-          filtroRol={filtroRol}
-          filtroCategoria={filtroCategoria}
+      );
+    }
+    return (
+      <AdminSectionContent
+        activeSection={activeSection}
+        data={data}
+        stats={stats}
+        solicitudesLoading={solicitudesLoading}
+        solicitudesError={solicitudesError}
+        onRefreshSolicitudes={() => loadSolicitudes(true)}
+        onProfilePhotoChange={setAdminProfilePhoto}
+        onProfileNameChange={setAdminProfileName}
+        pageItems={pageItems}
+        keyExtractor={keyExtractor}
+        renderItem={renderItem}
+        sectionHeader={SectionListHeader}
+        sectionFooter={SectionListFooter}
+        refreshing={refreshing}
+        onRefresh={() => load(true)}
+        sectionColor={cfg.color}
+        busqueda={busqueda}
+        filtroRol={filtroRol}
+        filtroCategoria={filtroCategoria}
+      />
+    );
+  };
+
+  return (
+    <SafeAreaView style={s.safe}>
+
+      {/* Header */}
+      <View style={s.header}>
+        <AdminHeaderContent
+          isDashboard={isDashboard}
+          sectionConfig={cfg}
+          onOpenMenu={() => setMenuVisible(true)}
         />
-      )}
+      </View>
+
+      {renderMainContent()}
 
       {/* Sidebar */}
       <SidebarAdmin
