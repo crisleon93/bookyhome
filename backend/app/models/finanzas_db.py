@@ -30,6 +30,7 @@ from app.database import get_db
 from app.models.bookypago_finanzas import (
     _load_store,
     FINANZAS_FILE,
+    PAGOS_VENDEDORES_FILE,
 )
 
 load_dotenv()

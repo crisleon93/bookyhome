@@ -52,10 +52,12 @@ def obtener_tiendas():
                 t.telefono,
                 t.fecha_creacion,
                 t.estado_tienda,
+                tc.logo_url,
                 u.correo_usuario AS email_contacto,
                 u.nombre_usuario AS nombre_dueno
             FROM tiendas t
             JOIN usuarios u ON u.id_usuario = t.id_usuario
+            LEFT JOIN tienda_configuracion tc ON tc.id_tienda = t.id_tienda
             ORDER BY t.id_tienda
         """)
         return cursor.fetchall()
