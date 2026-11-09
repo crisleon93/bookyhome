@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -14,20 +14,30 @@ import {
   View,
 } from 'react-native';
 import { getApiBaseUrl, getMensajesSolicitudAdmin, enviarMensajeSolicitudAdmin, resolverSolicitudAdmin } from '../services/api';
-import { IconAlertTriangle, IconCheck, IconMessage, IconTool } from '../components/Icons';
+import { IconAlertTriangle, IconCheck, IconEye, IconEyeOff, IconMail, IconMessage, IconStoreAlt, IconTool, IconUser } from '../components/Icons';
 
 const PRIMARY = '#7A1E3A';
 const BG = '#F9F6F1';
 const BORDER = '#E0DBD4';
 const GRAY = '#666';
 const STATES = ['Todos', 'Abierto', 'En revisión', 'Resuelto', 'Rechazado'];
+const STATE_FILTER_STYLES = {
+  Todos: { active: '#7A1E3A', inactiveBg: '#FDF8F9', inactiveBorder: '#F0DDE4', inactiveText: '#7A1E3A', dot: '#7A1E3A' },
+  Abierto: { active: '#2563EB', inactiveBg: '#EFF6FF', inactiveBorder: '#BFDBFE', inactiveText: '#1E40AF', dot: '#3B82F6' },
+  'En revisión': { active: '#EA580C', inactiveBg: '#FFF7ED', inactiveBorder: '#FED7AA', inactiveText: '#C2410C', dot: '#EA580C' },
+  Resuelto: { active: '#16A34A', inactiveBg: '#F0FDF4', inactiveBorder: '#BBF7D0', inactiveText: '#15803D', dot: '#16A34A' },
+  Rechazado: { active: '#DC2626', inactiveBg: '#FEF2F2', inactiveBorder: '#FECACA', inactiveText: '#B91C1C', dot: '#EF4444' },
+};
+const ITEMS_PER_PAGE = 10;
+
+const normalizeState = (state) => (state || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
 const stateStyle = (state) => {
-  const key = (state || '').toLowerCase();
-  if (key === 'resuelto') return { bg: '#DCFCE7', color: '#166534' };
-  if (key === 'rechazado') return { bg: '#FEF2F2', color: '#B91C1C' };
-  if (key.includes('revision')) return { bg: '#FFF7ED', color: '#C2410C' };
-  return { bg: '#EFF6FF', color: '#1D4ED8' };
+  const key = normalizeState(state);
+  if (key === 'resuelto') return { bg: '#DCFCE7', border: '#BBF7D0', color: '#166534' };
+  if (key === 'rechazado') return { bg: '#FEF2F2', border: '#FECACA', color: '#B91C1C' };
+  if (key.includes('revision')) return { bg: '#FFF7ED', border: '#FED7AA', color: '#C2410C' };
+  return { bg: '#EFF6FF', border: '#BFDBFE', color: '#1D4ED8' };
 };
 
 const formatDate = (value) => {
@@ -38,16 +48,244 @@ const formatDate = (value) => {
     : date.toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' });
 };
 
-function ActionButton({ label, color, backgroundColor, onPress, disabled }) {
+function ActionButton({ label, color, backgroundColor, onPress, disabled, wide, Icon, solid }) {
   return (
     <TouchableOpacity
-      style={[styles.actionButton, { backgroundColor, borderColor: color }, disabled && styles.disabled]}
+      style={[
+        styles.actionButton,
+        wide && styles.actionButtonWide,
+        solid && styles.actionButtonSolid,
+        { backgroundColor, borderColor: color },
+        disabled && styles.disabled,
+      ]}
       onPress={onPress}
       disabled={disabled}
       activeOpacity={0.8}
     >
-      <Text style={[styles.actionText, { color }]}>{label}</Text>
+      {Icon ? <Icon size={16} color={solid ? '#FFFFFF' : color} /> : null}
+      <Text style={[styles.actionText, { color: solid ? '#FFFFFF' : color }]}>{label}</Text>
     </TouchableOpacity>
+  );
+}
+
+function RequestCard({ item, isSupport, onOpenChat, onSetResolution }) {
+  const [expanded, setExpanded] = useState(false);
+  const status = stateStyle(item.estado);
+  const imagePath = item.imagen_libro;
+  const imageUri = imagePath
+    ? String(imagePath).startsWith('http') ? imagePath : `${getApiBaseUrl()}/${String(imagePath).replace(/^\/+/, '')}`
+    : null;
+  const evidencePath = item.evidencia_url;
+  const evidenceUri = evidencePath
+    ? String(evidencePath).startsWith('http') ? evidencePath : `${getApiBaseUrl()}/${String(evidencePath).replace(/^\/+/, '')}`
+    : null;
+
+  return (
+    <View style={styles.card}>
+      <TouchableOpacity
+        style={[styles.cardHeader, expanded && styles.cardHeaderExpanded]}
+        onPress={() => setExpanded((value) => !value)}
+        activeOpacity={0.85}
+        accessibilityRole="button"
+        accessibilityLabel={expanded ? 'Ocultar detalles' : 'Ver detalles'}
+        accessibilityState={{ expanded }}
+      >
+        <View style={styles.cardHeaderTop}>
+          {imageUri
+            ? <Image source={{ uri: imageUri }} style={styles.bookThumbnail} resizeMode="cover" />
+            : <View style={styles.cardFallback}><Text style={styles.cardFallbackText}>#{item.numero || item.id_solicitud}</Text></View>}
+          <View style={styles.cardMain}>
+            <View style={styles.cardEyebrow}>
+              <Text style={styles.cardEyebrowText}>{isSupport ? 'Solicitud' : 'Reclamo'} #{item.numero || item.id_solicitud}</Text>
+              {item.id_orden ? <Text style={styles.orderPill}>Orden #{item.id_orden}</Text> : null}
+              <View style={styles.cardEyebrowRight}>
+                <View style={[styles.statusBadge, { backgroundColor: status.bg, borderColor: status.border }]}>
+                  <View style={[styles.statusDot, { backgroundColor: status.color }]} />
+                  <Text style={[styles.status, { color: status.color }]} numberOfLines={1}>{item.estado || 'Abierto'}</Text>
+                </View>
+                <View style={styles.expandIcon}>
+                  {expanded ? <IconEyeOff size={16} color={PRIMARY} /> : <IconEye size={16} color={PRIMARY} />}
+                </View>
+              </View>
+            </View>
+            <Text style={styles.cardBookTitle} numberOfLines={2}>
+              {item.titulo_libro || (item.id_orden ? `Orden #${item.id_orden}` : item.asunto || (isSupport ? 'Solicitud de soporte' : 'Queja o reclamo'))}
+              {item.total_items > 1 ? <Text style={styles.additionalItems}> +{item.total_items - 1} más</Text> : null}
+            </Text>
+            <Text style={styles.cardBuyer} numberOfLines={1}>
+              Comprador: <Text style={styles.cardBuyerStrong}>{item.comprador || 'Usuario'}</Text>
+            </Text>
+            {item.nombre_tienda ? (
+              <Text style={styles.cardBuyer} numberOfLines={1}>
+                Tienda:                 <Text style={styles.cardStore}>{item.nombre_tienda}</Text>
+              </Text>
+            ) : null}
+          </View>
+        </View>
+      </TouchableOpacity>
+
+      {expanded && (
+        <View style={styles.cardDetails}>
+          <View style={styles.detailChips}>
+            {item.asunto ? <Text style={styles.reasonChip}>{item.asunto}</Text> : null}
+            {item.nombre_tienda ? <View style={styles.storeChip}><IconStoreAlt size={13} color="#0369A1" /><Text style={styles.storeChipText}>{item.nombre_tienda}</Text></View> : null}
+            {item.total_orden ? <Text style={styles.totalChip}>${Number(item.total_orden).toLocaleString('es-CO')}</Text> : null}
+              {item.fecha_creacion ? <Text style={styles.dateChip}>{formatDate(item.fecha_creacion)}</Text> : null}
+          </View>
+          {item.descripcion ? (
+            <View style={styles.descriptionBox}>
+              <Text style={styles.descriptionLabel}>Detalle del reclamo por el cliente</Text>
+              <Text style={styles.descriptionText}>{item.descripcion}</Text>
+            </View>
+          ) : null}
+          {evidenceUri ? (
+            <View style={styles.evidenceCard}>
+              <Image source={{ uri: evidenceUri }} style={styles.evidenceThumbnail} resizeMode="cover" />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.evidenceTitle}>Evidencia gráfica adjunta</Text>
+                <Text style={styles.evidenceHint}>Imagen enviada por el usuario.</Text>
+              </View>
+            </View>
+          ) : null}
+          {item.respuesta ? (
+            <View style={styles.answerBox}>
+              <Text style={styles.answerLabel}>Respuesta actual del administrador</Text>
+              <Text style={styles.answerText}>{item.respuesta}</Text>
+            </View>
+          ) : null}
+          <View style={styles.actions}>
+            {!isSupport && (
+              <ActionButton
+                wide
+                label="Contactar / Chat con la tienda"
+                color={PRIMARY}
+                backgroundColor="#FDF8F9"
+                Icon={IconStoreAlt}
+                onPress={() => onOpenChat(item)}
+              />
+            )}
+            <View style={styles.actionRow}>
+              <ActionButton
+                label={isSupport ? 'En revisión' : 'Marcar En revisión'}
+                color={isSupport ? '#C2410C' : '#EA580C'}
+                backgroundColor="#FFF7ED"
+                Icon={IconTool}
+                onPress={() => onSetResolution(item, 'En revisión')}
+              />
+              <ActionButton
+                label={isSupport ? 'Rechazar solicitud' : 'Rechazar reclamo'}
+                color={isSupport ? '#B91C1C' : '#DC2626'}
+                backgroundColor="#FEF2F2"
+                Icon={IconAlertTriangle}
+                onPress={() => onSetResolution(item, 'Rechazado')}
+              />
+            </View>
+            <ActionButton
+              wide
+              label={isSupport ? 'Cerrar solicitud' : 'Resolver reclamo'}
+              color={PRIMARY}
+              backgroundColor={PRIMARY}
+              Icon={IconCheck}
+              solid
+              onPress={() => onSetResolution(item, 'Resuelto')}
+            />
+          </View>
+        </View>
+      )}
+    </View>
+  );
+}
+
+function SupportRequestCard({ item, onSetResolution }) {
+  const status = stateStyle(item.estado);
+  const photoPath = item.foto_comprador;
+  const photoUri = photoPath
+    ? String(photoPath).startsWith('http') ? photoPath : `${getApiBaseUrl()}/${String(photoPath).replace(/^\/+/, '')}`
+    : null;
+  const userName = item.comprador || 'Usuario';
+  const userRole = (item.rol_usuario || '').toLowerCase() === 'vendedor' ? 'Vendedor' : 'Comprador';
+
+  return (
+    <View style={[styles.supportCard, { borderLeftColor: status.color }]}>
+      <View style={styles.supportHeader}>
+        <View style={styles.supportIdentity}>
+          <View style={styles.supportAvatar}>
+            <Text style={styles.supportAvatarInitial}>{userName.charAt(0).toUpperCase()}</Text>
+            {photoUri ? <Image source={{ uri: photoUri }} style={styles.supportAvatarImage} resizeMode="cover" /> : null}
+          </View>
+          <View style={styles.supportIdentityContent}>
+            <View style={styles.supportIdentityTags}>
+              <Text style={styles.supportTicket}>TICKET #{item.numero || item.id_solicitud}</Text>
+              <View style={styles.supportRole}>
+                <IconUser size={12} color={PRIMARY} />
+                <Text style={styles.supportRoleText}>{userRole}</Text>
+              </View>
+            </View>
+            <Text style={styles.supportName} numberOfLines={1}>{userName}</Text>
+          </View>
+        </View>
+        <View style={[styles.supportStatus, { backgroundColor: status.bg, borderColor: status.border }]}>
+          <View style={[styles.statusDot, { backgroundColor: status.color }]} />
+          <Text style={[styles.supportStatusText, { color: status.color }]} numberOfLines={1}>{item.estado || 'Abierto'}</Text>
+        </View>
+      </View>
+
+      <View style={styles.supportDetails}>
+        <View style={styles.supportMetadata}>
+          <View style={styles.supportCategory}>
+            <IconTool size={14} color={PRIMARY} />
+            <Text style={styles.supportCategoryText}>{item.categoria || 'Soporte'}</Text>
+          </View>
+          {item.correo_comprador ? (
+            <View style={styles.supportEmail}>
+              <IconMail size={14} color="#0369A1" />
+              <Text style={styles.supportEmailText}>{item.correo_comprador}</Text>
+            </View>
+          ) : null}
+          {item.fecha_creacion ? <Text style={styles.supportDate}>{formatDate(item.fecha_creacion)}</Text> : null}
+        </View>
+
+        <View style={styles.supportDescription}>
+          <Text style={styles.supportSubject}>{item.asunto || 'Solicitud de soporte'}</Text>
+          <Text style={styles.descriptionText}>{item.descripcion || 'Sin descripción.'}</Text>
+        </View>
+
+        {item.respuesta ? (
+          <View style={styles.answerBox}>
+            <Text style={styles.answerLabel}>Respuesta del administrador</Text>
+            <Text style={styles.answerText}>{item.respuesta}</Text>
+          </View>
+        ) : null}
+
+        <View style={styles.supportActions}>
+          <View style={styles.actionRow}>
+            <ActionButton
+              label="Marcar en revisión"
+              color="#C2410C"
+              backgroundColor="#FFFFFF"
+              Icon={IconEye}
+              onPress={() => onSetResolution(item, 'En revisión')}
+            />
+            <ActionButton
+              label="Rechazar ticket"
+              color="#DC2626"
+              backgroundColor="#FEF2F2"
+              Icon={IconAlertTriangle}
+              onPress={() => onSetResolution(item, 'Rechazado')}
+            />
+          </View>
+          <ActionButton
+            wide
+            label="Resolver y notificar"
+            color={PRIMARY}
+            backgroundColor={PRIMARY}
+            Icon={IconCheck}
+            solid
+            onPress={() => onSetResolution(item, 'Resuelto')}
+          />
+        </View>
+      </View>
+    </View>
   );
 }
 
@@ -64,6 +302,8 @@ export default function AdminRequests({ type, solicitudes = [], loading, refresh
   const [chatText, setChatText] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
   const [sending, setSending] = useState(false);
+  const [page, setPage] = useState(1);
+  const listRef = useRef(null);
 
   const sectionItems = useMemo(() => {
     const requestType = (item) => (item.tipo_solicitud || '').toLowerCase();
@@ -71,12 +311,24 @@ export default function AdminRequests({ type, solicitudes = [], loading, refresh
     return solicitudes
       .filter((item) => requestType(item) === (isSupport ? 'soporte' : 'reclamo'))
       .filter((item) => !isSupport || (item.rol_usuario || 'comprador').toLowerCase() === roleFilter)
-      .filter((item) => stateFilter === 'Todos' || item.estado === stateFilter || (stateFilter === 'En revisión' && item.estado === 'En revision'))
-      .filter((item) => !q || [
+      .filter((item) => stateFilter === 'Todos' || normalizeState(item.estado) === normalizeState(stateFilter))
+      .filter((item) => isSupport || !q || [
         item.comprador, item.nombre_tienda, item.asunto, item.descripcion,
         item.id_solicitud, item.id_orden, item.titulo_libro,
       ].some((value) => String(value || '').toLowerCase().includes(q)));
   }, [solicitudes, isSupport, roleFilter, stateFilter, query]);
+  const totalPages = Math.max(1, Math.ceil(sectionItems.length / ITEMS_PER_PAGE));
+  const currentPage = Math.min(page, totalPages);
+  const paginatedItems = sectionItems.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+
+  useEffect(() => {
+    setPage(1);
+  }, [query, stateFilter, roleFilter, type, solicitudes]);
+
+  const changePage = (nextPage) => {
+    setPage(nextPage);
+    listRef.current?.scrollToOffset({ offset: 0, animated: true });
+  };
 
   const updateRequest = async () => {
     if (!resolution?.item) return;
@@ -129,49 +381,14 @@ export default function AdminRequests({ type, solicitudes = [], loading, refresh
     }
   };
 
-  const renderItem = ({ item }) => {
-    const status = stateStyle(item.estado);
-    const imagePath = item.evidencia_url || item.imagen_libro;
-    const imageUri = imagePath
-      ? String(imagePath).startsWith('http') ? imagePath : `${getApiBaseUrl()}/${String(imagePath).replace(/^\/+/, '')}`
-      : null;
-    return (
-      <View style={styles.card}>
-        <View style={styles.cardTop}>
-          <View style={styles.idTag}>
-            {isSupport ? <IconTool size={14} color={PRIMARY} /> : <IconAlertTriangle size={14} color={PRIMARY} />}
-            <Text style={styles.idText}>#{item.numero || item.id_solicitud}</Text>
-          </View>
-          <Text style={[styles.status, { backgroundColor: status.bg, color: status.color }]}>
-            {item.estado || 'Abierto'}
-          </Text>
-        </View>
-        <Text style={styles.title}>{item.asunto || (isSupport ? 'Solicitud de soporte' : 'Queja o reclamo')}</Text>
-        <Text style={styles.body} numberOfLines={3}>{item.descripcion || 'Sin descripción.'}</Text>
-        {imageUri ? <Image source={{ uri: imageUri }} style={styles.evidence} resizeMode="cover" /> : null}
-        <View style={styles.metadata}>
-          <Text style={styles.metaText}>{item.comprador || 'Usuario'} · {(item.rol_usuario || 'comprador').toLowerCase()}</Text>
-          <Text style={styles.metaText}>{formatDate(item.fecha_creacion)}</Text>
-          {item.nombre_tienda ? <Text style={styles.metaText}>Tienda: {item.nombre_tienda}</Text> : null}
-          {item.id_orden ? <Text style={styles.metaText}>Orden #{item.id_orden}</Text> : null}
-        </View>
-        {item.respuesta ? (
-          <View style={styles.answerBox}>
-            <Text style={styles.answerLabel}>Respuesta del administrador</Text>
-            <Text style={styles.answerText}>{item.respuesta}</Text>
-          </View>
-        ) : null}
-        <View style={styles.actions}>
-          {!isSupport && (
-            <ActionButton label="Conversación" color={PRIMARY} backgroundColor="#FDF2F4" onPress={() => openChat(item)} />
-          )}
-          <ActionButton label="En revisión" color="#C2410C" backgroundColor="#FFF7ED" onPress={() => { setResolution({ item, state: 'En revisión' }); setAnswer(item.respuesta || ''); }} />
-          <ActionButton label="Rechazar" color="#B91C1C" backgroundColor="#FEF2F2" onPress={() => { setResolution({ item, state: 'Rechazado' }); setAnswer(item.respuesta || ''); }} />
-          <ActionButton label="Resolver" color="#166534" backgroundColor="#DCFCE7" onPress={() => { setResolution({ item, state: 'Resuelto' }); setAnswer(item.respuesta || ''); }} />
-        </View>
-      </View>
-    );
+  const setRequestResolution = (request, state) => {
+    setResolution({ item: request, state });
+    setAnswer(request.respuesta || '');
   };
+
+  const renderItem = ({ item }) => isSupport
+    ? <SupportRequestCard item={item} onSetResolution={setRequestResolution} />
+    : <RequestCard item={item} onOpenChat={openChat} onSetResolution={setRequestResolution} />;
 
   const counts = useMemo(() => ({
     total: solicitudes.filter((item) => (item.tipo_solicitud || '').toLowerCase() === (isSupport ? 'soporte' : 'reclamo')).length,
@@ -179,11 +396,28 @@ export default function AdminRequests({ type, solicitudes = [], loading, refresh
     review: solicitudes.filter((item) => (item.tipo_solicitud || '').toLowerCase() === (isSupport ? 'soporte' : 'reclamo') && ['En revisión', 'En revision'].includes(item.estado)).length,
     resolved: solicitudes.filter((item) => (item.tipo_solicitud || '').toLowerCase() === (isSupport ? 'soporte' : 'reclamo') && item.estado === 'Resuelto').length,
   }), [solicitudes, isSupport]);
+  const stateCounts = useMemo(() => {
+    const items = solicitudes.filter((item) => (item.tipo_solicitud || '').toLowerCase() === (isSupport ? 'soporte' : 'reclamo'));
+    return STATES.reduce((result, state) => {
+      result[state] = state === 'Todos'
+        ? items.length
+        : items.filter((item) => normalizeState(item.estado) === normalizeState(state)).length;
+      return result;
+    }, {});
+  }, [solicitudes, isSupport]);
+  const supportRoleCounts = useMemo(() => {
+    const supportItems = solicitudes.filter((item) => (item.tipo_solicitud || '').toLowerCase() === 'soporte');
+    return {
+      comprador: supportItems.filter((item) => (item.rol_usuario || 'comprador').toLowerCase() === 'comprador').length,
+      vendedor: supportItems.filter((item) => (item.rol_usuario || 'comprador').toLowerCase() === 'vendedor').length,
+    };
+  }, [solicitudes]);
 
   return (
     <View style={styles.container}>
       <FlatList
-        data={sectionItems}
+        ref={listRef}
+        data={paginatedItems}
         keyExtractor={(item) => String(item.id_solicitud)}
         renderItem={renderItem}
         contentContainerStyle={styles.list}
@@ -204,49 +438,115 @@ export default function AdminRequests({ type, solicitudes = [], loading, refresh
                 <Text style={styles.loadingText}>Cargando solicitudes...</Text>
               </View>
             )}
-            <View style={styles.statsRow}>
-              {[
-                ['Total', counts.total, PRIMARY],
-                ['Abiertos', counts.open, '#1D4ED8'],
-                ['En revisión', counts.review, '#C2410C'],
-                ['Resueltos', counts.resolved, '#166534'],
-              ].map(([label, value, color]) => (
-                <View key={label} style={styles.stat}>
-                  <Text style={[styles.statValue, { color }]}>{value}</Text>
-                  <Text style={styles.statLabel}>{label}</Text>
-                </View>
-              ))}
-            </View>
+            {!isSupport && (
+              <View style={styles.statsRow}>
+                {[
+                  ['Total', counts.total, PRIMARY],
+                  ['Abiertos', counts.open, '#1D4ED8'],
+                  ['En revisión', counts.review, '#C2410C'],
+                  ['Resueltos', counts.resolved, '#166534'],
+                ].map(([label, value, color]) => (
+                  <View key={label} style={styles.stat}>
+                    <Text style={[styles.statValue, { color }]}>{value}</Text>
+                    <Text style={styles.statLabel}>{label}</Text>
+                  </View>
+                ))}
+              </View>
+            )}
             {isSupport && (
-              <View style={styles.filters}>
+              <View style={styles.supportFilters}>
                 {['comprador', 'vendedor'].map((role) => (
-                  <TouchableOpacity key={role} onPress={() => setRoleFilter(role)} style={[styles.filterPill, roleFilter === role && styles.filterPillActive]}>
+                  <TouchableOpacity
+                    key={role}
+                    onPress={() => setRoleFilter(role)}
+                    style={[styles.supportRoleFilter, roleFilter === role && styles.supportRoleFilterActive]}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: roleFilter === role }}
+                  >
+                    <IconTool size={16} color={roleFilter === role ? '#FFFFFF' : PRIMARY} />
                     <Text style={[styles.filterText, roleFilter === role && styles.filterTextActive]}>
                       {role === 'comprador' ? 'Compradores' : 'Vendedores'}
                     </Text>
+                    <Text style={[styles.supportRoleCount, roleFilter === role && styles.supportRoleCountActive]}>{supportRoleCounts[role]}</Text>
                   </TouchableOpacity>
                 ))}
               </View>
             )}
-            <TextInput
-              style={styles.search}
-              placeholder="Buscar por usuario, solicitud, tienda u orden..."
-              placeholderTextColor="#8A8A8A"
-              value={query}
-              onChangeText={setQuery}
-              autoCapitalize="none"
-            />
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filters}>
-              {STATES.map((state) => (
-                <TouchableOpacity key={state} onPress={() => setStateFilter(state)} style={[styles.filterPill, stateFilter === state && styles.filterPillActive]}>
-                  <Text style={[styles.filterText, stateFilter === state && styles.filterTextActive]}>{state}</Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-            <Text style={styles.resultCount}>{sectionItems.length} solicitud(es)</Text>
+            {!isSupport && (
+              <>
+                <TextInput
+                  style={styles.search}
+                  placeholder="Buscar comprador, tienda, orden o ID..."
+                  placeholderTextColor="#8A8A8A"
+                  value={query}
+                  onChangeText={setQuery}
+                  autoCapitalize="none"
+                />
+              </>
+            )}
+            <View style={styles.filterPanel}>
+              <Text style={styles.filterSectionTitle}>Filtrar por estado</Text>
+              <View style={styles.stateFilters}>
+                {STATES.map((state) => (
+                  <TouchableOpacity
+                    key={state}
+                    onPress={() => setStateFilter(state)}
+                    style={[
+                      styles.stateFilterPill,
+                      {
+                        backgroundColor: stateFilter === state ? STATE_FILTER_STYLES[state].active : STATE_FILTER_STYLES[state].inactiveBg,
+                        borderColor: stateFilter === state ? STATE_FILTER_STYLES[state].active : STATE_FILTER_STYLES[state].inactiveBorder,
+                      },
+                    ]}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${state}: ${stateCounts[state]}`}
+                    accessibilityState={{ selected: stateFilter === state }}
+                  >
+                    <View style={[styles.stateFilterDot, { backgroundColor: stateFilter === state ? '#FFFFFF' : STATE_FILTER_STYLES[state].dot }]} />
+                    <Text style={[styles.stateFilterText, { color: stateFilter === state ? '#FFFFFF' : STATE_FILTER_STYLES[state].inactiveText }]}>
+                      {state === 'En revisión' ? 'Revisión' : state === 'Rechazado' ? 'Rechaz.' : state}
+                    </Text>
+                    <Text style={[
+                      styles.stateFilterCount,
+                      {
+                        backgroundColor: stateFilter === state ? 'rgba(255,255,255,0.22)' : 'rgba(0,0,0,0.06)',
+                        color: stateFilter === state ? '#FFFFFF' : STATE_FILTER_STYLES[state].inactiveText,
+                      },
+                    ]}>{stateCounts[state]}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+            <Text style={styles.resultCount}>{sectionItems.length} {isSupport ? 'ticket(s)' : 'solicitud(es)'}</Text>
           </View>
         }
-        ListEmptyComponent={<Text style={styles.empty}>No hay solicitudes que coincidan con los filtros.</Text>}
+        ListEmptyComponent={<Text style={styles.empty}>{isSupport ? `No hay tickets para ${roleFilter === 'comprador' ? 'compradores' : 'vendedores'}.` : 'No hay solicitudes que coincidan con los filtros.'}</Text>}
+        ListFooterComponent={sectionItems.length > 0 ? (
+          <View style={styles.pagination}>
+            <Text style={styles.paginationSummary}>
+              Mostrando {(currentPage - 1) * ITEMS_PER_PAGE + 1}–{Math.min(currentPage * ITEMS_PER_PAGE, sectionItems.length)} de {sectionItems.length}
+            </Text>
+            <View style={styles.paginationControls}>
+              <TouchableOpacity
+                style={[styles.pageButton, currentPage === 1 && styles.pageButtonDisabled]}
+                onPress={() => changePage(Math.max(1, currentPage - 1))}
+                disabled={currentPage === 1}
+                accessibilityLabel="Página anterior"
+              >
+                <Text style={[styles.pageButtonText, currentPage === 1 && styles.pageButtonTextDisabled]}>‹</Text>
+              </TouchableOpacity>
+              <Text style={styles.pageIndicator}>{currentPage} / {totalPages}</Text>
+              <TouchableOpacity
+                style={[styles.pageButton, currentPage === totalPages && styles.pageButtonDisabled]}
+                onPress={() => changePage(Math.min(totalPages, currentPage + 1))}
+                disabled={currentPage === totalPages}
+                accessibilityLabel="Página siguiente"
+              >
+                <Text style={[styles.pageButtonText, currentPage === totalPages && styles.pageButtonTextDisabled]}>›</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        ) : null}
         keyboardShouldPersistTaps="handled"
       />
 
@@ -324,29 +624,101 @@ const styles = StyleSheet.create({
   filterPillActive: { backgroundColor: PRIMARY, borderColor: PRIMARY },
   filterText: { color: GRAY, fontWeight: '700', fontSize: 12 },
   filterTextActive: { color: '#fff' },
-  search: { backgroundColor: '#fff', borderWidth: 1, borderColor: BORDER, borderRadius: 11, paddingHorizontal: 13, paddingVertical: 10, fontSize: 13, color: '#222', marginBottom: 10 },
+  supportFilters: { flexDirection: 'row', gap: 7, marginBottom: 10 },
+  supportRoleFilter: { flex: 1, minHeight: 38, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, borderWidth: 1.5, borderColor: BORDER, backgroundColor: '#fff', borderRadius: 20, paddingHorizontal: 6, paddingVertical: 8 },
+  supportRoleFilterActive: { backgroundColor: PRIMARY, borderColor: PRIMARY, elevation: 2 },
+  supportRoleCount: { color: PRIMARY, backgroundColor: '#F7E9EE', borderRadius: 10, paddingHorizontal: 6, paddingVertical: 2, fontSize: 10, fontWeight: '800' },
+  supportRoleCountActive: { color: '#fff', backgroundColor: 'rgba(255,255,255,0.25)' },
+  filterPanel: { backgroundColor: '#fff', borderWidth: 1, borderColor: BORDER, borderRadius: 12, paddingHorizontal: 10, paddingVertical: 8, marginTop: 4, marginBottom: 10 },
+  filterSectionTitle: { color: '#555', fontSize: 10, fontWeight: '800', marginBottom: 6 },
+  search: { backgroundColor: '#fff', borderWidth: 1, borderColor: BORDER, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 9, fontSize: 13, color: '#222', marginBottom: 8 },
+  stateFilters: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-start', columnGap: 6, rowGap: 6 },
+  stateFilterPill: { flexBasis: '31%', minHeight: 30, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 3, borderWidth: 1.5, borderRadius: 18, paddingHorizontal: 4, paddingVertical: 4 },
+  stateFilterDot: { width: 6, height: 6, borderRadius: 3 },
+  stateFilterText: { fontSize: 9, fontWeight: '700' },
+  stateFilterCount: { minWidth: 16, overflow: 'hidden', textAlign: 'center', borderRadius: 8, paddingHorizontal: 3, paddingVertical: 2, fontSize: 8, fontWeight: '800' },
   resultCount: { color: GRAY, fontSize: 12, fontWeight: '700', marginBottom: 10 },
   errorBox: { backgroundColor: '#FEF2F2', borderColor: '#FECACA', borderWidth: 1, borderRadius: 10, padding: 12, marginBottom: 12 },
   errorText: { color: '#991B1B', fontSize: 12, lineHeight: 18 },
   retryText: { color: PRIMARY, fontSize: 12, fontWeight: '800', marginTop: 7 },
   loadingRow: { flexDirection: 'row', alignItems: 'center', gap: 9, backgroundColor: '#fff', borderRadius: 10, padding: 11, marginBottom: 10 },
   loadingText: { color: GRAY, fontSize: 12, fontWeight: '700' },
-  card: { backgroundColor: '#fff', borderRadius: 15, borderWidth: 1, borderColor: BORDER, padding: 15, marginBottom: 12, elevation: 2 },
-  cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
-  idTag: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  idText: { fontSize: 12, color: PRIMARY, fontWeight: '800' },
-  status: { overflow: 'hidden', borderRadius: 12, paddingHorizontal: 9, paddingVertical: 4, fontSize: 11, fontWeight: '800' },
-  title: { color: '#222', fontSize: 16, fontWeight: '800', marginBottom: 5 },
-  body: { color: '#4B5563', fontSize: 13, lineHeight: 19 },
-  evidence: { height: 170, borderRadius: 10, marginTop: 10, backgroundColor: '#F3F4F6' },
-  metadata: { gap: 4, marginTop: 12 },
-  metaText: { color: GRAY, fontSize: 11 },
-  answerBox: { backgroundColor: '#F9FAFB', borderRadius: 9, padding: 10, marginTop: 10, borderLeftWidth: 3, borderLeftColor: PRIMARY },
+  pagination: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, paddingTop: 4, paddingBottom: 16 },
+  paginationSummary: { color: GRAY, fontSize: 11, flex: 1 },
+  paginationControls: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  pageButton: { width: 34, height: 34, borderWidth: 1, borderColor: PRIMARY, borderRadius: 9, alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff' },
+  pageButtonDisabled: { borderColor: BORDER, backgroundColor: '#F3F4F6' },
+  pageButtonText: { color: PRIMARY, fontSize: 22, fontWeight: '700', lineHeight: 25 },
+  pageButtonTextDisabled: { color: '#A8A29E' },
+  pageIndicator: { color: '#222', fontSize: 11, fontWeight: '800', minWidth: 38, textAlign: 'center' },
+  supportCard: { backgroundColor: '#fff', borderRadius: 15, borderWidth: 1.5, borderColor: '#EEE3E9', borderLeftWidth: 5, marginBottom: 12, elevation: 2, overflow: 'hidden' },
+  supportHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: 12, backgroundColor: '#FCF7F9', borderBottomWidth: 1, borderBottomColor: '#F0E8EC' },
+  supportIdentity: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 10 },
+  supportAvatar: { width: 44, height: 44, borderRadius: 22, backgroundColor: PRIMARY, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#fff', elevation: 2, overflow: 'hidden' },
+  supportAvatarInitial: { color: '#fff', fontSize: 16, fontWeight: '800' },
+  supportAvatarImage: { position: 'absolute', width: '100%', height: '100%', borderRadius: 22 },
+  supportIdentityContent: { flex: 1, minWidth: 0 },
+  supportIdentityTags: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 5, marginBottom: 4 },
+  supportTicket: { color: '#fff', backgroundColor: PRIMARY, overflow: 'hidden', borderRadius: 6, paddingHorizontal: 7, paddingVertical: 4, fontSize: 9, fontWeight: '800' },
+  supportRole: { flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: '#fff', borderWidth: 1, borderColor: '#ECDCE3', borderRadius: 6, paddingHorizontal: 6, paddingVertical: 3 },
+  supportRoleText: { color: PRIMARY, fontSize: 9, fontWeight: '700' },
+  supportName: { color: '#252525', fontSize: 13, fontWeight: '800' },
+  supportStatus: { flexDirection: 'row', alignItems: 'center', gap: 5, borderWidth: 1, borderRadius: 14, paddingHorizontal: 7, paddingVertical: 5 },
+  supportStatusText: { fontSize: 9, fontWeight: '800' },
+  supportDetails: { padding: 12, gap: 10 },
+  supportMetadata: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 6 },
+  supportCategory: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: '#FDF2F4', borderWidth: 1, borderColor: '#F0DDE4', borderRadius: 15, paddingHorizontal: 9, paddingVertical: 6 },
+  supportCategoryText: { color: PRIMARY, fontSize: 10, fontWeight: '700' },
+  supportEmail: { maxWidth: '100%', flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: '#F0F9FF', borderWidth: 1, borderColor: '#BAE6FD', borderRadius: 15, paddingHorizontal: 9, paddingVertical: 6 },
+  supportEmailText: { flexShrink: 1, color: '#0369A1', fontSize: 10, fontWeight: '600' },
+  supportDate: { color: '#6B7280', backgroundColor: '#F9FAFB', borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 15, paddingHorizontal: 9, paddingVertical: 6, fontSize: 10, fontWeight: '600' },
+  supportDescription: { backgroundColor: '#FAFAFA', borderWidth: 1, borderColor: '#F0F0F0', borderRadius: 10, padding: 11 },
+  supportSubject: { color: '#252525', fontSize: 12, fontWeight: '800', marginBottom: 5 },
+  supportActions: { gap: 8, paddingTop: 10, borderTopWidth: 1, borderTopColor: BORDER },
+  card: { backgroundColor: '#fff', borderRadius: 15, borderWidth: 1.5, borderColor: '#B9A99A', marginBottom: 12, elevation: 2, overflow: 'hidden' },
+  cardHeader: { padding: 13 },
+  cardHeaderExpanded: { borderBottomWidth: 1, borderBottomColor: BORDER, backgroundColor: '#FFFCFA' },
+  cardHeaderTop: { flexDirection: 'row', alignItems: 'flex-start', gap: 9 },
+  bookThumbnail: { width: 54, height: 68, borderRadius: 9, backgroundColor: '#F3F4F6' },
+  cardFallback: { width: 54, height: 68, borderRadius: 9, backgroundColor: PRIMARY, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 3 },
+  cardFallbackText: { color: '#fff', fontSize: 11, fontWeight: '900', textAlign: 'center' },
+  cardMain: { flex: 1, minWidth: 0 },
+  cardEyebrow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 3 },
+  cardEyebrowText: { fontSize: 10, color: GRAY, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.3 },
+  cardEyebrowRight: { flexDirection: 'row', alignItems: 'center', gap: 4, marginLeft: 'auto' },
+  orderPill: { backgroundColor: '#F7E9EE', color: PRIMARY, paddingHorizontal: 7, paddingVertical: 3, borderRadius: 7, fontSize: 10, fontWeight: '800' },
+  cardBookTitle: { color: '#252525', fontSize: 14, lineHeight: 19, fontWeight: '800' },
+  additionalItems: { color: GRAY, fontSize: 12, fontWeight: '500' },
+  cardBuyer: { color: GRAY, fontSize: 11, marginTop: 3 },
+  cardBuyerStrong: { color: '#252525', fontWeight: '700' },
+  cardStore: { color: PRIMARY, fontWeight: '800' },
+  statusBadge: { minHeight: 22, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, borderWidth: 1, borderRadius: 12, paddingHorizontal: 6, paddingVertical: 3 },
+  statusDot: { width: 7, height: 7, borderRadius: 4 },
+  status: { fontSize: 9, fontWeight: '800' },
+  expandIcon: { width: 24, height: 24, borderRadius: 12, borderWidth: 1, borderColor: '#F0DDE4', backgroundColor: '#FDF2F4', alignItems: 'center', justifyContent: 'center' },
+  cardDetails: { padding: 13, gap: 11 },
+  detailChips: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 7 },
+  reasonChip: { color: PRIMARY, backgroundColor: '#FDF2F4', borderColor: '#F0DDE4', borderWidth: 1, borderRadius: 15, paddingHorizontal: 10, paddingVertical: 6, fontSize: 11, fontWeight: '700' },
+  storeChip: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: '#F0F9FF', borderColor: '#BAE6FD', borderWidth: 1, borderRadius: 15, paddingHorizontal: 9, paddingVertical: 6 },
+  storeChipText: { color: '#0369A1', fontSize: 11, fontWeight: '700' },
+  totalChip: { color: '#166534', backgroundColor: '#F0FDF4', borderColor: '#BBF7D0', borderWidth: 1, borderRadius: 15, paddingHorizontal: 10, paddingVertical: 6, fontSize: 11, fontWeight: '700' },
+  dateChip: { color: GRAY, backgroundColor: '#FAFAFA', borderColor: BORDER, borderWidth: 1, borderRadius: 15, paddingHorizontal: 10, paddingVertical: 6, fontSize: 11, fontWeight: '600' },
+  descriptionBox: { backgroundColor: '#FAFAFA', borderWidth: 1, borderColor: BORDER, borderRadius: 11, padding: 12 },
+  descriptionLabel: { color: GRAY, fontSize: 10, fontWeight: '800', textTransform: 'uppercase', marginBottom: 5 },
+  descriptionText: { color: '#252525', fontSize: 13, lineHeight: 19 },
+  evidenceCard: { flexDirection: 'row', alignItems: 'center', gap: 11, backgroundColor: '#FDF8F9', borderWidth: 1, borderColor: '#F0DDE4', borderRadius: 11, padding: 10 },
+  evidenceThumbnail: { width: 60, height: 60, borderRadius: 8, backgroundColor: '#F3F4F6' },
+  evidenceTitle: { color: PRIMARY, fontSize: 12, fontWeight: '800' },
+  evidenceHint: { color: GRAY, fontSize: 11, marginTop: 3 },
+  answerBox: { backgroundColor: '#F9FAFB', borderRadius: 10, padding: 11, borderLeftWidth: 3, borderLeftColor: PRIMARY },
   answerLabel: { color: PRIMARY, fontWeight: '800', fontSize: 11, marginBottom: 4 },
   answerText: { color: '#374151', fontSize: 12, lineHeight: 18 },
-  actions: { flexDirection: 'row', flexWrap: 'wrap', gap: 7, marginTop: 13 },
-  actionButton: { borderWidth: 1, borderRadius: 9, paddingHorizontal: 10, paddingVertical: 8 },
-  actionText: { fontSize: 11, fontWeight: '800' },
+  actions: { gap: 9, marginTop: 3, paddingTop: 12, borderTopWidth: 1, borderTopColor: BORDER },
+  actionRow: { flexDirection: 'row', gap: 9 },
+  actionButton: { flex: 1, minHeight: 44, flexDirection: 'row', gap: 7, borderWidth: 1.5, borderRadius: 10, paddingHorizontal: 8, paddingVertical: 8, alignItems: 'center', justifyContent: 'center', elevation: 1 },
+  actionButtonWide: { width: '100%', flex: 0 },
+  actionButtonSolid: { borderWidth: 0, elevation: 2 },
+  actionText: { flexShrink: 1, fontSize: 11, fontWeight: '700', textAlign: 'center' },
   disabled: { opacity: 0.55 },
   empty: { color: GRAY, textAlign: 'center', paddingVertical: 36, fontSize: 13 },
   modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 18 },

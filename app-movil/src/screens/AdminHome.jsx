@@ -4,9 +4,8 @@ import React, {
 import {
   ActivityIndicator, FlatList, Image, Modal,
   Platform, RefreshControl, ScrollView,
-  StyleSheet, Text, TextInput, TouchableOpacity, View,
+  StyleSheet, Text, TextInput, TouchableOpacity, View, useWindowDimensions,
 } from 'react-native';
-import Svg, { Circle, Path } from 'react-native-svg';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AuthContext } from '../context/AuthContext';
 import SidebarAdmin from '../components/SidebarAdmin';
@@ -94,35 +93,43 @@ const SECTION_CONFIG = {
 
 const PER_PAGE = 10;
 
-function UserAvatar({ photo, name, color, borderColor, showPreview }) {
+function UntranslatedInitials({ children, style }) {
+  return Platform.OS === 'web'
+    ? React.createElement('span', { className: 'notranslate', translate: 'no', style: StyleSheet.flatten(style) }, children)
+    : <Text style={style}>{children}</Text>;
+}
+
+function UserAvatar({
+  photo,
+  name,
+  color,
+  borderColor,
+  containerStyle,
+  imageStyle,
+  textStyle,
+}) {
   const [imageError, setImageError] = useState(false);
-  const imageUri = photo
-    ? (/^https?:\/\//i.test(photo)
-      ? photo
-      : `${getApiBaseUrl()}/${String(photo).replace(/^\/+/, '')}`)
-    : null;
+  const photoPath = typeof photo === 'string' ? photo.trim() : '';
+  const isRemotePhoto = /^https?:\/\//i.test(photoPath);
+  const isProfileUpload = /^\/?uploads\/perfiles\//i.test(photoPath);
+  const imageUri = isRemotePhoto
+    ? photoPath
+    : isProfileUpload
+      ? `${getApiBaseUrl()}/${photoPath.replace(/^\/+/, '')}`
+      : null;
 
   return (
-    <View style={[s.avatar, s.userAvatar, { backgroundColor: WHITE, borderColor }]}>
+    <View style={[s.avatar, s.userAvatar, { backgroundColor: WHITE, borderColor }, containerStyle]}>
       {imageUri && !imageError ? (
         <Image
           source={{ uri: imageUri }}
-          style={s.userAvatarImage}
+          style={[s.userAvatarImage, imageStyle]}
           resizeMode="cover"
           onError={() => setImageError(true)}
           accessibilityLabel={`Foto de perfil de ${name || 'usuario'}`}
         />
-      ) : showPreview ? (
-        <Svg width="100%" height="100%" viewBox="0 0 88 88" accessibilityLabel="Ilustración de avatar de muestra">
-          <Circle cx="44" cy="44" r="44" fill="#DBEAFE" />
-          <Path d="M17 88c2-19 12-29 27-29s25 10 27 29" fill="#7A1E3A" />
-          <Circle cx="44" cy="35" r="17" fill="#D9A17B" />
-          <Path d="M27 34c0-14 8-22 18-22 11 0 18 8 18 21-4-3-7-8-8-13-6 7-16 11-28 11v3Z" fill="#35251F" />
-          <Path d="M37 39h1m12 0h1" stroke="#35251F" strokeWidth="2.5" strokeLinecap="round" />
-          <Path d="M39 48c3 2 7 2 10 0" fill="none" stroke="#9D5E4A" strokeWidth="2" strokeLinecap="round" />
-        </Svg>
       ) : (
-        <Text style={[s.avatarTxt, { color }]}>{initials(name)}</Text>
+        <UntranslatedInitials style={[s.avatarTxt, { color }, textStyle]}>{initials(name)}</UntranslatedInitials>
       )}
     </View>
   );
@@ -153,6 +160,39 @@ function BookCover({ image, title }) {
   );
 }
 
+function StoreAvatar({ image, name }) {
+  const [imageError, setImageError] = useState(false);
+  const imagePath = typeof image === 'string' ? image.trim() : '';
+  const imageUri = imagePath
+    ? (/^https?:\/\//i.test(imagePath)
+      ? imagePath
+      : `${getApiBaseUrl()}/${imagePath.replace(/^\/+/, '')}`)
+    : null;
+  const storeName = (name || '').trim() || 'Librería';
+  const words = storeName.split(/\s+/);
+  const storeInitials = words.length > 1
+    ? words.slice(0, 2).map((word) => word[0]).join('').toUpperCase()
+    : words[0].slice(0, 2).toUpperCase();
+
+  return (
+    <View style={[s.avatar, { backgroundColor: '#ECFDF5', overflow: 'hidden' }]}>
+      {imageUri && !imageError ? (
+        <Image
+          source={{ uri: imageUri }}
+          style={s.bookCoverImage}
+          resizeMode="cover"
+          onError={() => setImageError(true)}
+          accessibilityLabel={`Logo de ${storeName}`}
+        />
+      ) : (
+        <UntranslatedInitials style={[s.avatarTxt, { color: '#047857' }]}>
+          {storeInitials}
+        </UntranslatedInitials>
+      )}
+    </View>
+  );
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const initials = (name) =>
   (name || '?').trim().split(/\s+/).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
@@ -162,6 +202,16 @@ const isActiveStore  = (s) => ['activa', 'activo', 'habilitada', 'habilitado', '
 const isPendingStore = (s) => ['pendiente', 'en revision', 'en revisión', 'por revisar'].includes((s || '').toLowerCase().trim());
 const isSuspendedStore = (s) => ['suspendida', 'suspendido', 'inactiva', 'inactivo', 'pausada', 'pausado'].includes((s || '').toLowerCase().trim());
 const isVacationStore = (s) => ['vacaciones', 'en vacaciones'].includes((s || '').toLowerCase().trim());
+const isInactiveStore = (s) => ['inactiva', 'inactivo'].includes((s || '').toLowerCase().trim());
+const matchesStoreStatusFilter = (estado, filtro) => {
+  if (filtro === 'todos') return true;
+  if (filtro === 'activa') return isActiveStore(estado);
+  if (filtro === 'pendiente') return isPendingStore(estado);
+  if (filtro === 'vacaciones') return isVacationStore(estado);
+  if (filtro === 'suspendida') return isSuspendedStore(estado) && !isInactiveStore(estado);
+  if (filtro === 'inactiva') return isInactiveStore(estado);
+  return true;
+};
 const getRolColors   = (rol) => ROL_COLORS[(rol || '').toLowerCase()] || { bg: '#F3F4F6', color: GRAY, border: '#D1D5DB' };
 const normalizeUserRoleFilter = (rol) => {
   const rolNormalizado = (rol || '').toLowerCase().trim();
@@ -173,8 +223,9 @@ const getStoreColors = (estado) => {
   const state = (estado || '').toLowerCase().trim();
   if (isActiveStore(state)) return COLORS.active;
   if (isPendingStore(state)) return COLORS.pending;
+  if (isInactiveStore(state)) return { bg: '#F3F4F6', color: '#4B5563', border: '#D1D5DB' };
   if (isSuspendedStore(state)) return COLORS.suspended;
-  if (isVacationStore(state)) return { bg: '#FFF7ED', color: '#C2410C', border: '#FDBA74' };
+  if (isVacationStore(state)) return { bg: '#EFF6FF', color: '#1D4ED8', border: '#BFDBFE' };
   return { bg: '#F3F4F6', color: GRAY, border: '#D1D5DB' };
 };
 const fmtPrice       = (p) => `$${Number(p || 0).toLocaleString('es-CO')}`;
@@ -182,9 +233,9 @@ const fmtPrice       = (p) => `$${Number(p || 0).toLocaleString('es-CO')}`;
 const ESTADOS_TIENDA = [
   { value: 'activa',      label: 'Activa',          color: '#047857', bg: '#ECFDF5', border: '#A7F3D0' },
   { value: 'pendiente',   label: 'Pendiente',        color: '#B45309', bg: '#FFFBEB', border: '#FDE68A' },
-  { value: 'vacaciones',  label: 'En Vacaciones',    color: '#C2410C', bg: '#FFF7ED', border: '#FDBA74' },
+  { value: 'vacaciones',  label: 'En Vacaciones',    color: '#1D4ED8', bg: '#EFF6FF', border: '#BFDBFE' },
   { value: 'suspendida',  label: 'Suspendida',       color: '#B91C1C', bg: '#FEF2F2', border: '#FECACA' },
-  { value: 'inactiva',    label: 'Inactiva',         color: '#7A1E3A', bg: '#FDF2F4', border: '#F8D2DA' },
+  { value: 'inactiva',    label: 'Inactiva',         color: '#4B5563', bg: '#F3F4F6', border: '#D1D5DB' },
 ];
 
 const MOTIVOS_SUSPENSION_PREDEFINIDOS = [
@@ -380,10 +431,10 @@ function AdminReports({ data, stats }) {
   const categories = Object.entries(stats.categories).sort(([, a], [, b]) => b - a).slice(0, 8);
   const storeItems = [
     { key: 'activa', label: 'Activas / Operativas', icon: '🟢', color: '#047857', desc: 'Visibles en el catálogo y vendiendo' },
-    { key: 'vacaciones', label: 'En Vacaciones', icon: '🏖️', color: '#EA580C', desc: 'En pausa temporal programada' },
+    { key: 'vacaciones', label: 'En Vacaciones', icon: '🏖️', color: '#1D4ED8', desc: 'En pausa temporal programada' },
     { key: 'pendiente', label: 'Pendientes de Revisión', icon: '🕐', color: '#D97706', desc: 'Esperando validación de admin' },
     { key: 'suspendida', label: 'Suspendidas', icon: '🚫', color: '#DC2626', desc: 'Sancionadas por incumplimiento' },
-    { key: 'inactiva', label: 'Inactivas', icon: '⭕', color: VINOTINTO, desc: 'Deshabilitadas del sistema' },
+    { key: 'inactiva', label: 'Inactivas', icon: '⭕', color: '#4B5563', desc: 'Deshabilitadas del sistema' },
   ];
   const orderItems = [
     { key: 'pagada', label: 'Pagadas / Preparación', icon: '💳', color: '#D97706', desc: 'Pago confirmado por BookyPago' },
@@ -481,12 +532,15 @@ function AdminReports({ data, stats }) {
 // ─────────────────────────────────────────────────────────────────────────────
 export default function AdminHome() {
   const { user, signOut } = useContext(AuthContext);
+  const { width: windowWidth } = useWindowDimensions();
 
   // ── Vista activa: 'dashboard' o id de sección ─────────────────────────────
   const [activeSection, setActiveSection] = useState('dashboard');
   const [menuVisible,   setMenuVisible]   = useState(false);
   const [adminProfilePhoto, setAdminProfilePhoto] = useState(null);
   const [adminProfileName, setAdminProfileName] = useState(null);
+  const [adminProfileBanner, setAdminProfileBanner] = useState(undefined);
+  const [adminProfileBannerColor, setAdminProfileBannerColor] = useState(undefined);
 
   // ── Datos globales (cargados una vez) ─────────────────────────────────────
   const [data, setData] = useState({
@@ -518,6 +572,7 @@ export default function AdminHome() {
   // ── Filtros por sección ───────────────────────────────────────────────────
   const [filtroRol,          setFiltroRol]          = useState('todos');
   const [filtroEstadoUsuario, setFiltroEstadoUsuario] = useState('todos'); // 'todos' | 'Activo' | 'Bloqueado'
+  const [filtroEstadoTienda, setFiltroEstadoTienda] = useState('todos');
   const [filtroEstadoOrden, setFiltroEstadoOrden] = useState('todos');
   const [filtroCategoria,    setFiltroCategoria]    = useState('todas');
   const [modalCategoriasVisible, setModalCategoriasVisible] = useState(false);
@@ -606,7 +661,7 @@ export default function AdminHome() {
   useEffect(() => { load(); }, [load]);
 
   useEffect(() => {
-    if (['reclamos', 'soporte'].includes(activeSection)) {
+    if (['reclamos', 'soporte', 'perfil'].includes(activeSection)) {
       loadSolicitudes();
     }
   }, [activeSection, loadSolicitudes]);
@@ -617,6 +672,7 @@ export default function AdminHome() {
     setPagina(1);
     setFiltroRol('todos');
     setFiltroEstadoUsuario('todos');
+    setFiltroEstadoTienda('todos');
     setFiltroEstadoOrden('todos');
     setFiltroCategoria('todas');
     setBusquedaCategoria('');
@@ -640,7 +696,8 @@ export default function AdminHome() {
       activeBooks:   data.libros.filter((l) => !l.oculto).length,
       activeStores:  data.tiendas.filter((t) => isActiveStore(t.estado_tienda)).length,
       pendingStores: data.tiendas.filter((t) => isPendingStore(t.estado_tienda)).length,
-      suspendedStores: data.tiendas.filter((t) => isSuspendedStore(t.estado_tienda)).length,
+      suspendedStores: data.tiendas.filter((t) => isSuspendedStore(t.estado_tienda) && !isInactiveStore(t.estado_tienda)).length,
+      inactiveStores: data.tiendas.filter((t) => isInactiveStore(t.estado_tienda)).length,
       vacationStores: data.tiendas.filter((t) => isVacationStore(t.estado_tienda)).length,
       categories:    cats,
       ordersToday:   data.ordenes.filter((o) => o.fecha && new Date(o.fecha).toLocaleDateString('es-CO') === today).length,
@@ -709,7 +766,12 @@ export default function AdminHome() {
     if (activeSection === 'tiendas' && q)
       list = list.filter((t) =>
         (t.nombre_tienda || '').toLowerCase().includes(q) ||
+        (t.direccion || '').toLowerCase().includes(q) ||
+        String(t.telefono || '').toLowerCase().includes(q) ||
+        String(t.id_tienda || '').includes(q) ||
         (t.estado_tienda || '').toLowerCase().includes(q));
+    if (activeSection === 'tiendas' && filtroEstadoTienda !== 'todos')
+      list = list.filter((t) => matchesStoreStatusFilter(t.estado_tienda, filtroEstadoTienda));
     if (activeSection === 'ordenes' && q)
       list = list.filter((o) =>
         String(o.id_orden || '').includes(q) ||
@@ -718,7 +780,7 @@ export default function AdminHome() {
       list = list.filter((o) => (o.estado || '').trim().toLowerCase() === filtroEstadoOrden);
 
     return list;
-  }, [activeSection, data, busqueda, filtroRol, filtroEstadoUsuario, filtroCategoria, filtroEstadoOrden]);
+  }, [activeSection, data, busqueda, filtroRol, filtroEstadoUsuario, filtroEstadoTienda, filtroCategoria, filtroEstadoOrden]);
 
   const totalPages = Math.ceil(sectionItems.length / PER_PAGE) || 1;
   const pageSafe   = Math.min(pagina, totalPages);
@@ -848,7 +910,7 @@ export default function AdminHome() {
   // ─────────────────────────────────────────────────────────────────────────
 
   // ── Tarjeta Usuario ───────────────────────────────────────────────────────
-  const renderUsuario = useCallback(({ item: u, index }) => {
+  const renderUsuario = useCallback(({ item: u }) => {
     const bloqueado = u.estado_usuario === 'Bloqueado';
     const rc        = getRolColors(u.rol);
     return (
@@ -859,7 +921,7 @@ export default function AdminHome() {
       ]}>
         <View style={s.cardTop}>
           <View style={s.userAvatarHalf}>
-            <UserAvatar photo={u.foto_perfil} name={u.nombre_usuario} color={rc.color} borderColor={rc.border} showPreview={index === 0} />
+            <UserAvatar photo={u.foto_perfil} name={u.nombre_usuario} color={rc.color} borderColor={rc.border} />
           </View>
           <View style={s.userInfoHalf}>
             <Text style={s.cardName} numberOfLines={1}>{u.nombre_usuario || 'Usuario'}</Text>
@@ -876,14 +938,14 @@ export default function AdminHome() {
               </View>
             )}
             <View style={s.userInfoBadges}>
-              <View style={[s.badge, s.userRoleBadge, { backgroundColor: WHITE, borderColor: rc.border }]}>
-                <Text style={[s.badgeTxt, { color: rc.color }]}>{u.rol || 'usuario'}</Text>
+              <View style={[s.badge, s.userHighlightBadge, s.userRoleBadge, { backgroundColor: WHITE, borderColor: rc.color }]}>
+                <Text style={[s.badgeTxt, s.userHighlightBadgeText, { color: rc.color }]}>{u.rol || 'usuario'}</Text>
               </View>
-              <View style={[s.badge, { backgroundColor: bloqueado ? '#FEF2F2' : '#ECFDF5', borderColor: bloqueado ? '#FECACA' : '#A7F3D0' }]}>
+              <View style={[s.badge, s.userHighlightBadge, { backgroundColor: bloqueado ? '#FEF2F2' : '#ECFDF5', borderColor: bloqueado ? '#B91C1C' : '#047857' }]}>
                 {bloqueado
                   ? <IconLock size={11} color={RED} />
                   : <IconCheck size={11} color={GREEN} />}
-                <Text style={[s.badgeTxt, { color: bloqueado ? RED : GREEN, marginLeft: 3 }]}>
+                <Text style={[s.badgeTxt, s.userHighlightBadgeText, { color: bloqueado ? RED : GREEN, marginLeft: 3 }]}>
                   {bloqueado ? 'Bloqueado' : 'Activo'}
                 </Text>
               </View>
@@ -897,18 +959,23 @@ export default function AdminHome() {
             onPress={() => setFichaUsuarioId(u.id_usuario)}
             activeOpacity={0.75}
           >
-            <IconEye size={13} color={CARBON} />
-            <Text style={[s.actionTxt, { color: CARBON }]}>Ficha</Text>
+            <IconEye size={13} color="#374151" />
+            <Text style={[s.actionTxt, { color: '#374151' }]}>Ficha</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[s.actionBtn, s.actionHalf, { backgroundColor: bloqueado ? '#ECFDF5' : '#FEF2F2', borderColor: bloqueado ? '#A7F3D0' : '#FECACA' }]}
+            style={[
+              s.actionBtn,
+              s.actionHalf,
+              s.userActionSolid,
+              { backgroundColor: bloqueado ? '#047857' : '#DC2626' },
+            ]}
             onPress={() => handleBloqueo(u)}
             activeOpacity={0.75}
           >
             {bloqueado
-              ? <IconUnlock size={14} color={GREEN} />
-              : <IconLock   size={14} color={RED}   />}
-            <Text style={[s.actionTxt, { color: bloqueado ? GREEN : RED }]}>
+              ? <IconUnlock size={14} color={WHITE} />
+              : <IconLock   size={14} color={WHITE} />}
+            <Text style={[s.actionTxt, { color: WHITE }]}>
               {bloqueado ? 'Desbloquear' : 'Bloquear'}
             </Text>
           </TouchableOpacity>
@@ -938,7 +1005,11 @@ export default function AdminHome() {
             </View>
           </TouchableOpacity>
           <View style={s.bookCardActions}>
-            <View style={[s.badge, { backgroundColor: oculto ? '#FEF2F2' : '#ECFDF5', borderColor: oculto ? '#FECACA' : '#A7F3D0' }]}>
+            <View style={[
+              s.badge,
+              s.bookActionControl,
+              { backgroundColor: oculto ? '#FEF2F2' : '#ECFDF5', borderColor: oculto ? '#FECACA' : '#A7F3D0' },
+            ]}>
               {oculto
                 ? <IconEyeOff size={11} color="#991B1B" />
                 : <IconEye    size={11} color="#047857" />}
@@ -947,7 +1018,7 @@ export default function AdminHome() {
               </Text>
             </View>
             <TouchableOpacity
-              style={[s.detailsToggle, expanded && s.detailsToggleExpanded]}
+              style={[s.detailsToggle, s.bookActionControl, s.bookDetailsControl, expanded && s.detailsToggleExpanded]}
               onPress={() => setExpandedLibro(expanded ? null : l.id_libro)}
               activeOpacity={0.7}
               accessibilityRole="button"
@@ -961,65 +1032,62 @@ export default function AdminHome() {
         {/* Detalles expandibles */}
         {expanded && (
           <View style={s.expandBox}>
-            {/* Precio */}
-            <View style={s.detailRow}>
-              <Text style={s.detailLabel}>Precio</Text>
-              <View style={s.priceBadge}>
-                <Text style={s.priceTxt}>{fmtPrice(l.precio_libro)}</Text>
+            <View style={s.bookDetailsGrid}>
+              <View style={s.bookDetailCell}>
+                <Text style={s.bookDetailLabel}>Precio</Text>
+                <Text style={s.bookDetailValue}>{fmtPrice(l.precio_libro)}</Text>
               </View>
-            </View>
-            {/* Tienda */}
-            <View style={s.detailRow}>
-              <Text style={s.detailLabel}>Tienda</Text>
-              <Text style={[s.detailValue, { color: VINOTINTO, fontWeight: '700' }]} numberOfLines={1}>
-                {l.nombre_tienda || '—'}
-              </Text>
-            </View>
-            {/* Categoría */}
-            <View style={s.detailRow}>
-              <Text style={s.detailLabel}>Categoría</Text>
-              <View style={[s.badge, { backgroundColor: '#F3E8FF', borderColor: '#E9D5FF' }]}>
-                <Text style={[s.badgeTxt, { color: '#7E22CE' }]}>{l.nombre_categoria || 'Sin categoría'}</Text>
-              </View>
-            </View>
-            {/* Stock eliminado — no aparece en el dashboard web */}
-            {/* Estado */}
-            <View style={[s.detailRow, { marginBottom: 14 }]}>
-              <Text style={s.detailLabel}>Estado</Text>
-              <View style={[s.badge, { backgroundColor: oculto ? '#FEF2F2' : '#ECFDF5', borderColor: oculto ? '#FECACA' : '#A7F3D0' }]}>
-                {oculto
-                  ? <IconEyeOff size={11} color="#991B1B" />
-                  : <IconEye    size={11} color="#047857" />}
-                <Text style={[s.badgeTxt, { color: oculto ? '#991B1B' : '#047857', marginLeft: 3 }]}>
-                  {oculto ? 'Oculto en catálogo' : 'Visible en catálogo'}
+              <View style={s.bookDetailCell}>
+                <Text style={s.bookDetailLabel}>Tienda</Text>
+                <Text style={[s.bookDetailValue, { color: VINOTINTO }]} numberOfLines={2}>
+                  {l.nombre_tienda || '—'}
                 </Text>
+              </View>
+              <View style={s.bookDetailCell}>
+                <Text style={s.bookDetailLabel}>Categoría</Text>
+                <Text style={[s.bookDetailValue, { color: '#7E22CE' }]} numberOfLines={2}>
+                  {l.nombre_categoria || 'Sin categoría'}
+                </Text>
+              </View>
+              <View style={s.bookDetailCell}>
+                <Text style={s.bookDetailLabel}>Estado</Text>
+                <View style={s.bookDetailStatus}>
+                  {oculto
+                    ? <IconEyeOff size={12} color="#991B1B" />
+                    : <IconEye size={12} color="#047857" />}
+                  <Text style={[s.bookDetailValue, { color: oculto ? '#991B1B' : '#047857' }]}>
+                    {oculto ? 'Oculto' : 'Visible en catálogo'}
+                  </Text>
+                </View>
               </View>
             </View>
 
             {/* Acciones */}
             <View style={s.actionRow}>
               <TouchableOpacity
-                style={[s.actionBtn, s.actionHalf, {
-                  backgroundColor: oculto ? '#ECFDF5' : '#FFFBEB',
-                  borderColor:     oculto ? '#A7F3D0' : '#FDE68A',
-                }]}
+                style={[
+                  s.actionBtn,
+                  s.actionHalf,
+                  s.bookActionSolid,
+                  { backgroundColor: oculto ? '#6c757d' : VINOTINTO, opacity: oculto ? 0.6 : 1 },
+                ]}
                 onPress={() => handleOcultar(l)}
                 activeOpacity={0.75}
               >
                 {oculto
-                  ? <IconEye    size={13} color="#047857" />
-                  : <IconEyeOff size={13} color="#B45309" />}
-                <Text style={[s.actionTxt, { color: oculto ? '#047857' : '#B45309' }]}>
+                  ? <IconEye    size={13} color={WHITE} />
+                  : <IconEyeOff size={13} color={WHITE} />}
+                <Text style={[s.actionTxt, { color: WHITE }]}>
                   {oculto ? 'Mostrar' : 'Ocultar'}
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[s.actionBtn, s.actionHalf, { backgroundColor: '#FEF2F2', borderColor: '#FECACA' }]}
+                style={[s.actionBtn, s.actionHalf, s.bookActionSolid, { backgroundColor: '#c62828' }]}
                 onPress={() => handleEliminar(l)}
                 activeOpacity={0.75}
               >
-                <IconTrash size={13} color={RED} />
-                <Text style={[s.actionTxt, { color: RED }]}>Eliminar</Text>
+                <IconTrash size={13} color={WHITE} />
+                <Text style={[s.actionTxt, { color: WHITE }]}>Eliminar</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -1046,9 +1114,10 @@ export default function AdminHome() {
             onPress={() => setExpandedTienda(expanded ? null : t.id_tienda)}
             activeOpacity={0.8}
           >
-            <View style={[s.avatar, { backgroundColor: '#ECFDF5' }]}>
-              <IconStore size={18} color="#047857" />
-            </View>
+            <StoreAvatar
+              image={t.logo_url || t.foto_tienda || t.foto_perfil || t.foto}
+              name={t.nombre_tienda}
+            />
             <View style={s.cardMid}>
               <Text style={s.cardName} numberOfLines={1}>{t.nombre_tienda || 'Librería'}</Text>
               <Text style={s.cardSub}  numberOfLines={1}>
@@ -1057,12 +1126,19 @@ export default function AdminHome() {
             </View>
           </TouchableOpacity>
           <View style={s.bookCardActions}>
-            <View style={[s.badge, { backgroundColor: estadoConfig.bg, borderColor: estadoConfig.border }]}>
+            <View style={[
+              s.badge,
+              s.bookActionControl,
+              s.storeStatusControl,
+              { backgroundColor: estadoConfig.bg, borderColor: estadoConfig.color },
+            ]}>
               <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: estadoConfig.color, marginRight: 4 }} />
-              <Text style={[s.badgeTxt, { color: estadoConfig.color }]}>{estadoConfig.label}</Text>
+              <Text style={[s.badgeTxt, s.storeStatusText, { color: estadoConfig.color }]} numberOfLines={1}>
+                {estadoConfig.label}
+              </Text>
             </View>
             <TouchableOpacity
-              style={[s.detailsToggle, expanded && s.detailsToggleExpanded]}
+              style={[s.detailsToggle, s.bookActionControl, s.bookDetailsControl, expanded && s.detailsToggleExpanded]}
               onPress={() => setExpandedTienda(expanded ? null : t.id_tienda)}
               activeOpacity={0.7}
               accessibilityRole="button"
@@ -1076,47 +1152,52 @@ export default function AdminHome() {
         {/* Detalles expandibles */}
         {expanded && (
           <View style={s.expandBox}>
-            {/* ID */}
-            <View style={s.detailRow}>
-              <Text style={s.detailLabel}>ID Tienda</Text>
-              <Text style={s.detailValue}>#{t.id_tienda || '—'}</Text>
-            </View>
-            {/* Dirección */}
-            {!!t.direccion && (
-              <View style={s.detailRow}>
-                <Text style={s.detailLabel}>Dirección</Text>
-                <Text style={[s.detailValue, { maxWidth: '60%', textAlign: 'right' }]} numberOfLines={2}>{t.direccion}</Text>
+            <View style={s.storeDetailsPanel}>
+              <View style={s.storeDetailRow}>
+                <View style={s.storeDetailCell}>
+                  <Text style={s.storeDetailLabel}>ID Tienda</Text>
+                  <Text style={s.storeDetailValue}>#{t.id_tienda || '—'}</Text>
+                </View>
+                <View style={s.storeDetailCell}>
+                  <Text style={s.storeDetailLabel}>Teléfono</Text>
+                  <Text style={s.storeDetailValue}>{t.telefono || '—'}</Text>
+                </View>
               </View>
-            )}
-            {/* Teléfono */}
-            <View style={s.detailRow}>
-              <Text style={s.detailLabel}>Teléfono</Text>
-              <Text style={s.detailValue}>{t.telefono || '—'}</Text>
-            </View>
-            {/* Fecha de registro */}
-            <View style={s.detailRow}>
-              <Text style={s.detailLabel}>Registro</Text>
-              <Text style={s.detailValue}>{fecha}</Text>
-            </View>
-            {/* Estado actual */}
-            <View style={[s.detailRow, { marginBottom: 14 }]}>
-              <Text style={s.detailLabel}>Estado</Text>
-              <View style={[s.badge, { backgroundColor: estadoConfig.bg, borderColor: estadoConfig.border }]}>
-                <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: estadoConfig.color, marginRight: 4 }} />
-                <Text style={[s.badgeTxt, { color: estadoConfig.color }]}>{estadoConfig.label}</Text>
+              <View style={s.storeDetailRow}>
+                <View style={s.storeDetailCell}>
+                  <Text style={s.storeDetailLabel}>Dirección</Text>
+                  <Text style={s.storeDetailValue} numberOfLines={2}>{t.direccion || '—'}</Text>
+                </View>
+                <View style={s.storeDetailCell}>
+                  <Text style={s.storeDetailLabel}>Registro</Text>
+                  <Text style={s.storeDetailValue}>{fecha}</Text>
+                </View>
+              </View>
+              <View style={s.storeDetailRow}>
+                <View style={s.storeDetailCell}>
+                  <Text style={s.storeDetailLabel}>Estado</Text>
+                  <View style={[
+                    s.storeDetailStatus,
+                    { backgroundColor: estadoConfig.bg, borderColor: estadoConfig.color },
+                  ]}>
+                    <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: estadoConfig.color }} />
+                    <Text style={[s.badgeTxt, { color: estadoConfig.color }]}>{estadoConfig.label}</Text>
+                  </View>
+                </View>
+                <TouchableOpacity
+                  style={[
+                    s.storeDetailAction,
+                    { backgroundColor: estadoConfig.bg, borderColor: estadoConfig.border },
+                  ]}
+                  onPress={() => handleEstadoTienda(t)}
+                  activeOpacity={0.75}
+                >
+                  <Text style={[s.actionTxt, { color: estadoConfig.color }]}>
+                    Cambiar Estado
+                  </Text>
+                </TouchableOpacity>
               </View>
             </View>
-
-            {/* Acción */}
-            <TouchableOpacity
-              style={[s.actionBtn, { backgroundColor: estadoConfig.bg, borderColor: estadoConfig.border }]}
-              onPress={() => handleEstadoTienda(t)}
-              activeOpacity={0.75}
-            >
-              <Text style={[s.actionTxt, { color: estadoConfig.color }]}>
-                Cambiar Estado
-              </Text>
-            </TouchableOpacity>
           </View>
         )}
       </View>
@@ -1217,6 +1298,7 @@ export default function AdminHome() {
     busqueda ||
     filtroRol !== 'todos' ||
     (filtroEstadoUsuario !== 'todos' && filtroEstadoUsuario) ||
+    (activeSection === 'tiendas' && filtroEstadoTienda !== 'todos') ||
     filtroCategoria !== 'todas' ||
     (activeSection === 'ordenes' && filtroEstadoOrden !== 'todos')
   );
@@ -1348,22 +1430,126 @@ export default function AdminHome() {
         </View>
       )}
 
-      {/* Buscador */}
-      <TextInput
-        style={s.searchInput}
-        placeholder={
-          activeSection === 'usuarios' ? 'Buscar por nombre o correo…'
-          : activeSection === 'libros'  ? 'Buscar por título, autor o tienda…'
-          : activeSection === 'tiendas' ? 'Buscar por nombre o estado…'
-          : 'Buscar por ID o estado…'
-        }
-        placeholderTextColor="#AAA"
-        value={busqueda}
-        onChangeText={(t) => { setBusqueda(t); setPagina(1); }}
-        autoCapitalize="none"
-        autoCorrect={false}
-        returnKeyType="search"
-      />
+      {activeSection === 'tiendas' && (
+        <View style={s.storeKpiGrid}>
+          {[
+            {
+              key: 'total', label: 'TOTAL', value: data.tiendas.length,
+              color: VINOTINTO, bg: '#FDF2F4', border: '#F8D2DA', Icon: IconStore,
+              onPress: () => { setFiltroEstadoTienda('todos'); setPagina(1); },
+            },
+            {
+              key: 'activa', label: 'ACTIVAS', value: stats.activeStores,
+              color: '#047857', bg: '#ECFDF5', border: '#A7F3D0', Icon: IconCheck,
+              onPress: () => { setFiltroEstadoTienda('activa'); setPagina(1); },
+            },
+            {
+              key: 'pendiente', label: 'PENDIENTES', value: stats.pendingStores,
+              color: '#B45309', bg: '#FFFBEB', border: '#FDE68A', Icon: IconAlertTriangle,
+              onPress: () => { setFiltroEstadoTienda('pendiente'); setPagina(1); },
+            },
+            {
+              key: 'suspendida', label: 'SUSPENDIDAS', value: stats.suspendedStores,
+              color: '#B91C1C', bg: '#FEF2F2', border: '#FECACA', Icon: IconLock,
+              onPress: () => { setFiltroEstadoTienda('suspendida'); setPagina(1); },
+            },
+          ].map(({ key, label, value, color, bg, border, Icon, onPress }) => (
+            <TouchableOpacity
+              key={key}
+              style={[s.storeKpiCard, { borderColor: BORDER }]}
+              onPress={onPress}
+              activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel={`${label}: ${value}`}
+            >
+              <View style={[s.storeKpiIcon, { backgroundColor: bg, borderColor: border }]}>
+                <Icon size={21} color={color} />
+              </View>
+              <View style={s.storeKpiInfo}>
+                <Text style={s.storeKpiLabel}>{label}</Text>
+                <Text style={[s.storeKpiValue, { color }]}>{value}</Text>
+              </View>
+            </TouchableOpacity>
+          ))}
+        </View>
+      )}
+
+      {activeSection === 'tiendas' ? (
+        <View style={s.storeSearchAndFilters}>
+          <View style={s.storeSearchBox}>
+            <IconSearch size={17} color={GRAY} />
+            <TextInput
+              style={s.storeSearchInput}
+              placeholder="Buscar por nombre, dirección, teléfono o ID..."
+              placeholderTextColor="#888"
+              value={busqueda}
+              onChangeText={(t) => { setBusqueda(t); setPagina(1); }}
+              autoCapitalize="none"
+              autoCorrect={false}
+              returnKeyType="search"
+              accessibilityLabel="Buscar tiendas por nombre, dirección, teléfono o ID"
+            />
+          </View>
+          <View style={s.storeStatusFilterPanel}>
+            <View style={s.storeStatusFilters}>
+              {[
+                { value: 'todos', label: 'Todas', color: '#047857', bg: '#ECFDF5', border: '#A7F3D0' },
+                ...ESTADOS_TIENDA.map((estado) => ({
+                  value: estado.value,
+                  label: estado.label,
+                  color: estado.color,
+                  bg: estado.bg,
+                  border: estado.border,
+                })),
+              ].map(({ value, label, color = GRAY, bg = WHITE, border = BORDER }) => {
+                const selected = filtroEstadoTienda === value;
+                return (
+                  <TouchableOpacity
+                    key={value}
+                    style={[
+                      s.storeStatusPill,
+                      windowWidth <= 600 && s.storeStatusPillMobile,
+                      {
+                        backgroundColor: selected ? bg : WHITE,
+                        borderColor: selected ? color : border,
+                        borderWidth: selected ? 1.5 : 1,
+                      },
+                    ]}
+                    onPress={() => { setFiltroEstadoTienda(value); setPagina(1); }}
+                    activeOpacity={0.75}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected }}
+                  >
+                    {value !== 'todos' && <View style={[s.storeStatusDot, { backgroundColor: color }]} />}
+                    <Text style={[
+                      s.storeStatusPillText,
+                      windowWidth <= 600 && s.storeStatusPillTextMobile,
+                      { color: selected ? color : GRAY },
+                    ]}>
+                      {label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
+        </View>
+      ) : (
+        <TextInput
+          style={s.searchInput}
+          placeholder={
+            activeSection === 'usuarios' ? 'Buscar por nombre o correo…'
+            : activeSection === 'libros'  ? 'Buscar por título, autor o tienda…'
+            : 'Buscar por ID o estado…'
+          }
+          placeholderTextColor="#AAA"
+          value={busqueda}
+          onChangeText={(t) => { setBusqueda(t); setPagina(1); }}
+          autoCapitalize="none"
+          autoCorrect={false}
+          returnKeyType="search"
+        />
+      )}
 
       {/* Pills rol (solo usuarios) */}
       {activeSection === 'usuarios' && (
@@ -1454,6 +1640,7 @@ export default function AdminHome() {
 
       {/* Limpiar filtros */}
       {((activeSection === 'usuarios' && (busqueda || filtroRol !== 'todos' || filtroEstadoUsuario !== 'todos')) ||
+        (activeSection === 'tiendas' && (busqueda || filtroEstadoTienda !== 'todos')) ||
         (activeSection === 'libros' && (busqueda || filtroCategoria !== 'todas')) ||
         (activeSection === 'ordenes' && (busqueda || filtroEstadoOrden !== 'todos'))) && (
         <TouchableOpacity
@@ -1462,6 +1649,7 @@ export default function AdminHome() {
             setBusqueda('');
             setFiltroRol('todos');
             setFiltroEstadoUsuario('todos');
+            setFiltroEstadoTienda('todos');
             setFiltroCategoria('todas');
             setFiltroEstadoOrden('todos');
             setPagina(1);
@@ -1586,7 +1774,7 @@ export default function AdminHome() {
         {sectionCountLabel}
       </Text>
     </View>
-  ), [activeSection, busqueda, busquedaCategoria, filtroRol, filtroEstadoUsuario, filtroCategoria, filtroEstadoOrden, estadosOrden, modalCategoriasVisible, categorias, librosPorCategoria, data.libros.length, sectionItems.length, usuariosKpi]);
+  ), [activeSection, busqueda, busquedaCategoria, filtroRol, filtroEstadoUsuario, filtroEstadoTienda, filtroCategoria, filtroEstadoOrden, estadosOrden, modalCategoriasVisible, categorias, librosPorCategoria, data.libros.length, data.tiendas, sectionItems.length, usuariosKpi, stats, windowWidth]);
 
   // ── Paginación ────────────────────────────────────────────────────────────
   const SectionListFooter = useMemo(() => {
@@ -1685,6 +1873,35 @@ export default function AdminHome() {
                   {stats.support > 0       ? `Hay ${stats.support} ticket(s) de soporte sin resolver. ` : ''}
                   {stats.pendingStores > 0 ? `Hay ${stats.pendingStores} librería(s) pendiente(s) de revisión.` : ''}
                 </Text>
+                <View style={s.alertActions}>
+                  {stats.claims > 0 && (
+                    <TouchableOpacity
+                      style={[s.alertActionButton, { backgroundColor: '#D97706' }]}
+                      onPress={() => setActiveSection('reclamos')}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={s.alertActionText}>Resolver Reclamos →</Text>
+                    </TouchableOpacity>
+                  )}
+                  {stats.pendingStores > 0 && (
+                    <TouchableOpacity
+                      style={[s.alertActionButton, { backgroundColor: '#047857' }]}
+                      onPress={() => setActiveSection('tiendas')}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={s.alertActionText}>Revisar Tiendas →</Text>
+                    </TouchableOpacity>
+                  )}
+                  {stats.support > 0 && (
+                    <TouchableOpacity
+                      style={[s.alertActionButton, { backgroundColor: '#2563EB' }]}
+                      onPress={() => setActiveSection('soporte')}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={s.alertActionText}>Atender Soporte →</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
               </View>
             </View>
           )}
@@ -1777,7 +1994,8 @@ export default function AdminHome() {
               <View style={s.legend}>
                 <View style={s.legendItem}><View style={[s.legendDot, { backgroundColor: '#16a34a' }]} /><Text style={{ color: '#166534', fontSize: 11, fontWeight: '700' }}>{stats.activeStores} Activas</Text></View>
                 <View style={s.legendItem}><View style={[s.legendDot, { backgroundColor: '#ea580c' }]} /><Text style={{ color: '#9a3412', fontSize: 11, fontWeight: '700' }}>{stats.pendingStores} Pendientes</Text></View>
-                <View style={s.legendItem}><View style={[s.legendDot, { backgroundColor: '#ef4444' }]} /><Text style={{ color: '#991b1b', fontSize: 11, fontWeight: '700' }}>{stats.suspendedStores} Suspendidas/Inactivas</Text></View>
+                <View style={s.legendItem}><View style={[s.legendDot, { backgroundColor: '#ef4444' }]} /><Text style={{ color: '#991b1b', fontSize: 11, fontWeight: '700' }}>{stats.suspendedStores} Suspendidas</Text></View>
+                <View style={s.legendItem}><View style={[s.legendDot, { backgroundColor: '#9CA3AF' }]} /><Text style={{ color: '#4B5563', fontSize: 11, fontWeight: '700' }}>{stats.inactiveStores} Inactivas</Text></View>
               </View>
             </View>
           </View>
@@ -1807,7 +2025,7 @@ export default function AdminHome() {
                     <View key={item.id_usuario} style={[s.tableRow, { backgroundColor: i % 2 === 0 ? '#fafafa' : WHITE }]}>
                       <View style={[s.td, s.userNameColumn, { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start', gap: 7 }]}>
                         <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: rc.bg, alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                          <Text style={{ color: rc.color, fontSize: 10, fontWeight: '800' }}>{ini}</Text>
+                          <UntranslatedInitials style={{ color: rc.color, fontSize: 10, fontWeight: '800' }}>{ini}</UntranslatedInitials>
                         </View>
                         <Text style={{ color: CARBON, fontSize: 12, fontWeight: '700', flexShrink: 1 }} numberOfLines={1}>{item.nombre_usuario || 'Usuario'}</Text>
                       </View>
@@ -1904,6 +2122,10 @@ export default function AdminHome() {
           solicitudes={data.solicitudes}
           onProfilePhotoChange={setAdminProfilePhoto}
           onProfileNameChange={setAdminProfileName}
+          onProfileBannerChange={(banner, color) => {
+            setAdminProfileBanner(banner);
+            setAdminProfileBannerColor(color);
+          }}
         />
 
       ) : (
@@ -1937,6 +2159,8 @@ export default function AdminHome() {
           ...user,
           nombre: adminProfileName || user?.nombre,
           foto_perfil: adminProfilePhoto || user?.foto_perfil,
+          banner_perfil: adminProfileBanner !== undefined ? adminProfileBanner : user?.banner_perfil,
+          banner_color: adminProfileBannerColor !== undefined ? adminProfileBannerColor : user?.banner_color,
         }}
         activeSection={activeSection}
         onSignOut={signOut}
@@ -1974,9 +2198,15 @@ export default function AdminHome() {
 
                 {/* ── Header vinotinto ── */}
                 <View style={fm.header}>
-                  <View style={fm.headerAvatar}>
-                    <Text style={fm.headerAvatarTxt}>{initials(u.nombre_usuario)}</Text>
-                  </View>
+                  <UserAvatar
+                    photo={u.foto_perfil}
+                    name={u.nombre_usuario}
+                    color={WHITE}
+                    borderColor="rgba(255,255,255,0.6)"
+                    containerStyle={fm.headerAvatar}
+                    imageStyle={fm.headerAvatarImage}
+                    textStyle={fm.headerAvatarTxt}
+                  />
                   <View style={{ flex: 1 }}>
                     <Text style={fm.headerName} numberOfLines={1}>{u.nombre_usuario || 'Usuario'}</Text>
                     <Text style={fm.headerSub}>Ficha de Usuario · ID #{u.id_usuario}</Text>
@@ -2240,6 +2470,9 @@ const s = StyleSheet.create({
   alertIconBox: { width: 42, height: 42, borderRadius: 12, backgroundColor: '#FEF3C7', alignItems: 'center', justifyContent: 'center', marginRight: 14, flexShrink: 0 },
   alertTitle:   { color: '#92400E', fontSize: 14, fontWeight: '800' },
   alertBody:    { color: '#B45309', fontSize: 12, lineHeight: 18, marginTop: 3 },
+  alertActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10 },
+  alertActionButton: { minHeight: 36, justifyContent: 'center', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8 },
+  alertActionText: { color: WHITE, fontSize: 12, fontWeight: '700' },
 
   // KPI
   kpiCard:      { flex: 1, backgroundColor: WHITE, borderWidth: 1, borderRadius: 16, padding: 14, margin: 6, elevation: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.04, shadowRadius: 20 },
@@ -2288,6 +2521,12 @@ const s = StyleSheet.create({
 
   // Búsqueda + pills
   searchInput:  { backgroundColor: WHITE, borderWidth: 1, borderColor: BORDER, borderRadius: 12, paddingHorizontal: 14, paddingVertical: Platform.OS === 'ios' ? 11 : 8, fontSize: 13, color: CARBON, marginBottom: 10 },
+  storeKpiGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
+  storeKpiCard: { flexBasis: '22%', flexGrow: 1, minWidth: 145, minHeight: 82, flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: WHITE, borderWidth: 1, borderRadius: 14, padding: 12 },
+  storeKpiIcon: { width: 42, height: 42, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderRadius: 12 },
+  storeKpiInfo: { flex: 1, minWidth: 0 },
+  storeKpiLabel: { color: GRAY, fontSize: 10, fontWeight: '800', letterSpacing: 0.4 },
+  storeKpiValue: { fontSize: 25, lineHeight: 29, fontWeight: '900' },
   pill:         { paddingHorizontal: 13, paddingVertical: 6, borderRadius: 20, backgroundColor: WHITE, borderWidth: 1, borderColor: BORDER },
   userRoleFilters: { flexDirection: 'row', gap: 7, marginBottom: 8 },
   rolePill:     { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, paddingHorizontal: 6 },
@@ -2307,6 +2546,16 @@ const s = StyleSheet.create({
   orderStatusFilterSection: { marginBottom: 8 },
   orderStatusFilterLabel: { color: GRAY, fontSize: 11, fontWeight: '700', marginBottom: 6 },
   orderStatusFilters: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  storeSearchAndFilters: { flexDirection: 'column', gap: 8, marginBottom: 8 },
+  storeSearchBox: { width: '100%', minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 9, backgroundColor: WHITE, borderWidth: 1, borderColor: BORDER, borderRadius: 12, paddingHorizontal: 12 },
+  storeSearchInput: { flex: 1, minWidth: 0, color: CARBON, fontSize: 13, paddingVertical: 8, outlineStyle: 'none' },
+  storeStatusFilterPanel: { width: '100%', backgroundColor: WHITE, borderWidth: 1, borderColor: BORDER, borderRadius: 14, padding: 10 },
+  storeStatusFilters: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'flex-start', gap: 6, width: '100%', minWidth: 0 },
+  storeStatusPill: { minHeight: 34, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, paddingHorizontal: 9, paddingVertical: 6, borderWidth: 1, borderRadius: 18 },
+  storeStatusPillMobile: { flexBasis: '30%', flexGrow: 1, minWidth: 0, paddingHorizontal: 5 },
+  storeStatusDot: { width: 7, height: 7, borderRadius: 4 },
+  storeStatusPillText: { fontSize: 11, fontWeight: '700' },
+  storeStatusPillTextMobile: { fontSize: 10 },
   orderStatusFilter: { minHeight: 30, justifyContent: 'center', paddingHorizontal: 10, paddingVertical: 5, borderWidth: 1, borderRadius: 16 },
   orderStatusFilterText: { fontSize: 10, fontWeight: '700' },
   clearFiltersBtn: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', gap: 5, marginBottom: 8, paddingVertical: 5, paddingHorizontal: 2 },
@@ -2356,7 +2605,11 @@ const s = StyleSheet.create({
   cardTop:      { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
   bookMainPress: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center' },
   storeMainPress: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center' },
-  bookCardActions: { alignItems: 'flex-end', gap: 5, marginLeft: 8 },
+  bookCardActions: { width: 118, alignItems: 'stretch', gap: 6, marginLeft: 8 },
+  bookActionControl: { width: '100%', minHeight: 30, justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderRadius: 8 },
+  bookDetailsControl: { backgroundColor: '#FDF2F4', borderColor: '#F8D2DA', paddingVertical: 4, paddingHorizontal: 5 },
+  storeStatusControl: { flexDirection: 'row', paddingHorizontal: 5 },
+  storeStatusText: { fontSize: 10 },
   detailsToggle: { minHeight: 24, justifyContent: 'center', paddingVertical: 3, paddingHorizontal: 7, borderRadius: 6, backgroundColor: '#FDF2F4' },
   detailsToggleExpanded: { backgroundColor: '#F8E7EB' },
   detailsToggleText: { color: VINOTINTO, fontSize: 11, fontWeight: '700' },
@@ -2397,14 +2650,25 @@ const s = StyleSheet.create({
   userContactRow: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 18 },
   userContactText: { color: GRAY, fontSize: 11, flex: 1, minWidth: 0 },
   userInfoBadges: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 5, marginTop: 2 },
+  userHighlightBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, borderWidth: 1.5 },
+  userHighlightBadgeText: { fontSize: 12, fontWeight: '800' },
   userRoleBadge: { alignSelf: 'flex-start' },
   userStatusRow: { alignItems: 'center', marginBottom: 10 },
 
   // Acordeón libro
-  expandBox:    { borderTopWidth: 1, borderTopColor: BEIGE, marginTop: 4, paddingTop: 14 },
-  detailRow:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
-  detailLabel:  { color: GRAY, fontSize: 12, fontWeight: '600', flex: 1 },
-  detailValue:  { color: CARBON, fontSize: 13, fontWeight: '600', flexShrink: 1, textAlign: 'right' },
+  expandBox:    { borderTopWidth: 1, borderTopColor: BEIGE, marginTop: 4, paddingTop: 12, gap: 12 },
+  bookDetailsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  bookDetailCell: { flexBasis: '48%', flexGrow: 1, minWidth: 130, minHeight: 58, justifyContent: 'center', backgroundColor: BEIGE, borderWidth: 1, borderColor: BORDER, borderRadius: 10, paddingHorizontal: 11, paddingVertical: 8 },
+  bookDetailLabel: { color: GRAY, fontSize: 10, fontWeight: '700', marginBottom: 4 },
+  bookDetailValue: { color: CARBON, fontSize: 12, fontWeight: '800', flexShrink: 1 },
+  bookDetailStatus: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  storeDetailsPanel: { backgroundColor: '#FAF8F5', borderRadius: 14, padding: 10, gap: 8 },
+  storeDetailRow: { flexDirection: 'row', gap: 8 },
+  storeDetailCell: { flex: 1, minWidth: 0, minHeight: 58, justifyContent: 'center', backgroundColor: WHITE, borderWidth: 1, borderColor: BORDER, borderRadius: 10, paddingHorizontal: 11, paddingVertical: 8 },
+  storeDetailLabel: { color: GRAY, fontSize: 10, fontWeight: '700', marginBottom: 4 },
+  storeDetailValue: { color: CARBON, fontSize: 12, fontWeight: '800', flexShrink: 1 },
+  storeDetailStatus: { alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: WHITE, borderWidth: 1.5, borderRadius: 12, paddingHorizontal: 10, paddingVertical: 5 },
+  storeDetailAction: { flex: 1, minWidth: 0, minHeight: 58, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderRadius: 10, paddingHorizontal: 8, paddingVertical: 8 },
   priceBadge:   { backgroundColor: VINOTINTO, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 4 },
   priceTxt:     { color: WHITE, fontWeight: '800', fontSize: 13 },
   chevronWrap:  { alignSelf: 'center' },
@@ -2414,6 +2678,8 @@ const s = StyleSheet.create({
   actionRow:    { flexDirection: 'row', gap: 8 },
   actionBtn:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, borderWidth: 1, borderRadius: 10, paddingVertical: 8, paddingHorizontal: 14 },
   actionHalf:   { flex: 1 },
+  userActionSolid: { borderWidth: 0 },
+  bookActionSolid: { borderWidth: 0 },
   actionTxt:    { fontSize: 12, fontWeight: '700' },
 
   // Paginación
@@ -2447,6 +2713,7 @@ const fm = StyleSheet.create({
   // Header
   header:          { flexDirection: 'row', alignItems: 'center', backgroundColor: VINOTINTO, paddingHorizontal: 20, paddingVertical: 18, gap: 12 },
   headerAvatar:    { width: 52, height: 52, borderRadius: 26, backgroundColor: 'rgba(255,255,255,0.22)', alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: 'rgba(255,255,255,0.6)', flexShrink: 0 },
+  headerAvatarImage: { borderRadius: 26 },
   headerAvatarTxt: { color: WHITE, fontWeight: '900', fontSize: 18 },
   headerName:      { color: WHITE, fontSize: 15, fontWeight: '800' },
   headerSub:       { color: 'rgba(255,255,255,0.82)', fontSize: 11, marginTop: 2 },

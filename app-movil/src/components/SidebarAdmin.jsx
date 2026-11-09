@@ -3,6 +3,7 @@ import {
   Animated, Dimensions, Modal, Platform, ScrollView,
   Image, StyleSheet, Text, TouchableOpacity, View,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { getApiBaseUrl } from '../services/api';
 import {
   IconAlertTriangle, IconBook, IconClose, IconLayoutDashboard, IconLogout,
@@ -89,6 +90,17 @@ export default function SidebarAdmin({
       ? user.foto_perfil
       : `${getApiBaseUrl()}/${String(user.foto_perfil).replace(/^\/+/, '')}`)
     : null;
+  const bannerUri = user?.banner_perfil
+    ? (/^https?:\/\//i.test(user.banner_perfil)
+      ? user.banner_perfil
+      : `${getApiBaseUrl()}/${String(user.banner_perfil).replace(/^\/+/, '')}`)
+    : null;
+  const bannerGradientColors = typeof user?.banner_color === 'string' && user.banner_color.startsWith('linear-gradient')
+    ? user.banner_color.match(/#[0-9A-Fa-f]{6}/g)
+    : null;
+  const bannerBackgroundColor = /^#[0-9A-Fa-f]{6}$/.test(user?.banner_color || '')
+    ? user.banner_color
+    : VINOTINTO_DARK;
 
   return (
     <Modal visible={visible} transparent animationType="none" onRequestClose={onClose}>
@@ -102,7 +114,15 @@ export default function SidebarAdmin({
         <Animated.View style={[st.drawer, { transform: [{ translateX: slideAnim }] }]}>
 
           {/* Cabecera con avatar */}
-          <View style={st.header}>
+          <View style={[st.header, { backgroundColor: bannerBackgroundColor }]}>
+            {bannerGradientColors?.length >= 2 ? (
+              <LinearGradient colors={bannerGradientColors} style={StyleSheet.absoluteFill} />
+            ) : bannerUri ? (
+              <Image source={{ uri: bannerUri }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+            ) : null}
+            {(bannerUri || bannerGradientColors?.length >= 2) && (
+              <View style={[StyleSheet.absoluteFill, st.headerOverlay]} />
+            )}
             <View style={st.avatar}>
               {photoUri ? (
                 <Image source={{ uri: photoUri }} style={st.avatarImage} resizeMode="cover" />
@@ -182,7 +202,8 @@ const st = StyleSheet.create({
   },
 
   // Cabecera
-  header:    { backgroundColor: VINOTINTO_DARK, paddingTop: Platform.OS === 'ios' ? 54 : 34, paddingBottom: 20, paddingHorizontal: 18, flexDirection: 'row', alignItems: 'center' },
+  header:    { backgroundColor: VINOTINTO_DARK, paddingTop: Platform.OS === 'ios' ? 54 : 34, paddingBottom: 20, paddingHorizontal: 18, flexDirection: 'row', alignItems: 'center', overflow: 'hidden' },
+  headerOverlay: { backgroundColor: 'rgba(0,0,0,0.35)' },
   avatar:    { width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.2)', borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.35)', alignItems: 'center', justifyContent: 'center' },
   avatarImage: { width: '100%', height: '100%', borderRadius: 22 },
   avatarTxt: { color: WHITE, fontSize: 18, fontWeight: '800' },
