@@ -46,7 +46,7 @@ jobs:
 
       # ── Construir y publicar imagen del backend ────────────────────────────
       - name: Construir y publicar bkh-backend
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: ./backend
           push: true
@@ -58,7 +58,7 @@ jobs:
 
       # ── Construir y publicar imagen del frontend (build estatico) ───────────
       - name: Construir y publicar bkh-frontend
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: ./frontend
           file: ./frontend/Dockerfile.prod
