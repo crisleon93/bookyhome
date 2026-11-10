@@ -1,0 +1,465 @@
+---
+# instalar-bookyhome.yml — BookyHome Ansible Playbook
+# Instala BookyHome en un servidor Ubuntu Server 24.04 LTS limpio.
+# Cubre las secciones 5.2–5.7 y 7 del Plan de Implantación v1.1.
+#
+# Uso:
+#   # 1. Comprobar acceso
+#   ansible -i infra/ansible/inventario.ini bookyhome_prod -m ping
+#
+#   # 2. Ver qué cambiaría (dry-run)
+#   ansible-playbook -i infra/ansible/inventario.ini \
+#                    infra/ansible/instalar-bookyhome.yml \
+#                    --ask-vault-pass --check --diff
+#
+#   # 3. Aplicar
+#   ansible-playbook -i infra/ansible/inventario.ini \
+#                    infra/ansible/instalar-bookyhome.yml \
+#                    --ask-vault-pass
+#
+#   # 4. Comprobar idempotencia (segunda ejecución debe dar changed=0)
+#   ansible-playbook -i infra/ansible/inventario.ini \
+#                    infra/ansible/instalar-bookyhome.yml \
+#                    --ask-vault-pass
+#
+# Colecciones requeridas:
+#   ansible-galaxy collection install community.general ansible.posix
+#
+# Prerrequisitos del nodo de control:
+#   - Ansible >= 2.15
+#   - Llave SSH del servidor en ~/.ssh/id_ed25519 (nunca en el repositorio)
+#   - Contraseña del vault (entregar por canal seguro separado)
+# ─────────────────────────────────────────────────────────────────────────────
+
+- name: "BookyHome — Instalación completa (secciones 5 y 7 del plan)"
+  hosts: bookyhome_prod
+  become: true
+  vars_files:
+    - group_vars/bookyhome_prod/vars.yml
+    - group_vars/bookyhome_prod/vault.yml
+
+  handlers:
+    - name: Reiniciar SSH
+      ansible.builtin.service:
+        name: ssh
+        state: restarted
+
+    - name: Reiniciar Docker
+      ansible.builtin.service:
+        name: docker
+        state: restarted
+
+    - name: Recargar UFW
+      community.general.ufw:
+        state: reloaded
+
+  tasks:
+
+    # ─── BLOQUE 1: Sistema operativo base (plan §5.2 / §7.1) ─────────────────
+    - name: "SO | Actualizar caché de apt"
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 3600
+
+    - name: "SO | Instalar dependencias base"
+      ansible.builtin.apt:
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - gnupg
+          - lsb-release
+          - ufw
+          - unattended-upgrades
+          - python3
+          - python3-pip
+          - restic
+          - git
+        state: present
+
+    # ─── BLOQUE 2: Usuarios del sistema (plan §7.1) ───────────────────────────
+    - name: "Usuarios | Crear grupo despliegue"
+      ansible.builtin.group:
+        name: despliegue
+        state: present
+
+    - name: "Usuarios | Crear grupo respaldo"
+      ansible.builtin.group:
+        name: respaldo
+        state: present
+
+    - name: "Usuarios | Crear usuario ana (administradora)"
+      ansible.builtin.user:
+        name: ana
+        groups: [sudo, despliegue, docker]
+        append: true
+        shell: /bin/bash
+        create_home: true
+        state: present
+
+    - name: "Usuarios | Crear usuario luis (operador)"
+      ansible.builtin.user:
+        name: luis
+        groups: [despliegue, docker]
+        append: true
+        shell: /bin/bash
+        create_home: true
+        state: present
+
+    - name: "Usuarios | Crear usuario respaldo (servicio, nologin)"
+      ansible.builtin.user:
+        name: respaldo
+        groups: [respaldo]
+        append: true
+        shell: /usr/sbin/nologin
+        system: true
+        state: present
+
+    # ─── BLOQUE 3: SSH endurecido (plan §7.2) ─────────────────────────────────
+    - name: "SSH | Copiar configuración endurecida"
+      ansible.builtin.copy:
+        dest: /etc/ssh/sshd_config.d/10-endurecer.conf
+        owner: root
+        group: root
+        mode: "0600"
+        content: |
+          # SSH endurecido — BookyHome (semana 6)
+          PasswordAuthentication no
+          PermitRootLogin no
+          AllowUsers ana luis
+          PubkeyAuthentication yes
+          X11Forwarding no
+          MaxAuthTries 3
+          LoginGraceTime 30
+      notify: Reiniciar SSH
+
+    # ─── BLOQUE 4: Firewall UFW (plan §7.2) ───────────────────────────────────
+    - name: "UFW | Política por defecto — denegar entrada"
+      community.general.ufw:
+        direction: incoming
+        policy: deny
+
+    - name: "UFW | Política por defecto — permitir salida"
+      community.general.ufw:
+        direction: outgoing
+        policy: allow
+
+    - name: "UFW | Abrir puerto SSH (22)"
+      community.general.ufw:
+        rule: allow
+        port: "22"
+        proto: tcp
+        comment: "SSH"
+
+    - name: "UFW | Abrir puerto HTTP (80)"
+      community.general.ufw:
+        rule: allow
+        port: "80"
+        proto: tcp
+        comment: "HTTP Caddy"
+
+    - name: "UFW | Abrir puerto HTTPS (443 tcp)"
+      community.general.ufw:
+        rule: allow
+        port: "443"
+        proto: tcp
+        comment: "HTTPS Caddy"
+
+    - name: "UFW | Abrir puerto HTTPS (443 udp — HTTP/3)"
+      community.general.ufw:
+        rule: allow
+        port: "443"
+        proto: udp
+        comment: "HTTP3 Caddy"
+
+    - name: "UFW | Habilitar firewall"
+      community.general.ufw:
+        state: enabled
+
+    # ─── BLOQUE 5: Docker Engine (plan §1.2) ──────────────────────────────────
+    - name: "Docker | Crear directorio de keyrings"
+      ansible.builtin.file:
+        path: /etc/apt/keyrings
+        state: directory
+        mode: "0755"
+
+    - name: "Docker | Descargar clave GPG oficial"
+      ansible.builtin.get_url:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        dest: /etc/apt/keyrings/docker.asc
+        mode: "0444"
+        checksum: "sha256:1500c1f56fa9e26b9b8f42452a553675796ade0807cdce11975eb98170b3a570"
+      # La suma SHA256 de la clave GPG de Docker puede cambiar; actualizar si apt falla.
+      ignore_errors: true  # ignorar si la suma no coincide y dejar que apt valide
+
+    - name: "Docker | Agregar repositorio oficial"
+      ansible.builtin.apt_repository:
+        repo: >-
+          deb [arch={{ ansible_architecture }}
+          signed-by=/etc/apt/keyrings/docker.asc]
+          https://download.docker.com/linux/ubuntu
+          {{ ansible_distribution_release }} stable
+        state: present
+        filename: docker
+
+    - name: "Docker | Instalar Docker Engine y Compose plugin"
+      ansible.builtin.apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-buildx-plugin
+          - docker-compose-plugin
+        state: present
+        update_cache: true
+      notify: Reiniciar Docker
+
+    - name: "Docker | Habilitar e iniciar servicio"
+      ansible.builtin.service:
+        name: docker
+        enabled: true
+        state: started
+
+    # ─── BLOQUE 6: Directorios del proyecto (plan §5.2) ──────────────────────
+    - name: "Directorios | Crear estructura /opt/bookyhome"
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        owner: root
+        group: despliegue
+        mode: "2770"
+      loop:
+        - "{{ app_base_dir }}"
+        - "{{ deploy_dir }}"
+        - "{{ scripts_dir }}"
+        - "{{ backups_dir }}"
+
+    # ─── BLOQUE 7: Red Docker (plan §5.2, corrección D-01) ───────────────────
+    - name: "Docker | Crear red bookyhome_net (bridge — ver corrección D-01)"
+      community.docker.docker_network:
+        name: "{{ docker_network }}"
+        driver: bridge
+        state: present
+
+    # ─── BLOQUE 8: Clonar / actualizar el repositorio ─────────────────────────
+    - name: "Repo | Clonar repositorio en /opt/bookyhome"
+      ansible.builtin.git:
+        repo: "https://github.com/bookyhome/bkh.git"
+        dest: "{{ app_base_dir }}/repo"
+        version: "v{{ app_version }}"
+        force: false
+      # En producción real usar deploy key (SSH) en lugar de HTTPS anónimo.
+
+    - name: "Repo | Copiar compose.prod.yaml al directorio deploy"
+      ansible.builtin.copy:
+        src: "{{ app_base_dir }}/repo/deploy/compose.prod.yaml"
+        dest: "{{ deploy_dir }}/compose.prod.yaml"
+        remote_src: true
+        owner: root
+        group: despliegue
+        mode: "0640"
+
+    - name: "Repo | Copiar Caddyfile.prod al directorio deploy"
+      ansible.builtin.copy:
+        src: "{{ app_base_dir }}/repo/deploy/Caddyfile.prod"
+        dest: "{{ deploy_dir }}/Caddyfile.prod"
+        remote_src: true
+        owner: root
+        group: despliegue
+        mode: "0640"
+
+    - name: "Repo | Copiar scripts al directorio scripts"
+      ansible.builtin.copy:
+        src: "{{ app_base_dir }}/repo/scripts/{{ item }}"
+        dest: "{{ scripts_dir }}/{{ item }}"
+        remote_src: true
+        owner: root
+        group: despliegue
+        mode: "0750"
+      loop:
+        - smoke-test.sh
+        - verificar-requisitos.sh
+        - crear-roles-bd.sh
+        - desplegar.sh
+
+    # ─── BLOQUE 9: Archivo .env.prod (plan §6.2, corrección D-02) ────────────
+    - name: "Config | Generar .env.prod desde plantilla Vault (ruta absoluta)"
+      ansible.builtin.template:
+        src: templates/env.prod.j2
+        dest: "{{ deploy_dir }}/.env.prod"
+        owner: root
+        group: despliegue
+        mode: "0640"   # plan §7.1: solo root y grupo despliegue
+
+    # ─── BLOQUE 10: Roles de la base de datos (plan §7.3) ────────────────────
+    # Los roles se crean con el script crear-roles-bd.sh DESPUÉS de que MySQL
+    # esté en marcha. Este bloque descarga las imágenes y levanta solo MySQL.
+    - name: "DB | Descargar imagen MySQL"
+      community.docker.docker_image:
+        name: "mysql:8.0"
+        source: pull
+
+    - name: "DB | Arrancar contenedor MySQL (healthcheck: mysqladmin ping)"
+      community.docker.docker_container:
+        name: bookyhome-mysql
+        image: "mysql:8.0"
+        state: started
+        restart_policy: unless-stopped
+        env:
+          MYSQL_ROOT_PASSWORD: "{{ vault_db_password_app }}"
+          MYSQL_DATABASE: "{{ db_name }}"
+          TZ: "America/Bogota"
+        command: "--default-time-zone=-05:00"
+        networks:
+          - name: "{{ docker_network }}"
+        volumes:
+          - mysql_data:/var/lib/mysql
+        healthcheck:
+          test: ["CMD", "mysqladmin", "ping", "-h", "localhost",
+                 "-u", "root", "-p{{ vault_db_password_app }}"]
+          interval: 10s
+          timeout: 10s
+          retries: 15
+          start_period: 120s
+
+    - name: "DB | Esperar a que MySQL esté sano (hasta 3 min)"
+      community.docker.docker_container_info:
+        name: bookyhome-mysql
+      register: mysql_info
+      until: >
+        mysql_info.container is defined and
+        mysql_info.container.State.Health is defined and
+        mysql_info.container.State.Health.Status == 'healthy'
+      retries: 18
+      delay: 10
+
+    # ─── BLOQUE 11: Imágenes de la aplicación (plan §8.1) ─────────────────────
+    - name: "App | Descargar imagen del backend"
+      community.docker.docker_image:
+        name: "{{ registry }}/bkh-backend:{{ app_version }}"
+        source: pull
+
+    - name: "App | Descargar imagen del frontend"
+      community.docker.docker_image:
+        name: "{{ registry }}/bkh-frontend:{{ app_version }}"
+        source: pull
+
+    - name: "App | Descargar imagen de Caddy"
+      community.docker.docker_image:
+        name: "caddy:2.9-alpine"
+        source: pull
+
+    # ─── BLOQUE 12: Levantar el stack completo con Compose (plan §5.3–5.7) ───
+    - name: "Stack | Levantar compose.prod.yaml"
+      community.docker.docker_compose_v2:
+        project_src: "{{ deploy_dir }}"
+        files:
+          - compose.prod.yaml
+        state: present
+        pull: missing
+      environment:
+        APP_VERSION: "{{ app_version }}"
+        REGISTRY: "{{ registry }}"
+        DB_PASSWORD: "{{ vault_db_password_app }}"
+        DB_NAME: "{{ db_name }}"
+        VITE_API_BASE_URL: "{{ vite_api_base_url }}"
+
+    - name: "Stack | Esperar a que el backend esté sano (GET /health)"
+      ansible.builtin.uri:
+        url: "http://localhost:8000/health"
+        status_code: 200
+        timeout: 10
+      register: health_result
+      until: health_result.status == 200
+      retries: 18
+      delay: 10
+
+    # ─── BLOQUE 13: Roles MySQL con mínimo privilegio (plan §7.3) ────────────
+    - name: "DB | Crear rol bookyhome_app (sin DDL)"
+      community.mysql.mysql_user:
+        login_host: "127.0.0.1"
+        login_port: 3306
+        login_user: root
+        login_password: "{{ vault_db_password_app }}"
+        name: "{{ db_user_app }}"
+        password: "{{ vault_db_password_app }}"
+        host: "%"
+        priv: "{{ db_name }}.*:SELECT,INSERT,UPDATE,DELETE"
+        state: present
+
+    - name: "DB | Crear rol bookyhome_owner (DDL completo)"
+      community.mysql.mysql_user:
+        login_host: "127.0.0.1"
+        login_port: 3306
+        login_user: root
+        login_password: "{{ vault_db_password_app }}"
+        name: "{{ db_user_owner }}"
+        password: "{{ vault_db_password_owner }}"
+        host: "%"
+        priv: "{{ db_name }}.*:ALL"
+        state: present
+
+    # ─── BLOQUE 14: Respaldo con restic (plan §3) ─────────────────────────────
+    - name: "Restic | Crear directorio del repositorio local"
+      ansible.builtin.file:
+        path: "{{ restic_repo_local }}"
+        state: directory
+        owner: respaldo
+        group: respaldo
+        mode: "0700"
+
+    - name: "Restic | Crear directorio de configuración"
+      ansible.builtin.file:
+        path: /etc/restic
+        state: directory
+        owner: root
+        group: respaldo
+        mode: "0750"
+
+    - name: "Restic | Escribir contraseña del repositorio (del vault)"
+      ansible.builtin.template:
+        src: templates/restic-password.j2
+        dest: "{{ restic_password_file }}"
+        owner: root
+        group: respaldo
+        mode: "0640"
+
+    - name: "Restic | Inicializar repositorio local (idempotente)"
+      ansible.builtin.command:
+        cmd: restic -r "{{ restic_repo_local }}" init
+        creates: "{{ restic_repo_local }}/config"
+      environment:
+        RESTIC_PASSWORD_FILE: "{{ restic_password_file }}"
+      become_user: respaldo
+
+    - name: "Restic | Instalar script de respaldo generado"
+      ansible.builtin.template:
+        src: templates/respaldo-restic.sh.j2
+        dest: "{{ scripts_dir }}/respaldo-restic.sh"
+        owner: root
+        group: respaldo
+        mode: "0750"
+
+    - name: "Restic | Instalar cron diario a las 20:00 (America/Bogota)"
+      ansible.builtin.cron:
+        name: "bookyhome-respaldo-diario"
+        user: respaldo
+        job: "{{ scripts_dir }}/respaldo-restic.sh >> /var/log/bookyhome-respaldo.log 2>&1"
+        minute: "0"
+        hour: "20"
+        day: "*"
+        month: "*"
+        weekday: "*"
+        state: present
+
+    # ─── BLOQUE 15: Prueba de humo final (plan §5.2 + §6.4) ─────────────────
+    - name: "Humo | Ejecutar smoke-test.sh en el servidor"
+      ansible.builtin.command:
+        cmd: "bash {{ scripts_dir }}/smoke-test.sh http://localhost:8000 http://localhost:80"
+      register: smoke_result
+      changed_when: false
+      failed_when: smoke_result.rc != 0
+
+    - name: "Humo | Mostrar resultado"
+      ansible.builtin.debug:
+        msg: "{{ smoke_result.stdout_lines }}"

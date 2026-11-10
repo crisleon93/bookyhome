@@ -1,0 +1,129 @@
+from fastapi import APIRouter, Depends, HTTPException, Body, Form
+from typing import Dict, Any
+from app.auth import get_current_user
+from app.models.tiendas import obtener_tienda_por_usuario
+from app.models.tienda_configuracion import obtener_configuracion_tienda, actualizar_configuracion_tienda
+
+router = APIRouter()
+
+@router.get("")
+def get_configuracion(user: dict = Depends(get_current_user)):
+    """Obtiene la configuración de la tienda del vendedor."""
+    id_tienda = user.get("id_tienda")
+    if not id_tienda:
+        raise HTTPException(status_code=404, detail="No tienes una tienda registrada.")
+    config = obtener_configuracion_tienda(id_tienda)
+    
+    if not config:
+        # Si no tiene, devolver valores por defecto
+        return {
+            "descripcion": "",
+            "logo_url": "",
+            "banner_url": "",
+            "horario_atencion": "",
+            "politica_devoluciones": "",
+            "politica_envios": "",
+            "tiempo_despacho_dias": 2,
+            "ciudad_origen": "",
+            "acepta_negociacion": False,
+            "email_publico": "",
+            "redes_sociales": "",
+            "tarifa_envio": 0
+        }
+    # Asegurar que tarifa_envio esté presente aunque sea columna nueva
+    if "tarifa_envio" not in config:
+        config["tarifa_envio"] = 0
+    return config
+
+@router.put("")
+def update_configuracion(data: Dict[str, Any] = Body(...), user: dict = Depends(get_current_user)):
+    """Actualiza la configuración de la tienda del vendedor."""
+    id_tienda = user.get("id_tienda")
+    if not id_tienda:
+        raise HTTPException(status_code=404, detail="No tienes una tienda registrada.")
+    
+    resultado = actualizar_configuracion_tienda(id_tienda, data)
+    
+    if not resultado["ok"]:
+        raise HTTPException(status_code=500, detail=resultado["error"])
+        
+    return {"mensaje": "Configuración actualizada con éxito"}
+
+@router.get("/{id_tienda}")
+def get_configuracion_publica(id_tienda: int):
+    """Consulta pública de la configuración de la tienda."""
+    from app.models.tiendas import obtener_tienda_por_id
+    from app.models.libro import obtener_libros_por_tienda
+    
+    tienda = obtener_tienda_por_id(id_tienda)
+    if not tienda:
+        raise HTTPException(status_code=404, detail="Tienda no encontrada")
+        
+    config = obtener_configuracion_tienda(id_tienda)
+    if not config:
+        config = {
+            "descripcion": "",
+            "logo_url": "",
+            "banner_url": "",
+            "horario_atencion": "",
+            "politica_devoluciones": "",
+            "politica_envios": "",
+            "tiempo_despacho_dias": 2,
+            "ciudad_origen": "",
+            "email_publico": ""
+        }
+    
+    libros = obtener_libros_por_tienda(id_tienda)
+    
+    return {
+        "tienda": tienda,
+        "configuracion": config,
+        "libros": libros
+    }
+
+import os
+import shutil
+from fastapi import UploadFile, File
+import time
+
+UPLOAD_TIENDAS_DIR = "uploads/tiendas"
+os.makedirs(UPLOAD_TIENDAS_DIR, exist_ok=True)
+
+@router.post("/upload-image")
+def upload_tienda_image(
+    file: UploadFile = File(...),
+    tipo: str = Form(...), # 'logo' o 'banner'
+    user: dict = Depends(get_current_user)
+):
+    """Sube un logo o banner de la tienda y devuelve la URL relativa."""
+    id_tienda = user.get("id_tienda")
+    if not id_tienda:
+        raise HTTPException(status_code=403, detail="No tienes una tienda registrada.")
+
+    id_tienda = str(id_tienda)
+    if not id_tienda.isascii() or not id_tienda.isdigit() or int(id_tienda) <= 0:
+        raise HTTPException(status_code=403, detail="Identificador de tienda inválido.")
+    id_tienda = int(id_tienda)
+
+    if tipo not in ('logo', 'banner'):
+        raise HTTPException(status_code=400, detail="Tipo de imagen inválido. Debe ser 'logo' o 'banner'.")
+
+    # Extraer solo el nombre base del archivo (evita path traversal)
+    original_filename = os.path.basename((file.filename or "").replace("\\", "/"))
+    ext = os.path.splitext(original_filename)[1].lower()
+    if ext not in {".jpg", ".jpeg", ".png", ".gif", ".webp"}:
+        raise HTTPException(status_code=400, detail="Formato de imagen no permitido.")
+
+    # Nombre generado internamente — nunca usa datos del usuario en el path
+    filename = f"tienda_{id_tienda}_{tipo}_{int(time.time())}{ext}"
+    upload_dir = os.path.realpath(UPLOAD_TIENDAS_DIR)
+    filepath = os.path.realpath(os.path.join(upload_dir, filename))
+
+    # Verificar que el path resultante esté dentro del directorio permitido
+    if not filepath.startswith(upload_dir + os.sep) and filepath != upload_dir:
+        raise HTTPException(status_code=400, detail="Ruta de archivo inválida.")
+
+    with open(filepath, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+
+    return {"url": f"/{UPLOAD_TIENDAS_DIR}/{filename}"}

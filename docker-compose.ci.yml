@@ -1,0 +1,56 @@
+# docker-compose.ci.yml — Entorno de prueba para CI
+# Sin volumenes de codigo fuente, sin --reload, puertos mapeados al host.
+# Usado por .github/workflows/ci.yml y release.yml.
+
+services:
+
+  mysql:
+    image: mysql:8.0
+    container_name: ci-mysql
+    restart: "no"
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: bookyhome
+      TZ: America/Bogota
+    command: --default-time-zone='-05:00'
+    ports:
+      - "3306:3306"
+    volumes:
+      # Esquema base (crea todas las tablas) — se ejecuta primero por orden alfabetico
+      - ./database/bookyhome.sql:/docker-entrypoint-initdb.d/000-schema.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+
+  backend:
+    build:
+      context: ./backend
+    container_name: ci-backend
+    restart: "no"
+    ports:
+      - "8000:8000"
+    environment:
+      DB_HOST: mysql
+      DB_PORT: "3306"
+      DB_USER: root
+      DB_PASSWORD: root
+      DB_NAME: bookyhome
+      SECRET_KEY: ci-test-secret-key-not-for-production
+      APP_VERSION: "${APP_VERSION:-ci}"
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod
+    container_name: ci-frontend
+    restart: "no"
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend

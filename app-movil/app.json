@@ -6,16 +6,27 @@
     "orientation": "portrait",
     "icon": "./src/assets/icon.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
     "splash": {
       "image": "./src/assets/splash-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSFaceIDUsageDescription": "BookyHome usa Face ID o Touch ID para desbloquear tu sesión de forma segura.",
+        "NSCameraUsageDescription": "BookyHome necesita acceso a la cámara para escanear códigos de barras de libros y buscar mejores precios."
+      }
     },
     "android": {
+      "package": "com.bookyhome.app",
+      "permissions": [
+        "USE_BIOMETRIC",
+        "USE_FINGERPRINT",
+        "CAMERA",
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION"
+      ],
       "adaptiveIcon": {
         "foregroundImage": "./src/assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
@@ -24,6 +35,32 @@
     },
     "web": {
       "favicon": "./src/assets/favicon.png"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "b17b90c1-0e24-47ee-8d64-f8f404ccac49"
+      }
+    },
+    "owner": "liznayibe",
+    "plugins": [
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "BookyHome usa Face ID o Touch ID para desbloquear tu sesión de forma segura."
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "BookyHome necesita acceso a la cámara para escanear códigos de barras de libros y buscar mejores precios."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "BookyHome necesita tu ubicación para centrar el mapa en la dirección de envío."
+        }
+      ]
+    ]
   }
 }

@@ -43,16 +43,28 @@ El cliente Axios esta en:
 src/services/api.js
 ```
 
-La app movil no debe usar `localhost` para conectarse al backend, porque desde el celular `localhost` apunta al propio dispositivo. Debe usarse la IP local del computador.
+La app movil no debe usar `localhost` para conectarse al backend desde un celular,
+porque `localhost` apunta al propio dispositivo. Debe usarse la IP local del
+computador mediante una variable de entorno.
 
-Ejemplo:
+Crear el archivo `app-movil/.env.local` a partir de `.env.example` y colocar la
+IP local del computador:
 
-```javascript
-const api = axios.create({
-  baseURL: 'http://192.168.1.9:8000',
-  timeout: 10000,
-});
+```env
+EXPO_PUBLIC_API_URL=http://TU_IP_LOCAL:8000
 ```
+
+Por ejemplo:
+
+```env
+EXPO_PUBLIC_API_URL=http://192.168.0.5:8000
+```
+
+Las URLs HTTP son solo para desarrollo local. En producción, configura
+`EXPO_PUBLIC_API_URL` con una URL HTTPS del backend.
+
+El archivo `.env.local` esta excluido de Git, por lo que cada integrante puede
+usar su propia IP sin modificar `src/services/api.js` ni generar conflictos.
 
 ## Funcionalidades actuales
 
@@ -83,25 +95,19 @@ pnpm install
 
 ## Configurar backend
 
-Editar:
-
-```text
-src/services/api.js
-```
-
-y cambiar `baseURL` por la IP local del computador:
-
-```javascript
-baseURL: 'http://TU_IP_LOCAL:8000'
-```
-
-En Windows se puede consultar con:
+En Windows se puede consultar la IP local con:
 
 ```powershell
 ipconfig
 ```
 
-Buscar la direccion IPv4 del adaptador WiFi.
+Buscar la direccion IPv4 del adaptador que tenga conexion a la misma red que el
+celular. Despues de cambiar `.env.local`, reiniciar Expo para que cargue la
+nueva variable:
+
+```bash
+pnpm start
+```
 
 ## Ejecutar
 
@@ -120,6 +126,22 @@ pnpm android
 pnpm ios
 pnpm web
 ```
+
+## Pruebas y cobertura
+
+Ejecutar las pruebas unitarias de la app movil:
+
+```bash
+pnpm test
+```
+
+Para generar el reporte de cobertura que consume SonarCloud:
+
+```bash
+pnpm test:coverage
+```
+
+El reporte LCOV se guarda en `coverage/lcov.info`.
 
 ## Notas importantes
 

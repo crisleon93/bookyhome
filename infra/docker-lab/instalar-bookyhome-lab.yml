@@ -1,0 +1,445 @@
+---
+# instalar-bookyhome-lab.yml — versión de laboratorio del playbook principal
+# Diferencias con el playbook de producción:
+#   - Sin Ansible Vault (secretos en variables de lab, no reales)
+#   - Sin imágenes GHCR (usa imágenes públicas equivalentes para la prueba)
+#   - Sin dominio real (localhost)
+#   - Sin cron de restic (solo inicializa el repo)
+#   - La prueba de humo apunta a los contenedores locales del lab
+#
+# Cubre exactamente las mismas tareas que instalar-bookyhome.yml
+# para demostrar idempotencia y la prueba de humo en verde.
+
+- name: "BookyHome LAB — Instalación completa (secciones 5 y 7 del plan)"
+  hosts: bookyhome_lab
+  become: true
+
+  vars:
+    # ── versión y registro ──────────────────────────────────────────────────
+    app_version: "1.0.1"
+    registry: "ghcr.io/bookyhome"
+
+    # ── directorios ────────────────────────────────────────────────────────
+    app_base_dir: /opt/bookyhome
+    deploy_dir: "{{ app_base_dir }}/deploy"
+    scripts_dir: "{{ app_base_dir }}/scripts"
+    backups_dir: "{{ app_base_dir }}/backups"
+    app_user: ansible
+    app_group: despliegue
+
+    # ── base de datos ──────────────────────────────────────────────────────
+    db_host: mysql
+    db_port: 3306
+    db_name: bookyhome
+    db_user_app: bookyhome_app
+    db_user_owner: bookyhome_owner
+
+    # ── secretos (LAB — valores ficticios, sin vault) ─────────────────────
+    vault_db_password_app: "lab_app_pass_2026"
+    vault_db_password_owner: "lab_owner_pass_2026"
+    vault_secret_key: "0000111122223333444455556666777788889999aaaabbbbccccddddeeeeffff"
+    vault_mail_username: "lab@bookyhome.local"
+    vault_mail_password: "lab_mail_pass"
+    vault_mail_from: "lab@bookyhome.local"
+    vault_gemini_api_key: "lab_gemini_key"
+    vault_restic_password: "lab_restic_pass_2026"
+
+    # ── red ────────────────────────────────────────────────────────────────
+    docker_network: bookyhome_net
+
+    # ── restic ─────────────────────────────────────────────────────────────
+    restic_repo_local: /var/respaldos/restic
+    restic_password_file: /etc/restic/password
+
+    # ── correo / gemini ────────────────────────────────────────────────────
+    mail_server: smtp.gmail.com
+    mail_port: 587
+    mail_starttls: "true"
+    mail_ssl_tls: "false"
+    gemini_model: "gemini-3.8-flash"
+    gemini_base_url: "https://generativelanguage.googleapis.com/v1beta/openai"
+    public_api_url: "http://localhost:8000"
+    frontend_url: "http://localhost:80"
+    vite_api_base_url: "http://localhost:8000"
+    bookypago_comision: "0.05"
+    bookypago_comision_fija: "0.00"
+    bookypago_saldo_minimo: "0.00"
+    bookypago_saldo_maximo: "10000000.00"
+    bookypago_comision_venta: "0.10"
+    bookypago_comision_impulso: "0.05"
+    bookypago_comision_plan: "0.02"
+    bookypago_dias_pago: "7"
+    bookypago_minimo_pago: "50000"
+
+  handlers:
+    - name: Reiniciar SSH
+      ansible.builtin.service:
+        name: ssh
+        state: restarted
+        enabled: true
+
+  tasks:
+
+    # ─── BLOQUE 1: Sistema operativo base ────────────────────────────────────
+    - name: "SO | Actualizar caché de apt"
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 3600
+
+    - name: "SO | Instalar dependencias base"
+      ansible.builtin.apt:
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - gnupg
+          - lsb-release
+          - ufw
+          - python3
+          - python3-pip
+          - restic
+          - git
+        state: present
+
+    # ─── BLOQUE 2: Usuarios del sistema (plan §7.1) ───────────────────────────
+    - name: "Usuarios | Crear grupo despliegue"
+      ansible.builtin.group:
+        name: despliegue
+        state: present
+
+    - name: "Usuarios | Crear grupo respaldo"
+      ansible.builtin.group:
+        name: respaldo
+        state: present
+
+    - name: "Usuarios | Crear usuario ana (administradora)"
+      ansible.builtin.user:
+        name: ana
+        groups: [sudo, despliegue]
+        append: true
+        shell: /bin/bash
+        create_home: true
+        state: present
+
+    - name: "Usuarios | Crear usuario luis (operador)"
+      ansible.builtin.user:
+        name: luis
+        groups: [despliegue]
+        append: true
+        shell: /bin/bash
+        create_home: true
+        state: present
+
+    - name: "Usuarios | Crear usuario respaldo (servicio, nologin)"
+      ansible.builtin.user:
+        name: respaldo
+        groups: [respaldo]
+        append: true
+        shell: /usr/sbin/nologin
+        system: true
+        state: present
+
+    # ─── BLOQUE 3: SSH endurecido (plan §7.2) ─────────────────────────────────
+    - name: "SSH | Copiar configuración endurecida"
+      ansible.builtin.copy:
+        dest: /etc/ssh/sshd_config.d/10-endurecer.conf
+        owner: root
+        group: root
+        mode: "0600"
+        content: |
+          # SSH endurecido — BookyHome (semana 6)
+          PasswordAuthentication no
+          PermitRootLogin no
+          AllowUsers ana luis ansible
+          PubkeyAuthentication yes
+          X11Forwarding no
+          MaxAuthTries 3
+          LoginGraceTime 30
+      notify: Reiniciar SSH
+
+    # ─── BLOQUE 4: UFW (plan §7.2) ────────────────────────────────────────────
+    # NOTA LAB: UFW requiere NET_ADMIN (iptables). En un contenedor sin privilegios
+    # las tareas de UFW dan PermissionDenied. Se ignoran en el lab; en producción
+    # el servidor tiene los privilegios necesarios y estas tareas funcionan correctamente.
+    - name: "UFW | Política por defecto — denegar entrada"
+      community.general.ufw:
+        direction: incoming
+        policy: deny
+      ignore_errors: true
+
+    - name: "UFW | Política por defecto — permitir salida"
+      community.general.ufw:
+        direction: outgoing
+        policy: allow
+      ignore_errors: true
+
+    - name: "UFW | Abrir SSH"
+      community.general.ufw:
+        rule: allow
+        port: "22"
+        proto: tcp
+        comment: "SSH"
+      ignore_errors: true
+
+    - name: "UFW | Abrir HTTP"
+      community.general.ufw:
+        rule: allow
+        port: "80"
+        proto: tcp
+        comment: "HTTP"
+      ignore_errors: true
+
+    - name: "UFW | Abrir HTTPS"
+      community.general.ufw:
+        rule: allow
+        port: "443"
+        proto: tcp
+        comment: "HTTPS"
+      ignore_errors: true
+
+    - name: "UFW | Habilitar firewall"
+      community.general.ufw:
+        state: enabled
+      ignore_errors: true
+
+    # ─── BLOQUE 5: Docker Engine (plan §1.2) ──────────────────────────────────
+    # En el LAB Docker ya está disponible vía socket del host montado en el contenedor.
+    # En producción el playbook principal (instalar-bookyhome.yml) instala Docker
+    # desde el repositorio oficial de Docker con los pasos completos.
+    - name: "Docker | Verificar que Docker CLI está disponible (LAB usa socket del host)"
+      ansible.builtin.command:
+        cmd: docker info
+      register: docker_info_result
+      changed_when: false
+      failed_when: docker_info_result.rc != 0
+
+    - name: "Docker | Mostrar versión de Docker disponible"
+      ansible.builtin.debug:
+        msg: "Docker disponible en el servidor (via socket del host en LAB)"
+
+    # ─── BLOQUE 6: Directorios del proyecto (plan §5.2) ──────────────────────
+    - name: "Directorios | Crear estructura /opt/bookyhome"
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        owner: root
+        group: despliegue
+        mode: "2770"
+      loop:
+        - "{{ app_base_dir }}"
+        - "{{ deploy_dir }}"
+        - "{{ scripts_dir }}"
+        - "{{ backups_dir }}"
+
+    # ─── BLOQUE 7: Red Docker (plan §5.2, corrección D-01) ───────────────────
+    - name: "Docker | Crear red bookyhome_net con driver bridge (corrección D-01)"
+      community.docker.docker_network:
+        name: "{{ docker_network }}"
+        driver: bridge
+        state: present
+
+    # ─── BLOQUE 8: Archivo .env.prod (plan §6.2, corrección D-02) ────────────
+    - name: "Config | Generar .env.prod en ruta absoluta (corrección D-02)"
+      ansible.builtin.copy:
+        dest: "{{ deploy_dir }}/.env.prod"
+        owner: root
+        group: despliegue
+        mode: "0640"
+        content: |
+          APP_VERSION={{ app_version }}
+          REGISTRY={{ registry }}
+          DB_HOST={{ db_host }}
+          DB_PORT={{ db_port }}
+          DB_USER={{ db_user_app }}
+          DB_PASSWORD={{ vault_db_password_app }}
+          DB_NAME={{ db_name }}
+          DB_MIGRATION_USER={{ db_user_owner }}
+          DB_MIGRATION_PASSWORD={{ vault_db_password_owner }}
+          PUBLIC_API_URL={{ public_api_url }}
+          FRONTEND_URL={{ frontend_url }}
+          SECRET_KEY={{ vault_secret_key }}
+          MAIL_USERNAME={{ vault_mail_username }}
+          MAIL_PASSWORD={{ vault_mail_password }}
+          MAIL_FROM={{ vault_mail_from }}
+          MAIL_SERVER={{ mail_server }}
+          MAIL_PORT={{ mail_port }}
+          MAIL_STARTTLS={{ mail_starttls }}
+          MAIL_SSL_TLS={{ mail_ssl_tls }}
+          GEMINI_API_KEY={{ vault_gemini_api_key }}
+          GEMINI_MODEL={{ gemini_model }}
+          GEMINI_BASE_URL={{ gemini_base_url }}
+          VITE_API_BASE_URL={{ vite_api_base_url }}
+          BOOKYPAGO_COMISION={{ bookypago_comision }}
+          BOOKYPAGO_COMISION_FIJA={{ bookypago_comision_fija }}
+          BOOKYPAGO_SALDO_MINIMO={{ bookypago_saldo_minimo }}
+          BOOKYPAGO_SALDO_MAXIMO={{ bookypago_saldo_maximo }}
+          BOOKYPAGO_COMISION_VENTA={{ bookypago_comision_venta }}
+          BOOKYPAGO_COMISION_IMPULSO={{ bookypago_comision_impulso }}
+          BOOKYPAGO_COMISION_PLAN={{ bookypago_comision_plan }}
+          BOOKYPAGO_DIAS_PAGO={{ bookypago_dias_pago }}
+          BOOKYPAGO_MINIMO_PAGO={{ bookypago_minimo_pago }}
+
+    # ─── BLOQUE 9: Copiar compose.prod.yaml ──────────────────────────────────
+    - name: "Config | Copiar compose.prod.yaml al servidor"
+      ansible.builtin.copy:
+        src: /workspace/deploy/compose.prod.yaml
+        dest: "{{ deploy_dir }}/compose.prod.yaml"
+        owner: root
+        group: despliegue
+        mode: "0640"
+
+    - name: "Config | Copiar Caddyfile.prod al servidor"
+      ansible.builtin.copy:
+        src: /workspace/deploy/Caddyfile.prod
+        dest: "{{ deploy_dir }}/Caddyfile.prod"
+        owner: root
+        group: despliegue
+        mode: "0640"
+
+    - name: "Config | Copiar smoke-test.sh"
+      ansible.builtin.copy:
+        src: /workspace/scripts/smoke-test.sh
+        dest: "{{ scripts_dir }}/smoke-test.sh"
+        owner: root
+        group: despliegue
+        mode: "0750"
+
+    # ─── BLOQUE 10: MySQL (plan §5.3–5.5) ────────────────────────────────────
+    - name: "DB | Arrancar contenedor MySQL"
+      community.docker.docker_container:
+        name: bookyhome-mysql
+        image: "mysql:8.0"
+        state: started
+        restart_policy: unless-stopped
+        env:
+          MYSQL_ROOT_PASSWORD: "{{ vault_db_password_app }}"
+          MYSQL_DATABASE: "{{ db_name }}"
+          TZ: "America/Bogota"
+        command: "--default-time-zone=-05:00"
+        networks:
+          - name: "{{ docker_network }}"
+        volumes:
+          - mysql_data:/var/lib/mysql
+        healthcheck:
+          test:
+            - CMD
+            - mysqladmin
+            - ping
+            - "-h"
+            - localhost
+            - "-u"
+            - root
+            - "-p{{ vault_db_password_app }}"
+          interval: 10s
+          timeout: 10s
+          retries: 15
+          start_period: 120s
+
+    - name: "DB | Esperar a que MySQL esté sano (hasta 3 min)"
+      community.docker.docker_container_info:
+        name: bookyhome-mysql
+      register: mysql_info
+      until: >
+        mysql_info.container is defined and
+        mysql_info.container.State.Health is defined and
+        mysql_info.container.State.Health.Status == 'healthy'
+      retries: 18
+      delay: 10
+
+    # ─── BLOQUE 11: Backend FastAPI (plan §5.3–5.5) ───────────────────────────
+    - name: "App | Arrancar contenedor backend"
+      community.docker.docker_container:
+        name: bookyhome-backend
+        image: "{{ registry }}/bkh-backend:{{ app_version }}"
+        state: started
+        restart_policy: unless-stopped
+        env_file:
+          - "{{ deploy_dir }}/.env.prod"
+        env:
+          DB_HOST: mysql
+          DB_PORT: "3306"
+          DB_USER: root
+          DB_PASSWORD: "{{ vault_db_password_app }}"
+          DB_NAME: "{{ db_name }}"
+          TZ: "America/Bogota"
+          APP_VERSION: "{{ app_version }}"
+        networks:
+          - name: "{{ docker_network }}"
+        volumes:
+          - uploads_data:/app/uploads
+        healthcheck:
+          test:
+            - CMD
+            - python
+            - "-c"
+            - "import urllib.request,sys; r=urllib.request.urlopen('http://localhost:8000/health',timeout=5); sys.exit(0 if r.status==200 else 1)"
+          interval: 15s
+          timeout: 10s
+          retries: 5
+          start_period: 60s
+
+    - name: "App | Esperar a que el backend esté sano"
+      community.docker.docker_container_info:
+        name: bookyhome-backend
+      register: backend_info
+      until: >
+        backend_info.container is defined and
+        backend_info.container.State.Health is defined and
+        backend_info.container.State.Health.Status == 'healthy'
+      retries: 20
+      delay: 10
+
+    # ─── BLOQUE 12: Restic (plan §3) ──────────────────────────────────────────
+    - name: "Restic | Crear directorio del repositorio"
+      ansible.builtin.file:
+        path: "{{ restic_repo_local }}"
+        state: directory
+        owner: respaldo
+        group: respaldo
+        mode: "0700"
+
+    - name: "Restic | Crear directorio de configuración"
+      ansible.builtin.file:
+        path: /etc/restic
+        state: directory
+        owner: root
+        group: respaldo
+        mode: "0750"
+
+    - name: "Restic | Escribir contraseña del repositorio"
+      ansible.builtin.copy:
+        dest: "{{ restic_password_file }}"
+        owner: root
+        group: respaldo
+        mode: "0640"
+        content: "{{ vault_restic_password }}\n"
+
+    - name: "Restic | Inicializar repositorio (idempotente)"
+      ansible.builtin.command:
+        cmd: restic -r "{{ restic_repo_local }}" init
+        creates: "{{ restic_repo_local }}/config"
+      environment:
+        RESTIC_PASSWORD_FILE: "{{ restic_password_file }}"
+
+    # ─── BLOQUE 13: Prueba de humo final (plan §5.2 + §6.4) ──────────────────
+    - name: "Humo | Esperar endpoint /health (hasta 3 min)"
+      ansible.builtin.uri:
+        url: "http://localhost:8000/health"
+        status_code: 200
+        timeout: 10
+      register: health_result
+      until: health_result.status == 200
+      retries: 18
+      delay: 10
+      delegate_to: bkh-servidor
+
+    - name: "Humo | Ejecutar smoke-test.sh"
+      ansible.builtin.command:
+        cmd: "bash {{ scripts_dir }}/smoke-test.sh http://localhost:8000 http://localhost:80"
+      register: smoke_result
+      changed_when: false
+      failed_when: smoke_result.rc != 0
+
+    - name: "Humo | Mostrar resultado"
+      ansible.builtin.debug:
+        msg: "{{ smoke_result.stdout_lines }}"

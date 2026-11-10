@@ -1,4 +1,5 @@
-from fastapi import APIRouter, HTTPException, Depends
+from typing import Optional
+from fastapi import APIRouter, HTTPException, Depends, Query
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
 from app.schemas import LibreriaRegistro
@@ -10,6 +11,9 @@ from app.models.tiendas import (
     actualizar_tienda,
 )
 from app.auth import verify_token
+from app.email import enviar_email_confirmacion_registro, is_smtp_configured
+from app.database import get_db
+import secrets
 
 router = APIRouter()
 security = HTTPBearer()
@@ -24,14 +28,16 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
 
 
 @router.post("/libreria")
-def registrar_libreria(data: LibreriaRegistro):
+async def registrar_libreria(data: LibreriaRegistro):
+    token_verificacion = secrets.token_urlsafe(32)
     resultado = crear_libreria(
         data.nombre,
         data.libreria,
         data.direccion,
         data.telefono,
         data.email,
-        data.password
+        data.password,
+        token_verificacion
     )
 
     if not resultado["ok"]:
@@ -39,7 +45,21 @@ def registrar_libreria(data: LibreriaRegistro):
             raise HTTPException(status_code=400, detail="Ya existe una cuenta con ese email")
         raise HTTPException(status_code=500, detail=f"Error al registrar la librería: {resultado['error']}")
 
-    return {"mensaje": "Librería registrada exitosamente"}
+    if is_smtp_configured():
+        try:
+            await enviar_email_confirmacion_registro(data.email, token_verificacion)
+            print(f"✅ Correo de confirmación enviado a {data.email}", flush=True)
+        except Exception as exc:
+            print(f"❌ Error enviando correo de confirmación a {data.email}: {exc}", flush=True)
+            return {
+                "mensaje": "Librería registrada, pero no se pudo enviar el correo de verificación.",
+                "email_enviado": False,
+            }
+
+    return {
+        "mensaje": "Librería registrada exitosamente. Revisa tu correo para verificar la cuenta.",
+        "email_enviado": is_smtp_configured(),
+    }
 
 
 @router.get("/tiendas")
@@ -47,13 +67,86 @@ def listar_tiendas():
     return obtener_tiendas()
 
 
+@router.get("/tiendas/destacadas")
+def tiendas_destacadas(
+    limit: Optional[int] = Query(None, description="Límite de librerías"),
+    solo_con_stock: Optional[bool] = Query(None, description="Filtrar solo librerías con libros disponibles"),
+    todas: bool = Query(False, description="Obtener todas las librerías activas")
+):
+    """Devuelve librerías activas con logo, ciudad y conteo de libros."""
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    try:
+        query = """
+            SELECT
+                t.id_tienda,
+                t.nombre_tienda,
+                t.direccion,
+                tc.logo_url,
+                tc.descripcion,
+                tc.ciudad_origen,
+                COALESCE(libros.total_libros, 0) AS total_libros,
+                COALESCE(calificaciones.calificacion_promedio, 0.0) AS calificacion_promedio,
+                COALESCE(calificaciones.total_calificaciones, 0) AS total_calificaciones
+            FROM tiendas t
+            LEFT JOIN tienda_configuracion tc ON tc.id_tienda = t.id_tienda
+            LEFT JOIN (
+                SELECT id_tienda, COUNT(*) AS total_libros
+                FROM libros
+                WHERE stock > 0 AND (oculto IS NULL OR oculto = 0)
+                GROUP BY id_tienda
+            ) libros ON libros.id_tienda = t.id_tienda
+            LEFT JOIN (
+                SELECT id_tienda,
+                       ROUND(AVG(calificacion), 1) AS calificacion_promedio,
+                       COUNT(*) AS total_calificaciones
+                FROM calificaciones_tiendas
+                GROUP BY id_tienda
+            ) calificaciones ON calificaciones.id_tienda = t.id_tienda
+            WHERE t.estado_tienda = 'activa'
+        """
+
+        debe_tener_stock = solo_con_stock is True or (solo_con_stock is None and not todas and limit is None)
+        if debe_tener_stock:
+            query += " HAVING total_libros > 0"
+
+        query += " ORDER BY total_libros DESC, calificacion_promedio DESC, t.nombre_tienda ASC"
+
+        if todas:
+            cursor.execute(query)
+        elif limit is not None and limit > 0:
+            query += f" LIMIT {int(limit)}"
+            cursor.execute(query)
+        else:
+            query += " LIMIT 12"
+            cursor.execute(query)
+
+        return cursor.fetchall()
+    finally:
+        cursor.close()
+        db.close()
+
+
+ESTADOS_TIENDA_VALIDOS = {'activa', 'pendiente', 'vacaciones', 'suspendida', 'inactiva'}
+
 @router.patch("/tiendas/{id_tienda}/estado")
-def cambiar_estado_tienda(id_tienda: int, payload: dict):
-    nuevo_estado = payload.get("estado")
-    resultado = actualizar_estado_tienda(id_tienda, nuevo_estado)
+def cambiar_estado_tienda(id_tienda: int, payload: dict, user_payload: dict = Depends(get_current_user)):
+    nuevo_estado = (payload.get("estado") or "").strip().lower()
+    motivo = (payload.get("motivo") or "").strip()
+    if nuevo_estado not in ESTADOS_TIENDA_VALIDOS:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Estado inválido. Valores permitidos: {', '.join(sorted(ESTADOS_TIENDA_VALIDOS))}"
+        )
+    admin_id = int(user_payload.get("sub", 1)) if user_payload else None
+    resultado = actualizar_estado_tienda(id_tienda, nuevo_estado, motivo=motivo, admin_user_id=admin_id)
     if not resultado["ok"]:
         raise HTTPException(status_code=400, detail=resultado["error"])
-    return {"ok": True, "estado": nuevo_estado}
+    return {
+        "ok": True,
+        "estado": nuevo_estado,
+        "mensaje_enviado": resultado.get("mensaje_enviado", False)
+    }
 
 
 @router.get("/tiendas/mi-tienda")

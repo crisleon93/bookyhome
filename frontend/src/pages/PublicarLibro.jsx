@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "../services/api";
+import { jwtDecode } from "jwt-decode";
+import axios, { getApiBaseUrl } from "../services/api";
 import SellerSidebar from "../components/VendedorSidebar";
 import '../styles/publicar.css';
 
@@ -11,9 +12,46 @@ const ESTADOS = [
   { value: "usado_regular", label: "Usado — estado regular", desc: "Visible desgaste, funcional" },
 ];
 
+const TIPOS_TAPA = ['Tapa Blanda', 'Tapa Dura', 'Digital'];
+const IDIOMAS = ['Español', 'Inglés', 'Portugués', 'Francés', 'Otro'];
+
+const getSellerMediaStorageKey = (key) => {
+  const token = localStorage.getItem("token");
+  if (!token) return key;
+
+  try {
+    const payload = jwtDecode(token);
+    const userId = payload?.sub || payload?.id || payload?.usuario_id || payload?.user_id;
+    if (!userId) return key;
+    return `${key}_${userId}`;
+  } catch {
+    return key;
+  }
+};
+
+const clearLegacySellerMediaCache = () => {
+  localStorage.removeItem('vendedor_user_photo_url');
+  localStorage.removeItem('vendedor_banner_url');
+};
+
 export default function PublicarLibro() {
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
+
+  const userName = (() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      try {
+        const payload = jwtDecode(token);
+        return payload.nombre || "Vendedor";
+      } catch {
+        return "Vendedor";
+      }
+    }
+    return "Vendedor";
+  })();
+  const [userPhotoUrl, setUserPhotoUrl] = useState(() => localStorage.getItem(getSellerMediaStorageKey('vendedor_user_photo_url')) || null);
+  const [bannerUrl, setBannerUrl] = useState(() => localStorage.getItem(getSellerMediaStorageKey('vendedor_banner_url')) || null);
 
   const [categorias, setCategorias] = useState([]);
   const [previews, setPreviews] = useState([]);
@@ -23,6 +61,16 @@ export default function PublicarLibro() {
   const [exito, setExito] = useState(false);
   const [activeSide, setActiveSide] = useState("Publicar Libro");
 
+  // Variantes
+  const [variantes, setVariantes] = useState([]);
+  const [varianteForm, setVarianteForm] = useState({
+    tipo_tapa: 'Tapa Blanda',
+    idioma: 'Español',
+    edicion: '1ra Edición',
+    precio_variante: '',
+    stock_variante: '',
+    archivo_digital: null,
+  });
   const handleSidebarSelect = (name) => {
     // Si el usuario está en la página de publicar, mantener el highlight.
     // Para cualquier otra selección, navegamos de regreso al dashboard principal.
@@ -38,17 +86,59 @@ export default function PublicarLibro() {
     id_categoria: "",
     titulo: "",
     autor_libro: "",
+    isbn: "",
     descripcion_libro: "",
     precio_libro: "",
     stock: "",
     estado_libro: "",
   });
+  const [accesoAnticipado, setAccesoAnticipado] = useState(false);
+  const [nivelMinimoAcceso, setNivelMinimoAcceso] = useState("Plata");
+  const [fechaLanzamientoPublico, setFechaLanzamientoPublico] = useState("");
+
+  // Cargar logo y banner de la tienda para el sidebar
+  useEffect(() => {
+    axios.get("/configuracion")
+      .then((r) => {
+        const base = getApiBaseUrl();
+        const resolve = (url) => {
+          if (!url) return null;
+          if (url.startsWith('http')) return url;
+          return `${base}${url}`;
+        };
+        if (r.data?.logo_url) {
+          const nextPhotoUrl = resolve(r.data.logo_url);
+          setUserPhotoUrl(nextPhotoUrl);
+          localStorage.setItem(getSellerMediaStorageKey('vendedor_user_photo_url'), nextPhotoUrl);
+          clearLegacySellerMediaCache();
+        }
+        if (r.data?.banner_url) {
+          const nextBannerUrl = resolve(r.data.banner_url);
+          setBannerUrl(nextBannerUrl);
+          localStorage.setItem(getSellerMediaStorageKey('vendedor_banner_url'), nextBannerUrl);
+          clearLegacySellerMediaCache();
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   // Cargar categorías al montar
   useEffect(() => {
     axios.get("/libros/categorias")
-      .then((res) => setCategorias(res.data))
-      .catch(() => setError("No se pudieron cargar las categorías"));
+      .then((res) => {
+        if (Array.isArray(res.data)) {
+          setCategorias(res.data);
+        } else {
+          console.error("Respuesta inesperada de categorías:", res.data);
+          setError("No se pudieron cargar las categorías");
+          setCategorias([]);
+        }
+      })
+      .catch((err) => {
+        console.error("Error cargando categorías:", err);
+        setError("No se pudieron cargar las categorías. Recarga la página.");
+        setCategorias([]);
+      });
   }, []);
 
   const handleChange = (e) => {
@@ -79,6 +169,23 @@ export default function PublicarLibro() {
     setPreviews((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const agregarVariante = () => {
+    if (!varianteForm.precio_variante || Number(varianteForm.precio_variante) <= 0)
+      return setError("El precio de la variante debe ser mayor a $0");
+    if (!varianteForm.stock_variante || Number(varianteForm.stock_variante) < 0)
+      return setError("El stock de la variante no puede ser negativo");
+    if (varianteForm.tipo_tapa === 'Digital' && !varianteForm.archivo_digital)
+      return setError("Para la variante Digital debes subir un archivo PDF o EPUB");
+
+    setVariantes(prev => [...prev, { ...varianteForm, id_temp: Date.now() }]);
+    setVarianteForm({ tipo_tapa: 'Tapa Blanda', idioma: 'Español', edicion: '1ra Edición', precio_variante: '', stock_variante: '', archivo_digital: null });
+    setError("");
+  };
+
+  const eliminarVariante = (id_temp) => {
+    setVariantes(prev => prev.filter(v => v.id_temp !== id_temp));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -93,16 +200,54 @@ export default function PublicarLibro() {
     if (!form.stock || Number(form.stock) < 1)
       return setError("El stock debe ser al menos 1");
     if (!form.estado_libro) return setError("Selecciona el estado del libro");
+    if (accesoAnticipado && !fechaLanzamientoPublico)
+      return setError("Indica cuándo estará disponible el libro para todos");
+    if (
+      accesoAnticipado &&
+      new Date(fechaLanzamientoPublico).getTime() < Date.now() + 24 * 60 * 60 * 1000
+    )
+      return setError("La disponibilidad pública debe ser al menos 24 horas después");
 
     setCargando(true);
     try {
       const data = new FormData();
       Object.entries(form).forEach(([k, v]) => data.append(k, v));
+      data.append("acceso_anticipado", String(accesoAnticipado));
+      data.append("nivel_minimo_acceso", nivelMinimoAcceso);
+      data.append("fecha_lanzamiento_publico", fechaLanzamientoPublico);
       archivos.forEach((file) => data.append("imagenes", file));
 
-      await axios.post("/libros/publicar", data, {
+      const res = await axios.post("/libros/publicar", data, {
         headers: { "Content-Type": "multipart/form-data" },
       });
+
+      const id_libro = res.data?.id_libro;
+
+      // Subir variantes si las hay
+      if (id_libro && variantes.length > 0) {
+        for (const v of variantes) {
+          try {
+            // 1. Crear la variante
+            const resVariante = await axios.post(`/libros/${id_libro}/variantes`, {
+              tipo_tapa: v.tipo_tapa,
+              idioma: v.idioma,
+              edicion: v.edicion,
+              precio_variante: Number(v.precio_variante),
+              stock_variante: Number(v.stock_variante),
+            });
+            // 2. Si es digital y hay archivo, subirlo
+            if (v.tipo_tapa === 'Digital' && v.archivo_digital && resVariante.data?.id_variante) {
+              const fd = new FormData();
+              fd.append('file', v.archivo_digital);
+              await axios.post(`/libros/${id_libro}/variantes/${resVariante.data.id_variante}/archivo`, fd, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+              });
+            }
+          } catch (err) {
+            console.warn('Error subiendo variante:', err);
+          }
+        }
+      }
 
       setExito(true);
       setTimeout(() => navigate("/mi-tienda"), 2000);
@@ -119,11 +264,14 @@ export default function PublicarLibro() {
     return (
       <div className="dashboard-container">
         <SellerSidebar
-          userName="Vendedor"
+          userName={userName}
+          userPhotoUrl={userPhotoUrl}
+          bannerUrl={bannerUrl}
           activeSide={activeSide}
           setActiveSide={setActiveSide}
           handleLogout={() => {
             localStorage.removeItem("token");
+            window.dispatchEvent(new CustomEvent('auth-change', { detail: { authenticated: false } }));
             navigate("/");
           }}
         />
@@ -141,11 +289,14 @@ export default function PublicarLibro() {
   return (
     <div className="dashboard-container">
       <SellerSidebar
-        userName="Vendedor"
+        userName={userName}
+        userPhotoUrl={userPhotoUrl}
+        bannerUrl={bannerUrl}
         activeSide={activeSide}
         setActiveSide={handleSidebarSelect}
         handleLogout={() => {
           localStorage.removeItem("token");
+          window.dispatchEvent(new CustomEvent('auth-change', { detail: { authenticated: false } }));
           navigate("/");
         }}
       />
@@ -242,6 +393,20 @@ export default function PublicarLibro() {
                 onChange={handleChange}
               />
               <p className="input-hint">Si es autor colectivo o editorial, escríbelo igual al título.</p>
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="isbn">ISBN (opcional)</label>
+              <input
+                id="isbn"
+                name="isbn"
+                type="text"
+                maxLength={20}
+                placeholder="Ej: 978-3-16-148410-0"
+                value={form.isbn}
+                onChange={handleChange}
+              />
+              <p className="input-hint">El código ISBN permite que los compradores encuentren tu libro escaneando el código de barras. Puedes encontrarlo en la contraportada del libro.</p>
             </div>
 
             <div className="form-group">
@@ -368,6 +533,119 @@ export default function PublicarLibro() {
                 </strong>
               </div>
             )}
+          </div>
+
+          {/* ── VARIANTES ── */}
+          <div className="form-card">
+            <h3 className="card-title">
+              <span className="card-step">5</span>Formatos y variantes <span style={{fontSize:'12px',fontWeight:'400',color:'#888'}}>(opcional)</span>
+            </h3>
+            <p className="card-hint">Agrega Tapa Blanda, Tapa Dura o Digital con precios distintos. Para Digital, sube el archivo PDF o EPUB que recibirá el comprador.</p>
+
+            {/* Lista variantes ya agregadas */}
+            {variantes.length > 0 && (
+              <div style={{marginBottom:'16px'}}>
+                {variantes.map(v => (
+                  <div key={v.id_temp} style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'8px 12px',borderRadius:'8px',background:'#f3f4f6',marginBottom:'8px'}}>
+                    <div>
+                      <strong>{v.tipo_tapa}</strong> · {v.idioma} · {v.edicion}
+                      <br/><span style={{color:'#7A1E3A',fontWeight:'600'}}>${Number(v.precio_variante).toLocaleString('es-CO')}</span> · Stock: {v.stock_variante}
+                      {v.tipo_tapa === 'Digital' && v.archivo_digital && <span style={{marginLeft:'8px',color:'#2e7d32',fontSize:'12px'}}>📄 {v.archivo_digital.name}</span>}
+                    </div>
+                    <button type="button" onClick={() => eliminarVariante(v.id_temp)} style={{background:'none',border:'none',cursor:'pointer',color:'#c62828',fontSize:'18px'}}>×</button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Form nueva variante */}
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'12px',marginBottom:'12px'}}>
+              <div className="form-group">
+                <label htmlFor="variante-tipo-tapa">Tipo</label>
+                <select id="variante-tipo-tapa" value={varianteForm.tipo_tapa} onChange={e => setVarianteForm(p => ({...p, tipo_tapa: e.target.value}))}>
+                  {TIPOS_TAPA.map(t => <option key={t} value={t}>{t}</option>)}
+                </select>
+              </div>
+              <div className="form-group">
+                <label htmlFor="variante-idioma">Idioma</label>
+                <select id="variante-idioma" value={varianteForm.idioma} onChange={e => setVarianteForm(p => ({...p, idioma: e.target.value}))}>
+                  {IDIOMAS.map(i => <option key={i} value={i}>{i}</option>)}
+                </select>
+              </div>
+              <div className="form-group">
+                <label htmlFor="variante-edicion">Edición</label>
+                <input id="variante-edicion" type="text" placeholder="1ra Edición" value={varianteForm.edicion} onChange={e => setVarianteForm(p => ({...p, edicion: e.target.value}))} />
+              </div>
+              <div className="form-group">
+                <label htmlFor="variante-precio">Precio (COP)</label>
+                <input id="variante-precio" type="number" min="0" placeholder="25000" value={varianteForm.precio_variante} onChange={e => setVarianteForm(p => ({...p, precio_variante: e.target.value}))} />
+              </div>
+              <div className="form-group">
+                <label htmlFor="variante-stock">Stock</label>
+                <input id="variante-stock" type="number" min="0" placeholder={varianteForm.tipo_tapa === 'Digital' ? '999' : '5'} value={varianteForm.stock_variante} onChange={e => setVarianteForm(p => ({...p, stock_variante: e.target.value}))} />
+              </div>
+              {varianteForm.tipo_tapa === 'Digital' && (
+                <div className="form-group">
+                  <label htmlFor="variante-archivo-digital">Archivo PDF / EPUB</label>
+                  <input
+                    id="variante-archivo-digital"
+                    type="file"
+                    accept=".pdf,.epub"
+                    onChange={e => setVarianteForm(p => ({...p, archivo_digital: e.target.files[0] || null}))}
+                    style={{padding:'6px 0'}}
+                  />
+                </div>
+              )}
+            </div>
+            <button type="button" onClick={agregarVariante} style={{width:'100%',padding:'10px',borderRadius:'8px',background:'#7A1E3A',color:'#fff',border:'none',cursor:'pointer',fontWeight:'600',fontSize:'14px'}}>
+              + Agregar variante
+            </button>
+          </div>
+
+          <div className="form-card acceso-anticipado-config">
+            <h3 className="card-title">Acceso anticipado</h3>
+            <p className="card-hint">
+              Prepara este libro para el programa de acceso anticipado: el nivel elegido podrá verlo
+              24 horas antes de la fecha de disponibilidad pública.
+            </p>
+            <label style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "16px" }}>
+              <input
+                type="checkbox"
+                checked={accesoAnticipado}
+                onChange={(e) => setAccesoAnticipado(e.target.checked)}
+              />
+              Preparar acceso anticipado para este libro
+            </label>
+            {accesoAnticipado && (
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                <div className="form-group">
+                  <label htmlFor="nivel-minimo-acceso">Nivel mínimo del comprador</label>
+                  <select
+                    id="nivel-minimo-acceso"
+                    value={nivelMinimoAcceso}
+                    onChange={(e) => setNivelMinimoAcceso(e.target.value)}
+                  >
+                    {["Bronce", "Plata", "Oro", "Zafiro", "Rubi", "Esmeralda", "Amatista", "Perla", "Obsidiana", "Diamante", "Onix", "Platino"].map((nivel) => (
+                      <option key={nivel} value={nivel}>{nivel}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label htmlFor="fecha-lanzamiento-publico">Disponible para todos desde (hora Colombia)</label>
+                  <input
+                    id="fecha-lanzamiento-publico"
+                    type="datetime-local"
+                    min={new Date(Date.now() + 24 * 60 * 60 * 1000 - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16)}
+                    value={fechaLanzamientoPublico}
+                    onChange={(e) => setFechaLanzamientoPublico(e.target.value)}
+                  />
+                </div>
+              </div>
+            )}
+            <p className="input-hint">
+              La programación se guardará en tu panel. La visibilidad anticipada para compradores
+              se habilitará cuando se complete la integración del catálogo.
+            </p>
           </div>
 
           {/* Error */}

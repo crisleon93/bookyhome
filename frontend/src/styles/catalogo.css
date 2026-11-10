@@ -5,41 +5,465 @@
    =========================== */
 
 /* -- Contenedor principal de la página -- */
+.layout-container.catalogo-main {
+  max-width: 1400px;
+}
+
 .catalogo-main {
   padding: 32px 0;
+}
+
+.catalogo-main--detail {
+  position: relative;
+  padding-top: 24px;
+}
+
+.catalogo-main--detail > .catalogo-heading {
+  display: flex;
+  color: #241b1f;
+  font-size: 1.65rem !important;
+  margin: 0 0 12px !important;
+  letter-spacing: -0.02em;
+}
+
+.catalogo-main--detail > .catalogo-heading svg {
+  color: var(--vinotinto);
+  stroke-width: 2.4;
+}
+
+/* -- Vista de detalle -- */
+.detalle-libro-inline {
+  padding-bottom: 24px;
+}
+
+.detalle-back-button {
+  position: absolute;
+  top: 20px;
+  right: 0;
+  margin: 0 !important;
+  background: #fff !important;
+  color: var(--vinotinto) !important;
+  border: 1px solid #e4c5ce !important;
+  box-shadow: 0 4px 12px rgba(122, 30, 58, 0.08);
+  font-weight: 700;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.detalle-back-button:hover {
+  transform: translateY(-2px);
+  background: #fdf2f4 !important;
+  box-shadow: 0 7px 16px rgba(122, 30, 58, 0.14);
+}
+
+.detalle-hero {
+  background: #fff !important;
+  border: 1px solid #eadfe1;
+  border-radius: 22px;
+  padding: 24px;
+  box-shadow: 0 12px 30px rgba(66, 32, 42, 0.08);
+}
+
+.detalle-cover {
+  min-height: 460px !important;
+  height: 460px !important;
+  background: linear-gradient(145deg, #f9f2f3 0%, #f2e4e7 100%) !important;
+  box-shadow: inset 0 0 0 1px rgba(122, 30, 58, 0.08), 0 12px 24px rgba(66, 32, 42, 0.12) !important;
+}
+
+.detalle-cover img {
+  object-fit: cover !important;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.detalle-gallery {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 62px minmax(0, 1fr);
+  gap: 12px;
+}
+
+.detalle-cover {
+  grid-column: 2;
+  grid-row: 1;
+  cursor: zoom-in;
+}
+
+.detalle-cover--zoom {
+  cursor: crosshair;
+}
+
+.detalle-gallery-image {
+  will-change: transform;
+}
+
+.detalle-zoom-hint {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  padding: 6px 9px;
+  border-radius: 7px;
+  background: rgba(36, 27, 31, 0.72);
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 700;
+  pointer-events: none;
+}
+
+.detalle-thumbnails {
+  grid-column: 1;
+  grid-row: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+  padding: 2px;
+  max-height: 460px;
+}
+
+.detalle-thumbnail {
+  width: 58px;
+  height: 68px;
+  flex: 0 0 58px;
+  padding: 0;
+  overflow: hidden;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  background: #f8eef0;
+  cursor: pointer;
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+.detalle-thumbnail:hover {
+  transform: translateY(-2px);
+  border-color: #d99aaa;
+}
+
+.detalle-thumbnail--active {
+  border-color: var(--vinotinto);
+  box-shadow: 0 0 0 2px rgba(122, 30, 58, 0.12);
+}
+
+.detalle-thumbnail img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.detalle-summary {
+  padding: 12px 12px 12px 0;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 0.6fr 2fr;
+  grid-template-rows: auto;
+  column-gap: 24px;
+  align-items: start;
+}
+
+/* Columna izquierda: badge, título, autor, estrellas, tienda, precio */
+.detalle-summary-left {
+  grid-column: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* Columna derecha: rectángulos de info */
+.detalle-purchase-info {
+  grid-column: 2;
+  grid-row: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-self: start;
+}
+
+/* Botones abajo ocupando ambas columnas */
+.detalle-hero-actions {
+  grid-column: 1 / -1;
+  border-top: 1px solid #f0e6e8;
+  padding-top: 22px;
+  margin-top: 20px;
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.detalle-summary h2 {
+  color: #241b1f !important;
+  letter-spacing: -0.02em;
+}
+
+.detalle-summary > p:nth-of-type(1) {
+  color: #675c61 !important;
+}
+
+.detalle-hero-actions {
+  border-top: 1px solid #f0e6e8;
+  padding-top: 22px;
+  margin-top: 20px;
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.detalle-price-and-info {
+  display: contents;
+}
+
+.detalle-price {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #8b0000;
+  margin: 16px 0 0 0;
+  white-space: nowrap;
+}
+
+.detalle-price-and-info {
+  min-width: 0;
+}
+
+.detalle-price-and-info .detalle-purchase-info {
+  min-width: 0;
+}
+
+.detalle-purchase-info {
+  width: 100%;
+}
+
+.detalle-purchase-info__item {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid #eee1e4;
+  border-radius: 10px;
+  background: #fffafb;
+}
+
+.detalle-purchase-info__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  flex: 0 0 22px;
+  border-radius: 50%;
+  background: #f8e7eb;
+  color: var(--vinotinto);
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.detalle-purchase-info__item div {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 2px;
+}
+
+.detalle-purchase-info__item strong {
+  color: #302126;
+  font-size: 0.78rem;
+  line-height: 1.25;
+}
+
+.detalle-purchase-info__item span:not(.detalle-purchase-info__icon) {
+  overflow: hidden;
+  color: #84767b;
+  font-size: 0.68rem;
+  line-height: 1.3;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.detalle-hero-actions button {
+  min-height: 52px;
+  min-width: 0 !important;
+  border-radius: 11px !important;
+}
+
+.detalle-primary-action {
+  box-shadow: 0 8px 18px rgba(122, 30, 58, 0.2);
+}
+
+.detalle-primary-action:hover,
+.detalle-cart-action:hover,
+.detalle-contact-action:hover {
+  box-shadow: 0 8px 18px rgba(66, 32, 42, 0.12);
+}
+
+.detalle-content-section > h3 {
+  color: #241b1f !important;
+  letter-spacing: -0.01em;
+}
+
+.detalle-description-section {
+  border: 1px solid #eadfe1;
+  box-shadow: 0 6px 18px rgba(66, 32, 42, 0.05);
+}
+
+.detalle-reviews-section > div > div,
+.detalle-features-section > div > div,
+.detalle-faq-section > div > div {
+  border-color: #eadfe1 !important;
+  box-shadow: 0 5px 14px rgba(66, 32, 42, 0.04);
+}
+
+@media (max-width: 760px) {
+  .catalogo-main--detail {
+    padding-top: 20px;
+  }
+
+  .catalogo-main--detail > .catalogo-heading {
+    padding-right: 0;
+    margin-bottom: 56px !important;
+  }
+
+  .detalle-back-button {
+    top: 64px;
+    left: 0;
+    right: auto;
+  }
+
+  .detalle-hero {
+    grid-template-columns: 1fr !important;
+    gap: 22px !important;
+    padding: 16px;
+  }
+
+  .detalle-cover {
+    grid-column: 1;
+    grid-row: 1;
+    min-height: 360px !important;
+    height: 360px !important;
+  }
+
+  .detalle-thumbnails {
+    grid-column: 1;
+    grid-row: 2;
+    flex-direction: row;
+    overflow-x: auto;
+    overflow-y: hidden;
+    max-height: none;
+  }
+
+  .detalle-cover--zoom {
+    cursor: default;
+  }
+
+  .detalle-zoom-hint {
+    display: none;
+  }
+
+  .detalle-summary {
+    padding: 0 4px 8px;
+    grid-template-columns: 1fr;
+  }
+
+  .detalle-summary .detalle-price-and-info {
+    grid-column: 1;
+    grid-row: auto;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .detalle-summary .detalle-hero-actions {
+    grid-column: 1;
+  }
+
+  .detalle-purchase-info {
+    grid-column: 1;
+  }
+
+  .detalle-price-and-info {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .detalle-summary h2 {
+    font-size: 1.8rem !important;
+  }
 }
 
 /* -- Grid de tarjetas -- */
 .catalogo-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
   margin-top: 24px;
+  align-items: stretch;
 }
 
-/* -- Tarjeta individual de libro -- */
-.libro-card {
-  border: 1px solid #e0dbd4;
+/* -- Layout de libros por autor en columnas -- */
+.libros-por-autor {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 32px;
+  margin-top: 24px;
+  align-items: start;
+}
+
+.columna-autor {
+  background: #faf8f6;
   border-radius: 12px;
-  overflow: hidden;
-  text-align: center;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-  background: white;
+  padding: 20px;
+  border: 1px solid #e0dbd4;
   display: flex;
   flex-direction: column;
 }
 
+.titulo-autor {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--vinotinto);
+  margin: 0 0 16px 0;
+  padding-bottom: 12px;
+  border-bottom: 2px solid var(--vinotinto);
+  flex-shrink: 0;
+}
+
+.libros-columna {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+}
+
+/* -- Tarjeta individual de libro -- */
+.libro-card {
+  border: 1px solid #d8cec6;
+  border-radius: 14px;
+  overflow: hidden;
+  text-align: left;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background: white;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 3px 10px rgba(36, 27, 31, 0.1);
+  position: relative;
+  min-height: 0;
+  align-self: start;
+}
+
 .libro-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+  transform: translateY(-6px);
+  box-shadow: 0 12px 32px rgba(0,0,0,0.15);
+  border-color: var(--vinotinto);
 }
 
 /* -- Imagen de portada en la tarjeta -- */
 .libro-card-img {
   width: 100%;
-  height: 200px;
+  height: 180px;
   object-fit: cover;
   display: block;
+  transition: transform 0.3s ease;
+}
+
+.libro-card:hover .libro-card-img {
+  transform: scale(1.05);
 }
 
 /* -- Cuerpo de texto de la tarjeta -- */
@@ -47,8 +471,9 @@
   padding: 14px;
   display: flex;
   flex-direction: column;
-  flex: 1;
-  gap: 6px;
+  flex: initial;
+  gap: 7px;
+  overflow: hidden;
 }
 
 .libro-card .btn:disabled {
@@ -65,49 +490,305 @@
 }
 
 .categoria-badge {
-  display: inline-block;
-  background: #fce4ec;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #f4eef0;
   color: var(--vinotinto);
-  border-radius: 20px;
-  padding: 2px 10px;
-  font-size: 0.75rem;
-  font-weight: 600;
+  border-radius: 999px;
+  padding: 4px 9px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: none;
+  height: 24px;
+  flex-shrink: 0;
+  align-self: flex-start;
 }
+
+.categoria--general    { background: #f4eef0; color: #7a1e3a; }
+.categoria--terror     { background: #eee8f7; color: #603a92; }
+.categoria--ciencia    { background: #e4f5e9; color: #1f7a45; }
+.categoria--romance    { background: #fde8ef; color: #b4235d; }
+.categoria--fantasia   { background: #e9edff; color: #4156a6; }
+.categoria--historia   { background: #f8eddb; color: #8c5a1d; }
+.categoria--tecnologia { background: #e2f4f6; color: #137783; }
+.categoria--juvenil    { background: #fff2d7; color: #a25d00; }
+.categoria--infantil   { background: #e4f4ff; color: #2775a7; }
+.categoria--aventura   { background: #fff0df; color: #b85f11; }
+.categoria--arte       { background: #f4e6f6; color: #86418f; }
+.categoria--biografia  { background: #e8eef8; color: #365d96; }
+.categoria--educacion  { background: #e8f3e9; color: #397542; }
 
 .punto-verde { color: #4caf50; }
 .punto-rojo  { color: #e53935; }
 
 .disponibilidad {
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   margin: 0;
   color: #666;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 4px;
+  font-weight: 500;
+  flex-shrink: 0;
 }
 
 .tienda {
-  color: #999;
+  color: #777;
   font-size: 0.8rem;
   margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 4px;
+  font-weight: 500;
+  flex-shrink: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
+.calificacion-tienda {
+  color: #8a5a00;
+  font-size: 0.8rem;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 4px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.calificacion-tienda span { color: #777; font-weight: 500; }
+
+.libro-card-status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 20px;
+}
+
+.disponibilidad { color: #27864a; }
+.disponibilidad.sin-stock { color: #c73737; }
+
 .libro-card h3 {
-  font-size: 0.92rem;
+  font-size: 0.95rem;
   font-weight: 700;
   margin: 0;
   line-height: 1.3;
   color: var(--gris-carbon);
+  height: 2.6em;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  flex-shrink: 0;
 }
 
 .libro-card .autor {
   font-size: 0.82rem;
-  color: #888;
+  color: #666;
   margin: 0;
+  font-weight: 600;
+  height: 18px;
+  flex-shrink: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .libro-card .precio {
-  font-size: 1.05rem;
+  font-size: 1.15rem;
   font-weight: 800;
   color: var(--vinotinto);
-  margin: 4px 0 0;
+  margin: 3px 0 0;
+  color: var(--vinotinto);
+  height: 28px;
+  flex-shrink: 0;
+}
+
+.libro-card .btn {
+  height: 40px;
+  flex-shrink: 0;
+  font-size: 0.85rem;
+  padding: 0 20px;
+  margin-top: 0;
+}
+
+/* -- Paginación del catálogo (reutiliza estilos de mis-compras) -- */
+.catalogo-pagination {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin-top: 32px;
+  padding: 16px 0;
+}
+
+.catalogo-pagination .pagination-info {
+  font-size: 0.82rem;
+  color: #78716c;
+}
+
+.catalogo-pagination .pagination-info strong {
+  color: var(--gris-carbon);
+  font-weight: 750;
+}
+
+.dark .catalogo-pagination .pagination-info {
+  color: #999;
+}
+
+.dark .catalogo-pagination .pagination-info strong {
+  color: #ececec;
+}
+
+/* -- Modal de detalles -- */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 20px;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.modal-content {
+  background: white;
+  border-radius: 16px;
+  max-width: 700px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.modal-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: white;
+  border: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  transition: all 0.2s ease;
+  z-index: 10;
+}
+
+.modal-close:hover {
+  background: var(--vinotinto);
+  color: white;
+  transform: rotate(90deg);
+}
+
+.modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 24px;
+}
+
+@media (min-width: 768px) {
+  .modal-body {
+    flex-direction: row;
+  }
+}
+
+.modal-image {
+  width: 100%;
+  max-width: 250px;
+  height: auto;
+  object-fit: cover;
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+
+.modal-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.modal-info h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--gris-carbon);
+  margin: 0;
+  line-height: 1.3;
+}
+
+.modal-autor {
+  font-size: 1rem;
+  color: #666;
+  font-weight: 600;
+  margin: 0;
+}
+
+.modal-tienda {
+  font-size: 0.9rem;
+  color: #777;
+  margin: 0;
+  display: flex;
+  align-items: center;
+}
+
+.modal-precio {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--vinotinto);
+  margin: 8px 0 0;
+  background: linear-gradient(135deg, var(--vinotinto) 0%, #8b0000 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.modal-descripcion {
+  font-size: 0.95rem;
+  color: #555;
+  line-height: 1.6;
+  margin: 8px 0 0;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+
+.modal-actions .btn {
+  flex: 1;
+  min-width: 140px;
 }
 
 /* Estado vacío del catálogo */
@@ -149,3 +830,156 @@
 .btn-quitar-favorito:hover {
   background: #fef2f2;
 }
+
+@media (max-width: 1280px) {
+  .catalogo-grid { 
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 16px;
+  }
+}
+
+@media (max-width: 900px) {
+  .catalogo-grid { 
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 16px;
+  }
+}
+
+@media (max-width: 560px) {
+  .catalogo-grid { 
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 12px;
+  }
+  .libro-card-img { height: 190px; }
+}
+
+/* ===========================
+   MODO OSCURO — CATÁLOGO
+   =========================== */
+
+/* Fondo y texto general */
+.dark .catalogo-main--detail > .catalogo-heading { color: #ececec; }
+
+/* Tarjetas de libro */
+.dark .libro-card {
+  background: #252525;
+  border-color: #606060;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.38);
+}
+.dark .libro-card:hover {
+  border-color: var(--vinotinto);
+  box-shadow: 0 12px 32px rgba(0,0,0,0.4);
+}
+.dark .libro-card h3 { color: #ececec; }
+.dark .libro-card .autor { color: #c8c8c8; }
+.dark .libro-card .precio { color: #ff4f83; }
+.dark .libro-card .disponibilidad { color: #4ade80; }
+.dark .libro-card .disponibilidad.sin-stock { color: #f87171; }
+.dark .libro-card .tienda { color: #aaa; }
+.dark .libro-card .calificacion-tienda { color: #fbbf24; }
+.dark .libro-card .calificacion-tienda span { color: #aaa; }
+.dark .libro-card .card-feedback { color: #e05a7a; }
+
+/* Badge de categoría */
+.dark .categoria-badge { background: #2a2a2a; color: #e05a7a; }
+.dark .categoria--general    { background: #2a1a24; color: #e05a7a; }
+.dark .categoria--terror     { background: #1e1530; color: #b48ce8; }
+.dark .categoria--ciencia    { background: #0f2e1a; color: #4ade80; }
+.dark .categoria--romance    { background: #2e0d1e; color: #f472b6; }
+.dark .categoria--fantasia   { background: #0d1a3c; color: #818cf8; }
+.dark .categoria--historia   { background: #2a1a08; color: #fbbf24; }
+.dark .categoria--tecnologia { background: #0a2a2e; color: #22d3ee; }
+.dark .categoria--juvenil    { background: #2a1e00; color: #fcd34d; }
+.dark .categoria--infantil   { background: #0a1e30; color: #60a5fa; }
+.dark .categoria--aventura   { background: #2a1500; color: #fb923c; }
+.dark .categoria--arte       { background: #1e0a24; color: #d8b4fe; }
+.dark .categoria--biografia  { background: #0d1f3c; color: #7dd3fc; }
+.dark .categoria--educacion  { background: #0f2e18; color: #6ee7b7; }
+
+/* Columna de autor */
+.dark .columna-autor {
+  background: #1e1e1e;
+  border-color: #333;
+}
+.dark .titulo-autor { color: #e05a7a; border-bottom-color: #e05a7a; }
+
+
+
+/* Estado vacío */
+.dark .catalogo-empty h3 { color: #c8c8c8; }
+.dark .catalogo-empty p  { color: #999; }
+
+/* Modal de detalles */
+.dark .modal-content {
+  background: #1e1e1e;
+  color: #ececec;
+}
+.dark .modal-close {
+  background: #2a2a2a;
+  color: #c8c8c8;
+}
+.dark .modal-close:hover {
+  background: var(--vinotinto);
+  color: #fff;
+}
+.dark .modal-info h2   { color: #ececec; }
+.dark .modal-autor     { color: #c8c8c8; }
+.dark .modal-tienda    { color: #aaa; }
+.dark .modal-descripcion { color: #c8c8c8; }
+
+/* Detalle de libro (vista inline) */
+.dark .detalle-hero {
+  background: #1e1e1e !important;
+  border-color: #333;
+  box-shadow: 0 12px 30px rgba(0,0,0,0.4);
+}
+.dark .detalle-back-button {
+  background: #2a2a2a !important;
+  color: #e05a7a !important;
+  border-color: #3a3a3a !important;
+}
+.dark .detalle-back-button:hover {
+  background: #333 !important;
+}
+.dark .detalle-cover {
+  background: linear-gradient(145deg, #252525 0%, #1e1e1e 100%) !important;
+}
+.dark .detalle-thumbnail {
+  background: #2a2a2a;
+  border-color: transparent;
+}
+.dark .detalle-thumbnail:hover { border-color: #666; }
+.dark .detalle-thumbnail--active { border-color: var(--vinotinto); }
+.dark .detalle-summary h2 { color: #ececec !important; }
+.dark .detalle-summary > p:nth-of-type(1) { color: #c8c8c8 !important; }
+.dark .detalle-hero-actions { border-top-color: #333; }
+.dark .detalle-price { color: #e05a7a; }
+.dark .detalle-purchase-info__item {
+  background: #252525;
+  border-color: #333;
+}
+.dark .detalle-purchase-info__icon {
+  background: #2a1a24;
+  color: #e05a7a;
+}
+.dark .detalle-purchase-info__item strong { color: #ececec; }
+.dark .detalle-purchase-info__item span:not(.detalle-purchase-info__icon) { color: #999; }
+.dark .detalle-description-section {
+  border-color: #333 !important;
+  box-shadow: none !important;
+}
+.dark .detalle-content-section > h3 { color: #ececec !important; }
+.dark .detalle-reviews-section > div > div,
+.dark .detalle-features-section > div > div,
+.dark .detalle-faq-section > div > div {
+  border-color: #333 !important;
+  box-shadow: none !important;
+}
+
+/* Botón quitar favorito */
+.dark .btn-quitar-favorito {
+  background: #2a1010;
+  border-color: #f87171;
+  color: #f87171;
+}
+.dark .btn-quitar-favorito:hover { background: #3a1515; }

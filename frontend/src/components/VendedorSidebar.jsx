@@ -2,15 +2,22 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   IconStoreAlt as IconHome,
-  IconBook,
+  IconBookOpen,
   IconPlus,
   IconCartAlt as IconCart,
-  IconPackage,
+  IconShoppingBag,
+  IconAlertTriangle,
+  IconTool,
+  IconUser,
   IconSettings,
+  IconMail,
+  IconBell,
   IconTag,
   IconChevronLeft,
   IconMenu,
-  IconLogOut
+  IconLogOut,
+  IconStar,
+  IconTruck
 } from './Icons';
 
 const VINOTINTO = '#7A1E3A';
@@ -21,19 +28,42 @@ const MENU_LINKS = [
   { name: 'Mis Libros' },
   { name: 'Publicar Libro', path: '/vendedor/publicar' },
   { name: 'Promociones' },
+  { name: 'Cupones' },
   { name: 'Ventas' },
   { name: 'Pedidos' },
+  { name: 'Envíos' },
+  { name: 'Calificaciones' },
+  { name: 'Quejas y reclamos' },
+  { name: 'Soporte técnico' },
+  { name: 'Notificaciones' },
+  { name: 'Mensajes' },
   { name: 'Perfil' },
+  { name: 'Configuración' },
 ];
 
 const ICONS = {
-  Inicio: <IconHome strokeWidth={2.2} />,
-  'Mis Libros': <IconBook strokeWidth={2.2} />,
-  'Publicar Libro': <IconPlus strokeWidth={2.2} />,
-  Promociones: <IconTag strokeWidth={2.2} />,
-  Ventas: <IconCart strokeWidth={2.2} />,
-  Pedidos: <IconPackage strokeWidth={2.2} />,
-  Perfil: <IconSettings strokeWidth={2.2} />,
+  Inicio: <IconHome width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
+  'Mis Libros': <IconBookOpen width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
+  'Publicar Libro': <IconPlus width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
+  Promociones: <IconTag width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
+  Cupones: (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={WHITE} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M15 5v2"></path>
+      <path d="M15 11v2"></path>
+      <path d="M15 17v2"></path>
+      <path d="M5 5h14a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-3a2 2 0 0 0 0-4V7a2 2 0 0 1 2-2z"></path>
+    </svg>
+  ),
+  Ventas: <IconCart width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
+  Pedidos: <IconShoppingBag width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
+  'Envíos': <IconTruck width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
+  Calificaciones: <IconStar width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
+  'Quejas y reclamos': <IconAlertTriangle width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
+  'Soporte técnico': <IconTool width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
+  Notificaciones: <IconBell className="" width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
+  Mensajes: <IconMail className="" width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
+  Perfil: <IconUser width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
+  Configuración: <IconSettings width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
 };
 
 function SidebarIcon(props) {
@@ -43,9 +73,26 @@ function SidebarIcon(props) {
   );
 }
 
-export default function VendedorSidebar({ userName = 'Vendedor', activeSide = 'Inicio', setActiveSide, handleLogout }) {
+export default function VendedorSidebar({ userName = 'Vendedor', profileImage = null, userPhotoUrl = null, bannerUrl = null, activeSide = 'Inicio', setActiveSide, handleLogout }) {
   const navigate = useNavigate();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    const saved = localStorage.getItem('vendedor_sidebar_open');
+    const open = saved !== null ? saved === 'true' : true;
+    // Setear la variable CSS inmediatamente para que el header tenga el ancho correcto desde el inicio
+    document.documentElement.style.setProperty('--dashboard-sidebar-width', open ? '250px' : '76px');
+    return open;
+  });
+
+  const handleToggleSidebar = () => {
+    setSidebarOpen((prev) => {
+      const next = !prev;
+      localStorage.setItem('vendedor_sidebar_open', String(next));
+      return next;
+    });
+  };
+
+  const avatarSrc = profileImage || userPhotoUrl || null;
+  const avatarAlt = `${userName || 'Vendedor'} avatar`;
 
   useEffect(() => {
     document.documentElement.style.setProperty('--dashboard-sidebar-width', sidebarOpen ? '250px' : '76px');
@@ -56,56 +103,125 @@ export default function VendedorSidebar({ userName = 'Vendedor', activeSide = 'I
 
   const onLogout = handleLogout || (() => {
     localStorage.removeItem('token');
+    document.documentElement.classList.remove('dark');
     navigate('/');
   });
 
   return (
     <aside className={`dashboard-sidebar ${sidebarOpen ? '' : 'collapsed'}`} style={{
       width: sidebarOpen ? '250px' : '76px',
-      position: 'fixed', top: '1px', left: 0, zIndex: 60,
-      height: 'calc(100vh - 1px)',
+      position: 'fixed', top: 0, left: 0, zIndex: 60,
+      height: '100vh',
+      boxSizing: 'border-box',
       background: VINOTINTO, color: WHITE,
-      padding: '24px 14px', display: 'flex', flexDirection: 'column', gap: '6px',
+      padding: '16px 14px', display: 'flex', flexDirection: 'column', gap: '4px',
       transition: 'width 0.25s ease', flexShrink: 0, overflow: 'hidden',
     }}>
-      {/* Header */}
-      <div style={{
-        display: 'flex', alignItems: 'center',
-        justifyContent: sidebarOpen ? 'space-between' : 'center',
-        marginBottom: '26px', paddingLeft: sidebarOpen ? '10px' : 0,
-      }}>
-        {sidebarOpen && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span style={{ fontSize: '1.05rem', fontWeight: 800 }}>Vendedor</span>
-          </div>
-        )}
-        <button
-          onClick={() => setSidebarOpen(!sidebarOpen)}
-          style={{
-            background: 'rgba(255,255,255,0.12)', border: 'none', color: WHITE,
-            width: '34px', height: '34px', borderRadius: '8px', cursor: 'pointer',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-          }}
-          title={sidebarOpen ? 'Contraer menú' : 'Expandir menú'}
-        >
-          {sidebarOpen
-            ? <SidebarIcon Icon={IconChevronLeft} size={20} />
-            : <SidebarIcon Icon={IconMenu} size={20} />}
-        </button>
-      </div>
-
-      {/* User Info */}
-      {sidebarOpen && (
+      {/* Header con banner de fondo */}
+      {sidebarOpen ? (
+        /* ── Sidebar ABIERTO: banner como fondo, avatar + info encima ── */
         <div style={{
-          padding: '16px 12px', marginBottom: '16px', borderBottom: '1px solid rgba(255,255,255,0.15)',
-          display: 'flex', flexDirection: 'column', gap: '6px',
+          flexShrink: 0,
+          margin: '-16px -14px 10px -14px',
+          width: 'calc(100% + 28px)',
+          borderRadius: '0',
+          background: bannerUrl
+            ? `url(${bannerUrl}) center/cover no-repeat`
+            : VINOTINTO,
+          padding: '10px 14px 10px 14px',
+          position: 'relative',
         }}>
-          <div style={{ fontSize: '0.95rem', fontWeight: 700 }}>{userName}</div>
-          <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.7)' }}>Panel de ventas</div>
+          {/* Overlay oscuro sobre el banner */}
+          {bannerUrl && (
+            <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.35)' }} />
+          )}
+          {/* Contenido encima del overlay */}
+          <div style={{ position: 'relative', zIndex: 1 }}>
+            {/* Fila: avatar a la izq, botón < a la der */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+              {avatarSrc ? (
+                <img src={avatarSrc} alt={avatarAlt} style={{
+                  width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover',
+                  border: '2px solid rgba(255,255,255,0.5)', flexShrink: 0,
+                }} />
+              ) : (
+                <div style={{
+                  width: '40px', height: '40px', borderRadius: '50%', flexShrink: 0,
+                  background: 'rgba(255,255,255,0.2)', border: '2px solid rgba(255,255,255,0.4)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontWeight: 700, color: WHITE, textTransform: 'uppercase', fontSize: '1rem',
+                }}>
+                  {(userName || 'V').charAt(0)}
+                </div>
+              )}
+              <button
+                onClick={handleToggleSidebar}
+                style={{
+                  background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.3)',
+                  color: WHITE, width: '26px', height: '26px', borderRadius: '6px',
+                  cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}
+                title="Contraer menú"
+              >
+                <SidebarIcon Icon={IconChevronLeft} size={15} />
+              </button>
+            </div>
+            {/* Nombre y rol debajo */}
+            <div style={{ fontSize: '0.88rem', fontWeight: 700, color: WHITE, textShadow: '0 1px 3px rgba(0,0,0,0.6)' }}>{userName || 'Vendedor'}</div>
+            <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.9)', textShadow: '0 1px 3px rgba(0,0,0,0.6)' }}>Panel de ventas</div>
+          </div>
+        </div>
+      ) : (
+        /* ── Sidebar CERRADO: banner de fondo + hamburguesa + avatar ── */
+        <div style={{
+          position: 'relative',
+          margin: '-16px -14px 20px -14px',
+          background: bannerUrl
+            ? `url(${bannerUrl}) center/cover no-repeat`
+            : VINOTINTO,
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          width: 'calc(100% + 28px)',
+          padding: '12px 0',
+          gap: '8px',
+        }}>
+          {bannerUrl && (
+            <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.35)' }} />
+          )}
+          <button
+            onClick={handleToggleSidebar}
+            style={{
+              position: 'relative', zIndex: 1,
+              background: 'rgba(255,255,255,0.16)', border: '1px solid rgba(255,255,255,0.2)',
+              color: WHITE, width: '34px', height: '34px', borderRadius: '8px',
+              cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              boxShadow: '0 4px 14px rgba(0,0,0,0.15)',
+            }}
+            title="Expandir menú"
+          >
+            <SidebarIcon Icon={IconMenu} size={20} />
+          </button>
+          {avatarSrc ? (
+            <img src={avatarSrc} alt={avatarAlt} style={{
+              position: 'relative', zIndex: 1,
+              width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover',
+              border: '2px solid rgba(255,255,255,0.35)',
+            }} />
+          ) : (
+            <div style={{
+              position: 'relative', zIndex: 1,
+              width: '36px', height: '36px', borderRadius: '50%',
+              background: 'rgba(255,255,255,0.15)', border: '2px solid rgba(255,255,255,0.35)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontWeight: 700, color: WHITE, textTransform: 'uppercase', fontSize: '1rem',
+            }}>
+              {(userName || 'V').charAt(0)}
+            </div>
+          )}
         </div>
       )}
 
       {/* Navigation */}
+      <div className="sidebar-nav-scroll" style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
       {MENU_LINKS.map((item) => {
         const active = activeSide === item.name;
         return (
@@ -113,10 +229,14 @@ export default function VendedorSidebar({ userName = 'Vendedor', activeSide = 'I
             key={item.name}
             onClick={() => {
               if (item.path) {
+                if (setActiveSide) setActiveSide(item.name);
                 navigate(item.path);
                 return;
               }
-              if (setActiveSide) setActiveSide(item.name);
+              if (setActiveSide) {
+                setActiveSide(item.name);
+                return;
+              }
             }}
             title={!sidebarOpen ? item.name : undefined}
             style={{
@@ -138,6 +258,7 @@ export default function VendedorSidebar({ userName = 'Vendedor', activeSide = 'I
           </button>
         );
       })}
+      </div>
 
       {/* Logout */}
       <button

@@ -1,0 +1,39 @@
+# Caddyfile.prod — BookyHome producción
+# Sustituir bookyhome.com.co por el dominio real antes de desplegar.
+# Caddy obtiene y renueva el certificado TLS de Let's Encrypt automáticamente.
+
+{
+	email admin@bookyhome.com.co
+	admin off
+}
+
+# ─── Frontend ──────────────────────────────────────────────────────────────────
+bookyhome.com.co, www.bookyhome.com.co {
+	encode gzip
+
+	# Sirve el build estático generado por Vite
+	# En producción el contenedor del frontend expone el build en /app/dist
+	reverse_proxy bookyhome-frontend:80
+
+	# Cabeceras de seguridad
+	header {
+		X-Frame-Options "SAMEORIGIN"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		-Server
+	}
+}
+
+# ─── API REST ──────────────────────────────────────────────────────────────────
+api.bookyhome.com.co {
+	encode gzip
+
+	reverse_proxy bookyhome-backend:8000
+
+	header {
+		X-Frame-Options "DENY"
+		X-Content-Type-Options "nosniff"
+		-Server
+	}
+}

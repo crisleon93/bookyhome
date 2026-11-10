@@ -1,6 +1,41 @@
-import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useState, useEffect, startTransition, lazy, Suspense } from 'react'
+import { Link, useNavigate, useLocation, Navigate } from 'react-router-dom'
+import { jwtDecode } from 'jwt-decode'
+import { getUserRole } from '../hooks/useAuth'
 import Header from '../components/Header'
+import { IconUsers } from '../components/Icons'
+import SeccionInicio from '../components/dashboard/SeccionInicio'
+import CompradorSidebar from '../components/CompradorSidebar'
+import api from '../services/api'
+import SeccionSeguimiento from '../components/dashboard/SeccionSeguimiento'
+import SeccionFavoritos from '../components/dashboard/SeccionFavoritos'
+import SeccionConfiguracion from '../components/dashboard/SeccionConfiguracion'
+import SeccionMiPerfil from '../components/dashboard/SeccionMiPerfil'
+import SeccionMisDirecciones from '../components/dashboard/SeccionMisDirecciones'
+import SeccionNotificaciones from '../components/dashboard/SeccionNotificaciones'
+
+// Secciones pesadas: carga diferida
+const SeccionCarrito     = lazy(() => import('../components/dashboard/SeccionCarrito'))
+const SeccionMisCompras  = lazy(() => import('../components/dashboard/SeccionMisCompras'))
+import CarruselPublico from '../components/CarruselPublico'
+import LibreriasDestacadas from '../components/LibreriasDestacadas'
+
+// Carga diferida: solo se descargan cuando el usuario navega a esa sección
+const Catalogo       = lazy(() => import('./Catalogo'))
+const Chat           = lazy(() => import('./Chat'))
+const ListaDeseos    = lazy(() => import('./ListaDeseos'))
+const QuejasReclamos = lazy(() => import('./QuejasReclamos'))
+const Soporte        = lazy(() => import('./Soporte'))
+
+function SectionLoading() {
+  return (
+    <div style={{ minHeight: '240px', padding: '28px', display: 'flex', flexDirection: 'column', gap: '14px' }} aria-hidden="true">
+      <div style={{ width: '42%', height: '22px', borderRadius: '8px', background: '#eee7e1' }} />
+      <div style={{ width: '100%', height: '120px', borderRadius: '12px', background: '#f5f1ed' }} />
+      <div style={{ width: '72%', height: '16px', borderRadius: '8px', background: '#eee7e1' }} />
+    </div>
+  )
+}
 
 import ficcion from '../assets/ficcion.png'
 import romance from '../assets/romance.png'
@@ -12,6 +47,20 @@ import arte from '../assets/arte.png'
 import biografia from '../assets/biografia.png'
 import infantil from '../assets/infantil.png'
 import tecnologia from '../assets/tecnologia.png'
+import fantasia from '../assets/fantasia.jpg'
+import terror from '../assets/terror.jpg'
+import juvenil from '../assets/Juvenil.jpg'
+import aventura from '../assets/aventura.jpg'
+import educacion from '../assets/educacion.jpg'
+import comedia from '../assets/comedia.jpg'
+const HERO_IMAGES = [
+  { src: 'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=1000&q=85', alt: 'Personas explorando libros en una librería' },
+  { src: 'https://images.unsplash.com/photo-1521587760476-6c12a4b040da?w=1000&q=85', alt: 'Pasillo de una librería con estanterías llenas de libros' },
+  { src: 'https://images.unsplash.com/photo-1495446815901-a7297e633e8d?w=1000&q=85', alt: 'Libros abiertos sobre una mesa de lectura' },
+  { src: 'https://images.unsplash.com/photo-1507842217343-583bb7270b66?w=1000&q=85', alt: 'Biblioteca con grandes estanterías de libros' },
+  { src: 'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=1000&q=85', alt: 'Pila de libros de diferentes colores' },
+  { src: 'https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=1000&q=85', alt: 'Libro abierto junto a una taza de café' },
+]
 // ── Íconos ────────────────────────────────────────────────────────────────────
 
 const IconLocation = () => (
@@ -38,11 +87,11 @@ const IconArrow = () => (
 
 // ── Datos ─────────────────────────────────────────────────────────────────────
 
-const STATS = [
-  { icon: 'M4 19.5A2.5 2.5 0 0 1 6.5 17H20M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z', color: 'icon-vinotinto', num: '+10,000', label: 'Libros disponibles' },
-  { icon: 'M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM9 22V12h6v10', color: 'icon-rojo', num: '+150', label: 'Librerías asociadas' },
-  { icon: 'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 7a4 4 0 1 0 8 0 4 4 0 0 0-8 0M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75', color: 'icon-vinotinto', num: '+50,000', label: 'Usuarios activos' },
-  { icon: 'M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z', color: 'icon-rojo', num: '4.8', label: 'Calificación promedio' },
+const STATS_CONFIG = [
+  { key: 'libros_disponibles',  icon: 'M4 19.5A2.5 2.5 0 0 1 6.5 17H20M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2ZM12 6v12M8 10h4M8 14h3', color: 'icon-vinotinto', label: 'Libros disponibles',   prefix: '+', decimals: 0 },
+  { key: 'librerias_asociadas', icon: 'M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM9 22V12h6v10',                                                           color: 'icon-rojo',      label: 'Librerías asociadas',  prefix: '+', decimals: 0 },
+  { key: 'usuarios_activos',    icon: null,                                                                                                                        color: 'icon-vinotinto', label: 'Usuarios registrados', prefix: '+', decimals: 0 },
+  { key: 'calificacion_promedio',icon: 'M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z',                         color: 'icon-rojo',      label: 'Calificación promedio', prefix: '',  decimals: 1 },
 ]
 
 const BENEFITS = [
@@ -57,7 +106,7 @@ const BENEFITS = [
     desc: 'Envío gratis en compras mayores a $30.000. Seguimiento en tiempo real y entrega garantizada.',
   },
   {
-    icon: 'M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2zM22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z',
+    icon: 'M4 19.5A2.5 2.5 0 0 1 6.5 17H20M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2ZM12 6v12M8 10h4M8 14h3',
     title: 'Amplio Catálogo',
     desc: 'Desde clásicos hasta novedades. Encuentra libros nuevos, usados y de colección de múltiples librerías.',
   },
@@ -74,7 +123,12 @@ const CATEGORIES = [
   { name: 'Biografía',  img: biografia },  // personas
   { name: 'Infantil',   img: infantil },  // colorido
   { name: 'Tecnología', img: tecnologia },  // tech/
- 
+  { name: 'Fantasía',   img: fantasia },
+  { name: 'Terror',     img: terror },
+  { name: 'Juvenil',    img: juvenil },
+  { name: 'Aventura',   img: aventura },
+  { name: 'Educación',  img: educacion },
+  { name: 'Comedia',    img: comedia },
 ]
 
 const STEPS = [
@@ -99,9 +153,19 @@ function Modal({ open, onClose, title, subtitle, children }) {
   )
 }
 
-function ModalOption({ to, iconPath, title, desc, onClose }) {
+function ModalOption({ to, onClick, iconPath, title, desc, onClose }) {
   return (
-    <Link to={to} className="modal-option" onClick={onClose}>
+    <Link
+      to={to || '#'}
+      className="modal-option"
+      onClick={(event) => {
+        if (onClick) {
+          event.preventDefault()
+          onClick()
+        }
+        if (onClose) onClose()
+      }}
+    >
       <div className="modal-option-icon">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
           stroke="currentColor" strokeWidth="1.8">
@@ -122,9 +186,292 @@ function ModalOption({ to, iconPath, title, desc, onClose }) {
 function Home() {
   const [joinOpen,     setJoinOpen]     = useState(false)
   const [registerOpen, setRegisterOpen] = useState(false)
-  const navigate = useNavigate()
 
-return (
+  useEffect(() => {
+    const openJoin = () => setJoinOpen(true)
+    window.addEventListener('bookyhome:open-join', openJoin)
+    return () => window.removeEventListener('bookyhome:open-join', openJoin)
+  }, [])
+
+  // Limpiar modo oscuro en página pública (no autenticado)
+  useEffect(() => {
+    const token = localStorage.getItem('token')
+    if (!token) {
+      document.documentElement.classList.remove('dark')
+    }
+  }, [])
+  const [heroImageIndex, setHeroImageIndex] = useState(0)
+  const navigate = useNavigate()
+  const location = useLocation()
+
+  useEffect(() => {
+    const carouselTimer = setInterval(() => {
+      setHeroImageIndex(current => (current + 1) % HERO_IMAGES.length)
+    }, 5000)
+
+    return () => clearInterval(carouselTimer)
+  }, [])
+  
+  // Dashboard state — inicializar síncronamente desde el token para evitar flash
+  const _initAuth = () => {
+    const token = localStorage.getItem('token')
+    if (!token) return { isAuthenticated: false, userName: '', userId: null }
+    try {
+      const payload = jwtDecode(token)
+      return { isAuthenticated: true, userName: payload.nombre || 'Usuario', userId: Number.parseInt(payload.sub, 10) }
+    } catch {
+      return { isAuthenticated: false, userName: '', userId: null }
+    }
+  }
+  const _init = _initAuth()
+  const [isAuthenticated, setIsAuthenticated] = useState(_init.isAuthenticated)
+  const [userName, setUserName] = useState(_init.userName)
+  const [userEmail, setUserEmail] = useState('')
+  const [userId, setUserId] = useState(_init.userId)
+  const [profilePhotoUrl, setProfilePhotoUrl] = useState(null)
+  const [bannerUrl, setBannerUrl] = useState(null)
+  const [bannerColor, setBannerColor] = useState('#7A1E3A')
+  const [loading, setLoading] = useState(false)
+  const [activeSide, setActiveSide] = useState('Inicio')
+  const [catalogoLibroInicial, setCatalogoLibroInicial] = useState(null)
+  const [selectedSalaInChat, setSelectedSalaInChat] = useState(null)
+
+  // Stats públicos
+  const [stats, setStats] = useState({
+    libros_disponibles: null,
+    librerias_asociadas: null,
+    usuarios_activos: null,
+    calificacion_promedio: null,
+  })
+
+  useEffect(() => {
+    api.get('/catalogo/stats')
+      .then(res => setStats(res.data))
+      .catch(() => {})
+  }, [])
+  // Check authentication
+  useEffect(() => {
+    const checkAuth = () => {
+      const token = localStorage.getItem('token')
+      if (token) {
+        try {
+          const payload = jwtDecode(token)
+          setUserName(payload.nombre || 'Usuario')
+          const id = Number.parseInt(payload.sub, 10)
+          setUserId(id)
+          setIsAuthenticated(true)
+          // Cargar email, foto y banner desde el endpoint de perfil propio
+          api.get('/perfil/mi-perfil')
+            .then((res) => {
+              if (res.data) {
+                setUserEmail(res.data.correo_usuario || '')
+                const base = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000'
+                if (res.data.foto_perfil) {
+                  setProfilePhotoUrl(`${base}/${res.data.foto_perfil.replace(/^\//, '')}`)
+                } else {
+                  setProfilePhotoUrl(null)
+                }
+                if (res.data.banner_perfil) {
+                  setBannerUrl(`${base}/${res.data.banner_perfil.replace(/^\//, '')}`)
+                  setBannerColor(null)
+                } else if (res.data.banner_color) {
+                  setBannerColor(res.data.banner_color)
+                  setBannerUrl(null)
+                }
+              }
+            })
+            .catch((err) => console.error(err))
+        } catch (error) {
+          console.error('Error al decodificar token:', error)
+          setIsAuthenticated(false)
+        }
+      } else {
+        setIsAuthenticated(false)
+        setUserName('')
+        setUserEmail('')
+        setUserId(null)
+        setProfilePhotoUrl(null)
+      }
+      setLoading(false)
+    }
+    
+    checkAuth()
+    
+    // Escuchar evento personalizado de cambio de autenticación
+    const handleAuthChange = (e) => {
+      if (e.detail.authenticated) {
+        // Login — recargar datos del usuario
+        checkAuth()
+      } else {
+        // Logout — limpiar estado
+        setIsAuthenticated(false)
+        setUserName('')
+        setUserEmail('')
+        setUserId(null)
+        setProfilePhotoUrl(null)
+        setActiveSide('Inicio')
+      }
+    }
+    
+    window.addEventListener('auth-change', handleAuthChange)
+
+    // Escuchar cuando el usuario cambia su foto de perfil
+    const handlePhotoUpdate = (e) => {
+      if (e.detail?.url) setProfilePhotoUrl(e.detail.url)
+    }
+    window.addEventListener('profile-photo-updated', handlePhotoUpdate)
+
+    // Escuchar cuando el usuario cambia su banner
+    const handleBannerUpdate = (e) => {
+      if (e.detail?.bannerUrl) { setBannerUrl(e.detail.bannerUrl); setBannerColor(null) }
+      else if (e.detail?.bannerColor) { setBannerColor(e.detail.bannerColor); setBannerUrl(null) }
+    }
+    window.addEventListener('profile-banner-updated', handleBannerUpdate)
+    
+    return () => {
+      window.removeEventListener('auth-change', handleAuthChange)
+      window.removeEventListener('profile-photo-updated', handlePhotoUpdate)
+      window.removeEventListener('profile-banner-updated', handleBannerUpdate)
+    }
+  }, [])
+  
+
+  // Handle section selection
+  const handleSelectSection = (seccion) => {
+    startTransition(() => setActiveSide(seccion))
+    navigate(`/?seccion=${encodeURIComponent(seccion)}`, { replace: true })
+  }
+  
+  // Handle URL params for section
+  useEffect(() => {
+    const params = new URLSearchParams(location.search)
+    const seccion = params.get('seccion')
+    const salaParam = params.get('sala')
+    if (seccion && isAuthenticated) {
+      startTransition(() => {
+        setActiveSide(seccion === 'Direcciones' ? 'Mi Perfil' : seccion)
+      })
+    }
+    if (salaParam) {
+      startTransition(() => {
+        setSelectedSalaInChat(Number(salaParam))
+      })
+    }
+  }, [location.search, isAuthenticated])
+  
+  // Helper functions now live in their respective section components
+  
+  // If loading, show loading state
+  if (loading) {
+    return <SectionLoading />
+  }
+  
+  // If authenticated, check role: if seller/admin redirect to their dedicated dashboard
+  if (isAuthenticated) {
+    const role = getUserRole()
+    if (role === 'vendedor') {
+      return <Navigate to="/mi-tienda" replace />
+    }
+    if (role === 'admin' || role === 'administrador') {
+      return <Navigate to="/admin" replace />
+    }
+
+    return (
+      <div className={`dashboard-container ${activeSide === 'Inicio' ? 'home-view' : ''} ${activeSide === 'Soporte técnico' ? 'dashboard-container--compact' : ''}`}>
+        <CompradorSidebar
+          userName={userName}
+          userEmail={userEmail}
+          profilePhotoUrl={profilePhotoUrl}
+          bannerUrl={bannerUrl}
+          bannerColor={bannerColor}
+          activeSide={activeSide}
+          onSelect={handleSelectSection}
+        />
+        <main className={`dashboard-main ${activeSide === 'Mensajes' ? 'dashboard-main--chat' : ''}`}>
+          {activeSide === 'Inicio' && (
+            <div style={{ height: '100%', width: '100%', overflow: 'auto' }}>
+              <SeccionInicio
+                userName={userName}
+                onGoToCatalog={() => handleSelectSection('Catálogo')}
+                onSelectSeccion={handleSelectSection}
+                onVerDetalleLibro={(libro) => {
+                  setCatalogoLibroInicial(libro)
+                  handleSelectSection('Catálogo')
+                }}
+              />
+            </div>
+          )}
+          {activeSide === 'Mensajes' && (
+            <div style={{ height: '100%', width: '100%', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+              <Suspense fallback={<SectionLoading />}>
+                <Chat embedded={true} selectedSalaProp={selectedSalaInChat} onSelectSala={(id) => setSelectedSalaInChat(id)} />
+              </Suspense>
+            </div>
+          )}
+          {activeSide === 'Carrito' && (
+            <div style={{ height: '100%', width: '100%', overflow: 'auto' }}>
+              <Suspense fallback={<SectionLoading />}><SeccionCarrito userId={userId} /></Suspense>
+            </div>
+          )}
+          {activeSide === 'Mis Compras' && (
+            <div style={{ height: '100%', width: '100%', overflow: 'auto' }}>
+              <Suspense fallback={<SectionLoading />}><SeccionMisCompras userId={userId} /></Suspense>
+            </div>
+          )}
+          {activeSide === 'Seguimiento' && (
+            <div style={{ height: '100%', width: '100%', overflow: 'auto' }}><SeccionSeguimiento userId={userId} /></div>
+          )}
+          {activeSide === 'Lista de Deseos' && (
+            <div style={{ height: '100%', width: '100%', overflow: 'auto' }}>
+              <Suspense fallback={<SectionLoading />}>
+                <ListaDeseos
+                  embedded
+                  onIrCatalogo={() => handleSelectSection('Catálogo')}
+                  onVerLibro={(libro) => {
+                    setCatalogoLibroInicial(libro)
+                    handleSelectSection('Catálogo')
+                  }}
+                />
+              </Suspense>
+            </div>
+          )}
+          {activeSide === 'Favoritos' && (
+            <div style={{ height: '100%', width: '100%', overflow: 'auto' }}><SeccionFavoritos
+              onGoToCatalog={() => handleSelectSection('Catálogo')}
+              onSetActiveSide={handleSelectSection}
+            /></div>
+          )}
+          {activeSide === 'Mi Perfil' && (
+            <div style={{ height: '100%', width: '100%', overflow: 'auto' }}><SeccionMiPerfil userId={userId} /></div>
+          )}
+          {activeSide === 'Mis Direcciones' && (
+            <div style={{ height: '100%', width: '100%', overflow: 'auto' }}><SeccionMisDirecciones /></div>
+          )}
+          {activeSide === 'Configuración' && (
+            <div style={{ height: '100%', width: '100%', overflow: 'auto' }}><SeccionConfiguracion userId={userId} /></div>
+          )}
+          {activeSide === 'Notificaciones' && (
+            <div style={{ height: '100%', width: '100%', overflow: 'auto' }}><SeccionNotificaciones /></div>
+          )}
+          {activeSide === 'Catálogo' && (
+            <div style={{ height: '100%', width: '100%', overflow: 'auto' }}>
+              <Suspense fallback={<SectionLoading />}>
+                <Catalogo
+                  libroInicial={catalogoLibroInicial}
+                  onLibroInicialConsumido={() => setCatalogoLibroInicial(null)}
+                />
+              </Suspense>
+            </div>
+          )}
+          {activeSide === 'Quejas y reclamos' && <div style={{ height: '100%', width: '100%', overflow: 'auto' }}><Suspense fallback={<SectionLoading />}><QuejasReclamos /></Suspense></div>}
+          {activeSide === 'Soporte técnico' && <div style={{ height: '100%', width: '100%', overflow: 'auto' }}><Suspense fallback={<SectionLoading />}><Soporte /></Suspense></div>}
+        </main>
+      </div>
+    )
+  }
+  
+  // If not authenticated, show public home
+  return (
   <>
 
     {/* HERO */}
@@ -137,12 +484,52 @@ return (
             <button className="btn btn-primary" onClick={() => setJoinOpen(true)}>
               Comenzar a comprar
             </button>
-            <Link to="/libreria" className="btn" id="btn-vender-libros">Vender libros</Link>
+            <button
+              type="button"
+              className="btn"
+              id="btn-vender-libros"
+              onClick={() => window.dispatchEvent(new CustomEvent('bookyhome:open-library-register'))}
+            >
+              Vender libros
+            </button>
           </div>
         </div>
-        <div className="hero-image">
-          <img src="https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=800&q=80"
-            alt="Personas explorando libros en una librería" />
+        <div className="hero-image" aria-label="Galería de libros">
+          <div className="hero-carousel-frame">
+            <img
+              key={HERO_IMAGES[heroImageIndex].src}
+              src={HERO_IMAGES[heroImageIndex].src}
+              alt={HERO_IMAGES[heroImageIndex].alt}
+            />
+            <button
+              type="button"
+              className="hero-carousel-arrow hero-carousel-arrow--prev"
+              aria-label="Imagen anterior"
+              onClick={() => setHeroImageIndex(current => (current - 1 + HERO_IMAGES.length) % HERO_IMAGES.length)}
+            >
+              ‹
+            </button>
+            <button
+              type="button"
+              className="hero-carousel-arrow hero-carousel-arrow--next"
+              aria-label="Siguiente imagen"
+              onClick={() => setHeroImageIndex(current => (current + 1) % HERO_IMAGES.length)}
+            >
+              ›
+            </button>
+            <div className="hero-carousel-dots" aria-label="Seleccionar imagen">
+              {HERO_IMAGES.map((image, index) => (
+                <button
+                  type="button"
+                  key={image.src}
+                  className={index === heroImageIndex ? 'active' : ''}
+                  aria-label={`Mostrar imagen ${index + 1}`}
+                  aria-current={index === heroImageIndex ? 'true' : undefined}
+                  onClick={() => setHeroImageIndex(index)}
+                />
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -150,20 +537,40 @@ return (
       {/* STATS */}
       <section className="stats">
         <div className="layout-container stats-container">
-          {STATS.map((s, i) => (
-            <div key={i} className="stat-item">
-              <div className={`stat-icon ${s.color}`}>
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-                  stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d={s.icon}/>
-                </svg>
+          {STATS_CONFIG.map((s, i) => {
+            const valor = stats[s.key]
+            const num = valor === null
+              ? '...'
+              : s.decimals > 0
+                ? `${s.prefix}${Number(valor).toFixed(s.decimals)}`
+                : `${s.prefix}${Number(valor).toLocaleString('es-CO')}`
+            return (
+              <div key={i} className="stat-item">
+                <div className={`stat-icon ${s.color}`}>
+                  {s.icon ? (
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d={s.icon}/>
+                    </svg>
+                  ) : (
+                    <IconUsers />
+                  )}
+                </div>
+                <h2>{num}</h2>
+                <p>{s.label}</p>
               </div>
-              <h2>{s.num}</h2>
-              <p>{s.label}</p>
-            </div>
-          ))}
+            )
+          })}
         </div>
       </section>
+
+      {/* CARRUSELES PÚBLICOS */}
+      <CarruselPublico
+        onVerDetalles={(libro) => navigate(`/catalogo?q=${encodeURIComponent(libro.titulo)}`)}
+      />
+
+      {/* LIBRERÍAS DESTACADAS */}
+      <LibreriasDestacadas />
 
       {/* BENEFITS */}
       <section className="benefits">
@@ -232,18 +639,28 @@ return (
         <div className="layout-container">
           <h2>¿Tienes una librería?</h2>
           <p>Únete a nuestra red de librerías y alcanza a miles de lectores en todo el país.</p>
-          <Link to="/libreria" className="btn btn-primary">Registrar mi librería</Link>
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={() => window.dispatchEvent(new CustomEvent('bookyhome:open-library-register'))}
+          >
+            Registrar mi librería
+          </button>
         </div>
       </section>
 
       {/* MODAL: Comenzar a comprar */}
       <Modal open={joinOpen} onClose={() => setJoinOpen(false)}
         title="¡Bienvenido a BookyHome!" subtitle="¿Ya tienes cuenta o eres nuevo por aquí?">
-        <ModalOption to="/login" onClose={() => setJoinOpen(false)}
+        <ModalOption
+          onClick={() => window.dispatchEvent(new CustomEvent('bookyhome:open-login'))}
+          onClose={() => setJoinOpen(false)}
           iconPath="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.5 20.25a8.25 8.25 0 0115 0"
           title="Ya tengo cuenta" desc="Iniciar sesión en BookyHome" />
-        <ModalOption to="/register" onClose={() => setJoinOpen(false)}
-          iconPath="M19 7.5v3m0 0v3m0-3h3m-3 0h-3m-4.5-1.5a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM3 19.235v-.11a6.375 6.375 0 0112.75 0v.109A12.318 12.318 0 019.374 21c-2.331 0-4.512-.645-6.374-1.766z"
+        <ModalOption
+          onClick={() => window.dispatchEvent(new CustomEvent('bookyhome:open-register'))}
+          onClose={() => setJoinOpen(false)}
+          iconPath="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M8.5 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM20 8v6M17 11h6"
           title="Soy nuevo" desc="Crear una cuenta gratis" />
       </Modal>
 

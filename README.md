@@ -50,7 +50,7 @@ Estructura principal:
 - `app/email.py`: envio de correos de recuperacion.
 - `app/schemas.py`: validaciones Pydantic.
 - `Dockerfile`: imagen del backend.
-- `requirements.txt`: dependencias Python.
+- `pyproject.toml` y `uv.lock`: dependencias Python y versiones bloqueadas.
 
 Mas detalle en:
 
@@ -145,22 +145,7 @@ Cuando se usa Docker, este script se ejecuta automaticamente la primera vez que 
 
 1. Clonar el repositorio.
 
-2. Crear un archivo `.env` en `backend/` con el siguiente contenido. Ajusta los valores de correo segun corresponda:
-
-```dotenv
-MAIL_USERNAME=tu_correo@gmail.com
-MAIL_PASSWORD=tu_app_password
-MAIL_FROM=tu_correo@gmail.com
-MAIL_SERVER=smtp.gmail.com
-MAIL_PORT=587
-
-# Variables de la Base de Datos para Docker y Backend
-DB_HOST=mysql
-DB_PORT=3306
-DB_USER=root
-DB_PASSWORD=root
-DB_NAME=bookyhome
-```
+2. Crear un archivo `.env` en `backend/` basándose en el archivo `.env.example` de ejemplo. Ajusta los valores de correo y base de datos según corresponda.
 
 3. Desde la raiz del proyecto, ejecutar:
 
@@ -216,6 +201,10 @@ docker compose up -d --build backend
 - El backend espera a que MySQL este saludable antes de iniciar, gracias al `healthcheck` y `depends_on`.
 - El frontend web y el backend quedan disponibles en `localhost`.
 - La app movil debe usar la IP local del computador, no `localhost`.
+
+## Respaldos y restauracion
+
+La guia completa para crear backups, configurarlos automaticamente y restaurarlos esta en [scripts/README.md](scripts/README.md). La carpeta `scripts/` contiene las herramientas compartidas y `backups/` contiene los archivos generados, excluidos de Git porque pueden incluir datos reales.
 
 ## Como ejecutar la app movil con Expo
 
@@ -327,6 +316,17 @@ Estos comandos entran a `frontend/` y ejecutan el script correspondiente.
 - `frontend/README.md`: detalles del frontend web.
 - `backend/README.md`: detalles de la API.
 - `app-movil/README.md`: detalles de la app movil.
+- `autenticacion.md`: detalles del modulo de autenticacion.
+- `registro.md`: detalles del modulo de registro.
+- `reportes.md`: detalles del modulo de reportes.
+
+## Ayuda y soporte
+
+- **Guía rápida de uso:** [`docs/ayuda/guia-rapida.md`](docs/ayuda/guia-rapida.md)
+- **Preguntas frecuentes:** [`docs/ayuda/preguntas-frecuentes.md`](docs/ayuda/preguntas-frecuentes.md)
+- **Reportar una falla:** [Abrir un issue](https://github.com/bookyhome/biblioteca/issues/new?template=reporte-de-falla.md)
+- **Canal de soporte (Telegram):** @bookyhome_ops
+- **Runbooks de operación:** [`docs/runbooks/`](docs/runbooks/)
 
 ## Estado general
 
@@ -339,3 +339,5 @@ El proyecto esta organizado por capas:
 - App movil con navegacion, pantallas, contextos y servicios.
 - Base de datos inicializada por SQL.
 - Entorno web dockerizado para levantar frontend, backend y MySQL con un solo comando.
+Integración Módulo Autenticación - Compañero C
+Integración Módulo Registro - Cristopher

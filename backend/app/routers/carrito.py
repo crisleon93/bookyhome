@@ -1,4 +1,3 @@
-from fastapi import APIRouter
 from fastapi import APIRouter, HTTPException, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from app.auth import verify_token
@@ -8,6 +7,7 @@ from app.models.carrito import (
     eliminar_item_carrito,
     vaciar_carrito,
     checkout_carrito,
+    crear_orden_directa,
 )
 
 router = APIRouter()
@@ -22,15 +22,19 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
     return payload
 
 
-@router.get("/carrito")
+def _get_user_id(user: dict) -> int:
+    return int(user["sub"])
+
+
+@router.get("")
 def get_my_carrito(user=Depends(get_current_user)):
-    id_usuario = int(user["sub"])
+    id_usuario = _get_user_id(user)
     return obtener_carrito(id_usuario)
 
 
-@router.post("/carrito")
+@router.post("")
 def add_to_cart(data: dict, user=Depends(get_current_user)):
-    id_usuario = int(user["sub"])
+    id_usuario = _get_user_id(user)
     id_libro = data.get("id_libro")
     cantidad = max(1, int(data.get("cantidad", 1)))
 
@@ -44,27 +48,49 @@ def add_to_cart(data: dict, user=Depends(get_current_user)):
         "autor_libro": data.get("autor_libro", ""),
         "precio_libro": float(data.get("precio_libro", 0)),
         "imagen": data.get("imagen"),
+        "id_variante": data.get("id_variante"),
+        "variante_label": data.get("variante_label"),
     }
 
     return agregar_al_carrito(id_usuario, item)
 
 
-@router.delete("/carrito/{id_libro}")
+@router.delete("/{id_libro}")
 def remove_from_cart(id_libro: int, user=Depends(get_current_user)):
-    id_usuario = int(user["sub"])
+    id_usuario = _get_user_id(user)
     return eliminar_item_carrito(id_usuario, id_libro)
 
 
-@router.post("/carrito/checkout")
-def checkout(user=Depends(get_current_user)):
-    id_usuario = int(user["sub"])
-    resultado = checkout_carrito(id_usuario)
+@router.post("/checkout")
+def checkout(data: dict | None = None, user=Depends(get_current_user)):
+    id_usuario = _get_user_id(user)
+    payload = data or {}
+    resultado = checkout_carrito(
+        id_usuario,
+        payload.get("id_direccion"),
+        payload.get("tipo_entrega", "domicilio")
+    )
     if not resultado["ok"]:
         raise HTTPException(status_code=400, detail=resultado["error"])
     return resultado
 
 
-@router.post("/carrito/clear")
+@router.post("/checkout-directo")
+def checkout_directo(data: dict, user=Depends(get_current_user)):
+    id_usuario = _get_user_id(user)
+    payload = data or {}
+    resultado = crear_orden_directa(
+        id_usuario,
+        payload,
+        payload.get("id_direccion"),
+        payload.get("tipo_entrega", "domicilio")
+    )
+    if not resultado["ok"]:
+        raise HTTPException(status_code=400, detail=resultado["error"])
+    return resultado
+
+
+@router.post("/clear")
 def clear_my_cart(user=Depends(get_current_user)):
-    id_usuario = int(user["sub"])
+    id_usuario = _get_user_id(user)
     return vaciar_carrito(id_usuario)

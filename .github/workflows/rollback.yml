@@ -1,0 +1,133 @@
+# rollback.yml — Rollback de BookyHome sin reconstruir
+# Se ejecuta manualmente (workflow_dispatch) indicando la version a la que volver.
+# No construye imagenes: usa la imagen ya publicada en GHCR para esa version.
+# Despliega en Render via API (deploy desde el commit de esa etiqueta) y verifica.
+
+name: Rollback
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version a la que rollback (ej: 1.0.0, sin la v)'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  rollback:
+    name: rollback a v${{ inputs.version }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: produccion
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verificar que la etiqueta existe
+        run: |
+          TAG="v${{ inputs.version }}"
+          if ! git tag -l "$TAG" | grep -q "$TAG"; then
+            echo "::error::La etiqueta $TAG no existe en el repositorio."
+            exit 1
+          fi
+          COMMIT_SHA=$(git rev-list -n 1 "$TAG")
+          echo "Etiqueta $TAG -> commit $COMMIT_SHA"
+          echo "commit_sha=$COMMIT_SHA" >> "$GITHUB_ENV"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login a GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # ── Verificar que la imagen ya existe en GHCR (sin reconstruir) ─────────
+      - name: Verificar imagen del backend en GHCR
+        run: |
+          IMAGE="ghcr.io/${{ github.repository_owner }}/bkh-backend:${{ inputs.version }}"
+          echo "Verificando que $IMAGE ya existe (pull, no build)..."
+          docker pull "$IMAGE"
+          echo "Imagen encontrada — no se necesita reconstruir."
+
+      - name: Verificar imagen del frontend en GHCR
+        run: |
+          IMAGE="ghcr.io/${{ github.repository_owner }}/bkh-frontend:${{ inputs.version }}"
+          echo "Verificando que $IMAGE ya existe (pull, no build)..."
+          docker pull "$IMAGE"
+          echo "Imagen encontrada — no se necesita reconstruir."
+
+      # ── Desplegar en Render desde el commit de la etiqueta anterior ──────────
+      # La API de Render permite crear un deploy desde un commit especifico.
+      # No se construye nada en el workflow: Render construye desde ese commit,
+      # y la imagen de GHCR ya esta disponible para el servidor (VM).
+      - name: Desplegar en Render (API — deploy desde commit)
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          RENDER_SERVICE_ID_API: ${{ secrets.RENDER_SERVICE_ID_API }}
+        run: |
+          echo "Creando deploy en Render desde commit ${{ env.commit_sha }}..."
+          RESPONSE=$(curl -s -w "\n%{http_code}" \
+            -X POST "https://api.render.com/v1/services/${RENDER_SERVICE_ID_API}/deploys" \
+            -H "Authorization: Bearer ${RENDER_API_KEY}" \
+            -H "Content-Type: application/json" \
+            -H "Accept: application/json" \
+            -d "{\"commitId\": \"${{ env.commit_sha }}\"}")
+
+          HTTP_CODE=$(echo "$RESPONSE" | tail -1)
+          BODY=$(echo "$RESPONSE" | head -n -1)
+          echo "Render API respondio HTTP $HTTP_CODE"
+          echo "Cuerpo: $BODY"
+
+          if [ "$HTTP_CODE" != "201" ] && [ "$HTTP_CODE" != "200" ]; then
+            echo "::error::No se pudo crear el deploy en Render (HTTP $HTTP_CODE)"
+            exit 1
+          fi
+
+          # Extraer el ID del deploy para poder consultar su estado
+          DEPLOY_ID=$(echo "$BODY" | grep -o '"id":"[^"]*"' | head -1 | grep -o '"[^"]*"$' | tr -d '"')
+          echo "Deploy ID: $DEPLOY_ID"
+          echo "deploy_id=$DEPLOY_ID" >> "$GITHUB_ENV"
+
+      # ── Esperar y verificar produccion ──────────────────────────────────────
+      - name: Esperar y verificar produccion
+        env:
+          API_URL: https://bookyhome-api.onrender.com
+          WEB_URL: https://bookyhome-web.onrender.com
+          EXPECTED_VERSION: ${{ inputs.version }}
+        run: |
+          echo "Esperando a que Render levante el rollback..."
+          sleep 30
+          MAX_RETRIES=40
+          DEPLOY_OK=false
+          for i in $(seq 1 $MAX_RETRIES); do
+            HEALTH=$(curl -sf --max-time 15 "$API_URL/health" 2>/dev/null || echo "")
+            if [ -n "$HEALTH" ]; then
+              DEPLOYED_VERSION=$(echo "$HEALTH" | grep -o '"version":"[^"]*"' | grep -o '"[^"]*"$' | tr -d '"')
+              echo "Version desplegada: $DEPLOYED_VERSION (esperada: $EXPECTED_VERSION)"
+              if [ "$DEPLOYED_VERSION" = "$EXPECTED_VERSION" ]; then
+                echo "Rollback confirmado: version correcta en produccion"
+                DEPLOY_OK=true
+                break
+              fi
+            fi
+            echo "Intento $i/$MAX_RETRIES — esperando..."
+            sleep 15
+          done
+
+          if [ "$DEPLOY_OK" != "true" ]; then
+            echo "::error::El rollback no se reflejo en produccion tras $MAX_RETRIES intentos."
+            exit 1
+          fi
+
+          echo "Ejecutando prueba de humo en produccion..."
+          bash scripts/smoke-test.sh "$API_URL" "$WEB_URL"

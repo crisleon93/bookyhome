@@ -1,9 +1,13 @@
 // src/screens/Login.jsx
-import React, { useContext, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import {
   View, Text, TextInput, StyleSheet, Alert, ActivityIndicator,
-  TouchableOpacity, ScrollView, SafeAreaView, KeyboardAvoidingView, Platform,
+  TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, Modal,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import * as LocalAuthentication from 'expo-local-authentication';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import LottieView from 'lottie-react-native';
 import api from '../services/api';
 import { AuthContext } from '../context/AuthContext';
 import AuthHeader from '../components/AuthHeader';
@@ -11,39 +15,258 @@ import Footer from '../components/Footer';
 import { IconMail, IconLock, IconEye, IconEyeOff, IconGoogle } from '../components/Icons';
 
 const VINOTINTO = '#7A1E3A';
-const ROJO_SUAVE = '#C5425A';
 const BEIGE = '#F4EDE2';
 const CARBON = '#2A2A2A';
 const GRAY = '#888';
 const BORDER = '#E0DBD4';
 const WHITE = '#FFFFFF';
 
+function traducirErrorLogin(error) {
+  const detail = error.response?.data?.detail;
+  if (Array.isArray(detail)) {
+    return detail.map((item) => {
+      const field = item?.loc?.[item.loc.length - 1];
+      const type = String(item?.type || '').toLowerCase();
+      const message = String(item?.msg || '').toLowerCase();
+
+      if (field === 'email' && (type.includes('email') || message.includes('email'))) {
+        return 'El correo electrónico no tiene un formato válido.';
+      }
+      if (type.includes('missing') || message.includes('field required')) {
+        return 'Completa todos los campos obligatorios.';
+      }
+      if (type.includes('string_too_short') || message.includes('too short')) {
+        return 'Uno de los campos es demasiado corto.';
+      }
+      if (type.includes('string_too_long') || message.includes('too long')) {
+        return 'Uno de los campos excede la longitud permitida.';
+      }
+      return 'Revisa los datos ingresados e intenta de nuevo.';
+    }).join(' ');
+  }
+
+  if (error.response?.status === 422) {
+    const message = String(detail || '').toLowerCase();
+    if (message.includes('email') || message.includes('correo')) {
+      return 'El correo electrónico no tiene un formato válido.';
+    }
+    return 'Revisa que el correo tenga un formato válido y que ambos campos estén completos.';
+  }
+
+  if (typeof detail === 'string' && detail.trim()) return detail;
+  if (error.code === 'ECONNABORTED') return 'La solicitud tardó demasiado. Intenta de nuevo.';
+  if (!error.response) return 'No se pudo conectar con el servidor. Revisa tu conexión e intenta de nuevo.';
+  return 'No se pudo iniciar sesión. Intenta de nuevo.';
+}
+
 export default function Login({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [remember, setRemember] = useState(false);
+  const [enableBiometrics, setEnableBiometrics] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { signIn } = useContext(AuthContext);
+  const [loginError, setLoginError] = useState('');
+  const [biometricAvailable, setBiometricAvailable] = useState(false);
+  const [supportedBiometricTypes, setSupportedBiometricTypes] = useState([]);
+  const [biometricLoading, setBiometricLoading] = useState(false);
+  const [biometricModalVisible, setBiometricModalVisible] = useState(false);
+  const [biometricModalOptions, setBiometricModalOptions] = useState([]);
+  const [biometricSuccessToken, setBiometricSuccessToken] = useState(null);
+  const {
+    signIn,
+    biometricEnabled,
+    biometricLocked,
+    pendingToken,
+    unlockWithBiometrics,
+    setBiometricPreference,
+  } = useContext(AuthContext);
 
-  const handleLogin = async () => {
-    if (!email.trim() || !password) {
-      Alert.alert('Error', 'Ingresa email y contraseña');
+  useEffect(() => {
+    const checkSupport = async () => {
+      try {
+        const hasHardware = await LocalAuthentication.hasHardwareAsync();
+        const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+        const supportedTypes = await LocalAuthentication.supportedAuthenticationTypesAsync();
+        const available = hasHardware && isEnrolled && supportedTypes.length > 0;
+        setSupportedBiometricTypes(supportedTypes);
+        setBiometricAvailable(available);
+      } catch (error) {
+        setBiometricAvailable(false);
+      }
+    };
+
+    void checkSupport();
+  }, []);
+
+  useEffect(() => {
+    if (!biometricLocked || !pendingToken || !biometricAvailable) return;
+
+    const runPrompt = async () => {
+      setBiometricLoading(true);
+      const result = await unlockWithBiometrics();
+      if (!result.success && result.reason !== 'cancelled') {
+        showBiometricError(result);
+      }
+      setBiometricLoading(false);
+    };
+
+    void runPrompt();
+  }, [biometricAvailable, biometricLocked, pendingToken, unlockWithBiometrics]);
+
+  const showBiometricError = (result) => {
+    if (result.reason === 'no_session') {
+      Alert.alert(
+        'Sesión no guardada',
+        'No hay una sesión biométrica activa. Ve a iniciar sesión y marca "Usar Face ID / Huella" para habilitarla.'
+      );
       return;
     }
+
+    if (result.reason === 'not_enrolled' || result.reason === 'no_hardware') {
+      Alert.alert(
+        'Biometría no disponible',
+        'Activa Face ID o huella en la configuración de tu dispositivo y vuelve a iniciar sesión.'
+      );
+      return;
+    }
+
+    if (result.reason === 'cancelled') {
+      return;
+    }
+
+    Alert.alert(
+      'No se pudo verificar',
+      'Intenta de nuevo o inicia sesión con tu email y contraseña.'
+    );
+  };
+
+  const handleLogin = async () => {
+    if (loading) return;
+
+    if (!email.trim() || !password) {
+      const message = 'Ingresa email y contraseña';
+      setLoginError(message);
+      if (Platform.OS !== 'web') Alert.alert('Error', message);
+      return;
+    }
+
+    setLoginError('');
     setLoading(true);
     try {
-      const res = await api.post('/login', { email, password });
+      const res = await api.post('/login', { email: email.trim(), password });
       const token = res.data?.access_token;
       if (!token) throw new Error('No se recibió token');
-      await signIn(token);
+
+      if (enableBiometrics && biometricAvailable) {
+        await setBiometricPreference(true);
+        setBiometricSuccessToken(token);
+      } else {
+        await signIn(token, { enableBiometrics: false });
+      }
     } catch (err) {
-      const msg = err.response?.data?.detail || err.message || 'Error';
-      Alert.alert('Error', String(msg));
+      if (err.code === 'ERR_CANCELED' || err.name === 'CanceledError') {
+        return;
+      }
+      const msg = traducirErrorLogin(err);
+      setLoginError(String(msg));
+      if (Platform.OS !== 'web') Alert.alert('Error', String(msg));
     } finally {
       setLoading(false);
     }
   };
+
+  const handleBiometricUnlock = async (method) => {
+    setBiometricLoading(true);
+    const result = await unlockWithBiometrics(method);
+
+    if (!result.success && method === 'face' && result.reason !== 'cancelled') {
+      const message =
+        result.reason === 'not_enrolled'
+          ? 'Tu dispositivo no tiene Face ID configurado.'
+          : result.reason === 'no_hardware'
+          ? 'Tu dispositivo no tiene soporte de Face ID.'
+          : result.reason === 'failed'
+          ? `No se pudo desbloquear con Face ID (${result.error || 'error desconocido'}).`
+          : 'No se pudo desbloquear con Face ID.';
+
+      Alert.alert(
+        'Face ID no disponible',
+        message,
+        [
+          {
+            text: 'Usar huella',
+            onPress: async () => {
+              const fingerprintResult = await unlockWithBiometrics('fingerprint');
+              if (!fingerprintResult.success) {
+                showBiometricError(fingerprintResult);
+              }
+            },
+          },
+          { text: 'Cancelar', style: 'cancel' },
+        ],
+        { cancelable: true }
+      );
+    } else if (!result.success) {
+      showBiometricError(result);
+    }
+
+    setBiometricLoading(false);
+  };
+
+  const faceSupported = supportedBiometricTypes.includes(LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION);
+  const fingerprintSupported = supportedBiometricTypes.includes(LocalAuthentication.AuthenticationType.FINGERPRINT);
+
+  const handleBiometricButtonPress = async () => {
+    if (!biometricAvailable) {
+      Alert.alert('Biometría no disponible', 'Activa Face ID o huella en tu dispositivo.');
+      return;
+    }
+
+    if (!biometricEnabled || !pendingToken) {
+      Alert.alert(
+        'No hay sesión biométrica activa',
+        'Inicia sesión con email y contraseña y marca "Usar Face ID / Huella" para habilitarla.'
+      );
+      return;
+    }
+
+    let currentSupportedTypes = supportedBiometricTypes;
+    try {
+      currentSupportedTypes = await LocalAuthentication.supportedAuthenticationTypesAsync();
+      setSupportedBiometricTypes(currentSupportedTypes);
+    } catch (error) {
+      // Keep the previous supported types if refresh fails
+    }
+
+    const currentFaceSupported = currentSupportedTypes.includes(LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION);
+    const currentFingerprintSupported = currentSupportedTypes.includes(LocalAuthentication.AuthenticationType.FINGERPRINT);
+
+    const buttons = [];
+
+    if (currentFaceSupported) {
+      buttons.push({ label: 'Face ID', onPress: () => handleBiometricUnlock('face') });
+    }
+    if (currentFingerprintSupported) {
+      buttons.push({ label: 'Huella dactilar', onPress: () => handleBiometricUnlock('fingerprint') });
+    }
+
+    setBiometricModalOptions(buttons);
+    setBiometricModalVisible(true);
+  };
+
+  const canUnlockWithBiometrics = biometricEnabled && pendingToken && biometricAvailable;
+  const biometricMethodNames = supportedBiometricTypes
+    .map((type) => {
+      if (type === LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION) {
+        return 'Face ID';
+      }
+      if (type === LocalAuthentication.AuthenticationType.FINGERPRINT) return 'Huella';
+      return 'Biometría';
+    })
+    .join(' + ');
+
+  const biometricButtonLabel = 'Ingresar con Huella o Face ID';
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -56,13 +279,27 @@ export default function Login({ navigation }) {
           showsVerticalScrollIndicator={false}
         >
           <AuthHeader />
-
+          <TouchableOpacity
+            style={styles.backArrow}
+            onPress={() => navigation.navigate('Home')}
+            activeOpacity={0.75}
+          >
+            <Text style={styles.backArrowText}>‹</Text>
+          </TouchableOpacity>
           <View style={styles.authMain}>
             <View style={styles.authCard}>
-              <Text style={styles.title}>Iniciar Sesión</Text>
-              <Text style={styles.subtitle}>Ingresa a tu cuenta de BookyHome</Text>
+              <View style={styles.heroContainer}>
+                <LottieView
+                  source={require('../assets/biometric-login.json')}
+                  autoPlay
+                  loop
+                  style={styles.lottie}
+                />
+              </View>
 
-              {/* Email */}
+              <Text style={styles.title}>Iniciar Sesión</Text>
+              <Text style={styles.subtitle}>Ingresa a tu cuenta de BookyHome con una experiencia más fluida.</Text>
+
               <View style={styles.field}>
                 <Text style={styles.label}>Email</Text>
                 <View style={styles.inputWrapper}>
@@ -71,17 +308,16 @@ export default function Login({ navigation }) {
                   </View>
                   <TextInput
                     style={styles.input}
-                    placeholder="tu@email.com"
+                    placeholder="ejemplo@gmail.com"
                     placeholderTextColor="#aaa"
                     value={email}
-                    onChangeText={setEmail}
+                    onChangeText={(value) => { setEmail(value); setLoginError(''); }}
                     autoCapitalize="none"
                     keyboardType="email-address"
                   />
                 </View>
               </View>
 
-              {/* Contraseña */}
               <View style={styles.field}>
                 <Text style={styles.label}>Contraseña</Text>
                 <View style={styles.inputWrapper}>
@@ -90,10 +326,10 @@ export default function Login({ navigation }) {
                   </View>
                   <TextInput
                     style={styles.input}
-                    placeholder="Tu contraseña"
+                    placeholder="Contraseña"
                     placeholderTextColor="#aaa"
                     value={password}
-                    onChangeText={setPassword}
+                    onChangeText={(value) => { setPassword(value); setLoginError(''); }}
                     secureTextEntry={!showPassword}
                   />
                   <TouchableOpacity
@@ -105,7 +341,6 @@ export default function Login({ navigation }) {
                 </View>
               </View>
 
-              {/* Olvidé contraseña */}
               <TouchableOpacity
                 style={styles.forgotWrap}
                 onPress={() => navigation.navigate('ForgotPassword')}
@@ -113,19 +348,38 @@ export default function Login({ navigation }) {
                 <Text style={styles.forgotText}>¿Olvidaste tu contraseña?</Text>
               </TouchableOpacity>
 
-              {/* Recordarme */}
-              <TouchableOpacity
-                style={styles.rememberRow}
-                onPress={() => setRemember(!remember)}
-                activeOpacity={0.7}
-              >
-                <View style={[styles.checkbox, remember && styles.checkboxChecked]}>
-                  {remember && <Text style={styles.checkboxMark}>✓</Text>}
-                </View>
-                <Text style={styles.rememberText}>Recordarme</Text>
-              </TouchableOpacity>
+              <View style={styles.optionList}>
+                <TouchableOpacity
+                  style={styles.rememberRow}
+                  onPress={() => setRemember(!remember)}
+                  activeOpacity={0.7}
+                >
+                  <View style={[styles.checkbox, remember && styles.checkboxChecked]}>
+                    {remember && <Text style={styles.checkboxMark}>✓</Text>}
+                  </View>
+                  <Text style={styles.rememberText}>Recordarme</Text>
+                </TouchableOpacity>
 
-              {/* Botón Ingresar */}
+                {!!loginError && (
+                  <View style={styles.loginErrorBox} accessibilityRole="alert">
+                    <Text style={styles.loginErrorText}>{loginError}</Text>
+                  </View>
+                )}
+
+                {biometricAvailable && (
+                  <TouchableOpacity
+                    style={styles.rememberRow}
+                    onPress={() => setEnableBiometrics(!enableBiometrics)}
+                    activeOpacity={0.7}
+                  >
+                    <View style={[styles.checkbox, enableBiometrics && styles.checkboxChecked]}>
+                      {enableBiometrics && <Text style={styles.checkboxMark}>✓</Text>}
+                    </View>
+                    <Text style={styles.rememberText}>Usar Face ID / Huella</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+
               <TouchableOpacity
                 style={[styles.submitBtn, loading && styles.disabledBtn]}
                 onPress={handleLogin}
@@ -139,20 +393,33 @@ export default function Login({ navigation }) {
                 )}
               </TouchableOpacity>
 
-              {/* Divider */}
+              {biometricAvailable && (
+                <TouchableOpacity
+                  style={styles.bioButton}
+                  onPress={handleBiometricButtonPress}
+                  disabled={biometricLoading}
+                  activeOpacity={0.85}
+                >
+                  {biometricLoading ? (
+                    <ActivityIndicator color={VINOTINTO} />
+                  ) : (
+                    <Text style={styles.bioButtonText}>{biometricButtonLabel}</Text>
+                  )}
+                </TouchableOpacity>
+              )}
+
+
               <View style={styles.divider}>
                 <View style={styles.dividerLine} />
                 <Text style={styles.dividerText}>o continúa con</Text>
                 <View style={styles.dividerLine} />
               </View>
 
-              {/* Google */}
               <TouchableOpacity style={styles.googleBtn} activeOpacity={0.85}>
                 <IconGoogle size={18} />
                 <Text style={styles.googleText}>Continuar con Google</Text>
               </TouchableOpacity>
 
-              {/* Footer link */}
               <View style={styles.footerLinks}>
                 <Text style={styles.footerText}>
                   ¿No tienes cuenta?{' '}
@@ -170,18 +437,90 @@ export default function Login({ navigation }) {
           <Footer onLinkPress={(link) => console.log('Footer link:', link)} />
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* Modal biométrico personalizado */}
+      <Modal
+        visible={biometricModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setBiometricModalVisible(false)}
+      >
+        <TouchableOpacity
+          style={styles.bioModalOverlay}
+          activeOpacity={1}
+          onPress={() => setBiometricModalVisible(false)}
+        >
+          <View style={styles.bioModalCard} onStartShouldSetResponder={() => true}>
+            {/* Franja vinotinto superior */}
+            <View style={styles.bioModalHeader}>
+              <Text style={styles.bioModalTitle}>Elige un método</Text>
+            </View>
+            <Text style={styles.bioModalSubtitle}>
+              Selecciona cómo deseas desbloquear la app.
+            </Text>
+            {/* Botones de opciones */}
+            <View style={styles.bioModalOptions}>
+              {biometricModalOptions.map((btn, i) => (
+                <TouchableOpacity
+                  key={i}
+                  style={styles.bioModalOptionBtn}
+                  activeOpacity={0.8}
+                  onPress={() => {
+                    setBiometricModalVisible(false);
+                    btn.onPress();
+                  }}
+                >
+                  <Text style={styles.bioModalOptionText}>{btn.label}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            {/* Cancelar */}
+            <TouchableOpacity
+              style={styles.bioModalCancelBtn}
+              activeOpacity={0.7}
+              onPress={() => setBiometricModalVisible(false)}
+            >
+              <Text style={styles.bioModalCancelText}>Cancelar</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
+      <Modal
+        visible={Boolean(biometricSuccessToken)}
+        transparent
+        animationType="fade"
+        onRequestClose={() => {}}
+      >
+        <View style={styles.bioSuccessOverlay}>
+          <View style={styles.bioSuccessCard}>
+            <View style={styles.bioSuccessIcon}><Text style={styles.bioSuccessIconText}>✓</Text></View>
+            <Text style={styles.bioSuccessTitle}>Huella registrada</Text>
+            <Text style={styles.bioSuccessText}>Tu sesión quedó protegida. La próxima vez podrás ingresar con Face ID o huella.</Text>
+            <TouchableOpacity
+              style={styles.bioSuccessButton}
+              onPress={async () => {
+                const token = biometricSuccessToken;
+                setBiometricSuccessToken(null);
+                await signIn(token, { enableBiometrics: true });
+              }}
+            >
+              <Text style={styles.bioSuccessButtonText}>Continuar</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: WHITE },
+  safe: { flex: 1, backgroundColor: '#7A1E3A' },
   scrollContent: { flexGrow: 1 },
-
-  /* Auth main */
   authMain: {
     backgroundColor: BEIGE,
-    paddingVertical: 40,
+    paddingVertical: 20,
     paddingHorizontal: 20,
     alignItems: 'center',
   },
@@ -191,17 +530,14 @@ const styles = StyleSheet.create({
     padding: 28,
     width: '100%',
     maxWidth: 460,
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowRadius: 20,
+    boxShadow: '0px 4px 20px rgba(0, 0, 0, 0.08)',
     elevation: 4,
   },
-
-  title:    { fontSize: 26, fontWeight: '800', color: CARBON, textAlign: 'center', marginBottom: 8 },
-  subtitle: { fontSize: 15, color: GRAY, textAlign: 'center', marginBottom: 32 },
-
-  /* Fields */
-  field: { marginBottom: 22 },
+  heroContainer: { alignItems: 'center', marginBottom: 4 },
+  lottie: { width: 100, height: 100 },
+  title: { fontSize: 26, fontWeight: '800', color: CARBON, textAlign: 'center', marginBottom: 8 },
+  subtitle: { fontSize: 15, color: GRAY, textAlign: 'center', marginBottom: 24 },
+  field: { marginBottom: 18 },
   label: { fontSize: 14, fontWeight: '600', color: CARBON, marginBottom: 8 },
   inputWrapper: {
     flexDirection: 'row', alignItems: 'center',
@@ -209,43 +545,117 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16, height: 54, backgroundColor: WHITE,
   },
   inputIcon: { marginRight: 12 },
-  input:     { flex: 1, fontSize: 16, color: CARBON, padding: 0 },
-  eyeBtn:    { padding: 6, marginLeft: 6 },
-
-  /* Olvidé / recordarme */
-  forgotWrap: { alignItems: 'flex-end', marginTop: -8, marginBottom: 18 },
+  input: { flex: 1, fontSize: 16, color: CARBON, padding: 0 },
+  eyeBtn: { padding: 6, marginLeft: 6 },
+  forgotWrap: { alignItems: 'flex-end', marginTop: -6, marginBottom: 14 },
   forgotText: { fontSize: 13, fontWeight: '600', color: VINOTINTO },
-
-  rememberRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 24 },
+  optionList: { marginBottom: 18 },
+  rememberRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 },
   checkbox: {
     width: 20, height: 20, borderRadius: 5,
     borderWidth: 1.5, borderColor: BORDER,
     justifyContent: 'center', alignItems: 'center',
   },
   checkboxChecked: { backgroundColor: VINOTINTO, borderColor: VINOTINTO },
-  checkboxMark:    { color: WHITE, fontSize: 13, fontWeight: '800' },
-  rememberText:    { fontSize: 14, color: '#666' },
-
-  /* Botón principal */
-  submitBtn:     { backgroundColor: VINOTINTO, borderRadius: 10, paddingVertical: 16, alignItems: 'center', marginBottom: 6 },
-  disabledBtn:   { opacity: 0.7 },
+  checkboxMark: { color: WHITE, fontSize: 13, fontWeight: '800' },
+  rememberText: { fontSize: 14, color: '#666' },
+  submitBtn: { backgroundColor: VINOTINTO, borderRadius: 10, paddingVertical: 16, alignItems: 'center', marginBottom: 10 },
+  disabledBtn: { opacity: 0.7 },
   submitBtnText: { color: WHITE, fontSize: 16, fontWeight: '700' },
-
-  /* Divider */
-  divider:     { flexDirection: 'row', alignItems: 'center', gap: 12, marginVertical: 26 },
+  loginErrorBox: { backgroundColor: '#FEF2F2', borderColor: '#FECACA', borderWidth: 1, borderRadius: 10, padding: 12, marginTop: 12 },
+  loginErrorText: { color: '#991B1B', fontSize: 13, lineHeight: 18, fontWeight: '600' },
+  bioButton: {
+    backgroundColor: '#F8ECEF',
+    borderRadius: 10,
+    borderWidth: 1.2,
+    borderColor: '#EAC6CF',
+    paddingVertical: 14,
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  bioButtonText: { color: VINOTINTO, fontSize: 15, fontWeight: '700' },
+  bioHint: {
+    fontSize: 13,
+    color: '#777',
+    textAlign: 'center',
+    lineHeight: 19,
+    marginBottom: 6,
+    paddingHorizontal: 4,
+  },
+  divider: { flexDirection: 'row', alignItems: 'center', gap: 12, marginVertical: 22 },
   dividerLine: { flex: 1, height: 1, backgroundColor: '#E5E0D8' },
   dividerText: { fontSize: 13, color: '#bbb' },
-
-  /* Google */
   googleBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12,
     backgroundColor: WHITE, borderWidth: 1.5, borderColor: BORDER,
     borderRadius: 10, paddingVertical: 16,
   },
   googleText: { fontSize: 15, fontWeight: '600', color: CARBON },
+  footerLinks: { marginTop: 22, alignItems: 'center' },
+  footerText: { fontSize: 14, color: '#888' },
+  footerLink: { color: VINOTINTO, fontWeight: '700' },
+  backArrow: {
+    position: 'absolute',
+    top: 14,
+    left: 16,
+    zIndex: 10,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  backArrowText: {
+    color: WHITE,
+    fontSize: 30,
+    lineHeight: 34,
+    fontWeight: '300',
+    marginTop: -2,
+  },
 
-  /* Footer link */
-  footerLinks: { marginTop: 26, alignItems: 'center' },
-  footerText:  { fontSize: 14, color: '#888' },
-  footerLink:  { color: VINOTINTO, fontWeight: '700' },
+  /* Modal biométrico */
+  bioModalOverlay: {
+    flex: 1, backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32,
+  },
+  bioModalCard: {
+    backgroundColor: WHITE, borderRadius: 18, width: '100%',
+    overflow: 'hidden',
+    boxShadow: '0px 4px 20px rgba(0, 0, 0, 0.15)', elevation: 8,
+  },
+  bioModalHeader: {
+    backgroundColor: VINOTINTO, paddingVertical: 18, paddingHorizontal: 24,
+  },
+  bioModalTitle: {
+    color: WHITE, fontSize: 18, fontWeight: '800',
+  },
+  bioModalSubtitle: {
+    fontSize: 14, color: GRAY, paddingHorizontal: 24,
+    paddingTop: 16, paddingBottom: 8, lineHeight: 20,
+  },
+  bioModalOptions: {
+    paddingHorizontal: 24, paddingTop: 8, gap: 10,
+  },
+  bioModalOptionBtn: {
+    backgroundColor: VINOTINTO, borderRadius: 10,
+    paddingVertical: 14, alignItems: 'center',
+  },
+  bioModalOptionText: {
+    color: WHITE, fontSize: 15, fontWeight: '700',
+  },
+  bioModalCancelBtn: {
+    paddingVertical: 16, alignItems: 'center', marginTop: 4,
+  },
+  bioModalCancelText: {
+    color: GRAY, fontSize: 14, fontWeight: '600',
+  },
+  bioSuccessOverlay: { flex: 1, backgroundColor: 'rgba(42, 18, 28, 0.5)', justifyContent: 'center', paddingHorizontal: 28 },
+  bioSuccessCard: { backgroundColor: WHITE, borderWidth: 2, borderColor: VINOTINTO, borderRadius: 18, padding: 26, alignItems: 'center', boxShadow: '0px 4px 14px rgba(0, 0, 0, 0.24)', elevation: 8 },
+  bioSuccessIcon: { width: 58, height: 58, borderRadius: 29, backgroundColor: VINOTINTO, alignItems: 'center', justifyContent: 'center', marginBottom: 14 },
+  bioSuccessIconText: { color: WHITE, fontSize: 30, fontWeight: '900' },
+  bioSuccessTitle: { color: VINOTINTO, fontSize: 21, fontWeight: '800', marginBottom: 8 },
+  bioSuccessText: { color: '#62555A', fontSize: 14, lineHeight: 20, textAlign: 'center', marginBottom: 20 },
+  bioSuccessButton: { backgroundColor: VINOTINTO, width: '100%', borderRadius: 10, paddingVertical: 13, alignItems: 'center' },
+  bioSuccessButtonText: { color: WHITE, fontSize: 15, fontWeight: '800' },
 });

@@ -1,6 +1,6 @@
-from pydantic import BaseModel, EmailStr
-from pydantic import BaseModel, Field
-from typing import List, Optional
+from typing import List, Literal, Optional
+
+from pydantic import BaseModel, EmailStr, Field
 
 # ===========================
 # USUARIOS
@@ -9,9 +9,9 @@ from typing import List, Optional
 class UsuarioRegistro(BaseModel):
     nombre: str
     email: EmailStr
-    password: str
-    telefono: str
-    rol: str = "comprador"  # 'comprador' | 'vendedor'
+    password: str = Field(..., min_length=8, description="Mínimo 8 caracteres")
+    telefono: str = Field(..., pattern=r"^\d{7,15}$", description="Solo dígitos, entre 7 y 15")
+    rol: Literal["comprador", "vendedor"] = "comprador"
 
 class UsuarioLogin(BaseModel):
     email: EmailStr
@@ -70,7 +70,7 @@ class LibroRespuesta(BaseModel):
     fecha_publicacion: str
     fecha_listado: str
     nombre_categoria: Optional[str] = None
-    imagenes: List[str] = []
+    imagenes: List[str] = Field(default_factory=list)
  
 class CategoriaRespuesta(BaseModel):
     id_categoria: int
@@ -82,8 +82,14 @@ class CategoriaRespuesta(BaseModel):
 
 class PagoRequest(BaseModel):
     order_id: int
-    amount: float
-    payment_method: str
+    amount: float = Field(..., gt=0, description="Debe ser mayor a 0")
+    payment_method: Literal["tarjeta", "efectivo", "transferencia", "nequi", "daviplata", "pse"] 
+    coupon_code: Optional[str] = None
+    tipo_entrega: Optional[str] = None  # 'domicilio' | 'retiro_tienda'
+    id_direccion: Optional[int] = None  # dirección de envío si tipo_entrega == 'domicilio'
+
+class CancelacionOrdenRequest(BaseModel):
+    motivo: str = Field(default="Cancelación solicitada por el comprador", min_length=5, max_length=500)
 
 
 # ===========================

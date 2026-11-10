@@ -1,0 +1,96 @@
+name: SonarCloud Analysis
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+
+jobs:
+  sonarcloud:
+    name: SonarCloud Scan
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: bookyhome
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+      - name: Checkout del repositorio
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Historial completo para métricas y git blame
+
+      # ── Instalar Node.js para poder generar cobertura del frontend ──────────
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Instalar pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 11
+
+      - name: Instalar dependencias del frontend
+        run: pnpm install
+        working-directory: frontend
+
+      # ── Ejecutar tests del frontend con cobertura ───────────────────────────
+      - name: Ejecutar tests y generar cobertura (frontend)
+        run: pnpm test:coverage
+        working-directory: frontend
+        continue-on-error: true  # No bloquear el análisis si fallan los tests
+
+      # ── Instalar Python para generar cobertura del backend ─────────────────
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Instalar uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Instalar dependencias del backend
+        run: uv sync --locked --group dev
+        working-directory: backend
+
+      # ── Ejecutar tests y generar cobertura (backend) ────────────────────────
+      - name: Ejecutar tests y generar cobertura (backend)
+        run: uv run pytest tests/ --cov=app --cov-report=xml:coverage/coverage.xml
+        working-directory: backend
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: '3306'
+          DB_USER: root
+          DB_PASSWORD: root
+          DB_NAME: bookyhome
+          SECRET_KEY: test-only-secret-key-for-sonar-coverage-workflow-32bytes-minimum
+
+      # ── Ejecutar tests y generar cobertura (app móvil) ─────────────────────
+      - name: Instalar dependencias de la app móvil
+        run: pnpm install --frozen-lockfile
+        working-directory: app-movil
+
+      - name: Ejecutar tests y generar cobertura (app móvil)
+        run: pnpm test:coverage
+        working-directory: app-movil
+
+      # ── Análisis SonarCloud ─────────────────────────────────────────────────
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}   # Proporcionado automáticamente por GitHub
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}     # Configurado manualmente en Settings > Secrets

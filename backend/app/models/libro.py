@@ -1,23 +1,30 @@
 from app.database import get_db
-from datetime import date
+from datetime import date, datetime
+import re
+from typing import Optional
 
 # ──────────────────────────────────────────────
 #  CREAR LIBRO
 # ──────────────────────────────────────────────
 def crear_libro(id_tienda: int, id_categoria: int, titulo: str, autor: str,
-                descripcion: str, precio: float, stock: int, estado: str):
+                descripcion: str, precio: float, stock: int, estado: str, isbn: str = None,
+                acceso_anticipado: bool = False, nivel_minimo_acceso: str = "Plata",
+                fecha_lanzamiento_publico: Optional[datetime] = None):
     db = get_db()
     cursor = db.cursor()
     try:
         cursor.execute("""
-            INSERT INTO libros (id_tienda, id_categoria, titulo, autor_libro,
+            INSERT INTO libros (id_tienda, id_categoria, titulo, autor_libro, isbn,
                                 descripcion_libro, precio_libro, stock,
-                                estado_libro, fecha_publicacion, fecha_listado)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                                estado_libro, fecha_publicacion, fecha_listado,
+                                acceso_anticipado, nivel_minimo_acceso,
+                                fecha_lanzamiento_publico)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         """, (
-            id_tienda, id_categoria, titulo, autor,
+            id_tienda, id_categoria, titulo, autor, isbn,
             descripcion, precio, stock,
-            estado, date.today(), date.today()
+            estado, date.today(), date.today(), acceso_anticipado,
+            nivel_minimo_acceso, fecha_lanzamiento_publico,
         ))
         db.commit()
         return {"ok": True, "id_libro": cursor.lastrowid}
@@ -64,7 +71,7 @@ def obtener_libros_por_tienda(id_tienda: int):
             LEFT JOIN categorias c ON l.id_categoria = c.id_categoria
             LEFT JOIN imagenes_libro i ON l.id_libro = i.id_libro
             WHERE l.id_tienda = %s 
-            GROUP BY l.id_libro
+            GROUP BY l.id_libro, c.nombre_categoria
             ORDER BY l.fecha_listado DESC
         """, (id_tienda,))
         libros = cursor.fetchall()
@@ -90,7 +97,7 @@ def obtener_libros_visibles_por_tienda(id_tienda: int):
             LEFT JOIN imagenes_libro i ON l.id_libro = i.id_libro
             WHERE l.id_tienda = %s 
               AND l.oculto = 0  -- 🎯 CANDADO: Filtra para que NO salgan los ocultos en el catálogo
-            GROUP BY l.id_libro
+            GROUP BY l.id_libro, c.nombre_categoria
             ORDER BY l.fecha_listado DESC
         """, (id_tienda,))
         libros = cursor.fetchall()
@@ -101,6 +108,31 @@ def obtener_libros_visibles_por_tienda(id_tienda: int):
     finally:
         cursor.close()
         db.close()
+
+# ──────────────────────────────────────────────
+#  OBTENER LIBRO POR ID
+# ──────────────────────────────────────────────
+def obtener_libro_por_id(id_libro: int):
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    try:
+        cursor.execute("""
+            SELECT l.*,
+                   (SELECT url_imagen FROM imagenes_libro WHERE id_libro = l.id_libro LIMIT 1) AS imagen_url
+            FROM libros l
+            WHERE l.id_libro = %s
+        """, (id_libro,))
+        libro = cursor.fetchone()
+        if libro:
+            cursor.execute("SELECT url_imagen FROM imagenes_libro WHERE id_libro = %s", (id_libro,))
+            rows = cursor.fetchall()
+            libro["imagenes"] = [r["url_imagen"] for r in rows if r.get("url_imagen")]
+        return libro
+    finally:
+        cursor.close()
+        db.close()
+
+
 
 # ──────────────────────────────────────────────
 #  OBTENER TIENDA DEL USUARIO AUTENTICADO
@@ -136,7 +168,10 @@ def obtener_categorias():
 #  EDITAR LIBRO
 # ──────────────────────────────────────────────
 def editar_libro(id_libro: int, id_tienda: int, id_categoria: int, titulo: str,
-                 autor: str, descripcion: str, precio: float, stock: int, estado: str):
+                 autor: str, descripcion: str, precio: float, stock: int, estado: str,
+                 isbn: str = None, acceso_anticipado: bool = False,
+                 nivel_minimo_acceso: str = "Plata",
+                 fecha_lanzamiento_publico: Optional[datetime] = None):
     db = get_db()
     cursor = db.cursor()
     try:
@@ -148,11 +183,15 @@ def editar_libro(id_libro: int, id_tienda: int, id_categoria: int, titulo: str,
 
         cursor.execute("""
             UPDATE libros
-            SET id_categoria = %s, titulo = %s, autor_libro = %s,
+            SET id_categoria = %s, titulo = %s, autor_libro = %s, isbn = %s,
                 descripcion_libro = %s, precio_libro = %s,
-                stock = %s, estado_libro = %s
+                stock = %s, estado_libro = %s, acceso_anticipado = %s,
+                nivel_minimo_acceso = %s, fecha_lanzamiento_publico = %s
             WHERE id_libro = %s
-        """, (id_categoria, titulo, autor, descripcion, precio, stock, estado, id_libro))
+        """, (
+            id_categoria, titulo, autor, isbn, descripcion, precio, stock, estado,
+            acceso_anticipado, nivel_minimo_acceso, fecha_lanzamiento_publico, id_libro,
+        ))
         db.commit()
         return {"ok": True}
     except Exception as e:
@@ -329,7 +368,7 @@ def obtener_top_vendidos(id_tienda: int, limite: int = 5):
             LEFT JOIN ordenes_compra o  ON d.id_orden      = o.id_orden
                 AND o.estado_orden NOT IN ('cancelada', 'rechazada')
             WHERE l.id_tienda = %s
-            GROUP BY l.id_libro
+            GROUP BY l.id_libro, l.titulo, l.autor_libro, l.precio_libro, l.estado_libro, c.nombre_categoria
             ORDER BY unidades_vendidas DESC
             LIMIT %s
         """, (id_tienda, limite))
@@ -430,13 +469,12 @@ def obtener_alertas_stock(id_tienda: int, umbral: int = 3):
     cursor = db.cursor(dictionary=True)
     try:
         cursor.execute("""
-            SELECT v.titulo, v.nombre_tienda, v.stock
-            FROM vista_alerta_stock v
-            JOIN libros l ON l.titulo = v.titulo
-            JOIN tiendas t ON t.nombre_tienda = v.nombre_tienda
-            WHERE t.id_tienda = %s
-              AND v.stock <= %s
-            ORDER BY v.stock ASC
+            SELECT l.id_libro, l.titulo, l.stock, t.nombre_tienda
+            FROM libros l
+            JOIN tiendas t ON t.id_tienda = l.id_tienda
+            WHERE l.id_tienda = %s
+              AND l.stock <= %s
+            ORDER BY l.stock ASC
         """, (id_tienda, umbral))
         return cursor.fetchall()
     finally:
@@ -478,96 +516,182 @@ def ocultar_libro(id_libro: int, ocultar_estado: bool, id_tienda: int = None):
         db.close()
 
 # ──────────────────────────────────────────────
-#  VENDEDOR - PEDIDOS Y VENTAS DESDE ORDERS.JSON
+#  VENDEDOR - PEDIDOS Y VENTAS DESDE MYSQL
 # ──────────────────────────────────────────────
-def _load_orders():
-    # El archivo orders.json se almacena en backend/app/data/
-    import os, json
-    storage_dir = os.path.join(os.path.dirname(__file__), '..', 'data')
-    order_file = os.path.join(storage_dir, 'orders.json')
-    if not os.path.exists(order_file):
-        return {}
-    try:
-        with open(order_file, 'r', encoding='utf-8') as file:
-            return json.load(file)
-    except Exception:
-        return {}
-
 def obtener_pedidos_tienda(id_tienda: int):
-    # 1. Obtener todos los libros de la tienda
+    """
+    Devuelve los pedidos que contienen al menos un libro de la tienda indicada.
+    La fuente de verdad es MySQL: ordenes_compra → detalle_orden → libros,
+    filtrando por libros.id_tienda. Esto garantiza que cada vendedor solo
+    vea los pedidos que realmente le pertenecen.
+    """
+    from app.models.envios import EMPRESAS_MENSAJERIA, limpiar_envios_no_pagados
+    limpiar_envios_no_pagados()
+
     db = get_db()
     cursor = db.cursor(dictionary=True)
     try:
-        cursor.execute("SELECT id_libro, titulo FROM libros WHERE id_tienda = %s", (id_tienda,))
-        libros_tienda = {row["id_libro"]: row["titulo"] for row in cursor.fetchall()}
-        
-        if not libros_tienda:
-            return []
-            
-        # 2. Mapear usuarios para info de cliente
-        cursor.execute("SELECT id_usuario, nombre_usuario, correo_usuario FROM usuarios")
-        usuarios_map = {
-            row["id_usuario"]: {
-                "nombre": row["nombre_usuario"],
-                "correo": row["correo_usuario"]
-            }
-            for row in cursor.fetchall()
-        }
+        # Traer todos los ítems de órdenes que corresponden a libros de esta tienda,
+        # junto con los datos del comprador y la orden.
+        cursor.execute("""
+            SELECT
+                oc.id_orden,
+                oc.fecha_orden            AS fecha,
+                oc.estado_orden           AS estado,
+                oc.total                  AS total_orden,
+                oc.costo_envio,
+                COALESCE(tc.tarifa_envio, 0) AS costo_envio_tienda,
+                oc.id_usuario             AS id_comprador,
+                oc.tipo_entrega,
+                oc.estado_retiro,
+                oc.pin_retiro,
+                oc.fecha_limite_retiro,
+                oc.metodo_pago,
+                u.nombre_usuario          AS cliente,
+                u.correo_usuario          AS correo_cliente,
+                u.telefono                AS telefono_cliente,
+                u.foto_perfil             AS foto_perfil_cliente,
+                do.id_libro,
+                do.cantidad,
+                do.precio_unitario        AS precio_libro,
+                do.porcentaje_descuento,
+                do.precio_final,
+                l.titulo,
+                l.autor_libro,
+                (SELECT url_imagen
+                 FROM imagenes_libro
+                 WHERE id_libro = l.id_libro AND es_principal = 1
+                 LIMIT 1)                 AS imagen,
+                de.alias_direccion        AS alias_direccion,
+                de.direccion_completa     AS direccion_completa,
+                de.ciudad                 AS ciudad_entrega,
+                de.departamento           AS departamento_entrega,
+                de.codigo_postal          AS codigo_postal_entrega
+            FROM ordenes_compra oc
+            JOIN detalle_orden   do ON do.id_orden  = oc.id_orden
+            JOIN libros          l  ON l.id_libro   = do.id_libro
+            JOIN usuarios        u  ON u.id_usuario = oc.id_usuario
+            LEFT JOIN direcciones_envio de ON de.id_direccion = oc.id_direccion_envio
+            LEFT JOIN tienda_configuracion tc ON tc.id_tienda = l.id_tienda
+            WHERE l.id_tienda = %s
+            ORDER BY oc.fecha_orden DESC
+        """, (id_tienda,))
+        filas = cursor.fetchall()
+
+        # Consultar envíos registrados para las órdenes de esta tienda.
+        # La tabla envios ya tiene id_tienda, no se necesita JOIN adicional.
+        cursor.execute("""
+            SELECT id_orden, estado_envio, numero_guia,
+                   empresa_mensajeria, id_empresa,
+                   fecha_estimada_entrega, costo_envio
+            FROM envios
+            WHERE id_tienda = %s
+        """, (id_tienda,))
+        envios_map = {row["id_orden"]: row for row in cursor.fetchall()}
+
     finally:
         cursor.close()
         db.close()
-        
-    # 3. Cargar las órdenes de orders.json
-    orders_data = _load_orders()
-    
-    pedidos = []
-    for user_id_str, user_orders in orders_data.items():
-        try:
-            user_id = int(user_id_str)
-        except ValueError:
-            continue
-        cliente_info = usuarios_map.get(user_id, {"nombre": f"Usuario #{user_id}", "correo": ""})
-        
-        for order in user_orders:
-            items_tienda = []
-            total_tienda = 0.0
-            
-            for item in order.get("items", []):
-                try:
-                    id_libro = int(item.get("id_libro"))
-                except (ValueError, TypeError):
-                    continue
-                if id_libro in libros_tienda:
-                    cant = int(item.get("cantidad", 1))
-                    precio = float(item.get("precio_libro", 0))
-                    items_tienda.append({
-                        "id_libro": id_libro,
-                        "titulo": item.get("titulo", libros_tienda[id_libro]),
-                        "autor_libro": item.get("autor_libro", ""),
-                        "precio_libro": precio,
-                        "cantidad": cant,
-                        "imagen": item.get("imagen")
-                    })
-                    total_tienda += precio * cant
-            
-            if items_tienda:
-                pedidos.append({
-                    "id_orden": order.get("id_orden"),
-                    "fecha": order.get("fecha"),
-                    "estado": order.get("estado"),
-                    "cliente": cliente_info["nombre"],
-                    "correo_cliente": cliente_info["correo"],
-                    "items": items_tienda,
-                    "total_tienda": total_tienda,
-                    "total_orden": order.get("total")
-                })
-                
-    return sorted(pedidos, key=lambda p: p.get("fecha", ""), reverse=True)
+
+    # Agrupar filas por id_orden
+    ordenes: dict = {}
+    for fila in filas:
+        id_orden = fila["id_orden"]
+        if id_orden not in ordenes:
+            ordenes[id_orden] = {
+                "id_orden":       id_orden,
+                "id_orden_unico": f"{fila['id_comprador']}-{id_orden}",
+                "codigo_compra":  f"BH-{fila['id_comprador']}-{id_orden}",
+                "id_comprador":   fila["id_comprador"],
+                "fecha":          fila["fecha"].isoformat() if hasattr(fila["fecha"], "isoformat") else fila["fecha"],
+                "estado":         fila["estado"],
+                "tipo_entrega":   fila.get("tipo_entrega") or "domicilio",
+                "estado_retiro":  fila.get("estado_retiro"),
+                "pin_retiro":     fila.get("pin_retiro"),
+                "fecha_limite_retiro": fila["fecha_limite_retiro"].isoformat() if fila.get("fecha_limite_retiro") and hasattr(fila["fecha_limite_retiro"], "isoformat") else fila.get("fecha_limite_retiro"),
+                "metodo_pago":    fila.get("metodo_pago"),
+                "cliente":        fila["cliente"],
+                "correo_cliente": fila["correo_cliente"],
+                "telefono_cliente": fila.get("telefono_cliente"),
+                "foto_perfil_cliente": fila["foto_perfil_cliente"],
+                "items":          [],
+                "total_tienda":   0.0,
+                "total_orden":    float(fila["total_orden"] or 0),
+                "costo_envio":    float(fila.get("costo_envio") or 0),
+                "costo_envio_tienda": float(fila.get("costo_envio_tienda") or 0),
+                "direccion_entrega": {
+                    "alias":        fila.get("alias_direccion"),
+                    "direccion":    fila.get("direccion_completa"),
+                    "ciudad":       fila.get("ciudad_entrega"),
+                    "departamento": fila.get("departamento_entrega"),
+                    "codigo_postal": fila.get("codigo_postal_entrega"),
+                },
+                "envio":          None,
+            }
+
+        precio = float(fila["precio_libro"] or 0)
+        cant   = int(fila["cantidad"] or 1)
+        # Total por línea: se prefiere precio_final (ya guardado con descuento
+        # cuando existen cupones). Si no está, se calcula del precio unitario.
+        precio_final_linea = float(fila["precio_final"] or 0)
+        if precio_final_linea > 0:
+            total_linea = precio_final_linea
+        else:
+            pct = float(fila["porcentaje_descuento"] or 0)
+            total_linea = precio * cant * (1 - pct / 100) if pct > 0 else precio * cant
+
+        ordenes[id_orden]["items"].append({
+            "id_libro":   fila["id_libro"],
+            "titulo":     fila["titulo"],
+            "autor_libro": fila["autor_libro"],
+            "precio_libro": precio,
+            "cantidad":   cant,
+            "porcentaje_descuento": float(fila["porcentaje_descuento"] or 0),
+            "total_linea": round(total_linea, 2),
+            "imagen":     fila["imagen"],
+        })
+        ordenes[id_orden]["total_tienda"] = round(ordenes[id_orden]["total_tienda"] + total_linea, 2)
+
+    # Mantener visible la guía durante todo el ciclo posterior al pago.
+    for id_orden, pedido in ordenes.items():
+        if str(pedido["estado"]).lower() in ("pagado", "pagada", "enviado", "enviada", "entregada", "entregado") and id_orden in envios_map:
+            e = envios_map[id_orden]
+            empresa = next(
+                (empresa for empresa in EMPRESAS_MENSAJERIA if empresa["id_empresa"] == e["id_empresa"]),
+                {},
+            )
+            pedido["envio"] = {
+                "id_empresa":             e["id_empresa"],
+                "empresa_mensajeria":     e["empresa_mensajeria"],
+                "sitio_web":              empresa.get("sitio_web"),
+                "url_rastreo":            empresa.get("url_rastreo", empresa.get("sitio_web")),
+                "numero_guia":            e["numero_guia"],
+                "estado_envio":           e["estado_envio"],
+                "fecha_estimada_entrega": str(e["fecha_estimada_entrega"]) if e["fecha_estimada_entrega"] else None,
+                "costo_envio":            float(e["costo_envio"] or 0),
+            }
+
+    return sorted(ordenes.values(), key=lambda p: p.get("fecha", ""), reverse=True)
 
 def obtener_ventas_tienda(id_tienda: int):
     pedidos = obtener_pedidos_tienda(id_tienda)
     ventas = []
+    # Estados que representan una venta confirmada. Se comparan en minúsculas
+    # para tolerar variaciones de capitalización en la base de datos.
+    # Se incluye 'entregado' (retiro en tienda) además de 'entregada' (envío),
+    # 'completado'/'completada' y 'en preparacion' para cubrir todos los flujos.
+    ESTADOS_VENTA = {
+        "pagado", "pagada",
+        "enviado", "enviada",
+        "entregada", "entregado",
+        "completado", "completada",
+        "en preparacion",
+    }
     for p in pedidos:
+        # El registro de ventas solo incluye órdenes en estado de venta
+        # confirmada. Las pendientes y canceladas se gestionan desde Pedidos.
+        if str(p.get("estado", "")).lower() not in ESTADOS_VENTA:
+            continue
         for item in p["items"]:
             ventas.append({
                 "id_orden": p["id_orden"],
@@ -578,8 +702,75 @@ def obtener_ventas_tienda(id_tienda: int):
                 "id_libro": item["id_libro"],
                 "titulo": item["titulo"],
                 "autor_libro": item["autor_libro"],
+                "imagen": item.get("imagen"),
+                "foto_perfil_cliente": p.get("foto_perfil_cliente"),
                 "precio_libro": item["precio_libro"],
                 "cantidad": item["cantidad"],
-                "total": item["precio_libro"] * item["cantidad"]
+                "total": item.get("total_linea") or item["precio_libro"] * item["cantidad"]
             })
     return ventas
+
+
+# ──────────────────────────────────────────────
+#  BUSCAR LIBRO POR ISBN
+# ──────────────────────────────────────────────
+def buscar_libro_por_isbn(isbn: str):
+    """
+    Busca libros por ISBN en todo el catálogo.
+    Retorna una lista de libros con el mismo ISBN de diferentes vendedores,
+    ordenados por precio ascendente para comparación.
+    """
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    try:
+        cursor.execute("""
+            SELECT l.*, t.nombre_tienda, t.id_tienda, c.nombre_categoria,
+                   GROUP_CONCAT(i.url_imagen) AS imagenes
+            FROM libros l
+            LEFT JOIN tiendas t ON l.id_tienda = t.id_tienda
+            LEFT JOIN categorias c ON l.id_categoria = c.id_categoria
+            LEFT JOIN imagenes_libro i ON l.id_libro = i.id_libro
+            WHERE l.isbn = %s AND l.oculto = 0
+            GROUP BY l.id_libro, t.nombre_tienda, c.nombre_categoria
+            ORDER BY l.precio_libro ASC
+        """, (isbn,))
+        libros = cursor.fetchall()
+        
+        for libro in libros:
+            libro["imagenes"] = libro["imagenes"].split(",") if libro["imagenes"] else []
+        return libros
+    except Exception as e:
+        return []
+    finally:
+        cursor.close()
+        db.close()
+
+
+# ──────────────────────────────────────────────
+#  VALIDAR Y NORMALIZAR ISBN
+# ──────────────────────────────────────────────
+def validar_y_normalizar_isbn(isbn: str) -> str:
+    """
+    Valida y normaliza un ISBN (elimina guiones y espacios).
+    Soporta ISBN-10 e ISBN-13.
+    Retorna el ISBN normalizado o None si es inválido.
+    """
+    if not isbn:
+        return None
+    
+    # Eliminar guiones y espacios
+    isbn_limpio = re.sub(r'[-\s]', '', isbn.upper())
+    
+    # Validar formato ISBN-10 o ISBN-13
+    if len(isbn_limpio) == 10:
+        # ISBN-10: 9 dígitos + X o dígito de verificación
+        if not re.match(r'^\d{9}[\dX]$', isbn_limpio):
+            return None
+    elif len(isbn_limpio) == 13:
+        # ISBN-13: 13 dígitos
+        if not re.match(r'^\d{13}$', isbn_limpio):
+            return None
+    else:
+        return None
+    
+    return isbn_limpio

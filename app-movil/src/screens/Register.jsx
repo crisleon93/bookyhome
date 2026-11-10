@@ -2,8 +2,9 @@
 import React, { useContext, useState, useEffect } from 'react';
 import {
   View, Text, TextInput, StyleSheet, Alert, ActivityIndicator,
-  TouchableOpacity, ScrollView, SafeAreaView, KeyboardAvoidingView, Platform, Modal,
+  TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, Modal,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import api from '../services/api';
 import AuthHeader from '../components/AuthHeader';
 import Footer from '../components/Footer';
@@ -126,6 +127,10 @@ export default function Register({ navigation }) {
       Alert.alert('Error', 'La contraseña debe tener al menos 8 caracteres');
       return false;
     }
+    if (!/[A-Z]/.test(password) || !/[0-9]/.test(password) || !/[^A-Za-z0-9]/.test(password)) {
+      Alert.alert('Error', 'La contraseña debe incluir una mayúscula, un número y un carácter especial');
+      return false;
+    }
     if (!terminosCompletos) {
       Alert.alert('Error', 'Debes aceptar tanto los Términos y Condiciones como la Política de Privacidad');
       return false;
@@ -210,7 +215,7 @@ export default function Register({ navigation }) {
                       </View>
                       <TextInput
                         style={styles.input}
-                        placeholder="tu@email.com"
+                        placeholder="ejemplo@gmail.com"
                         placeholderTextColor="#aaa"
                         value={email}
                         onChangeText={setEmail}
@@ -229,7 +234,7 @@ export default function Register({ navigation }) {
                       </View>
                       <TextInput
                         style={styles.input}
-                        placeholder="Tu teléfono"
+                        placeholder="3001234567"
                         placeholderTextColor="#aaa"
                         value={telefono}
                         onChangeText={setTelefono}
@@ -257,6 +262,9 @@ export default function Register({ navigation }) {
                         {showPassword ? <IconEyeOff /> : <IconEye />}
                       </TouchableOpacity>
                     </View>
+                    <Text style={styles.passwordHint}>
+                      Usa al menos 8 caracteres, una mayúscula, un número y un carácter especial.
+                    </Text>
                   </View>
 
                   {/* Términos y privacidad */}
@@ -333,7 +341,7 @@ export default function Register({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: WHITE },
+  safe: { flex: 1, backgroundColor: '#7A1E3A' },
   scrollContent: { flexGrow: 1 },
 
   authMain: { backgroundColor: BEIGE, paddingVertical: 40, paddingHorizontal: 20, alignItems: 'center' },
@@ -342,7 +350,7 @@ const styles = StyleSheet.create({
     shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 20, elevation: 4,
   },
 
-  title:    { fontSize: 26, fontWeight: '800', color: CARBON, textAlign: 'center', marginBottom: 8 },
+  title: { fontSize: 26, fontWeight: '800', color: CARBON, textAlign: 'center', marginBottom: 8 },
   subtitle: { fontSize: 15, color: GRAY, textAlign: 'center', marginBottom: 32 },
 
   /* Fields */
@@ -353,8 +361,9 @@ const styles = StyleSheet.create({
     borderRadius: 10, paddingHorizontal: 16, height: 54, backgroundColor: WHITE,
   },
   inputIcon: { marginRight: 12 },
-  input:     { flex: 1, fontSize: 16, color: CARBON, padding: 0 },
-  eyeBtn:    { padding: 6, marginLeft: 6 },
+  input: { flex: 1, fontSize: 16, color: CARBON, padding: 0 },
+  eyeBtn: { padding: 6, marginLeft: 6 },
+  passwordHint: { fontSize: 12, color: GRAY, lineHeight: 18, marginTop: 6 },
 
   /* Términos */
   termsRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginBottom: 26 },
@@ -363,19 +372,19 @@ const styles = StyleSheet.create({
     borderWidth: 1.5, borderColor: BORDER, justifyContent: 'center', alignItems: 'center',
   },
   checkboxChecked: { backgroundColor: VINOTINTO, borderColor: VINOTINTO },
-  checkboxMark:    { color: WHITE, fontSize: 13, fontWeight: '800' },
-  termsText:       { flex: 1, fontSize: 13, color: '#666', lineHeight: 20 },
-  termsLink:       { color: VINOTINTO, fontWeight: '700', textDecorationLine: 'underline' },
+  checkboxMark: { color: WHITE, fontSize: 13, fontWeight: '800' },
+  termsText: { flex: 1, fontSize: 13, color: '#666', lineHeight: 20 },
+  termsLink: { color: VINOTINTO, fontWeight: '700', textDecorationLine: 'underline' },
 
   /* Botón principal */
-  submitBtn:     { backgroundColor: VINOTINTO, borderRadius: 10, paddingVertical: 16, alignItems: 'center' },
-  disabledBtn:   { opacity: 0.7 },
+  submitBtn: { backgroundColor: VINOTINTO, borderRadius: 10, paddingVertical: 16, alignItems: 'center' },
+  disabledBtn: { opacity: 0.7 },
   submitBtnText: { color: WHITE, fontSize: 16, fontWeight: '700' },
 
   /* Footer links */
   footerLinks: { marginTop: 26, alignItems: 'center' },
-  footerText:  { fontSize: 14, color: '#888', textAlign: 'center' },
-  footerLink:  { color: VINOTINTO, fontWeight: '700' },
+  footerText: { fontSize: 14, color: '#888', textAlign: 'center' },
+  footerLink: { color: VINOTINTO, fontWeight: '700' },
 
   /* Banner de éxito */
   successBanner: {
@@ -392,20 +401,20 @@ const styles = StyleSheet.create({
     maxHeight: '85%',
   },
   modalHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 },
-  modalTitle:     { fontSize: 17, fontWeight: '800', color: CARBON, flex: 1, marginRight: 10 },
-  modalCloseBtn:  { padding: 2 },
+  modalTitle: { fontSize: 17, fontWeight: '800', color: CARBON, flex: 1, marginRight: 10 },
+  modalCloseBtn: { padding: 2 },
 
   acceptedBanner: { backgroundColor: '#edf7ee', borderWidth: 1.5, borderColor: '#a5d6a7', borderRadius: 8, padding: 10, marginBottom: 12 },
   acceptedBannerText: { color: '#2e7d32', fontSize: 13, fontWeight: '700' },
 
-  modalBody:         { marginBottom: 16 },
-  modalUpdated:      { fontSize: 12, fontWeight: '700', color: CARBON, marginBottom: 14 },
+  modalBody: { marginBottom: 16 },
+  modalUpdated: { fontSize: 12, fontWeight: '700', color: CARBON, marginBottom: 14 },
   modalSectionTitle: { fontSize: 14, fontWeight: '800', color: CARBON, marginBottom: 4 },
-  modalSectionText:  { fontSize: 13, color: '#555', lineHeight: 19 },
+  modalSectionText: { fontSize: 13, color: '#555', lineHeight: 19 },
 
   modalActions: { flexDirection: 'row', gap: 10 },
-  acceptBtn:    { flex: 1, backgroundColor: VINOTINTO, borderRadius: 8, paddingVertical: 13, alignItems: 'center' },
-  acceptBtnText:{ color: WHITE, fontWeight: '700', fontSize: 14 },
-  denyBtn:      { flex: 1, borderWidth: 1.5, borderColor: '#ccc', borderRadius: 8, paddingVertical: 13, alignItems: 'center' },
-  denyBtnText:  { color: '#666', fontWeight: '600', fontSize: 14 },
+  acceptBtn: { flex: 1, backgroundColor: VINOTINTO, borderRadius: 8, paddingVertical: 13, alignItems: 'center' },
+  acceptBtnText: { color: WHITE, fontWeight: '700', fontSize: 14 },
+  denyBtn: { flex: 1, borderWidth: 1.5, borderColor: '#ccc', borderRadius: 8, paddingVertical: 13, alignItems: 'center' },
+  denyBtnText: { color: '#666', fontWeight: '600', fontSize: 14 },
 });
