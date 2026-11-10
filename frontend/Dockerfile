@@ -1,5 +1,5 @@
 # 1. Traemos una base de Linux ultra ligera que ya viene con Node 20 instalado
-FROM node:20-alpine
+FROM node:26-alpine
 
 # 2. Instalamos pnpm de forma global dentro de la caja de Docker
 RUN npm install -g pnpm
