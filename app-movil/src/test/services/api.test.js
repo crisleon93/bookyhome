@@ -27,6 +27,10 @@ vi.mock('axios', () => ({
   default: { create: mocks.create },
 }));
 
+vi.mock('react-native', () => ({
+  Platform: { OS: 'android' },
+}));
+
 const originalApiUrl = process.env.EXPO_PUBLIC_API_URL;
 const originalNodeEnv = process.env.NODE_ENV;
 
