@@ -1,3 +1,4 @@
+import { useThemedStyles } from '../context/ThemeContext';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Svg, { Circle, Line, Path, Text as SvgText } from 'react-native-svg';
@@ -266,6 +267,7 @@ function StatisticsPanel({ statistics, history, balance }) {
 }
 
 export default function FinanzasAdmin() {
+  const s = useThemedStyles(themeBaseS);
   const financeScrollRef = useRef(null);
   const financeViewportRef = useRef(null);
   const financeScrollOffset = useRef(0);
@@ -413,7 +415,7 @@ export default function FinanzasAdmin() {
   </View>;
 }
 
-const s = StyleSheet.create({
+const themeBaseS = StyleSheet.create({
   content: { padding: 14, paddingBottom: 36, backgroundColor: BEIGE },
   hero: { backgroundColor: VINOTINTO, borderRadius: 18, padding: 16, marginBottom: 14, elevation: 3 },
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
@@ -504,3 +506,4 @@ const s = StyleSheet.create({
   commissionMetric: { alignItems: 'flex-end' },
   commissionValue: { color: WHITE, fontSize: 20, fontWeight: '900', marginTop: 5 },
 });
+const s = themeBaseS;

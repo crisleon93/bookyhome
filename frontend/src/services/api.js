@@ -5,6 +5,46 @@ export const getApiBaseUrl = () => {
   return import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 };
 
+export const getApiErrorMessage = (error, fallback) => {
+  const detail = error?.response?.data?.detail;
+  if (typeof detail === 'string' && detail.trim()) return detail;
+
+  if (Array.isArray(detail)) {
+    const messages = detail.map((item) => {
+      if (typeof item === 'string') return item;
+      if (!item || typeof item !== 'object') return '';
+
+      const location = Array.isArray(item.loc)
+        ? item.loc.filter((part) => part !== 'body').join('.')
+        : '';
+      const message = typeof item.msg === 'string' ? item.msg : '';
+      return [location, message].filter(Boolean).join(': ');
+    }).filter(Boolean);
+
+    if (messages.length) return messages.join('; ');
+  }
+
+  if (detail && typeof detail === 'object') {
+    if (typeof detail.msg === 'string') return detail.msg;
+    if (typeof detail.message === 'string') return detail.message;
+  }
+
+  return fallback;
+};
+
+export const normalizarMetodoPagoApi = (metodo) => {
+  const m = String(metodo || '').toLowerCase().trim();
+  if (m.includes('daviplata')) return 'daviplata';
+  if (m.includes('nequi')) return 'nequi';
+  if (m.includes('efecty') || m.includes('sucursal')) return 'sucursal';
+  if (m.includes('efectivo')) return 'efectivo';
+  if (m.includes('pse')) return 'pse';
+  if (m.includes('transferencia') || m.includes('bancari')) return 'transferencia';
+  if (m.includes('paypal')) return 'paypal';
+  if (m.includes('tarjeta') || m.includes('card') || m.includes('credito') || m.includes('debito')) return 'tarjeta';
+  return null;
+};
+
 const api = axios.create({
   baseURL: getApiBaseUrl(),
   headers: {

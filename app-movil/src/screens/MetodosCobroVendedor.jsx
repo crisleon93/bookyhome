@@ -1,3 +1,4 @@
+import { useThemedStyles } from '../context/ThemeContext';
 import React, { useCallback, useContext, useState } from 'react';
 import {
   ActivityIndicator,
@@ -58,8 +59,10 @@ const bancos = [
 
 const tiposCuenta = ['Ahorros', 'Corriente', 'Nequi', 'Daviplata'];
 
-export default function MetodosCobroVendedor({ navigation }) {
+export default function MetodosCobroVendedor({ navigation, embedded = false }) {
+  const styles = useThemedStyles(themeBaseStyles);
   const { user, signOut } = useContext(AuthContext);
+  const Container = embedded ? View : SafeAreaView;
   const [sidebarVisible, setSidebarVisible] = useState(false);
   const [cuentas, setCuentas] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -176,16 +179,18 @@ export default function MetodosCobroVendedor({ navigation }) {
   const principal = cuentas.find((cuenta) => cuenta.es_principal) || cuentas[0];
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => setSidebarVisible(true)} style={styles.menuButton} accessibilityLabel="Abrir menú">
-          <Text style={styles.menuIcon}>☰</Text>
-        </TouchableOpacity>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.headerTitle}>Métodos de cobro</Text>
-          <Text style={styles.headerSubtitle}>Administra las cuentas donde recibirás tus pagos</Text>
+    <Container style={embedded ? styles.embeddedContainer : styles.safeArea}>
+      {!embedded && (
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => setSidebarVisible(true)} style={styles.menuButton} accessibilityLabel="Abrir menú">
+            <Text style={styles.menuIcon}>☰</Text>
+          </TouchableOpacity>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.headerTitle}>Métodos de cobro</Text>
+            <Text style={styles.headerSubtitle}>Administra las cuentas donde recibirás tus pagos</Text>
+          </View>
         </View>
-      </View>
+      )}
 
       {loading ? (
         <View style={styles.loadingContainer}>
@@ -330,11 +335,13 @@ export default function MetodosCobroVendedor({ navigation }) {
               <Text style={styles.summaryText}>Final {String(principal.numero_cuenta || '').slice(-4)}</Text>
             </View>
           )}
-          <Footer onLinkPress={() => {}} />
+          {!embedded && <Footer onLinkPress={() => {}} />}
         </ScrollView>
       )}
 
-      <SidebarVendedor visible={sidebarVisible} onClose={() => setSidebarVisible(false)} user={user} navigation={navigation} onSignOut={signOut} />
+      {!embedded && (
+        <SidebarVendedor visible={sidebarVisible} onClose={() => setSidebarVisible(false)} user={user} navigation={navigation} onSignOut={signOut} />
+      )}
 
       {bankPickerVisible && (
         <View style={styles.modalOverlay}>
@@ -363,12 +370,13 @@ export default function MetodosCobroVendedor({ navigation }) {
           </View>
         </View>
       )}
-    </SafeAreaView>
+    </Container>
   );
 }
 
-const styles = StyleSheet.create({
+const themeBaseStyles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: BG },
+  embeddedContainer: { flex: 1, minHeight: 0 },
   header: {
     flexDirection: 'row', alignItems: 'center', backgroundColor: PRIMARY, paddingHorizontal: 18, paddingVertical: 16,
   },
@@ -486,3 +494,4 @@ const styles = StyleSheet.create({
   modalItemText: { color: TEXT, fontSize: 14, fontWeight: '600' },
   modalItemTextSelected: { color: PRIMARY, fontWeight: '800' },
 });
+const styles = themeBaseStyles;

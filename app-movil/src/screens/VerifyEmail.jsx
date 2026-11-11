@@ -1,3 +1,4 @@
+import { useThemedStyles } from '../context/ThemeContext';
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, ScrollView
@@ -6,6 +7,7 @@ import { verifyEmail } from '../services/api';
 import Footer from '../components/Footer';
 
 export default function VerifyEmail({ route, navigation }) {
+  const s = useThemedStyles(themeBaseS);
   // El token llega por deep link como parámetro de navegación
   const token = route?.params?.token || '';
   const [estado, setEstado] = useState('cargando'); // 'cargando' | 'exito' | 'error'
@@ -74,7 +76,7 @@ export default function VerifyEmail({ route, navigation }) {
   );
 }
 
-const s = StyleSheet.create({
+const themeBaseS = StyleSheet.create({
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FAF8F5', padding: 28 },
   icon: { fontSize: 60, marginBottom: 16 },
   title: { fontSize: 22, fontWeight: '800', color: '#222', marginBottom: 10, textAlign: 'center' },
@@ -84,3 +86,4 @@ const s = StyleSheet.create({
   secondaryBtn: { paddingVertical: 12 },
   secondaryText: { color: '#7A1E3A', fontSize: 14, fontWeight: '600' },
 });
+const s = themeBaseS;

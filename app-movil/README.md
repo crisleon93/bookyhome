@@ -76,6 +76,10 @@ usar su propia IP sin modificar `src/services/api.js` ni generar conflictos.
 - Carrito autenticado.
 - Checkout.
 - Consulta/procesamiento de ordenes y pagos.
+- Gestion de envios del vendedor, registro de guias y acceso al rastreo de transportadoras.
+- Inicio del vendedor con indicadores interactivos, salud del inventario y tendencia de ventas historica.
+- Publicacion de libros del vendedor con hasta cinco fotos, descripcion obligatoria, variantes fisicas y digitales con carga de PDF/EPUB, e inventario por idioma y formato.
+- Configuracion de nivel y fecha/hora de disponibilidad publica para libros con acceso anticipado.
 - Registro de libreria, segun flujo disponible.
 
 ## Requisitos

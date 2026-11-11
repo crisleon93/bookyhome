@@ -1,3 +1,4 @@
+import { useThemedStyles } from '../context/ThemeContext';
 // src/screens/Register.jsx
 import React, { useContext, useState, useEffect } from 'react';
 import {
@@ -93,6 +94,7 @@ function LegalModal({ visible, onClose, onAccept, accepted, title, sections }) {
 }
 
 export default function Register({ navigation }) {
+  const styles = useThemedStyles(themeBaseStyles);
   const [nombre, setNombre] = useState('');
   const [email, setEmail] = useState('');
   const [telefono, setTelefono] = useState('');
@@ -340,7 +342,7 @@ export default function Register({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
+const themeBaseStyles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#7A1E3A' },
   scrollContent: { flexGrow: 1 },
 
@@ -418,3 +420,4 @@ const styles = StyleSheet.create({
   denyBtn: { flex: 1, borderWidth: 1.5, borderColor: '#ccc', borderRadius: 8, paddingVertical: 13, alignItems: 'center' },
   denyBtnText: { color: '#666', fontWeight: '600', fontSize: 14 },
 });
+const styles = themeBaseStyles;

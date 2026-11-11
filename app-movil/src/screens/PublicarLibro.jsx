@@ -1,12 +1,15 @@
+import { useThemedStyles } from '../context/ThemeContext';
 import React, { useState, useEffect, useContext } from 'react';
 import {
   View, Text, ScrollView, TextInput, TouchableOpacity,
-  StyleSheet, ActivityIndicator, Image, Modal,
+  StyleSheet, ActivityIndicator, Image, Modal, Alert, Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Footer from '../components/Footer';
 import * as ImagePicker from 'expo-image-picker';
-import { getCategorias, publicarLibro, updateLibro, updateStockLibro, crearVariante } from '../services/api';
+import * as DocumentPicker from 'expo-document-picker';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { getCategorias, publicarLibro, updateLibro, updateStockLibro, crearVariante, subirArchivoVariante } from '../services/api';
 import BarcodeScanner from '../components/BarcodeScanner';
 import { IconCamera } from '../components/Icons';
 import { AuthContext } from '../context/AuthContext';
@@ -25,7 +28,7 @@ const ESTADOS = [
   { value: 'usado_regular',     label: 'Usado — estado regular', desc: 'Visible desgaste, funcional' },
 ];
 const TIPOS    = ['Tapa Blanda', 'Tapa Dura', 'Digital'];
-const IDIOMAS  = ['Español', 'Inglés', 'Otro'];
+const IDIOMAS  = ['Español', 'Inglés', 'Portugués', 'Francés', 'Otro'];
 const NIVELES_FIDELIZACION = [
   { value: 'Bronce', label: 'Bronce' },
   { value: 'Plata', label: 'Plata' },
@@ -52,15 +55,29 @@ const CAT_ICONS = {
 };
 const parseError = (err) => {
   const detail = err?.response?.data?.detail;
-  if (!detail) return 'Ocurrió un error inesperado.';
+  if (!detail) return err?.message || 'Ocurrió un error inesperado.';
   if (typeof detail === 'string') return detail;
   if (Array.isArray(detail)) return detail.map(d => d.msg || JSON.stringify(d)).join(', ');
   return JSON.stringify(detail);
 };
 
 const getCatIcon = (nombre) => CAT_ICONS[nombre?.toLowerCase().trim()] ?? '📖';
+const getMinimumLaunchDate = () => {
+  const date = new Date(Date.now() + 24 * 60 * 60 * 1000);
+  date.setSeconds(0, 0);
+  date.setMinutes(date.getMinutes() + 1);
+  return date;
+};
+const formatDateInput = (date) => [
+  date.getFullYear(),
+  String(date.getMonth() + 1).padStart(2, '0'),
+  String(date.getDate()).padStart(2, '0'),
+].join('-');
+const formatTimeInput = (date) =>
+  `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
 
 export default function PublicarLibro({ navigation, route }) {
+  const s = useThemedStyles(themeBaseS);
   const { user, signOut } = useContext(AuthContext);
   const [sidebarVisible, setSidebarVisible] = useState(false);
   const libro = route?.params?.libro ?? null;
@@ -84,6 +101,16 @@ export default function PublicarLibro({ navigation, route }) {
       ? libro.nivel_minimo_acceso
       : 'Plata'
   );
+  const [fechaLanzamientoPublico, setFechaLanzamientoPublico] = useState(() => {
+    const saved = libro?.fecha_lanzamiento_publico ? new Date(libro.fecha_lanzamiento_publico) : null;
+    return saved && !Number.isNaN(saved.getTime()) ? saved : getMinimumLaunchDate();
+  });
+  const [fechaPickerMode, setFechaPickerMode] = useState(null);
+  const [fechaPickerDraft, setFechaPickerDraft] = useState(fechaLanzamientoPublico);
+  const [fechaInput, setFechaInput] = useState({
+    date: formatDateInput(fechaLanzamientoPublico),
+    time: formatTimeInput(fechaLanzamientoPublico),
+  });
 
   const [categorias,           setCategorias]           = useState([]);
   const [imagenes,             setImagenes]             = useState([]);
@@ -97,6 +124,7 @@ export default function PublicarLibro({ navigation, route }) {
   const [varForm,              setVarForm]              = useState({
     tipo_tapa: 'Tapa Blanda', idioma: 'Español',
     edicion: '1ra Edición', precio_variante: '', stock_variante: '',
+    archivo_digital: null,
   });
 
   useEffect(() => {
@@ -105,33 +133,16 @@ export default function PublicarLibro({ navigation, route }) {
   }, [modo]);
 
   const set = (key, val) => setForm(p => ({ ...p, [key]: val }));
-  const getFechaLanzamientoPublico = () => {
-    if (!accesoAnticipado) return '';
-    const fechaGuardada = libro?.fecha_lanzamiento_publico;
-    const fechaExistente = fechaGuardada ? new Date(fechaGuardada) : null;
-    const fechaMinima = Date.now() + 24 * 60 * 60 * 1000 + 60 * 1000;
-    if (
-      modo === 'editar' &&
-      libro?.acceso_anticipado &&
-      fechaExistente &&
-      !Number.isNaN(fechaExistente.getTime()) &&
-      fechaExistente.getTime() >= fechaMinima
-    ) {
-      return fechaGuardada;
-    }
-    return new Date(fechaMinima).toISOString();
-  };
-
   /* ── validaciones ── */
   const validarCompleto = () => {
     const e = {};
     if (!form.titulo.trim())  e.titulo = 'El título es obligatorio';
     if (!form.autor.trim())   e.autor  = 'El autor es obligatorio';
-    if (!form.precio || Number.isNaN(Number(form.precio)) || Number.parseFloat(form.precio) <= 0)
+    if (!form.precio || isNaN(form.precio) || parseFloat(form.precio) <= 0)
       e.precio = 'Ingresa un precio válido';
     if (!form.id_categoria)   e.id_categoria = 'Selecciona una categoría';
     if (!form.estado)         e.estado = 'Selecciona el estado del libro';
-    if (form.stock === '' || Number.isNaN(Number(form.stock)) || Number.parseInt(form.stock, 10) < 0)
+    if (form.stock === '' || isNaN(form.stock) || parseInt(form.stock) < 0)
       e.stock = 'Ingresa un stock válido';
     setErrores(e);
     return Object.keys(e).length === 0;
@@ -147,11 +158,147 @@ export default function PublicarLibro({ navigation, route }) {
 
   /* ── imagen ── */
   const handleAgregarImagen = async () => {
-    if (imagenes.length >= 4) return;
-    const permiso = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permiso.granted) return;
-    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaType.Images, quality: 0.8 });
-    if (!result.canceled) setImagenes(prev => [...prev, result.assets[0].uri]);
+    if (imagenes.length >= 5) return;
+    try {
+      const permiso = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permiso.granted) {
+        Alert.alert('Permiso necesario', 'Permite el acceso a tus fotos para agregarlas al libro.');
+        return;
+      }
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        quality: 0.8,
+      });
+      if (!result.canceled) {
+        const nuevos = result.assets.slice(0, 5 - imagenes.length);
+        const validos = nuevos.filter((asset) => {
+          const mime = asset.mimeType?.toLowerCase();
+          const extension = asset.fileName?.match(/\.(jpe?g|png|webp)$/i)?.[1];
+          return mime
+            ? ['image/jpeg', 'image/png', 'image/webp'].includes(mime)
+            : Boolean(extension);
+        });
+        if (validos.length < nuevos.length) {
+          Alert.alert('Formato no compatible', 'Solo se admiten fotos JPG, PNG o WebP.');
+        }
+        setImagenes(prev => [...prev, ...validos]);
+      }
+    } catch (error) {
+      Alert.alert('No se pudieron seleccionar las fotos', parseError(error));
+    }
+  };
+
+  const handleSeleccionarArchivoDigital = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ['application/pdf', 'application/epub+zip'],
+        copyToCacheDirectory: true,
+        multiple: false,
+      });
+      if (result.canceled || !result.assets?.[0]) return;
+      const file = result.assets[0];
+      const extension = file.name?.split('.').pop()?.toLowerCase();
+      if (!['pdf', 'epub'].includes(extension)) {
+        Alert.alert('Formato no compatible', 'Selecciona un archivo PDF o EPUB.');
+        return;
+      }
+      setVarForm(prev => ({ ...prev, archivo_digital: file }));
+    } catch (error) {
+      Alert.alert('No se pudo seleccionar el archivo', parseError(error));
+    }
+  };
+
+  const abrirSelectorFecha = (mode) => {
+    setFechaPickerDraft(new Date(fechaLanzamientoPublico));
+    setFechaPickerMode(mode);
+  };
+
+  const actualizarFechaManual = (key, value) => {
+    const nextInput = { ...fechaInput, [key]: value };
+    setFechaInput(nextInput);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(nextInput.date) || !/^\d{2}:\d{2}$/.test(nextInput.time)) return;
+    const [year, month, day] = nextInput.date.split('-').map(Number);
+    const [hours, minutes] = nextInput.time.split(':').map(Number);
+    const parsed = new Date(year, month - 1, day, hours, minutes);
+    if (
+      parsed.getFullYear() === year && parsed.getMonth() === month - 1 &&
+      parsed.getDate() === day && hours < 24 && minutes < 60
+    ) setFechaLanzamientoPublico(parsed);
+  };
+
+  const confirmarFechaPicker = () => {
+    setFechaLanzamientoPublico(fechaPickerDraft);
+    setFechaInput({
+      date: formatDateInput(fechaPickerDraft),
+      time: formatTimeInput(fechaPickerDraft),
+    });
+    setFechaPickerMode(null);
+  };
+
+  const handleFechaPickerChange = (event, selectedDate) => {
+    if (selectedDate) {
+      setFechaPickerDraft(selectedDate);
+      if (Platform.OS === 'android') {
+        setFechaLanzamientoPublico(selectedDate);
+        setFechaInput({
+          date: formatDateInput(selectedDate),
+          time: formatTimeInput(selectedDate),
+        });
+      }
+    }
+    if (Platform.OS === 'android') setFechaPickerMode(null);
+  };
+
+  const agregarVariante = () => {
+    const precio = Number(varForm.precio_variante);
+    const stock = Number(varForm.stock_variante);
+    if (!Number.isFinite(precio) || precio <= 0) {
+      Alert.alert('Precio inválido', 'El precio de la variante debe ser mayor a $0.');
+      return;
+    }
+    if (!Number.isInteger(stock) || stock < 0) {
+      Alert.alert('Stock inválido', 'Ingresa un stock entero igual o mayor que cero.');
+      return;
+    }
+    if (varForm.tipo_tapa === 'Digital' && !varForm.archivo_digital) {
+      Alert.alert('Falta el archivo digital', 'Para una variante Digital debes seleccionar un archivo PDF o EPUB.');
+      return;
+    }
+    setVariantes(prev => [...prev, {
+      tipo_tapa: varForm.tipo_tapa,
+      idioma: varForm.idioma,
+      edicion: varForm.edicion.trim() || '1ra Edición',
+      precio_variante: precio,
+      stock_variante: stock,
+      archivo_digital: varForm.archivo_digital,
+    }]);
+    setVarForm({
+      tipo_tapa: 'Tapa Blanda',
+      idioma: 'Español',
+      edicion: '1ra Edición',
+      precio_variante: '',
+      stock_variante: '',
+      archivo_digital: null,
+    });
+    setVarModalVisible(false);
+  };
+
+  const completarVariante = async (idLibro) => {
+    const fallos = [];
+    for (const variante of variantes) {
+      try {
+        const { archivo_digital, ...datosVariante } = variante;
+        const respuesta = await crearVariante(idLibro, datosVariante);
+        const idVariante = respuesta?.data?.id_variante;
+        if (variante.tipo_tapa === 'Digital' && archivo_digital) {
+          if (!idVariante) throw new Error('El servidor no devolvió el identificador de la variante digital.');
+          await subirArchivoVariante(idLibro, idVariante, archivo_digital);
+        }
+      } catch (error) {
+        fallos.push(`${variante.tipo_tapa} · ${variante.idioma}: ${parseError(error)}`);
+      }
+    }
+    return fallos;
   };
 
   /* ── acciones ── */
@@ -167,15 +314,39 @@ export default function PublicarLibro({ navigation, route }) {
       formData.append('stock',             form.stock);
       formData.append('id_categoria',      form.id_categoria);
       formData.append('estado_libro',      form.estado);
-      formData.append('descripcion_libro', form.descripcion || '');
+      formData.append('descripcion_libro', form.descripcion.trim());
       formData.append('acceso_anticipado', String(accesoAnticipado));
       formData.append('nivel_minimo_acceso', accesoAnticipado ? nivelMinimoAcceso : 'Plata');
-      formData.append('fecha_lanzamiento_publico', getFechaLanzamientoPublico());
-      imagenes.forEach((uri, i) => formData.append('imagenes', { uri, name: `img_${i}.jpg`, type: 'image/jpeg' }));
+      formData.append('fecha_lanzamiento_publico', accesoAnticipado ? fechaLanzamientoPublico.toISOString() : '');
+      for (const [i, image] of imagenes.entries()) {
+        const extension = image.fileName?.match(/\.(jpe?g|png|webp)$/i)?.[1]?.toLowerCase();
+        const mimeType = image.mimeType && ['image/jpeg', 'image/png', 'image/webp'].includes(image.mimeType)
+          ? image.mimeType
+          : ({ jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp' }[extension] || 'image/jpeg');
+        const fileExtension = extension || ({ 'image/png': 'png', 'image/webp': 'webp' }[mimeType] || 'jpg');
+        const fileName = `img_${i}.${fileExtension}`;
+        if (Platform.OS === 'web') {
+          const file = image.file || await fetch(image.uri).then(response => {
+            if (!response.ok) throw new Error('No se pudo leer una de las imágenes seleccionadas.');
+            return response.blob();
+          });
+          formData.append('imagenes', file, fileName);
+        } else {
+          formData.append('imagenes', { uri: image.uri, name: fileName, type: mimeType });
+        }
+      }
       const res = await publicarLibro(formData);
       const id_libro = res?.data?.id_libro;
-      if (id_libro && variantes.length > 0) {
-        await Promise.all(variantes.map(v => crearVariante(id_libro, v).catch(() => {})));
+      const fallosVariantes = id_libro && variantes.length > 0
+        ? await completarVariante(id_libro)
+        : [];
+      if (fallosVariantes.length) {
+        Alert.alert(
+          'Libro publicado con variantes pendientes',
+          `El libro se publicó, pero algunas variantes no se guardaron:\n\n${fallosVariantes.join('\n')}`,
+          [{ text: 'Volver a mis libros', onPress: () => navigation.goBack() }],
+        );
+        return;
       }
       navigation.goBack();
     } catch (err) {
@@ -197,10 +368,10 @@ export default function PublicarLibro({ navigation, route }) {
       formData.append('stock',             form.stock);
       formData.append('id_categoria',      form.id_categoria);
       formData.append('estado_libro',      form.estado);
-      formData.append('descripcion_libro', form.descripcion);
+      formData.append('descripcion_libro', form.descripcion.trim());
       formData.append('acceso_anticipado', String(accesoAnticipado));
       formData.append('nivel_minimo_acceso', accesoAnticipado ? nivelMinimoAcceso : 'Plata');
-      formData.append('fecha_lanzamiento_publico', getFechaLanzamientoPublico());
+      formData.append('fecha_lanzamiento_publico', accesoAnticipado ? fechaLanzamientoPublico.toISOString() : '');
       await updateLibro(libro.id_libro, formData);
       navigation.goBack();
     } catch (err) {
@@ -312,17 +483,22 @@ export default function PublicarLibro({ navigation, route }) {
         {modo === 'nuevo' && (
           <View style={s.card}>
             <Text style={s.cardTitle}>Imágenes del libro</Text>
-            <Text style={s.cardSubtitle}>Agrega hasta 4 fotos de la portada</Text>
+            <Text style={s.cardSubtitle}>Agrega hasta 5 fotos. La primera será la portada.</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 10 }}>
-              {imagenes.map((uri, i) => (
+              {imagenes.map((image, i) => (
                 <View key={i} style={s.imgWrap}>
-                  <Image source={{ uri }} style={s.imgThumb} />
+                  <Image source={{ uri: image.uri }} style={s.imgThumb} />
+                  {i === 0 && (
+                    <View style={s.coverBadge}>
+                      <Text style={s.coverBadgeText}>Portada</Text>
+                    </View>
+                  )}
                   <TouchableOpacity style={s.imgRemove} onPress={() => setImagenes(p => p.filter((_, idx) => idx !== i))}>
                     <Text style={{ color: WHITE, fontSize: 11, fontWeight: '800' }}>✕</Text>
                   </TouchableOpacity>
                 </View>
               ))}
-              {imagenes.length < 4 && (
+              {imagenes.length < 5 && (
                 <TouchableOpacity style={s.imgAdd} onPress={handleAgregarImagen} activeOpacity={0.7}>
                   <Text style={{ fontSize: 30, color: PRIMARY }}>+</Text>
                   <Text style={{ fontSize: 11, color: MUTED, marginTop: 2 }}>Agregar</Text>
@@ -338,12 +514,12 @@ export default function PublicarLibro({ navigation, route }) {
 
           <Field label="Título *" error={errores.titulo}>
             <TextInput style={[s.input, errores.titulo && s.inputError]}
-              placeholder="Título del libro" value={form.titulo} onChangeText={v => set('titulo', v)} />
+              placeholder="Ej: Cien años de soledad" value={form.titulo} maxLength={100} onChangeText={v => set('titulo', v)} />
           </Field>
 
           <Field label="Autor *" error={errores.autor}>
             <TextInput style={[s.input, errores.autor && s.inputError]}
-              placeholder="Nombre del autor" value={form.autor} onChangeText={v => set('autor', v)} />
+              placeholder="Ej: Gabriel García Márquez" value={form.autor} maxLength={50} onChangeText={v => set('autor', v)} />
           </Field>
 
 
@@ -351,17 +527,21 @@ export default function PublicarLibro({ navigation, route }) {
           <Field label="ISBN (opcional)">
             <View style={s.isbnRow}>
               <TextInput style={[s.input, { flex: 1 }]}
-                placeholder="Escanea o ingresa el ISBN" value={form.isbn} onChangeText={v => set('isbn', v)} />
+                placeholder="Escanea o ingresa el ISBN" value={form.isbn} maxLength={20} onChangeText={v => set('isbn', v)} />
               <TouchableOpacity style={s.scanBtn} onPress={() => setBarcodeVisible(true)} activeOpacity={0.8}>
                 <IconCamera size={20} color={PRIMARY} />
               </TouchableOpacity>
             </View>
           </Field>
 
-          <Field label="Descripción (opcional)">
+          <Field label={`Descripción * (${form.descripcion.length}/300)`} error={errores.descripcion}>
             <TextInput style={[s.input, s.inputMulti]}
-              placeholder="Describe brevemente el libro…" value={form.descripcion}
-              onChangeText={v => set('descripcion', v)} multiline />
+              placeholder="Describe brevemente el libro: condición, edición y detalles importantes…"
+              value={form.descripcion}
+              onChangeText={v => set('descripcion', v.slice(0, 300))}
+              maxLength={300}
+              multiline />
+            <Text style={s.fieldHint}>Incluye condición, edición y cualquier detalle importante para el comprador.</Text>
           </Field>
         </View>
 
@@ -498,10 +678,40 @@ export default function PublicarLibro({ navigation, route }) {
               <View style={s.earlyAccessNotice}>
                 <Text style={s.earlyAccessNoticeTitle}>Disponibilidad pública</Text>
                 <Text style={s.earlyAccessNoticeText}>
-                  {modo === 'editar' && libro?.acceso_anticipado && libro?.fecha_lanzamiento_publico
-                    ? 'Se conserva la fecha programada si faltan al menos 24 horas. Si está más próxima, se reprogramará para al menos 24 horas después de guardar.'
-                    : 'El lanzamiento público se programará para al menos 24 horas después de guardar.'}
+                  Elige la fecha y hora (hora de Colombia). Debe ser al menos 24 horas después de guardar.
                 </Text>
+                {Platform.OS === 'web' ? (
+                  <View style={[s.row2, s.dateFields]}>
+                    <Field label="Fecha (AAAA-MM-DD)" style={{ flex: 1 }}>
+                      <TextInput
+                        style={[s.input, errores.fechaLanzamiento && s.inputError]}
+                        value={fechaInput.date}
+                        onChangeText={value => actualizarFechaManual('date', value)}
+                        placeholder="AAAA-MM-DD"
+                      />
+                    </Field>
+                    <Field label="Hora (HH:MM)" style={{ flex: 1 }}>
+                      <TextInput
+                        style={[s.input, errores.fechaLanzamiento && s.inputError]}
+                        value={fechaInput.time}
+                        onChangeText={value => actualizarFechaManual('time', value)}
+                        placeholder="HH:MM"
+                      />
+                    </Field>
+                  </View>
+                ) : (
+                  <View style={s.datePickerActions}>
+                    <TouchableOpacity style={s.datePickerButton} onPress={() => abrirSelectorFecha('date')}>
+                      <Text style={s.datePickerLabel}>Fecha</Text>
+                      <Text style={s.datePickerValue}>{fechaLanzamientoPublico.toLocaleDateString('es-CO')}</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={s.datePickerButton} onPress={() => abrirSelectorFecha('time')}>
+                      <Text style={s.datePickerLabel}>Hora</Text>
+                      <Text style={s.datePickerValue}>{fechaLanzamientoPublico.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })}</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+                {errores.fechaLanzamiento && <Text style={s.errorText}>{errores.fechaLanzamiento}</Text>}
               </View>
             </View>
           )}
@@ -521,6 +731,9 @@ export default function PublicarLibro({ navigation, route }) {
                 <View style={{ flex: 1 }}>
                   <Text style={s.varItemTitle}>{v.tipo_tapa} · {v.idioma}</Text>
                   <Text style={s.varItemSub}>{v.edicion} · Stock: {v.stock_variante}</Text>
+                  {v.archivo_digital && (
+                    <Text style={s.varItemSub} numberOfLines={1}>Archivo: {v.archivo_digital.name}</Text>
+                  )}
                 </View>
                 <Text style={s.varItemPrice}>${Number(v.precio_variante).toLocaleString('es-CO')}</Text>
                 <TouchableOpacity onPress={() => setVariantes(prev => prev.filter((_, idx) => idx !== i))} style={{ padding: 6 }}>
@@ -545,6 +758,47 @@ export default function PublicarLibro({ navigation, route }) {
 
         <Footer onLinkPress={() => {}} />
       </ScrollView>
+
+      {Platform.OS === 'android' && fechaPickerMode && (
+        <DateTimePicker
+          value={fechaPickerDraft}
+          mode={fechaPickerMode}
+          display="default"
+          minimumDate={getMinimumLaunchDate()}
+          onChange={handleFechaPickerChange}
+        />
+      )}
+      {Platform.OS === 'ios' && (
+        <Modal
+          visible={Boolean(fechaPickerMode)}
+          transparent
+          animationType="slide"
+          onRequestClose={() => setFechaPickerMode(null)}
+        >
+          <View style={s.sheetOverlay}>
+            <View style={s.datePickerSheet}>
+              <Text style={s.sheetTitle}>{fechaPickerMode === 'date' ? 'Fecha de disponibilidad' : 'Hora de disponibilidad'}</Text>
+              {fechaPickerMode && (
+                <DateTimePicker
+                  value={fechaPickerDraft}
+                  mode={fechaPickerMode}
+                  display="spinner"
+                  minimumDate={getMinimumLaunchDate()}
+                  onChange={handleFechaPickerChange}
+                />
+              )}
+              <View style={s.datePickerFooter}>
+                <TouchableOpacity style={[s.modalAction, s.modalActionSecondary]} onPress={() => setFechaPickerMode(null)}>
+                  <Text style={s.modalActionSecondaryText}>Cancelar</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={[s.modalAction, s.modalActionPrimary]} onPress={confirmarFechaPicker}>
+                  <Text style={s.modalActionPrimaryText}>Confirmar</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+      )}
 
       {/* ── Modal categoría ── */}
       <Modal visible={catModalVisible} transparent animationType="slide" onRequestClose={() => setCatModalVisible(false)}>
@@ -620,24 +874,25 @@ export default function PublicarLibro({ navigation, route }) {
               <Field label="Stock">
                 <TextInput style={s.input} value={varForm.stock_variante}
                   onChangeText={v => setVarForm(p => ({ ...p, stock_variante: v }))}
-                  keyboardType="numeric" placeholder="1" />
+                  keyboardType="numeric" placeholder={varForm.tipo_tapa === 'Digital' ? '999' : '5'} />
               </Field>
+              {varForm.tipo_tapa === 'Digital' && (
+                <Field label="Archivo PDF / EPUB">
+                  <TouchableOpacity style={s.filePickerButton} onPress={handleSeleccionarArchivoDigital}>
+                    <Text style={s.filePickerButtonText}>
+                      {varForm.archivo_digital ? 'Cambiar archivo' : 'Seleccionar archivo PDF o EPUB'}
+                    </Text>
+                  </TouchableOpacity>
+                  {varForm.archivo_digital && (
+                    <Text style={s.fileName} numberOfLines={2}>{varForm.archivo_digital.name}</Text>
+                  )}
+                </Field>
+              )}
 
               <TouchableOpacity
                 style={[s.submitBtn, { marginTop: 4 }]}
                 activeOpacity={0.85}
-                onPress={() => {
-                  if (!varForm.precio_variante || !varForm.stock_variante) return;
-                  setVariantes(prev => [...prev, {
-                    tipo_tapa:      varForm.tipo_tapa,
-                    idioma:         varForm.idioma,
-                    edicion:        varForm.edicion,
-                    precio_variante: Number(varForm.precio_variante),
-                    stock_variante:  Number(varForm.stock_variante),
-                  }]);
-                  setVarForm({ tipo_tapa: 'Tapa Blanda', idioma: 'Español', edicion: '1ra Edición', precio_variante: '', stock_variante: '' });
-                  setVarModalVisible(false);
-                }}
+                onPress={agregarVariante}
               >
                 <Text style={s.submitBtnText}>Agregar variante</Text>
               </TouchableOpacity>
@@ -675,7 +930,7 @@ function Field({ label, error, children, style }) {
   );
 }
 
-const s = StyleSheet.create({
+const themeBaseS = StyleSheet.create({
   container: { flex: 1, backgroundColor: BG },
   center:    { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: BG },
 
@@ -695,6 +950,8 @@ const s = StyleSheet.create({
   /* imágenes */
   imgWrap:   { marginRight: 10, position: 'relative' },
   imgThumb:  { width: 80, height: 108, borderRadius: 10 },
+  coverBadge: { position: 'absolute', left: 4, bottom: 4, backgroundColor: PRIMARY, borderRadius: 6, paddingHorizontal: 6, paddingVertical: 3 },
+  coverBadgeText: { color: WHITE, fontSize: 9, fontWeight: '800' },
   imgRemove: { position: 'absolute', top: 5, right: 5, backgroundColor: PRIMARY, borderRadius: 10, width: 20, height: 20, justifyContent: 'center', alignItems: 'center' },
   imgAdd:    { width: 80, height: 108, borderRadius: 10, borderWidth: 2, borderColor: '#E0C8D0', borderStyle: 'dashed', justifyContent: 'center', alignItems: 'center', backgroundColor: '#FDF7F9' },
 
@@ -751,6 +1008,18 @@ const s = StyleSheet.create({
   earlyAccessNotice: { marginTop: 14, padding: 11, borderRadius: 10, backgroundColor: '#F5F3EF' },
   earlyAccessNoticeTitle: { color: TEXT, fontSize: 12, fontWeight: '800', marginBottom: 4 },
   earlyAccessNoticeText: { color: MUTED, fontSize: 11, lineHeight: 16 },
+  datePickerActions: { flexDirection: 'row', gap: 8, marginTop: 10 },
+  datePickerButton: { flex: 1, backgroundColor: WHITE, borderWidth: 1, borderColor: BORDER, borderRadius: 10, padding: 10 },
+  datePickerLabel: { color: MUTED, fontSize: 10, fontWeight: '700', marginBottom: 4 },
+  datePickerValue: { color: PRIMARY, fontSize: 14, fontWeight: '800' },
+  dateFields: { gap: 8, marginTop: 10 },
+  datePickerSheet: { backgroundColor: WHITE, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, paddingBottom: 30, width: '100%' },
+  datePickerFooter: { flexDirection: 'row', justifyContent: 'flex-end', gap: 10, marginTop: 10 },
+  modalAction: { paddingHorizontal: 18, paddingVertical: 11, borderRadius: 10 },
+  modalActionSecondary: { backgroundColor: '#F3F4F6', borderWidth: 1, borderColor: BORDER },
+  modalActionSecondaryText: { color: TEXT, fontSize: 13, fontWeight: '700' },
+  modalActionPrimary: { backgroundColor: PRIMARY },
+  modalActionPrimaryText: { color: WHITE, fontSize: 13, fontWeight: '800' },
 
   /* chips (modal variantes) */
   chipRow:          { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 6 },
@@ -762,6 +1031,9 @@ const s = StyleSheet.create({
   varItemTitle:  { fontSize: 13, fontWeight: '700', color: TEXT },
   varItemSub:    { fontSize: 11, color: MUTED, marginTop: 2 },
   varItemPrice:  { fontSize: 13, fontWeight: '800', color: PRIMARY },
+  filePickerButton: { borderWidth: 1, borderColor: PRIMARY, backgroundColor: '#FDF2F4', borderRadius: 10, padding: 12, alignItems: 'center' },
+  filePickerButtonText: { color: PRIMARY, fontSize: 12, fontWeight: '800', textAlign: 'center' },
+  fileName: { color: MUTED, fontSize: 11, marginTop: 6 },
   varAddBtn:     { marginTop: 12, borderWidth: 1.5, borderColor: PRIMARY, borderRadius: 10, paddingVertical: 11, alignItems: 'center', borderStyle: 'dashed' },
   varAddBtnText: { fontSize: 14, fontWeight: '700', color: PRIMARY },
 
@@ -792,3 +1064,4 @@ const s = StyleSheet.create({
   submitBtn:     { backgroundColor: PRIMARY, borderRadius: 16, paddingVertical: 16, alignItems: 'center', marginTop: 4, elevation: 3, shadowColor: PRIMARY, shadowOpacity: 0.3, shadowRadius: 8, shadowOffset: { width: 0, height: 4 } },
   submitBtnText: { color: WHITE, fontWeight: '800', fontSize: 16 },
 });
+const s = themeBaseS;

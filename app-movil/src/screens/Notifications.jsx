@@ -27,6 +27,7 @@ import SidebarVendedor from '../components/SidebarVendedor';
 import Footer from '../components/Footer';
 import {
   IconCreditCard,
+  IconFilter,
   IconMessage,
   IconPackage,
   IconShoppingBag,
@@ -46,6 +47,15 @@ const BUYER_FILTERS = [
   { key: 'no_leidas', label: 'No leídas' },
   { key: 'pedidos_envios', label: 'Pedidos y envíos', types: ['pedido', 'entrega', 'pago'] },
   { key: 'reclamos', label: 'Reclamos y soporte', types: ['sistema'] },
+  { key: 'mensajes', label: 'Mensajes', types: ['mensaje'] },
+];
+
+const VENDOR_FILTERS = [
+  { key: 'todas', label: 'Todas' },
+  { key: 'no_leidas', label: 'No leídas' },
+  { key: 'pedidos_envios', label: 'Ventas y envíos', types: ['venta', 'pedido', 'entrega', 'pago'] },
+  { key: 'reclamos', label: 'Reclamos', types: ['sistema', 'reclamo', 'devolucion'] },
+  { key: 'resenas', label: 'Reseñas', types: ['resena', 'reseña', 'resenia'] },
   { key: 'mensajes', label: 'Mensajes', types: ['mensaje'] },
 ];
 
@@ -180,6 +190,7 @@ export default function Notifications({ navigation }) {
   const [deleting, setDeleting] = useState(false);
   const [sortVisible, setSortVisible] = useState(false);
   const [pageSizeVisible, setPageSizeVisible] = useState(false);
+  const [filterVisible, setFilterVisible] = useState(false);
   const [sortOrder, setSortOrder] = useState('recientes');
   const [pageSize, setPageSize] = useState(10);
   const [page, setPage] = useState(1);
@@ -237,34 +248,34 @@ export default function Notifications({ navigation }) {
     let items = notifications;
     if (filter === 'no_leidas') {
       items = items.filter((item) => !item.leida);
-    } else if (isBuyer) {
-      const selectedFilter = BUYER_FILTERS.find((item) => item.key === filter);
+    } else {
+      const options = isBuyer ? BUYER_FILTERS : VENDOR_FILTERS;
+      const selectedFilter = options.find((item) => item.key === filter);
       if (selectedFilter?.types) {
-        items = items.filter((item) => selectedFilter.types.includes(item.tipo));
+        items = items.filter((item) => selectedFilter.types.includes(
+          String(item.tipo || '').toLowerCase(),
+        ));
       }
     }
 
-    if (isBuyer) {
-      items = [...items].sort((a, b) => {
-        const dateA = new Date(a.fecha_creacion || 0).getTime();
-        const dateB = new Date(b.fecha_creacion || 0).getTime();
-        return sortOrder === 'antiguas' ? dateA - dateB : dateB - dateA;
-      });
-    }
-    return items;
+    return [...items].sort((a, b) => {
+      const dateA = new Date(a.fecha_creacion || 0).getTime();
+      const dateB = new Date(b.fecha_creacion || 0).getTime();
+      return sortOrder === 'antiguas' ? dateA - dateB : dateB - dateA;
+    });
   }, [filter, isBuyer, notifications, sortOrder]);
 
   const unreadCount = notifications.filter((item) => !item.leida).length;
   const totalPages = Math.max(1, Math.ceil(filteredNotifications.length / pageSize));
   const safePage = Math.min(page, totalPages);
-  const visibleNotifications = isBuyer
-    ? filteredNotifications.slice((safePage - 1) * pageSize, safePage * pageSize)
-    : filteredNotifications;
+  const visibleNotifications = filteredNotifications.slice((safePage - 1) * pageSize, safePage * pageSize);
 
   const getFilterCount = (filterOption) => {
     if (filterOption.key === 'no_leidas') return unreadCount;
     if (!filterOption.types) return notifications.length;
-    return notifications.filter((item) => filterOption.types.includes(item.tipo)).length;
+    return notifications.filter((item) => filterOption.types.includes(
+      String(item.tipo || '').toLowerCase(),
+    )).length;
   };
 
   const handleMarkRead = async (id) => {
@@ -377,9 +388,9 @@ export default function Notifications({ navigation }) {
         !isBuyer && styles.vendorCard,
         unread && (isBuyer ? styles.cardUnread : styles.vendorCardUnread),
       ]}>
-        <View style={styles.cardInner}>
+        <View style={[styles.cardInner, !isBuyer && styles.vendorCardInner]}>
           <TouchableOpacity
-            style={styles.cardContent}
+            style={[styles.cardContent, !isBuyer && styles.vendorCardContent]}
             activeOpacity={0.75}
             onPress={() => handleOpen(item)}
           >
@@ -395,14 +406,14 @@ export default function Notifications({ navigation }) {
                 <Text style={[styles.cardTitle, unread && styles.cardTitleUnread]}>
                   {cleanTitle(item.titulo)}
                 </Text>
-                {unread && <View style={styles.unreadDot} />}
+                {unread && isBuyer && <View style={styles.unreadDot} />}
               </View>
               <Text style={styles.cardBody}>{item.descripcion || item.cuerpo}</Text>
               <Text style={styles.cardDate}>🕐 {formatDate(item.fecha_creacion) || 'Ahora'}</Text>
             </View>
           </TouchableOpacity>
 
-          <View style={styles.actions}>
+          <View style={[styles.actions, !isBuyer && styles.vendorActions]}>
             {unread && (
               <TouchableOpacity
                 style={[styles.btnRead, !isBuyer && styles.vendorBtnRead]}
@@ -411,7 +422,7 @@ export default function Notifications({ navigation }) {
                 accessibilityLabel="Marcar como leída"
               >
                 <Text style={[styles.btnReadText, !isBuyer && styles.vendorBtnReadText]}>
-                  {isBuyer ? '✓' : '✓ Leída'}
+                    ✓
                 </Text>
               </TouchableOpacity>
             )}
@@ -422,7 +433,7 @@ export default function Notifications({ navigation }) {
               accessibilityLabel="Eliminar notificación"
             >
               <Text style={[styles.btnDeleteText, !isBuyer && styles.vendorBtnDeleteText]}>
-                {isBuyer ? '×' : 'Eliminar'}
+                ×
               </Text>
             </TouchableOpacity>
           </View>
@@ -431,27 +442,49 @@ export default function Notifications({ navigation }) {
     );
   };
 
-  const filterOptions = isBuyer ? BUYER_FILTERS : [
-    { key: 'todas', label: 'Todas' },
-    { key: 'no_leidas', label: 'No leídas' },
-  ];
+  const filterOptions = isBuyer ? BUYER_FILTERS : VENDOR_FILTERS;
+  const activeFilterOption = filterOptions.find((option) => option.key === filter) || filterOptions[0];
 
   return (
     <SafeAreaView style={[styles.safe, !isBuyer && styles.vendorSafe]}>
       {user?.rol === 'vendedor' && (
         <View style={styles.vendorHeader}>
-          <TouchableOpacity onPress={() => setSidebarVisible(true)} style={styles.menuBtn}>
-            <Text style={styles.menuIcon}>☰</Text>
-          </TouchableOpacity>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.vendorHeaderTitle}>Notificaciones</Text>
-            <Text style={styles.vendorHeaderSubtitle}>Mantente al día con tus pedidos y mensajes</Text>
-          </View>
-          {unreadCount > 0 && (
-            <View style={styles.vendorUnreadBadge}>
-              <Text style={styles.vendorUnreadBadgeText}>{unreadCount}</Text>
+          <View style={styles.vendorHeaderTop}>
+            <TouchableOpacity onPress={() => setSidebarVisible(true)} style={styles.menuBtn}>
+              <Text style={styles.menuIcon}>☰</Text>
+            </TouchableOpacity>
+            <View style={styles.vendorHeaderCopy}>
+              <Text style={styles.vendorHeaderTitle}>Notificaciones</Text>
             </View>
-          )}
+            {unreadCount > 0 && (
+              <View style={styles.vendorUnreadBadge}>
+                <Text style={styles.vendorUnreadBadgeText}>
+                  {unreadCount > 999 ? '999+' : `${unreadCount} sin leer`}
+                </Text>
+              </View>
+            )}
+          </View>
+          <View style={styles.vendorHeaderActions}>
+            {unreadCount > 0 && (
+              <TouchableOpacity
+                style={styles.vendorMarkAllButton}
+                onPress={handleMarkAllRead}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.vendorMarkAllText}>Marcar todas como leídas</Text>
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity
+              style={styles.vendorBulkDeleteButton}
+              onPress={() => {
+                setDeleteFilter('leidas');
+                setBulkDeleteVisible(true);
+              }}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.vendorBulkDeleteText}>Eliminar mensajes</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       )}
 
@@ -501,61 +534,68 @@ export default function Notifications({ navigation }) {
               </View>
             )}
 
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={[styles.filterRow, !isBuyer && styles.vendorFilterRow]}
-            >
-              {filterOptions.map((option) => {
-                const count = isBuyer
-                  ? getFilterCount(option)
-                  : option.key === 'no_leidas' ? unreadCount : notifications.length;
-                return (
-                  <TouchableOpacity
-                    key={option.key}
-                    style={[styles.filterBtn, filter === option.key && styles.filterBtnActive]}
-                    onPress={() => {
-                      setFilter(option.key);
-                      setPage(1);
-                    }}
-                    activeOpacity={0.8}
-                  >
-                    <Text style={[styles.filterText, filter === option.key && styles.filterTextActive]}>
-                      {option.label}
-                    </Text>
-                    {isBuyer && count > 0 && (
-                      <Text style={[styles.filterBadge, filter === option.key && styles.filterBadgeActive]}>
-                        {count > 99 ? '99+' : count}
+            {isBuyer ? (
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
+                {filterOptions.map((option) => {
+                  const count = getFilterCount(option);
+                  return (
+                    <TouchableOpacity
+                      key={option.key}
+                      style={[styles.filterBtn, filter === option.key && styles.filterBtnActive]}
+                      onPress={() => {
+                        setFilter(option.key);
+                        setPage(1);
+                      }}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={[styles.filterText, filter === option.key && styles.filterTextActive]}>
+                        {option.label}
                       </Text>
-                    )}
-                  </TouchableOpacity>
-                );
-              })}
-              {!isBuyer && unreadCount > 0 && (
+                      {count > 0 && (
+                        <Text style={[styles.filterBadge, filter === option.key && styles.filterBadgeActive]}>
+                          {count > 99 ? '99+' : count}
+                        </Text>
+                      )}
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+            ) : (
+              <View style={styles.vendorFilterToolbar}>
                 <TouchableOpacity
-                  style={styles.vendorMarkAllButton}
-                  onPress={handleMarkAllRead}
+                  style={styles.vendorFilterButton}
+                  onPress={() => setFilterVisible(true)}
                   activeOpacity={0.8}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Filtrar notificaciones. Filtro actual: ${activeFilterOption.label}`}
                 >
-                  <Text style={styles.vendorMarkAllText}>Marcar todas</Text>
-                </TouchableOpacity>
-              )}
-            </ScrollView>
-
-            {isBuyer && (
-              <View style={styles.listTools}>
-                <TouchableOpacity style={styles.sortControl} onPress={() => setSortVisible(true)}>
-                  <Text style={styles.sortIcon}>🗓️</Text>
-                  <Text style={styles.sortText}>
-                    {sortOrder === 'recientes' ? 'Más recientes' : 'Más antiguas'}
-                  </Text>
-                  <Text style={styles.sortChevron}>⌄</Text>
+                  <IconFilter size={17} color={PRIMARY} />
+                  <Text style={styles.vendorFilterButtonText}>Filtrar</Text>
+                  <View style={styles.vendorActiveFilterPill}>
+                    <Text style={styles.vendorActiveFilterText}>{activeFilterOption.label}</Text>
+                    <Text style={styles.vendorActiveFilterCount}>
+                      {getFilterCount(activeFilterOption) > 99 ? '99+' : getFilterCount(activeFilterOption)}
+                    </Text>
+                  </View>
                 </TouchableOpacity>
                 <Text style={styles.resultsCount}>
                   {filteredNotifications.length} {filteredNotifications.length === 1 ? 'notificación' : 'notificaciones'}
                 </Text>
               </View>
             )}
+
+            {isBuyer && <View style={styles.listTools}>
+              <TouchableOpacity style={styles.sortControl} onPress={() => setSortVisible(true)}>
+                <Text style={styles.sortIcon}>🗓️</Text>
+                <Text style={styles.sortText}>
+                  {sortOrder === 'recientes' ? 'Más recientes' : 'Más antiguas'}
+                </Text>
+                <Text style={styles.sortChevron}>⌄</Text>
+              </TouchableOpacity>
+              <Text style={styles.resultsCount}>
+                {filteredNotifications.length} {filteredNotifications.length === 1 ? 'notificación' : 'notificaciones'}
+              </Text>
+            </View>}
 
             {error ? (
               <View style={styles.errorBanner}>
@@ -586,22 +626,46 @@ export default function Notifications({ navigation }) {
         )}
         ListFooterComponent={(
           <View>
-            {isBuyer && filteredNotifications.length > 0 && (
+            {filteredNotifications.length > 0 && (
               <View style={styles.pagination}>
                 <Text style={styles.paginationInfo}>
-                  Mostrando {(safePage - 1) * pageSize + 1}–{Math.min(safePage * pageSize, filteredNotifications.length)} de {filteredNotifications.length}
+                  Mostrando <Text style={styles.paginationEmphasis}>{(safePage - 1) * pageSize + 1}–{Math.min(safePage * pageSize, filteredNotifications.length)}</Text> de <Text style={styles.paginationEmphasis}>{filteredNotifications.length}</Text> notificaciones
                 </Text>
                 <View style={styles.paginationControls}>
                   <TouchableOpacity
-                    style={[styles.pageButton, safePage <= 1 && styles.disabledButton]}
+                    style={[styles.pageButton, styles.pageNavButton, safePage <= 1 && styles.disabledButton]}
                     onPress={() => setPage((current) => Math.max(1, current - 1))}
                     disabled={safePage <= 1}
                   >
                     <Text style={styles.pageButtonText}>‹ Anterior</Text>
                   </TouchableOpacity>
-                  <Text style={styles.pageNumber}>{safePage} / {totalPages}</Text>
+                  {Array.from(new Set([
+                    1,
+                    safePage - 1,
+                    safePage,
+                    safePage + 1,
+                    totalPages,
+                  ].filter((number) => number >= 1 && number <= totalPages).sort((a, b) => a - b)))
+                    .map((number, index, pages) => (
+                      <React.Fragment key={number}>
+                        {index > 0 && pages[index - 1] < number - 1 && (
+                          <Text style={styles.pageEllipsis}>…</Text>
+                        )}
+                        <TouchableOpacity
+                          style={[styles.pageButton, styles.pageNumberButton, number === safePage && styles.pageButtonActive]}
+                          onPress={() => setPage(number)}
+                          accessibilityRole="button"
+                          accessibilityState={{ selected: number === safePage }}
+                          accessibilityLabel={`Página ${number}`}
+                        >
+                          <Text style={[styles.pageButtonText, number === safePage && styles.pageButtonTextActive]}>
+                            {number}
+                          </Text>
+                        </TouchableOpacity>
+                      </React.Fragment>
+                    ))}
                   <TouchableOpacity
-                    style={[styles.pageButton, safePage >= totalPages && styles.disabledButton]}
+                    style={[styles.pageButton, styles.pageNavButton, safePage >= totalPages && styles.disabledButton]}
                     onPress={() => setPage((current) => Math.min(totalPages, current + 1))}
                     disabled={safePage >= totalPages}
                   >
@@ -760,6 +824,48 @@ export default function Notifications({ navigation }) {
         </TouchableOpacity>
       </Modal>
 
+      <Modal
+        visible={filterVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setFilterVisible(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setFilterVisible(false)}
+        >
+          <View style={styles.optionsModal}>
+            <Text style={styles.optionsTitle}>Filtrar notificaciones</Text>
+            {filterOptions.map((option) => {
+              const selected = filter === option.key;
+              const count = getFilterCount(option);
+              return (
+                <TouchableOpacity
+                  key={option.key}
+                  style={[styles.optionRow, selected && styles.optionRowSelected]}
+                  onPress={() => {
+                    setFilter(option.key);
+                    setPage(1);
+                    setFilterVisible(false);
+                  }}
+                >
+                  <Text style={[styles.optionText, selected && styles.optionTextSelected]}>
+                    {option.label}
+                  </Text>
+                  <View style={styles.filterModalRight}>
+                    <Text style={[styles.filterModalCount, selected && styles.filterModalCountSelected]}>
+                      {count > 99 ? '99+' : count}
+                    </Text>
+                    {selected && <Text style={styles.optionCheck}>✓</Text>}
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
       {user?.rol === 'vendedor' ? (
         <SidebarVendedor
           visible={sidebarVisible}
@@ -783,47 +889,73 @@ export default function Notifications({ navigation }) {
 
 const baseStyles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: BG },
-  vendorSafe: { backgroundColor: PRIMARY },
+  vendorSafe: { backgroundColor: '#F8EEF1' },
   list: { flex: 1, backgroundColor: BG },
-  vendorList: {
-    backgroundColor: PRIMARY,
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-  },
+  vendorList: { backgroundColor: '#F8EEF1' },
   listContent: { flexGrow: 1, paddingBottom: 0 },
   listHeader: { paddingHorizontal: 14, paddingTop: 14 },
   vendorListHeader: { paddingHorizontal: 0, paddingTop: 0 },
 
   vendorHeader: {
-    paddingHorizontal: 20,
-    paddingTop: 10,
-    paddingBottom: 22,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    backgroundColor: PRIMARY,
-  },
-  menuBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  menuIcon: { color: WHITE, fontSize: 20, fontWeight: '700' },
-  vendorHeaderTitle: { fontSize: 20, fontWeight: '900', color: WHITE, letterSpacing: -0.3 },
-  vendorHeaderSubtitle: { fontSize: 12, color: 'rgba(255,255,255,0.65)', marginTop: 2 },
-  vendorUnreadBadge: {
+    marginHorizontal: 12,
+    marginTop: 8,
+    marginBottom: 10,
+    padding: 12,
+    borderRadius: 15,
+    borderWidth: 1,
+    borderColor: '#E8DDE1',
     backgroundColor: WHITE,
+    gap: 12,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
+  },
+  vendorHeaderTop: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  vendorHeaderCopy: { flex: 1 },
+  vendorHeaderActions: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
+  menuBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 11,
+    backgroundColor: '#F7E8EC',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  menuIcon: { color: PRIMARY, fontSize: 20, fontWeight: '700' },
+  vendorHeaderTitle: { fontSize: 19, fontWeight: '900', color: PRIMARY, letterSpacing: -0.3 },
+  vendorUnreadBadge: {
+    backgroundColor: PRIMARY,
     borderRadius: 14,
-    minWidth: 28,
-    height: 28,
+    minHeight: 25,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 8,
+    paddingHorizontal: 9,
   },
-  vendorUnreadBadgeText: { color: PRIMARY, fontWeight: '900', fontSize: 13 },
+  vendorUnreadBadgeText: { color: WHITE, fontWeight: '800', fontSize: 10 },
+  vendorMarkAllButton: {
+    flexGrow: 1,
+    flexBasis: 0,
+    alignItems: 'center',
+    backgroundColor: PRIMARY,
+    borderRadius: 9,
+    paddingVertical: 9,
+    paddingHorizontal: 12,
+  },
+  vendorMarkAllText: { color: WHITE, fontSize: 11, fontWeight: '700', textAlign: 'center' },
+  vendorBulkDeleteButton: {
+    flexGrow: 1,
+    flexBasis: 0,
+    alignItems: 'center',
+    backgroundColor: '#FEF2F2',
+    borderWidth: 1,
+    borderColor: '#FECACA',
+    borderRadius: 9,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+  },
+  vendorBulkDeleteText: { color: '#DC2626', fontSize: 11, fontWeight: '700', textAlign: 'center' },
 
   headerCard: {
     backgroundColor: WHITE,
@@ -866,9 +998,59 @@ const baseStyles = StyleSheet.create({
   bulkDeleteText: { color: '#DC2626', fontSize: 12, fontWeight: '700' },
 
   filterRow: { alignItems: 'center', paddingBottom: 12, gap: 8 },
-  vendorFilterRow: { paddingHorizontal: 14, paddingTop: 16, paddingBottom: 10 },
-  vendorMarkAllButton: { marginLeft: 2, paddingVertical: 8, paddingHorizontal: 10 },
-  vendorMarkAllText: { color: WHITE, fontSize: 12, fontWeight: '700' },
+  vendorFilterRow: { paddingHorizontal: 14, paddingTop: 4, paddingBottom: 12 },
+  vendorFilterToolbar: {
+    marginHorizontal: 12,
+    marginBottom: 8,
+    paddingHorizontal: 12,
+    minHeight: 50,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+    borderRadius: 13,
+    borderWidth: 1,
+    borderColor: '#E8DDE1',
+    backgroundColor: WHITE,
+  },
+  vendorFilterButton: { flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1, minWidth: 0 },
+  vendorFilterButtonText: { color: PRIMARY, fontSize: 13, fontWeight: '800' },
+  vendorActiveFilterPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    maxWidth: '70%',
+    borderRadius: 16,
+    backgroundColor: '#F7E8EC',
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+  },
+  vendorActiveFilterText: { color: '#4B5563', fontSize: 11, fontWeight: '700', flexShrink: 1 },
+  vendorActiveFilterCount: {
+    overflow: 'hidden',
+    borderRadius: 10,
+    backgroundColor: '#E2D7DC',
+    color: PRIMARY,
+    textAlign: 'center',
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+    fontSize: 9,
+    fontWeight: '800',
+  },
+  filterModalRight: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  filterModalCount: {
+    minWidth: 26,
+    overflow: 'hidden',
+    borderRadius: 10,
+    backgroundColor: '#F7E8EC',
+    color: PRIMARY,
+    textAlign: 'center',
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  filterModalCountSelected: { backgroundColor: PRIMARY, color: WHITE },
   filterBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -935,9 +1117,11 @@ const baseStyles = StyleSheet.create({
   },
   cardUnread: { backgroundColor: '#FFF8F5', borderLeftColor: PRIMARY, borderLeftWidth: 5 },
   vendorCard: { borderWidth: 1, borderColor: '#E5E0D8', marginTop: 4, marginBottom: 10 },
-  vendorCardUnread: { backgroundColor: WHITE, borderColor: PRIMARY, borderWidth: 1.5 },
+  vendorCardUnread: { backgroundColor: WHITE, borderColor: '#E5E0D8', borderLeftColor: PRIMARY, borderLeftWidth: 5 },
   cardInner: { padding: 14 },
+  vendorCardInner: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 12 },
   cardContent: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
+  vendorCardContent: { flex: 1, minWidth: 0, alignItems: 'center', gap: 9 },
   notificationCopy: { flex: 1, minWidth: 0 },
   iconBox: {
     width: 52,
@@ -950,7 +1134,7 @@ const baseStyles = StyleSheet.create({
     alignItems: 'center',
   },
   iconBoxUnread: { backgroundColor: '#FFF1F3', borderColor: '#F0D9DE' },
-  vendorIconBox: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#F5F3EF', borderWidth: 0 },
+  vendorIconBox: { width: 44, height: 44, borderRadius: 13, backgroundColor: '#F7F4F1', borderWidth: 1, borderColor: '#E8E4DF' },
   iconText: { fontSize: 23 },
   cardTitleRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 5, gap: 7 },
   cardTitle: { fontSize: 14, fontWeight: '700', color: TEXT, flex: 1 },
@@ -959,6 +1143,7 @@ const baseStyles = StyleSheet.create({
   cardDate: { fontSize: 11, color: '#999', marginTop: 8, fontWeight: '500' },
   cardBody: { fontSize: 13, color: '#555', lineHeight: 19 },
   actions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 8, marginTop: 10 },
+  vendorActions: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 6, marginTop: 0 },
   btnRead: {
     width: 38,
     height: 38,
@@ -970,8 +1155,8 @@ const baseStyles = StyleSheet.create({
     justifyContent: 'center',
   },
   btnReadText: { fontSize: 19, fontWeight: '800', color: '#16A34A' },
-  vendorBtnRead: { width: undefined, height: undefined, paddingVertical: 5, paddingHorizontal: 12, borderRadius: 20 },
-  vendorBtnReadText: { fontSize: 12 },
+  vendorBtnRead: { width: 38, height: 38, paddingVertical: 0, paddingHorizontal: 0, borderRadius: 12 },
+  vendorBtnReadText: { fontSize: 19 },
   btnDelete: {
     width: 38,
     height: 38,
@@ -982,9 +1167,9 @@ const baseStyles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  vendorBtnDelete: { width: undefined, height: undefined, paddingVertical: 5, paddingHorizontal: 12, borderRadius: 20 },
+  vendorBtnDelete: { width: 38, height: 38, paddingVertical: 0, paddingHorizontal: 0, borderRadius: 12 },
   btnDeleteText: { fontSize: 23, lineHeight: 26, fontWeight: '500', color: '#DC2626' },
-  vendorBtnDeleteText: { fontSize: 12, lineHeight: 16, fontWeight: '700' },
+  vendorBtnDeleteText: { fontSize: 23, lineHeight: 26, fontWeight: '500' },
 
   centered: { minHeight: 220, justifyContent: 'center', alignItems: 'center' },
   emptyCard: {
@@ -1005,12 +1190,12 @@ const baseStyles = StyleSheet.create({
     shadowRadius: 5,
     shadowOffset: { width: 0, height: 2 },
   },
-  vendorEmptyCard: { backgroundColor: 'transparent', borderWidth: 0, elevation: 0, shadowOpacity: 0 },
+  vendorEmptyCard: { backgroundColor: WHITE, borderWidth: 1, borderColor: BORDER, elevation: 0, shadowOpacity: 0 },
   emptyIcon: { fontSize: 36, marginBottom: 12 },
   emptyTitle: { fontSize: 16, fontWeight: '700', color: '#666', marginBottom: 6 },
-  vendorEmptyTitle: { color: WHITE },
+  vendorEmptyTitle: { color: TEXT },
   emptySubtitle: { fontSize: 13, color: '#888', textAlign: 'center', lineHeight: 19 },
-  vendorEmptySubtitle: { color: 'rgba(255,255,255,0.75)' },
+  vendorEmptySubtitle: { color: MUTED },
   errorBanner: {
     backgroundColor: '#FEF2F2',
     borderWidth: 1,
@@ -1026,20 +1211,28 @@ const baseStyles = StyleSheet.create({
     marginHorizontal: 14,
     marginTop: 2,
     marginBottom: 18,
-    padding: 14,
-    backgroundColor: WHITE,
-    borderWidth: 1.5,
-    borderColor: BORDER,
-    borderRadius: 14,
-    gap: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    backgroundColor: '#FAF8F6',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    columnGap: 12,
+    rowGap: 10,
   },
-  paginationInfo: { color: '#64748B', fontSize: 12, textAlign: 'center' },
-  paginationControls: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
-  pageButton: { paddingVertical: 9, paddingHorizontal: 12, borderWidth: 1, borderColor: '#E0DBD4', borderRadius: 9, backgroundColor: WHITE },
+  paginationInfo: { color: '#64748B', fontSize: 12, flexShrink: 1 },
+  paginationEmphasis: { color: '#1F2937', fontWeight: '800' },
+  paginationControls: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', gap: 5 },
+  pageButton: { minWidth: 34, height: 36, paddingHorizontal: 9, borderWidth: 1, borderColor: '#E0DBD4', borderRadius: 9, backgroundColor: WHITE, alignItems: 'center', justifyContent: 'center' },
+  pageNumberButton: { minWidth: 34, paddingHorizontal: 8 },
+  pageNavButton: { paddingHorizontal: 11 },
+  pageButtonActive: { backgroundColor: PRIMARY, borderColor: PRIMARY, elevation: 2 },
   pageButtonText: { color: '#374151', fontSize: 12, fontWeight: '700' },
+  pageButtonTextActive: { color: WHITE },
+  pageEllipsis: { color: '#64748B', fontSize: 13, paddingHorizontal: 2 },
   disabledButton: { opacity: 0.4 },
-  pageNumber: { color: '#64748B', fontSize: 12, fontWeight: '700' },
-  pageSizeRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
+  pageSizeRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 7 },
   pageSizeLabel: { color: '#64748B', fontSize: 12 },
   pageSizeButton: { borderWidth: 1, borderColor: '#E0DBD4', borderRadius: 8, paddingVertical: 7, paddingHorizontal: 10 },
   pageSizeText: { color: '#374151', fontSize: 12, fontWeight: '700' },

@@ -1,3 +1,4 @@
+import { useThemedStyles } from '../context/ThemeContext';
 // src/screens/ForgotPassword.jsx
 import React, { useState } from 'react';
 import {
@@ -18,6 +19,7 @@ const BORDER = '#E0DBD4';
 const WHITE = '#FFFFFF';
 
 export default function ForgotPassword({ navigation }) {
+  const styles = useThemedStyles(themeBaseStyles);
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -107,7 +109,7 @@ export default function ForgotPassword({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
+const themeBaseStyles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#7A1E3A' },
   scrollContent: { flexGrow: 1 },
 
@@ -148,3 +150,4 @@ const styles = StyleSheet.create({
   backLink:     { marginTop: 20 },
   backLinkText: { color: VINOTINTO, fontWeight: '700', fontSize: 14 },
 });
+const styles = themeBaseStyles;

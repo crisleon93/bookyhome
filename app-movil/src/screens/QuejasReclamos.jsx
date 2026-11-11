@@ -16,7 +16,6 @@ import {
   IconAlertTriangle, IconCheck, IconEye, IconChevronRight, IconMessage, IconStoreAlt,
 } from '../components/Icons';
 import { AuthContext } from '../context/AuthContext';
-import SidebarMenu from '../components/SidebarMenu';
 import SidebarVendedor from '../components/SidebarVendedor';
 
 const PRIMARY = '#7A1E3A';
@@ -63,6 +62,7 @@ const getTiempoTranscurrido = (fecha) => {
 export default function QuejasReclamos({ navigation }) {
   const styles = useThemedStyles(baseStyles);
   const { user, signOut } = useContext(AuthContext);
+  const esVendedor = String(user?.rol || '').trim().toLowerCase() === 'vendedor';
   const [sidebarVisible, setSidebarVisible] = useState(false);
   const [ordenes, setOrdenes] = useState([]);
   const [quejas, setQuejas] = useState([]);
@@ -252,6 +252,22 @@ export default function QuejasReclamos({ navigation }) {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+      {esVendedor ? (
+        <View style={styles.navigationHeader}>
+          <TouchableOpacity
+            style={styles.menuButton}
+            onPress={() => setSidebarVisible(true)}
+            accessibilityRole="button"
+            accessibilityLabel="Abrir menú"
+          >
+            <Text style={styles.menuButtonText}>☰</Text>
+          </TouchableOpacity>
+          <View style={styles.navigationHeading}>
+            <Text style={styles.navigationTitle}>Quejas y reclamos</Text>
+            <Text style={styles.navigationSubtitle}>Consulta y gestiona tus solicitudes</Text>
+          </View>
+        </View>
+      ) : null}
       <ScrollView contentContainerStyle={styles.scroll}>
         
         <LinearGradient colors={['#7A1E3A', '#8E2640']} style={styles.headerBox}>
@@ -817,7 +833,7 @@ export default function QuejasReclamos({ navigation }) {
         </View>
       </Modal>
 
-      {user?.rol === 'vendedor' ? (
+      {esVendedor ? (
         <SidebarVendedor
           visible={sidebarVisible}
           onClose={() => setSidebarVisible(false)}
@@ -825,21 +841,19 @@ export default function QuejasReclamos({ navigation }) {
           navigation={navigation}
           onSignOut={signOut}
         />
-      ) : (
-        <SidebarMenu
-          visible={sidebarVisible}
-          onClose={() => setSidebarVisible(false)}
-          user={user}
-          navigation={navigation}
-          onSignOut={signOut}
-        />
-      )}
+      ) : null}
     </SafeAreaView>
   );
 }
 
 const baseStyles = StyleSheet.create({
   safe:            { flex: 1, backgroundColor: BG },
+  navigationHeader: { minHeight: 60, flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 10, backgroundColor: PRIMARY },
+  navigationHeading: { flex: 1 },
+  navigationTitle: { color: WHITE, fontSize: 17, fontWeight: '800' },
+  navigationSubtitle: { color: 'rgba(255,255,255,0.75)', fontSize: 11, marginTop: 2 },
+  menuButton: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center', borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.15)' },
+  menuButtonText: { color: WHITE, fontSize: 19, fontWeight: '700' },
   scroll: { padding: 16, paddingBottom: 40, backgroundColor: BG },
   headerBox: {
     flexDirection: 'row', alignItems: 'center', gap: 14,

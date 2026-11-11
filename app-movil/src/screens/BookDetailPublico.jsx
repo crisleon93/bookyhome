@@ -1,3 +1,4 @@
+import { useThemedStyles } from '../context/ThemeContext';
 // src/screens/BookDetailPublico.jsx
 // Detalle de libro compartido por visitantes y compradores autenticados.
 // Estructura idéntica al "detalle-libro-inline" de Catalogo.jsx del frontend:
@@ -208,6 +209,7 @@ function ResenasLibro({ idLibro }) {
 
 // ════════════════════════════════════════════════════════════════════════════
 export default function BookDetailPublico({ navigation, route }) {
+  const d = useThemedStyles(themeBaseD);
   const BASE = getApiBaseUrl();
   const { book: bookParam } = route.params || {};
   const { user, signOut } = useContext(AuthContext);
@@ -647,7 +649,7 @@ export default function BookDetailPublico({ navigation, route }) {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-const d = StyleSheet.create({
+const themeBaseD = StyleSheet.create({
   safe:   { flex: 1, backgroundColor: PRIMARY },
   scroll: { flex: 1, backgroundColor: SECTION_BG },
 
@@ -775,3 +777,4 @@ const d = StyleSheet.create({
   envioItemLabel:{ fontSize: 14, fontWeight: '600', color: TEXT_P },
   envioItemSub:  { fontSize: 12, color: TEXT_M },
 });
+const d = themeBaseD;

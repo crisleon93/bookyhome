@@ -1,3 +1,4 @@
+import { useThemedStyles } from '../context/ThemeContext';
 import React, { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -65,6 +66,13 @@ const formatFecha = (f) => {
   });
 };
 
+const formatFechaCorta = (f) => {
+  if (!f) return '—';
+  return new Date(f).toLocaleDateString('es-CO', {
+    day: '2-digit', month: 'short', year: 'numeric',
+  }).replace(/\./g, '');
+};
+
 // Devuelve el estado de una oferta a partir de las fechas (igual que el backend)
 const calcEstado = (fechaInicio, fechaFin) => {
   const ahora = new Date();
@@ -120,35 +128,52 @@ function TarjetaOferta({ oferta, onEditar, onEliminar }) {
   const estado = oferta.estado || calcEstado(oferta.fecha_inicio, oferta.fecha_fin);
   const cfg    = ESTADO_CONFIG[estado] || ESTADO_CONFIG.vencida;
   const esVencida = estado === 'vencida';
+  const totalLibros = Number(oferta.total_libros);
 
   return (
     <View style={[styles.card, { borderLeftColor: cfg.border, opacity: esVencida ? 0.75 : 1 }]}>
-      <View style={styles.cardRow}>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.cardNombre} numberOfLines={2}>{oferta.nombre_oferta}</Text>
-          <View style={styles.cardMeta}>
-            <BadgeEstado estado={estado} />
-            <View style={[styles.tipoBadge, { backgroundColor: PRIMARY + '18' }]}>
-              <Text style={[styles.tipoBadgeText, { color: PRIMARY }]}>
-                {labelTipo(oferta.tipo_descuento, oferta.valor_descuento)}
-              </Text>
-            </View>
-          </View>
+      <Text style={styles.cardNombre} numberOfLines={2}>{oferta.nombre_oferta}</Text>
+
+      <View style={styles.cardMeta}>
+        <BadgeEstado estado={estado} />
+        <View style={[styles.tipoBadge, { backgroundColor: PRIMARY + '18' }]}>
+          <Text style={[styles.tipoBadgeText, { color: PRIMARY }]} numberOfLines={1}>
+            {labelTipo(oferta.tipo_descuento, oferta.valor_descuento)}
+          </Text>
         </View>
       </View>
 
-      <View style={styles.cardDates}>
-        <IconCalendar size={13} color={MUTED} />
-        <Text style={styles.cardDateText}>
-          {formatFecha(oferta.fecha_inicio)} → {formatFecha(oferta.fecha_fin)}
-        </Text>
-      </View>
+      <View style={styles.cardDetails}>
+        <View style={styles.cardDates}>
+          <View style={styles.dateColumn}>
+            <View style={styles.dateLabelRow}>
+              <IconCalendar size={12} color={MUTED} />
+              <Text style={styles.dateLabel}>INICIA</Text>
+            </View>
+            <Text style={styles.cardDateText} numberOfLines={1}>
+              {formatFechaCorta(oferta.fecha_inicio)}
+            </Text>
+          </View>
+          <View style={styles.dateDivider} />
+          <View style={styles.dateColumn}>
+            <View style={styles.dateLabelRow}>
+              <Text style={styles.dateLabel}>FINALIZA</Text>
+            </View>
+            <Text style={styles.cardDateText} numberOfLines={1}>
+              {formatFechaCorta(oferta.fecha_fin)}
+            </Text>
+          </View>
+        </View>
 
-      {oferta.total_libros != null && (
-        <Text style={styles.cardLibros}>
-          {oferta.total_libros} libro{oferta.total_libros !== 1 ? 's' : ''} incluido{oferta.total_libros !== 1 ? 's' : ''}
-        </Text>
-      )}
+        {oferta.total_libros != null && Number.isFinite(totalLibros) && (
+          <View style={styles.cardBooks}>
+            <IconBook size={14} color={PRIMARY} />
+            <Text style={styles.cardLibros}>
+              Aplica a {totalLibros} {totalLibros === 1 ? 'libro' : 'libros'}
+            </Text>
+          </View>
+        )}
+      </View>
 
       <View style={styles.cardActions}>
         <TouchableOpacity
@@ -156,7 +181,7 @@ function TarjetaOferta({ oferta, onEditar, onEliminar }) {
           onPress={() => onEditar(oferta)}
           activeOpacity={0.7}
         >
-          <IconEdit size={15} color="#1e40af" />
+          <IconEdit size={14} color="#1e40af" />
           <Text style={[styles.btnAccionText, { color: '#1e40af' }]}>Editar</Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -164,7 +189,7 @@ function TarjetaOferta({ oferta, onEditar, onEliminar }) {
           onPress={() => onEliminar(oferta)}
           activeOpacity={0.7}
         >
-          <IconTrash size={15} color="#dc2626" />
+          <IconTrash size={14} color="#dc2626" />
           <Text style={[styles.btnAccionText, { color: '#dc2626' }]}>Eliminar</Text>
         </TouchableOpacity>
       </View>
@@ -185,9 +210,11 @@ function GrupoOfertas({ titulo, lista, colorAccent, onEditar, onEliminar }) {
           <Text style={[styles.grupoBadgeText, { color: colorAccent }]}>{lista.length}</Text>
         </View>
       </View>
-      {lista.map((o) => (
-        <TarjetaOferta key={o.id_oferta} oferta={o} onEditar={onEditar} onEliminar={onEliminar} />
-      ))}
+      <View style={styles.cardsGrid}>
+        {lista.map((o) => (
+          <TarjetaOferta key={o.id_oferta} oferta={o} onEditar={onEditar} onEliminar={onEliminar} />
+        ))}
+      </View>
     </View>
   );
 }
@@ -489,6 +516,7 @@ function FormOferta({ libros, ofertaEditar, onGuardado, onCancelar }) {
 
 // ── Pantalla principal ────────────────────────────────────────────────────────
 export default function PromocionesVendedor({ navigation }) {
+  const styles = useThemedStyles(themeBaseStyles);
   const { user, signOut } = useContext(AuthContext);
   const [sidebarVisible, setSidebarVisible] = useState(false);
 
@@ -797,15 +825,15 @@ export default function PromocionesVendedor({ navigation }) {
 }
 
 // ── Estilos ───────────────────────────────────────────────────────────────────
-const styles = StyleSheet.create({
+const themeBaseStyles = StyleSheet.create({
   root:         { flex: 1, backgroundColor: BG },
 
   // ── Header ──
   header: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: WHITE, paddingHorizontal: 16,
+    backgroundColor: PRIMARY, paddingHorizontal: 16,
     paddingVertical: 12,
-    borderBottomWidth: 1, borderBottomColor: BORDER,
+    borderBottomWidth: 1, borderBottomColor: '#64172F',
     ...Platform.select({
       ios:     { shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.08, shadowRadius: 3 },
       android: { elevation: 2 },
@@ -813,19 +841,19 @@ const styles = StyleSheet.create({
   },
   menuBtn:       { padding: 6, marginRight: 8 },
   menuIcon:      { gap: 4 },
-  menuLine:      { width: 22, height: 2, borderRadius: 1, backgroundColor: TEXT },
+  menuLine:      { width: 22, height: 2, borderRadius: 1, backgroundColor: WHITE },
   headerCenter:  { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10 },
   headerIcon: {
     width: 34, height: 34, borderRadius: 10,
-    backgroundColor: PRIMARY,
+    backgroundColor: 'rgba(255,255,255,0.16)',
     alignItems: 'center', justifyContent: 'center',
   },
-  headerTitle:   { fontSize: 18, fontWeight: '800', color: TEXT },
+  headerTitle:   { fontSize: 18, fontWeight: '800', color: WHITE },
   addBtn: {
-    backgroundColor: PRIMARY, borderRadius: 10,
+    backgroundColor: WHITE, borderRadius: 10,
     paddingHorizontal: 14, paddingVertical: 8,
   },
-  addBtnText:    { color: WHITE, fontWeight: '800', fontSize: 13 },
+  addBtnText:    { color: PRIMARY, fontWeight: '800', fontSize: 13 },
 
   // ── Stats bar ──
   statsBar: {
@@ -848,34 +876,41 @@ const styles = StyleSheet.create({
   grupoTitulo:   { fontSize: 14, fontWeight: '800' },
   grupoBadge:    { borderRadius: 12, paddingHorizontal: 8, paddingVertical: 2 },
   grupoBadgeText:{ fontSize: 12, fontWeight: '800' },
+  cardsGrid:     { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'stretch' },
 
   card: {
-    backgroundColor: WHITE, borderRadius: 14,
-    borderLeftWidth: 4, padding: 14, marginBottom: 10,
+    width: '48.5%', backgroundColor: WHITE, borderRadius: 14,
+    borderLeftWidth: 4, padding: 11, marginBottom: 10,
     ...Platform.select({
       ios:     { shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.07, shadowRadius: 4 },
       android: { elevation: 2 },
     }),
   },
-  cardRow:       { flexDirection: 'row', marginBottom: 8 },
-  cardNombre:    { fontSize: 15, fontWeight: '800', color: TEXT, marginBottom: 6 },
-  cardMeta:      { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  cardNombre:    { fontSize: 13, lineHeight: 18, fontWeight: '800', color: TEXT, marginBottom: 8, minHeight: 36 },
+  cardMeta:      { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'flex-start', gap: 5, marginBottom: 10 },
   badge:         { borderWidth: 1, borderRadius: 20, paddingHorizontal: 9, paddingVertical: 3 },
-  badgeText:     { fontSize: 11, fontWeight: '700' },
-  tipoBadge:     { borderRadius: 20, paddingHorizontal: 9, paddingVertical: 3 },
-  tipoBadgeText: { fontSize: 11, fontWeight: '700' },
+  badgeText:     { fontSize: 10, fontWeight: '700' },
+  tipoBadge:     { borderRadius: 20, paddingHorizontal: 8, paddingVertical: 4, maxWidth: '100%' },
+  tipoBadgeText: { fontSize: 10, fontWeight: '700' },
+  cardDetails:   { flex: 1 },
   cardDates: {
-    flexDirection: 'row', alignItems: 'center', gap: 5,
-    marginTop: 8, marginBottom: 4,
+    flexDirection: 'row', alignItems: 'center',
+    paddingVertical: 9, paddingHorizontal: 7, backgroundColor: '#f9fafb',
+    borderRadius: 9, marginBottom: 8,
   },
-  cardDateText:  { fontSize: 12, color: MUTED },
-  cardLibros:    { fontSize: 12, color: MUTED, marginBottom: 8 },
-  cardActions:   { flexDirection: 'row', gap: 8, marginTop: 8 },
+  dateColumn:    { flex: 1, minWidth: 0, paddingHorizontal: 3 },
+  dateLabelRow:  { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 4 },
+  dateLabel:     { color: MUTED, fontSize: 9, fontWeight: '800', letterSpacing: 0.4 },
+  dateDivider:   { width: 1, alignSelf: 'stretch', backgroundColor: BORDER, marginHorizontal: 5 },
+  cardDateText:  { fontSize: 10, lineHeight: 14, color: TEXT, fontWeight: '600' },
+  cardBooks:     { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#f4eef0', borderRadius: 8, paddingHorizontal: 9, paddingVertical: 6, marginBottom: 8 },
+  cardLibros:    { flex: 1, fontSize: 10, color: PRIMARY, fontWeight: '700' },
+  cardActions:   { flexDirection: 'row', gap: 6, marginTop: 'auto', paddingTop: 8 },
   btnAccion: {
     flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    gap: 5, paddingVertical: 8, borderRadius: 8, borderWidth: 1,
+    gap: 4, minWidth: 0, paddingVertical: 8, borderRadius: 8, borderWidth: 1,
   },
-  btnAccionText: { fontSize: 13, fontWeight: '700' },
+  btnAccionText: { fontSize: 11, fontWeight: '700' },
 
   // ── Vacío / carga ──
   centered:      { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
@@ -1040,3 +1075,4 @@ const styles = StyleSheet.create({
   },
   modalBtnEliminarText: { color: WHITE, fontWeight: '800', fontSize: 14 },
 });
+const styles = themeBaseStyles;
