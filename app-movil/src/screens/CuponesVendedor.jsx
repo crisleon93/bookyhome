@@ -1,3 +1,4 @@
+import { useThemedStyles } from '../context/ThemeContext';
 import React, { useCallback, useContext, useState } from 'react';
 import {
   ActivityIndicator,
@@ -434,6 +435,7 @@ function FormCupon({ cuponEditar, onGuardado, onCancelar }) {
 
 // ── Pantalla principal ────────────────────────────────────────────────────────
 export default function CuponesVendedor({ navigation }) {
+  const styles = useThemedStyles(themeBaseStyles);
   const { user, signOut } = useContext(AuthContext);
   const [sidebarVisible, setSidebarVisible] = useState(false);
 
@@ -680,15 +682,15 @@ export default function CuponesVendedor({ navigation }) {
 }
 
 // ── Estilos ───────────────────────────────────────────────────────────────────
-const styles = StyleSheet.create({
+const themeBaseStyles = StyleSheet.create({
   root: { flex: 1, backgroundColor: BG },
 
   // Header
   header: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: WHITE,
+    backgroundColor: PRIMARY,
     paddingHorizontal: 16, paddingVertical: 12,
-    borderBottomWidth: 1, borderBottomColor: BORDER,
+    borderBottomWidth: 1, borderBottomColor: '#64172F',
     ...Platform.select({
       ios:     { shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.08, shadowRadius: 3 },
       android: { elevation: 2 },
@@ -696,19 +698,19 @@ const styles = StyleSheet.create({
   },
   menuBtn:      { padding: 6, marginRight: 8 },
   menuIcon:     { gap: 4 },
-  menuLine:     { width: 22, height: 2, borderRadius: 1, backgroundColor: TEXT },
+  menuLine:     { width: 22, height: 2, borderRadius: 1, backgroundColor: WHITE },
   headerCenter: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10 },
   headerIcon: {
     width: 34, height: 34, borderRadius: 10,
-    backgroundColor: PRIMARY,
+    backgroundColor: 'rgba(255,255,255,0.16)',
     alignItems: 'center', justifyContent: 'center',
   },
-  headerTitle: { fontSize: 18, fontWeight: '800', color: TEXT },
+  headerTitle: { fontSize: 18, fontWeight: '800', color: WHITE },
   addBtn: {
-    backgroundColor: PRIMARY, borderRadius: 10,
+    backgroundColor: WHITE, borderRadius: 10,
     paddingHorizontal: 14, paddingVertical: 8,
   },
-  addBtnText: { color: WHITE, fontWeight: '800', fontSize: 13 },
+  addBtnText: { color: PRIMARY, fontWeight: '800', fontSize: 13 },
 
   // Stats bar
   statsBar: {
@@ -888,3 +890,4 @@ const styles = StyleSheet.create({
   },
   modalBtnEliminarText: { color: WHITE, fontWeight: '800', fontSize: 14 },
 });
+const styles = themeBaseStyles;

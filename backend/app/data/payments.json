@@ -871,5 +871,14 @@
     "metodo_pago": "Pago en Efecty",
     "fecha_pago": "2026-09-14T00:13:36.050133Z",
     "estado": "aprobado"
+  },
+  {
+    "id_pago": 98,
+    "id_usuario": 300,
+    "id_orden": 41271,
+    "monto": 52000.0,
+    "metodo_pago": "tarjeta",
+    "fecha_pago": "2026-11-08T23:18:43.843915Z",
+    "estado": "aprobado"
   }
 ]

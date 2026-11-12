@@ -22,6 +22,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import api, { getApiBaseUrl, searchByISBN } from '../services/api';
+import { useThemedStyles } from '../context/ThemeContext';
 
 const PRIMARY  = '#7A1E3A';
 const BG       = '#FAF8F6';
@@ -84,6 +85,7 @@ function catColor(cat = '') {
 
 // ── Tarjeta de libro ─────────────────────────────────────────────────────────
 function LibroCard({ libro, onPress, cardWidth, coverHeight, BASE }) {
+  const st = useThemedStyles(themeBaseSt);
   const [uri, setUri] = useState(() => resolveImgUri(libro, BASE));
   const cat        = libro.nombre_categoria || '';
   const price      = Number(libro.precio_libro ?? libro.precio ?? 0);
@@ -118,6 +120,7 @@ function LibroCard({ libro, onPress, cardWidth, coverHeight, BASE }) {
 }
 
 function CardSkeleton({ cardWidth, coverHeight }) {
+  const st = useThemedStyles(themeBaseSt);
   return (
     <View style={[st.card, { width: cardWidth, opacity: 0.45 }]}>
       <View style={[st.cover, { height: coverHeight, backgroundColor: '#ddd' }]} />
@@ -132,6 +135,7 @@ function CardSkeleton({ cardWidth, coverHeight }) {
 
 // ════════════════════════════════════════════════════════════════════════════
 export default function CatalogoPublico({ navigation, route }) {
+  const sc = useThemedStyles(themeBaseSc);
   const BASE = getApiBaseUrl();
   const { width: W } = useWindowDimensions();
   const GAP = 10, PADDING = 16, COLS = 2;
@@ -408,7 +412,7 @@ export default function CatalogoPublico({ navigation, route }) {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-const st = StyleSheet.create({
+const themeBaseSt = StyleSheet.create({
   card:      { backgroundColor: WHITE, borderRadius: 10, overflow: 'hidden', borderWidth: 1, borderColor: '#d8cec6', shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 5, elevation: 3 },
   cover:     { position: 'relative', backgroundColor: '#ECE9E4' },
   coverImg:  { width: '100%', height: '100%' },
@@ -432,8 +436,9 @@ const st = StyleSheet.create({
   verBtn:    { backgroundColor: PRIMARY, borderRadius: 6, paddingVertical: 8, alignItems: 'center' },
   verBtnTxt: { color: WHITE, fontSize: 11, fontWeight: '700' },
 });
+const st = themeBaseSt;
 
-const sc = StyleSheet.create({
+const themeBaseSc = StyleSheet.create({
   safe:      { flex: 1, backgroundColor: PRIMARY },
 
   // Área superior — título + resultados
@@ -462,3 +467,4 @@ const sc = StyleSheet.create({
   pageLbl:        { minWidth: 90, alignItems: 'center', justifyContent: 'center', paddingVertical: 10, paddingHorizontal: 6, borderRadius: 8, borderWidth: 1, borderColor: BORDER },
   pageLblTxt:     { color: '#333', fontSize: 13, fontWeight: '600' },
 });
+const sc = themeBaseSc;

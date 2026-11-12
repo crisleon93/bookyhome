@@ -1,3 +1,4 @@
+import { useThemedStyles } from '../context/ThemeContext';
 // src/screens/Login.jsx
 import React, { useContext, useEffect, useState } from 'react';
 import {
@@ -60,6 +61,7 @@ function traducirErrorLogin(error) {
 }
 
 export default function Login({ navigation }) {
+  const styles = useThemedStyles(themeBaseStyles);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -515,7 +517,7 @@ export default function Login({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
+const themeBaseStyles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#7A1E3A' },
   scrollContent: { flexGrow: 1 },
   authMain: {
@@ -659,3 +661,4 @@ const styles = StyleSheet.create({
   bioSuccessButton: { backgroundColor: VINOTINTO, width: '100%', borderRadius: 10, paddingVertical: 13, alignItems: 'center' },
   bioSuccessButtonText: { color: WHITE, fontSize: 15, fontWeight: '800' },
 });
+const styles = themeBaseStyles;

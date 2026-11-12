@@ -1,3 +1,4 @@
+import { useThemedStyles } from '../context/ThemeContext';
 import React, { useCallback, useContext, useState } from 'react';
 import {
   ActivityIndicator, Modal, RefreshControl, ScrollView,
@@ -30,8 +31,10 @@ const formatoFecha = (fecha) => fecha
   ? new Date(`${String(fecha).slice(0, 10)}T12:00:00`).toLocaleDateString('es-CO', { day: '2-digit', month: 'long', year: 'numeric' })
   : 'No disponible';
 
-export default function SuscripcionesVendedor({ navigation }) {
+export default function SuscripcionesVendedor({ navigation, embedded = false, onNavigateTab }) {
+  const styles = useThemedStyles(themeBaseStyles);
   const { user, signOut } = useContext(AuthContext);
+  const Container = embedded ? View : SafeAreaView;
   const [sidebarVisible, setSidebarVisible] = useState(false);
   const [planes, setPlanes] = useState([]);
   const [miSuscripcion, setMiSuscripcion] = useState(null);
@@ -117,22 +120,30 @@ export default function SuscripcionesVendedor({ navigation }) {
     Number(plan.impulsos_con_descuento) > 0 ? `Impulsos Destacados: ${Number(plan.impulsos_con_descuento)}% de descuento al pagar para posicionar tus libros arriba en el catálogo.` : null,
   ].filter(Boolean);
 
+  const openImpulsos = () => {
+    if (embedded && onNavigateTab) onNavigateTab('impulsos');
+    else navigation.navigate('ImpulsosVendedor');
+  };
+
   return (
-    <SafeAreaView style={styles.safe}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => setSidebarVisible(true)} style={styles.menuButton} accessibilityLabel="Abrir menú">
-          <Text style={styles.menuIcon}>☰</Text>
-        </TouchableOpacity>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.headerTitle}>Suscripciones</Text>
-          <Text style={styles.headerSubtitle}>Herramientas para hacer crecer tu tienda</Text>
+    <Container style={embedded ? styles.embeddedContainer : styles.safe}>
+      {!embedded && (
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => setSidebarVisible(true)} style={styles.menuButton} accessibilityLabel="Abrir menú">
+            <Text style={styles.menuIcon}>☰</Text>
+          </TouchableOpacity>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.headerTitle}>Suscripciones</Text>
+            <Text style={styles.headerSubtitle}>Herramientas para hacer crecer tu tienda</Text>
+          </View>
         </View>
-      </View>
+      )}
 
       {loading ? (
         <View style={styles.loading}><ActivityIndicator size="large" color={PRIMARY} /><Text style={styles.loadingText}>Cargando planes…</Text></View>
       ) : (
         <ScrollView
+          style={styles.scroll}
           contentContainerStyle={styles.content}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); cargarDatos(true); }} tintColor={PRIMARY} colors={[PRIMARY]} />}
         >
@@ -188,15 +199,17 @@ export default function SuscripcionesVendedor({ navigation }) {
           <View style={styles.impulsos}>
             <Text style={styles.impulsosTitle}>⚡ ¿Para qué sirve el descuento en Impulsos?</Text>
             <Text style={styles.impulsosText}>Los Impulsos son espacios publicitarios dentro de BookyHome: destaca tu libro en la página principal, aparece como banner en categorías o llega por email a miles de compradores. Tu plan te da ese descuento de forma automática en cada compra.</Text>
-            <TouchableOpacity style={styles.impulsosButton} onPress={() => navigation.navigate('ImpulsosVendedor')}>
+            <TouchableOpacity style={styles.impulsosButton} onPress={openImpulsos}>
               <Text style={styles.impulsosButtonText}>🚀 Ver y contratar Impulsos</Text>
             </TouchableOpacity>
           </View>
-          <Footer onLinkPress={() => {}} />
+          {!embedded && <Footer onLinkPress={() => {}} />}
         </ScrollView>
       )}
 
-      <SidebarVendedor visible={sidebarVisible} onClose={() => setSidebarVisible(false)} user={user} navigation={navigation} onSignOut={signOut} />
+      {!embedded && (
+        <SidebarVendedor visible={sidebarVisible} onClose={() => setSidebarVisible(false)} user={user} navigation={navigation} onSignOut={signOut} />
+      )}
 
       <Modal visible={Boolean(modal)} transparent animationType="fade" onRequestClose={() => !procesando && setModal(null)}>
         <View style={styles.modalOverlay}>
@@ -215,12 +228,14 @@ export default function SuscripcionesVendedor({ navigation }) {
           </View>
         </View>
       </Modal>
-    </SafeAreaView>
+    </Container>
   );
 }
 
-const styles = StyleSheet.create({
+const themeBaseStyles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: BG },
+  embeddedContainer: { flex: 1, minHeight: 0 },
+  scroll: { flex: 1 },
   header: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: PRIMARY, paddingHorizontal: 20, paddingVertical: 16 },
   menuButton: { padding: 4 }, menuIcon: { color: WHITE, fontSize: 22, fontWeight: '700' },
   headerTitle: { color: WHITE, fontSize: 20, fontWeight: '800' }, headerSubtitle: { color: 'rgba(255,255,255,0.72)', fontSize: 12, marginTop: 2 },
@@ -241,3 +256,4 @@ const styles = StyleSheet.create({
   impulsos: { backgroundColor: WHITE, borderLeftWidth: 5, borderLeftColor: PRIMARY, borderRadius: 12, padding: 18 }, impulsosTitle: { color: PRIMARY, fontSize: 14, fontWeight: '800' }, impulsosText: { color: '#555', fontSize: 13, lineHeight: 19, marginTop: 6 }, impulsosButton: { alignSelf: 'flex-start', backgroundColor: PRIMARY, borderRadius: 8, paddingHorizontal: 16, paddingVertical: 11, marginTop: 16 }, impulsosButtonText: { color: WHITE, fontSize: 13, fontWeight: '800' },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(46, 10, 24, 0.62)', alignItems: 'center', justifyContent: 'center', padding: 24 }, modalCard: { width: '100%', maxWidth: 380, backgroundColor: WHITE, borderRadius: 20, overflow: 'hidden', padding: 22, elevation: 12 }, modalHeader: { alignSelf: 'center', width: 52, height: 52, borderRadius: 26, backgroundColor: PRIMARY, alignItems: 'center', justifyContent: 'center', marginBottom: 14 }, modalMark: { color: WHITE, fontSize: 25, fontWeight: '900' }, modalTitle: { color: PRIMARY, fontSize: 19, fontWeight: '900', textAlign: 'center' }, modalText: { color: '#5E5360', fontSize: 14, lineHeight: 21, textAlign: 'center', marginTop: 10, marginBottom: 22 }, modalActions: { flexDirection: 'row', gap: 10 }, modalSecondary: { flex: 1, borderWidth: 1, borderColor: '#D8CCD1', borderRadius: 9, alignItems: 'center', paddingVertical: 12 }, modalSecondaryText: { color: PRIMARY, fontSize: 13, fontWeight: '800' }, modalPrimary: { flex: 1, backgroundColor: PRIMARY, borderRadius: 9, alignItems: 'center', paddingVertical: 12 }, modalDanger: { backgroundColor: '#A82645' }, modalPrimaryText: { color: WHITE, fontSize: 13, fontWeight: '800' },
 });
+const styles = themeBaseStyles;

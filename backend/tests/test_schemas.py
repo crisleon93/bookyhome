@@ -1,9 +1,9 @@
 """
 test_schemas.py — Pruebas unitarias de validación de schemas Pydantic.
 
-Cubre los huecos detectados en el plan de testing (sección 03):
+Cubre validaciones de los esquemas del plan de testing (sección 03):
 - UsuarioRegistro: password y teléfono sin validación → se documenta el hueco
-- PagoRequest: amount sin gt=0, payment_method sin whitelist → se documenta el hueco
+- PagoRequest: monto positivo y métodos de pago admitidos
 - LibroCrear: validaciones existentes deben funcionar
 """
 
@@ -214,7 +214,7 @@ class TestLibroCrear:
 
 
 # ---------------------------------------------------------------------------
-# PagoRequest — huecos documentados
+# PagoRequest — validaciones
 # ---------------------------------------------------------------------------
 
 class TestPagoRequest:
@@ -239,7 +239,7 @@ class TestPagoRequest:
 
     def test_payment_method_validos_pasan(self):
         """REGRESIÓN: todos los métodos permitidos deben pasar."""
-        metodos = ["tarjeta", "efectivo", "transferencia", "nequi", "daviplata", "pse"]
+        metodos = ["tarjeta", "efectivo", "transferencia", "nequi", "daviplata", "pse", "sucursal", "paypal"]
         for metodo in metodos:
             pago = PagoRequest(order_id=1, amount=1000.0, payment_method=metodo)
             assert pago.payment_method == metodo

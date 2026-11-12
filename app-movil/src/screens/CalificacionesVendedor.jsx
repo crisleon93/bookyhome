@@ -1,3 +1,4 @@
+import { useThemedStyles } from '../context/ThemeContext';
 import React, { useCallback, useContext, useState } from 'react';
 import {
   ActivityIndicator, FlatList, RefreshControl, StyleSheet, Text,
@@ -37,6 +38,7 @@ const estrellas = (valor, size = 16) => (
 );
 
 export default function CalificacionesVendedor({ navigation }) {
+  const styles = useThemedStyles(themeBaseStyles);
   const { user, signOut } = useContext(AuthContext);
   const [sidebarVisible, setSidebarVisible] = useState(false);
   const [data, setData] = useState(null);
@@ -171,7 +173,7 @@ function Metric({ Icon, label, value, background, color, border }) {
   );
 }
 
-const styles = StyleSheet.create({
+const themeBaseStyles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: BG },
   header: { backgroundColor: PRIMARY, flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 20, paddingVertical: 16 },
   menuButton: { padding: 4 }, menuIcon: { color: WHITE, fontSize: 22, fontWeight: '700' }, headerTitle: { color: WHITE, fontSize: 20, fontWeight: '800' }, headerSubtitle: { color: 'rgba(255,255,255,.72)', fontSize: 12, marginTop: 2 },
@@ -182,3 +184,4 @@ const styles = StyleSheet.create({
   listTitle: { color: TEXT, fontSize: 16, fontWeight: '800', marginBottom: 10 }, reviewCard: { backgroundColor: WHITE, borderColor: BORDER, borderWidth: 1, borderTopWidth: 3, borderRadius: 14, padding: 14, marginBottom: 10 }, reviewHeader: { flexDirection: 'row', alignItems: 'center', gap: 10 }, avatar: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center', backgroundColor: PRIMARY }, avatarText: { color: WHITE, fontSize: 12, fontWeight: '800' }, reviewInfo: { flex: 1 }, userName: { color: TEXT, fontSize: 13, fontWeight: '800', marginBottom: 2 }, date: { color: '#A8A29E', fontSize: 10, maxWidth: 85, textAlign: 'right' }, comment: { color: '#5E5A57', fontSize: 13, lineHeight: 20, marginTop: 12, paddingTop: 10, borderTopColor: '#F1EDE8', borderTopWidth: 1, fontStyle: 'italic' },
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 28, paddingVertical: 70 }, emptyIcon: { fontSize: 42, marginBottom: 12 }, emptyTitle: { color: TEXT, fontWeight: '800', fontSize: 16, textAlign: 'center' }, emptyText: { color: MUTED, fontSize: 13, lineHeight: 20, textAlign: 'center', marginTop: 7 }, retry: { backgroundColor: PRIMARY, borderRadius: 8, paddingHorizontal: 16, paddingVertical: 10, marginTop: 18 }, retryText: { color: WHITE, fontSize: 13, fontWeight: '800' },
 });
+const styles = themeBaseStyles;

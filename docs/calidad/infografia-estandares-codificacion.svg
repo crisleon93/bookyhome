@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="1600" viewBox="0 0 1500 1600" role="img" aria-labelledby="title desc">
+  <title id="title">Estándares de codificación en BookyHome</title>
+  <desc id="desc">Infografía sobre convenciones de nombres, organización por capas, buenas prácticas, errores y tecnologías de BookyHome.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#101a2c"/><stop offset="1" stop-color="#172b40"/></linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#46d6c4"/><stop offset="1" stop-color="#a2efbb"/></linearGradient>
+    <style>
+      .sans{font-family:Inter,Segoe UI,Arial,sans-serif}.mono{font-family:Consolas,monospace}.white{fill:#f4f8fc}.muted{fill:#b8c8d8}.teal{fill:#57dfce}.lime{fill:#b6f28d}.label{font-size:16px;font-weight:700;letter-spacing:2px}.title{font-size:61px;font-weight:800;letter-spacing:-2px}.sub{font-size:22px}.cardtitle{font-size:23px;font-weight:750}.body{font-size:17px}.small{font-size:15px}.card{fill:#1d3045;stroke:#324961;stroke-width:1.5}.chip{fill:#263d52}.rule{stroke:#38536b;stroke-width:1.5}
+    </style>
+  </defs>
+  <rect width="1500" height="1600" fill="url(#bg)"/>
+  <g transform="scale(1.25 1)">
+  <circle cx="1080" cy="80" r="170" fill="#46d6c4" opacity=".07"/><circle cx="70" cy="1510" r="230" fill="#a2efbb" opacity=".05"/>
+  <g class="sans">
+    <rect x="76" y="64" width="8" height="26" rx="4" fill="url(#accent)"/><text x="101" y="84" class="label teal">EVIDENCIA 3 · CALIDAD DE SOFTWARE</text>
+    <text x="76" y="165" class="title white">Código claro.</text><text x="76" y="232" class="title white">Proyecto sostenible.</text>
+    <text x="79" y="282" class="sub muted">Estándares de codificación aplicados en BookyHome</text>
+    <rect x="76" y="319" width="1048" height="4" rx="2" fill="url(#accent)"/>
+    <text x="76" y="374" class="label lime">5 ACUERDOS PARA CONSTRUIR Y MANTENER EL SOFTWARE</text>
+
+    <rect x="76" y="408" width="510" height="252" rx="20" class="card"/>
+    <circle cx="119" cy="456" r="23" fill="#254e5a"/><text x="111" y="463" class="cardtitle teal">01</text>
+    <text x="158" y="464" class="cardtitle white">Nombres que explican</text>
+    <text x="106" y="510" class="body muted">Usamos nombres relacionados con el dominio:</text>
+    <rect x="106" y="529" width="443" height="44" rx="10" class="chip"/><text x="124" y="557" class="mono body lime">getCarrito() · UsuarioRegistro</text>
+    <text x="106" y="610" class="small muted">JavaScript: camelCase · Python: snake_case</text>
+    <text x="106" y="636" class="small muted">Clases de esquemas: PascalCase</text>
+
+    <rect x="614" y="408" width="510" height="252" rx="20" class="card"/>
+    <circle cx="657" cy="456" r="23" fill="#254e5a"/><text x="649" y="463" class="cardtitle teal">02</text>
+    <text x="696" y="464" class="cardtitle white">Responsabilidades separadas</text>
+    <text x="644" y="510" class="body muted">Cada capa tiene un propósito reconocible:</text>
+    <text x="644" y="552" class="mono body lime">routers/  →  endpoints HTTP</text>
+    <text x="644" y="585" class="mono body lime">models/   →  acceso y lógica de datos</text>
+    <text x="644" y="618" class="mono body lime">schemas.py → validación de entrada/salida</text>
+    <text x="644" y="644" class="small muted">Frontend: pages · components · hooks · services</text>
+
+    <rect x="76" y="684" width="510" height="252" rx="20" class="card"/>
+    <circle cx="119" cy="732" r="23" fill="#254e5a"/><text x="111" y="739" class="cardtitle teal">03</text>
+    <text x="158" y="740" class="cardtitle white">Buenas prácticas</text>
+    <text x="106" y="785" class="body muted">• Reutilizamos lógica común para evitar duplicación.</text>
+    <text x="106" y="818" class="body muted">• Validamos datos con Pydantic y tipos explícitos.</text>
+    <text x="106" y="851" class="body muted">• ESLint revisa reglas de JavaScript y React.</text>
+    <text x="106" y="884" class="body muted">• Variables SQL parametrizadas ayudan a prevenir</text>
+    <text x="124" y="909" class="body muted">inyección; los roles limitan acciones protegidas.</text>
+
+    <rect x="614" y="684" width="510" height="252" rx="20" class="card"/>
+    <circle cx="657" cy="732" r="23" fill="#254e5a"/><text x="649" y="739" class="cardtitle teal">04</text>
+    <text x="696" y="740" class="cardtitle white">Errores con contexto</text>
+    <text x="644" y="785" class="body muted">• API: respuestas HTTP según el problema (401, 403,</text>
+    <text x="662" y="812" class="body muted">400, 500) y mensajes útiles para el cliente.</text>
+    <text x="644" y="851" class="body muted">• Base de datos: rollback ante fallos y cierre de</text>
+    <text x="662" y="878" class="body muted">cursor/conexión en bloques finally.</text>
+    <text x="644" y="913" class="small muted">Los detalles internos se registran para diagnóstico.</text>
+
+    <rect x="76" y="960" width="1048" height="246" rx="20" class="card"/>
+    <circle cx="119" cy="1008" r="23" fill="#254e5a"/><text x="111" y="1015" class="cardtitle teal">05</text>
+    <text x="158" y="1016" class="cardtitle white">Tecnologías coherentes con cada capa</text>
+    <text x="106" y="1064" class="body muted">Interfaz web y móvil</text><text x="411" y="1064" class="body white">React · Vite · Expo / React Native</text>
+    <line x1="106" y1="1080" x2="1094" y2="1080" class="rule"/>
+    <text x="106" y="1113" class="body muted">API y validación</text><text x="411" y="1113" class="body white">Python · FastAPI · Pydantic</text>
+    <line x1="106" y1="1129" x2="1094" y2="1129" class="rule"/>
+    <text x="106" y="1162" class="body muted">Persistencia y entorno</text><text x="411" y="1162" class="body white">MySQL · SQL · Docker Compose</text>
+    <text x="106" y="1190" class="small muted">ESLint y archivos de bloqueo ayudan a mantener consistencia entre cambios y entornos.</text>
+
+    <rect x="76" y="1234" width="1048" height="178" rx="20" fill="#203e49" stroke="#3c766e" stroke-width="1.5"/>
+    <text x="108" y="1281" class="label lime">¿CÓMO SE APLICAN EN EL TRABAJO DIARIO?</text>
+    <text x="108" y="1325" class="body white">1. Ubicamos el cambio en la capa responsable.</text>
+    <text x="108" y="1360" class="body white">2. Usamos nombres y validaciones acordes al módulo.</text>
+    <text x="619" y="1325" class="body white">3. Reutilizamos funciones y controles de acceso.</text>
+    <text x="619" y="1360" class="body white">4. Revisamos lint, construcción y manejo de fallos.</text>
+    <text x="76" y="1474" class="small muted">BOOKYHOME  /  Evidencia académica · Estándares de codificación</text>
+    <text x="1124" y="1474" text-anchor="end" class="small teal">LECTURA · MANTENIMIENTO · CONFIANZA</text>
+  </g>
+  </g>
+</svg>

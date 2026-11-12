@@ -18,6 +18,8 @@ import api, {
   reservarRetiroEnTienda,
   notificarLlegadaTienda,
   actualizarCostoEnvio,
+  getApiErrorMessage,
+  normalizarMetodoPagoApi,
 } from "../../services/api";
 import { useNavigate, useLocation } from "react-router-dom";
 
@@ -405,7 +407,7 @@ export default function SeccionCarrito({ userId }) {
         }
       })
       .catch((err) => {
-        setCheckoutError(err.response?.data?.detail || "Error al realizar el checkout. Intenta de nuevo.");
+        setCheckoutError(getApiErrorMessage(err, "Error al realizar el checkout. Intenta de nuevo."));
       })
       .finally(() => setCheckoutLoading(false));
   };
@@ -650,7 +652,7 @@ export default function SeccionCarrito({ userId }) {
         setOrder(newOrder);
         setBuyNowData(null);
       } catch (err) {
-        setCheckoutError(err.response?.data?.detail || 'Error al crear la orden. Intenta de nuevo.');
+        setCheckoutError(getApiErrorMessage(err, 'Error al crear la orden. Intenta de nuevo.'));
         setPaymentProcessing(false);
         return;
       }
@@ -702,7 +704,7 @@ export default function SeccionCarrito({ userId }) {
           return;
         }
       } catch (err) {
-        setCheckoutError(err.response?.data?.detail || "Ocurrió un error al procesar tu reserva.");
+        setCheckoutError(getApiErrorMessage(err, "Ocurrió un error al procesar tu reserva."));
         return;
       } finally {
         setPaymentProcessing(false);
@@ -712,9 +714,14 @@ export default function SeccionCarrito({ userId }) {
     try {
       const baseTotal = totalFresco ?? (Number(order?.total || 0) || totalCarrito);
       const amountToCharge = Math.max(0, baseTotal - discountAmount);
+      const paymentMethodApi = normalizarMetodoPagoApi(method);
+      if (!paymentMethodApi) {
+        setCheckoutError("El método de pago seleccionado no es válido.");
+        return;
+      }
       const payload = {
-        order_id: Number.parseInt(activeOrderId, 10),
-        amount: Number.parseFloat(amountToCharge),
+        order_id: parseInt(activeOrderId),
+        amount: parseFloat(amountToCharge),
         payment_method: method,
         tipo_entrega: metodoEntrega,
         ...(metodoEntrega === 'domicilio' && direccionSeleccionadaId ? { id_direccion: Number(direccionSeleccionadaId) } : {}),
@@ -746,7 +753,7 @@ export default function SeccionCarrito({ userId }) {
         setCheckoutError("El pago fue rechazado por la pasarela de pagos.");
       }
     } catch (err) {
-      setCheckoutError(err.response?.data?.detail || "Ocurrió un error inesperado al procesar tu pago.");
+      setCheckoutError(getApiErrorMessage(err, "Ocurrió un error inesperado al procesar tu pago."));
     } finally {
       setPaymentProcessing(false);
     }

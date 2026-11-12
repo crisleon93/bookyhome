@@ -1,3 +1,4 @@
+import { useThemedStyles } from '../context/ThemeContext';
 // src/screens/Librerias.jsx — Listado completo de librerías BookyHome
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -108,6 +109,7 @@ function TiendaCard({ tienda, base, onPress }) {
 
 // ════════════════════════════════════════════════════════════════════════════
 export default function Librerias({ navigation, route }) {
+  const s = useThemedStyles(themeBaseS);
   const BASE = getApiBaseUrl();
 
   const [tiendas,     setTiendas]     = useState([]);
@@ -301,7 +303,7 @@ export default function Librerias({ navigation, route }) {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-const s = StyleSheet.create({
+const themeBaseS = StyleSheet.create({
   safe:       { flex: 1, backgroundColor: PRIMARY },
 
   // Cabecera
@@ -362,3 +364,4 @@ const s = StyleSheet.create({
   modalOptionTxtActive: { color: PRIMARY, fontWeight: '700' },
   checkmark:      { fontSize: 14, color: PRIMARY, fontWeight: '800' },
 });
+const s = themeBaseS;

@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { Platform } from 'react-native';
 
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL?.trim();
@@ -139,6 +140,7 @@ export const eliminarCupon         = (id)         => api.delete(`/cupones/${id}`
 
 // ===== Librería (Vendedor) =====
 export const getLibreria = () => api.get('/tiendas/mi-tienda');
+export const updateMiTienda = (data) => api.put('/tiendas/mi-tienda', data);
 export const registerLibrary = (data) => api.post('/libreria', data);
 export const updateLibreria = (data) => api.put('/libreria/actualizar', data);
 export const uploadLibreriaLogo = (formData) =>
@@ -155,6 +157,25 @@ export const getMisLibros = () => api.get('/libros/mis-libros');
 export const publicarLibro = (formData) =>
   api.post('/libros/publicar', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
 export const updateLibro = (id, data) => api.put(`/libros/${id}`, data);
+export const subirArchivoVariante = async (idLibro, idVariante, archivo) => {
+  const formData = new FormData();
+  if (Platform.OS === 'web') {
+    const file = archivo.file || await fetch(archivo.uri).then(response => {
+      if (!response.ok) throw new Error('No se pudo leer el archivo digital seleccionado.');
+      return response.blob();
+    });
+    formData.append('file', file, archivo.name);
+  } else {
+    formData.append('file', {
+      uri: archivo.uri,
+      name: archivo.name,
+      type: archivo.mimeType || (archivo.name?.toLowerCase().endsWith('.epub') ? 'application/epub+zip' : 'application/pdf'),
+    });
+  }
+  return api.post(`/libros/${idLibro}/variantes/${idVariante}/archivo`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+};
 export const updateStockLibro = (id, stock) => { const f = new FormData(); f.append('stock', stock); return api.patch(`/libros/${id}/stock`, f, { headers: { 'Content-Type': 'multipart/form-data' } }); };
 export const deleteLibro = (id) => api.delete(`/libros/${id}`);
 export const getStatsVendedor = () => api.get('/libros/stats');
@@ -203,8 +224,27 @@ export const eliminarSalaChat = (id_sala) => api.delete(`/chat/salas/${id_sala}`
 
 // ===== Quejas y Reclamos =====
 export const getApiBaseUrl = () => api.defaults.baseURL;
+export const resolveImageUrl = (value) => {
+  if (!value) return null;
+
+  const candidate = String(value).split(',')[0].trim();
+  if (!candidate) return null;
+  if (/^(data:|blob:)/i.test(candidate)) return candidate;
+
+  const baseUrl = String(api.defaults.baseURL || '').replace(/\/+$/, '');
+  const apiOrigin = baseUrl.match(/^https?:\/\/[^/]+/i)?.[0];
+  if (/^https?:\/\//i.test(candidate)) {
+    const isLoopbackUrl = /^https?:\/\/(?:localhost|127(?:\.\d{1,3}){3}|\[::1\])(?=[:/]|$)/i.test(candidate);
+    return isLoopbackUrl && apiOrigin
+      ? candidate.replace(/^https?:\/\/[^/]+/i, apiOrigin)
+      : candidate;
+  }
+
+  return `${baseUrl}/${candidate.replace(/^\/+/, '')}`;
+};
 export const getOrdenes = () => api.get('/api/v1/orders');
 export const getQuejas = () => api.get('/quejas');
+export const getQuejasVendedor = () => api.get('/quejas/vendedor');
 export const crearQueja = (formData) => api.post('/quejas', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
 export const cancelarQueja = (id) => api.delete(`/quejas/${id}`);
 export const getMensajesReclamo = (id) => api.get(`/quejas/${id}/mensajes`);

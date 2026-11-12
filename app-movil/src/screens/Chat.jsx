@@ -19,7 +19,14 @@ import {
 } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Audio } from 'expo-av';
+import {
+  AudioModule,
+  RecordingPresets,
+  setAudioModeAsync,
+  useAudioPlayer,
+  useAudioPlayerStatus,
+  useAudioRecorder,
+} from 'expo-audio';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
@@ -392,6 +399,9 @@ export default function Chat() {
   const { id_sala, nombre_tienda, nombre_comprador, telefono_contacto } = route.params || {};
   const { user } = useContext(AuthContext);
   const { conectado, suscribirseAMensajes, enviarPorSocket, marcarSalaLeidaLocal } = useChatSocket();
+  const audioRecorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
+  const audioPlayer = useAudioPlayer();
+  const audioPlayerStatus = useAudioPlayerStatus(audioPlayer);
 
   const [mensajes, setMensajes] = useState([]);
   const [texto, setTexto] = useState('');
@@ -421,10 +431,14 @@ export default function Chat() {
   const flatListRef = useRef(null);
   const sectionListRef = useRef(null);
   const montadoRef = useRef(true);
-  const recordingRef = useRef(null);
   const recordingTimerRef = useRef(null);
   const soundRef = useRef(null);
-  const emojiSections = buildEmojiSections(EMOJI_CATEGORIES, busquedaEmoji.trim());
+  const emojiSections = EMOJI_CATEGORIES.map((categoria) => {
+    const emojis = categoria.emojis.filter((emoji) => !busquedaEmoji.trim() || emoji.includes(busquedaEmoji.trim()));
+    const filas = [];
+    for (let index = 0; index < emojis.length; index += 8) filas.push(emojis.slice(index, index + 8));
+    return { id: categoria.id, title: categoria.name, data: filas };
+  }).filter((seccion) => seccion.data.length > 0);
 
   useEffect(() => {
     const termino = busquedaMensajes.trim().toLowerCase();
@@ -476,10 +490,12 @@ export default function Chat() {
     return () => {
       montadoRef.current = false;
       if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
-      if (recordingRef.current) recordingRef.current.stopAndUnloadAsync().catch(() => {});
-      if (soundRef.current) soundRef.current.unloadAsync().catch(() => {});
+      if (audioRecorder.isRecording) {
+        audioRecorder.stop().catch((error) => console.warn('No se pudo detener la grabación al salir del chat.', error));
+      }
+      audioPlayer.pause();
     };
-  }, [id_sala]);
+  }, [id_sala, audioRecorder, audioPlayer]);
 
   const cargarHistorial = useCallback(async () => {
     try {
@@ -551,16 +567,14 @@ export default function Chat() {
 
   const iniciarGrabacionAudio = async () => {
     try {
-      const permiso = await Audio.requestPermissionsAsync();
+      const permiso = await AudioModule.requestRecordingPermissionsAsync();
       if (!permiso.granted) {
         Alert.alert('Permiso de micrófono', 'Activa el micrófono para grabar una nota de voz.');
         return;
       }
-      await Audio.setAudioModeAsync({ allowsRecordingIOS: true, playsInSilentModeIOS: true });
-      const grabacion = new Audio.Recording();
-      await grabacion.prepareToRecordAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY);
-      await grabacion.startAsync();
-      recordingRef.current = grabacion;
+      await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
+      await audioRecorder.prepareToRecordAsync();
+      audioRecorder.record();
       setSegundosGrabacion(0);
       setGrabandoAudio(true);
       recordingTimerRef.current = setInterval(() => setSegundosGrabacion((prev) => prev + 1), 1000);
@@ -571,16 +585,15 @@ export default function Chat() {
   };
 
   const detenerGrabacionAudio = async (enviar = true) => {
-    if (!recordingRef.current) return;
+    if (!audioRecorder.isRecording) return;
     if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
-    const grabacion = recordingRef.current;
-    recordingRef.current = null;
     setGrabandoAudio(false);
     const duracion = Math.max(segundosGrabacion, 1);
     setSegundosGrabacion(0);
     try {
-      await grabacion.stopAndUnloadAsync();
-      const uri = grabacion.getURI();
+      await audioRecorder.stop();
+      await setAudioModeAsync({ allowsRecording: false, playsInSilentMode: true });
+      const uri = audioRecorder.uri;
       if (!enviar || !uri) return;
       const base64 = await FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.Base64 });
       await enviarPayloadREST(encodeChatPayload('AUDIO', {
@@ -705,20 +718,18 @@ export default function Chat() {
   const reproducirAudio = async (mensaje) => {
     try {
       if (audioReproduciendo === mensaje.id_mensaje) {
-        await soundRef.current?.pauseAsync();
+        audioPlayer.pause();
         setAudioReproduciendo(null);
         return;
       }
-      if (soundRef.current) await soundRef.current.unloadAsync();
       const datos = JSON.parse(mensaje.mensaje.replace('[AUDIO]', ''));
-      const { sound } = await Audio.Sound.createAsync({ uri: datos.url }, { shouldPlay: true });
-      soundRef.current = sound;
+      audioPlayer.replace({ uri: datos.url });
+      audioPlayer.play();
       setAudioReproduciendo(mensaje.id_mensaje);
       sound.setOnPlaybackStatusUpdate((status) => {
         if (status.didJustFinish) setAudioReproduciendo(null);
       });
-    } catch (error) {
-      console.error('Error reproduciendo audio del chat:', error);
+    } catch (e) {
       Alert.alert('Audio no disponible', 'No se pudo reproducir esta nota de voz.');
     }
   };
