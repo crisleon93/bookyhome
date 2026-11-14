@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import AdminHome from '../../screens/AdminHome'
 import {
   bloquearUsuario,
+  cambiarEstadoTienda,
   eliminarLibroAdmin,
   getAdminLibros,
   getAdminOrdenes,
@@ -182,7 +183,21 @@ const fixtures = {
     { id_tienda: 8, nombre_tienda: 'Librería Uno', direccion: 'Calle 1', telefono: '5550100', estado_tienda: 'activa', id_usuario: 2 },
   ],
   ordenes: [
-    { id_orden: 20, estado: 'pagado', fecha: '2026-01-01', total: 24000, items: [{ titulo: 'Libro visible', cantidad: 1 }] },
+    {
+      id_orden: 20,
+      id_usuario_propietario: 1,
+      estado: 'pagado',
+      fecha: '2026-01-01',
+      total: 24000,
+      tipo_entrega: 'domicilio',
+      metodo_pago: 'Tarjeta',
+      items: [
+        { titulo: 'Libro visible', cantidad: 1 },
+        { titulo: 'Libro adicional', cantidad: 2 },
+        { titulo: 'Tercer libro', cantidad: 1 },
+      ],
+    },
+    { id_orden: 21, estado: 'pendiente', total: 0, items: [] },
   ],
   solicitudes: [
     { tipo_solicitud: 'Reclamo', estado: 'Abierto' },
@@ -198,6 +213,7 @@ describe('AdminHome: flujos de administración', () => {
     getAdminOrdenes.mockResolvedValue({ data: fixtures.ordenes })
     getAdminTiendas.mockResolvedValue({ data: fixtures.tiendas })
     getAdminSolicitudes.mockResolvedValue({ data: fixtures.solicitudes })
+    cambiarEstadoTienda.mockResolvedValue({})
     bloquearUsuario.mockResolvedValue({})
     ocultarLibroAdmin.mockResolvedValue({})
     eliminarLibroAdmin.mockResolvedValue({ data: {} })
@@ -258,5 +274,59 @@ describe('AdminHome: flujos de administración', () => {
     fireEvent.click(screen.getByText('Reintentar'))
     expect(await screen.findByText('Usuarios Totales')).toBeTruthy()
     expect(getAdminUsuarios).toHaveBeenCalledTimes(2)
+  })
+
+  it('valida el motivo y suspende una tienda con el detalle ingresado', async () => {
+    render(<AdminHome />)
+    fireEvent.click(await screen.findByText('Librerías & Tiendas'))
+    expect(await screen.findByText('Librería Uno')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Ver detalles' }))
+    fireEvent.click(screen.getByText('Cambiar Estado'))
+
+    fireEvent.click(within(screen.getByRole('dialog')).getByText('Suspendida'))
+    const suspensionDialog = screen.getByRole('dialog')
+    fireEvent.click(within(suspensionDialog).getByRole('button', { name: /Suspender y Notificar/ }))
+    expect(within(suspensionDialog).getByText(/Debes ingresar o seleccionar un motivo/)).toBeTruthy()
+
+    fireEvent.change(within(suspensionDialog).getByPlaceholderText(/Escribe detalladamente/), {
+      target: { value: 'Incumplimiento confirmado de las políticas.' },
+    })
+    fireEvent.click(within(suspensionDialog).getByRole('button', { name: /Suspender y Notificar/ }))
+
+    await waitFor(() => {
+      expect(cambiarEstadoTienda).toHaveBeenCalledWith(
+        8,
+        'suspendida',
+        'Incumplimiento confirmado de las políticas.',
+      )
+    })
+    expect(await screen.findAllByText('Suspendida')).not.toHaveLength(0)
+    expect(screen.getByText('Estado actualizado')).toBeTruthy()
+  })
+
+  it('muestra artículos, comprador, pago y entrega al expandir órdenes', async () => {
+    render(<AdminHome />)
+    fireEvent.click(await screen.findByText('Órdenes Procesadas'))
+
+    const orderButtons = await screen.findAllByRole('button', { name: 'Ver detalles de la orden' })
+    fireEvent.click(orderButtons[0])
+    expect(screen.getAllByText('Ana Compradora')).not.toHaveLength(0)
+    expect(screen.getByText('Libro adicional')).toBeTruthy()
+    expect(screen.getByText('y 1 más')).toBeTruthy()
+    expect(screen.getByText('Tarjeta')).toBeTruthy()
+    expect(screen.getByText('Domicilio')).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Ver detalles de la orden' }))
+    expect(screen.getByText('No hay artículos disponibles')).toBeTruthy()
+  })
+
+  it('carga solicitudes al abrir la sección de soporte desde el menú', async () => {
+    render(<AdminHome />)
+    fireEvent.click(await screen.findByText('Usuarios Totales'))
+    fireEvent.click(screen.getByText('Abrir menú'))
+    fireEvent.click(screen.getByRole('button', { name: 'Admin: soporte' }))
+
+    expect(await screen.findByText('Solicitudes: soporte')).toBeTruthy()
+    expect(getAdminSolicitudes).toHaveBeenCalledOnce()
   })
 })
