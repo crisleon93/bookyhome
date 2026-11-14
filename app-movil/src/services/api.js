@@ -1,25 +1,257 @@
 import axios from 'axios';
 
+
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL?.trim();
+
+if (!API_BASE_URL) {
+  throw new Error('Configura EXPO_PUBLIC_API_URL para conectar la app con el backend.');
+}
+
+const API_URL = new URL(API_BASE_URL);
+if (process.env.NODE_ENV === 'production' && API_URL.protocol !== 'https:') {
+  throw new Error('EXPO_PUBLIC_API_URL debe usar HTTPS en producción.');
+}
+
 const api = axios.create({
-  baseURL: 'http://192.168.1.9:8000',
-  timeout: 10000,
+  baseURL: API_BASE_URL,
+  timeout: 15000,
 });
 
+// Interceptor de request — log de cada llamada
+api.interceptors.request.use(
+  config => {
+    console.log(`[API] ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`, config.params || '');
+    return config;
+  },
+  error => Promise.reject(error)
+);
+
+// Interceptor de response — log de errores
+api.interceptors.response.use(
+  response => response,
+  error => {
+    console.warn(`[API ERROR] ${error?.config?.url}:`, error?.message, error?.response?.status);
+    return Promise.reject(error);
+  }
+);
+
+// ===== Auth =====
 export const login = (credentials) => api.post('/login', credentials);
 export const register = (data) => api.post('/register', data);
 export const forgotPassword = (data) => api.post('/forgot-password', data);
-export const getCart = () => api.get('/carrito');
-export const checkoutCarrito = () => api.post('/carrito/checkout');
-export const getOrderDetails = (orderId) => api.get(`/api/v1/orders/${orderId}`);
-export const processPayment = (payload) => api.post('/api/v1/payments', payload);
-export const getBooks = () => api.get('/api/stored/libros');
+export const verifyEmail = ({ token }) => api.get('/verify-email', { params: { token } });
+
+// ===== Catálogo =====
+export const getBooks = (params) => api.get('/api/stored/libros', { params });
+export const getStoredLibros = (params) => api.get('/api/stored/libros', { params });
+export const getBusquedaAvanzada = (params) => api.get('/catalogo/busqueda-avanzada', { params });
+export const getBookById = (id) => api.get(`/api/stored/libros/${id}`);
+export const getVariantes = (id_libro) => api.get(`/libros/${id_libro}/variantes`);
+export const getCuponesDisponibles = () => api.get('/cupones/disponibles');
+export const getCatalogoStats = () => api.get('/catalogo/stats');
+export const getFiltrosDisponibles = () => api.get('/catalogo/filtros-disponibles');
+export const getTiendasDestacadas = (params = {}) => api.get('/tiendas/destacadas', { params });
+export const crearVariante = (id_libro, data) => api.post(`/libros/${id_libro}/variantes`, data);
 export const getBookAvailability = (id, cantidad) => api.get(`/libros/${id}/disponibilidad`, { params: { cantidad } });
 export const getBookOffer = (id) => api.get(`/ofertas/libro/${id}/activa`);
-export const registerLibrary = (data) => api.post('/libreria', data);
+export const getCategorias = () => api.get('/catalogo/categorias');
+export const searchByISBN = (isbn) => api.get(`/catalogo/buscar-por-isbn/${isbn}`);
+
+// ===== Carrito =====
+export const getCart = () => api.get('/carrito');
+export const checkoutCarrito = (payload = {}) => api.post('/carrito/checkout', payload);
+
+// ===== Pagos / Pedidos =====
+export const getOrderDetails = (orderId) => api.get(`/api/v1/orders/${orderId}`);
+export const confirmarEntrega = (orderId) => api.post(`/perfil/ordenes/${orderId}/confirmar-entrega`);
+export const actualizarCostoEnvio = (orderId, tipo_entrega) => api.post(`/api/v1/orders/${orderId}/actualizar-envio`, { tipo_entrega });
+export const reservarRetiroEnTienda = (orderId, metodoPago) => api.post(`/api/v1/orders/${orderId}/reservar-retiro`, { metodo_pago: metodoPago });
+export const notificarLlegadaTienda = (orderId) => api.post(`/api/v1/orders/${orderId}/llegada-tienda`);
+export const getDatosTransferenciaVendedor = (orderId) => api.get(`/api/v1/orders/${orderId}/vendedor-transferencia`);
+export const cancelOrder = (orderId, motivo) => api.delete(`/api/v1/orders/${orderId}`, {
+  data: motivo ? { motivo } : undefined,
+});
+export const cancelarMisPendientes = () => api.post('/api/v1/orders/cancelar-mis-pendientes');
+export const processPayment = (payload) => api.post('/api/v1/payments', payload);
+export const sendConfirmationEmail = (orderId) => api.post(`/api/v1/orders/${orderId}/send-confirmation`);
+
+// ===== Perfil =====
+export const getProfile = () => api.get('/perfil/mi-perfil');
+export const updateProfile = (payload) => api.put('/perfil/actualizar', payload);
+export const updatePreferences = (payload) => api.put('/perfil/preferencias', payload);
+export const changePassword = (payload) => api.put('/perfil/cambiar-password', payload);
+export const uploadProfilePhoto = (formData) =>
+  api.post('/perfil/foto-perfil', formData);
+export const uploadBannerPhoto = (formData) =>
+  api.post('/perfil/banner', formData);
+export const saveBannerColor = (bannerColor) => api.patch('/perfil/banner-color', { banner_color: bannerColor });
+export const getEstadisticasUsuario = () => api.get('/perfil/estadisticas/usuario');
+export const getPurchaseHistory = () => api.get('/perfil/historial/compras');
+export const getDevoluciones = () => api.get('/devoluciones');
+
+// ===== Notificaciones =====
+export const getNotifications = (soloNoLeidas = false, limit = 50, offset = 0) =>
+  api.get('/notificaciones', { params: { solo_no_leidas: soloNoLeidas, limit, offset } });
+export const markNotificationRead = (id) => api.put(`/notificaciones/${id}/leer`);
+export const markAllNotificationsRead = () => api.put('/notificaciones/marcar-todas-leidas');
+export const deleteNotification = (id) => api.delete(`/notificaciones/${id}`);
+export const deleteNotificationsByFilter = (filtro = 'leidas') =>
+  api.delete('/notificaciones', { params: { filtro } });
 
 // ===== Reseñas =====
-export const getReviewsForBook = (id) => api.get(`/resenas/libro/${id}`);
-export const createReview = (payload) => api.post('/resenas/crear', payload);
-export const updateReview = (id, payload) => api.put(`/resenas/${id}`, payload);
-export const deleteReview = (id) => api.delete(`/resenas/${id}`);
+export const getReviewsForBook = (id) => api.get(`/resenas/resenas/libro/${id}`);
+export const createReview = (payload) => api.post('/resenas/resenas/crear', payload);
+export const updateReview = (id, payload) => api.put(`/resenas/resenas/${id}`, payload);
+export const deleteReview = (id) => api.delete(`/resenas/resenas/${id}`);
+export const getCalificacionesVendedor = (id_tienda) => api.get(`/perfil/calificaciones-tienda/${id_tienda}`);
+
+// ===== Lista de Deseos =====
+// Favoritos es la lista predeterminada y compartida con la versión web.
+export const getFavoritos = () => api.get('/favoritos');
+export const addFavorito = (id_libro) => api.post(`/favoritos/${id_libro}`);
+export const removeFavorito = (id_libro) => api.delete(`/favoritos/${id_libro}`);
+
+// Las listas personalizadas se mantienen como una función independiente.
+export const getListaDeseos = () => api.get('/lista-deseos');
+export const createListaDeseos = (data) => api.post('/lista-deseos', data);
+export const deleteListaDeseos = (id_lista) => api.delete(`/lista-deseos/${id_lista}`);
+export const getLibrosListaDeseos = (id_lista) => api.get(`/lista-deseos/${id_lista}/libros`);
+export const addToListaDeseos = (id_libro, id_lista) => api.post(`/lista-deseos/${id_lista}/libros`, { id_libro });
+export const removeFromListaDeseos = (id_libro, id_lista) => api.delete(`/lista-deseos/${id_lista}/libros/${id_libro}`);
+export const isEnListaDeseos = (id_lista, id_libro) => api.get(`/lista-deseos/${id_lista}/libros`);
+
+// ===== Direcciones =====
+export const getDirecciones = () => api.get('/perfil/direcciones');
+export const createDireccion = (data) => api.post('/perfil/direcciones', data);
+export const updateDireccion = (id, data) => api.put(`/perfil/direcciones/${id}`, data);
+export const deleteDireccion = (id) => api.delete(`/perfil/direcciones/${id}`);
+export const setPrincipalDireccion = (id) => api.put(`/perfil/direcciones/${id}`, { es_principal: true });
+
+// ===== Cupones (comprador) =====
+export const validarCupon = (data) => api.post('/cupones/validar', data);
+export const aplicarCupon = (data) => api.post('/cupones/aplicar', data);
+
+// ===== Cupones (vendedor — gestión CRUD) =====
+export const getCuponesVendedor    = (id_tienda) => api.get(`/cupones/tienda/${id_tienda}`);
+export const crearCupon            = (data)       => api.post('/cupones', data);
+export const actualizarCupon       = (id, data)   => api.patch(`/cupones/${id}`, data);
+export const eliminarCupon         = (id)         => api.delete(`/cupones/${id}`);
+
+// ===== Librería (Vendedor) =====
+export const getLibreria = () => api.get('/tiendas/mi-tienda');
+export const registerLibrary = (data) => api.post('/libreria', data);
+export const updateLibreria = (data) => api.put('/libreria/actualizar', data);
+export const uploadLibreriaLogo = (formData) =>
+  api.post('/libreria/logo', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+export const getConfigLibreria = () => api.get('/configuracion');
+export const updateConfigLibreria = (data) => api.put('/configuracion', data);
+export const uploadTiendaImage = (formData) =>
+  api.post('/configuracion/upload-image', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+export const getPerfilTiendaPublico = (id_tienda) => api.get(`/configuracion/${id_tienda}`);
+export const getMetricasTienda = () => api.get('/libreria/metricas');
+
+// ===== Libros del vendedor =====
+export const getMisLibros = () => api.get('/libros/mis-libros');
+export const publicarLibro = (formData) =>
+  api.post('/libros/publicar', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+export const updateLibro = (id, data) => api.put(`/libros/${id}`, data);
+export const updateStockLibro = (id, stock) => { const f = new FormData(); f.append('stock', stock); return api.patch(`/libros/${id}/stock`, f, { headers: { 'Content-Type': 'multipart/form-data' } }); };
+export const deleteLibro = (id) => api.delete(`/libros/${id}`);
+export const getStatsVendedor = () => api.get('/libros/stats');
+export const getTopVendidos = () => api.get('/libros/top-vendidos');
+export const getAlertasStock = (umbral = 3) => api.get(`/libros/alertas-stock?umbral=${umbral}`);
+
+// ===== Herramientas y suscripciones del vendedor =====
+export const getPlanesHerramientas = () => api.get('/herramientas/planes');
+export const getMiSuscripcionHerramientas = () => api.get('/herramientas/mi-suscripcion');
+export const suscribirPlanHerramientas = (data) => api.post('/herramientas/suscribir', data);
+export const cancelarSuscripcionHerramientas = () => api.delete('/herramientas/cancelar');
+
+// ===== Impulsos publicitarios del vendedor =====
+export const getTiposImpulso = () => api.get('/impulsos/tipos');
+export const getMisImpulsos = () => api.get('/impulsos/mis-impulsos');
+export const contratarImpulso = (data) => api.post('/impulsos/contratar', data);
+export const cancelarImpulso = (id_impulso) => api.delete(`/impulsos/${id_impulso}`);
+
+// ===== Ofertas y Promociones del vendedor =====
+export const getOfertas = () => api.get('/ofertas');
+export const getOfertaById = (id) => api.get(`/ofertas/${id}`);
+export const crearOferta = (formData) =>
+  api.post('/ofertas', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+export const updateOferta = (id, formData) =>
+  api.put(`/ofertas/${id}`, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+export const deleteOferta = (id) => api.delete(`/ofertas/${id}`);
+
+// ===== Pedidos del vendedor =====
+export const getMisVentas = () => api.get('/libros/mis-ventas');
+export const getMisPedidos = () => api.get('/libros/mis-pedidos');
+export const actualizarEstadoOrden = (id_orden, estado) =>
+  api.put(`/perfil/ordenes/${id_orden}/estado`, { estado });
+export const registrarGuia = (id_orden, data) =>
+  api.put(`/envios/orden/${id_orden}`, data);
+export const getEmpresasMensajeria = () => api.get('/envios/empresas');
+
+// ===== Chat =====
+export const crearSalaChat = (id_tienda) => api.post('/chat/salas', { id_tienda });
+export const getChatHistory = (id_sala, params = undefined) =>
+  api.get(`/chat/salas/${id_sala}/mensajes`, { params: params ?? { limit: 50, offset: 0 } });
+export const marcarSalaLeida = (id_sala) => api.put(`/chat/salas/${id_sala}/marcar-leidos`);
+export const enviarMensajeChat = (payload) => api.post('/chat/mensajes', payload);
+export const getSalasUsuario = () => api.get('/chat/salas');
+export const vaciarSalaChat = (id_sala) => api.delete(`/chat/salas/${id_sala}/mensajes`);
+export const eliminarSalaChat = (id_sala) => api.delete(`/chat/salas/${id_sala}`);
+
+// ===== Quejas y Reclamos =====
+export const getApiBaseUrl = () => api.defaults.baseURL;
+export const getOrdenes = () => api.get('/api/v1/orders');
+export const getQuejas = () => api.get('/quejas');
+export const crearQueja = (formData) => api.post('/quejas', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+export const cancelarQueja = (id) => api.delete(`/quejas/${id}`);
+export const getMensajesReclamo = (id) => api.get(`/quejas/${id}/mensajes`);
+export const enviarMensajeReclamo = (id, mensaje) => api.post(`/quejas/${id}/mensajes`, { mensaje });
+export const getSoporte = () => api.get('/quejas/soporte');
+export const crearSoporte = (payload) => api.post('/quejas/soporte', payload);
+
+// ===== Administración =====
+// El panel conserva las mismas fuentes de datos que el dashboard web.
+export const getAdminUsuarios = () => api.get('/usuarios');
+export const getAdminLibros = () => api.get('/api/stored/libros');
+export const getAdminOrdenes = () => api.get('/api/v1/admin/orders');
+export const getAdminTiendas = () => api.get('/tiendas');
+export const getAdminSolicitudes = () =>
+  api.get('/quejas/admin/todas', { timeout: 60000 });
+export const resolverSolicitudAdmin = (id, estado, respuesta) =>
+  api.patch(`/quejas/admin/${id}`, { estado, respuesta });
+export const getMensajesSolicitudAdmin = (id) => api.get(`/quejas/${id}/mensajes`);
+export const enviarMensajeSolicitudAdmin = (id, mensaje) =>
+  api.post(`/quejas/${id}/mensajes`, { mensaje });
+
+// Mutaciones admin — equivalentes a las acciones del dashboard web
+export const bloquearUsuario = (id, bloqueado) =>
+  api.patch(`/usuarios/${id}/bloquear`, { bloqueado });
+export const ocultarLibroAdmin = (id, oculto) =>
+  api.patch(`/libros/${id}/ocultar`, { oculto });
+export const eliminarLibroAdmin = (id) =>
+  api.delete(`/libros/${id}`);
+export const cambiarEstadoTienda = (id, estado, motivo) =>
+  api.patch(`/tiendas/${id}/estado`, {
+    estado,
+    ...(motivo ? { motivo } : {}),
+  });
+
+// ===== BookyPago Finanzas (Administración) =====
+export const getFinanzasBalance = () => api.get('/api/v1/bookypago-finanzas/balance');
+export const getFinanzasEstadisticas = () => api.get('/api/v1/bookypago-finanzas/estadisticas');
+export const getFinanzasHistorial = () => api.get('/api/v1/bookypago-finanzas/historial?dias=30');
+export const getFinanzasNomina = () => api.get('/api/v1/bookypago-finanzas/nomina');
+export const getCuentasBancariasVendedor = (idVendedor) => api.get(`/api/v1/bookypago-finanzas/cuentas-bancarias/${idVendedor}`);
+export const crearCuentaBancariaVendedor = (idVendedor, data) =>
+  api.post(`/api/v1/bookypago-finanzas/cuentas-bancarias/${idVendedor}`, data);
+export const marcarCuentaPrincipalVendedor = (idVendedor, idCuenta) =>
+  api.put(`/api/v1/bookypago-finanzas/cuentas-bancarias/${idVendedor}/principal/${idCuenta}`);
+export const eliminarCuentaBancariaVendedor = (idVendedor, idCuenta) =>
+  api.delete(`/api/v1/bookypago-finanzas/cuentas-bancarias/${idVendedor}/${idCuenta}`);
+export const procesarNominaVendedor = (idVendedor, idMetodo) =>
+  api.post(`/api/v1/bookypago-finanzas/nomina/procesar/${idVendedor}`, { id_metodo: idMetodo });
+
 export default api;

@@ -1,10 +1,40 @@
 from fastapi import APIRouter, HTTPException, Query
 from app.database import get_db
+from app.models.libro import buscar_libro_por_isbn, validar_y_normalizar_isbn
 from typing import Optional
 
 router = APIRouter(prefix="/catalogo", tags=["Catálogo"])
 
 # ============= ENDPOINTS =============
+
+@router.get("/stats")
+def get_stats_publicos():
+    """Estadísticas públicas de la plataforma para mostrar en la Home"""
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    try:
+        cursor.execute("SELECT COUNT(*) AS total FROM libros WHERE stock > 0 AND oculto = 0")
+        libros = cursor.fetchone()["total"]
+
+        cursor.execute("SELECT COUNT(*) AS total FROM tiendas")
+        librerias = cursor.fetchone()["total"]
+
+        cursor.execute("SELECT COUNT(*) AS total FROM usuarios")
+        usuarios = cursor.fetchone()["total"]
+
+        cursor.execute("SELECT ROUND(AVG(calificacion), 1) AS promedio FROM calificaciones_tiendas")
+        row = cursor.fetchone()
+        calificacion = float(row["promedio"]) if row["promedio"] else 0.0
+
+        return {
+            "libros_disponibles": libros,
+            "librerias_asociadas": librerias,
+            "usuarios_activos": usuarios,
+            "calificacion_promedio": calificacion
+        }
+    finally:
+        cursor.close()
+        db.close()
 
 @router.get("/busqueda-avanzada")
 def busqueda_avanzada(
@@ -14,9 +44,13 @@ def busqueda_avanzada(
     precio_max: Optional[float] = Query(None, ge=0, description="Precio máximo"),
     calificacion_min: Optional[float] = Query(None, ge=0, le=5, description="Calificación mínima"),
     disponible: Optional[bool] = Query(None, description="Solo libros con stock"),
-    ordenar_por: Optional[str] = Query("relevancia", regex="^(relevancia|precio_asc|precio_desc|calificacion|recientes)$"),
+    ordenar_por: Optional[str] = Query("relevancia", pattern="^(relevancia|precio_asc|precio_desc|calificacion|recientes)$"),
     pagina: int = Query(1, ge=1),
-    limite: int = Query(20, ge=1, le=100)
+    limite: int = Query(20, ge=1, le=100),
+    incluir_total: bool = Query(True, description="Incluir total y páginas; desactívalo para carruseles"),
+    categoria: Optional[str] = Query(None, description="Nombre de la categoría"),
+    nombre_tienda: Optional[str] = Query(None, description="Nombre de la librería/tienda"),
+    correo_vendedor: Optional[str] = Query(None, description="Correo del vendedor")
 ):
     """
     Búsqueda avanzada con filtros
@@ -50,6 +84,9 @@ def busqueda_avanzada(
         if categoria_id:
             where_conditions.append("l.id_categoria = %s")
             params.append(categoria_id)
+        elif categoria:
+            where_conditions.append("c.nombre_categoria = %s")
+            params.append(categoria)
         
         if precio_min is not None:
             where_conditions.append("l.precio_libro >= %s")
@@ -62,7 +99,20 @@ def busqueda_avanzada(
         if disponible:
             where_conditions.append("l.stock > 0")
         
-        # Construir ORDER BY
+        if nombre_tienda:
+            where_conditions.append("t.nombre_tienda LIKE %s")
+            params.append(f"%{nombre_tienda}%")
+        
+        if correo_vendedor:
+            where_conditions.append("u.correo_usuario = %s")
+            params.append(correo_vendedor)
+
+        having_params = []
+        if calificacion_min:
+            where_conditions.append("(SELECT COALESCE(AVG(rf.calificacion), 0) FROM resenas_libros rf WHERE rf.id_libro = l.id_libro) >= %s")
+            params.append(calificacion_min)
+        
+        # Construir ORDER BY — impulsados siempre primero, luego criterio elegido
         orden_map = {
             "relevancia": "l.fecha_listado DESC",
             "precio_asc": "l.precio_libro ASC",
@@ -75,17 +125,23 @@ def busqueda_avanzada(
         # Query base
         where_clause = " AND ".join(where_conditions)
         
-        # Contar total
-        count_query = f"""
-            SELECT COUNT(*) as total 
-            FROM libros l
-            WHERE {where_clause}
-        """
-        cursor.execute(count_query, params)
-        total_result = cursor.fetchone()
-        total = total_result["total"] if total_result else 0
+        # Los carruseles de la página pública no muestran paginación. Evitar este
+        # COUNT reduce a la mitad las consultas al cargar la portada.
+        total = None
+        if incluir_total:
+            count_query = f"""
+                SELECT COUNT(*) as total
+                FROM libros l
+                LEFT JOIN categorias c ON l.id_categoria = c.id_categoria
+                LEFT JOIN tiendas t ON l.id_tienda = t.id_tienda
+                LEFT JOIN usuarios u ON t.id_usuario = u.id_usuario
+                WHERE {where_clause}
+            """
+            cursor.execute(count_query, params)
+            total_result = cursor.fetchone()
+            total = total_result["total"] if total_result else 0
         
-        # Query principal con calificaciones
+        # Query principal con calificaciones e impulsos activos
         offset = (pagina - 1) * limite
         
         main_query = f"""
@@ -93,6 +149,7 @@ def busqueda_avanzada(
                 l.id_libro,
                 l.titulo,
                 l.autor_libro,
+                l.isbn,
                 l.descripcion_libro,
                 l.precio_libro,
                 l.stock,
@@ -101,25 +158,45 @@ def busqueda_avanzada(
                 c.nombre_categoria,
                 t.nombre_tienda,
                 t.id_tienda,
-                (SELECT url_imagen FROM imagenes_libro WHERE id_libro = l.id_libro LIMIT 1) as imagen_url,
-                COALESCE(AVG(r.calificacion), 0) as promedio_calificacion,
-                COUNT(r.id_resena) as total_resenas
+                COALESCE(tc.tarifa_envio, 0) AS costo_envio_tienda,
+                COALESCE(tc.tiempo_despacho_dias, 2) AS tiempo_despacho_dias,
+                tc.politica_devoluciones,
+                tc.politica_envios,
+                (SELECT url_imagen FROM imagenes_libro WHERE id_libro = l.id_libro ORDER BY es_principal DESC, id_imagen ASC LIMIT 1) AS imagen_url,
+                (SELECT GROUP_CONCAT(DISTINCT il.url_imagen ORDER BY il.es_principal DESC, il.id_imagen ASC) FROM imagenes_libro il WHERE il.id_libro = l.id_libro) AS imagenes,
+                COALESCE((SELECT ROUND(AVG(rf.calificacion), 1) FROM resenas_libros rf WHERE rf.id_libro = l.id_libro), 0) AS promedio_calificacion,
+                (SELECT COUNT(*) FROM resenas_libros rf WHERE rf.id_libro = l.id_libro) AS total_resenas,
+                COALESCE((SELECT ROUND(AVG(ct.calificacion), 1) FROM calificaciones_tiendas ct WHERE ct.id_tienda = t.id_tienda), 0) AS calificacion_tienda,
+                (SELECT COUNT(*) FROM calificaciones_tiendas ct WHERE ct.id_tienda = t.id_tienda) AS total_opiniones_tienda,
+                -- Impulso activo del libro (si existe)
+                imp.id_impulso,
+                imp.id_tipo_impulso AS impulso_tipo_id,
+                ti_imp.tipo          AS impulso_tipo,
+                ti_imp.nombre        AS impulso_nombre,
+                CASE WHEN imp.id_impulso IS NOT NULL THEN 1 ELSE 0 END AS es_impulsado
             FROM libros l
             LEFT JOIN categorias c ON l.id_categoria = c.id_categoria
             LEFT JOIN tiendas t ON l.id_tienda = t.id_tienda
-            LEFT JOIN resenas_libros r ON l.id_libro = r.id_libro
+            LEFT JOIN usuarios u ON t.id_usuario = u.id_usuario
+            LEFT JOIN tienda_configuracion tc ON t.id_tienda = tc.id_tienda
+            LEFT JOIN impulsos_contratados imp
+                   ON imp.id_libro = l.id_libro
+                  AND imp.estado = 'Activo'
+                  AND NOW() BETWEEN imp.fecha_inicio AND imp.fecha_fin
+            LEFT JOIN tipos_impulso ti_imp ON ti_imp.id_tipo_impulso = imp.id_tipo_impulso
             WHERE {where_clause}
-            GROUP BY l.id_libro
-            ORDER BY {order_clause}
+            ORDER BY es_impulsado DESC, {order_clause}
             LIMIT %s OFFSET %s
         """
         
-        params.extend([limite, offset])
+        params.extend(having_params + [limite, offset])
         cursor.execute(main_query, params)
         libros = cursor.fetchall()
+        for libro in libros:
+            libro["imagenes"] = libro["imagenes"].split(",") if libro.get("imagenes") else []
         
         # Calcular páginas
-        total_paginas = (total + limite - 1) // limite
+        total_paginas = (total + limite - 1) // limite if total is not None else None
         
         return {
             "total": total,
@@ -135,6 +212,66 @@ def busqueda_avanzada(
     finally:
         cursor.close()
         db.close()
+
+@router.get("/libro/{id_libro}")
+def obtener_libro_catalogo(id_libro: int):
+    """Obtiene un libro del catálogo por su ID (incluye datos de tienda, imágenes y calificaciones)"""
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    try:
+        cursor.execute("""
+            SELECT 
+                l.id_libro,
+                l.titulo,
+                l.autor_libro,
+                l.isbn,
+                l.descripcion_libro,
+                l.precio_libro,
+                l.stock,
+                l.estado_libro,
+                l.fecha_listado,
+                c.nombre_categoria,
+                t.nombre_tienda,
+                t.id_tienda,
+                COALESCE(tc.tarifa_envio, 0) AS costo_envio_tienda,
+                COALESCE(tc.tiempo_despacho_dias, 2) AS tiempo_despacho_dias,
+                tc.politica_devoluciones,
+                tc.politica_envios,
+                (SELECT url_imagen FROM imagenes_libro WHERE id_libro = l.id_libro LIMIT 1) as imagen_url,
+                GROUP_CONCAT(DISTINCT i.url_imagen ORDER BY i.es_principal DESC, i.id_imagen ASC) AS imagenes,
+                COALESCE(AVG(r.calificacion), 0) as promedio_calificacion,
+                COUNT(DISTINCT r.id_resena) as total_resenas,
+                (SELECT ROUND(AVG(ct.calificacion), 1)
+                 FROM calificaciones_tiendas ct
+                 WHERE ct.id_tienda = t.id_tienda) as calificacion_tienda,
+                (SELECT COUNT(ct.id_calificacion)
+                 FROM calificaciones_tiendas ct
+                 WHERE ct.id_tienda = t.id_tienda) as total_opiniones_tienda
+            FROM libros l
+            LEFT JOIN categorias c ON l.id_categoria = c.id_categoria
+            LEFT JOIN tiendas t ON l.id_tienda = t.id_tienda
+            LEFT JOIN tienda_configuracion tc ON t.id_tienda = tc.id_tienda
+            LEFT JOIN imagenes_libro i ON l.id_libro = i.id_libro
+            LEFT JOIN resenas_libros r ON l.id_libro = r.id_libro
+            WHERE l.id_libro = %s AND l.oculto = 0
+            GROUP BY l.id_libro, l.titulo, l.autor_libro, l.isbn, l.precio_libro, l.stock,
+                     l.descripcion_libro, l.fecha_listado, c.nombre_categoria, t.nombre_tienda,
+                     t.id_tienda, tc.tarifa_envio, tc.tiempo_despacho_dias,
+                     tc.politica_devoluciones, tc.politica_envios
+        """, (id_libro,))
+        libro = cursor.fetchone()
+        if not libro:
+            raise HTTPException(status_code=404, detail="Libro no encontrado")
+        libro["imagenes"] = libro["imagenes"].split(",") if libro.get("imagenes") else []
+        return libro
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        cursor.close()
+        db.close()
+
 
 @router.get("/filtros-disponibles")
 def obtener_filtros_disponibles():
@@ -187,7 +324,7 @@ def obtener_categorias():
                 COUNT(l.id_libro) as cantidad_libros
             FROM categorias c
             LEFT JOIN libros l ON c.id_categoria = l.id_categoria AND l.stock > 0
-            GROUP BY c.id_categoria
+            GROUP BY c.id_categoria, c.nombre_categoria
             ORDER BY c.nombre_categoria
         """
         cursor.execute(query)
@@ -196,3 +333,99 @@ def obtener_categorias():
     finally:
         cursor.close()
         db.close()
+
+
+@router.get("/autocompletado")
+def autocompletado(
+    q: str = Query(..., min_length=1, description="Texto de búsqueda para autocompletado"),
+    limite: int = Query(8, ge=1, le=20, description="Máximo de sugerencias a retornar")
+):
+    """
+    Endpoint para autocompletado de búsqueda.
+    
+    Retorna sugerencias de libros basadas en el texto de búsqueda.
+    Optimizado para respuestas rápidas con datos mínimos necesarios.
+    """
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    
+    try:
+        search_term = f"%{q}%"
+        
+        query = """
+            SELECT 
+                l.id_libro,
+                l.titulo,
+                l.autor_libro,
+                l.isbn,
+                l.precio_libro,
+                (SELECT url_imagen FROM imagenes_libro WHERE id_libro = l.id_libro LIMIT 1) as imagen_url,
+                t.nombre_tienda
+            FROM libros l
+            LEFT JOIN tiendas t ON l.id_tienda = t.id_tienda
+            WHERE 
+                l.stock > 0 
+                AND l.oculto = 0
+                AND (l.titulo LIKE %s OR l.autor_libro LIKE %s)
+            ORDER BY 
+                CASE 
+                    WHEN l.titulo LIKE %s THEN 1
+                    WHEN l.autor_libro LIKE %s THEN 2
+                    ELSE 3
+                END,
+                l.stock DESC,
+                l.fecha_listado DESC
+            LIMIT %s
+        """
+        
+        cursor.execute(query, [search_term, search_term, search_term, search_term, limite])
+        sugerencias = cursor.fetchall()
+        
+        return {
+            "sugerencias": sugerencias,
+            "total": len(sugerencias)
+        }
+        
+    except Exception as e:
+        print(f"Error en autocompletado: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        cursor.close()
+        db.close()
+
+@router.get("/buscar-por-isbn/{isbn}")
+def buscar_por_isbn(isbn: str):
+    """
+    Busca libros por ISBN en todo el catálogo.
+    
+    Útil para escaneo de códigos de barras: el usuario escanea el ISBN de un libro
+    en una librería física y la app busca si hay vendedores en BookyHome con el mismo
+    libro a mejor precio.
+    
+    Retorna una lista de libros con el mismo ISBN de diferentes vendedores,
+    ordenados por precio ascendente para facilitar la comparación.
+    """
+    # Normalizar y validar ISBN
+    isbn_normalizado = validar_y_normalizar_isbn(isbn)
+    
+    if not isbn_normalizado:
+        raise HTTPException(
+            status_code=400, 
+            detail="ISBN inválido. Debe ser ISBN-10 (10 caracteres) o ISBN-13 (13 caracteres)"
+        )
+    
+    # Buscar libros por ISBN
+    libros = buscar_libro_por_isbn(isbn_normalizado)
+    
+    if not libros:
+        raise HTTPException(
+            status_code=404, 
+            detail=f"No se encontraron libros con el ISBN {isbn_normalizado}"
+        )
+    
+    return {
+        "isbn": isbn_normalizado,
+        "total_encontrados": len(libros),
+        "mejor_precio": libros[0]["precio_libro"] if libros else None,
+        "libros": libros
+    }

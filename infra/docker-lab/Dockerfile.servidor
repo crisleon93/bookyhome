@@ -1,0 +1,48 @@
+# Dockerfile.servidor — "servidor limpio" Ubuntu 24.04 para laboratorio Ansible
+# Simula un servidor recién instalado con:
+#   - Usuario ansible (sudoer sin contraseña)
+#   - SSH habilitado
+#   - Python3 (requerido por Ansible)
+#   - Sin Docker preinstalado (lo instala el playbook)
+
+FROM ubuntu:24.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Paquetes mínimos: SSH, sudo, Python3
+RUN apt-get update -q && \
+    apt-get install -y --no-install-recommends \
+        openssh-server \
+        sudo \
+        python3 \
+        python3-pip \
+        curl \
+        ca-certificates \
+        ufw \
+        docker.io \
+    && rm -rf /var/lib/apt/lists/*
+
+# Usuario ansible con sudo sin contraseña, y acceso al socket de Docker
+RUN useradd -m -s /bin/bash ansible && \
+    echo "ansible ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/ansible && \
+    chmod 440 /etc/sudoers.d/ansible && \
+    usermod -aG docker ansible 2>/dev/null || true
+
+# Configurar SSH
+RUN mkdir -p /var/run/sshd && \
+    sed -i 's/#PasswordAuthentication yes/PasswordAuthentication no/' /etc/ssh/sshd_config && \
+    sed -i 's/#PubkeyAuthentication yes/PubkeyAuthentication yes/' /etc/ssh/sshd_config && \
+    sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin no/' /etc/ssh/sshd_config
+
+# Directorio SSH del usuario ansible
+RUN mkdir -p /home/ansible/.ssh && \
+    chmod 700 /home/ansible/.ssh && \
+    chown ansible:ansible /home/ansible/.ssh
+
+# La llave pública se copia en el entrypoint (se genera fuera del build)
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+EXPOSE 22
+
+ENTRYPOINT ["/entrypoint.sh"]

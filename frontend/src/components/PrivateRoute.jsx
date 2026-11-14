@@ -9,7 +9,7 @@ function PrivateRoute({ allowedRoles }) {
   const token = localStorage.getItem('token');
 
   if (!token) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/" replace />;
   }
 
   // ========================
@@ -39,7 +39,8 @@ function PrivateRoute({ allowedRoles }) {
   // ========================
   if (!isTokenValid) {
     localStorage.removeItem('token');
-    return <Navigate to="/login" replace />;
+    document.documentElement.classList.remove('dark');
+    return <Navigate to="/" replace />;
   }
 
   // ========================

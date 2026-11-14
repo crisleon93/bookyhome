@@ -27,7 +27,8 @@ backend/
     main.py               Entrada principal de FastAPI
     schemas.py            Esquemas de validacion Pydantic
   Dockerfile              Imagen del backend
-  requirements.txt        Dependencias Python
+  pyproject.toml          Dependencias directas y configuracion del proyecto
+  uv.lock                 Resolucion reproducible de dependencias
 ```
 
 ## Routers
@@ -92,6 +93,17 @@ MAIL_SERVER=smtp.gmail.com
 MAIL_PORT=587
 ```
 
+### Asistente IA
+
+El asistente de BookyHome ya funciona con respuestas locales básicas. Para que mantenga una conversación natural y responda con mayor precisión sobre la plataforma, añade estas variables **solo** en `backend/.env` (nunca en el frontend):
+
+```env
+OPENAI_API_KEY=tu_clave_secreta
+OPENAI_MODEL=gpt-4o-mini
+```
+
+El endpoint `POST /asistente/chat` recibe el mensaje actual y hasta 12 mensajes previos. El frontend ya envía ese historial automáticamente.
+
 ## Ejecutar con Docker
 
 Desde la raiz del proyecto:
@@ -106,19 +118,28 @@ La API queda disponible en:
 http://localhost:8000
 ```
 
+## Pruebas y cobertura
+
+Instala las dependencias de desarrollo y ejecuta las pruebas con cobertura:
+
+```bash
+uv sync --locked --group dev
+uv run pytest tests/ --cov=app --cov-report=term-missing --cov-report=xml:coverage/coverage.xml
+```
+
+El reporte XML se guarda en `coverage/coverage.xml` y lo importa SonarCloud.
+
 ## Ejecutar localmente
 
 Si se desea ejecutar el backend sin Docker:
 
 ```bash
 cd backend
-python -m venv venv
-venv\Scripts\activate
-pip install -r requirements.txt
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+uv sync --frozen
+uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-Para esto se necesita tener MySQL disponible y configurar las variables de entorno de conexion.
+Instala `uv` previamente siguiendo sus instrucciones oficiales. `uv sync --frozen` crea el entorno virtual e instala exactamente las versiones de `uv.lock`; `uv run` ejecuta el servidor dentro de ese entorno. Para esto se necesita tener MySQL disponible y configurar las variables de entorno de conexion.
 
 ## Base de datos
 

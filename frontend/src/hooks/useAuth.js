@@ -7,6 +7,10 @@ export function parseToken(token) {
   }
 }
 
+export function getToken() {
+  return localStorage.getItem('token')
+}
+
 export function getUserRole() {
   const token = localStorage.getItem('token')
   return parseToken(token)?.rol || null

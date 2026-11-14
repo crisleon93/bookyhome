@@ -1,0 +1,155 @@
+# .github/dependabot.yml — BookyHome
+# Mantiene actualizadas las dependencias Python, npm y las imágenes Docker.
+# Ejecuta el análisis cada lunes a las 06:00 hora de Bogotá (UTC-5 → 11:00 UTC).
+# Las actualizaciones abren PRs automáticos; el CI (ci.yml) verifica cada PR.
+
+version: 2
+
+updates:
+  # ── Backend Python (pyproject.toml / uv.lock) ─────────────────────────────
+  # Usa package-ecosystem: "uv" (soporte nativo desde marzo 2025).
+  # Lee pyproject.toml y actualiza uv.lock automáticamente.
+  # Ref: https://docs.astral.sh/uv/guides/integration/dependabot/
+  - package-ecosystem: "uv"
+    directory: "/backend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "11:00"
+      timezone: "America/Bogota"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependabot"
+      - "backend"
+    commit-message:
+      prefix: "deps(backend)"
+    # Agrupa todas las actualizaciones de producción en un solo PR para
+    # reducir el número de PRs y facilitar la revisión.
+    groups:
+      backend-production:
+        dependency-type: "production"
+        update-types:
+          - "minor"
+          - "patch"
+      backend-security:
+        applies-to: security-updates
+        patterns:
+          - "*"
+
+  # ── Frontend web (frontend/package.json / pnpm-lock.yaml) ─────────────────
+  - package-ecosystem: "npm"
+    directory: "/frontend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "11:00"
+      timezone: "America/Bogota"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependabot"
+      - "frontend"
+    commit-message:
+      prefix: "deps(frontend)"
+    groups:
+      frontend-production:
+        dependency-type: "production"
+        update-types:
+          - "minor"
+          - "patch"
+      frontend-dev:
+        dependency-type: "development"
+        update-types:
+          - "minor"
+          - "patch"
+
+  # ── App móvil Expo/React Native (app-movil/package.json) ──────────────────
+  - package-ecosystem: "npm"
+    directory: "/app-movil"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "11:00"
+      timezone: "America/Bogota"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependabot"
+      - "app-movil"
+    commit-message:
+      prefix: "deps(app-movil)"
+    groups:
+      app-movil-deps:
+        update-types:
+          - "minor"
+          - "patch"
+
+  # ── Imágenes Docker (docker-compose.yml, deploy/, backend/Dockerfile, etc.) ─
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "11:00"
+      timezone: "America/Bogota"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependabot"
+      - "docker"
+    commit-message:
+      prefix: "deps(docker)"
+
+  - package-ecosystem: "docker"
+    directory: "/backend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "11:00"
+      timezone: "America/Bogota"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependabot"
+      - "docker"
+    commit-message:
+      prefix: "deps(docker)"
+
+  - package-ecosystem: "docker"
+    directory: "/frontend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "11:00"
+      timezone: "America/Bogota"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependabot"
+      - "docker"
+    commit-message:
+      prefix: "deps(docker)"
+
+  - package-ecosystem: "docker"
+    directory: "/deploy"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "11:00"
+      timezone: "America/Bogota"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependabot"
+      - "docker"
+    commit-message:
+      prefix: "deps(docker)"
+
+  # ── GitHub Actions ─────────────────────────────────────────────────────────
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "11:00"
+      timezone: "America/Bogota"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependabot"
+      - "ci"
+    commit-message:
+      prefix: "deps(actions)"

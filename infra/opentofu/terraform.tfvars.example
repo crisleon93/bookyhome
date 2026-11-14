@@ -1,0 +1,10 @@
+# terraform.tfvars.example — BookyHome OpenTofu
+# Copiar como terraform.tfvars y completar los valores.
+# NUNCA subir terraform.tfvars al repositorio (está en .gitignore).
+
+hcloud_token        = "pega_tu_token_de_hetzner_cloud_aqui"
+app_version         = "1.0.1"
+server_name         = "bookyhome-prod-01"
+server_type         = "cpx21"
+location            = "nbg1"
+ssh_public_key_path = "~/.ssh/id_ed25519.pub"

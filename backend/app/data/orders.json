@@ -1,20 +1,531 @@
 {
-  "22": [
+  "16": [
     {
-      "id_orden": 1,
-      "fecha": "2026-06-19T22:05:18.638504Z",
+      "id_orden": 69,
+      "codigo_compra": "BH-43D3616239",
+      "fecha": "2026-09-08T07:32:28.821686Z",
       "items": [
         {
-          "id_libro": 2,
-          "titulo": "Amor en Invierno",
-          "autor_libro": "L. Moreno",
-          "precio_libro": 28000.0,
+          "id_libro": 48,
           "cantidad": 1,
-          "imagen": null
+          "precio_libro": 75000.0,
+          "titulo": "1984 - Edición Especial",
+          "autor_libro": "George Orwell",
+          "imagen": "https://covers.openlibrary.org/b/id/11186714-L.jpg",
+          "id_variante": null
         }
       ],
-      "total": 28000.0,
-      "estado": "pendiente"
+      "subtotal": 75000.0,
+      "costo_envio": 0.0,
+      "total": 75000.0,
+      "estado": "pagado",
+      "tipo_entrega": "domicilio",
+      "pin_retiro": null,
+      "estado_retiro": null,
+      "fecha_limite_retiro": null,
+      "id_orden_db": 69,
+      "estado_orden": "pagado",
+      "metodo_pago": "Tarjeta de Crédito",
+      "id_direccion": 16
+    },
+    {
+      "id_orden": 2,
+      "codigo_compra": "BH-DDD51E11CE",
+      "fecha": "2026-09-08T08:21:24.808834Z",
+      "items": [
+        {
+          "id_libro": 47,
+          "titulo": "Dune Remastered",
+          "autor_libro": "Frank Herbert",
+          "precio_libro": 95000.0,
+          "cantidad": 1,
+          "imagen": "https://covers.openlibrary.org/b/id/8259443-L.jpg",
+          "id_variante": null,
+          "variante_label": null,
+          "id_tienda": 14,
+          "nombre_tienda": ""
+        },
+        {
+          "id_libro": 476,
+          "titulo": "Libro 426 - Aventura",
+          "autor_libro": "Daniela Lozano",
+          "precio_libro": 103698.0,
+          "cantidad": 1,
+          "imagen": null,
+          "id_variante": null,
+          "variante_label": null,
+          "id_tienda": 6,
+          "nombre_tienda": ""
+        }
+      ],
+      "subtotal": 198698.0,
+      "costo_envio": 0.0,
+      "total": 198698.0,
+      "estado": "cancelada",
+      "tipo_entrega": "domicilio",
+      "pin_retiro": null,
+      "estado_retiro": null,
+      "fecha_limite_retiro": null,
+      "id_orden_db": 70,
+      "motivo_cancelacion": "Cancelación de orden pendiente"
+    },
+    {
+      "id_orden": 3,
+      "codigo_compra": "BH-D5451F3F97",
+      "fecha": "2026-09-09T18:11:31.086191Z",
+      "items": [
+        {
+          "id_libro": 50,
+          "titulo": "caminos elevados",
+          "autor_libro": "jose jose",
+          "precio_libro": 34000.0,
+          "cantidad": 1,
+          "imagen": null,
+          "id_variante": null,
+          "variante_label": null,
+          "id_tienda": 8,
+          "nombre_tienda": ""
+        },
+        {
+          "id_libro": 436,
+          "titulo": "Libro 386 - Romance",
+          "autor_libro": "Camilo Restrepo",
+          "precio_libro": 84278.0,
+          "cantidad": 1,
+          "imagen": null,
+          "id_variante": null,
+          "variante_label": null,
+          "id_tienda": 8,
+          "nombre_tienda": ""
+        }
+      ],
+      "subtotal": 118278.0,
+      "costo_envio": 12000.0,
+      "total": 130278.0,
+      "estado": "enviado",
+      "tipo_entrega": "domicilio",
+      "pin_retiro": null,
+      "estado_retiro": null,
+      "fecha_limite_retiro": null,
+      "id_orden_db": 71,
+      "estado_orden": "pagado",
+      "metodo_pago": "Transferencia Bancaria",
+      "id_direccion": 16,
+      "envio": {
+        "id_empresa": 2,
+        "empresa_mensajeria": "Interrapidisimo",
+        "sitio_web": "https://www.interrapidisimo.com",
+        "url_rastreo": "https://www.interrapidisimo.com",
+        "numero_guia": "38724982374329",
+        "estado_envio": "Guía registrada",
+        "fecha_despacho_con_hora": "2026-09-09T18:14:05.660092+00:00",
+        "actualizado_en": "2026-09-09T18:14:05.660092+00:00",
+        "origen": "Librería El Sótano · Calle 45 # 13-22, Bogotá"
+      }
+    },
+    {
+      "id_orden": 72,
+      "codigo_compra": "BH-60C49B7E8E",
+      "fecha": "2026-09-09T20:06:04.300845Z",
+      "items": [
+        {
+          "id_libro": 50,
+          "cantidad": 1,
+          "precio_libro": 34000.0,
+          "titulo": "caminos elevados",
+          "autor_libro": "jose jose",
+          "imagen": null,
+          "id_variante": null
+        }
+      ],
+      "subtotal": 34000.0,
+      "costo_envio": 0.0,
+      "total": 34000.0,
+      "estado": "entregada",
+      "tipo_entrega": "retiro_tienda",
+      "pin_retiro": "1696",
+      "estado_retiro": "entregada",
+      "fecha_limite_retiro": "2026-09-11T20:06:04.470087Z",
+      "id_orden_db": 72,
+      "metodo_pago": "Efectivo en Tienda",
+      "estado_orden": "pagado"
+    },
+    {
+      "id_orden": 73,
+      "codigo_compra": "BH-100A528658",
+      "fecha": "2026-09-09T23:13:05.677924Z",
+      "items": [
+        {
+          "id_libro": 49,
+          "cantidad": 1,
+          "precio_libro": 121231.0,
+          "titulo": "erwerwe",
+          "autor_libro": "werwerwer",
+          "imagen": null,
+          "id_variante": null
+        }
+      ],
+      "subtotal": 121231.0,
+      "costo_envio": 0.0,
+      "total": 121231.0,
+      "estado": "entregada",
+      "tipo_entrega": "retiro_tienda",
+      "pin_retiro": "8999",
+      "estado_retiro": "entregada",
+      "fecha_limite_retiro": "2026-09-11T23:13:05.861479Z",
+      "id_orden_db": 73,
+      "metodo_pago": "Efectivo en Tienda"
+    },
+    {
+      "id_orden": 749,
+      "codigo_compra": "BH-B1787BDA68",
+      "fecha": "2026-09-11T19:04:43.213036Z",
+      "items": [
+        {
+          "id_libro": 50,
+          "cantidad": 1,
+          "precio_libro": 41000.0,
+          "titulo": "El tiempo entre costuras",
+          "autor_libro": "Maria Duenas",
+          "imagen": "https://covers.openlibrary.org/b/id/6665280-L.jpg",
+          "id_variante": null
+        }
+      ],
+      "subtotal": 41000.0,
+      "costo_envio": 0.0,
+      "total": 41000.0,
+      "estado": "entregada",
+      "tipo_entrega": "retiro_tienda",
+      "pin_retiro": "3643",
+      "estado_retiro": "entregada",
+      "fecha_limite_retiro": "2026-09-13T19:04:43.443289Z",
+      "id_orden_db": 749,
+      "metodo_pago": "Efectivo en Tienda"
+    },
+    {
+      "id_orden": 750,
+      "codigo_compra": "BH-1DD425AC30",
+      "fecha": "2026-09-11T19:08:34.529244Z",
+      "items": [
+        {
+          "id_libro": 50,
+          "cantidad": 1,
+          "precio_libro": 41000.0,
+          "titulo": "El tiempo entre costuras",
+          "autor_libro": "Maria Duenas",
+          "imagen": "https://covers.openlibrary.org/b/id/6665280-L.jpg",
+          "id_variante": null
+        }
+      ],
+      "subtotal": 41000.0,
+      "costo_envio": 0.0,
+      "total": 41000.0,
+      "estado": "entregada",
+      "tipo_entrega": "retiro_tienda",
+      "pin_retiro": "8855",
+      "estado_retiro": "entregada",
+      "fecha_limite_retiro": "2026-09-13T19:08:34.666717Z",
+      "id_orden_db": 750,
+      "metodo_pago": "Efectivo en Tienda"
+    },
+    {
+      "id_orden": 751,
+      "codigo_compra": "BH-B475B1C2DB",
+      "fecha": "2026-09-11T19:10:38.038827Z",
+      "items": [
+        {
+          "id_libro": 45,
+          "cantidad": 1,
+          "precio_libro": 38000.0,
+          "titulo": "Las reglas del juego",
+          "autor_libro": "Neil Strauss",
+          "imagen": "https://covers.openlibrary.org/b/id/15175028-L.jpg",
+          "id_variante": null
+        }
+      ],
+      "subtotal": 38000.0,
+      "costo_envio": 0.0,
+      "total": 38000.0,
+      "estado": "entregada",
+      "tipo_entrega": "retiro_tienda",
+      "pin_retiro": "8878",
+      "estado_retiro": "entregada",
+      "fecha_limite_retiro": "2026-09-13T19:10:38.167826Z",
+      "id_orden_db": 751,
+      "metodo_pago": "Efectivo en Tienda"
+    },
+    {
+      "id_orden": 752,
+      "codigo_compra": "BH-F90E104824",
+      "fecha": "2026-09-11T19:17:42.493546Z",
+      "items": [
+        {
+          "id_libro": 450,
+          "cantidad": 1,
+          "precio_libro": 86700.0,
+          "titulo": "Libro 400 - Ficción Científica",
+          "autor_libro": "Felipe Navas",
+          "imagen": "https://images.unsplash.com/photo-1512820790803-83ca734da794?w=400&q=80",
+          "id_variante": null
+        }
+      ],
+      "subtotal": 86700.0,
+      "costo_envio": 0.0,
+      "total": 86700.0,
+      "estado": "entregada",
+      "tipo_entrega": "retiro_tienda",
+      "pin_retiro": "6600",
+      "estado_retiro": "entregada",
+      "fecha_limite_retiro": "2026-09-13T19:17:42.663810Z",
+      "id_orden_db": 752,
+      "metodo_pago": "Efectivo en Tienda"
+    },
+    {
+      "id_orden": 10,
+      "codigo_compra": "BH-D52D371DF3",
+      "fecha": "2026-09-11T21:57:40.331186Z",
+      "items": [
+        {
+          "id_libro": 801,
+          "titulo": "El corredor del laberinto",
+          "autor_libro": "James Dashner",
+          "precio_libro": 66000.0,
+          "cantidad": 1,
+          "imagen": "https://images.unsplash.com/photo-1512820790803-83ca734da794?w=400&q=80",
+          "id_variante": null,
+          "variante_label": null,
+          "id_tienda": 5,
+          "nombre_tienda": ""
+        },
+        {
+          "id_libro": 50,
+          "titulo": "El tiempo entre costuras",
+          "autor_libro": "Maria Duenas",
+          "precio_libro": 41000.0,
+          "cantidad": 1,
+          "imagen": "https://covers.openlibrary.org/b/id/6665280-L.jpg",
+          "id_variante": null,
+          "variante_label": null,
+          "id_tienda": 8,
+          "nombre_tienda": ""
+        }
+      ],
+      "subtotal": 107000.0,
+      "costo_envio": 12000.0,
+      "total": 119000.0,
+      "estado": "enviado",
+      "tipo_entrega": "domicilio",
+      "pin_retiro": null,
+      "estado_retiro": null,
+      "fecha_limite_retiro": null,
+      "id_orden_db": 753,
+      "estado_orden": "pagado",
+      "metodo_pago": "Transferencia Bancaria",
+      "id_direccion": 16,
+      "envio": {
+        "id_empresa": 9,
+        "empresa_mensajeria": "FedEx Colombia",
+        "sitio_web": "https://www.fedex.com/es-co/home.html",
+        "url_rastreo": "https://www.fedex.com/es-co/home.html",
+        "numero_guia": "wqeqeqw",
+        "estado_envio": "Guía registrada",
+        "fecha_despacho_con_hora": "2026-09-21T18:24:28.466135+00:00",
+        "actualizado_en": "2026-09-21T18:24:28.466135+00:00",
+        "origen": "Librería El Sótano · Calle 45 # 13-22, Bogotá"
+      }
+    },
+    {
+      "id_orden": 11,
+      "codigo_compra": "BH-CCCBB9273E",
+      "fecha": "2026-09-11T22:25:48.899699Z",
+      "items": [
+        {
+          "id_libro": 801,
+          "titulo": "El corredor del laberinto",
+          "autor_libro": "James Dashner",
+          "precio_libro": 66000.0,
+          "cantidad": 1,
+          "imagen": "https://images.unsplash.com/photo-1512820790803-83ca734da794?w=400&q=80",
+          "id_variante": null,
+          "variante_label": null,
+          "id_tienda": 5,
+          "nombre_tienda": ""
+        },
+        {
+          "id_libro": 50,
+          "titulo": "El tiempo entre costuras",
+          "autor_libro": "Maria Duenas",
+          "precio_libro": 41000.0,
+          "cantidad": 1,
+          "imagen": "https://covers.openlibrary.org/b/id/6665280-L.jpg",
+          "id_variante": null,
+          "variante_label": null,
+          "id_tienda": 8,
+          "nombre_tienda": ""
+        }
+      ],
+      "subtotal": 107000.0,
+      "costo_envio": 12000.0,
+      "total": 119000.0,
+      "estado": "enviado",
+      "tipo_entrega": "domicilio",
+      "pin_retiro": null,
+      "estado_retiro": null,
+      "fecha_limite_retiro": null,
+      "id_orden_db": 754,
+      "estado_orden": "pagado",
+      "metodo_pago": "Tarjeta de Crédito",
+      "id_direccion": 16,
+      "envio": {
+        "id_empresa": 2,
+        "empresa_mensajeria": "Interrapidisimo",
+        "sitio_web": "https://www.interrapidisimo.com",
+        "url_rastreo": "https://www.interrapidisimo.com",
+        "numero_guia": "weqwewqewqe",
+        "estado_envio": "Guía registrada",
+        "fecha_despacho_con_hora": "2026-09-21T18:24:22.918979+00:00",
+        "actualizado_en": "2026-09-21T18:24:22.918979+00:00",
+        "origen": "Librería El Sótano · Calle 45 # 13-22, Bogotá"
+      }
+    },
+    {
+      "id_orden": 12,
+      "codigo_compra": "BH-AB9E21E7AC",
+      "fecha": "2026-09-13T23:19:56.385539Z",
+      "items": [
+        {
+          "id_libro": 5247,
+          "titulo": "Ingenieria de software",
+          "autor_libro": "Ian Sommerville",
+          "precio_libro": 156000.0,
+          "cantidad": 1,
+          "imagen": "https://images.unsplash.com/photo-1512820790803-83ca734da794?w=400&q=80",
+          "id_variante": null,
+          "variante_label": null,
+          "id_tienda": 148,
+          "nombre_tienda": ""
+        }
+      ],
+      "subtotal": 156000.0,
+      "costo_envio": 0.0,
+      "total": 156000.0,
+      "estado": "pagado",
+      "tipo_entrega": "domicilio",
+      "pin_retiro": null,
+      "estado_retiro": null,
+      "fecha_limite_retiro": null,
+      "id_orden_db": 755,
+      "estado_orden": "pagado",
+      "metodo_pago": "PayPal",
+      "id_direccion": 16
+    },
+    {
+      "id_orden": 13,
+      "codigo_compra": "BH-C35D3D6442",
+      "fecha": "2026-09-13T23:48:19.761438Z",
+      "items": [
+        {
+          "id_libro": 5248,
+          "titulo": "Peter Pan",
+          "autor_libro": "J.M. Barrie",
+          "precio_libro": 46000.0,
+          "cantidad": 1,
+          "imagen": "https://images.unsplash.com/photo-1512820790803-83ca734da794?w=400&q=80",
+          "id_variante": null,
+          "variante_label": null,
+          "id_tienda": 148,
+          "nombre_tienda": ""
+        },
+        {
+          "id_libro": 5255,
+          "titulo": "Neuromante",
+          "autor_libro": "William Gibson",
+          "precio_libro": 52000.0,
+          "cantidad": 1,
+          "imagen": "https://images.unsplash.com/photo-1512820790803-83ca734da794?w=400&q=80",
+          "id_variante": null,
+          "variante_label": null,
+          "id_tienda": 149,
+          "nombre_tienda": ""
+        }
+      ],
+      "subtotal": 98000.0,
+      "costo_envio": 0.0,
+      "total": 98000.0,
+      "estado": "pagado",
+      "tipo_entrega": "domicilio",
+      "pin_retiro": null,
+      "estado_retiro": null,
+      "fecha_limite_retiro": null,
+      "id_orden_db": 756,
+      "estado_orden": "pagado",
+      "metodo_pago": "Pago en Efecty",
+      "id_direccion": 16
+    },
+    {
+      "id_orden": 14,
+      "codigo_compra": "BH-A52858C858",
+      "fecha": "2026-09-13T23:50:47.084700Z",
+      "items": [
+        {
+          "id_libro": 5247,
+          "titulo": "Ingenieria de software",
+          "autor_libro": "Ian Sommerville",
+          "precio_libro": 156000.0,
+          "cantidad": 1,
+          "imagen": "https://images.unsplash.com/photo-1512820790803-83ca734da794?w=400&q=80",
+          "id_variante": null,
+          "variante_label": null,
+          "id_tienda": 148,
+          "nombre_tienda": ""
+        }
+      ],
+      "subtotal": 156000.0,
+      "costo_envio": 0.0,
+      "total": 156000.0,
+      "estado": "pagado",
+      "tipo_entrega": "domicilio",
+      "pin_retiro": null,
+      "estado_retiro": null,
+      "fecha_limite_retiro": null,
+      "id_orden_db": 757,
+      "estado_orden": "pagado",
+      "metodo_pago": "PSE",
+      "id_direccion": 16
+    },
+    {
+      "id_orden": 15,
+      "codigo_compra": "BH-31060198D4",
+      "fecha": "2026-09-14T00:13:23.940076Z",
+      "items": [
+        {
+          "id_libro": 5345,
+          "titulo": "hola soy pablo",
+          "autor_libro": "quesada",
+          "precio_libro": 234443.0,
+          "cantidad": 1,
+          "imagen": "/uploads/libros/ded5ef9a2e73457e952cf785e663715c.png",
+          "id_variante": null,
+          "variante_label": null,
+          "id_tienda": 8,
+          "nombre_tienda": ""
+        }
+      ],
+      "subtotal": 234443.0,
+      "costo_envio": 12000.0,
+      "total": 246443.0,
+      "estado": "entregada",
+      "tipo_entrega": "domicilio",
+      "pin_retiro": null,
+      "estado_retiro": null,
+      "fecha_limite_retiro": null,
+      "id_orden_db": 758,
+      "estado_orden": "pagado",
+      "metodo_pago": "Pago en Efecty",
+      "id_direccion": 16,
+      "fecha_entrega_confirmada": "2026-09-21T18:25:46.739453Z"
     }
-  ]
+  ],
+  "5": [],
+  "3": []
 }

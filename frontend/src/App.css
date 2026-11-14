@@ -183,3 +183,124 @@
   }
 }
 
+/* ── Estilos optimizados para AdminDashboard ── */
+.admin-kpi-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease !important;
+  will-change: transform;
+}
+.admin-kpi-card:hover {
+  transform: translateY(-4px) !important;
+  box-shadow: 0 16px 32px rgba(122, 30, 58, 0.08), 0 4px 12px rgba(0,0,0,0.04) !important;
+  border-color: #D4C3BA !important;
+}
+.admin-hero-btn {
+  transition: transform 0.18s ease, filter 0.18s ease, box-shadow 0.18s ease !important;
+}
+.admin-hero-btn:hover {
+  transform: translateY(-2px) !important;
+  filter: brightness(1.06) !important;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.18) !important;
+}
+.admin-table-row {
+  transition: background-color 0.15s ease !important;
+}
+.admin-table-row:hover {
+  background-color: #FAF5EE !important;
+}
+
+/* ── Botones optimizados de Reclamos en AdminDashboard ── */
+.btn-reclamo-chat {
+  border: 1.5px solid #7A1E3A !important;
+  background: #fdf8f9 !important;
+  color: #7A1E3A !important;
+  transition: all 0.15s ease !important;
+}
+.btn-reclamo-chat:hover {
+  background: #f7e9ee !important;
+  border-color: #5e1629 !important;
+}
+.btn-reclamo-revision {
+  border: 1.5px solid #fdba74 !important;
+  background: #fff7ed !important;
+  color: #ea580c !important;
+  transition: all 0.15s ease !important;
+}
+.btn-reclamo-revision:hover {
+  background: #ffedd5 !important;
+}
+.btn-reclamo-rechazar {
+  border: 1.5px solid #fca5a5 !important;
+  background: #fef2f2 !important;
+  color: #dc2626 !important;
+  transition: all 0.15s ease !important;
+}
+.btn-reclamo-rechazar:hover {
+  background: #fee2e2 !important;
+}
+.btn-reclamo-resolver {
+  border: none !important;
+  background: #7A1E3A !important;
+  color: #FFFFFF !important;
+  transition: all 0.15s ease !important;
+}
+.btn-reclamo-resolver:hover {
+  background: #5e1629 !important;
+}
+.btn-reclamo-evidencia {
+  background: #FFFFFF !important;
+  border: 1.5px solid #f0dde4 !important;
+  color: #7A1E3A !important;
+  transition: all 0.15s ease !important;
+}
+.btn-reclamo-evidencia:hover {
+  background: #fdf2f4 !important;
+  border-color: #7A1E3A !important;
+}
+
+.admin-reclamo-card:hover {
+  box-shadow: 0 10px 28px rgba(122, 30, 58, 0.12) !important;
+}
+
+.admin-soporte-card:hover {
+  box-shadow: 0 10px 30px rgba(122, 30, 58, 0.16) !important;
+  transform: translateY(-2px) !important;
+}
+
+.admin-soporte-grid {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 16px !important;
+  align-items: start !important;
+}
+
+@media (max-width: 480px) {
+  .admin-soporte-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+.btn-soporte-revision {
+  transition: all 0.15s ease !important;
+}
+.btn-soporte-revision:hover {
+  background: #fff7ed !important;
+  border-color: #ea580c !important;
+}
+
+.btn-soporte-rechazar {
+  transition: all 0.15s ease !important;
+}
+.btn-soporte-rechazar:hover {
+  background: #fee2e2 !important;
+  border-color: #ef4444 !important;
+}
+
+.btn-soporte-resolver {
+  transition: all 0.15s ease !important;
+}
+.btn-soporte-resolver:hover {
+  background: #5e1629 !important;
+}
+
+
+

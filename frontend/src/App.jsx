@@ -1,5 +1,5 @@
 // src/App.jsx
-import Favoritos from './pages/Favoritos';
+import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 
 import Header from './components/Header';
@@ -8,24 +8,22 @@ import CookieBanner from './components/CookieBanner';
 import { ToastProvider } from './components/ToastProvider';
 
 import Home from './pages/Home';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import Libreria from './pages/Libreria';
 import Catalogo from './pages/Catalogo';
-import ForgotPassword from './pages/ForgotPassword';
-import ResetPassword from './pages/Resetpassword';
-import PostLogin from './pages/PostLogin';
+import Librerias from './pages/Librerias';
+import PerfilTienda from './pages/PerfilTienda';
+import ResetPassword from './pages/ResetPassword';
 import MiTienda from './pages/MiTienda';
 import PrivateRoute from './components/PrivateRoute';
-import Checkout from './pages/Checkout';
-import StoredProcedurePage from './pages/StoredProcedurePage';
 import PublicarLibro from './pages/PublicarLibro';
-import DetalleLibro from './pages/DetalleLibro';
 import AdminDashboard from './pages/AdminDashboard';
-import PerfilUsuario from './pages/PerfilUsuario';
+import Historial from './pages/Historial';
+import ListaDeseos from './pages/ListaDeseos';
+import Devoluciones from './pages/Devoluciones';
+import BookyPagoFinanzas from './pages/BookyPagoFinanzas';
+import LegalPage from './pages/LegalPage';
+import AsistenteIA from './components/AsistenteIA';
 
 import { getUserRole } from './hooks/useAuth';
-import LegalPage from './pages/LegalPage';
 
 function App() {
   return (
@@ -50,31 +48,79 @@ function MainLayout() {
   // Mostrar header en páginas de comprador y vendedor; ocultarlo solo en admin
   const isDashboard = location.pathname.startsWith('/admin');
 
+  // Detectar si el usuario está autenticado para ajustar el header en Home
+  const [hasToken, setHasToken] = useState(!!localStorage.getItem('token'));
+
+  useEffect(() => {
+    const checkToken = () => {
+      setHasToken(!!localStorage.getItem('token'));
+    };
+    checkToken();
+    window.addEventListener('storage', checkToken);
+    window.addEventListener('auth-change', checkToken);
+    
+    // Verificar periódicamente por si el token cambió en otra pestaña
+    const tokenIntervalId = setInterval(checkToken, 5000);
+    
+    // Manejar cambio de autenticación para modo oscuro
+    const handleAuthChange = (e) => {
+      if (e.detail.authenticated) {
+        // Usuario se autenticó: restaurar modo oscuro si estaba activo
+        const savedDarkMode = localStorage.getItem('darkMode') === 'true';
+        if (savedDarkMode) {
+          document.documentElement.classList.add('dark');
+        }
+      } else {
+        // Usuario cerró sesión: remover modo oscuro del DOM pero guardar preferencia
+        document.documentElement.classList.remove('dark');
+      }
+    };
+    
+    window.addEventListener('auth-change', handleAuthChange);
+    
+    return () => {
+      window.removeEventListener('storage', checkToken);
+      window.removeEventListener('auth-change', checkToken);
+      window.removeEventListener('auth-change', handleAuthChange);
+      clearInterval(tokenIntervalId);
+    };
+  }, []);
+
+  // Pasar prop para indicar al Header si debe ajustarse por el sidebar
+  const hasSidebar = location.pathname === '/' && hasToken;
+  const hasFooterSidebar = hasSidebar ||
+    location.pathname.startsWith('/mi-tienda') ||
+    location.pathname.startsWith('/vendedor') ||
+    location.pathname.startsWith('/post-login') ||
+    location.pathname.startsWith('/perfil') ||
+    location.pathname.startsWith('/publicar');
+
   return (
     <>
-      {/* Header solo en páginas públicas */}
-      {!isDashboard && <Header variant={variant} />}
+      {/* Header siempre en Home, excepto en admin */}
+      {!isDashboard && <Header variant={variant} hasSidebar={hasSidebar} />}
 
       <Routes>
         {/* ── RUTAS PÚBLICAS ── */}
         <Route path="/" element={<Home />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/libreria" element={<Libreria />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/reset-password" element={<ResetPassword />} />
-        <Route path="/libros" element={<StoredProcedurePage />} />
         <Route path="/catalogo" element={<Catalogo />} />
-        <Route path="/catalogo/:id" element={<DetalleLibro />} />
-        <Route path="/favoritos" element={<Favoritos />} />
-        <Route path="/legal" element={<LegalPage />} />
+        <Route path="/librerias" element={<Librerias />} />
+        <Route path="/tienda/:id" element={<PerfilTienda />} />
+        <Route path="/register" element={<Navigate to="/" replace />} />
+        <Route path="/forgot-password" element={<Navigate to="/" replace />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/legal" element={<Navigate to="/" replace />} />
+        <Route path="/terminos" element={<LegalPage type="terminos" />} />
+        <Route path="/privacidad" element={<LegalPage type="privacidad" />} />
 
         {/* ── RUTAS PROTEGIDAS GENERALES (Cualquier usuario logueado) ── */}
         <Route element={<PrivateRoute />}>
-          <Route path="/post-login" element={<PostLogin />} />
-          <Route path="/carrito" element={<Navigate to="/post-login?seccion=Carrito" replace />} />
-          <Route path="/checkout/:orderId" element={<Checkout />} />
-          <Route path="/perfil" element={<PerfilUsuario />} />
+          <Route path="/carrito" element={<Navigate to="/?seccion=Carrito" replace />} />
+          <Route path="/historial" element={<Historial />} />
+          <Route path="/lista-deseos" element={<ListaDeseos />} />
+          <Route path="/devoluciones" element={<Devoluciones />} />
+          <Route path="/favoritos" element={<Navigate to="/lista-deseos" replace />} />
+
         </Route>
 
         {/* ── RUTAS EXCLUSIVAS DE VENDEDOR ── */}
@@ -86,6 +132,7 @@ function MainLayout() {
         {/* ── RUTAS EXCLUSIVAS DE ADMINISTRADOR ── */}
         <Route element={<PrivateRoute allowedRoles={['admin', 'administrador']} />}>
           <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/admin/finanzas" element={<BookyPagoFinanzas />} />
         </Route>
 
         {/* ── REDIRECCIÓN LOGÍSTICA POR ROL ── */}
@@ -96,23 +143,19 @@ function MainLayout() {
               <Navigate to="/mi-tienda" replace />
             ) : (userRole === 'admin' || userRole === 'administrador') ? (
               <Navigate to="/admin" replace />
-            ) : (userRole === 'usuario' || userRole === 'comprador') ? (
-              <Navigate to="/post-login" replace />
             ) : (
-              <Navigate to="/login" replace />
+              <Navigate to="/" replace />
             )
           }
         />
-
-        {/* El carrito vive dentro del dashboard (PostLogin), no como página propia */}
-        <Route path="/carrito" element={<Navigate to="/post-login" replace />} />
 
         {/* Catch-all para rutas inexistentes */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
 
-      {/* Footer solo en páginas públicas */}
-      {!isDashboard && <Footer />}
+      {/* Footer siempre en Home, incluso autenticado */}
+      {!isDashboard && <Footer hasSidebar={hasFooterSidebar} />}
+      <AsistenteIA />
     </>
   );
 }

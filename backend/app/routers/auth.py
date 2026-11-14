@@ -1,19 +1,119 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
+from fastapi.responses import HTMLResponse, JSONResponse
+from pydantic import BaseModel, EmailStr, Field
 from app.auth import create_token, verify_token
-from app.email import enviar_email_recuperacion
-from app.models.usuarios import obtener_usuario_por_email, actualizar_password
+from app.email import enviar_email_recuperacion, enviar_email_agradecimiento_confirmacion, get_frontend_url
+from app.models.usuarios import obtener_usuario_por_email, actualizar_password, verificar_email_usuario, obtener_usuario_por_token, obtener_usuario_por_id
 
 router = APIRouter()
+
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    password: str = Field(..., min_length=8, description="Mínimo 8 caracteres")
+
+
+def _render_verify_email_page(*, success: bool, title: str, message: str) -> str:
+    accent = "#7A1E3A"
+    bg = "#FAF8F5"
+    card_bg = "#FFFFFF"
+    success_color = "#15803d"
+    error_color = "#991b1b"
+    icon = "✓" if success else "!"
+    icon_bg = "#dcfce7" if success else "#fee2e2"
+    icon_color = success_color if success else error_color
+
+    return f"""<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{title} — BookyHome</title>
+  <style>
+    body {{
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: {bg};
+      font-family: Montserrat, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: #2A2A2A;
+      padding: 24px;
+      box-sizing: border-box;
+    }}
+    .card {{
+      width: 100%;
+      max-width: 480px;
+      background: {card_bg};
+      border-radius: 16px;
+      padding: 32px 28px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+      text-align: center;
+    }}
+    .brand {{
+      color: {accent};
+      font-size: 1.4rem;
+      font-weight: 800;
+      margin-bottom: 24px;
+    }}
+    .icon {{
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background: {icon_bg};
+      color: {icon_color};
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      font-weight: 800;
+      margin: 0 auto 20px;
+    }}
+    h1 {{
+      margin: 0 0 12px;
+      font-size: 1.5rem;
+    }}
+    p {{
+      margin: 0;
+      color: #666;
+      line-height: 1.6;
+    }}
+    .hint {{
+      margin-top: 20px;
+      font-size: 0.9rem;
+      color: #888;
+    }}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="brand">BookyHome</div>
+    <div class="icon">{icon}</div>
+    <h1>{title}</h1>
+    <p>{message}</p>
+    <p class="hint">Ya puedes volver a la app móvil o al sitio web e iniciar sesión.</p>
+  </div>
+</body>
+</html>"""
+
+
+def _wants_json_response(request: Request) -> bool:
+    accept = request.headers.get("accept", "")
+    return "application/json" in accept or request.query_params.get("format") == "json"
+
 
 # ========================
 # Recuperación de contraseña
 # ========================
 @router.post("/forgot-password")
-async def forgot_password(data: dict):
+async def forgot_password(data: ForgotPasswordRequest):
     """Genera un token de recuperación y envía un correo al usuario."""
-    email = data.get("email")
-    if not email:
-        raise HTTPException(status_code=400, detail="El email es obligatorio")
+    email = data.email
 
     user = obtener_usuario_por_email(email)
     if not user:
@@ -29,14 +129,15 @@ async def forgot_password(data: dict):
 
     return {"mensaje": "Correo de recuperación enviado", "correo_enviado": True}
 
+
 # ========================
 # Reinicio de contraseña con token
 # ========================
 @router.post("/reset-password")
-def reset_password(data: dict):
+def reset_password(data: ResetPasswordRequest):
     """Verifica el token de recuperación y actualiza la contraseña del usuario."""
-    token = data.get("token")
-    nueva_password = data.get("password")
+    token = data.token
+    nueva_password = data.password
 
     payload = verify_token(token)
     if not payload or payload.get("tipo") != "reset":
@@ -48,3 +149,136 @@ def reset_password(data: dict):
         raise HTTPException(status_code=500, detail="Error al actualizar la contraseña")
 
     return {"mensaje": "Contraseña actualizada exitosamente"}
+
+
+# ========================
+# Verificación de correo electrónico
+# ========================
+@router.get("/verify-email")
+async def verify_email(token: str, request: Request):
+    """Verifica el correo electrónico usando el token de verificación."""
+    wants_json = _wants_json_response(request)
+
+    usuario = obtener_usuario_por_token(token)
+    if not usuario:
+        detail = "Token inválido o expirado"
+        if wants_json:
+            raise HTTPException(status_code=400, detail=detail)
+        return HTMLResponse(
+          content=_render_verify_email_page(success=False, title="Verificación fallida", message=detail),
+          status_code=400,
+        )
+
+    resultado = verificar_email_usuario(token)
+    if not resultado["ok"]:
+        detail = resultado.get("error", "Error al verificar el correo")
+        if wants_json:
+            raise HTTPException(status_code=400, detail=detail)
+        return HTMLResponse(
+          content=_render_verify_email_page(success=False, title="Verificación fallida", message=detail),
+          status_code=400,
+        )
+
+    try:
+        await enviar_email_agradecimiento_confirmacion(usuario["correo_usuario"])
+        print(f"✅ Correo de agradecimiento enviado a {usuario['correo_usuario']}", flush=True)
+    except Exception as exc:
+        print(f"❌ Error enviando correo de agradecimiento a {usuario['correo_usuario']}: {exc}", flush=True)
+
+    mensaje = "Correo electrónico verificado exitosamente. Ya puedes iniciar sesión."
+    if wants_json:
+        return {"mensaje": mensaje}
+
+    return HTMLResponse(
+        content="""<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Verificando correo... - BookyHome</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: linear-gradient(135deg, #7A1E3A 0%, #9c2a4a 100%);
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+    }
+    .container {
+      text-align: center;
+      padding: 2rem;
+      max-width: 400px;
+    }
+    .spinner {
+      width: 50px;
+      height: 50px;
+      border: 4px solid rgba(255,255,255,0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 1.5rem;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    h1 {
+      margin: 0 0 0.5rem;
+      font-size: 1.5rem;
+    }
+    p {
+      margin: 0;
+      opacity: 0.9;
+      font-size: 1rem;
+    }
+    .success {
+      display: none;
+      background: rgba(255,255,255,0.1);
+      padding: 1.5rem;
+      border-radius: 12px;
+      margin-top: 1rem;
+    }
+    .success.visible {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="spinner"></div>
+    <h1>Verificando tu correo...</h1>
+    <p>Cargando...</p>
+    <div class="success" id="success">
+      <h1>¡Correo verificado! ✅</h1>
+      <p>Esta pestaña se cerrará automáticamente.</p>
+      <p style="margin-top: 1rem; font-size: 0.9rem; opacity: 0.8;">
+        Regresa a la pestaña de BookyHome para iniciar sesión.
+      </p>
+    </div>
+  </div>
+  <script>
+    // Intentar cerrar la ventana inmediatamente
+    window.close();
+    
+    // Mostrar mensaje de éxito después de un breve momento
+    setTimeout(() => {
+      document.querySelector('.spinner').style.display = 'none';
+      document.querySelector('h1').textContent = '¡Correo verificado! ✅';
+      document.querySelector('p').textContent = 'Regresa a la pestaña de BookyHome para iniciar sesión.';
+      document.getElementById('success').classList.add('visible');
+      
+      // Intentar cerrar nuevamente
+      window.close();
+      
+      // Intento final de cierre
+      setTimeout(() => {
+        window.close();
+      }, 1500);
+    }, 800);
+  </script>
+</body>
+</html>""",
+        status_code=200,
+    )

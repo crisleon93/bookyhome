@@ -1,0 +1,26 @@
+# docker-compose.yml — Uptime Kuma para monitoreo de BookyHome
+# CORRE EN UNA MAQUINA DISTINTA de los servicios que vigila.
+# Si el servidor de BookyHome cae, Uptime Kuma sigue arriba y manda la alerta.
+#
+# Uso:
+#   cd deploy/uptime-kuma
+#   docker compose up -d
+#   # Acceder a http://<ip-de-esta-maquina>:3001 para configurar monitores
+
+services:
+  uptime-kuma:
+    image: louislam/uptime-kuma:1
+    container_name: uptime-kuma
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    volumes:
+      - kuma_data:/app/data
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3001', r => process.exit(r.statusCode === 200 ? 0 : 1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  kuma_data:
