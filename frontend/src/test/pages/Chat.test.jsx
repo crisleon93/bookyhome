@@ -2,7 +2,9 @@
  * Chat.test.jsx — Tests de lógica pura de Chat.jsx del frontend.
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import Chat from '../../pages/Chat'
 
 const mockNavigate = vi.fn()
 
@@ -37,7 +39,24 @@ vi.mock('jwt-decode', () => ({
 vi.mock('../../components/Icons', () => ({ IconSearch: () => null }))
 vi.mock('../../components/ToastProvider', () => ({ notify: vi.fn() }))
 vi.mock('../../styles/Chat.css', () => ({}))
-vi.mock('axios', () => ({ default: { get: vi.fn(), post: vi.fn() } }))
+vi.mock('axios', () => ({
+  default: {
+    get: vi.fn(() => Promise.resolve({ data: { id_usuario: 1 } })),
+    post: vi.fn(),
+  },
+}))
+
+class MockWebSocket {
+  static OPEN = 1
+  static CLOSING = 2
+  static CLOSED = 3
+
+  constructor() {
+    this.readyState = 0
+    this.close = vi.fn()
+    this.send = vi.fn()
+  }
+}
 
 // ── Lógica pura extraída ──────────────────────────────────────────────────────
 
@@ -167,5 +186,58 @@ describe('Chat (frontend) — agruparMensajesPorFecha', () => {
 
   it('devuelve array vacío para lista vacía', () => {
     expect(agruparMensajesPorFecha([])).toHaveLength(0)
+  })
+})
+
+describe('Chat (frontend) — pantalla', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    localStorage.clear()
+    vi.stubGlobal('WebSocket', MockWebSocket)
+  })
+
+  afterEach(() => {
+    cleanup()
+    vi.unstubAllGlobals()
+  })
+
+  it('carga el estado vacío y permite buscar conversaciones', async () => {
+    render(<Chat />)
+
+    expect(await screen.findByText('No tienes conversaciones')).toBeInTheDocument()
+    fireEvent.change(screen.getByPlaceholderText('Buscar un chat o iniciar uno nuevo'), {
+      target: { value: 'sin coincidencia' },
+    })
+    expect(screen.getByText('Sin resultados')).toBeInTheDocument()
+    expect(screen.getByText('No se encontraron conversaciones')).toBeInTheDocument()
+  })
+
+  it('abre una sala, carga su historial y envía un mensaje por REST', async () => {
+    const { chatService } = await import('../../services/chat')
+    chatService.getSalas.mockResolvedValueOnce({
+      salas: [{
+        id_sala: 1,
+        nombre_tienda: 'Librería Central',
+        ultimo_mensaje: '',
+        no_leidos: 0,
+      }],
+    })
+    chatService.obtenerMensajes.mockResolvedValueOnce({
+      mensajes: [{ id_mensaje: 10, id_remitente: 2, mensaje: 'Hola', enviado_en: '2026-01-15 10:00:00' }],
+    })
+
+    render(<Chat />)
+    expect(await screen.findAllByText('Librería Central')).toHaveLength(2)
+    expect(await screen.findByText('Hola')).toBeInTheDocument()
+    expect(chatService.marcarSalaLeida).toHaveBeenCalledWith(1)
+
+    fireEvent.change(screen.getByPlaceholderText('Escribe un mensaje'), {
+      target: { value: 'Gracias por responder' },
+    })
+    fireEvent.click(screen.getByTitle('Enviar mensaje'))
+
+    await waitFor(() => {
+      expect(chatService.enviarMensaje).toHaveBeenCalledWith(1, 'Gracias por responder')
+    })
   })
 })
