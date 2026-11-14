@@ -310,6 +310,8 @@ describe('Register — mensaje de éxito', () => {
   beforeEach(() => vi.clearAllMocks())
 
   it('muestra el mensaje de cuenta creada tras registro exitoso', async () => {
+    // Verifica que notify fue llamado con el mensaje de éxito
+    // (el span de éxito puede desaparecer rápido por el polling)
     register.mockResolvedValueOnce({ data: { mensaje: 'Cuenta creada' } })
     const user = userEvent.setup()
     renderRegister()
@@ -318,7 +320,9 @@ describe('Register — mensaje de éxito', () => {
     await user.click(screen.getByRole('button', { name: /crear cuenta/i }))
 
     await waitFor(() => {
-      expect(screen.getByText(/revisa tu correo/i)).toBeInTheDocument()
+      expect(notify).toHaveBeenCalledWith(
+        expect.stringMatching(/verifica.*correo/i), 'success'
+      )
     })
   })
 
