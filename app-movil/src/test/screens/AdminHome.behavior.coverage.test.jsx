@@ -4,6 +4,7 @@ import React from 'react'
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import AdminHome from '../../screens/AdminHome'
+import { AuthContext } from '../../context/AuthContext'
 import {
   bloquearUsuario,
   cambiarEstadoTienda,
@@ -68,8 +69,9 @@ vi.mock('react-native', async () => {
     : part
   return {
     ActivityIndicator: element('span'),
-    FlatList: ({ data = [], renderItem, ListHeaderComponent, ListFooterComponent, ListEmptyComponent }) => (
+    FlatList: ({ data = [], renderItem, refreshControl, ListHeaderComponent, ListFooterComponent, ListEmptyComponent }) => (
       ReactModule.createElement('div', null,
+        renderListPart(refreshControl),
         renderListPart(ListHeaderComponent),
         data.length
           ? data.map((item, index) => ReactModule.createElement(
@@ -82,12 +84,28 @@ vi.mock('react-native', async () => {
       )
     ),
     Image: element('img'),
-    Modal: ({ visible, children }) => visible
-      ? ReactModule.createElement('div', { role: 'dialog' }, children)
+    Modal: ({ visible, children, onRequestClose }) => visible
+      ? ReactModule.createElement('div', { role: 'dialog' },
+        onRequestClose && ReactModule.createElement(
+          'button',
+          { type: 'button', onClick: onRequestClose },
+          'Cerrar diálogo',
+        ),
+        children,
+      )
       : null,
     Platform: { OS: 'web' },
-    RefreshControl: () => null,
-    ScrollView: element('div'),
+    RefreshControl: ({ onRefresh }) => ReactModule.createElement(
+      'button',
+      { type: 'button', onClick: onRefresh },
+      'Actualizar datos',
+    ),
+    ScrollView: ({ children, refreshControl }) => ReactModule.createElement(
+      'div',
+      null,
+      renderListPart(refreshControl),
+      children,
+    ),
     StyleSheet: {
       create: (styles) => styles,
       flatten: (style) => (Array.isArray(style) ? style : [style]).filter(Boolean).reduce((all, item) => ({ ...all, ...item }), {}),
@@ -118,8 +136,13 @@ vi.mock('../../context/AuthContext', async () => {
   }
 })
 vi.mock('../../components/SidebarAdmin', () => ({
-  default: ({ visible, onSelectSection, onSelectDashboard }) => visible ? (
+  default: ({ visible, onClose, onSignOut, onSelectSection, onSelectDashboard, user }) => visible ? (
     <nav>
+      <output data-testid="admin-sidebar-profile">
+        {[user?.nombre, user?.foto_perfil, user?.banner_perfil, user?.banner_color].join('|')}
+      </output>
+      <button onClick={onClose}>Cerrar menú</button>
+      <button onClick={onSignOut}>Cerrar sesión</button>
       <button onClick={onSelectDashboard}>Admin: Dashboard</button>
       {['usuarios', 'libros', 'tiendas', 'ordenes', 'reclamos', 'soporte', 'perfil', 'reportes', 'finanzas'].map((section) => (
         <button key={section} onClick={() => onSelectSection(section)}>Admin: {section}</button>
@@ -128,8 +151,24 @@ vi.mock('../../components/SidebarAdmin', () => ({
   ) : null,
 }))
 vi.mock('../../screens/FinanzasAdmin', () => ({ default: () => <div>Finanzas de administración</div> }))
-vi.mock('../../screens/AdminRequests', () => ({ default: ({ type }) => <div>Solicitudes: {type}</div> }))
-vi.mock('../../screens/AdminProfile', () => ({ default: () => <div>Perfil de administración</div> }))
+vi.mock('../../screens/AdminRequests', () => ({
+  default: ({ type, onRefresh }) => (
+    <div>
+      <div>Solicitudes: {type}</div>
+      <button onClick={onRefresh}>Actualizar solicitudes</button>
+    </div>
+  ),
+}))
+vi.mock('../../screens/AdminProfile', () => ({
+  default: ({ onProfilePhotoChange, onProfileNameChange, onProfileBannerChange }) => (
+    <div>
+      <div>Perfil de administración</div>
+      <button onClick={() => onProfilePhotoChange('foto-nueva')}>Cambiar foto de perfil</button>
+      <button onClick={() => onProfileNameChange('Nombre nuevo')}>Cambiar nombre de perfil</button>
+      <button onClick={() => onProfileBannerChange('banner-nuevo', 'color-nuevo')}>Cambiar banner de perfil</button>
+    </div>
+  ),
+}))
 vi.mock('../../components/Icons', () => {
   const Icon = () => null
   const Menu = () => <span>Abrir menú</span>
@@ -302,6 +341,11 @@ describe('AdminHome: flujos de administración', () => {
     })
     expect(await screen.findAllByText('Suspendida')).not.toHaveLength(0)
     expect(screen.getByText('Estado actualizado')).toBeTruthy()
+
+    fireEvent.click(screen.getByText('Cambiar Estado'))
+    const stateSelection = screen.getByText('Selecciona un estado').closest('[role="dialog"]')
+    fireEvent.click(within(stateSelection).getByText('✕'))
+    expect(screen.queryByText('Selecciona un estado')).toBeNull()
   })
 
   it('muestra artículos, comprador, pago y entrega al expandir órdenes', async () => {
@@ -328,5 +372,124 @@ describe('AdminHome: flujos de administración', () => {
 
     expect(await screen.findByText('Solicitudes: soporte')).toBeTruthy()
     expect(getAdminSolicitudes).toHaveBeenCalledOnce()
+  })
+
+  it('refresca los datos del dashboard, de una sección y de las solicitudes', async () => {
+    render(<AdminHome />)
+    await screen.findByText('Usuarios Totales')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Actualizar datos' }))
+    await waitFor(() => expect(getAdminUsuarios).toHaveBeenCalledTimes(2))
+
+    fireEvent.click(screen.getByText('Abrir menú'))
+    fireEvent.click(screen.getByRole('button', { name: 'Admin: soporte' }))
+    await screen.findByText('Solicitudes: soporte')
+    fireEvent.click(screen.getByRole('button', { name: 'Actualizar solicitudes' }))
+    await waitFor(() => expect(getAdminSolicitudes).toHaveBeenCalledTimes(2))
+
+    fireEvent.click(screen.getByRole('button', { name: 'Admin: usuarios' }))
+    await screen.findByText('Ana Compradora')
+    fireEvent.click(screen.getByRole('button', { name: 'Actualizar datos' }))
+    await waitFor(() => expect(getAdminUsuarios).toHaveBeenCalledTimes(3))
+  })
+
+  it('filtra libros por categoría, muestra búsquedas vacías y navega páginas', async () => {
+    const books = Array.from({ length: 11 }, (_, index) => ({
+      id_libro: index + 1,
+      titulo: `Libro ${index + 1}`,
+      autor_libro: 'Autora',
+      nombre_tienda: 'Librería Uno',
+      nombre_categoria: index === 10 ? 'Ciencia' : 'Fantasía',
+      precio_libro: 10000,
+      oculto: false,
+    }))
+    getAdminLibros.mockResolvedValueOnce({ data: books })
+    render(<AdminHome />)
+
+    fireEvent.click(await screen.findByText('Libros Publicados'))
+    expect(screen.getByText('1 / 2')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: /Elegir categoría/ }))
+
+    let categoryDialog = screen.getByRole('dialog')
+    const categorySearch = within(categoryDialog).getByPlaceholderText('Buscar categoría...')
+    fireEvent.change(categorySearch, { target: { value: 'inexistente' } })
+    expect(within(categoryDialog).getByText('No se encontraron categorías.')).toBeTruthy()
+
+    fireEvent.click(within(categoryDialog).getByLabelText('Limpiar búsqueda de categoría'))
+    fireEvent.change(categorySearch, { target: { value: 'Ciencia' } })
+    fireEvent.click(within(categoryDialog).getByRole('button', { name: /Ciencia/ }))
+    expect(screen.getByRole('button', { name: /Elegir categoría.*Ciencia/ })).toBeTruthy()
+
+    fireEvent.click(screen.getByText('Limpiar filtros'))
+    fireEvent.click(screen.getByRole('button', { name: /Elegir categoría/ }))
+    categoryDialog = screen.getByRole('dialog')
+    fireEvent.click(within(categoryDialog).getByLabelText('Cerrar categorías'))
+    expect(screen.queryByText('Filtrar por categoría')).toBeNull()
+
+    fireEvent.click(screen.getByRole('button', { name: /Elegir categoría/ }))
+    categoryDialog = screen.getByRole('dialog')
+    fireEvent.click(within(categoryDialog).getByText('Listo'))
+    expect(screen.queryByText('Filtrar por categoría')).toBeNull()
+
+    fireEvent.click(screen.getByRole('button', { name: /Elegir categoría/ }))
+    fireEvent.click(within(screen.getByRole('dialog')).getByText('Cerrar diálogo'))
+    expect(screen.queryByText('Filtrar por categoría')).toBeNull()
+
+    fireEvent.click(screen.getByRole('button', { name: /Siguiente/ }))
+    expect(screen.getByText('2 / 2')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: /Anterior/ }))
+    expect(screen.getByText('1 / 2')).toBeTruthy()
+  })
+
+  it('aplica filtros de rol y estado a usuarios y órdenes', async () => {
+    render(<AdminHome />)
+    fireEvent.click(await screen.findByText('Usuarios Totales'))
+
+    fireEvent.click(screen.getByRole('button', { name: 'Admin' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Todos' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Solo activos' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Solo activos' }))
+
+    fireEvent.click(screen.getByText('Abrir menú'))
+    fireEvent.click(screen.getByRole('button', { name: 'Admin: ordenes' }))
+    const orderFilters = screen.getByText('Filtrar por estado').parentElement
+    fireEvent.click(within(orderFilters).getByRole('button', { name: 'Pagado' }))
+    expect(screen.getByText('Ana Compradora')).toBeTruthy()
+    fireEvent.click(within(orderFilters).getByRole('button', { name: 'Todos' }))
+  })
+
+  it('propaga cambios del perfil de administrador al usuario del menú', async () => {
+    const user = {
+      nombre: 'Nombre original',
+      foto_perfil: 'foto-original',
+      banner_perfil: 'banner-original',
+      banner_color: 'color-original',
+    }
+    const signOut = vi.fn()
+    render(
+      <AuthContext.Provider value={{ user, signOut }}>
+        <AdminHome />
+      </AuthContext.Provider>,
+    )
+
+    fireEvent.click(await screen.findByText('Usuarios Totales'))
+    fireEvent.click(screen.getByText('Abrir menú'))
+    fireEvent.click(screen.getByRole('button', { name: 'Admin: perfil' }))
+    expect(screen.getByText('Perfil de administración')).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Cambiar foto de perfil' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Cambiar nombre de perfil' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Cambiar banner de perfil' }))
+
+    expect(screen.getByTestId('admin-sidebar-profile').textContent).toBe(
+      'Nombre nuevo|foto-nueva|banner-nuevo|color-nuevo',
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Admin: Dashboard' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Cerrar menú' }))
+    expect(screen.queryByRole('navigation')).toBeNull()
+    fireEvent.click(screen.getByText('Abrir menú'))
+    fireEvent.click(screen.getByRole('button', { name: 'Cerrar sesión' }))
+    expect(signOut).toHaveBeenCalledOnce()
   })
 })
