@@ -134,7 +134,8 @@ class TestRequireRole:
         token = _token(rol="admin")
         usuario_admin = _usuario_mock(rol="admin")
 
-        with patch("app.models.usuarios.obtener_usuario_por_id", return_value=usuario_admin):
+        with patch("app.models.usuarios.obtener_usuario_por_id", return_value=usuario_admin), \
+             patch("app.routers.usuarios.obtener_todos_usuarios", return_value=[]):
             resp = client.get("/usuarios", headers={"Authorization": f"Bearer {token}"})
         assert resp.status_code != 403
 
