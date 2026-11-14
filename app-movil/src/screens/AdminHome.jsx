@@ -6,7 +6,6 @@ import {
   Platform, RefreshControl, ScrollView,
   StyleSheet, Text, TextInput, TouchableOpacity, View, useWindowDimensions,
 } from 'react-native';
-import Svg, { Circle, Path } from 'react-native-svg';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AuthContext } from '../context/AuthContext';
 import SidebarAdmin from '../components/SidebarAdmin';
@@ -119,11 +118,12 @@ function UserAvatar({
   const photoPath = typeof photo === 'string' ? photo.trim() : '';
   const isRemotePhoto = /^https?:\/\//i.test(photoPath);
   const isProfileUpload = /^\/?uploads\/perfiles\//i.test(photoPath);
-  const imageUri = isRemotePhoto
-    ? photoPath
-    : isProfileUpload
-      ? `${getApiBaseUrl()}/${photoPath.replace(/^\/+/, '')}`
-      : null;
+  let imageUri = null;
+  if (isRemotePhoto) {
+    imageUri = photoPath;
+  } else if (isProfileUpload) {
+    imageUri = `${getApiBaseUrl()}/${photoPath.replace(/^\/+/, '')}`;
+  }
 
   return (
     <View style={[s.avatar, s.userAvatar, { backgroundColor: WHITE, borderColor }, containerStyle]}>
@@ -171,11 +171,12 @@ function BookCover({ image, title }) {
 function StoreAvatar({ image, name }) {
   const [imageError, setImageError] = useState(false);
   const imagePath = typeof image === 'string' ? image.trim() : '';
-  const imageUri = imagePath
-    ? (/^https?:\/\//i.test(imagePath)
+  let imageUri = null;
+  if (imagePath) {
+    imageUri = /^https?:\/\//i.test(imagePath)
       ? imagePath
-      : `${getApiBaseUrl()}/${imagePath.replace(/^\/+/, '')}`)
-    : null;
+      : `${getApiBaseUrl()}/${imagePath.replace(/^\/+/, '')}`;
+  }
   const storeName = (name || '').trim() || 'Librería';
   const words = storeName.split(/\s+/);
   const storeInitials = words.length > 1
@@ -488,6 +489,8 @@ const getSectionItems = ({ activeSection, data, query, role, userStatus, categor
   }
   return [];
 };
+
+export { getOrdenEstado, getSectionItems };
 
 const getSearchPlaceholder = (section) => ({
   usuarios: 'Buscar por nombre o correo…',
@@ -1999,6 +2002,12 @@ export default function AdminHome() {
   //  HEADER DE SECCIÓN (filtros + búsqueda)
   // ─────────────────────────────────────────────────────────────────────────
   const cfg = SECTION_CONFIG[activeSection];
+  let searchPlaceholder = 'Buscar por ID o estado…';
+  if (activeSection === 'usuarios') {
+    searchPlaceholder = 'Buscar por nombre o correo…';
+  } else if (activeSection === 'libros') {
+    searchPlaceholder = 'Buscar por título, autor o tienda…';
+  }
   const isSectionFiltered = Boolean(
     busqueda ||
     filtroRol !== 'todos' ||
@@ -2242,11 +2251,7 @@ export default function AdminHome() {
       ) : (
         <TextInput
           style={s.searchInput}
-          placeholder={
-            activeSection === 'usuarios' ? 'Buscar por nombre o correo…'
-            : activeSection === 'libros'  ? 'Buscar por título, autor o tienda…'
-            : 'Buscar por ID o estado…'
-          }
+          placeholder={searchPlaceholder}
           placeholderTextColor="#AAA"
           value={busqueda}
           onChangeText={(t) => { setBusqueda(t); setPagina(1); }}

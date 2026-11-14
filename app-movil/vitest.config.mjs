@@ -7,7 +7,7 @@ export default defineConfig({
   },
   test: {
     environment: 'node',
-    include: ['app-movil/src/test/**/*.test.js'],
+    include: ['app-movil/src/test/**/*.test.{js,jsx}'],
     coverage: {
       provider: 'v8',
       reportsDirectory: './app-movil/coverage',

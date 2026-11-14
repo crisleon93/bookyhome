@@ -1,14 +1,7 @@
-/**
- * AdminHome.test.js — Tests unitarios de la lógica de AdminHome.
- *
- * AdminHome usa React Native, SVG, contextos y APIs nativas.
- * Se mockean todas las dependencias y se prueba la lógica pura:
- * getOrdenEstado, COLORS, helpers de filtros y estadísticas.
- */
-
-import { describe, it, expect, vi } from 'vitest'
-
-// ── Mocks de dependencias nativas ─────────────────────────────────────────────
+import React from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { describe, expect, it, vi } from 'vitest';
+import AdminHome, { getOrdenEstado, getSectionItems } from '../../screens/AdminHome';
 
 vi.mock('react-native', () => ({
   ActivityIndicator: () => null,
@@ -18,46 +11,48 @@ vi.mock('react-native', () => ({
   Platform: { OS: 'web' },
   RefreshControl: () => null,
   ScrollView: () => null,
-  StyleSheet: { create: (s) => s },
+  StyleSheet: { create: (styles) => styles, flatten: (style) => style },
   Text: () => null,
   TextInput: () => null,
   TouchableOpacity: () => null,
   View: () => null,
   useWindowDimensions: () => ({ width: 375, height: 812 }),
-}))
+}));
 
 vi.mock('react-native-svg', () => ({
   default: () => null,
   Circle: () => null,
   Path: () => null,
-}))
+}));
 
 vi.mock('react-native-safe-area-context', () => ({
   SafeAreaView: ({ children }) => children,
-}))
+}));
 
-vi.mock('../../context/AuthContext', () => ({
-  AuthContext: { Consumer: ({ children }) => children({}), Provider: ({ children }) => children },
-}))
+vi.mock('../../context/AuthContext', async () => {
+  const { createContext } = await vi.importActual('react');
+  return { AuthContext: createContext({ user: { nombre: 'Admin Test' }, signOut: vi.fn() }) };
+});
 
-vi.mock('../../components/SidebarAdmin', () => ({ default: () => null }))
-vi.mock('./FinanzasAdmin', () => ({ default: () => null }))
-vi.mock('./AdminRequests', () => ({ default: () => null }))
-vi.mock('./AdminProfile', () => ({ default: () => null }))
+vi.mock('../../components/SidebarAdmin', () => ({ default: () => null }));
+vi.mock('../../screens/FinanzasAdmin', () => ({ default: () => null }));
+vi.mock('../../screens/AdminRequests', () => ({ default: () => null }));
+vi.mock('../../screens/AdminProfile', () => ({ default: () => null }));
 
-vi.mock('../../components/Icons', () => ({
-  IconAlertTriangle: () => null, IconBook: () => null, IconCheck: () => null,
-  IconEye: () => null, IconEyeOff: () => null, IconLock: () => null,
-  IconMenu: () => null, IconPackage: () => null, IconStore: () => null,
-  IconTrash: () => null, IconUnlock: () => null, IconUser: () => null,
-  IconUsers: () => null, IconCart: () => null, IconClose: () => null,
-  IconFilter: () => null, IconMail: () => null, IconPhone: () => null,
-  IconSearch: () => null, IconShield: () => null, IconSettings: () => null,
-  IconTool: () => null,
-}))
+vi.mock('../../components/Icons', () => {
+  const Icon = () => null;
+  return {
+    IconAlertTriangle: Icon, IconBook: Icon, IconCheck: Icon,
+    IconEye: Icon, IconEyeOff: Icon, IconLock: Icon, IconMenu: Icon,
+    IconPackage: Icon, IconStore: Icon, IconTrash: Icon, IconUnlock: Icon,
+    IconUser: Icon, IconUsers: Icon, IconCart: Icon, IconClose: Icon,
+    IconFilter: Icon, IconMail: Icon, IconPhone: Icon, IconSearch: Icon,
+    IconShield: Icon, IconSettings: Icon, IconTool: Icon,
+  };
+});
 
 vi.mock('../../services/api', () => ({
-  getApiBaseUrl: vi.fn(() => 'http://localhost:8000'),
+  getApiBaseUrl: vi.fn(() => 'https://api.example.test'),
   bloquearUsuario: vi.fn(),
   cambiarEstadoTienda: vi.fn(),
   eliminarLibroAdmin: vi.fn(),
@@ -67,136 +62,101 @@ vi.mock('../../services/api', () => ({
   getAdminTiendas: vi.fn(() => Promise.resolve({ data: [] })),
   getAdminUsuarios: vi.fn(() => Promise.resolve({ data: [] })),
   ocultarLibroAdmin: vi.fn(),
-}))
+}));
 
-vi.mock('react', async () => {
-  const actual = await vi.importActual('react')
-  return { ...actual }
-})
+const data = {
+  usuarios: [
+    { nombre_usuario: 'Ana', correo_usuario: 'ana@example.test', rol: 'administrador', estado_usuario: 'Activo' },
+    { nombre_usuario: 'Luis', correo_usuario: 'luis@example.test', rol: 'vendedor', estado_usuario: 'Bloqueado' },
+  ],
+  libros: [
+    { titulo: 'Fantasia', autor_libro: 'Autora', nombre_tienda: 'Librería Uno', nombre_categoria: 'Fantasía' },
+    { titulo: 'Ciencia', autor_libro: 'Autor', nombre_tienda: 'Librería Dos', nombre_categoria: 'Ciencia' },
+  ],
+  tiendas: [
+    { nombre_tienda: 'Librería Activa', direccion: 'Calle 1', telefono: '123', id_tienda: 1, estado_tienda: 'activa' },
+    { nombre_tienda: 'Librería en pausa', direccion: 'Calle 2', telefono: '456', id_tienda: 2, estado_tienda: 'vacaciones' },
+    { nombre_tienda: 'Librería inactiva', direccion: 'Calle 3', telefono: '789', id_tienda: 3, estado_tienda: 'inactiva' },
+  ],
+  ordenes: [
+    { id_orden: 1, estado: 'pagado', fecha: '2026-01-01' },
+    { id_orden: 2, estado: 'cancelada', fecha: '2026-02-01' },
+  ],
+  solicitudes: [],
+};
 
-// ── Lógica pura extraída del componente ──────────────────────────────────────
+describe('AdminHome', () => {
+  it('renderiza el componente real en estado inicial de carga', () => {
+    expect(typeof AdminHome).toBe('function');
+    expect(() => renderToStaticMarkup(React.createElement(AdminHome))).not.toThrow();
+  });
 
-const ORDEN_ESTADOS = {
-  pagado:      { bg: '#eafaf1', color: '#145c2e', label: 'Pagado' },
-  enviado:     { bg: '#eaf3ff', color: '#1a4f8a', label: 'Enviado' },
-  entregado:   { bg: '#FFF7ED', color: '#9A3412', label: 'Entregado' },
-  completada:  { bg: '#ECFDF5', color: '#047857', label: 'Completada' },
-  cancelada:   { bg: '#fdecea', color: '#7b1e1e', label: 'Cancelada' },
-  pendiente:   { bg: '#FFFBEB', color: '#B45309', label: 'Pendiente' },
-}
+  it.each([
+    ['pagado', 'Pagado'],
+    ['ENTREGADA', 'Entregada'],
+    ['finalizada', 'Finalizada'],
+    ['cancelado', 'Cancelado'],
+    ['en proceso', 'En proceso'],
+  ])('reconoce el estado de orden %s', (state, label) => {
+    expect(getOrdenEstado(state).label).toBe(label);
+  });
 
-const getOrdenEstado = (estado) =>
-  ORDEN_ESTADOS[(estado || '').toLowerCase()] ||
-  { bg: '#F3F4F6', color: '#666', label: estado || 'Desconocido' }
+  it.each([undefined, null, '', 'estado desconocido'])('usa la etiqueta de respaldo para %s', (state) => {
+    expect(getOrdenEstado(state).label).toBe(state || 'Desconocido');
+  });
 
-// ── Tests ─────────────────────────────────────────────────────────────────────
+  it('filtra usuarios por búsqueda, rol normalizado y estado', () => {
+    expect(getSectionItems({
+      activeSection: 'usuarios', data, query: 'ana', role: 'admin',
+      userStatus: 'Activo', category: 'todas', storeStatus: 'todos', orderStatus: 'todos',
+    })).toEqual([data.usuarios[0]]);
+    expect(getSectionItems({
+      activeSection: 'usuarios', data, query: '', role: 'vendedor',
+      userStatus: 'Bloqueado', category: 'todas', storeStatus: 'todos', orderStatus: 'todos',
+    })).toEqual([data.usuarios[1]]);
+    expect(getSectionItems({
+      activeSection: 'usuarios', data, query: '', role: 'todos',
+      userStatus: 'Activo', category: 'todas', storeStatus: 'todos', orderStatus: 'todos',
+    })).toEqual([data.usuarios[0]]);
+  });
 
-describe('AdminHome — getOrdenEstado', () => {
-  it('devuelve config correcta para estado pagado', () => {
-    const result = getOrdenEstado('pagado')
-    expect(result.label).toBe('Pagado')
-    expect(result.bg).toBe('#eafaf1')
-  })
+  it('filtra libros por consulta y categoría y devuelve orden inverso', () => {
+    expect(getSectionItems({
+      activeSection: 'libros', data, query: 'autora', role: 'todos',
+      userStatus: 'todos', category: 'todas', storeStatus: 'todos', orderStatus: 'todos',
+    })).toEqual([data.libros[0]]);
+    expect(getSectionItems({
+      activeSection: 'libros', data, query: '', role: 'todos',
+      userStatus: 'todos', category: 'Ciencia', storeStatus: 'todos', orderStatus: 'todos',
+    })).toEqual([data.libros[1]]);
+  });
 
-  it('devuelve config correcta para estado Pagado (mayúscula)', () => {
-    const result = getOrdenEstado('Pagado')
-    expect(result.label).toBe('Pagado')
-  })
+  it('filtra tiendas por estado y búsqueda en campos distintos', () => {
+    expect(getSectionItems({
+      activeSection: 'tiendas', data, query: '', role: 'todos',
+      userStatus: 'todos', category: 'todas', storeStatus: 'activa', orderStatus: 'todos',
+    })).toEqual([data.tiendas[0]]);
+    expect(getSectionItems({
+      activeSection: 'tiendas', data, query: '456', role: 'todos',
+      userStatus: 'todos', category: 'todas', storeStatus: 'todos', orderStatus: 'todos',
+    })).toEqual([data.tiendas[1]]);
+  });
 
-  it('devuelve config correcta para estado cancelada', () => {
-    const result = getOrdenEstado('cancelada')
-    expect(result.label).toBe('Cancelada')
-  })
+  it('ordena órdenes por fecha e identifica el estado filtrado', () => {
+    expect(getSectionItems({
+      activeSection: 'ordenes', data, query: '', role: 'todos',
+      userStatus: 'todos', category: 'todas', storeStatus: 'todos', orderStatus: 'cancelada',
+    })).toEqual([data.ordenes[1]]);
+    expect(getSectionItems({
+      activeSection: 'ordenes', data, query: '1', role: 'todos',
+      userStatus: 'todos', category: 'todas', storeStatus: 'todos', orderStatus: 'todos',
+    })).toEqual([data.ordenes[0]]);
+  });
 
-  it('devuelve config por defecto para estado desconocido', () => {
-    const result = getOrdenEstado('estado_raro')
-    expect(result.label).toBe('estado_raro')
-    expect(result.bg).toBe('#F3F4F6')
-  })
-
-  it('devuelve Desconocido para estado vacío', () => {
-    const result = getOrdenEstado('')
-    expect(result.label).toBe('Desconocido')
-  })
-
-  it('devuelve Desconocido para estado null', () => {
-    const result = getOrdenEstado(null)
-    expect(result.label).toBe('Desconocido')
-  })
-})
-
-describe('AdminHome — filtros de búsqueda', () => {
-  const usuarios = [
-    { nombre_usuario: 'Juan Pérez', correo_usuario: 'juan@test.com', rol: 'comprador' },
-    { nombre_usuario: 'Ana Gómez', correo_usuario: 'ana@test.com', rol: 'vendedor' },
-    { nombre_usuario: 'Admin User', correo_usuario: 'admin@test.com', rol: 'admin' },
-  ]
-
-  it('filtra usuarios por nombre', () => {
-    const q = 'juan'
-    const result = usuarios.filter((u) =>
-      u.nombre_usuario.toLowerCase().includes(q.toLowerCase()) ||
-      u.correo_usuario.toLowerCase().includes(q.toLowerCase())
-    )
-    expect(result).toHaveLength(1)
-    expect(result[0].nombre_usuario).toBe('Juan Pérez')
-  })
-
-  it('filtra usuarios por email', () => {
-    const q = 'ana@test'
-    const result = usuarios.filter((u) =>
-      u.nombre_usuario.toLowerCase().includes(q.toLowerCase()) ||
-      u.correo_usuario.toLowerCase().includes(q.toLowerCase())
-    )
-    expect(result).toHaveLength(1)
-    expect(result[0].nombre_usuario).toBe('Ana Gómez')
-  })
-
-  it('devuelve todos cuando la búsqueda está vacía', () => {
-    const q = ''
-    const result = q
-      ? usuarios.filter((u) => u.nombre_usuario.toLowerCase().includes(q.toLowerCase()))
-      : usuarios
-    expect(result).toHaveLength(3)
-  })
-
-  it('filtra usuarios por rol', () => {
-    const result = usuarios.filter((u) => u.rol === 'vendedor')
-    expect(result).toHaveLength(1)
-    expect(result[0].nombre_usuario).toBe('Ana Gómez')
-  })
-})
-
-describe('AdminHome — estadísticas de órdenes', () => {
-  const ordenes = [
-    { estado_orden: 'pagado', total: 50000 },
-    { estado_orden: 'entregado', total: 30000 },
-    { estado_orden: 'cancelada', total: 20000 },
-    { estado_orden: 'pagado', total: 70000 },
-  ]
-
-  it('cuenta órdenes por estado', () => {
-    const pagadas = ordenes.filter((o) => o.estado_orden === 'pagado').length
-    expect(pagadas).toBe(2)
-  })
-
-  it('suma el total de ventas de órdenes pagadas', () => {
-    const totalVentas = ordenes
-      .filter((o) => o.estado_orden === 'pagado')
-      .reduce((acc, o) => acc + o.total, 0)
-    expect(totalVentas).toBe(120000)
-  })
-
-  it('cuenta correctamente las canceladas', () => {
-    const canceladas = ordenes.filter((o) => o.estado_orden === 'cancelada').length
-    expect(canceladas).toBe(1)
-  })
-})
-
-describe('AdminHome — módulo exporta componente', () => {
-  it('la lógica de negocio está cubierta por los tests anteriores', () => {
-    // AdminHome usa expo-modules-core que no es compatible con el entorno Node.
-    // La cobertura se obtiene a través de los tests de lógica pura arriba.
-    expect(true).toBe(true)
-  })
-})
+  it('devuelve una lista vacía para secciones sin registros tabulares', () => {
+    expect(getSectionItems({
+      activeSection: 'dashboard', data, query: '', role: 'todos',
+      userStatus: 'todos', category: 'todas', storeStatus: 'todos', orderStatus: 'todos',
+    })).toEqual([]);
+  });
+});
