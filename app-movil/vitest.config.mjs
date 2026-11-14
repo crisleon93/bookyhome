@@ -1,7 +1,16 @@
 import { defineConfig } from 'vitest/config';
+import { fileURLToPath } from 'node:url';
 
 export default defineConfig({
   root: '..',
+  resolve: {
+    alias: [
+      {
+        find: /^\.{2}\/components\/AddressMapFrame$/,
+        replacement: fileURLToPath(new URL('./src/components/AddressMapFrame.web.jsx', import.meta.url)),
+      },
+    ],
+  },
   define: {
     __DEV__: true,
   },
