@@ -58,28 +58,44 @@ class TestGetCurrentUserTokenInvalido:
 
 
 # ---------------------------------------------------------------------------
-# get_current_user — usuario no encontrado en BD
+# get_current_user — usuario no encontrado en BD (test unitario directo)
 # ---------------------------------------------------------------------------
 
 class TestGetCurrentUserUsuarioNoEncontrado:
-    def test_usuario_no_existe_retorna_401(self, client):
+    def test_usuario_no_existe_lanza_401(self):
+        from fastapi import HTTPException
+        from unittest.mock import MagicMock
+        from app.auth import get_current_user
+
         token = _token()
+        credentials_mock = MagicMock()
+        credentials_mock.credentials = token
+
         with patch("app.models.usuarios.obtener_usuario_por_id", return_value=None):
-            resp = client.get("/carrito", headers={"Authorization": f"Bearer {token}"})
-        assert resp.status_code == 401
+            with pytest.raises(HTTPException) as exc:
+                get_current_user(credentials_mock)
+        assert exc.value.status_code == 401
 
 
 # ---------------------------------------------------------------------------
-# get_current_user — usuario bloqueado
+# get_current_user — usuario bloqueado (test unitario directo)
 # ---------------------------------------------------------------------------
 
 class TestGetCurrentUserUsuarioBloqueado:
-    def test_usuario_bloqueado_retorna_403(self, client):
+    def test_usuario_bloqueado_lanza_403(self):
+        from fastapi import HTTPException
+        from unittest.mock import MagicMock
+        from app.auth import get_current_user
+
         token = _token()
+        credentials_mock = MagicMock()
+        credentials_mock.credentials = token
         usuario_bloqueado = _usuario_mock(estado="Bloqueado")
+
         with patch("app.models.usuarios.obtener_usuario_por_id", return_value=usuario_bloqueado):
-            resp = client.get("/carrito", headers={"Authorization": f"Bearer {token}"})
-        assert resp.status_code == 403
+            with pytest.raises(HTTPException) as exc:
+                get_current_user(credentials_mock)
+        assert exc.value.status_code == 403
 
 
 # ---------------------------------------------------------------------------
@@ -119,8 +135,7 @@ class TestRequireRole:
         usuario_admin = _usuario_mock(rol="admin")
 
         with patch("app.models.usuarios.obtener_usuario_por_id", return_value=usuario_admin):
-            resp = client.get("/admin/usuarios", headers={"Authorization": f"Bearer {token}"})
-        # No debe ser 403 por rol
+            resp = client.get("/usuarios", headers={"Authorization": f"Bearer {token}"})
         assert resp.status_code != 403
 
     def test_rol_incorrecto_retorna_403(self, client):
@@ -128,5 +143,5 @@ class TestRequireRole:
         usuario_comprador = _usuario_mock(rol="comprador")
 
         with patch("app.models.usuarios.obtener_usuario_por_id", return_value=usuario_comprador):
-            resp = client.get("/admin/usuarios", headers={"Authorization": f"Bearer {token}"})
+            resp = client.get("/usuarios", headers={"Authorization": f"Bearer {token}"})
         assert resp.status_code == 403
