@@ -2,7 +2,13 @@
  * AuthContext.test.js — Tests de lógica pura de AuthContext.
  */
 
-import { describe, it, expect, vi } from 'vitest'
+import React, { useContext } from 'react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest'
+import AsyncStorage from '@react-native-async-storage/async-storage'
+import * as LocalAuthentication from 'expo-local-authentication'
+import api from '../../services/api'
+import { AuthContext, AuthProvider } from '../../context/AuthContext'
 
 vi.mock('react-native', () => ({
   AppState: { currentState: 'active', addEventListener: vi.fn(() => ({ remove: vi.fn() })) },
@@ -107,5 +113,95 @@ describe('AuthContext — estado inicial del contexto', () => {
     const { AuthContext } = await import('../../context/AuthContext.jsx')
     expect(AuthContext).toBeDefined()
     expect(typeof AuthContext).toBe('object')
+  })
+})
+
+function AuthProbe() {
+  const auth = useContext(AuthContext)
+  return React.createElement('div', null,
+    React.createElement('span', null, auth.loading ? 'loading' : 'ready'),
+    React.createElement('span', null, auth.user?.nombre || 'anonymous'),
+    React.createElement('span', null, auth.biometricLocked ? 'locked' : 'unlocked'),
+    React.createElement('button', { onClick: () => auth.signIn(fakeJwt({
+        sub: '12',
+        nombre: 'Ana',
+        rol: 'comprador',
+        exp: Math.floor(Date.now() / 1000) + 3600,
+      }), { enableBiometrics: true }) }, 'sign in'),
+    React.createElement('button', { onClick: () => auth.signOut() }, 'sign out'),
+    React.createElement('button', { onClick: async () => {
+        const result = await auth.unlockWithBiometrics('face')
+        document.querySelector('[data-result]').textContent = JSON.stringify(result)
+      } }, 'unlock'),
+    React.createElement('output', { 'data-result': '' }),
+  )
+}
+
+beforeEach(() => {
+  vi.clearAllMocks()
+  AsyncStorage.getItem.mockResolvedValue(null)
+  AsyncStorage.setItem.mockResolvedValue(undefined)
+  AsyncStorage.multiRemove.mockResolvedValue(undefined)
+  LocalAuthentication.hasHardwareAsync.mockResolvedValue(false)
+  LocalAuthentication.isEnrolledAsync.mockResolvedValue(false)
+  LocalAuthentication.authenticateAsync.mockResolvedValue({ success: false })
+  api.defaults.headers.common = {}
+})
+
+afterEach(cleanup)
+
+describe('AuthProvider — comportamiento de sesión', () => {
+  it('inicia sesión, persiste el token y limpia la sesión al salir', async () => {
+    render(React.createElement(AuthProvider, null, React.createElement(AuthProbe)))
+    expect(await screen.findByText('ready')).toBeTruthy()
+    fireEvent.click(screen.getByText('sign in'))
+
+    expect(await screen.findByText('Ana')).toBeTruthy()
+    await waitFor(() => expect(AsyncStorage.setItem).toHaveBeenCalledWith('token', expect.any(String)))
+    expect(AsyncStorage.setItem).toHaveBeenCalledWith('biometricEnabled', 'true')
+    expect(api.defaults.headers.common.Authorization).toMatch(/^Bearer /)
+
+    fireEvent.click(screen.getByText('sign out'))
+    await waitFor(() => expect(screen.getByText('anonymous')).toBeTruthy())
+    expect(screen.getByText('locked')).toBeTruthy()
+    expect(api.defaults.headers.common.Authorization).toBeUndefined()
+    expect(AsyncStorage.multiRemove).not.toHaveBeenCalled()
+  })
+
+  it('bloquea un token restaurado y lo desbloquea con biometría disponible', async () => {
+    const restoredToken = fakeJwt({
+      sub: '20',
+      nombre: 'Luis',
+      exp: Math.floor(Date.now() / 1000) + 3600,
+    })
+    AsyncStorage.getItem.mockImplementation(async (key) => (
+      key === 'token' ? restoredToken : 'true'
+    ))
+    LocalAuthentication.hasHardwareAsync.mockResolvedValue(true)
+    LocalAuthentication.isEnrolledAsync.mockResolvedValue(true)
+    LocalAuthentication.authenticateAsync.mockResolvedValue({ success: true })
+
+    render(React.createElement(AuthProvider, null, React.createElement(AuthProbe)))
+    expect(await screen.findByText('locked')).toBeTruthy()
+    expect(screen.getByText('anonymous')).toBeTruthy()
+    fireEvent.click(screen.getByText('unlock'))
+
+    expect(await screen.findByText('Luis')).toBeTruthy()
+    expect(await screen.findByText('unlocked')).toBeTruthy()
+    expect(LocalAuthentication.authenticateAsync).toHaveBeenCalledWith(expect.objectContaining({
+      promptMessage: 'Desbloquea BookyHome con Face Unlock',
+      disableDeviceFallback: true,
+    }))
+  })
+
+  it('elimina tokens expirados durante la restauración', async () => {
+    AsyncStorage.getItem.mockImplementation(async (key) => (
+      key === 'token' ? fakeJwt({ exp: Math.floor(Date.now() / 1000) - 60 }) : 'false'
+    ))
+    render(React.createElement(AuthProvider, null, React.createElement(AuthProbe)))
+
+    expect(await screen.findByText('ready')).toBeTruthy()
+    expect(screen.getByText('anonymous')).toBeTruthy()
+    expect(AsyncStorage.multiRemove).toHaveBeenCalledWith(['token', 'biometricEnabled'])
   })
 })

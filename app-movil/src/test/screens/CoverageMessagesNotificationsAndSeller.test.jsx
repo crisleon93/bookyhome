@@ -8,6 +8,7 @@ import MetodosCobroVendedor from '../../screens/MetodosCobroVendedor';
 import Notifications from '../../screens/Notifications';
 import PedidosVendedor from '../../screens/PedidosVendedor';
 import PerfilTienda from '../../screens/PerfilTienda';
+import VentasVendedor from '../../screens/VentasVendedor';
 import MobileMenuButton from '../../components/MobileMenuButton';
 import { AuthContext } from '../../context/AuthContext';
 import { NotificationContext, NotificationProvider } from '../../context/NotificationContext';
@@ -27,6 +28,7 @@ const mocks = vi.hoisted(() => ({
     getCuentasBancariasVendedor: vi.fn(),
     getEmpresasMensajeria: vi.fn(),
     getMisPedidos: vi.fn(),
+    getMisVentas: vi.fn(),
     getNotifications: vi.fn(),
     getOrdenes: vi.fn(),
     getPerfilTiendaPublico: vi.fn(),
@@ -158,6 +160,7 @@ vi.mock('../../services/api', () => ({
   getCuentasBancariasVendedor: mocks.api.getCuentasBancariasVendedor,
   getEmpresasMensajeria: mocks.api.getEmpresasMensajeria,
   getMisPedidos: mocks.api.getMisPedidos,
+  getMisVentas: mocks.api.getMisVentas,
   getNotifications: mocks.api.getNotifications,
   getOrdenes: mocks.api.getOrdenes,
   getPerfilTiendaPublico: mocks.api.getPerfilTiendaPublico,
@@ -249,6 +252,13 @@ beforeEach(() => {
   mocks.api.deleteNotificationsByFilter.mockResolvedValue({ data: {} });
   mocks.api.getCuentasBancariasVendedor.mockResolvedValue({ data: { cuentas: [paymentAccount] } });
   mocks.api.getMisPedidos.mockResolvedValue({ data: [order] });
+  mocks.api.getMisVentas.mockResolvedValue({
+    data: [
+      { id_orden: 51, id_libro: 5, titulo: 'Libro A', cantidad: 2, precio_libro: 12000, total: 24000, fecha: '2026-03-20', cliente: 'Ana' },
+      { id_orden: 51, id_libro: 6, titulo: 'Libro B', cantidad: 1, precio_libro: 18000, total: 18000, fecha: '2026-03-20', cliente: 'Ana' },
+      { id_orden: 52, id_libro: 7, titulo: 'Libro reciente', cantidad: 1, total: 9000, fecha: '2026-03-21' },
+    ],
+  });
   mocks.api.getEmpresasMensajeria.mockResolvedValue({ data: [{ id_empresa: 2, nombre: 'Servientrega' }] });
   mocks.api.registrarGuia.mockResolvedValue({ data: {} });
   mocks.api.getPerfilTiendaPublico.mockResolvedValue({
@@ -453,6 +463,37 @@ describe('PedidosVendedor', () => {
       });
     });
     expect(await screen.findByText('Guía: TRK-100')).toBeTruthy();
+  });
+});
+
+describe('VentasVendedor', () => {
+  it('agrupa libros por orden, muestra totales y permite consultar el detalle', async () => {
+    render(withAuth(<VentasVendedor navigation={navigation} />, vendor));
+
+    expect(await screen.findByText('Orden #51')).toBeTruthy();
+    expect(screen.getByText('Orden #52')).toBeTruthy();
+    expect(screen.getByText('Libro A')).toBeTruthy();
+    expect(screen.getByText('Libro B')).toBeTruthy();
+    expect(screen.getByText('3 unidades')).toBeTruthy();
+
+    fireEvent.click(screen.getByText('Ver detalle'));
+    expect(screen.getByText('Detalle de la orden')).toBeTruthy();
+    expect(screen.getByText('Total de la orden')).toBeTruthy();
+    fireEvent.click(screen.getByText('×'));
+    expect(screen.queryByText('Detalle de la orden')).toBeNull();
+    expect(mocks.api.getMisVentas).toHaveBeenCalledOnce();
+  });
+
+  it('muestra errores de carga y permite reintentar', async () => {
+    mocks.api.getMisVentas
+      .mockRejectedValueOnce({ response: { data: { detail: 'Ventas no disponibles' } } })
+      .mockResolvedValueOnce({ data: [] });
+    render(withAuth(<VentasVendedor navigation={navigation} />, vendor));
+
+    expect(await screen.findByText('Ventas no disponibles')).toBeTruthy();
+    fireEvent.click(screen.getByText('Reintentar'));
+    expect(await screen.findByText('Aún no hay ventas registradas')).toBeTruthy();
+    expect(mocks.api.getMisVentas).toHaveBeenCalledTimes(2);
   });
 });
 
