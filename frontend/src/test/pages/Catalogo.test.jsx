@@ -191,3 +191,92 @@ describe('Catalogo — restricción de carrito sin login', () => {
     expect(localStorage.getItem('token')).toBeNull()
   })
 })
+
+// ── Tests: estado vacío ───────────────────────────────────────────────────────
+
+describe('Catalogo — sin resultados', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('no muestra libros cuando la API devuelve lista vacía', async () => {
+    const apiModule = await import('../../services/api')
+    apiModule.default.get.mockImplementationOnce(() =>
+      Promise.resolve({ data: { libros: [], total_paginas: 0, total: 0, pagina: 1 } })
+    )
+    renderCatalogo()
+    await waitFor(() => {
+      expect(screen.queryByTestId('librocard-1')).toBeNull()
+    })
+  })
+})
+
+// ── Tests: dark mode ──────────────────────────────────────────────────────────
+
+describe('Catalogo — dark mode', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('responde al evento darkModeChange sin lanzar errores', async () => {
+    renderCatalogo()
+    await waitFor(() => screen.getByText(/catálogo de libros/i))
+    localStorage.setItem('darkMode', 'true')
+    window.dispatchEvent(new Event('darkModeChange'))
+    expect(screen.getByText(/catálogo de libros/i)).toBeInTheDocument()
+  })
+
+  it('responde al evento storage sin lanzar errores', async () => {
+    renderCatalogo()
+    await waitFor(() => screen.getByText(/catálogo de libros/i))
+    localStorage.setItem('darkMode', 'false')
+    window.dispatchEvent(new Event('storage'))
+    expect(screen.getByText(/catálogo de libros/i)).toBeInTheDocument()
+  })
+})
+
+// ── Tests: paginación ─────────────────────────────────────────────────────────
+
+describe('Catalogo — paginación', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('renderiza libros en página 1 con múltiples páginas disponibles', async () => {
+    const apiModule = await import('../../services/api')
+    apiModule.default.get.mockImplementation((url) => {
+      if (url.includes('busqueda-avanzada')) {
+        return Promise.resolve({
+          data: { libros: librosEjemplo, total_paginas: 3, total: 6, pagina: 1 },
+        })
+      }
+      return Promise.resolve({ data: {} })
+    })
+    renderCatalogo()
+    await waitFor(() => {
+      expect(screen.getByTestId('librocard-1')).toBeInTheDocument()
+      expect(screen.getByTestId('librocard-2')).toBeInTheDocument()
+    })
+  })
+})
+
+// ── Tests: resolveImagenUrl (helper interno) ──────────────────────────────────
+
+describe('Catalogo — resolveImagenUrl', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('renderiza sin imagen cuando imagen_url es null', async () => {
+    renderCatalogo()
+    await waitFor(() => {
+      expect(screen.getByTestId('librocard-1')).toBeInTheDocument()
+    })
+  })
+
+  it('renderiza correctamente con libros que tienen imagen http', async () => {
+    const apiModule = await import('../../services/api')
+    const librosConImagen = [
+      { ...librosEjemplo[0], imagen_url: 'https://example.com/img.jpg' },
+    ]
+    apiModule.default.get.mockImplementationOnce(() =>
+      Promise.resolve({ data: { libros: librosConImagen, total_paginas: 1, total: 1, pagina: 1 } })
+    )
+    renderCatalogo()
+    await waitFor(() => {
+      expect(screen.getByTestId('librocard-1')).toBeInTheDocument()
+    })
+  })
+})
