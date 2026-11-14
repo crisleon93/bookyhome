@@ -26,7 +26,11 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
     token = credentials.credentials
     payload = verify_token(token)
     if not payload:
-        raise HTTPException(status_code=401, detail="Token inválido")
+        # A05:2021 — Responder 401 (no autenticado) cuando el token es inválido
+        # o ausente, no 403 (prohibido). El código 403 implica que la identidad
+        # fue reconocida pero no tiene permiso; 401 es semánticamente correcto
+        # cuando simplemente no hay credenciales válidas.
+        raise HTTPException(status_code=401, detail="Token inválido o expirado")
     return int(payload.get("sub"))
 
 
@@ -60,11 +64,11 @@ async def register(data: UsuarioRegistro):
 
             raise HTTPException(status_code=400, detail="Ya existe una cuenta con ese email")
 
-
-
+        # A05:2021 — No revelar al cliente que el error ocurrió en la base de datos.
+        # El detalle técnico se registra solo en los logs del servidor.
         print(f"❌ Error interno en modelo crear_usuario: {resultado.get('error')}", flush=True)
 
-        raise HTTPException(status_code=500, detail="Error interno al crear la cuenta en la base de datos")
+        raise HTTPException(status_code=500, detail="No fue posible completar el registro. Intenta de nuevo más tarde.")
 
 
 

@@ -84,11 +84,17 @@ def health():
     overall = "ok" if critical_ok else "error"
     http_status = 200 if critical_ok else 503
 
+    # A05:2021 — No exponer detalles internos (versión, latencia, proveedor de IA)
+    # en la respuesta pública. Solo se informa el estado general y si cada
+    # dependencia está operativa o no, sin revelar información técnica del servidor.
+    checks_publicos = {
+        nombre: {"status": info["status"]}
+        for nombre, info in checks.items()
+    }
+
     body = {
         "status": overall,
-        "timestamp": datetime.now(timezone.utc).isoformat(),
-        "version": os.getenv("APP_VERSION", "unknown"),
-        "checks": checks,
+        "checks": checks_publicos,
     }
 
     return JSONResponse(content=body, status_code=http_status)

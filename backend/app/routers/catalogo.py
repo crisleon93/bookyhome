@@ -19,8 +19,10 @@ def get_stats_publicos():
         cursor.execute("SELECT COUNT(*) AS total FROM tiendas")
         librerias = cursor.fetchone()["total"]
 
-        cursor.execute("SELECT COUNT(*) AS total FROM usuarios")
-        usuarios = cursor.fetchone()["total"]
+        # A05:2021 — El total de usuarios registrados es información interna
+        # del sistema y no tiene utilidad para el visitante de la plataforma.
+        # Exponerla permite estimar el tamaño de la base de usuarios y facilita
+        # ataques de enumeración. Se elimina del payload público.
 
         cursor.execute("SELECT ROUND(AVG(calificacion), 1) AS promedio FROM calificaciones_tiendas")
         row = cursor.fetchone()
@@ -29,7 +31,6 @@ def get_stats_publicos():
         return {
             "libros_disponibles": libros,
             "librerias_asociadas": librerias,
-            "usuarios_activos": usuarios,
             "calificacion_promedio": calificacion
         }
     finally:

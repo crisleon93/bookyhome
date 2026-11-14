@@ -18,6 +18,9 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
     token = credentials.credentials
     payload = verify_token(token)
     if not payload:
+        # A05:2021 — Usar 401 (no autenticado) cuando no hay token válido,
+        # no 403 (prohibido). El 403 debe reservarse para cuando el usuario
+        # está autenticado pero no tiene permisos sobre el recurso.
         raise HTTPException(status_code=401, detail="Token inválido o expirado")
     return payload
 
