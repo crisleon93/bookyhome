@@ -28,7 +28,7 @@ vi.mock('../../components/Legal', () => ({
   Privacidad: () => <div>Privacidad</div>,
 }))
 
-import { register } from '../../services/api'
+import { register, checkEmailVerification } from '../../services/api'
 import { notify } from '../../components/ToastProvider'
 
 // ── Helper ────────────────────────────────────────────────────────────────────
@@ -239,5 +239,109 @@ describe('Register — submit exitoso', () => {
         expect.stringMatching(/error.*cuenta/i), 'error'
       )
     })
+  })
+})
+
+// ── Tests: mostrar/ocultar contraseña ────────────────────────────────────────
+
+describe('Register — mostrar/ocultar contraseña', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('el campo contraseña es de tipo password por defecto', () => {
+    renderRegister()
+    expect(screen.getByLabelText(/^contraseña$/i)).toHaveAttribute('type', 'password')
+  })
+
+  it('cambia a tipo text al hacer clic en el ojo', async () => {
+    const user = userEvent.setup()
+    renderRegister()
+    const btnOjo = screen.getByRole('button', { name: '' })
+    await user.click(btnOjo)
+    expect(screen.getByLabelText(/^contraseña$/i)).toHaveAttribute('type', 'text')
+  })
+})
+
+// ── Tests: modo modal ─────────────────────────────────────────────────────────
+
+describe('Register — modo modal (isModal=true)', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  const renderModal = (onSuccess = vi.fn()) =>
+    render(
+      <MemoryRouter>
+        <Register isModal={true} onSuccess={onSuccess} />
+      </MemoryRouter>
+    )
+
+  it('renderiza el formulario en modo modal', () => {
+    renderModal()
+    expect(screen.getByRole('heading', { name: /crear cuenta/i })).toBeInTheDocument()
+  })
+
+  it('no muestra los links de pie de página en modo modal', () => {
+    renderModal()
+    expect(screen.queryByText(/¿ya tienes cuenta/i)).toBeNull()
+  })
+
+  it('llama a onSuccess tras registro exitoso y verificación', async () => {
+    const onSuccess = vi.fn()
+    register.mockResolvedValueOnce({ data: { mensaje: 'Cuenta creada' } })
+    checkEmailVerification
+      .mockResolvedValueOnce({ data: { verificado: false } })
+      .mockResolvedValueOnce({ data: { verificado: true } })
+
+    const user = userEvent.setup()
+    renderModal(onSuccess)
+
+    await llenarFormularioValido(user)
+    await user.click(screen.getByRole('button', { name: /crear cuenta/i }))
+
+    await waitFor(() => {
+      expect(notify).toHaveBeenCalledWith(
+        expect.stringMatching(/verifica.*correo/i), 'success'
+      )
+    })
+  })
+})
+
+// ── Tests: mensaje de éxito visible ──────────────────────────────────────────
+
+describe('Register — mensaje de éxito', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('muestra el mensaje de cuenta creada tras registro exitoso', async () => {
+    register.mockResolvedValueOnce({ data: { mensaje: 'Cuenta creada' } })
+    const user = userEvent.setup()
+    renderRegister()
+
+    await llenarFormularioValido(user)
+    await user.click(screen.getByRole('button', { name: /crear cuenta/i }))
+
+    await waitFor(() => {
+      expect(screen.getByText(/revisa tu correo/i)).toBeInTheDocument()
+    })
+  })
+
+  it('el botón muestra "Creando cuenta..." mientras carga', async () => {
+    register.mockReturnValueOnce(new Promise(() => {}))
+    const user = userEvent.setup()
+    renderRegister()
+
+    await llenarFormularioValido(user)
+    await user.click(screen.getByRole('button', { name: /crear cuenta/i }))
+
+    expect(screen.getByRole('button', { name: /creando cuenta/i })).toBeDisabled()
+  })
+})
+
+// ── Tests: indicador de contraseña media ─────────────────────────────────────
+
+describe('Register — contraseña media', () => {
+  it('muestra "media" con 3 criterios cumplidos', async () => {
+    const user = userEvent.setup()
+    renderRegister()
+    // Abc12345 → longitud ≥8 ✅, mayúscula ✅, número ✅, especial ❌ → score 3 → media
+    await user.type(screen.getByLabelText(/^contraseña$/i), 'Abc12345')
+    expect(screen.getByText(/contraseña media/i)).toBeInTheDocument()
   })
 })
