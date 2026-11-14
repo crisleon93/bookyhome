@@ -6,7 +6,7 @@ export default defineConfig({
     __DEV__: true,
   },
   test: {
-    environment: 'node',
+    environment: 'jsdom',
     include: ['app-movil/src/test/**/*.test.{js,jsx}'],
     coverage: {
       provider: 'v8',
