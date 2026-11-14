@@ -2,6 +2,9 @@ import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   root: '..',
+  define: {
+    __DEV__: true,
+  },
   test: {
     environment: 'node',
     include: ['app-movil/src/test/**/*.test.js'],
