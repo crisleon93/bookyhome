@@ -1,6 +1,12 @@
 # ======================
-# 🔒 BACKEND (Python)
+# 🔒 SEGURIDAD — Llaves y secretos
 # ======================
+infra/
+**/lab-keys/
+id_rsa
+id_ed25519
+*.pem
+*.key
 backend/venv/
 backend/__pycache__/
 backend/**/*.pyc
@@ -13,6 +19,11 @@ node_modules
 dist
 dist-ssr
 *.local
+coverage
+
+# Reportes de cobertura
+**/coverage/
+*.lcov
 
 # Logs
 logs
