@@ -5,7 +5,7 @@ settings:
   excludeLinksFromLockfile: false
 
 overrides:
-  '@xmldom/xmldom': '>=0.9.12'
+  '@xmldom/xmldom': ^0.9.12
 
 importers:
 
