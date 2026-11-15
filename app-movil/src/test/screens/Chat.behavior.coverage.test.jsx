@@ -266,4 +266,100 @@ describe('Chat móvil', () => {
     expect(mocks.alert).toHaveBeenCalledWith('No se pudo vaciar', 'Inténtalo de nuevo.')
     expect(screen.getByText('Tu pedido está listo')).toBeTruthy()
   })
+
+  it('reacciona, copia, responde y elimina un mensaje propio', async () => {
+    mocks.getHistory.mockResolvedValue({
+      data: {
+        mensajes: [{
+          id_mensaje: 41,
+          id_remitente: 11,
+          mensaje: 'Mensaje propio',
+          enviado_en: '2026-03-20T12:00:00',
+        }],
+      },
+    })
+    const { setStringAsync } = await import('expo-clipboard')
+    render(withAuth(<Chat />))
+    await screen.findByText('Mensaje propio')
+
+    fireEvent.click(screen.getByLabelText('Reaccionar al mensaje'))
+    fireEvent.click(screen.getByText('❤️'))
+    await waitFor(() => {
+      expect(AsyncStorage.setItem).toHaveBeenCalledWith(
+        'chat_reacciones_12',
+        JSON.stringify({ 41: ['❤️'] }),
+      )
+    })
+
+    fireEvent.click(screen.getByLabelText('Reaccionar al mensaje'))
+    fireEvent.click(screen.getByRole('button', { name: 'Copiar' }))
+    expect(setStringAsync).toHaveBeenCalledWith('Mensaje propio')
+
+    fireEvent.click(screen.getByLabelText('Reaccionar al mensaje'))
+    fireEvent.click(screen.getByRole('button', { name: 'Responder' }))
+    expect(screen.getByPlaceholderText('Escribe un mensaje').value).toBe('Mensaje propio')
+
+    fireEvent.click(screen.getByLabelText('Reaccionar al mensaje'))
+    fireEvent.click(screen.getByRole('button', { name: 'Eliminar para mí' }))
+    expect(screen.queryByText('Mensaje propio')).toBeNull()
+  })
+
+  it('persiste el bloqueo y comunica las opciones de adjuntos no compatibles', async () => {
+    const imagePicker = await import('expo-image-picker')
+    imagePicker.requestMediaLibraryPermissionsAsync.mockResolvedValueOnce({ granted: false })
+    render(withAuth(<Chat />))
+    await screen.findByText('Tu pedido está listo')
+
+    fireEvent.click(screen.getAllByRole('button')[4])
+    fireEvent.click(screen.getByText('Bloquear'))
+    const confirm = mocks.alert.mock.lastCall[2].find((option) => option.text === 'Confirmar')
+    await act(async () => confirm.onPress())
+    expect(AsyncStorage.setItem).toHaveBeenCalledWith('chat_bloqueado_12', '1')
+
+    const composer = screen.getByPlaceholderText('Escribe un mensaje')
+    fireEvent.click(composer.parentElement.querySelectorAll('button')[0])
+    fireEvent.click(screen.getByText('Contacto'))
+    expect(mocks.alert).toHaveBeenCalledWith('Contacto', 'Tarjeta de contacto compartida.')
+
+    fireEvent.click(composer.parentElement.querySelectorAll('button')[0])
+    fireEvent.click(screen.getByText('Fotos y videos'))
+    await waitFor(() => {
+      expect(mocks.alert).toHaveBeenCalledWith(
+        'Permiso de galería',
+        'Activa el acceso a tus fotos para adjuntar una imagen.',
+      )
+    })
+  })
+
+  it('reproduce, pausa y maneja el fin de una nota de voz', async () => {
+    const { Audio } = await import('expo-av')
+    const sound = {
+      pauseAsync: vi.fn().mockResolvedValue(undefined),
+      setOnPlaybackStatusUpdate: vi.fn(),
+      unloadAsync: vi.fn().mockResolvedValue(undefined),
+    }
+    Audio.Sound.createAsync.mockResolvedValue({ sound })
+    mocks.getHistory.mockResolvedValue({
+      data: {
+        mensajes: [{
+          id_mensaje: 51,
+          id_remitente: 3,
+          nombre_remitente: 'Librería Sol',
+          mensaje: `[AUDIO]${JSON.stringify({ url: 'https://example.test/audio.mp4', duracion: '0:07' })}`,
+          enviado_en: '2026-03-20T12:00:00',
+        }],
+      },
+    })
+    render(withAuth(<Chat />))
+    const duration = await screen.findByText('0:07')
+
+    fireEvent.click(duration)
+    await waitFor(() => expect(Audio.Sound.createAsync).toHaveBeenCalledWith(
+      { uri: 'https://example.test/audio.mp4' },
+      { shouldPlay: true },
+    ))
+    fireEvent.click(screen.getByText('0:07'))
+    await waitFor(() => expect(sound.pauseAsync).toHaveBeenCalledOnce())
+    act(() => sound.setOnPlaybackStatusUpdate.mock.calls[0][0]({ didJustFinish: true }))
+  })
 })

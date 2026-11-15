@@ -116,4 +116,34 @@ describe('ListaDeseos web', () => {
     expect(screen.queryByText('Cuentos de prueba')).not.toBeInTheDocument()
     expect(mocks.notify).toHaveBeenCalledWith('Libro eliminado de favoritos', 'success')
   })
+
+  it('agrega un favorito a una lista existente', async () => {
+    renderWishlist()
+    await screen.findByText('Cuentos de prueba')
+    fireEvent.click(screen.getByRole('button', { name: 'Agregar a lista' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Para leer', exact: true }))
+
+    await waitFor(() => {
+      expect(mocks.agregarLibroListaDeseos).toHaveBeenCalledWith(4, { id_libro: 17 })
+    })
+    expect(mocks.notify).toHaveBeenCalledWith('Libro agregado a la lista', 'success')
+  })
+
+  it('abre una lista, elimina uno de sus libros y permite borrar la lista', async () => {
+    mocks.getLibrosListaDeseos.mockResolvedValue({ data: [favorite] })
+    renderWishlist()
+    await screen.findByText('Cuentos de prueba')
+    fireEvent.click(screen.getByRole('button', { name: /Para leer/ }))
+    expect(await screen.findByText('Para leer', { selector: 'h3' })).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: /Quitar/i }))
+    await waitFor(() => {
+      expect(mocks.eliminarLibroListaDeseos).toHaveBeenCalledWith(4, 17)
+    })
+    expect(mocks.notify).toHaveBeenCalledWith('Libro eliminado de la lista', 'success')
+
+    fireEvent.click(screen.getByTitle('Eliminar lista'))
+    await waitFor(() => expect(mocks.eliminarListaDeseos).toHaveBeenCalledWith(4))
+    expect(mocks.notify).toHaveBeenCalledWith('Lista eliminada', 'success')
+  })
 })

@@ -144,6 +144,41 @@ describe('secciones personales del comprador', () => {
     expect(onDetail).toHaveBeenCalledWith(book)
   })
 
+  it('muestra el estado vacío cuando fallan las cargas de la portada', async () => {
+    getStoredLibros.mockRejectedValueOnce(new Error('offline'))
+    getOrdenes.mockRejectedValueOnce(new Error('offline'))
+    getCuponesDisponibles.mockRejectedValueOnce(new Error('offline'))
+    render(<SeccionInicio userName="Ana" onSelectSeccion={vi.fn()} />)
+
+    expect(await screen.findByText('No hay libros disponibles aún')).toBeTruthy()
+    expect(screen.queryByText('Tus últimas compras')).toBeNull()
+    expect(screen.queryByTestId('coupons')).toBeNull()
+  })
+
+  it('anima y permite recorrer el carrusel y abrir un libro sin callback de detalle', async () => {
+    const onSelect = vi.fn()
+    const books = [
+      { id_libro: 81, titulo: 'Libro del carrusel A', autor_libro: 'Autora', precio_libro: 10000 },
+      { id_libro: 82, titulo: 'Libro del carrusel B', autor_libro: 'Autor', precio_libro: 12000 },
+    ]
+    getStoredLibros.mockResolvedValue({ data: books })
+    getOrdenes.mockResolvedValue({ data: [{ id_orden: 3, estado: 'cancelada', items: [] }] })
+    getCuponesDisponibles.mockResolvedValue({ data: [] })
+    vi.stubGlobal('requestAnimationFrame', vi.fn(() => 1))
+    vi.stubGlobal('cancelAnimationFrame', vi.fn())
+
+    const { container } = render(<SeccionInicio userName="Ana María" onSelectSeccion={onSelect} />)
+    expect((await screen.findAllByText('Libro del carrusel A')).length).toBeGreaterThan(0)
+    expect(screen.getByText('cancelada')).toBeTruthy()
+
+    const buttons = container.querySelectorAll('button')
+    fireEvent.click(buttons[2])
+    fireEvent.click(buttons[3])
+    fireEvent.click(screen.getAllByRole('button', { name: 'Libro del carrusel A' })[0])
+
+    expect(onSelect).toHaveBeenCalledWith('Catálogo')
+  })
+
   it('guarda una dirección validada y abre el selector de mapa', async () => {
     api.get.mockResolvedValue({ data: [] })
     render(<SeccionMisDirecciones />)

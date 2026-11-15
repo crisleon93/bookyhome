@@ -1,10 +1,10 @@
 import React from 'react'
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import SeccionCarrito from '../../components/dashboard/SeccionCarrito'
 import SeccionMisCompras from '../../components/dashboard/SeccionMisCompras'
 import SeccionNotificaciones from '../../components/dashboard/SeccionNotificaciones'
-import api, { cancelarMisPendientes, checkoutCarrito, getCarrito, getDevoluciones, getDirecciones, getOrden, getOrdenes, removeFromCart } from '../../services/api'
+import api, { actualizarCostoEnvio, cancelarMisPendientes, checkoutCarrito, getCarrito, getDevoluciones, getDirecciones, getOrden, getOrdenes, postPayment, removeFromCart, sendConfirmationEmail } from '../../services/api'
 import { notificacionesService } from '../../services/notificaciones'
 import { notify } from '../../components/ToastProvider'
 
@@ -83,6 +83,9 @@ describe('secciones de compras y notificaciones', () => {
     getOrden.mockResolvedValue({ data: { id_orden: 1 } })
     removeFromCart.mockResolvedValue({})
     cancelarMisPendientes.mockResolvedValue({ data: { canceladas: 1 } })
+    actualizarCostoEnvio.mockResolvedValue({ data: { ok: true, total: 14000, costo_envio: 0 } })
+    postPayment.mockResolvedValue({ data: { ok: true } })
+    sendConfirmationEmail.mockResolvedValue({})
     notificacionesService.obtener.mockResolvedValue({ notificaciones: [] })
   })
 
@@ -188,6 +191,43 @@ describe('secciones de compras y notificaciones', () => {
     expect(screen.getByText('1. Identificación PSE')).toBeTruthy()
   })
 
+  it('completa un pago PSE y confirma la orden', async () => {
+    getCarrito.mockResolvedValue({ data: [{
+      id_libro: 33, titulo: 'Libro PSE aprobado', precio_libro: 14000, cantidad: 1,
+    }] })
+    checkoutCarrito.mockResolvedValue({
+      data: { ok: true, order: { id_orden: 78, estado: 'pendiente', total: 14000 } },
+    })
+    getOrden.mockResolvedValue({ data: { id_orden: 78, estado: 'pendiente', total: 14000 } })
+
+    render(<SeccionCarrito userId={7} />)
+    await screen.findAllByText('Libro PSE aprobado')
+    fireEvent.click(screen.getByRole('button', { name: /Continuar con el pago/ }))
+    await screen.findByText('2. Entrega y Pago')
+    fireEvent.click(screen.getByRole('button', { name: /PSE/ }))
+    fireEvent.click(screen.getByRole('button', { name: /Abrir Simulador PSE/ }))
+    fireEvent.click(screen.getByRole('button', { name: /Ir a la Banca Virtual/ }))
+    expect(await screen.findByText(/2. Banca Virtual/)).toBeTruthy()
+
+    vi.useFakeTimers()
+    fireEvent.click(screen.getByRole('button', { name: /Aprobar Débito Bancario/ }))
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2000)
+    })
+    vi.useRealTimers()
+
+    await waitFor(() => {
+      expect(postPayment).toHaveBeenCalledWith({
+        order_id: 78,
+        amount: 14000,
+        payment_method: 'PSE',
+        tipo_entrega: 'domicilio',
+      })
+    })
+    expect(sendConfirmationEmail).toHaveBeenCalledWith(78)
+    expect(screen.queryByRole('dialog')).toBeNull()
+  })
+
   it('filtra compras por libro y abre el detalle actualizado de una orden', async () => {
     const order = {
       id_orden: 22,
@@ -222,6 +262,58 @@ describe('secciones de compras y notificaciones', () => {
 
     await waitFor(() => expect(cancelarMisPendientes).toHaveBeenCalledOnce())
     expect(notify).toHaveBeenCalledWith('1 orden pendiente cancelada.', 'success')
+  })
+
+  it('filtra órdenes por estado y permite ordenar por valor', async () => {
+    getOrdenes.mockResolvedValue({
+      data: [
+        { id_orden: 41, estado: 'entregada', total: 12000, fecha: '2026-03-01', items: [] },
+        { id_orden: 42, estado: 'enviado', total: 45000, fecha: '2026-03-02', items: [] },
+        { id_orden: 43, estado: 'pendiente', total: 30000, fecha: '2026-03-03', items: [] },
+        { id_orden: 44, estado: 'cancelada', total: 8000, fecha: '2026-03-04', items: [] },
+      ],
+    })
+    render(<SeccionMisCompras userId={7} />)
+
+    await screen.findByText('Orden #41')
+    fireEvent.click(screen.getAllByRole('button', { name: /Canceladas/ })[0])
+    expect(screen.getByText('Orden #44')).toBeTruthy()
+    expect(screen.queryByText('Orden #41')).toBeNull()
+
+    fireEvent.click(screen.getAllByRole('button', { name: /Entregadas/ })[0])
+    expect(screen.getByText('Orden #41')).toBeTruthy()
+    expect(screen.queryByText('Orden #44')).toBeNull()
+    fireEvent.change(screen.getByDisplayValue('📅 Más recientes'), {
+      target: { value: 'mayor_precio' },
+    })
+    expect(screen.getByDisplayValue('💰 Mayor valor')).toBeTruthy()
+  })
+
+  it('abre el comprobante y muestra un error si no logra enviarlo por correo', async () => {
+    const paidOrder = {
+      id_orden: 52,
+      estado: 'pagado',
+      tipo_entrega: 'domicilio',
+      total: 30000,
+      total_con_descuento: 27000,
+      costo_envio: 5000,
+      cupon_aplicado: 'LECTURA10',
+      items: [{ id_libro: 5, titulo: 'Libro comprado', autor_libro: 'Autora', cantidad: 1, precio_libro: 25000 }],
+    }
+    getOrdenes.mockResolvedValue({ data: [paidOrder] })
+    getOrden.mockResolvedValue({ data: paidOrder })
+    sendConfirmationEmail.mockRejectedValue(new Error('mail unavailable'))
+    render(<SeccionMisCompras userId={7} />)
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Ver Baucher' }))
+    expect(await screen.findByRole('dialog', { name: '¡Compra Exitosa!' })).toBeTruthy()
+    expect(screen.getByText('LECTURA10')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Enviar por correo' }))
+
+    await waitFor(() => expect(sendConfirmationEmail).toHaveBeenCalledWith(52))
+    expect(notify).toHaveBeenCalledWith('No se pudo enviar el comprobante al correo', 'error')
+    fireEvent.click(screen.getByRole('button', { name: 'Cerrar comprobante' }))
+    expect(screen.queryByRole('dialog', { name: '¡Compra Exitosa!' })).toBeNull()
   })
 
   it('combina notificaciones automáticas de órdenes y navega al leer un mensaje', async () => {

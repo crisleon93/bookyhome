@@ -43,7 +43,7 @@ vi.mock('../../services/notificaciones', () => ({
 vi.mock('../../components/VendedorSidebar', () => ({
   default: ({ activeSide, setActiveSide, handleLogout }) => (
     <nav aria-label="Secciones de tienda">
-      {['Inicio', 'Mis Libros', 'Notificaciones', 'Perfil'].map((section) => (
+      {['Inicio', 'Mis Libros', 'Ventas', 'Pedidos', 'Notificaciones', 'Perfil'].map((section) => (
         <button
           key={section}
           type="button"
@@ -267,6 +267,48 @@ describe('MiTienda', () => {
     fireEvent.click(screen.getByRole('button', { name: /Libros en Catálogo/ }))
     expect(await screen.findByRole('heading', { name: 'Mis Libros Publicados' })).toBeTruthy()
     expect(mocks.apiGet).toHaveBeenCalledWith('/libros/mis-libros')
+  })
+
+  it('agrupa ventas de una orden y permite consultar el detalle de sus libros', async () => {
+    const getDefault = mocks.apiGet.getMockImplementation()
+    mocks.apiGet.mockImplementation((path) => {
+      if (path === '/libros/mis-ventas') {
+        return Promise.resolve({ data: [
+          {
+            id_orden: 71,
+            fecha: '2026-03-20T12:00:00',
+            cliente: 'Juan Pérez',
+            estado: 'pagado',
+            titulo: 'Libro uno',
+            cantidad: 1,
+            total: 12000,
+            precio_libro: 12000,
+          },
+          {
+            id_orden: 71,
+            fecha: '2026-03-20T12:00:00',
+            cliente: 'Juan Pérez',
+            estado: 'pagado',
+            titulo: 'Libro dos',
+            cantidad: 2,
+            total: 18000,
+            precio_libro: 9000,
+          },
+        ] })
+      }
+      return getDefault(path)
+    })
+    renderSeller('?seccion=Ventas')
+
+    expect(await screen.findByRole('heading', { name: 'Registro de Ventas' })).toBeTruthy()
+    expect(screen.getByText('Varios libros')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Ver detalle' }))
+
+    expect(screen.getByRole('dialog', { name: 'Detalle de la venta' })).toBeTruthy()
+    expect(screen.getByText('Libro uno')).toBeTruthy()
+    expect(screen.getByText('Libro dos')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Cerrar detalle de venta' }))
+    expect(screen.queryByRole('dialog', { name: 'Detalle de la venta' })).toBeNull()
   })
 
   it('filtra, marca como leída y elimina las notificaciones del vendedor', async () => {

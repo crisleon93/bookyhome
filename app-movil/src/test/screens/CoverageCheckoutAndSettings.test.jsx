@@ -432,8 +432,17 @@ describe('Checkout and buyer/store settings coverage', () => {
     expect(mocks.alert).toHaveBeenCalledWith('Error', 'Ingresa el nombre del titular');
 
     fireEvent.change(screen.getByPlaceholderText('Juan Pérez'), { target: { value: 'Ana Pérez' } });
+    fireEvent.click(payButton);
+    expect(mocks.alert).toHaveBeenCalledWith('Error', 'El número de tarjeta debe tener 16 dígitos');
+
     fireEvent.change(screen.getByPlaceholderText('0000 0000 0000 0000'), { target: { value: '4111111111111111' } });
+    fireEvent.click(payButton);
+    expect(mocks.alert).toHaveBeenCalledWith('Error', 'Ingresa una fecha de vencimiento válida (MM/AA)');
+
     fireEvent.change(screen.getByPlaceholderText('MM/AA'), { target: { value: '1228' } });
+    fireEvent.click(payButton);
+    expect(mocks.alert).toHaveBeenCalledWith('Error', 'El código de seguridad (CVV) debe tener 3 dígitos');
+
     fireEvent.change(screen.getByPlaceholderText('123'), { target: { value: '123' } });
 
     vi.useFakeTimers();
@@ -453,6 +462,105 @@ describe('Checkout and buyer/store settings coverage', () => {
     expect(screen.getByText('¡Pago Exitoso!')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Volver al Catálogo' }));
     expect(navigation.navigate).toHaveBeenCalledWith('PostLogin');
+  });
+
+  it('completa una reserva de retiro en tienda con pago en efectivo', async () => {
+    mocks.reservarRetiroEnTienda.mockResolvedValue({
+      data: {
+        ok: true,
+        estado_retiro: 'reservado',
+        pin_retiro: '654321',
+        tienda: { nombre_tienda: 'Lecturas Centro' },
+      },
+    });
+    renderCheckout();
+    await screen.findByText('Entrega y Pago');
+
+    fireEvent.click(screen.getByRole('button', { name: /Retiro en Tienda/ }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Confirmar Reserva' }));
+
+    await waitFor(() => {
+      expect(mocks.reservarRetiroEnTienda).toHaveBeenCalledWith(21, 'Efectivo en Tienda');
+    });
+    expect(await screen.findByText('Reserva confirmada')).toBeTruthy();
+    expect(screen.getByText('654321')).toBeTruthy();
+    expect(screen.getByText('Lecturas Centro')).toBeTruthy();
+  });
+
+  it('valida y completa el pago de PayPal', async () => {
+    renderCheckout();
+    await screen.findByText('Entrega y Pago');
+    fireEvent.click(screen.getByRole('button', { name: /PayPal/ }));
+    fireEvent.click(screen.getByRole('button', { name: /PayPal · Pagar/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar Pago' }));
+    expect(mocks.alert).toHaveBeenCalledWith('Error', 'Ingresa las credenciales de tu cuenta Sandbox');
+
+    fireEvent.change(screen.getByPlaceholderText('usuario@sandbox.paypal.com'), {
+      target: { value: 'comprador@sandbox.paypal.com' },
+    });
+    fireEvent.change(screen.getByPlaceholderText('••••••••'), {
+      target: { value: 'clave-demo' },
+    });
+    vi.useFakeTimers();
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar Pago' }));
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2000);
+    });
+
+    expect(mocks.processPayment).toHaveBeenCalledWith(expect.objectContaining({
+      order_id: 21,
+      payment_method: 'PayPal',
+    }));
+    expect(screen.getByText('¡Pago Exitoso!')).toBeTruthy();
+  });
+
+  it('avanza por el simulador PSE y confirma el débito bancario', async () => {
+    renderCheckout();
+    await screen.findByText('Entrega y Pago');
+    fireEvent.click(screen.getByRole('button', { name: /PSE/ }));
+    fireEvent.click(await screen.findByRole('button', { name: /Abrir Simulador PSE/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Ir a la Banca Virtual/ }));
+    expect(screen.getByText(/2\. Banca Virtual/)).toBeTruthy();
+
+    vi.useFakeTimers();
+    fireEvent.click(screen.getByRole('button', { name: /Aprobar Débito Bancario/ }));
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2500);
+    });
+
+    expect(mocks.processPayment).toHaveBeenCalledWith(expect.objectContaining({
+      order_id: 21,
+      payment_method: 'PSE',
+    }));
+    expect(screen.getByText('¡Pago Exitoso!')).toBeTruthy();
+  });
+
+  it('muestra la cuenta bancaria del vendedor al elegir transferencia', async () => {
+    mocks.getDatosTransferenciaVendedor.mockResolvedValue({
+      data: {
+        vendedores: [{
+          id_tienda: 8,
+          nombre_tienda: 'Lecturas Centro',
+          vendedor_nombre: 'Ana Ruiz',
+          cuenta: {
+            banco: 'Banco de Bogotá',
+            tipo_cuenta: 'Ahorros',
+            numero_cuenta: '123456789',
+            nombre_titular: 'Ana Ruiz',
+            cedula_titular: '12345678',
+          },
+        }],
+      },
+    });
+    renderCheckout();
+    await screen.findByText('Entrega y Pago');
+    fireEvent.click(screen.getByRole('button', { name: /Transferencia/ }));
+
+    expect(await screen.findByText('Banco de Bogotá')).toBeTruthy();
+    expect(screen.getByText('Ahorros')).toBeTruthy();
+    expect(screen.getByText('123456789')).toBeTruthy();
+    expect(screen.getByText('12345678')).toBeTruthy();
+    expect(mocks.getDatosTransferenciaVendedor).toHaveBeenCalledWith(21);
   });
 
   it('muestra la confirmación de una orden que ya estaba pagada', async () => {

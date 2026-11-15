@@ -251,6 +251,94 @@ describe('Librerias móvil', () => {
     fireEvent.click(screen.getByText('Lecturas Centro'))
     expect(mocks.navigation.navigate).toHaveBeenCalledWith('PerfilTienda', { id_tienda: 8 })
   })
+
+  it('permite ordenar por calificación, cantidad y nombre ascendente', async () => {
+    mocks.getTiendasDestacadas.mockResolvedValueOnce({
+      data: [
+        { ...store, id_tienda: 11, nombre_tienda: 'Zeta', total_libros: 3, calificacion_promedio: 3.2 },
+        { ...store, id_tienda: 12, nombre_tienda: 'Alfa', total_libros: 1, calificacion_promedio: 4.9 },
+        { ...store, id_tienda: 13, nombre_tienda: 'Beta', total_libros: 8, calificacion_promedio: 4.1 },
+      ],
+    })
+    render(<Librerias navigation={mocks.navigation} route={{ params: {} }} />)
+    await screen.findByText('Alfa')
+
+    for (const [option, selected] of [
+      [/Mejor calificación/, /Mejor calificación/],
+      [/Menor cantidad de libros/, /Menor cantidad de libros/],
+      [/Nombre: A/, /Nombre: A/],
+    ]) {
+      fireEvent.click(screen.getByText(/Mayor cantidad de libros|Mejor calificación|Menor cantidad de libros|Nombre: A/))
+      fireEvent.click(screen.getByText(option))
+      expect(screen.getByText(selected)).toBeTruthy()
+    }
+  })
+
+  it('normaliza la ciudad desde la dirección y muestra datos alternativos si faltan', async () => {
+    mocks.getTiendasDestacadas.mockResolvedValueOnce({
+      data: [{
+        id_tienda: 14,
+        nombre_tienda: 'Librer??a de prueba',
+        direccion: 'Calle 1, Medell??n',
+        total_libros: 0,
+        descripcion: ' ',
+        logo_url: '/logos/prueba.png',
+      }],
+    })
+    render(<Librerias navigation={mocks.navigation} route={{ params: {} }} />)
+
+    expect(await screen.findAllByText(/Medellín/)).toHaveLength(2)
+    expect(screen.getByText('Librería de prueba')).toBeTruthy()
+    expect(screen.getByText('Librería asociada a BookyHome en Medellín.')).toBeTruthy()
+    fireEvent.error(document.querySelector('img'))
+    expect(screen.getByText('LD')).toBeTruthy()
+  })
+
+  it('normaliza ciudades colombianas y usa Colombia como ubicación predeterminada', async () => {
+    const cities = [
+      ['Bogota', 'Bogotá'],
+      ['Medellin', 'Medellín'],
+      ['Cali', 'Cali'],
+      ['Barranquilla', 'Barranquilla'],
+      ['Cartagena', 'Cartagena'],
+      ['Santa Marta', 'Santa Marta'],
+      ['Bucaramanga', 'Bucaramanga'],
+      ['Pereira', 'Pereira'],
+      ['Manizales', 'Manizales'],
+      ['Armenia', 'Armenia'],
+      ['Ibague', 'Ibagué'],
+      ['Neiva', 'Neiva'],
+      ['Villavicencio', 'Villavicencio'],
+      ['Pasto', 'Pasto'],
+      ['Popayan', 'Popayán'],
+    ]
+    mocks.getTiendasDestacadas.mockResolvedValueOnce({
+      data: [
+        ...cities.map(([ciudad_origen], index) => ({
+          id_tienda: 20 + index,
+          nombre_tienda: `Librería ${index}`,
+          ciudad_origen,
+          total_libros: 1,
+        })),
+        { id_tienda: 40, nombre_tienda: 'Sin ciudad', total_libros: 1 },
+      ],
+    })
+    const { container } = render(<Librerias navigation={mocks.navigation} route={{ params: {} }} />)
+    await screen.findByText('Librería 0')
+
+    for (const [, city] of cities) {
+      expect(container.textContent).toContain(city)
+    }
+    expect(container.textContent).toContain('Colombia')
+  })
+
+  it('muestra la lista vacía cuando no se pueden cargar las librerías', async () => {
+    mocks.getTiendasDestacadas.mockRejectedValueOnce(new Error('offline'))
+    render(<Librerias navigation={mocks.navigation} route={{ params: { nombre_tienda: 'No existe' } }} />)
+
+    expect(await screen.findByText('Sin resultados')).toBeTruthy()
+    expect(screen.getByText('0 librerías')).toBeTruthy()
+  })
 })
 
 describe('ListaDeseos móvil', () => {
