@@ -156,6 +156,33 @@ describe('AdminDashboard — navegación entre secciones', () => {
       expect(screen.getByTestId('finanzas-section')).toBeInTheDocument()
     })
   })
+
+  it('bloquea un usuario y actualiza su estado luego de confirmar', async () => {
+    const user = userEvent.setup()
+    const { default: api } = await import('../../services/api')
+    const { notify } = await import('../../components/ToastProvider')
+    api.get.mockImplementation((url) => Promise.resolve({
+      data: url === '/usuarios'
+        ? [{ id_usuario: 18, nombre_usuario: 'Ana Compradora', correo_usuario: 'ana@example.com', rol: 'comprador', estado_usuario: 'Activo' }]
+        : url === '/perfil/mi-perfil'
+          ? { nombre_usuario: 'Admin Test', correo_usuario: 'admin@test.com' }
+          : [],
+    }))
+
+    renderAdmin()
+    await user.click(await screen.findByText(/^Usuarios$/i))
+    await user.click(await screen.findByRole('button', { name: 'Bloquear' }))
+    await user.click(screen.getByRole('button', { name: 'Confirmar Bloqueo' }))
+
+    await waitFor(() => {
+      expect(api.patch).toHaveBeenCalledWith('/usuarios/18/bloquear', { bloqueado: true })
+      expect(notify).toHaveBeenCalledWith(
+        'Usuario "Ana Compradora" bloqueado exitosamente.',
+        'success',
+      )
+    })
+    expect(await screen.findByText('Bloqueado')).toBeInTheDocument()
+  })
 })
 
 describe('AdminDashboard — acceso de rol', () => {

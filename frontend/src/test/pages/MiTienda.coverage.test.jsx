@@ -207,6 +207,29 @@ describe('MiTienda', () => {
     expect(screen.getByText('Cien años de soledad')).toBeTruthy()
   })
 
+  it('registra una venta presencial y confirma el descuento de inventario', async () => {
+    renderSeller()
+    await screen.findByRole('heading', { name: 'Mis Libros Publicados' })
+    fireEvent.click(screen.getByRole('button', { name: 'Venta en mostrador' }))
+    fireEvent.click(screen.getByRole('option', { name: /Cien años de soledad/ }))
+    fireEvent.change(screen.getByLabelText(/Nombre del comprador/), {
+      target: { value: 'Juan Pérez' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar Venta' }))
+
+    await waitFor(() => {
+      expect(mocks.apiPatch).toHaveBeenCalledWith(
+        '/libros/5/stock',
+        expect.any(FormData),
+        { headers: { 'Content-Type': 'multipart/form-data' } },
+      )
+    })
+    expect(await screen.findByText('¡Venta registrada con éxito!')).toBeTruthy()
+    expect(screen.getByRole('dialog')).toHaveTextContent(
+      'Se descontaron 1 unidad(es) de "Cien años de soledad"',
+    )
+  })
+
   it('muestra el resumen de Inicio y cambia de sección desde los indicadores', async () => {
     renderSeller('?seccion=Inicio')
     expect(await screen.findByRole('heading', { name: /Ana Vendedora/ })).toBeTruthy()

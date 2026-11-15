@@ -300,4 +300,31 @@ describe('Chat (frontend) — pantalla', () => {
     expect(screen.getAllByText('Librería Central').length).toBeGreaterThan(0)
     expect(notify).toHaveBeenCalledWith('Mensaje eliminado ✓', 'success')
   })
+
+  it('guarda una reacción rápida en los mensajes propios', async () => {
+    const { chatService } = await import('../../services/chat')
+    chatService.getSalas.mockResolvedValueOnce({
+      salas: [{
+        id_sala: 1,
+        nombre_tienda: 'Librería Central',
+        ultimo_mensaje: 'Mi mensaje',
+        no_leidos: 0,
+      }],
+    })
+    chatService.obtenerMensajes.mockResolvedValueOnce({
+      mensajes: [{
+        id_mensaje: 31,
+        id_remitente: 1,
+        mensaje: 'Mi mensaje',
+        enviado_en: new Date().toISOString(),
+      }],
+    })
+
+    render(<Chat />)
+    await screen.findByText('Mi mensaje', { selector: '.mensaje-texto' })
+    fireEvent.click(screen.getByTitle('Reaccionar'))
+    fireEvent.click(document.querySelector('.reaction-quick-btn'))
+
+    expect(JSON.parse(localStorage.getItem('bkh_chat_reacciones'))).toEqual({ 31: ['👍'] })
+  })
 })

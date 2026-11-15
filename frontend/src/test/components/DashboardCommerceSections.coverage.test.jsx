@@ -132,6 +132,22 @@ describe('secciones de compras y notificaciones', () => {
     expect(getOrden).toHaveBeenCalledWith(77)
   })
 
+  it('muestra el error de la API cuando no se puede iniciar el checkout', async () => {
+    getCarrito.mockResolvedValue({ data: [{
+      id_libro: 33, titulo: 'Libro temporal', precio_libro: 14000, cantidad: 1,
+    }] })
+    checkoutCarrito.mockRejectedValue({
+      response: { data: { detail: 'No se pudo reservar el inventario' } },
+    })
+
+    render(<SeccionCarrito userId={7} />)
+    await screen.findAllByText('Libro temporal')
+    fireEvent.click(screen.getByRole('button', { name: /Continuar con el pago/ }))
+
+    expect(await screen.findByText(/No se pudo reservar el inventario/)).toBeTruthy()
+    expect(screen.getByRole('button', { name: /Continuar con el pago/ })).toBeEnabled()
+  })
+
   it('filtra compras por libro y abre el detalle actualizado de una orden', async () => {
     const order = {
       id_orden: 22,
