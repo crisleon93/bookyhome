@@ -129,6 +129,7 @@ function AuthProbe() {
         exp: Math.floor(Date.now() / 1000) + 3600,
       }), { enableBiometrics: true }) }, 'sign in'),
     React.createElement('button', { onClick: () => auth.signOut() }, 'sign out'),
+    React.createElement('button', { onClick: () => auth.setBiometricPreference(true) }, 'enable biometrics'),
     React.createElement('button', { onClick: async () => {
         const result = await auth.unlockWithBiometrics('face')
         document.querySelector('[data-result]').textContent = JSON.stringify(result)
@@ -203,5 +204,46 @@ describe('AuthProvider — comportamiento de sesión', () => {
     expect(await screen.findByText('ready')).toBeTruthy()
     expect(screen.getByText('anonymous')).toBeTruthy()
     expect(AsyncStorage.multiRemove).toHaveBeenCalledWith(['token', 'biometricEnabled'])
+  })
+
+  it('persiste el cambio de preferencia biométrica', async () => {
+    render(React.createElement(AuthProvider, null, React.createElement(AuthProbe)))
+    await screen.findByText('ready')
+
+    fireEvent.click(screen.getByText('enable biometrics'))
+    await waitFor(() => expect(AsyncStorage.setItem).toHaveBeenCalledWith('biometricEnabled', 'true'))
+  })
+
+  it('informa por qué no puede desbloquear una sesión biométrica', async () => {
+    const restoredToken = fakeJwt({ sub: '20', nombre: 'Luis', exp: Math.floor(Date.now() / 1000) + 3600 })
+    AsyncStorage.getItem.mockImplementation(async (key) => key === 'token' ? restoredToken : 'true')
+    LocalAuthentication.hasHardwareAsync.mockResolvedValue(false)
+    render(React.createElement(AuthProvider, null, React.createElement(AuthProbe)))
+    await screen.findByText('locked')
+
+    fireEvent.click(screen.getByText('unlock'))
+    await waitFor(() => expect(document.querySelector('[data-result]').textContent).toBe(JSON.stringify({ success: false, reason: 'no_hardware' })))
+
+    LocalAuthentication.hasHardwareAsync.mockResolvedValue(true)
+    LocalAuthentication.isEnrolledAsync.mockResolvedValue(false)
+    fireEvent.click(screen.getByText('unlock'))
+    await waitFor(() => expect(document.querySelector('[data-result]').textContent).toBe(JSON.stringify({ success: false, reason: 'not_enrolled' })))
+  })
+
+  it('distingue cancelación y fallo de la autenticación biométrica', async () => {
+    const restoredToken = fakeJwt({ sub: '20', nombre: 'Luis', exp: Math.floor(Date.now() / 1000) + 3600 })
+    AsyncStorage.getItem.mockImplementation(async (key) => key === 'token' ? restoredToken : 'true')
+    LocalAuthentication.hasHardwareAsync.mockResolvedValue(true)
+    LocalAuthentication.isEnrolledAsync.mockResolvedValue(true)
+    LocalAuthentication.authenticateAsync.mockResolvedValue({ success: false, error: 'user_cancel' })
+    render(React.createElement(AuthProvider, null, React.createElement(AuthProbe)))
+    await screen.findByText('locked')
+
+    fireEvent.click(screen.getByText('unlock'))
+    await waitFor(() => expect(document.querySelector('[data-result]').textContent).toBe(JSON.stringify({ success: false, reason: 'cancelled' })))
+
+    LocalAuthentication.authenticateAsync.mockResolvedValue({ success: false, error: 'denied' })
+    fireEvent.click(screen.getByText('unlock'))
+    await waitFor(() => expect(document.querySelector('[data-result]').textContent).toBe(JSON.stringify({ success: false, reason: 'failed', error: 'denied' })))
   })
 })

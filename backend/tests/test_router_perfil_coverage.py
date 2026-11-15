@@ -176,3 +176,52 @@ def test_user_statistics_calculates_loyalty_tier_and_category_list(monkeypatch):
     assert result["nivel_fidelizacion"] == "Zafiro"
     assert result["total_gastado"] == 320000
     assert result["categorias_favoritas"] == [{"nombre": "Novela", "conteo": 2}]
+
+
+def test_addresses_listing_and_deleting_a_primary_address(monkeypatch):
+    db, cursor = _db()
+    cursor.fetchall.return_value = [{"id_direccion": 3, "direccion": "Calle 3"}]
+    cursor.fetchone.side_effect = [
+        {"id_direccion": 3, "es_principal": True},
+        {"id_direccion": 4},
+    ]
+    monkeypatch.setattr(mod, "get_db", lambda: db)
+
+    assert mod.listar_direcciones(7) == [{"id_direccion": 3, "direccion": "Calle 3"}]
+    assert mod.eliminar_direccion(3, 7)["ok"] is True
+    assert any("UPDATE direcciones_envio SET es_principal" in call.args[0] for call in cursor.execute.call_args_list)
+    db.commit.assert_called_once()
+
+
+def test_banner_color_persists_the_requested_value(monkeypatch):
+    db, cursor = _db()
+    monkeypatch.setattr(mod, "get_db", lambda: db)
+    color = mod.guardar_banner_color(mod.BannerColorData(banner_color="#123456"), 5)
+
+    assert color == {"ok": True, "mensaje": "Color de banner guardado", "banner_color": "#123456"}
+    cursor.execute.assert_called_once_with(
+        "UPDATE usuarios SET banner_color = %s, banner_perfil = NULL WHERE id_usuario = %s",
+        ("#123456", 5),
+    )
+    db.commit.assert_called_once()
+
+
+def test_store_rating_returns_distribution_and_validates_new_rating(monkeypatch):
+    db, cursor = _db()
+    cursor.fetchall.return_value = [{"calificacion": 5, "comentario": "Excelente"}]
+    cursor.fetchone.return_value = {
+        "calificacion_media": 4.5,
+        "total_opiniones": 1,
+        "total_5_estrellas": 1,
+    }
+    monkeypatch.setattr(mod, "get_db", lambda: db)
+
+    ratings = mod.obtener_calificaciones_tienda(3)
+    assert ratings["promedio"] == 4.5
+    assert ratings["distribucion"][5] == 1
+
+    with pytest.raises(HTTPException) as invalid:
+        mod.crear_calificacion_tienda(
+            mod.CalificacionTiendaCreate(id_tienda=3, calificacion=0, comentario=""), user_id=2,
+        )
+    assert invalid.value.status_code == 400

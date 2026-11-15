@@ -70,4 +70,29 @@ describe('LibreriasDestacadas', () => {
     const { container } = render(<LibreriasDestacadas />)
     await waitFor(() => expect(container.querySelector('section')).toBeNull())
   })
+
+  it('normaliza la ciudad, usa la portada de respaldo y mueve el carrusel', async () => {
+    const animationFrames = []
+    window.requestAnimationFrame = vi.fn((callback) => {
+      animationFrames.push(callback)
+      return animationFrames.length
+    })
+    mocks.apiGet.mockResolvedValueOnce({
+      data: [
+        { ...store, id_tienda: 1, nombre_tienda: 'Librer??a Norte', ciudad_origen: 'Colombia', direccion: 'Carrera 8, Medellin', descripcion: 'En Colombia', logo_url: '' },
+        { ...store, id_tienda: 2, nombre_tienda: 'Lecturas Sur', ciudad_origen: 'Cali', direccion: 'Calle 2', total_libros: 1, calificacion_promedio: 4.5 },
+      ],
+    })
+    render(<LibreriasDestacadas />)
+
+    expect(await screen.findAllByText('Librería Norte')).toHaveLength(2)
+    expect(document.querySelectorAll('.lib-card__ciudad')).toHaveLength(4)
+    expect([...document.querySelectorAll('.lib-card__ciudad')].filter((node) => node.textContent.includes('Medellín'))).toHaveLength(2)
+    expect(screen.getAllByText(/Librería asociada a BookyHome en Medellín/)).toHaveLength(2)
+    expect(screen.getAllByText(/1 libro/)).toHaveLength(2)
+    fireEvent.click(screen.getByRole('button', { name: 'Anterior' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Siguiente' }))
+    expect(animationFrames.length).toBeGreaterThan(0)
+    animationFrames.at(-1)(1000)
+  })
 })
