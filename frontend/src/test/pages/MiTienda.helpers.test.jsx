@@ -1,6 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import {
+  BadgeEstado,
+  BadgeCategoriaLibro,
+  AlertaStock,
+  ModalStock,
+  ModalCodigoLibro,
+  ModalRetiroTienda,
+  StarIcon,
+  Stars,
+  SeccionCalificacionesVendedor,
+} from '../../pages/MiTienda'
+import {
   categoriaColor,
   getCategoriaBadgeStyle,
   parseFechaPedido,
@@ -10,21 +21,12 @@ import {
   getLibroImageUrl,
   formatPrecio,
   normalizarEstado,
-  BadgeEstado,
-  BadgeCategoriaLibro,
-  AlertaStock,
-  ModalStock,
-  ModalCodigoLibro,
-  ModalRetiroTienda,
-  StarIcon,
-  Stars,
   initials,
   AVATAR_COLORS,
   avatarColor,
-  SeccionCalificacionesVendedor,
   getSellerMediaStorageKey,
   clearLegacySellerMediaCache,
-} from '../../pages/MiTienda'
+} from '../../pages/MiTienda.utils'
 
 const mocks = vi.hoisted(() => ({
   apiGet: vi.fn(),

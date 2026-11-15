@@ -14,7 +14,7 @@
     "@react-native-async-storage/async-storage": "2.2.0",
     "@react-navigation/native": "6.1.7",
     "@react-navigation/native-stack": "6.9.12",
-    "axios": "1.4.0",
+    "axios": "1.21.1",
     "expo": "54.0.35",
     "expo-av": "16.0.8",
     "expo-camera": "16.0.18",
