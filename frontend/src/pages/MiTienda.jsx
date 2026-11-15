@@ -1,4 +1,4 @@
-﻿// src/pages/MiTienda.jsx
+// src/pages/MiTienda.jsx
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
@@ -14,7 +14,7 @@ import QuejasVendedor from './QuejasVendedor';
 import Soporte from './Soporte';
 
 // Función para colores de categorías
-const categoriaColor = (categoria = '', dark = false) => {
+export const categoriaColor = (categoria = '', dark = false) => {
   const texto = categoria.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
   if (dark) {
     if (texto.includes('terror')) return { bg: '#1e1530', color: '#b48ce8' };
@@ -82,12 +82,12 @@ import "../styles/Notificaciones.css";
 // ========================
 // Utilidades y constantes
 // ========================
-const formatPrecio = (valor) => {
+export const formatPrecio = (valor) => {
   if (!valor && valor !== 0) return "$0 COP";
   return `$${new Intl.NumberFormat("es-CO", { maximumFractionDigits: 0 }).format(Math.floor(valor))} COP`;
 };
 
-const normalizarEstado = (estado) => {
+export const normalizarEstado = (estado) => {
   const raw = String(estado || "").toLowerCase().trim();
   if (["pagado", "pagada", "aprobado", "aprobada"].includes(raw)) return "pagado";
   if (["enviado", "enviada", "en_camino"].includes(raw)) return "enviado";
@@ -96,14 +96,14 @@ const normalizarEstado = (estado) => {
   return "pendiente";
 };
 
-const FILTROS_ENVIOS = [
+export const FILTROS_ENVIOS = [
   { id: "todos", label: "Todos", clases: null },
   { id: "transito", label: "En tránsito", clases: ["camino", "procesando"] },
   { id: "entregados", label: "Entregados", clases: ["entregado"] },
   { id: "sin_guia", label: "Sin guía", clases: ["alerta"] },
 ];
 
-const RANGOS_ENVIOS = [
+export const RANGOS_ENVIOS = [
   { id: "todos", label: "Todos los tiempos", dias: null },
   { id: "hoy", label: "Hoy", dias: 0 },
   { id: "7d", label: "Últimos 7 días", dias: 6 },
@@ -111,7 +111,7 @@ const RANGOS_ENVIOS = [
   { id: "90d", label: "Últimos 90 días", dias: 89 },
 ];
 
-const parseFechaPedido = (d) => {
+export const parseFechaPedido = (d) => {
   if (!d) return new Date();
   if (typeof d === "string" && /^\d{4}-\d{2}-\d{2}/.test(d)) {
     const [y, m, dd] = d.slice(0, 10).split("-").map(Number);
@@ -121,7 +121,7 @@ const parseFechaPedido = (d) => {
   return Number.isNaN(dt.getTime()) ? new Date() : dt;
 };
 
-const infoEstadoEnvio = (pedido) => {
+export const infoEstadoEnvio = (pedido) => {
   const estNorm = normalizarEstado(pedido.estado);
   const envio = pedido.envio;
   if (!envio) {
@@ -140,7 +140,7 @@ const infoEstadoEnvio = (pedido) => {
   return { clase: "procesando", texto: raw.charAt(0).toUpperCase() + raw.slice(1) };
 };
 
-const resolveImageUrl = (value) => {
+export const resolveImageUrl = (value) => {
   if (!value || typeof value !== "string") return null;
   const trimmed = value.trim();
   if (!trimmed) return null;
@@ -149,7 +149,7 @@ const resolveImageUrl = (value) => {
   return `${getApiBaseUrl()}/${trimmed}`;
 };
 
-const resolveLibroCandidate = (candidate) => {
+export const resolveLibroCandidate = (candidate) => {
   if (!candidate) return null;
   if (Array.isArray(candidate)) {
     for (const item of candidate) {
@@ -168,7 +168,7 @@ const resolveLibroCandidate = (candidate) => {
   return resolveImageUrl(candidate);
 };
 
-const getLibroImageUrl = (libro) => {
+export const getLibroImageUrl = (libro) => {
   const candidates = [
     libro?.imagen_url,
     libro?.imagen_principal,
@@ -185,13 +185,13 @@ const getLibroImageUrl = (libro) => {
   return null;
 };
 
-const ESTADOS = [
+export const ESTADOS = [
   { value: "nuevo",             label: "Nuevo" },
   { value: "usado_buen_estado", label: "Usado — buen estado" },
   { value: "usado_regular",     label: "Usado — estado regular" },
 ];
 
-const BadgeEstado = ({ estado, darkMode = false }) => {
+export const BadgeEstado = ({ estado, darkMode = false }) => {
   const map = {
     nuevo:             { label: "Nuevo",        color: "#d1fae5", text: "#065f46", darkBg: "#0d2e23", darkText: "#a7f3d0", darkBorder: "#1f7a5d" },
     usado_buen_estado: { label: "Buen estado",  color: "#dbeafe", text: "#1e40af", darkBg: "#0e1d39", darkText: "#bfdbfe", darkBorder: "#3b82f6" },
@@ -215,7 +215,7 @@ const BadgeEstado = ({ estado, darkMode = false }) => {
   );
 };
 
-const getCategoriaBadgeStyle = (cat = '') => {
+export const getCategoriaBadgeStyle = (cat = '') => {
   const t = (cat || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
   if (t.includes('terror'))     return { bg: '#eee8f7', color: '#603a92', border: '#d8b4fe' };
   if (t.includes('ciencia'))    return { bg: '#e4f5e9', color: '#1f7a45', border: '#86efac' };
@@ -236,7 +236,7 @@ const getCategoriaBadgeStyle = (cat = '') => {
   return { bg: '#f4eef0', color: '#7A1E3A', border: '#fbcfe8' };
 };
 
-const BadgeCategoriaLibro = ({ categoria, darkMode = false }) => {
+export const BadgeCategoriaLibro = ({ categoria, darkMode = false }) => {
   if (!categoria) return <span style={{ color: '#a8a29e', fontSize: '0.8rem' }}>—</span>;
   const s = getCategoriaBadgeStyle(categoria);
   return (
@@ -263,7 +263,7 @@ const BadgeCategoriaLibro = ({ categoria, darkMode = false }) => {
 // ========================
 // Componentes auxiliares
 // ========================
-function AlertaStock({ alertas, umbral }) {
+export function AlertaStock({ alertas, umbral }) {
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('darkMode') === 'true');
   
   useEffect(() => {
@@ -333,7 +333,7 @@ function AlertaStock({ alertas, umbral }) {
   );
 }
 
-function ModalEditarLibro({ libro, categorias, onClose, onGuardado }) {
+export function ModalEditarLibro({ libro, categorias, onClose, onGuardado }) {
   const [form, setForm] = useState({
     id_categoria:      libro.id_categoria,
     titulo:            libro.titulo,
@@ -485,7 +485,7 @@ function ModalEditarLibro({ libro, categorias, onClose, onGuardado }) {
   );
 }
 
-function ModalEliminar({ libro, onClose, onEliminado }) {
+export function ModalEliminar({ libro, onClose, onEliminado }) {
   // ========================
   // Estado del modal de eliminación
   // ========================
@@ -528,7 +528,7 @@ function ModalEliminar({ libro, onClose, onEliminado }) {
   );
 }
 
-function ModalStock({ libro, onClose, onActualizado }) {
+export function ModalStock({ libro, onClose, onActualizado }) {
   // ========================
   // Estado del modal de stock
   // ========================
@@ -579,7 +579,7 @@ function ModalStock({ libro, onClose, onActualizado }) {
 }
 
 /* ================= MODAL VENTA FÍSICA (POS - Punto de Venta) ================= */
-function ModalVentaFisica({ libro: libroInicial, libros = [], onClose, onVendido }) {
+export function ModalVentaFisica({ libro: libroInicial, libros = [], onClose, onVendido }) {
   const [selectedLibroId, setSelectedLibroId] = useState(libroInicial?.id_libro || "");
   const [dropdownAbierto, setDropdownAbierto] = useState(!libroInicial?.id_libro);
   const [busqueda, setBusqueda] = useState("");
@@ -948,7 +948,7 @@ function ModalVentaFisica({ libro: libroInicial, libros = [], onClose, onVendido
 }
 
 /* ================= MODAL CÓDIGO / IDENTIFICACIÓN DEL LIBRO ================= */
-function ModalCodigoLibro({ libro, onClose }) {
+export function ModalCodigoLibro({ libro, onClose }) {
   const codigoId = `BKH-${String(libro.id_libro).padStart(5, '0')}`;
   const isbn = libro.isbn || libro.codigo_barras || null;
 
@@ -1047,7 +1047,7 @@ function ModalCodigoLibro({ libro, onClose }) {
 }
 
 /* ================= MODAL RETIRO EN TIENDA (CLICK & COLLECT) ================= */
-function ModalRetiroTienda({ libro, onClose, onConfirmado }) {
+export function ModalRetiroTienda({ libro, onClose, onConfirmado }) {
   const [nombreCliente, setNombreCliente] = useState("");
   const [cantidadReserva, setCantidadReserva] = useState(1);
   const [cargando, setCargando] = useState(false);
@@ -1168,26 +1168,26 @@ function ModalRetiroTienda({ libro, onClose, onConfirmado }) {
 }
 
 /* ================= SECCIÓN CALIFICACIONES VENDEDOR ================= */
-const StarIcon = ({ filled, size = 16 }) => (
+export const StarIcon = ({ filled, size = 16 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill={filled ? '#ffc107' : '#e0e0e0'} stroke="none">
     <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
   </svg>
 );
 
-const Stars = ({ value, size = 16 }) => (
+export const Stars = ({ value, size = 16 }) => (
   <div style={{ display: 'flex', gap: '2px' }}>
     {[1,2,3,4,5].map(i => <StarIcon key={i} filled={i <= value} size={size} />)}
   </div>
 );
 
 // Iniciales del usuario para el avatar
-const initials = (name = '') => name.trim().split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase() || '?';
+export const initials = (name = '') => name.trim().split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase() || '?';
 
 // Paleta de colores para avatares
-const AVATAR_COLORS = ['#7A1E3A','#1e4d8a','#1e7a45','#7a5c00','#5a1e7a','#1e6a7a'];
-const avatarColor = (name = '') => AVATAR_COLORS[name.charCodeAt(0) % AVATAR_COLORS.length] || '#7A1E3A';
+export const AVATAR_COLORS = ['#7A1E3A','#1e4d8a','#1e7a45','#7a5c00','#5a1e7a','#1e6a7a'];
+export const avatarColor = (name = '') => AVATAR_COLORS[name.charCodeAt(0) % AVATAR_COLORS.length] || '#7A1E3A';
 
-function SeccionCalificacionesVendedor({ tiendaId, darkMode = false }) {
+export function SeccionCalificacionesVendedor({ tiendaId, darkMode = false }) {
   const [data, setData]       = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -1467,7 +1467,7 @@ function SeccionCalificacionesVendedor({ tiendaId, darkMode = false }) {
   );
 }
 
-const getSellerMediaStorageKey = (key) => {
+export const getSellerMediaStorageKey = (key) => {
   const token = localStorage.getItem("token");
   if (!token) return key;
 
@@ -1481,7 +1481,7 @@ const getSellerMediaStorageKey = (key) => {
   }
 };
 
-const clearLegacySellerMediaCache = () => {
+export const clearLegacySellerMediaCache = () => {
   localStorage.removeItem('vendedor_user_photo_url');
   localStorage.removeItem('vendedor_banner_url');
 };

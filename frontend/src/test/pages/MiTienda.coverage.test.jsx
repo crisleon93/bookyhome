@@ -9,6 +9,8 @@ const mocks = vi.hoisted(() => ({
   apiPatch: vi.fn(),
   apiDelete: vi.fn(),
   navigate: vi.fn(),
+  habilitarPagoRetiro: vi.fn(),
+  confirmarEntregaRetiro: vi.fn(),
   notificaciones: {
     obtener: vi.fn(),
     marcarLeida: vi.fn(),
@@ -33,9 +35,9 @@ vi.mock('../../services/api', () => ({
     post: mocks.apiPost,
     put: mocks.apiPut,
   },
-  confirmarEntregaRetiro: vi.fn(),
+  confirmarEntregaRetiro: mocks.confirmarEntregaRetiro,
   getApiBaseUrl: () => 'https://api.example.test',
-  habilitarPagoRetiro: vi.fn(),
+  habilitarPagoRetiro: mocks.habilitarPagoRetiro,
 }))
 vi.mock('../../services/notificaciones', () => ({
   notificacionesService: mocks.notificaciones,
@@ -346,5 +348,177 @@ describe('MiTienda', () => {
     fireEvent.click(screen.getByText('Cerrar sesión'))
     expect(localStorage.getItem('token')).toBeNull()
     expect(mocks.navigate).toHaveBeenCalledWith('/')
+  })
+
+  it('abre y cierra modal de stock y modal de código desde la lista de libros', async () => {
+    renderSeller()
+    await screen.findByRole('heading', { name: 'Mis Libros Publicados' })
+
+    // Abrir y cerrar modal de código ID
+    fireEvent.click(screen.getAllByTitle('Ver código de barras / identificación del libro')[0])
+    expect(await screen.findByText('Código del Libro')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'x' }))
+    await waitFor(() => expect(screen.queryByText('Código del Libro')).toBeNull())
+
+    // Abrir y cerrar modal de stock
+    fireEvent.click(screen.getAllByTitle('Ajustar unidades en stock')[0])
+    expect(await screen.findByText('Gestionar stock')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }))
+    await waitFor(() => expect(screen.queryByText('Gestionar stock')).toBeNull())
+  })
+
+  it('gestiona la sección de Pedidos, habilita pago y registra guía de envío', async () => {
+    const orders = [
+      {
+        id_orden: 101,
+        codigo_compra: 'ORD-101',
+        cliente: 'Beatriz Gomez',
+        correo_cliente: 'beatriz@test.com',
+        fecha: '2026-03-20T10:00:00',
+        estado: 'pagado',
+        tipo_entrega: 'envio',
+        total: 45000,
+        libros: [{ id_libro: 5, titulo: 'Cien años de soledad', cantidad: 1, precio_libro: 45000 }],
+        envio: null,
+      },
+      {
+        id_orden: 102,
+        codigo_compra: 'ORD-102',
+        cliente: 'Carlos Mario',
+        correo_cliente: 'carlos@test.com',
+        fecha: '2026-03-21T11:00:00',
+        estado: 'pendiente',
+        tipo_entrega: 'retiro_tienda',
+        estado_retiro: 'en_tienda',
+        metodo_pago: 'transferencia',
+        total: 28000,
+        libros: [{ id_libro: 6, titulo: 'La casa de los espíritus', cantidad: 1, precio_libro: 28000 }],
+      },
+    ]
+    const empresas = [{ id_empresa: 1, nombre_empresa: 'Servientrega' }]
+
+    const getDefault = mocks.apiGet.getMockImplementation()
+    mocks.apiGet.mockImplementation((path) => {
+      if (path === '/libros/mis-pedidos') return Promise.resolve({ data: orders })
+      if (path === '/envios/empresas') return Promise.resolve({ data: empresas })
+      return getDefault(path)
+    })
+    mocks.habilitarPagoRetiro.mockResolvedValueOnce({ data: { ok: true } })
+    mocks.apiPut.mockResolvedValue({ data: {} })
+
+    renderSeller('?seccion=Pedidos')
+    expect(await screen.findByText('Beatriz Gomez')).toBeTruthy()
+    expect(screen.getByText('Carlos Mario')).toBeTruthy()
+
+    // Filtro búsqueda
+    const inputBuscar = screen.getByPlaceholderText(/Buscar por #orden/i)
+    fireEvent.change(inputBuscar, { target: { value: 'Beatriz' } })
+    expect(screen.getByText('Beatriz Gomez')).toBeTruthy()
+    fireEvent.change(inputBuscar, { target: { value: '' } })
+
+    // Abrir modal de habilitar pago para retiro
+    const btnHabilitar = screen.getByRole('button', { name: /Habilitar Pago/i })
+    fireEvent.click(btnHabilitar)
+
+    expect(await screen.findByText('Habilitar Cobro / Pago')).toBeTruthy()
+    const dialogHabilitar = screen.getByRole('dialog', { name: 'Habilitar pagos en tienda' })
+    const btnConfirmarHabilitar = dialogHabilitar.querySelector('button[style*="linear-gradient"]')
+    fireEvent.click(btnConfirmarHabilitar)
+
+    await waitFor(() => {
+      expect(mocks.habilitarPagoRetiro).toHaveBeenCalledWith(102)
+    })
+
+    // Registrar guía desde la sección de pedidos
+    const btnRegistrarGuia = screen.getByRole('button', { name: /\+ Registrar Guía/i })
+    fireEvent.click(btnRegistrarGuia)
+
+    expect(await screen.findByText(/Registrar Guía de envío/i)).toBeTruthy()
+    fireEvent.change(screen.getByLabelText(/Empresa de mensajería/i), { target: { value: '1' } })
+    fireEvent.change(screen.getByLabelText(/Número de Guía/i), { target: { value: 'GUIA-101' } })
+
+    fireEvent.click(screen.getByRole('button', { name: /Guardar Guía/i }))
+    await waitFor(() => {
+      expect(mocks.apiPut).toHaveBeenCalledWith(
+        '/envios/orden/101',
+        expect.objectContaining({ numero_guia: 'GUIA-101' })
+      )
+    })
+  })
+
+  it('gestiona la sección de Envíos y aplica filtros', async () => {
+    const orders = [
+      {
+        id_orden: 201,
+        codigo_compra: 'ENV-201',
+        cliente: 'Daniela Mejia',
+        correo_cliente: 'daniela@test.com',
+        fecha: new Date().toISOString(),
+        estado: 'pagado',
+        tipo_entrega: 'envio',
+        total: 50000,
+        envio: null,
+      },
+    ]
+    const empresas = [{ id_empresa: 1, nombre_empresa: 'Servientrega' }]
+
+    const getDefault = mocks.apiGet.getMockImplementation()
+    mocks.apiGet.mockImplementation((path) => {
+      if (path === '/libros/mis-pedidos') return Promise.resolve({ data: orders })
+      if (path === '/envios/empresas') return Promise.resolve({ data: empresas })
+      return getDefault(path)
+    })
+
+    renderSeller('?seccion=Envíos')
+    expect(await screen.findByText(/Envíos y seguimiento/i)).toBeTruthy()
+    expect(screen.getByText(/Daniela Mejia/)).toBeTruthy()
+
+    // Filtros de estado de envío
+    const botonSinGuia = screen.getByRole('button', { name: /Sin guía/i })
+    fireEvent.click(botonSinGuia)
+
+    const botonTodos = screen.getByRole('button', { name: /Todos/i })
+    fireEvent.click(botonTodos)
+
+    // Filtro por fecha
+    const selectFecha = screen.getByLabelText(/Filtrar por fecha/i)
+    fireEvent.change(selectFecha, { target: { value: '30d' } })
+
+    // Búsqueda en envíos
+    const inputBusquedaEnvios = screen.getByPlaceholderText(/Buscar por compra/i)
+    fireEvent.change(inputBusquedaEnvios, { target: { value: 'ENV-201' } })
+    expect(screen.getByText(/Daniela Mejia/)).toBeTruthy()
+  })
+
+  it('renderiza secciones complementarias: Configuración, Promociones, Cupones, Reclamos, Soporte y Clientes', async () => {
+    const getDefault = mocks.apiGet.getMockImplementation()
+    mocks.apiGet.mockImplementation((path) => {
+      if (path === '/configuracion') return Promise.resolve({ data: { alertas_email: true } })
+      return getDefault(path)
+    })
+
+    const { unmount: u1 } = renderSeller('?seccion=Promociones')
+    expect(await screen.findByText('Ofertas mock')).toBeTruthy()
+    u1()
+
+    const { unmount: u2 } = renderSeller('?seccion=Cupones')
+    expect(await screen.findByText('Cupones mock')).toBeTruthy()
+    u2()
+
+    const { unmount: u3 } = renderSeller('?seccion=Quejas%20y%20reclamos')
+    expect(await screen.findByText('Reclamos mock')).toBeTruthy()
+    u3()
+
+    const { unmount: u4 } = renderSeller('?seccion=Soporte%20t%C3%A9cnico')
+    expect(await screen.findByText('Soporte mock')).toBeTruthy()
+    u4()
+
+    const { unmount: u5 } = renderSeller('?seccion=Clientes')
+    expect(await screen.findByText(/Próximamente/i)).toBeTruthy()
+    u5()
+
+    const { unmount: u6 } = renderSeller('?seccion=Configuración')
+    expect(await screen.findByText(/Configuración de tienda/i)).toBeTruthy()
+    u6()
   })
 })
