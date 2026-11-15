@@ -268,27 +268,29 @@ export default function VendedorHome({ navigation: navProp }) {
     </View>
   );
 
+  const renderGridLines = () => [32, 87, baseGrafico].map((y, index) => {
+    const valor = maxTotalGrafico * (1 - index * 0.5);
+    return (
+      <React.Fragment key={`grid-${y}`}>
+        <Path
+          d={`M 32 ${y} L ${anchoGrafico - 10} ${y}`}
+          fill="none"
+          stroke={colorCuadriculaGrafico}
+          strokeWidth={index === 2 ? 1.2 : 1}
+          strokeDasharray={index === 2 ? undefined : '4 5'}
+        />
+        <SvgText x={4} y={y + 4} fill={colorEjeGrafico} fontSize={9} fontWeight="600">
+          ${formatoEje(valor)}
+        </SvgText>
+      </React.Fragment>
+    );
+  });
+
   const renderGraficoVentas = () => {
     const renderAreaChart = () => (
       <View style={{ width: anchoGrafico }}>
         <Svg width={anchoGrafico} height={altoGrafico} viewBox={`0 0 ${anchoGrafico} ${altoGrafico}`}>
-          {[32, 87, baseGrafico].map((y, index) => {
-            const valor = maxTotalGrafico * (1 - index * 0.5);
-            return (
-              <React.Fragment key={`grid-${y}`}>
-                <Path
-                  d={`M 32 ${y} L ${anchoGrafico - 10} ${y}`}
-                  fill="none"
-                  stroke={colorCuadriculaGrafico}
-                  strokeWidth={index === 2 ? 1.2 : 1}
-                  strokeDasharray={index === 2 ? undefined : '4 5'}
-                />
-                <SvgText x={4} y={y + 4} fill={colorEjeGrafico} fontSize={9} fontWeight="600">
-                  ${formatoEje(valor)}
-                </SvgText>
-              </React.Fragment>
-            );
-          })}
+          {renderGridLines()}
           <Defs>
             <SvgLinearGradient id="salesAreaGradient" x1="0%" y1="0%" x2="0%" y2="100%">
               <Stop offset="0%" stopColor={colorGrafico} stopOpacity={darkMode ? 0.2 : 0.28} />
@@ -331,32 +333,16 @@ export default function VendedorHome({ navigation: navProp }) {
               <Stop offset="0%" stopColor={darkMode ? '#E05A7A' : '#9B2648'} />
               <Stop offset="100%" stopColor={PRIMARY} />
             </SvgLinearGradient>
-            <SvgLinearGradient id="salesBarSelectedGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-              <Stop offset="0%" stopColor={darkMode ? '#F5A3B4' : '#D85B7C'} />
-              <Stop offset="100%" stopColor={darkMode ? '#E05A7A' : '#7A1E3A'} />
-            </SvgLinearGradient>
             <SvgLinearGradient id="salesBarTodayGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-              <Stop offset="0%" stopColor="#F7D67A" />
-              <Stop offset="100%" stopColor="#D4AF37" />
+              <Stop offset="0%" stopColor={colorHoyGrafico} />
+              <Stop offset="100%" stopColor={darkMode ? '#B8960C' : '#B89120'} />
+            </SvgLinearGradient>
+            <SvgLinearGradient id="salesBarSelectedGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+              <Stop offset="0%" stopColor={darkMode ? '#F87171' : '#D4AF37'} />
+              <Stop offset="100%" stopColor={darkMode ? colorGrafico : '#B89120'} />
             </SvgLinearGradient>
           </Defs>
-          {[32, 87, baseGrafico].map((y, index) => {
-            const valor = maxTotalGrafico * (1 - index * 0.5);
-            return (
-              <React.Fragment key={`bar-grid-${y}`}>
-                <Path
-                  d={`M 32 ${y} L ${anchoGrafico - 10} ${y}`}
-                  fill="none"
-                  stroke={colorCuadriculaGrafico}
-                  strokeWidth={index === 2 ? 1.2 : 1}
-                  strokeDasharray={index === 2 ? undefined : '4 5'}
-                />
-                <SvgText x={4} y={y + 4} fill={colorEjeGrafico} fontSize={9} fontWeight="600">
-                  ${formatoEje(valor)}
-                </SvgText>
-              </React.Fragment>
-            );
-          })}
+          {renderGridLines()}
           {periodosGrafico.items.map((item, index) => {
             const punto = puntosGrafico[index];
             const valorAltura = (item.total / maxTotalGrafico) * 110;
@@ -428,9 +414,9 @@ export default function VendedorHome({ navigation: navProp }) {
     if (tipoGrafico === 'area') {
       return (
         <View style={s.chartPlotContainer}>
-          {renderTooltip()}
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             {chartContent}
+            {renderAxisLabels()}
           </ScrollView>
         </View>
       );
@@ -629,302 +615,7 @@ export default function VendedorHome({ navigation: navProp }) {
 
               {errorVentas ? (
                 <Text style={s.chartMessage}>No se pudo cargar el historial de ventas. Desliza para volver a intentar.</Text>
-              ) : (
-                tipoGrafico === 'area' && periodoGrafico === 'mes' ? (
-                  <View style={s.chartPlotContainer}>
-                    <View style={s.chartTooltip}>
-                      <View style={s.chartTooltipDate}>
-                        <View style={s.chartTooltipDot} />
-                        <Text style={s.chartTooltipDateText}>
-                          {itemSeleccionado
-                            ? formatPeriodDate(itemSeleccionado.fecha, periodoGrafico === 'anio'
-                              ? { month: 'long', year: 'numeric' }
-                              : { weekday: 'short', day: 'numeric', month: 'short' })
-                            : '—'}
-                        </Text>
-                      </View>
-                      <View style={s.chartTooltipValue}>
-                        <Text style={s.chartTooltipTotal}>{fmt(itemSeleccionado?.total)}</Text>
-                        <Text style={s.chartTooltipOrders}>
-                          {itemSeleccionado?.ordenes
-                            ? `${itemSeleccionado.ordenes} orden(es)`
-                            : itemSeleccionado?.esHoy ? 'Hoy (en curso)' : 'Sin ventas'}
-                        </Text>
-                      </View>
-                    </View>
-                    <View>
-                    <View style={{ width: anchoGrafico }}>
-                      <Svg width={anchoGrafico} height={altoGrafico} viewBox={`0 0 ${anchoGrafico} ${altoGrafico}`}>
-                        {[32, 87, baseGrafico].map((y, index) => {
-                          const valor = maxTotalGrafico * (1 - index * 0.5);
-                          return (
-                            <React.Fragment key={`grid-${y}`}>
-                              <Path
-                                d={`M 32 ${y} L ${anchoGrafico - 10} ${y}`}
-                                fill="none"
-                                stroke={colorCuadriculaGrafico}
-                                strokeWidth={index === 2 ? 1.2 : 1}
-                                strokeDasharray={index === 2 ? undefined : '4 5'}
-                              />
-                              <SvgText x={4} y={y + 4} fill={colorEjeGrafico} fontSize={9} fontWeight="600">
-                                ${formatoEje(valor)}
-                              </SvgText>
-                            </React.Fragment>
-                          );
-                        })}
-                        <Defs>
-                          <SvgLinearGradient id="salesAreaGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                            <Stop offset="0%" stopColor={colorGrafico} stopOpacity={darkMode ? 0.2 : 0.28} />
-                            <Stop offset="100%" stopColor={colorGrafico} stopOpacity={0} />
-                          </SvgLinearGradient>
-                        </Defs>
-                        <Path d={areaGrafico} fill="url(#salesAreaGradient)" />
-                        <Path d={lineaGrafico} fill="none" stroke={colorGrafico} strokeWidth={3.2} strokeLinecap="round" strokeLinejoin="round" />
-                        {puntosGrafico.map((punto, index) => (
-                          <React.Fragment key={`${periodoGrafico}-punto-${index}`}>
-                            {(periodosGrafico.items[index].esHoy || indiceSeleccionado === index) && (
-                              <Circle
-                                cx={punto.x}
-                                cy={punto.y}
-                                r={periodosGrafico.items[index].esHoy ? 7 : 6}
-                                fill={periodosGrafico.items[index].esHoy ? colorHoyGrafico : colorGrafico}
-                                fillOpacity={0.28}
-                              />
-                            )}
-                            <Circle
-                              cx={punto.x}
-                              cy={punto.y}
-                              r={indiceSeleccionado === index ? 5.5 : periodosGrafico.items[index].esHoy ? 4.2 : 3}
-                              fill={periodosGrafico.items[index].esHoy ? colorHoyGrafico : colorGrafico}
-                              stroke={colorFondoGrafico}
-                              strokeWidth={2}
-                              onPress={() => setIndiceSeleccionado(index)}
-                            />
-                          </React.Fragment>
-                        ))}
-                      </Svg>
-                      <View style={[s.chartAxisLabels, { width: anchoGrafico }]}>
-                        {periodosGrafico.items.map((item, index) => (
-                          periodoGrafico !== 'mes' || index === 0 || (index + 1) % 5 === 0 || index === periodosGrafico.items.length - 1
-                            ? (
-                              <TouchableOpacity
-                                key={`${periodoGrafico}-etiqueta-${item.label}`}
-                                style={[
-                                  s.chartAxisLabel,
-                                  { left: puntosGrafico[index]?.x ?? 0, transform: [{ translateX: -18 }] },
-                                ]}
-                                onPress={() => setIndiceSeleccionado(index)}
-                                accessibilityRole="button"
-                                accessibilityLabel={`${item.label}: ${fmt(item.total)}, ${item.ordenes} órdenes`}
-                              >
-                                <Text style={[s.chartLabel, item.esHoy && s.chartLabelToday]}>{item.label}</Text>
-                                {item.esHoy && <Text style={s.chartTodayLabel}>HOY</Text>}
-                              </TouchableOpacity>
-                            )
-                            : null
-                        ))}
-                      </View>
-                    </View>
-                    </View>
-                  </View>
-                ) : tipoGrafico === 'area' ? (
-                  <View style={s.chartPlotContainer}>
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                      <View style={{ width: anchoGrafico }}>
-                        <Svg width={anchoGrafico} height={altoGrafico} viewBox={`0 0 ${anchoGrafico} ${altoGrafico}`}>
-                          {[32, 87, baseGrafico].map((y, index) => {
-                            const valor = maxTotalGrafico * (1 - index * 0.5);
-                            return (
-                              <React.Fragment key={`grid-${y}`}>
-                                <Path
-                                  d={`M 32 ${y} L ${anchoGrafico - 10} ${y}`}
-                                  fill="none"
-                                  stroke={colorCuadriculaGrafico}
-                                  strokeWidth={index === 2 ? 1.2 : 1}
-                                  strokeDasharray={index === 2 ? undefined : '4 5'}
-                                />
-                                <SvgText x={4} y={y + 4} fill={colorEjeGrafico} fontSize={9} fontWeight="600">
-                                  ${formatoEje(valor)}
-                                </SvgText>
-                              </React.Fragment>
-                            );
-                          })}
-                          <Defs>
-                            <SvgLinearGradient id="salesAreaGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                              <Stop offset="0%" stopColor={colorGrafico} stopOpacity={darkMode ? 0.2 : 0.28} />
-                              <Stop offset="100%" stopColor={colorGrafico} stopOpacity={0} />
-                            </SvgLinearGradient>
-                          </Defs>
-                          <Path d={areaGrafico} fill="url(#salesAreaGradient)" />
-                          <Path d={lineaGrafico} fill="none" stroke={colorGrafico} strokeWidth={3.2} strokeLinecap="round" strokeLinejoin="round" />
-                          {puntosGrafico.map((punto, index) => (
-                            <React.Fragment key={`${periodoGrafico}-punto-${index}`}>
-                              {(periodosGrafico.items[index].esHoy || indiceSeleccionado === index) && (
-                                <Circle
-                                  cx={punto.x}
-                                  cy={punto.y}
-                                  r={periodosGrafico.items[index].esHoy ? 7 : 6}
-                                  fill={periodosGrafico.items[index].esHoy ? colorHoyGrafico : colorGrafico}
-                                  fillOpacity={0.28}
-                                />
-                              )}
-                              <Circle
-                                cx={punto.x}
-                                cy={punto.y}
-                                r={indiceSeleccionado === index ? 5.5 : periodosGrafico.items[index].esHoy ? 4.2 : 3}
-                                fill={periodosGrafico.items[index].esHoy ? colorHoyGrafico : colorGrafico}
-                                stroke={colorFondoGrafico}
-                                strokeWidth={2}
-                                onPress={() => setIndiceSeleccionado(index)}
-                              />
-                            </React.Fragment>
-                          ))}
-                        </Svg>
-                        <View style={[s.chartAxisLabels, { width: anchoGrafico }]}>
-                          {periodosGrafico.items.map((item, index) => (
-                            <TouchableOpacity
-                              key={`${periodoGrafico}-etiqueta-${item.label}`}
-                              style={[s.chartAxisLabel, { left: puntosGrafico[index]?.x ?? 0, transform: [{ translateX: -18 }] }]}
-                              onPress={() => setIndiceSeleccionado(index)}
-                              accessibilityRole="button"
-                              accessibilityLabel={`${item.label}: ${fmt(item.total)}, ${item.ordenes} órdenes`}
-                            >
-                              <Text style={[s.chartLabel, item.esHoy && s.chartLabelToday]}>{item.label}</Text>
-                              {item.esHoy && <Text style={s.chartTodayLabel}>HOY</Text>}
-                            </TouchableOpacity>
-                          ))}
-                        </View>
-                      </View>
-                    </ScrollView>
-                  </View>
-                ) : (
-                  <View style={s.chartPlotContainer}>
-                    <View style={s.chartTooltip}>
-                      <View style={s.chartTooltipDate}>
-                        <View style={s.chartTooltipDot} />
-                        <Text style={s.chartTooltipDateText}>
-                          {itemSeleccionado
-                            ? formatPeriodDate(itemSeleccionado.fecha, periodoGrafico === 'anio'
-                              ? { month: 'long', year: 'numeric' }
-                              : { weekday: 'short', day: 'numeric', month: 'short' })
-                            : '—'}
-                        </Text>
-                      </View>
-                      <View style={s.chartTooltipValue}>
-                        <Text style={s.chartTooltipTotal}>{fmt(itemSeleccionado?.total)}</Text>
-                        <Text style={s.chartTooltipOrders}>
-                          {itemSeleccionado?.ordenes
-                            ? `${itemSeleccionado.ordenes} orden(es)`
-                            : itemSeleccionado?.esHoy ? 'Hoy (en curso)' : 'Sin ventas'}
-                        </Text>
-                      </View>
-                    </View>
-                    <Svg width={anchoGrafico} height={altoGrafico} viewBox={`0 0 ${anchoGrafico} ${altoGrafico}`}>
-                      <Defs>
-                        <SvgLinearGradient id="salesBarGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                          <Stop offset="0%" stopColor={darkMode ? '#E05A7A' : '#9B2648'} />
-                          <Stop offset="100%" stopColor={PRIMARY} />
-                        </SvgLinearGradient>
-                        <SvgLinearGradient id="salesBarTodayGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                          <Stop offset="0%" stopColor={colorHoyGrafico} />
-                          <Stop offset="100%" stopColor={darkMode ? '#B8960C' : '#B89120'} />
-                        </SvgLinearGradient>
-                        <SvgLinearGradient id="salesBarSelectedGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                          <Stop offset="0%" stopColor={darkMode ? '#F87171' : '#D4AF37'} />
-                          <Stop offset="100%" stopColor={darkMode ? colorGrafico : '#B89120'} />
-                        </SvgLinearGradient>
-                      </Defs>
-                      {[32, 87, baseGrafico].map((y, index) => {
-                        const valor = maxTotalGrafico * (1 - index * 0.5);
-                        return (
-                          <React.Fragment key={`bar-grid-${y}`}>
-                            <Path
-                              d={`M 32 ${y} L ${anchoGrafico - 10} ${y}`}
-                              fill="none"
-                              stroke={colorCuadriculaGrafico}
-                              strokeWidth={index === 2 ? 1.2 : 1}
-                              strokeDasharray={index === 2 ? undefined : '4 5'}
-                            />
-                            <SvgText x={4} y={y + 4} fill={colorEjeGrafico} fontSize={9} fontWeight="600">
-                              ${formatoEje(valor)}
-                            </SvgText>
-                          </React.Fragment>
-                        );
-                      })}
-                      {periodosGrafico.items.map((item, index) => {
-                        const punto = puntosGrafico[index];
-                        const valorAltura = (item.total / maxTotalGrafico) * 110;
-                        const altura = Math.max(item.total > 0 ? 8 : 5, valorAltura);
-                        const anchoBarra = periodoGrafico === 'mes' ? 5 : 16;
-                        const color = indiceSeleccionado === index
-                          ? 'url(#salesBarSelectedGradient)'
-                          : item.esHoy ? 'url(#salesBarTodayGradient)' : 'url(#salesBarGradient)';
-                        return (
-                          <React.Fragment key={`${periodoGrafico}-barra-${item.label}`}>
-                            <Rect
-                              x={punto.x - anchoBarra / 2}
-                              y={32}
-                              width={anchoBarra}
-                              height={baseGrafico - 32}
-                              rx={Math.min(3, anchoBarra / 2)}
-                              fill={darkMode ? '#3A3A3A' : '#F4F0EC'}
-                            />
-                            <Rect
-                              x={punto.x - anchoBarra / 2}
-                              y={baseGrafico - altura}
-                              width={anchoBarra}
-                              height={altura}
-                              rx={Math.min(3, anchoBarra / 2)}
-                              fill={color}
-                              onPress={() => setIndiceSeleccionado(index)}
-                            />
-                            {item.total > 0 ? (
-                              <SvgText
-                                x={punto.x}
-                                y={baseGrafico - altura - 5}
-                                fill={colorEjeGrafico}
-                                fontSize={periodoGrafico === 'mes' ? 7 : 8}
-                                fontWeight="600"
-                                textAnchor="middle"
-                              >
-                                {item.total >= 1000 ? `$${Math.round(item.total / 1000)}k` : `$${Math.round(item.total)}`}
-                              </SvgText>
-                            ) : null}
-                          </React.Fragment>
-                        );
-                      })}
-                      {periodosGrafico.items.map((item, index) => (
-                        <Circle
-                          key={`${periodoGrafico}-barra-hit-${item.label}`}
-                          cx={puntosGrafico[index].x}
-                          cy={baseGrafico - 4}
-                          r={12}
-                          fill="transparent"
-                          onPress={() => setIndiceSeleccionado(index)}
-                        />
-                      ))}
-                    </Svg>
-                    <View style={[s.chartAxisLabels, { width: anchoGrafico }]}>
-                      {periodosGrafico.items.map((item, index) => (
-                        periodoGrafico !== 'mes' || index === 0 || (index + 1) % 5 === 0 || index === periodosGrafico.items.length - 1
-                          ? (
-                            <TouchableOpacity
-                              key={`${periodoGrafico}-barra-etiqueta-${item.label}`}
-                              style={[s.chartAxisLabel, { left: puntosGrafico[index]?.x ?? 0, transform: [{ translateX: -18 }] }]}
-                              onPress={() => setIndiceSeleccionado(index)}
-                              accessibilityRole="button"
-                              accessibilityLabel={`${item.label}: ${fmt(item.total)}, ${item.ordenes} órdenes`}
-                            >
-                              <Text style={[s.chartLabel, item.esHoy && s.chartLabelToday]}>{item.label}</Text>
-                              {item.esHoy && <Text style={s.chartTodayLabel}>HOY</Text>}
-                            </TouchableOpacity>
-                          )
-                          : null
-                      ))}
-                    </View>
-                  </View>
-                )
-              )}
+              ) : renderGraficoVentas()}
               <View style={s.chartFooter}>
                 <Text style={s.chartFooterText}>Mostrando órdenes de tu tienda en {periodosGrafico.titulo}</Text>
                 <TouchableOpacity onPress={() => navigation.navigate('VentasVendedor')}>
