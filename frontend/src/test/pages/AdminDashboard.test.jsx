@@ -43,6 +43,7 @@ vi.mock('../../services/api', () => ({
     }),
     post: vi.fn(() => Promise.resolve({ data: {} })),
     put:  vi.fn(() => Promise.resolve({ data: {} })),
+    patch: vi.fn(() => Promise.resolve({ data: {} })),
     delete: vi.fn(() => Promise.resolve({ data: {} })),
   },
   getApiBaseUrl: vi.fn(() => 'http://localhost:8000'),
@@ -168,5 +169,55 @@ describe('AdminDashboard — acceso de rol', () => {
       // El componente llama a navigate('/') si el rol no es admin
       expect(mockNavigate).toHaveBeenCalledWith('/')
     })
+  })
+})
+
+describe('AdminDashboard — gestión de reclamos', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('valida y envía la respuesta de resolución de un reclamo', async () => {
+    const user = userEvent.setup()
+    const { default: api } = await import('../../services/api')
+    const { notify } = await import('../../components/ToastProvider')
+    const reclamo = {
+      id_solicitud: 42,
+      id_orden: 18,
+      tipo_solicitud: 'reclamo',
+      estado: 'Abierto',
+      asunto: 'Producto dañado',
+      titulo_libro: 'Libro averiado',
+      comprador: 'Ana Compradora',
+      nombre_tienda: 'Librería Central',
+      descripcion: 'El libro llegó con la portada rota.',
+    }
+
+    api.get.mockImplementation((url) => Promise.resolve({
+      data: url === '/quejas/admin/todas'
+        ? [reclamo]
+        : url === '/perfil/mi-perfil'
+          ? { nombre_usuario: 'Admin Test', correo_usuario: 'admin@test.com' }
+          : [],
+    }))
+
+    renderAdmin()
+    await user.click(await screen.findByText(/^Quejas y reclamos$/i))
+    await user.click(await screen.findByRole('button', { name: /Reclamo #42/ }))
+    await user.click(screen.getByRole('button', { name: 'Resolver reclamo' }))
+
+    const responseField = screen.getByLabelText('Respuesta o resolución para el usuario:')
+    await user.click(screen.getByRole('button', { name: 'Resolver y notificar' }))
+    expect(notify).toHaveBeenCalledWith('La respuesta debe tener al menos 3 caracteres', 'error')
+    expect(api.patch).not.toHaveBeenCalled()
+
+    await user.type(responseField, 'Se gestionó el reembolso del pedido.')
+    await user.click(screen.getByRole('button', { name: 'Resolver y notificar' }))
+
+    await waitFor(() => {
+      expect(api.patch).toHaveBeenCalledWith('/quejas/admin/42', {
+        estado: 'Resuelto',
+        respuesta: 'Se gestionó el reembolso del pedido.',
+      })
+    })
+    expect(notify).toHaveBeenCalledWith('Solicitud actualizada y usuario notificado', 'success')
   })
 })

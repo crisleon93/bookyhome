@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import SeccionCarrito from '../../components/dashboard/SeccionCarrito'
 import SeccionMisCompras from '../../components/dashboard/SeccionMisCompras'
 import SeccionNotificaciones from '../../components/dashboard/SeccionNotificaciones'
-import api, { getCarrito, getDevoluciones, getDirecciones, getOrden, getOrdenes, removeFromCart } from '../../services/api'
+import api, { checkoutCarrito, getCarrito, getDevoluciones, getDirecciones, getOrden, getOrdenes, removeFromCart } from '../../services/api'
 import { notificacionesService } from '../../services/notificaciones'
 import { notify } from '../../components/ToastProvider'
 
@@ -104,6 +104,32 @@ describe('secciones de compras y notificaciones', () => {
 
     await waitFor(() => expect(removeFromCart).toHaveBeenCalledWith(33))
     expect(notify).toHaveBeenCalledWith('Libro eliminado del carrito', 'info')
+  })
+
+  it('crea una orden antes de pasar al paso de entrega y pago', async () => {
+    getCarrito.mockResolvedValue({ data: [{
+      id_libro: 33, titulo: 'Libro para pagar', precio_libro: 14000, cantidad: 1,
+    }] })
+    checkoutCarrito.mockResolvedValue({
+      data: {
+        ok: true,
+        order: { id_orden: 77, estado: 'pendiente', tipo_entrega: 'domicilio', total: 14000 },
+      },
+    })
+    getOrden.mockResolvedValue({
+      data: { id_orden: 77, estado: 'pendiente', tipo_entrega: 'domicilio', total: 14000 },
+    })
+
+    render(<SeccionCarrito userId={7} />)
+    await screen.findAllByText('Libro para pagar')
+    fireEvent.click(screen.getByRole('button', { name: /Continuar con el pago/ }))
+
+    expect(await screen.findByText('2. Entrega y Pago')).toBeTruthy()
+    expect(checkoutCarrito).toHaveBeenCalledWith({
+      id_direccion: null,
+      tipo_entrega: 'domicilio',
+    })
+    expect(getOrden).toHaveBeenCalledWith(77)
   })
 
   it('filtra compras por libro y abre el detalle actualizado de una orden', async () => {
