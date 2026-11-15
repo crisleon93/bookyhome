@@ -5,3 +5,6 @@ overrides:
   '@xmldom/xmldom': 0.9.12
   # Mantener node-forge en una versión con la corrección de ReDoS.
   node-forge: 1.4.3
+  js-yaml@^3: 3.15.2
+  js-yaml@^4: 4.3.2
+  postcss: 8.5.32
