@@ -2,7 +2,7 @@
  * Chat.test.jsx — Tests de lógica pura de Chat.jsx del frontend.
  */
 
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import Chat from '../../pages/Chat'
 
@@ -239,5 +239,65 @@ describe('Chat (frontend) — pantalla', () => {
     await waitFor(() => {
       expect(chatService.enviarMensaje).toHaveBeenCalledWith(1, 'Gracias por responder')
     })
+  })
+
+  it('fija y añade a favoritos una conversación desde el menú contextual', async () => {
+    const { chatService } = await import('../../services/chat')
+    const { notify } = await import('../../components/ToastProvider')
+    chatService.getSalas.mockResolvedValueOnce({
+      salas: [{
+        id_sala: 1,
+        nombre_tienda: 'Librería Central',
+        ultimo_mensaje: 'Último mensaje',
+        no_leidos: 0,
+      }],
+    })
+
+    render(<Chat />)
+    await screen.findAllByText('Librería Central')
+    const sala = screen.getAllByText('Librería Central')[0].closest('.sala-item')
+    fireEvent.contextMenu(sala, { clientX: 40, clientY: 40 })
+    fireEvent.click(screen.getByRole('button', { name: 'Fijar chat' }))
+
+    expect(JSON.parse(localStorage.getItem('bkh_chats_fijados'))).toEqual([1])
+    expect(notify).toHaveBeenCalledWith('Chat fijado al inicio', 'success')
+
+    fireEvent.contextMenu(sala, { clientX: 40, clientY: 40 })
+    fireEvent.click(screen.getByRole('button', { name: 'Añadir a Favoritos' }))
+    expect(JSON.parse(localStorage.getItem('bkh_chats_favoritos'))).toEqual([1])
+    expect(notify).toHaveBeenCalledWith('Añadido a favoritos', 'success')
+  })
+
+  it('elimina un mensaje desde sus opciones y conserva la conversación', async () => {
+    const { chatService } = await import('../../services/chat')
+    const { notify } = await import('../../components/ToastProvider')
+    chatService.getSalas.mockResolvedValueOnce({
+      salas: [{
+        id_sala: 1,
+        nombre_tienda: 'Librería Central',
+        ultimo_mensaje: 'Mensaje para borrar',
+        no_leidos: 0,
+      }],
+    })
+    chatService.obtenerMensajes.mockResolvedValueOnce({
+      mensajes: [{
+        id_mensaje: 21,
+        id_remitente: 1,
+        mensaje: 'Mensaje para borrar',
+        enviado_en: new Date().toISOString(),
+      }],
+    })
+
+    render(<Chat />)
+    await screen.findByText('Mensaje para borrar', { selector: '.mensaje-texto' })
+    const message = document.querySelector('.chat-mensajes .mensaje')
+    fireEvent.click(within(message).getByTitle('Más opciones'))
+    fireEvent.click(screen.getByRole('button', { name: 'Eliminar' }))
+
+    await waitFor(() => {
+      expect(document.querySelector('.chat-mensajes .mensaje-texto')).toBeNull()
+    })
+    expect(screen.getAllByText('Librería Central').length).toBeGreaterThan(0)
+    expect(notify).toHaveBeenCalledWith('Mensaje eliminado ✓', 'success')
   })
 })

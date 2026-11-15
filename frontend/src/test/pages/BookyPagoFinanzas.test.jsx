@@ -3,8 +3,10 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
+import api from '../../services/api'
+import BookyPagoFinanzas from '../../pages/BookyPagoFinanzas'
 
 vi.mock('../../services/api', () => ({
   default: {
@@ -133,5 +135,59 @@ describe('BookyPagoFinanzas — cálculos de resumen', () => {
     expect(porTipo.venta).toBe(2)
     expect(porTipo.plan).toBe(1)
     expect(porTipo.impulso).toBe(1)
+  })
+})
+
+describe('BookyPagoFinanzas — datos financieros', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('muestra historial y permite filtrar la gráfica por ventas', async () => {
+    const hoy = new Date().toISOString()
+    api.get.mockImplementation((url) => Promise.resolve({
+      data: url.endsWith('/balance')
+        ? {
+            balance: 140,
+            ingresos_totales: 140,
+            pagos_totales: 0,
+            ingresos_por_tipo: { venta: 100, plan: 25, impulso: 15 },
+          }
+        : url.endsWith('/estadisticas')
+          ? {
+              estadisticas: {
+                ingresos_30_dias: 100,
+                promedio_diario: 3.33,
+                ventas_totales: 1,
+                planes_activos: 1,
+                impulsos_comprados: 1,
+              },
+            }
+          : {
+              historial: {
+                ingresos: [{
+                  id: 1,
+                  tipo: 'venta',
+                  fecha: hoy,
+                  comision: 100,
+                  monto_venta: 1000,
+                  estado: 'completado',
+                }],
+                pagos: [],
+              },
+            },
+    }))
+
+    render(<MemoryRouter><BookyPagoFinanzas /></MemoryRouter>)
+    await screen.findByText('Desglose de Ingresos')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Historial' }))
+    expect(await screen.findByText('Historial Financiero · Últimos 30 días')).toBeInTheDocument()
+    expect(screen.getByText('Ingresos registrados')).toBeInTheDocument()
+    expect(screen.getByText('Venta')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Estadísticas' }))
+    fireEvent.click(screen.getByRole('button', { name: /Ventas/ }))
+    expect(screen.getByText(/Ventas · últimos 30 días/)).toBeInTheDocument()
+    expect(screen.getByText('Período total')).toBeInTheDocument()
+    expect(api.get).toHaveBeenCalledTimes(3)
   })
 })
