@@ -2,7 +2,7 @@
  * Chat.test.jsx — Tests de lógica pura de Chat.jsx del frontend.
  */
 
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import Chat from '../../pages/Chat'
 
@@ -198,6 +198,7 @@ describe('Chat (frontend) — pantalla', () => {
 
   afterEach(() => {
     cleanup()
+    vi.useRealTimers()
     vi.unstubAllGlobals()
   })
 
@@ -374,5 +375,109 @@ describe('Chat (frontend) — pantalla', () => {
     const wasChecked = enterToSend.checked
     fireEvent.click(enterToSend)
     expect(enterToSend.checked).toBe(!wasChecked)
+  })
+
+  it('actualiza el progreso de una nota de voz al mover el scrubber, pausar y terminar', async () => {
+    const { chatService } = await import('../../services/chat')
+    chatService.getSalas.mockResolvedValueOnce({
+      salas: [{
+        id_sala: 1,
+        nombre_tienda: 'Librería Central',
+        ultimo_mensaje: 'Nota de voz',
+        no_leidos: 0,
+      }],
+    })
+    chatService.obtenerMensajes.mockResolvedValueOnce({
+      mensajes: [{
+        id_mensaje: 41,
+        id_remitente: 1,
+        mensaje: '[AUDIO]{"url":"https://example.test/voice.mp3","duracion":"0:10","seg":10}',
+        enviado_en: new Date().toISOString(),
+        mensaje_leido: '1',
+      }],
+    })
+
+    let audio
+    vi.stubGlobal('Audio', class {
+      constructor(url) {
+        this.url = url
+        this.currentTime = 0
+        this.ended = false
+        this.pause = vi.fn()
+        this.play = vi.fn().mockResolvedValue(undefined)
+        this.onended = null
+        audio = this
+      }
+    })
+
+    render(<Chat />)
+    await screen.findByText('0:10')
+    expect(screen.getByTitle('Visto')).toBeInTheDocument()
+    const slider = screen.getByRole('slider', { name: 'Barra de progreso de audio' })
+    slider.getBoundingClientRect = () => ({ left: 10, width: 100 })
+    fireEvent.click(slider, { clientX: 45 })
+    expect(slider).toHaveAttribute('aria-valuenow', '35')
+
+    vi.useFakeTimers()
+    fireEvent.click(screen.getByTitle('Reproducir nota de voz'))
+    expect(audio.url).toBe('https://example.test/voice.mp3')
+    expect(audio.currentTime).toBe(3.5)
+    expect(audio.play).toHaveBeenCalledOnce()
+
+    act(() => {
+      audio.currentTime = 6
+      vi.advanceTimersByTime(50)
+    })
+    expect(slider).toHaveAttribute('aria-valuenow', '60')
+    expect(screen.getByText('0:06')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByTitle('Pausar nota de voz'))
+    expect(audio.pause).toHaveBeenCalledOnce()
+    fireEvent.click(screen.getByTitle('Reproducir nota de voz'))
+    act(() => audio.onended())
+    expect(slider).toHaveAttribute('aria-valuenow', '0')
+    expect(screen.getByText('0:10')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByTitle('Reproducir nota de voz'))
+    act(() => {
+      audio.currentTime = 10
+      vi.advanceTimersByTime(50)
+    })
+    expect(slider).toHaveAttribute('aria-valuenow', '0')
+    expect(screen.getByTitle('Reproducir nota de voz')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByTitle('Reproducir nota de voz'))
+    act(() => {
+      audio.currentTime = 1
+      audio.ended = true
+      vi.advanceTimersByTime(50)
+    })
+    expect(slider).toHaveAttribute('aria-valuenow', '0')
+  })
+
+  it('muestra los estados pendiente, entregado y enviado para mensajes propios', async () => {
+    const { chatService } = await import('../../services/chat')
+    chatService.getSalas.mockResolvedValueOnce({
+      salas: [{
+        id_sala: 1,
+        nombre_tienda: 'Librería Central',
+        ultimo_mensaje: 'Estados',
+        no_leidos: 0,
+      }],
+    })
+    chatService.obtenerMensajes.mockResolvedValueOnce({
+      mensajes: [
+        { id_mensaje: 51, id_remitente: 1, mensaje: 'Pendiente', pendiente: true },
+        { id_mensaje: 52, id_remitente: 1, mensaje: 'Entregado', entregado: 1 },
+        { id_mensaje: 53, id_remitente: 1, mensaje: 'Enviado' },
+      ],
+    })
+
+    render(<Chat />)
+    await screen.findByText('Pendiente')
+
+    expect(screen.getByTitle('Enviando...')).toBeInTheDocument()
+    expect(screen.getByTitle('Entregado')).toBeInTheDocument()
+    expect(screen.getByTitle('Enviado')).toBeInTheDocument()
   })
 })
