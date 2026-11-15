@@ -106,12 +106,16 @@ describe('AdminHome', () => {
   });
 
   it('filtra usuarios por búsqueda, rol normalizado y estado', () => {
+    const users = [
+      ...data.usuarios,
+      { nombre_usuario: 'Usuario sin rol', correo_usuario: 'sin-rol@example.test' },
+    ];
     expect(getSectionItems({
-      activeSection: 'usuarios', data, query: 'ana', role: 'admin',
+      activeSection: 'usuarios', data: { ...data, usuarios: users }, query: 'ana', role: 'admin',
       userStatus: 'Activo', category: 'todas', storeStatus: 'todos', orderStatus: 'todos',
     })).toEqual([data.usuarios[0]]);
     expect(getSectionItems({
-      activeSection: 'usuarios', data, query: '', role: 'vendedor',
+      activeSection: 'usuarios', data: { ...data, usuarios: users }, query: '', role: 'vendedor',
       userStatus: 'Bloqueado', category: 'todas', storeStatus: 'todos', orderStatus: 'todos',
     })).toEqual([data.usuarios[1]]);
     expect(getSectionItems({
@@ -140,6 +144,36 @@ describe('AdminHome', () => {
       activeSection: 'tiendas', data, query: '456', role: 'todos',
       userStatus: 'todos', category: 'todas', storeStatus: 'todos', orderStatus: 'todos',
     })).toEqual([data.tiendas[1]]);
+  });
+
+  it('aplica todos los filtros de estado de tienda y conserva estados desconocidos', () => {
+    const stores = [
+      { id_tienda: 1, estado_tienda: 'habilitada' },
+      { id_tienda: 2, estado_tienda: 'por revisar' },
+      { id_tienda: 3, estado_tienda: 'en vacaciones' },
+      { id_tienda: 4, estado_tienda: 'pausada' },
+      { id_tienda: 5, estado_tienda: 'inactivo' },
+      { id_tienda: 6, estado_tienda: 'otro estado' },
+      { id_tienda: 7 },
+    ];
+    const getStoresByStatus = (storeStatus) => getSectionItems({
+      activeSection: 'tiendas',
+      data: { ...data, tiendas: stores },
+      query: '',
+      role: 'todos',
+      userStatus: 'todos',
+      category: 'todas',
+      storeStatus,
+      orderStatus: 'todos',
+    }).map((store) => store.id_tienda);
+
+    expect(getStoresByStatus('activa')).toEqual([1]);
+    expect(getStoresByStatus('pendiente')).toEqual([2]);
+    expect(getStoresByStatus('vacaciones')).toEqual([3]);
+    expect(getStoresByStatus('suspendida')).toEqual([4]);
+    expect(getStoresByStatus('inactiva')).toEqual([5]);
+    expect(getStoresByStatus('desconocido'))
+      .toEqual(stores.slice().reverse().map((store) => store.id_tienda));
   });
 
   it('ordena órdenes por fecha e identifica el estado filtrado', () => {

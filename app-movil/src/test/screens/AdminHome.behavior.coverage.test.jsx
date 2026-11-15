@@ -17,6 +17,8 @@ import {
   ocultarLibroAdmin,
 } from '../../services/api'
 
+const platformState = vi.hoisted(() => ({ os: 'web' }))
+
 vi.mock('react-native', async () => {
   const ReactModule = await vi.importActual('react')
   const element = (tag) => function NativeElement({
@@ -57,6 +59,7 @@ vi.mock('react-native', async () => {
       return ReactModule.createElement('img', {
         src: source?.uri || source,
         alt: accessibilityLabel || '',
+        onError: props.onError,
       })
     }
     return ReactModule.createElement(tag, {
@@ -94,7 +97,7 @@ vi.mock('react-native', async () => {
         children,
       )
       : null,
-    Platform: { OS: 'web' },
+    Platform: { get OS() { return platformState.os } },
     RefreshControl: ({ onRefresh }) => ReactModule.createElement(
       'button',
       { type: 'button', onClick: onRefresh },
@@ -258,7 +261,10 @@ describe('AdminHome: flujos de administración', () => {
     eliminarLibroAdmin.mockResolvedValue({ data: {} })
   })
 
-  afterEach(cleanup)
+  afterEach(() => {
+    cleanup()
+    platformState.os = 'web'
+  })
 
   it('carga métricas, filtra usuarios y actualiza el estado desde la ficha', async () => {
     render(<AdminHome />)
@@ -491,5 +497,118 @@ describe('AdminHome: flujos de administración', () => {
     fireEvent.click(screen.getByText('Abrir menú'))
     fireEvent.click(screen.getByRole('button', { name: 'Cerrar sesión' }))
     expect(signOut).toHaveBeenCalledOnce()
+  })
+
+  it('resuelve fotos de usuario remotas y de perfil, y usa iniciales ante rutas inválidas o errores', async () => {
+    getAdminUsuarios.mockResolvedValueOnce({
+      data: [
+        { ...fixtures.usuarios[0], foto_perfil: ' https://cdn.example.test/ana.jpg ' },
+        { ...fixtures.usuarios[1], foto_perfil: '/uploads/perfiles/luis.jpg' },
+        { id_usuario: 3, nombre_usuario: 'María López', rol: 'comprador', foto_perfil: '/otra-ruta/maria.jpg' },
+        { id_usuario: 4, nombre_usuario: 'Nora Díaz', rol: 'comprador', foto_perfil: { url: 'foto' } },
+        { id_usuario: 5, nombre_usuario: 'Omar', rol: 'rol desconocido' },
+        { id_usuario: 6, rol: 'comprador', foto_perfil: 'https://cdn.example.test/sin-nombre.jpg' },
+      ],
+    })
+    render(<AdminHome />)
+    fireEvent.click(await screen.findByText('Usuarios Totales'))
+
+    const remotePhoto = screen.getByAltText('Foto de perfil de Ana Compradora')
+    expect(remotePhoto.getAttribute('src')).toBe('https://cdn.example.test/ana.jpg')
+    expect(screen.getByAltText('Foto de perfil de Luis Vendedor').getAttribute('src'))
+      .toBe('https://api.example.test/uploads/perfiles/luis.jpg')
+    expect(screen.getByText('ML')).toBeTruthy()
+    expect(screen.getByText('ND')).toBeTruthy()
+
+    fireEvent.error(remotePhoto)
+    expect(screen.getByText('AC')).toBeTruthy()
+    expect(screen.queryByAltText('Foto de perfil de Ana Compradora')).toBeNull()
+    fireEvent.error(screen.getByAltText('Foto de perfil de usuario'))
+    expect(screen.getByText('?')).toBeTruthy()
+  })
+
+  it('renderiza las iniciales en un componente de texto fuera de web', async () => {
+    platformState.os = 'ios'
+    getAdminUsuarios.mockResolvedValueOnce({
+      data: [{ id_usuario: 7, nombre_usuario: 'Ana Test', rol: 'comprador' }],
+    })
+    render(<AdminHome />)
+
+    fireEvent.click(await screen.findByText('Usuarios Totales'))
+    expect(screen.getByText('AT')).toBeTruthy()
+  })
+
+  it('mantiene valores de respaldo para roles, estados y solicitudes sin clasificación', async () => {
+    getAdminUsuarios.mockResolvedValueOnce({
+      data: [{ id_usuario: 15, nombre_usuario: 'Usuario sin rol' }],
+    })
+    getAdminTiendas.mockResolvedValueOnce({
+      data: [{ id_tienda: 16, nombre_tienda: 'Librería sin estado' }],
+    })
+    getAdminSolicitudes.mockResolvedValueOnce({
+      data: [
+        { tipo_solicitud: 'Reclamo', estado: 'Cerrado' },
+        { tipo_solicitud: 'Soporte', estado: 'Resuelto' },
+        { tipo_solicitud: 'Soporte' },
+      ],
+    })
+    render(<AdminHome />)
+
+    expect(await screen.findByText('Usuario sin rol')).toBeTruthy()
+    expect(screen.getByText('Librería sin estado')).toBeTruthy()
+    fireEvent.click(screen.getByText('Abrir menú'))
+    fireEvent.click(screen.getByRole('button', { name: 'Admin: soporte' }))
+    expect(await screen.findByText('Solicitudes: soporte')).toBeTruthy()
+  })
+
+  it('resuelve portadas remotas y relativas, y muestra el recurso alternativo cuando falla la imagen', async () => {
+    getAdminLibros.mockResolvedValueOnce({
+      data: [
+        { ...fixtures.libros[0], imagen: 'https://cdn.example.test/libro.jpg' },
+        { id_libro: 6, titulo: 'Libro relativo', imagen: '/uploads/libros/relativo.jpg' },
+        { id_libro: 7, imagen: 'https://cdn.example.test/sin-titulo.jpg' },
+      ],
+    })
+    render(<AdminHome />)
+    fireEvent.click(await screen.findByText('Libros Publicados'))
+
+    const remoteCover = screen.getByAltText('Portada de Libro visible')
+    expect(remoteCover.getAttribute('src')).toBe('https://cdn.example.test/libro.jpg')
+    expect(screen.getByAltText('Portada de Libro relativo').getAttribute('src'))
+      .toBe('https://api.example.test/uploads/libros/relativo.jpg')
+    expect(screen.getByAltText('Portada de libro').getAttribute('src'))
+      .toBe('https://cdn.example.test/sin-titulo.jpg')
+
+    fireEvent.error(remoteCover)
+    expect(screen.queryByAltText('Portada de Libro visible')).toBeNull()
+  })
+
+  it('resuelve logos de tienda y calcula iniciales si no hay imagen o esta falla', async () => {
+    getAdminTiendas.mockResolvedValueOnce({
+      data: [
+        { id_tienda: 7, nombre_tienda: 'Sol', estado_tienda: 'activa' },
+        { id_tienda: 8, estado_tienda: 'activa' },
+        { ...fixtures.tiendas[0], logo_url: 'https://cdn.example.test/tienda.jpg' },
+        { id_tienda: 9, nombre_tienda: 'Librería Dos Palabras', estado_tienda: 'pendiente', foto_tienda: '/uploads/tiendas/dos.jpg' },
+        { id_tienda: 11, nombre_tienda: 'Librería Suspendida', estado_tienda: 'suspendida' },
+        { id_tienda: 12, nombre_tienda: 'Librería en Vacaciones', estado_tienda: 'vacaciones' },
+        { id_tienda: 13, nombre_tienda: 'Librería Inactiva', estado_tienda: 'inactiva' },
+        { id_tienda: 14, nombre_tienda: 'Librería con estado nuevo', estado_tienda: 'otro estado' },
+      ],
+    })
+    render(<AdminHome />)
+    fireEvent.click(await screen.findByText('Librerías & Tiendas'))
+
+    const remoteLogo = screen.getByAltText('Logo de Librería Uno')
+    expect(remoteLogo.getAttribute('src')).toBe('https://cdn.example.test/tienda.jpg')
+    expect(screen.getByAltText('Logo de Librería Dos Palabras').getAttribute('src'))
+      .toBe('https://api.example.test/uploads/tiendas/dos.jpg')
+    expect(screen.getByText('SO')).toBeTruthy()
+    expect(screen.getAllByText('LI')).toHaveLength(2)
+    expect(screen.getByText('LC')).toBeTruthy()
+
+    fireEvent.error(remoteLogo)
+    expect(screen.getByText('LU')).toBeTruthy()
+    expect(screen.queryByAltText('Logo de Librería Uno')).toBeNull()
   })
 })
