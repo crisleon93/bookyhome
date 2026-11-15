@@ -4,7 +4,9 @@ import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
   ActivityIndicator, RefreshControl, Image, Modal, TextInput, Alert, useWindowDimensions,
 } from 'react-native';
-import Svg, { Circle, Path, Rect, Text as SvgText } from 'react-native-svg';
+import Svg, {
+  Circle, Defs, LinearGradient as SvgLinearGradient, Path, Rect, Stop, Text as SvgText,
+} from 'react-native-svg';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -12,11 +14,21 @@ import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { AuthContext } from '../context/AuthContext';
 import { useChatSocket } from '../context/ChatSocketContext';
 import {
+  buildPeriodData,
+  dateKey,
+  fmt,
+  formatPeriodDate,
+  getBookImageUri,
+  getNotificationIcon,
+  parseSaleDate,
+} from '../utils/vendedorHome';
+import {
   getMisLibros, getStatsVendedor, getTopVendidos, getMisVentas,
   getAlertasStock, getNotifications, getLibreria, resolveImageUrl,
 } from '../services/api';
 import SidebarVendedor from '../components/SidebarVendedor';
 import Footer from '../components/Footer';
+import { useAppTheme } from '../context/ThemeContext';
 
 const PRIMARY   = '#7A1E3A';
 const WHITE     = '#FFFFFF';
@@ -25,55 +37,15 @@ const BORDER    = '#E5E0D8';
 const TEXT      = '#1A1A1A';
 const MUTED     = '#8A8A8A';
 const SUCCESS   = '#16A34A';
-const CHART_BLUE = '#2563EB';
 const UMBRAL_DEFAULT = 3;
 const UMBRAL_STORAGE_KEY = 'vendedor_stock_umbral';
 
-const fmt = (val) =>
-  val == null
-    ? '$0 COP'
-    : new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(Math.floor(val));
-
 const RANK_COLORS = ['#F59E0B', '#94A3B8', '#CD7C2F'];
 
-const getBookImageUri = (book) => {
-  const raw = book?.imagen_url || book?.imagen_principal || book?.imagen
-    || (Array.isArray(book?.imagenes) ? book.imagenes[0] : book?.imagenes) || book?.foto;
-  return resolveImageUrl(raw);
-};
-
-const getNotificationIcon = (type) => {
-  const normalized = String(type || '').toLowerCase();
-  if (normalized.includes('pedido') || normalized.includes('orden')) return '🛍️';
-  if (normalized.includes('pago')) return '💳';
-  if (normalized.includes('mensaje')) return '💬';
-  if (normalized.includes('entrega') || normalized.includes('envio')) return '🚚';
-  if (normalized.includes('resena')) return '⭐';
-  return '🔔';
-};
-
-const parseSaleDate = (value) => {
-  if (!value) return null;
-  if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}/.test(value)) {
-    const [year, month, day] = value.slice(0, 10).split('-').map(Number);
-    const date = new Date(year, month - 1, day);
-    return Number.isNaN(date.getTime()) ? null : date;
-  }
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? null : date;
-};
-
-const dateKey = (date) => {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-};
-
-const formatPeriodDate = (date, options) => date.toLocaleDateString('es-CO', options);
 
 export default function VendedorHome({ navigation: navProp }) {
   const s = useThemedStyles(themeBaseS);
+  const { darkMode } = useAppTheme();
   const navigation = navProp || useNavigation();
   const { width: screenWidth } = useWindowDimensions();
   const { user, signOut } = useContext(AuthContext);
@@ -158,84 +130,20 @@ export default function VendedorHome({ navigation: navProp }) {
     categorias: [...new Set(libros.map(l => l.nombre_categoria).filter(Boolean))].length,
   };
 
-  const periodosGrafico = useMemo(() => {
-    const hoy = new Date();
-    hoy.setHours(0, 0, 0, 0);
-    let inicio;
-    let cantidad;
-    let titulo;
-    let paso;
-    let etiquetas;
-
-    if (periodoGrafico === 'semana') {
-      const diaSemana = (hoy.getDay() + 6) % 7;
-      inicio = new Date(hoy);
-      inicio.setDate(hoy.getDate() - diaSemana + desplazamientoGrafico * 7);
-      cantidad = 7;
-      paso = 'dia';
-      etiquetas = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
-      const fin = new Date(inicio);
-      fin.setDate(inicio.getDate() + 6);
-      titulo = desplazamientoGrafico === 0
-        ? `Esta semana · ${formatPeriodDate(inicio, { day: 'numeric', month: 'short' })} - ${formatPeriodDate(fin, { day: 'numeric', month: 'short' })}`
-        : `${formatPeriodDate(inicio, { day: 'numeric', month: 'short' })} - ${formatPeriodDate(fin, { day: 'numeric', month: 'short', year: 'numeric' })}`;
-    } else if (periodoGrafico === 'mes') {
-      const mes = new Date(hoy.getFullYear(), hoy.getMonth() + desplazamientoGrafico, 1);
-      inicio = mes;
-      cantidad = new Date(mes.getFullYear(), mes.getMonth() + 1, 0).getDate();
-      paso = 'dia';
-      etiquetas = Array.from({ length: cantidad }, (_, index) => String(index + 1));
-      titulo = formatPeriodDate(mes, { month: 'long', year: 'numeric' });
-      titulo = desplazamientoGrafico === 0 ? `Este mes · ${titulo}` : titulo;
-    } else {
-      const anio = hoy.getFullYear() + desplazamientoGrafico;
-      inicio = new Date(anio, 0, 1);
-      cantidad = 12;
-      paso = 'mes';
-      etiquetas = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-      titulo = desplazamientoGrafico === 0 ? `Este año · ${anio}` : `Año ${anio}`;
-    }
-
-    const totales = new Map();
-    (Array.isArray(ventas) ? ventas : []).forEach((venta) => {
-      const fecha = parseSaleDate(venta.fecha);
-      if (!fecha) return;
-      const clave = paso === 'dia'
-        ? dateKey(fecha)
-        : `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}`;
-      const agregado = totales.get(clave) || { total: 0, ordenes: new Set() };
-      agregado.total += Number(venta.total) || 0;
-      if (venta.id_orden != null) agregado.ordenes.add(venta.id_orden);
-      totales.set(clave, agregado);
-    });
-
-    const items = Array.from({ length: cantidad }, (_, index) => {
-      const fecha = new Date(inicio);
-      if (paso === 'dia') fecha.setDate(inicio.getDate() + index);
-      else fecha.setMonth(index);
-      const clave = paso === 'dia'
-        ? dateKey(fecha)
-        : `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}`;
-      const agregado = totales.get(clave);
-      const esHoy = paso === 'mes'
-        ? fecha.getFullYear() === hoy.getFullYear() && fecha.getMonth() === hoy.getMonth()
-        : dateKey(fecha) === dateKey(hoy);
-      return {
-        label: etiquetas[index],
-        fecha,
-        total: agregado?.total || 0,
-        ordenes: agregado?.ordenes.size || 0,
-        esHoy,
-      };
-    });
-
-    return { titulo, items };
-  }, [ventas, periodoGrafico, desplazamientoGrafico]);
+  const periodosGrafico = useMemo(
+    () => buildPeriodData(ventas, periodoGrafico, desplazamientoGrafico),
+    [ventas, periodoGrafico, desplazamientoGrafico],
+  );
 
   const itemSeleccionado = indiceSeleccionado == null
     ? periodosGrafico.items.find((item) => item.esHoy) || periodosGrafico.items[0]
     : periodosGrafico.items[indiceSeleccionado] || periodosGrafico.items[0];
   const maxTotalGrafico = Math.max(50000, ...periodosGrafico.items.map((item) => item.total));
+  const colorGrafico = darkMode ? '#E05A7A' : PRIMARY;
+  const colorEjeGrafico = darkMode ? '#888888' : MUTED;
+  const colorCuadriculaGrafico = darkMode ? '#3A3A3A' : BORDER;
+  const colorFondoGrafico = darkMode ? '#1E1E1E' : WHITE;
+  const colorHoyGrafico = '#D4AF37';
   const anchoVisibleGrafico = Math.max(280, screenWidth - 56);
   const anchoGrafico = anchoVisibleGrafico;
   const altoGrafico = 176;
@@ -246,13 +154,16 @@ export default function VendedorHome({ navigation: navProp }) {
       : anchoGrafico / 2,
     y: baseGrafico - (item.total / maxTotalGrafico) * 110,
   }));
-  const lineaGrafico = puntosGrafico.map((punto, index) =>
-    `${index === 0 ? 'M' : 'L'} ${punto.x} ${punto.y}`
-  ).join(' ');
+  const lineaGrafico = puntosGrafico.reduce((path, punto, index) => {
+    if (index === 0) return `M ${punto.x} ${punto.y}`;
+    const anterior = puntosGrafico[index - 1];
+    const medio = (anterior.x + punto.x) / 2;
+    return `${path} C ${medio} ${anterior.y}, ${medio} ${punto.y}, ${punto.x} ${punto.y}`;
+  }, '');
   const areaGrafico = puntosGrafico.length
     ? `${lineaGrafico} L ${puntosGrafico[puntosGrafico.length - 1].x} ${baseGrafico} L ${puntosGrafico[0].x} ${baseGrafico} Z`
     : '';
-  const formatoEje = (value) => value >= 1000000
+  const formatoEje = (value) => value === 0 ? '0k' : value >= 1000000
     ? `${(value / 1000000).toFixed(value % 1000000 === 0 ? 0 : 1)}M`
     : value >= 1000 ? `${Math.round(value / 1000)}k` : String(Math.round(value));
   const totalPeriodo = periodosGrafico.items.reduce((total, item) => total + item.total, 0);
@@ -530,27 +441,45 @@ export default function VendedorHome({ navigation: navProp }) {
                               <Path
                                 d={`M 32 ${y} L ${anchoGrafico - 10} ${y}`}
                                 fill="none"
-                                stroke={BORDER}
+                                stroke={colorCuadriculaGrafico}
                                 strokeWidth={index === 2 ? 1.2 : 1}
                                 strokeDasharray={index === 2 ? undefined : '4 5'}
                               />
-                              <SvgText x={4} y={y + 4} fill={MUTED} fontSize={9} fontWeight="600">
+                              <SvgText x={4} y={y + 4} fill={colorEjeGrafico} fontSize={9} fontWeight="600">
                                 ${formatoEje(valor)}
                               </SvgText>
                             </React.Fragment>
                           );
                         })}
-                        <Path d={areaGrafico} fill={CHART_BLUE} fillOpacity={0.12} />
-                        <Path d={lineaGrafico} fill="none" stroke={CHART_BLUE} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
+                        <Defs>
+                          <SvgLinearGradient id="salesAreaGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <Stop offset="0%" stopColor={colorGrafico} stopOpacity={darkMode ? 0.2 : 0.28} />
+                            <Stop offset="100%" stopColor={colorGrafico} stopOpacity={0} />
+                          </SvgLinearGradient>
+                        </Defs>
+                        <Path d={areaGrafico} fill="url(#salesAreaGradient)" />
+                        <Path d={lineaGrafico} fill="none" stroke={colorGrafico} strokeWidth={3.2} strokeLinecap="round" strokeLinejoin="round" />
                         {puntosGrafico.map((punto, index) => (
-                          <Circle
-                            key={`${periodoGrafico}-punto-${index}`}
-                            cx={punto.x}
-                            cy={punto.y}
-                            r={indiceSeleccionado === index ? 5 : periodosGrafico.items[index].esHoy ? 4 : 3}
-                            fill={indiceSeleccionado === index ? PRIMARY : CHART_BLUE}
-                            onPress={() => setIndiceSeleccionado(index)}
-                          />
+                          <React.Fragment key={`${periodoGrafico}-punto-${index}`}>
+                            {(periodosGrafico.items[index].esHoy || indiceSeleccionado === index) && (
+                              <Circle
+                                cx={punto.x}
+                                cy={punto.y}
+                                r={periodosGrafico.items[index].esHoy ? 7 : 6}
+                                fill={periodosGrafico.items[index].esHoy ? colorHoyGrafico : colorGrafico}
+                                fillOpacity={0.28}
+                              />
+                            )}
+                            <Circle
+                              cx={punto.x}
+                              cy={punto.y}
+                              r={indiceSeleccionado === index ? 5.5 : periodosGrafico.items[index].esHoy ? 4.2 : 3}
+                              fill={periodosGrafico.items[index].esHoy ? colorHoyGrafico : colorGrafico}
+                              stroke={colorFondoGrafico}
+                              strokeWidth={2}
+                              onPress={() => setIndiceSeleccionado(index)}
+                            />
+                          </React.Fragment>
                         ))}
                       </Svg>
                       <View style={[s.chartAxisLabels, { width: anchoGrafico }]}>
@@ -568,6 +497,7 @@ export default function VendedorHome({ navigation: navProp }) {
                                 accessibilityLabel={`${item.label}: ${fmt(item.total)}, ${item.ordenes} órdenes`}
                               >
                                 <Text style={[s.chartLabel, item.esHoy && s.chartLabelToday]}>{item.label}</Text>
+                                {item.esHoy && <Text style={s.chartTodayLabel}>HOY</Text>}
                               </TouchableOpacity>
                             )
                             : null
@@ -588,27 +518,45 @@ export default function VendedorHome({ navigation: navProp }) {
                                 <Path
                                   d={`M 32 ${y} L ${anchoGrafico - 10} ${y}`}
                                   fill="none"
-                                  stroke={BORDER}
+                                  stroke={colorCuadriculaGrafico}
                                   strokeWidth={index === 2 ? 1.2 : 1}
                                   strokeDasharray={index === 2 ? undefined : '4 5'}
                                 />
-                                <SvgText x={4} y={y + 4} fill={MUTED} fontSize={9} fontWeight="600">
+                                <SvgText x={4} y={y + 4} fill={colorEjeGrafico} fontSize={9} fontWeight="600">
                                   ${formatoEje(valor)}
                                 </SvgText>
                               </React.Fragment>
                             );
                           })}
-                          <Path d={areaGrafico} fill={CHART_BLUE} fillOpacity={0.12} />
-                          <Path d={lineaGrafico} fill="none" stroke={CHART_BLUE} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
+                          <Defs>
+                            <SvgLinearGradient id="salesAreaGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                              <Stop offset="0%" stopColor={colorGrafico} stopOpacity={darkMode ? 0.2 : 0.28} />
+                              <Stop offset="100%" stopColor={colorGrafico} stopOpacity={0} />
+                            </SvgLinearGradient>
+                          </Defs>
+                          <Path d={areaGrafico} fill="url(#salesAreaGradient)" />
+                          <Path d={lineaGrafico} fill="none" stroke={colorGrafico} strokeWidth={3.2} strokeLinecap="round" strokeLinejoin="round" />
                           {puntosGrafico.map((punto, index) => (
-                            <Circle
-                              key={`${periodoGrafico}-punto-${index}`}
-                              cx={punto.x}
-                              cy={punto.y}
-                              r={indiceSeleccionado === index ? 5 : periodosGrafico.items[index].esHoy ? 4 : 3}
-                              fill={indiceSeleccionado === index ? PRIMARY : CHART_BLUE}
-                              onPress={() => setIndiceSeleccionado(index)}
-                            />
+                            <React.Fragment key={`${periodoGrafico}-punto-${index}`}>
+                              {(periodosGrafico.items[index].esHoy || indiceSeleccionado === index) && (
+                                <Circle
+                                  cx={punto.x}
+                                  cy={punto.y}
+                                  r={periodosGrafico.items[index].esHoy ? 7 : 6}
+                                  fill={periodosGrafico.items[index].esHoy ? colorHoyGrafico : colorGrafico}
+                                  fillOpacity={0.28}
+                                />
+                              )}
+                              <Circle
+                                cx={punto.x}
+                                cy={punto.y}
+                                r={indiceSeleccionado === index ? 5.5 : periodosGrafico.items[index].esHoy ? 4.2 : 3}
+                                fill={periodosGrafico.items[index].esHoy ? colorHoyGrafico : colorGrafico}
+                                stroke={colorFondoGrafico}
+                                strokeWidth={2}
+                                onPress={() => setIndiceSeleccionado(index)}
+                              />
+                            </React.Fragment>
                           ))}
                         </Svg>
                         <View style={[s.chartAxisLabels, { width: anchoGrafico }]}>
@@ -621,6 +569,7 @@ export default function VendedorHome({ navigation: navProp }) {
                               accessibilityLabel={`${item.label}: ${fmt(item.total)}, ${item.ordenes} órdenes`}
                             >
                               <Text style={[s.chartLabel, item.esHoy && s.chartLabelToday]}>{item.label}</Text>
+                              {item.esHoy && <Text style={s.chartTodayLabel}>HOY</Text>}
                             </TouchableOpacity>
                           ))}
                         </View>
@@ -650,6 +599,20 @@ export default function VendedorHome({ navigation: navProp }) {
                       </View>
                     </View>
                     <Svg width={anchoGrafico} height={altoGrafico} viewBox={`0 0 ${anchoGrafico} ${altoGrafico}`}>
+                      <Defs>
+                        <SvgLinearGradient id="salesBarGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                          <Stop offset="0%" stopColor={darkMode ? '#E05A7A' : '#9B2648'} />
+                          <Stop offset="100%" stopColor={PRIMARY} />
+                        </SvgLinearGradient>
+                        <SvgLinearGradient id="salesBarTodayGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                          <Stop offset="0%" stopColor={colorHoyGrafico} />
+                          <Stop offset="100%" stopColor={darkMode ? '#B8960C' : '#B89120'} />
+                        </SvgLinearGradient>
+                        <SvgLinearGradient id="salesBarSelectedGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                          <Stop offset="0%" stopColor={darkMode ? '#F87171' : '#D4AF37'} />
+                          <Stop offset="100%" stopColor={darkMode ? colorGrafico : '#B89120'} />
+                        </SvgLinearGradient>
+                      </Defs>
                       {[32, 87, baseGrafico].map((y, index) => {
                         const valor = maxTotalGrafico * (1 - index * 0.5);
                         return (
@@ -657,11 +620,11 @@ export default function VendedorHome({ navigation: navProp }) {
                             <Path
                               d={`M 32 ${y} L ${anchoGrafico - 10} ${y}`}
                               fill="none"
-                              stroke={BORDER}
+                              stroke={colorCuadriculaGrafico}
                               strokeWidth={index === 2 ? 1.2 : 1}
                               strokeDasharray={index === 2 ? undefined : '4 5'}
                             />
-                            <SvgText x={4} y={y + 4} fill={MUTED} fontSize={9} fontWeight="600">
+                            <SvgText x={4} y={y + 4} fill={colorEjeGrafico} fontSize={9} fontWeight="600">
                               ${formatoEje(valor)}
                             </SvgText>
                           </React.Fragment>
@@ -670,13 +633,21 @@ export default function VendedorHome({ navigation: navProp }) {
                       {periodosGrafico.items.map((item, index) => {
                         const punto = puntosGrafico[index];
                         const valorAltura = (item.total / maxTotalGrafico) * 110;
-                        const altura = Math.max(2, valorAltura);
+                        const altura = Math.max(item.total > 0 ? 8 : 5, valorAltura);
                         const anchoBarra = periodoGrafico === 'mes' ? 5 : 16;
                         const color = indiceSeleccionado === index
-                          ? PRIMARY
-                          : item.esHoy ? '#D4AF37' : '#B9C9E8';
+                          ? 'url(#salesBarSelectedGradient)'
+                          : item.esHoy ? 'url(#salesBarTodayGradient)' : 'url(#salesBarGradient)';
                         return (
                           <React.Fragment key={`${periodoGrafico}-barra-${item.label}`}>
+                            <Rect
+                              x={punto.x - anchoBarra / 2}
+                              y={32}
+                              width={anchoBarra}
+                              height={baseGrafico - 32}
+                              rx={Math.min(3, anchoBarra / 2)}
+                              fill={darkMode ? '#3A3A3A' : '#F4F0EC'}
+                            />
                             <Rect
                               x={punto.x - anchoBarra / 2}
                               y={baseGrafico - altura}
@@ -690,7 +661,7 @@ export default function VendedorHome({ navigation: navProp }) {
                               <SvgText
                                 x={punto.x}
                                 y={baseGrafico - altura - 5}
-                                fill={MUTED}
+                                fill={colorEjeGrafico}
                                 fontSize={periodoGrafico === 'mes' ? 7 : 8}
                                 fontWeight="600"
                                 textAnchor="middle"
@@ -724,6 +695,7 @@ export default function VendedorHome({ navigation: navProp }) {
                               accessibilityLabel={`${item.label}: ${fmt(item.total)}, ${item.ordenes} órdenes`}
                             >
                               <Text style={[s.chartLabel, item.esHoy && s.chartLabelToday]}>{item.label}</Text>
+                              {item.esHoy && <Text style={s.chartTodayLabel}>HOY</Text>}
                             </TouchableOpacity>
                           )
                           : null
@@ -763,9 +735,9 @@ export default function VendedorHome({ navigation: navProp }) {
                   <View style={[s.rankBadge, { backgroundColor: RANK_COLORS[index] ?? '#E5E0D8' }]}>
                     <Text style={s.rankText}>#{index + 1}</Text>
                   </View>
-                  {getBookImageUri(libro) ? (
+                  {getBookImageUri(libro, resolveImageUrl) ? (
                     <Image
-                      source={{ uri: getBookImageUri(libro) }}
+                      source={{ uri: getBookImageUri(libro, resolveImageUrl) }}
                       style={s.topBookCover}
                       resizeMode="cover"
                       accessibilityLabel={`Portada de ${libro.titulo}`}
@@ -812,7 +784,7 @@ export default function VendedorHome({ navigation: navProp }) {
             ) : (
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.recentBooksRow}>
                 {libros.slice(0, 4).map((libro) => {
-                  const imageUri = getBookImageUri(libro);
+                  const imageUri = getBookImageUri(libro, resolveImageUrl);
                   const stock = Number(libro.stock) || 0;
                   const stockBajo = stock <= umbralStock;
                   return (
@@ -1089,10 +1061,11 @@ const themeBaseS = StyleSheet.create({
   chartFooterText: { color: MUTED, fontSize: 8, flexShrink: 1 },
   chartFooterLink: { color: PRIMARY, fontSize: 9, fontWeight: '800' },
   chartLabel: { color: MUTED, fontSize: 9, marginTop: 5 },
-  chartLabelToday: { color: PRIMARY, fontWeight: '800' },
+  chartLabelToday: { color: '#D4AF37', fontWeight: '800' },
   chartMessage: { color: MUTED, fontSize: 12, textAlign: 'center', padding: 20 },
-  chartAxisLabels: { position: 'relative', height: 24, paddingBottom: 8 },
+  chartAxisLabels: { position: 'relative', height: 34, paddingBottom: 8 },
   chartAxisLabel: { position: 'absolute', width: 36, alignItems: 'center' },
+  chartTodayLabel: { color: '#D4AF37', fontSize: 6, fontWeight: '800', marginTop: 1 },
   topRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 13, gap: 9 },
   rankBadge: { width: 29, height: 29, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
   rankText: { fontSize: 10, fontWeight: '900', color: WHITE },
