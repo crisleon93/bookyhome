@@ -2,4 +2,6 @@ overrides:
   # Forzar versión segura de @xmldom/xmldom en todas las dependencias transitivas.
   # 0.9.12 corrige CVE-2026-83605, CVE-2026-83606, CVE-2026-83607, CVE-2026-83608, CVE-2026-83609 y CVE-2026-83612.
   # La rama 0.9.x es compatible con plist y @expo/plist.
-  '@xmldom/xmldom': '^0.9.12'
+  '@xmldom/xmldom': 0.9.12
+  # Mantener node-forge en una versión con la corrección de ReDoS.
+  node-forge: 1.4.3
