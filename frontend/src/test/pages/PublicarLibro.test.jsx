@@ -9,6 +9,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
+import axios from '../../services/api'
 
 // ── Mocks globales ────────────────────────────────────────────────────────────
 
@@ -104,5 +105,64 @@ describe('PublicarLibro — auditoría de validaciones client-side', () => {
     // Sin huecos críticos equivalentes a password sin min_length o amount sin gt=0
     expect(huecosCriticos).toHaveLength(0)
     expect(validacionesEncontradas.length).toBeGreaterThan(0)
+  })
+
+  it('muestra errores de validación sin enviar el formulario', async () => {
+    const user = userEvent.setup()
+    axios.get.mockResolvedValue({ data: [{ id_categoria: 1, nombre_categoria: 'Ficción' }] })
+    renderPublicarLibro()
+
+    await user.click(await screen.findByRole('button', { name: 'Publicar libro' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Selecciona una categoría')
+    expect(axios.post).not.toHaveBeenCalled()
+  })
+
+  it('publica el libro con los campos y opciones del formulario', async () => {
+    const user = userEvent.setup()
+    axios.get.mockImplementation((path) => path === '/libros/categorias'
+      ? Promise.resolve({ data: [{ id_categoria: 1, nombre_categoria: 'Ficción' }] })
+      : Promise.resolve({ data: {} }))
+    renderPublicarLibro()
+
+    await user.type(await screen.findByLabelText(/Título del libro/), 'Libro de prueba')
+    await user.type(screen.getByLabelText('Autor *'), 'Autora')
+    await user.selectOptions(screen.getByLabelText('Categoría *'), '1')
+    await user.type(screen.getByLabelText(/Descripción/), 'Una descripción breve')
+    await user.click(screen.getByRole('radio', { name: /Nuevo/ }))
+    await user.type(screen.getByLabelText('Precio (COP) *'), '25000')
+    await user.type(screen.getByLabelText('Unidades disponibles *'), '2')
+    await user.click(screen.getByRole('button', { name: 'Publicar libro' }))
+
+    await waitFor(() => expect(axios.post).toHaveBeenCalledWith(
+      '/libros/publicar',
+      expect.any(FormData),
+      { headers: { 'Content-Type': 'multipart/form-data' } },
+    ))
+    expect(await screen.findByText('¡Libro publicado!')).toBeInTheDocument()
+  })
+
+  it('valida variantes digitales y permite agregar y quitar una variante física', async () => {
+    const user = userEvent.setup()
+    axios.get.mockResolvedValue({ data: [] })
+    renderPublicarLibro()
+
+    await user.click(screen.getByRole('button', { name: '+ Agregar variante' }))
+    expect(screen.getByRole('alert')).toHaveTextContent('El precio de la variante debe ser mayor a $0')
+
+    await user.selectOptions(screen.getByLabelText('Tipo'), 'Digital')
+    await user.type(screen.getByLabelText('Precio (COP)'), '10000')
+    await user.type(screen.getByLabelText('Stock'), '1')
+    await user.click(screen.getByRole('button', { name: '+ Agregar variante' }))
+    expect(screen.getByRole('alert')).toHaveTextContent('debes subir un archivo PDF o EPUB')
+
+    await user.selectOptions(screen.getByLabelText('Tipo'), 'Tapa Dura')
+    await user.clear(screen.getByLabelText('Precio (COP)'))
+    await user.type(screen.getByLabelText('Precio (COP)'), '15000')
+    await user.click(screen.getByRole('button', { name: '+ Agregar variante' }))
+    const variant = screen.getAllByText('Tapa Dura')[0].parentElement.parentElement
+    expect(variant).toHaveTextContent('Tapa Dura · Español · 1ra Edición')
+    await user.click(variant.querySelector('button'))
+    expect(screen.getAllByText('Tapa Dura')).toHaveLength(1)
   })
 })
