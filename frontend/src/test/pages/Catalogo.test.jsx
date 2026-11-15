@@ -7,7 +7,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import Catalogo from '../../pages/Catalogo'
@@ -167,6 +167,51 @@ describe('Catalogo — interacción Ver detalles', () => {
 
     await waitFor(() => {
       expect(screen.getByText(/catálogo de libros/i)).toBeInTheDocument()
+    })
+  })
+})
+
+describe('Catalogo — acciones de compra', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    localStorage.setItem('token', 'token-de-prueba')
+  })
+
+  it('agrega y quita del carrito el libro seleccionado', async () => {
+    const apiModule = await import('../../services/api')
+    const { notify } = await import('../../components/ToastProvider')
+    renderCatalogo()
+    await screen.findByTestId('librocard-1')
+    await userEvent.setup().click(screen.getAllByRole('button', { name: /ver detalles/i })[0])
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Agregar al carrito' }))
+    await waitFor(() => expect(apiModule.addToCart).toHaveBeenCalledWith(expect.objectContaining({
+      id_libro: 1,
+      cantidad: 1,
+      titulo: 'El Quijote',
+    })))
+    expect(notify).toHaveBeenCalledWith('AGREGADO AL CARRITO', 'success')
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Eliminar de carrito' }))
+    await waitFor(() => expect(apiModule.removeFromCart).toHaveBeenCalledWith(1))
+    expect(notify).toHaveBeenCalledWith('Eliminado del carrito', 'success')
+  })
+
+  it('redirige al carrito con los datos del libro al comprar ahora', async () => {
+    renderCatalogo()
+    await screen.findByTestId('librocard-1')
+    await userEvent.setup().click(screen.getAllByRole('button', { name: /ver detalles/i })[0])
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Comprar ahora' }))
+
+    expect(mockNavigate).toHaveBeenCalledWith('/?seccion=Carrito', {
+      state: {
+        buyNow: expect.objectContaining({
+          id_libro: 1,
+          cantidad: 1,
+          tipo_entrega: 'domicilio',
+        }),
+      },
     })
   })
 })

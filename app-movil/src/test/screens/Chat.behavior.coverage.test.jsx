@@ -253,4 +253,17 @@ describe('Chat móvil', () => {
     await waitFor(() => expect(screen.getAllByText('Actualización del pedido')).toHaveLength(1))
     expect(mocks.markLocalRead).toHaveBeenCalledWith(12)
   })
+
+  it('informa si falla la operación de vaciar el historial', async () => {
+    mocks.clearChat.mockRejectedValue(new Error('offline'))
+    render(withAuth(<Chat />))
+    expect(await screen.findByText('Tu pedido está listo')).toBeTruthy()
+
+    fireEvent.click(screen.getAllByRole('button')[4])
+    fireEvent.click(screen.getByText('Vaciar chat'))
+
+    await waitFor(() => expect(mocks.clearChat).toHaveBeenCalledWith(12))
+    expect(mocks.alert).toHaveBeenCalledWith('No se pudo vaciar', 'Inténtalo de nuevo.')
+    expect(screen.getByText('Tu pedido está listo')).toBeTruthy()
+  })
 })

@@ -241,6 +241,29 @@ describe('Chat (frontend) — pantalla', () => {
     })
   })
 
+  it('muestra un error visible si falla el envío del mensaje', async () => {
+    const { chatService } = await import('../../services/chat')
+    chatService.getSalas.mockResolvedValueOnce({
+      salas: [{
+        id_sala: 1,
+        nombre_tienda: 'Librería Central',
+        ultimo_mensaje: '',
+        no_leidos: 0,
+      }],
+    })
+    chatService.enviarMensaje.mockRejectedValueOnce(new Error('offline'))
+
+    render(<Chat />)
+    await screen.findAllByText('Librería Central')
+    fireEvent.change(screen.getByPlaceholderText('Escribe un mensaje'), {
+      target: { value: 'Mensaje sin conexión' },
+    })
+    fireEvent.click(screen.getByTitle('Enviar mensaje'))
+
+    expect(await screen.findByText('Error enviando mensaje. Revisa tu conexión a internet.')).toBeInTheDocument()
+    expect(chatService.enviarMensaje).toHaveBeenCalledWith(1, 'Mensaje sin conexión')
+  })
+
   it('fija y añade a favoritos una conversación desde el menú contextual', async () => {
     const { chatService } = await import('../../services/chat')
     const { notify } = await import('../../components/ToastProvider')

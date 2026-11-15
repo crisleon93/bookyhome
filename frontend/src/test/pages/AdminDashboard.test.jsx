@@ -7,7 +7,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import AdminDashboard from '../../pages/AdminDashboard'
@@ -253,6 +253,44 @@ describe('AdminDashboard — gestión de reclamos', () => {
         respuesta: 'Se gestionó el reembolso del pedido.',
       })
     })
+
     expect(notify).toHaveBeenCalledWith('Solicitud actualizada y usuario notificado', 'success')
+  })
+})
+
+describe('AdminDashboard — gestión de órdenes', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('resume, busca y filtra órdenes devueltas por la API', async () => {
+    const user = userEvent.setup()
+    const { default: api } = await import('../../services/api')
+    const orders = [
+      { id_orden: 77, estado: 'pagado', total: 25000, fecha: '2026-03-20T12:00:00' },
+      { id_orden: 78, estado: 'enviado', total: 18000, fecha: null },
+    ]
+    api.get.mockImplementation((url) => Promise.resolve({
+      data: url === '/api/v1/admin/orders'
+        ? orders
+        : url === '/perfil/mi-perfil'
+          ? { nombre_usuario: 'Admin Test', correo_usuario: 'admin@test.com' }
+          : [],
+    }))
+
+    renderAdmin()
+    await user.click(await screen.findByText(/^Órdenes$/i))
+
+    expect(await screen.findByText('#77')).toBeInTheDocument()
+    expect(screen.getByText('#78')).toBeInTheDocument()
+
+    fireEvent.change(screen.getByPlaceholderText('Buscar por ID orden o estado...'), {
+      target: { value: '77' },
+    })
+    expect(screen.getByText('#77')).toBeInTheDocument()
+    expect(screen.queryByText('#78')).toBeNull()
+
+    fireEvent.change(screen.getByPlaceholderText('Buscar por ID orden o estado...'), {
+      target: { value: 'sin coincidencias' },
+    })
+    expect(screen.getByText('No se encontraron órdenes')).toBeInTheDocument()
   })
 })

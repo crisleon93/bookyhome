@@ -460,6 +460,21 @@ describe('Checkout and buyer/store settings coverage', () => {
     expect(await screen.findByText('¡Pago Exitoso!')).toBeTruthy();
   });
 
+  it('valida el correo PSE antes de avanzar a la banca virtual', async () => {
+    renderCheckout()
+    await screen.findByText('Entrega y Pago')
+
+    fireEvent.click(screen.getByRole('button', { name: /PSE/ }))
+    fireEvent.click(await screen.findByRole('button', { name: /Abrir Simulador PSE/ }))
+    fireEvent.change(screen.getByPlaceholderText('ejemplo@correo.com'), {
+      target: { value: 'correo-invalido' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: /Ir a la Banca Virtual/ }))
+
+    expect(await screen.findByText(/Ingresa un correo electrónico registrado en PSE/)).toBeTruthy()
+    expect(screen.getByText('1. Identificación PSE')).toBeTruthy()
+  })
+
   it('guarda las preferencias de notificación y valida que las contraseñas coincidan', async () => {
     renderBuyerSettings();
     const emailSwitch = await screen.findByRole('switch', { name: 'Email: Mensajes' });

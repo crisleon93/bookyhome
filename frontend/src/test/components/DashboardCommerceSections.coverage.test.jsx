@@ -163,6 +163,31 @@ describe('secciones de compras y notificaciones', () => {
     expect(getOrden).not.toHaveBeenCalled()
   })
 
+  it('valida el correo antes de continuar con el simulador PSE', async () => {
+    getCarrito.mockResolvedValue({ data: [{
+      id_libro: 33, titulo: 'Libro PSE', precio_libro: 14000, cantidad: 1,
+    }] })
+    checkoutCarrito.mockResolvedValue({
+      data: { ok: true, order: { id_orden: 77, estado: 'pendiente', total: 14000 } },
+    })
+    getOrden.mockResolvedValue({ data: { id_orden: 77, estado: 'pendiente', total: 14000 } })
+
+    render(<SeccionCarrito userId={7} />)
+    await screen.findAllByText('Libro PSE')
+    fireEvent.click(screen.getByRole('button', { name: /Continuar con el pago/ }))
+    expect(await screen.findByText('2. Entrega y Pago')).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('button', { name: /PSE/ }))
+    fireEvent.click(screen.getByRole('button', { name: /Abrir Simulador PSE/ }))
+    fireEvent.change(screen.getByPlaceholderText('ejemplo@correo.com'), {
+      target: { value: '' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: /Ir a la Banca Virtual/ }))
+
+    expect(await screen.findByText('Ingresa un correo electrónico registrado en PSE.')).toBeTruthy()
+    expect(screen.getByText('1. Identificación PSE')).toBeTruthy()
+  })
+
   it('filtra compras por libro y abre el detalle actualizado de una orden', async () => {
     const order = {
       id_orden: 22,

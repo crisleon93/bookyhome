@@ -249,6 +249,18 @@ describe('MiTienda', () => {
     expect(formData.get('titulo')).toBe('Título actualizado')
   })
 
+  it('confirma la eliminación de un libro del catálogo', async () => {
+    renderSeller()
+    await screen.findByRole('heading', { name: 'Mis Libros Publicados' })
+    fireEvent.click(screen.getAllByTitle('Eliminar del catálogo')[0])
+
+    expect(await screen.findByRole('heading', { name: 'Eliminar libro' })).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Sí, eliminar' }))
+
+    await waitFor(() => expect(mocks.apiDelete).toHaveBeenCalledWith('/libros/6'))
+    await waitFor(() => expect(screen.queryByRole('heading', { name: 'Eliminar libro' })).toBeNull())
+  })
+
   it('muestra el resumen de Inicio y cambia de sección desde los indicadores', async () => {
     renderSeller('?seccion=Inicio')
     expect(await screen.findByRole('heading', { name: /Ana Vendedora/ })).toBeTruthy()

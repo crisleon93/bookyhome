@@ -161,6 +161,59 @@ describe('secciones personales del comprador', () => {
     })))
   })
 
+  it('edita una dirección, la marca como principal y permite eliminarla', async () => {
+    const direccion = {
+      id_direccion: 19,
+      alias_direccion: 'Casa',
+      direccion: 'Calle 10',
+      ciudad: 'Bogotá',
+      departamento: 'Cundinamarca',
+      codigo_postal: '110111',
+      es_principal: false,
+    }
+    api.get.mockImplementation((path) => path === '/perfil/direcciones'
+      ? Promise.resolve({ data: [direccion] })
+      : Promise.resolve({ data: [] }))
+    render(<SeccionMisDirecciones />)
+
+    expect(await screen.findByText('Calle 10')).toBeTruthy()
+    fireEvent.click(screen.getByText('Hacer principal'))
+    await waitFor(() => expect(api.put).toHaveBeenCalledWith(
+      '/perfil/direcciones/19',
+      { es_principal: true },
+    ))
+    expect(notify).toHaveBeenCalledWith('Dirección marcada como principal', 'success')
+
+    fireEvent.click(screen.getByText('Editar'))
+    fireEvent.change(screen.getByLabelText('Alias'), { target: { value: 'Oficina' } })
+    fireEvent.click(screen.getByText('Actualizar dirección'))
+    await waitFor(() => expect(api.put).toHaveBeenCalledWith('/perfil/direcciones/19', {
+      alias_direccion: 'Oficina',
+      direccion: 'Calle 10',
+      ciudad: 'Bogotá',
+      departamento: 'Cundinamarca',
+      codigo_postal: '110111',
+      es_principal: false,
+    }))
+
+    fireEvent.click(await screen.findByText('Eliminar'))
+    await waitFor(() => expect(api.delete).toHaveBeenCalledWith('/perfil/direcciones/19'))
+    expect(notify).toHaveBeenCalledWith('Dirección eliminada', 'success')
+  })
+
+  it('mantiene el formulario abierto y muestra el error al fallar el guardado', async () => {
+    api.get.mockResolvedValue({ data: [] })
+    api.post.mockRejectedValue({ response: { data: { detail: 'Dirección duplicada' } } })
+    render(<SeccionMisDirecciones />)
+
+    fireEvent.click(await screen.findByText('+ Agregar dirección'))
+    fireEvent.change(screen.getByLabelText('Dirección'), { target: { value: 'Calle 20' } })
+    fireEvent.click(screen.getByText('Guardar dirección'))
+
+    expect(await screen.findByText('Dirección duplicada')).toBeTruthy()
+    expect(screen.getByText('Cancelar')).toBeTruthy()
+  })
+
   it('actualiza el perfil y muestra/cierra la escala de fidelización', async () => {
     api.get.mockImplementation((path) => path === '/perfil/mi-perfil'
       ? Promise.resolve({ data: { nombre_usuario: 'Ana Ruiz', correo_usuario: 'ana@example.com', telefono: '3001234567' } })
