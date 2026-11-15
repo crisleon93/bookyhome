@@ -407,6 +407,23 @@ describe('Checkout and buyer/store settings coverage', () => {
     expect(screen.getByText(/Destino activo/)).toBeTruthy();
   });
 
+  it('valida el código de cupón vacío y muestra el rechazo del servidor', async () => {
+    mocks.validarCupon.mockResolvedValue({
+      data: { valido: false, mensaje: 'El código no está vigente' },
+    });
+    renderCheckout();
+    await screen.findByText('Entrega y Pago');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Aplicar' }));
+    expect(screen.getByText('Ingresa un código de cupón.')).toBeTruthy();
+
+    fireEvent.change(screen.getByPlaceholderText('Código de cupón'), {
+      target: { value: 'NO-VIGENTE' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Aplicar' }));
+    expect(await screen.findByText('El código no está vigente')).toBeTruthy();
+  });
+
   it('valida los datos de tarjeta y completa el pago con correo de confirmación', async () => {
     renderCheckout();
     const payButton = await screen.findByRole('button', { name: /Pagar/ });

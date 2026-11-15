@@ -216,6 +216,7 @@ describe('AdminDashboard — gestión de reclamos', () => {
       comprador: 'Ana Compradora',
       nombre_tienda: 'Librería Central',
       descripcion: 'El libro llegó con la portada rota.',
+      evidencia_url: '/uploads/reclamo-42.jpg',
     }
 
     api.get.mockImplementation((url) => Promise.resolve({
@@ -229,6 +230,13 @@ describe('AdminDashboard — gestión de reclamos', () => {
     renderAdmin()
     await user.click(await screen.findByText(/^Quejas y reclamos$/i))
     await user.click(await screen.findByRole('button', { name: /Reclamo #42/ }))
+    await user.click(await screen.findByAltText('Evidencia thumbnail'))
+    expect(screen.getByRole('dialog', { name: 'Evidencia del reclamo' })).toBeInTheDocument()
+    expect(screen.getByAltText('Evidencia del reclamo')).toHaveAttribute(
+      'src',
+      'http://localhost:8000/uploads/reclamo-42.jpg',
+    )
+    await user.click(screen.getByRole('button', { name: 'Cerrar evidencia del reclamo' }))
     await user.click(screen.getByRole('button', { name: 'Resolver reclamo' }))
 
     const responseField = screen.getByLabelText('Respuesta o resolución para el usuario:')

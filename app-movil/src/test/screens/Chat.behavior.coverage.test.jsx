@@ -2,7 +2,7 @@
 
 import React from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import Chat from '../../screens/Chat'
 import { AuthContext } from '../../context/AuthContext'
 import {
@@ -191,6 +191,7 @@ describe('Chat móvil', () => {
   it('carga historial, busca mensajes y envía por socket', async () => {
     render(withAuth(<Chat />))
     expect(await screen.findByText('Tu pedido está listo')).toBeTruthy()
+    await waitFor(() => expect(mocks.subscribe).toBeTypeOf('function'))
     expect(mocks.getHistory).toHaveBeenCalledWith(12)
     expect(mocks.markLocalRead).toHaveBeenCalledWith(12)
     expect(mocks.markRead).toHaveBeenCalledWith(12)
@@ -227,5 +228,29 @@ describe('Chat móvil', () => {
     fireEvent.click(screen.getAllByRole('button')[4])
     fireEvent.click(screen.getByText('Mensajes temporales'))
     await waitFor(() => expect(AsyncStorage.setItem).toHaveBeenCalledWith('chat_temporales_12', '1'))
+  })
+
+  it('agrega una sola vez los mensajes entrantes de la sala desde el socket', async () => {
+    render(withAuth(<Chat />))
+    expect(await screen.findByText('Tu pedido está listo')).toBeTruthy()
+    const incoming = {
+      tipo: 'nuevo_mensaje',
+      mensaje: {
+        id_sala: 12,
+        id_mensaje: 3,
+        id_remitente: 3,
+        nombre_remitente: 'Librería Sol',
+        mensaje: 'Actualización del pedido',
+        enviado_en: '2026-03-20T12:02:00',
+      },
+    }
+
+    act(() => {
+      mocks.subscribe(incoming)
+      mocks.subscribe(incoming)
+    })
+
+    await waitFor(() => expect(screen.getAllByText('Actualización del pedido')).toHaveLength(1))
+    expect(mocks.markLocalRead).toHaveBeenCalledWith(12)
   })
 })

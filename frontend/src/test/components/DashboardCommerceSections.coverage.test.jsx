@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import SeccionCarrito from '../../components/dashboard/SeccionCarrito'
 import SeccionMisCompras from '../../components/dashboard/SeccionMisCompras'
 import SeccionNotificaciones from '../../components/dashboard/SeccionNotificaciones'
-import api, { checkoutCarrito, getCarrito, getDevoluciones, getDirecciones, getOrden, getOrdenes, removeFromCart } from '../../services/api'
+import api, { cancelarMisPendientes, checkoutCarrito, getCarrito, getDevoluciones, getDirecciones, getOrden, getOrdenes, removeFromCart } from '../../services/api'
 import { notificacionesService } from '../../services/notificaciones'
 import { notify } from '../../components/ToastProvider'
 
@@ -82,6 +82,7 @@ describe('secciones de compras y notificaciones', () => {
     getDirecciones.mockResolvedValue({ data: [] })
     getOrden.mockResolvedValue({ data: { id_orden: 1 } })
     removeFromCart.mockResolvedValue({})
+    cancelarMisPendientes.mockResolvedValue({ data: { canceladas: 1 } })
     notificacionesService.obtener.mockResolvedValue({ notificaciones: [] })
   })
 
@@ -148,6 +149,20 @@ describe('secciones de compras y notificaciones', () => {
     expect(screen.getByRole('button', { name: /Continuar con el pago/ })).toBeEnabled()
   })
 
+  it('muestra el mensaje alternativo si el checkout responde sin crear la orden', async () => {
+    getCarrito.mockResolvedValue({ data: [{
+      id_libro: 33, titulo: 'Libro sin reserva', precio_libro: 14000, cantidad: 1,
+    }] })
+    checkoutCarrito.mockResolvedValue({ data: { ok: false } })
+    render(<SeccionCarrito userId={7} />)
+
+    await screen.findAllByText('Libro sin reserva')
+    fireEvent.click(screen.getByRole('button', { name: /Continuar con el pago/ }))
+
+    await waitFor(() => expect(checkoutCarrito).toHaveBeenCalledOnce())
+    expect(getOrden).not.toHaveBeenCalled()
+  })
+
   it('filtra compras por libro y abre el detalle actualizado de una orden', async () => {
     const order = {
       id_orden: 22,
@@ -170,6 +185,18 @@ describe('secciones de compras y notificaciones', () => {
     fireEvent.click(await screen.findByText('Ver Detalles'))
     expect(await screen.findByText('Librería Central')).toBeTruthy()
     expect(getOrden).toHaveBeenCalledWith(22)
+  })
+
+  it('permite limpiar órdenes pendientes y notifica el resultado', async () => {
+    getOrdenes.mockResolvedValue({
+      data: [{ id_orden: 23, estado: 'pendiente', total: 14000, items: [] }],
+    })
+    render(<SeccionMisCompras userId={7} />)
+
+    fireEvent.click(await screen.findByTitle('Cancela las órdenes que quedaron pendientes de pago sin completar'))
+
+    await waitFor(() => expect(cancelarMisPendientes).toHaveBeenCalledOnce())
+    expect(notify).toHaveBeenCalledWith('1 orden pendiente cancelada.', 'success')
   })
 
   it('combina notificaciones automáticas de órdenes y navega al leer un mensaje', async () => {

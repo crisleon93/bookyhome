@@ -28,6 +28,7 @@ vi.mock('../../components/Icons', () => {
     IconBookOpen: Icon,
     IconCalendar: Icon,
     IconCheck: Icon,
+    IconDollar: Icon,
     IconEdit: Icon,
     IconEye: Icon,
     IconGift: Icon,
@@ -90,6 +91,65 @@ describe('secciones del vendedor y administrador', () => {
       valor_descuento: 20,
       activo: 1,
     })))
+  })
+
+  it('edita un cupón existente y convierte el descuento antes de guardarlo', async () => {
+    getCuponesTienda.mockResolvedValue({
+      data: [{
+        id_cupon: 31,
+        codigo_cupon: 'LECTURA',
+        tipo_descuento: 'porcentaje',
+        valor_descuento: 10,
+        minimo_compra: 0,
+        usos_maximos: 20,
+        usos_actuales: 3,
+        activo: true,
+        fecha_fin: '2099-12-31',
+      }],
+    })
+    render(<SeccionCuponesVendedor tiendaId={12} />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Editar' }))
+    fireEvent.change(screen.getByLabelText(/Valor del descuento/), { target: { value: '25' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }))
+
+    await waitFor(() => expect(editarCupon).toHaveBeenCalledWith(
+      31,
+      expect.objectContaining({ codigo_cupon: 'LECTURA', valor_descuento: 25, activo: 1 }),
+    ))
+    expect(notify).toHaveBeenCalledWith('Cupón actualizado correctamente', 'success')
+  })
+
+  it('alterna el estado del cupón y confirma su eliminación', async () => {
+    getCuponesTienda.mockResolvedValue({
+      data: [{
+        id_cupon: 32,
+        codigo_cupon: 'PAUSABLE',
+        tipo_descuento: 'fijo',
+        valor_descuento: 5000,
+        usos_actuales: 0,
+        usos_maximos: null,
+        activo: true,
+        fecha_fin: '2099-12-31',
+      }],
+    })
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true)
+    render(<SeccionCuponesVendedor tiendaId={12} />)
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Activo' }))
+    await waitFor(() => expect(editarCupon).toHaveBeenCalledWith(32, { activo: 0 }))
+    fireEvent.click(screen.getByRole('button', { name: 'Eliminar' }))
+    expect(confirm).toHaveBeenCalledWith('¿Estás seguro de que deseas eliminar este cupón?')
+    await waitFor(() => expect(eliminarCupon).toHaveBeenCalledWith(32))
+  })
+
+  it('notifica cuando no puede cargar los cupones de la tienda', async () => {
+    getCuponesTienda.mockRejectedValue(new Error('network error'))
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {})
+    render(<SeccionCuponesVendedor tiendaId={12} />)
+
+    await waitFor(() => expect(notify).toHaveBeenCalledWith('Error al cargar cupones de tienda', 'error'))
+    expect(consoleError).toHaveBeenCalled()
+    consoleError.mockRestore()
   })
 
   it('contrata el impulso seleccionado y cambia a la lista de activos', async () => {

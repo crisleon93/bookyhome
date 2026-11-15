@@ -327,4 +327,29 @@ describe('Chat (frontend) — pantalla', () => {
 
     expect(JSON.parse(localStorage.getItem('bkh_chat_reacciones'))).toEqual({ 31: ['👍'] })
   })
+
+  it('abre las preferencias del contacto y actualiza la configuración de mensajes', async () => {
+    const { chatService } = await import('../../services/chat')
+    chatService.getSalas.mockResolvedValueOnce({
+      salas: [{
+        id_sala: 1,
+        nombre_tienda: 'Librería Central',
+        ultimo_mensaje: 'Último mensaje',
+        no_leidos: 0,
+      }],
+    })
+    render(<Chat />)
+    await screen.findAllByText('Librería Central')
+
+    fireEvent.click(screen.getByTitle('Más opciones'))
+    fireEvent.click(screen.getByText('Info. del contacto'))
+    fireEvent.click(screen.getByTitle('Configuración y apariencia del chat'))
+    expect(screen.getByRole('dialog', { name: 'Configuración y Apariencia del Chat' })).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: /Preferencias/ }))
+    const enterToSend = screen.getByLabelText('Enviar al presionar Enter')
+    const wasChecked = enterToSend.checked
+    fireEvent.click(enterToSend)
+    expect(enterToSend.checked).toBe(!wasChecked)
+  })
 })

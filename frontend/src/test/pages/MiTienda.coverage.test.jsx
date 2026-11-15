@@ -102,6 +102,7 @@ const books = [
     autor_libro: 'Gabriel García Márquez',
     nombre_categoria: 'Ficción',
     id_categoria: 2,
+    descripcion_libro: 'Descripción del libro',
     precio_libro: 35000,
     stock: 5,
     estado_libro: 'nuevo',
@@ -112,6 +113,7 @@ const books = [
     autor_libro: 'Isabel Allende',
     nombre_categoria: 'Ficción',
     id_categoria: 2,
+    descripcion_libro: 'Descripción de la novela',
     precio_libro: 28000,
     stock: 0,
     estado_libro: 'usado_buen_estado',
@@ -228,6 +230,23 @@ describe('MiTienda', () => {
     expect(screen.getByRole('dialog')).toHaveTextContent(
       'Se descontaron 1 unidad(es) de "Cien años de soledad"',
     )
+  })
+
+  it('valida y guarda los cambios del libro desde el formulario de edición', async () => {
+    renderSeller()
+    await screen.findByRole('heading', { name: 'Mis Libros Publicados' })
+    fireEvent.click(screen.getAllByTitle('Editar información del libro')[0])
+
+    fireEvent.change(screen.getByLabelText('Título *'), { target: { value: 'Título actualizado' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }))
+
+    await waitFor(() => expect(mocks.apiPut).toHaveBeenCalledWith(
+      '/libros/6',
+      expect.any(FormData),
+      { headers: { 'Content-Type': 'multipart/form-data' } },
+    ))
+    const formData = mocks.apiPut.mock.calls[0][1]
+    expect(formData.get('titulo')).toBe('Título actualizado')
   })
 
   it('muestra el resumen de Inicio y cambia de sección desde los indicadores', async () => {
