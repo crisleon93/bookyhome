@@ -10,5 +10,5 @@ overrides:
   'undici@^8': 8.12.4
 # Parches temporales para CVE-2026-112366 y los CVE reportados en uri-js.
 patchedDependencies:
-  picomatch@4.0.7: ../patches/picomatch@4.0.7.patch
-  uri-js@4.4.1: ../patches/uri-js@4.4.1.patch
+  picomatch@4.0.7: patches/picomatch@4.0.7.patch
+  uri-js@4.4.1: patches/uri-js@4.4.1.patch
