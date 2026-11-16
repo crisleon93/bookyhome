@@ -529,7 +529,7 @@ export default function PublicarLibro() {
               <div className="precio-preview">
                 <span>El comprador verá:</span>
                 <strong>
-                  $ {String(parseInt(form.precio_libro)).replace(/\B(?=(\d{3})+(?!\d))/g, ".")} COP
+                  $ {String(Number.parseInt(form.precio_libro)).replace(/\B(?=(\d{3})+(?!\d))/g, ".")} COP
                 </strong>
               </div>
             )}

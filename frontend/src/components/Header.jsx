@@ -1315,7 +1315,7 @@ function Header({ variant, hasSidebar }) {
       </header>
 
       {modalOpen && (
-        <div className="modal-overlay open" onClick={e => { if (e.target === e.currentTarget) setModalOpen(false) }}>
+        <div className="modal-overlay open" role="presentation" onClick={e => { if (e.target === e.currentTarget) setModalOpen(false) }}>
           <div className="modal-card">
             <button className="modal-close" aria-label="Cerrar" onClick={() => setModalOpen(false)}>
               <IconClose />
@@ -1341,7 +1341,7 @@ function Header({ variant, hasSidebar }) {
       )}
 
       {loginOpen && (
-        <div className="modal-overlay open" onClick={e => { if (e.target === e.currentTarget) setLoginOpen(false) }}>
+        <div className="modal-overlay open" role="presentation" onClick={e => { if (e.target === e.currentTarget) setLoginOpen(false) }}>
           <div className="modal-card">
             <button className="modal-close" aria-label="Cerrar" onClick={() => setLoginOpen(false)}>
               <IconClose />
@@ -1416,7 +1416,7 @@ function Header({ variant, hasSidebar }) {
       )}
 
       {registerOpen && (
-        <div className="modal-overlay open" onClick={e => { if (e.target === e.currentTarget) setRegisterOpen(false) }}>
+        <div className="modal-overlay open" role="presentation" onClick={e => { if (e.target === e.currentTarget) setRegisterOpen(false) }}>
           <div className="modal-box" style={{ maxWidth: '800px', maxHeight: '90vh', overflowY: 'auto', position: 'relative' }}>
             <button className="modal-close" aria-label="Cerrar" onClick={() => setRegisterOpen(false)}>
               <IconClose />

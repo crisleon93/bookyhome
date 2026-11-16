@@ -89,9 +89,20 @@ function CookieBanner() {
 
       {/* ── Modal de configuración ── */}
       {showConfig && (
-        <div className="cookie-modal-overlay" onClick={cerrarModal}>
-          <div className="cookie-modal" onClick={e => e.stopPropagation()}>
-            <h2 className="cookie-modal__title">🍪 Configurar cookies</h2>
+        <div
+          className="cookie-modal-overlay"
+          role="presentation"
+          onClick={e => {
+            if (e.target === e.currentTarget) cerrarModal()
+          }}
+        >
+          <div
+            className="cookie-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="cookie-modal-title"
+          >
+            <h2 id="cookie-modal-title" className="cookie-modal__title">🍪 Configurar cookies</h2>
             <p className="cookie-modal__subtitle">
               Elige qué tipos de cookies deseas permitir. Las esenciales siempre están activas.
             </p>

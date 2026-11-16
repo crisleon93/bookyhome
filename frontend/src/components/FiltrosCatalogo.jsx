@@ -116,7 +116,7 @@ function FiltrosCatalogo({ onFiltrosChange }) {
             <label>Categoría</label>
             <select
               value={filtros.categoria_id || ''}
-              onChange={(e) => handleFiltroChange('categoria_id', e.target.value ? parseInt(e.target.value) : null)}
+              onChange={(e) => handleFiltroChange('categoria_id', e.target.value ? Number.parseInt(e.target.value) : null)}
               className="select-filtro"
             >
               <option value="">Todas las categorías</option>
@@ -138,7 +138,7 @@ function FiltrosCatalogo({ onFiltrosChange }) {
                 max={opciones.precio_max}
                 value={filtros.precio_min}
                 onChange={(e) => {
-                  const val = parseInt(e.target.value) || 0;
+                  const val = Number.parseInt(e.target.value) || 0;
                   if (val <= filtros.precio_max) {
                     handleFiltroChange('precio_min', val);
                   }
@@ -153,7 +153,7 @@ function FiltrosCatalogo({ onFiltrosChange }) {
                 max={opciones.precio_max}
                 value={filtros.precio_max}
                 onChange={(e) => {
-                  const val = parseInt(e.target.value) || opciones.precio_max;
+                  const val = Number.parseInt(e.target.value) || opciones.precio_max;
                   if (val >= filtros.precio_min) {
                     handleFiltroChange('precio_max', val);
                   }

@@ -142,7 +142,7 @@ const STEPS = [
 function Modal({ open, onClose, title, subtitle, children }) {
   if (!open) return null
   return (
-    <div className={`modal-overlay ${open ? 'open' : ''}`} onClick={e => { if (e.target === e.currentTarget) onClose() }}>
+    <div className={`modal-overlay ${open ? 'open' : ''}`} role="presentation" onClick={e => { if (e.target === e.currentTarget) onClose() }}>
       <div className="modal-card">
         <button className="modal-close" aria-label="Cerrar" onClick={onClose}><IconClose /></button>
         <h2 className="modal-title">{title}</h2>

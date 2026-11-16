@@ -231,10 +231,10 @@ export function ModalEditarLibro({ libro, categorias, onClose, onGuardado }) {
   };
 
   return (
-    <div className="modal-overlay open" onClick={onClose}>
-      <div className="modal-box" onClick={(e) => e.stopPropagation()}>
+    <div className="modal-overlay open" role="presentation" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="modal-box" role="dialog" aria-modal="true" aria-labelledby="editar-libro-title">
         <div className="modal-header">
-          <h2>Editar libro</h2>
+          <h2 id="editar-libro-title">Editar libro</h2>
           <button className="modal-close" onClick={onClose}>x</button>
         </div>
         <form onSubmit={handleSubmit} className="modal-form">
@@ -352,10 +352,10 @@ export function ModalEliminar({ libro, onClose, onEliminado }) {
   };
 
   return (
-    <div className="modal-overlay open" onClick={onClose}>
-      <div className="modal-box modal-box--sm" onClick={(e) => e.stopPropagation()}>
+    <div className="modal-overlay open" role="presentation" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="modal-box modal-box--sm" role="dialog" aria-modal="true" aria-labelledby="eliminar-libro-title">
         <div className="modal-header">
-          <h2>Eliminar libro</h2>
+          <h2 id="eliminar-libro-title">Eliminar libro</h2>
           <button className="modal-close" onClick={onClose}>x</button>
         </div>
         <div style={{ padding: "8px 0 20px" }}>
@@ -399,10 +399,10 @@ export function ModalStock({ libro, onClose, onActualizado }) {
   };
 
   return (
-    <div className="modal-overlay open" onClick={onClose}>
-      <div className="modal-box modal-box--sm" onClick={(e) => e.stopPropagation()}>
+    <div className="modal-overlay open" role="presentation" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="modal-box modal-box--sm" role="dialog" aria-modal="true" aria-labelledby="gestionar-stock-title">
         <div className="modal-header">
-          <h2>Gestionar stock</h2>
+          <h2 id="gestionar-stock-title">Gestionar stock</h2>
           <button className="modal-close" onClick={onClose}>x</button>
         </div>
         <p style={{ color: "#666", fontSize: "0.9rem", marginBottom: "20px" }}>
@@ -606,7 +606,6 @@ export function ModalVentaFisica({ libro: libroInicial, libros = [], onClose, on
                       placeholder="Buscar por título, autor o categoría..."
                       value={busqueda}
                       onChange={(e) => setBusqueda(e.target.value)}
-                      onClick={(e) => e.stopPropagation()}
                       style={{
                         width: '100%',
                         border: 'none',

@@ -1131,7 +1131,9 @@ function ModalEliminarOferta({ oferta, onClose, onEliminado, darkMode = false })
   return (
     <div
       role="presentation"
-      onClick={onClose}
+      onClick={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
       style={{
         position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)",
         display: "flex", alignItems: "center", justifyContent: "center",
@@ -1141,7 +1143,6 @@ function ModalEliminarOferta({ oferta, onClose, onEliminado, darkMode = false })
       <div
         role="dialog"
         aria-modal="true"
-        onClick={(e) => e.stopPropagation()}
         style={{
           background: panelBg, borderRadius: "16px", padding: "28px",
           maxWidth: "420px", width: "95%",
