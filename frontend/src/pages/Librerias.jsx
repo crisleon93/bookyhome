@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api, { getApiBaseUrl } from '../services/api';
+import { parseTiendaInfo } from '../utils/catalogo';
 
 const BASE_URL = getApiBaseUrl();
 
@@ -28,60 +29,6 @@ function LogoTienda({ logoUrl, nombre }) {
     );
   }
   return <img src={logoUrl} alt={nombre} onError={() => setErr(true)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />;
-}
-
-function parseTiendaInfo(tienda) {
-  let ciudad = (tienda.ciudad_origen || '').trim();
-  let direccion = (tienda.direccion || '').trim();
-
-  if (direccion.includes(',')) {
-    const parts = direccion.split(',');
-    const posCiudad = parts.pop().trim();
-    if ((!ciudad || ciudad.toLowerCase() === 'colombia') && posCiudad) {
-      ciudad = posCiudad;
-    }
-    direccion = parts.join(',').trim();
-  }
-
-  // Normalizar y asegurar nombres de ciudades reales
-  const cNorm = (ciudad || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-  if (cNorm.includes('bogot')) ciudad = 'Bogotá';
-  else if (cNorm.includes('medell')) ciudad = 'Medellín';
-  else if (cNorm.includes('cali')) ciudad = 'Cali';
-  else if (cNorm.includes('barranqu')) ciudad = 'Barranquilla';
-  else if (cNorm.includes('cartag')) ciudad = 'Cartagena';
-  else if (cNorm.includes('santa mart')) ciudad = 'Santa Marta';
-  else if (cNorm.includes('bucaram')) ciudad = 'Bucaramanga';
-  else if (cNorm.includes('perei')) ciudad = 'Pereira';
-  else if (cNorm.includes('maniz')) ciudad = 'Manizales';
-  else if (cNorm.includes('armen')) ciudad = 'Armenia';
-  else if (cNorm.includes('ibag')) ciudad = 'Ibagué';
-  else if (cNorm.includes('neiv')) ciudad = 'Neiva';
-  else if (cNorm.includes('villav')) ciudad = 'Villavicencio';
-  else if (cNorm.includes('past')) ciudad = 'Pasto';
-  else if (cNorm.includes('popay')) ciudad = 'Popayán';
-  else if (!ciudad || ciudad.toLowerCase() === 'colombia') ciudad = 'Bogotá';
-
-  let dirLimpia = direccion;
-  if (dirLimpia.toLowerCase().endsWith(ciudad.toLowerCase())) {
-    dirLimpia = dirLimpia.slice(0, -ciudad.length).replace(/,\s*$/, '').trim();
-  }
-
-  const nombreLimpio = (tienda.nombre_tienda || '')
-    .replace(/Librer\?\?a/g, 'Librería')
-    .replace(/Bogot\?\?/g, 'Bogotá');
-
-  let desc = (tienda.descripcion || '').trim();
-  if (!desc || desc.includes('??') || desc.toLowerCase().includes('en colombia')) {
-    desc = `Librería asociada a BookyHome en ${ciudad}. Catálogo y novedades.`;
-  }
-
-  return {
-    ciudad,
-    direccion: dirLimpia,
-    descripcion: desc,
-    nombre: nombreLimpio
-  };
 }
 
 const normalize = (str) =>

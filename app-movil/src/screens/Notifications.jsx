@@ -22,8 +22,7 @@ import {
 } from '../services/api';
 import { useNotifications } from '../context/NotificationContext';
 import { AuthContext } from '../context/AuthContext';
-import SidebarMenu from '../components/SidebarMenu';
-import SidebarVendedor from '../components/SidebarVendedor';
+import RoleBasedSidebar from '../components/RoleBasedSidebar';
 import Footer from '../components/Footer';
 import {
   IconCreditCard,
@@ -760,23 +759,13 @@ export default function Notifications({ navigation }) {
         </TouchableOpacity>
       </Modal>
 
-      {user?.rol === 'vendedor' ? (
-        <SidebarVendedor
-          visible={sidebarVisible}
-          onClose={() => setSidebarVisible(false)}
-          user={user}
-          navigation={navigation}
-          onSignOut={signOut}
-        />
-      ) : (
-        <SidebarMenu
-          visible={sidebarVisible}
-          onClose={() => setSidebarVisible(false)}
-          user={user}
-          navigation={navigation}
-          onSignOut={signOut}
-        />
-      )}
+      <RoleBasedSidebar
+        visible={sidebarVisible}
+        onClose={() => setSidebarVisible(false)}
+        user={user}
+        navigation={navigation}
+        onSignOut={signOut}
+      />
     </SafeAreaView>
   );
 }

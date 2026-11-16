@@ -1,5 +1,6 @@
 ﻿import { useState, useEffect } from "react";
 import api from "../services/api";
+import useSyncedDarkMode from "../hooks/useSyncedDarkMode";
 
 const fechaLocalISO = (fecha) => [
   fecha.getFullYear(),
@@ -21,13 +22,7 @@ export default function SeccionSuscripciones({ tiendaId, onNavegar, darkMode = f
   const [procesando, setProcesando] = useState(false);
 
   // Sync darkMode from localStorage
-  const [localDarkMode, setLocalDarkMode] = useState(() => localStorage.getItem('darkMode') === 'true');
-  useEffect(() => {
-    const handler = () => setLocalDarkMode(localStorage.getItem('darkMode') === 'true');
-    window.addEventListener('darkModeChange', handler);
-    window.addEventListener('storage', handler);
-    return () => { window.removeEventListener('darkModeChange', handler); window.removeEventListener('storage', handler); };
-  }, []);
+  const [localDarkMode] = useSyncedDarkMode();
 
   const effectiveDarkMode = darkMode || localDarkMode;
 

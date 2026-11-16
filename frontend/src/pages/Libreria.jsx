@@ -15,6 +15,7 @@ import {
 } from '../components/Icons'
 import { LegalModal, Terminos, Privacidad } from '../components/Legal'
 import LeafletAddressPickerModal from '../components/LeafletAddressPickerModal'
+import { getPasswordStrengthScore } from '../utils/passwordValidation'
 
 const isValidEmail = (email) => {
   const atIndex = email.indexOf('@')
@@ -62,12 +63,7 @@ function Libreria({ isModal = false, onSuccess }) {
 
   const terminosCompletos = aceptoTerminos && aceptoPrivacidad
 
-  const passwordScore = [
-    password.length >= 8,
-    /[A-Z]/.test(password),
-    /[0-9]/.test(password),
-    /[^A-Za-z0-9]/.test(password)
-  ].filter(Boolean).length
+  const passwordScore = getPasswordStrengthScore(password)
   const passwordStrength = password.length === 0
     ? { label: 'Completa la contraseña', width: '0%', color: '#ddd' }
     : passwordScore <= 2

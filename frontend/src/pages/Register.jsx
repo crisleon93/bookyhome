@@ -9,6 +9,7 @@ import { notify } from '../components/ToastProvider'
 import { IconUser, IconMail, IconPhone, IconLock, IconEyeOpen, IconEyeClosed, IconCheck } from '../components/Icons'
 
 import { LegalModal, Terminos, Privacidad } from '../components/Legal'
+import { getPasswordStrengthScore } from '../utils/passwordValidation'
 
 const isValidEmail = (value) => {
   const email = value.trim()
@@ -63,17 +64,7 @@ function Register({ isModal = false, onSuccess }) {
 
   const terminosCompletos = aceptoTerminos && aceptoPrivacidad
 
-  const passwordScore = [
-
-    password.length >= 8,
-
-    /[A-Z]/.test(password),
-
-    /[0-9]/.test(password),
-
-    /[^A-Za-z0-9]/.test(password)
-
-  ].filter(Boolean).length
+  const passwordScore = getPasswordStrengthScore(password)
 
   const passwordStrength = password.length === 0
 
@@ -167,7 +158,7 @@ function Register({ isModal = false, onSuccess }) {
 
     }
 
-    if (!/[A-Z]/.test(password) || !/[0-9]/.test(password) || !/[^A-Za-z0-9]/.test(password)) {
+    if (passwordScore < 4) {
 
       notify('La contraseña debe incluir una mayúscula, un número y un carácter especial', 'error')
 

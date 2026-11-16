@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { enviarMensajeReclamo, getApiBaseUrl, getMensajesReclamo, getQuejasVendedor } from '../services/api';
+import useSyncedDarkMode from '../hooks/useSyncedDarkMode';
 import {
   IconAlertTriangle,
   IconMessage,
@@ -143,13 +144,7 @@ export default function QuejasVendedor() {
   const [panelContraido, setPanelContraido] = useState(false);
 
   // Dark mode
-  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('darkMode') === 'true');
-  useEffect(() => {
-    const handler = () => setDarkMode(localStorage.getItem('darkMode') === 'true');
-    window.addEventListener('darkModeChange', handler);
-    window.addEventListener('storage', handler);
-    return () => { window.removeEventListener('darkModeChange', handler); window.removeEventListener('storage', handler); };
-  }, []);
+  const [darkMode] = useSyncedDarkMode();
 
   // Paleta de colores según modo
   const t = {

@@ -1,8 +1,11 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useEffectEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { IconUser, IconStar, IconChartBar, IconBookOpen, IconBook, IconGift } from "../Icons";
 import { notify } from "../ToastProvider";
-import api, { getEstadisticasUsuario, uploadProfilePhoto, uploadBannerPhoto, saveBannerColor } from "../../services/api";
+import ModalBackdrop from "../ModalBackdrop";
+import api, { getEstadisticasUsuario } from "../../services/api";
+import useProfileMedia from "../../hooks/useProfileMedia";
+import useSyncedDarkMode from "../../hooks/useSyncedDarkMode";
 
 const NIVELES_FIDELIZACION = [
   { nivel: 'Bronce', umbral: 0 },
@@ -42,25 +45,27 @@ export default function SeccionMiPerfil({ userId }) {
   const [userSurname, setUserSurname] = useState("");
   const [userEmail, setUserEmail] = useState("");
   const [userPhone, setUserPhone] = useState("");
-  const [profilePhotoUrl, setProfilePhotoUrl] = useState(null);
-  const [photoUploading, setPhotoUploading] = useState(false);
-  const [bannerUrl, setBannerUrl] = useState(null);
-  const [bannerColor, setBannerColor] = useState('#7A1E3A');
-  const [bannerUploading, setBannerUploading] = useState(false);
-  const [showBannerEditor, setShowBannerEditor] = useState(false);
+  const {
+    profilePhotoUrl,
+    photoUploading,
+    bannerUrl,
+    bannerColor,
+    setBannerColor,
+    bannerUploading,
+    showBannerEditor,
+    setShowBannerEditor,
+    loadProfileMedia,
+    onProfilePhotoChange,
+    onBannerImageChange,
+    onBannerColorSelect,
+  } = useProfileMedia();
   const [estadisticas, setEstadisticas] = useState(null);
   const [categoriasFavoritas, setCategoriasFavoritas] = useState([]);
   const [nivelFidelizacion, setNivelFidelizacion] = useState(null);
   const [mostrarDetallesFidelizacion, setMostrarDetallesFidelizacion] = useState(false);
 
   // Dark mode
-  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('darkMode') === 'true');
-  useEffect(() => {
-    const handler = () => setDarkMode(localStorage.getItem('darkMode') === 'true');
-    window.addEventListener('darkModeChange', handler);
-    window.addEventListener('storage', handler);
-    return () => { window.removeEventListener('darkModeChange', handler); window.removeEventListener('storage', handler); };
-  }, []);
+  const [darkMode] = useSyncedDarkMode();
 
   // Paleta dinámica
   const t = {
@@ -86,13 +91,7 @@ export default function SeccionMiPerfil({ userId }) {
     headingColor:     darkMode ? '#f3f4f6' : '#1a1a1a',
   };
 
-  const resolveImageUrl = (path) => {
-    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
-    if (!path) return null;
-    return `${baseUrl}/${path.replace(/^\//, '')}`;
-  };
-
-  const cargarDatosPerfil = useCallback(async () => {
+  const cargarDatosPerfil = useEffectEvent(async () => {
     try {
       const resEstadisticas = await getEstadisticasUsuario();
       if (resEstadisticas.data) {
@@ -115,19 +114,12 @@ export default function SeccionMiPerfil({ userId }) {
       setCategoriasFavoritas([]);
       setNivelFidelizacion({ nivel: 'Bronce', puntos: 0, siguiente_nivel: 'Plata', puntos_para_siguiente: 50000 });
     }
-  }, []);
+  });
 
-  const cargarPerfil = useCallback(async () => {
+  const cargarPerfil = useEffectEvent(async () => {
     try {
       const res = await api.get('/perfil/mi-perfil');
-      if (res.data?.foto_perfil) setProfilePhotoUrl(resolveImageUrl(res.data.foto_perfil));
-      if (res.data?.banner_perfil) {
-        setBannerUrl(resolveImageUrl(res.data.banner_perfil));
-        setBannerColor(null);
-      } else if (res.data?.banner_color) {
-        setBannerColor(res.data.banner_color);
-        setBannerUrl(null);
-      }
+      loadProfileMedia(res.data);
       if (res.data?.nombre_usuario) {
         const parts = res.data.nombre_usuario.split(" ");
         setUserName(parts[0] || "");
@@ -138,77 +130,18 @@ export default function SeccionMiPerfil({ userId }) {
     } catch (error) {
       console.error('Error cargando perfil:', error);
     }
-  }, []);
+  });
 
   useEffect(() => {
     if (userId) {
       void cargarDatosPerfil();
       void cargarPerfil();
     }
-  }, [userId, cargarDatosPerfil, cargarPerfil]);
+  }, [userId]);
 
   const onUserNameChange = (e) => setUserName(e.target.value);
   const onUserSurnameChange = (e) => setUserSurname(e.target.value);
   const onUserPhoneChange = (e) => setUserPhone(e.target.value);
-
-  const onProfilePhotoChange = async (event) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    const formData = new FormData();
-    formData.append('file', file);
-    setPhotoUploading(true);
-    try {
-      const res = await uploadProfilePhoto(formData);
-      if (res.data?.url) {
-        const newUrl = resolveImageUrl(res.data.url);
-        setProfilePhotoUrl(newUrl);
-        // Notificar al sidebar para que actualice la foto
-        window.dispatchEvent(new CustomEvent('profile-photo-updated', { detail: { url: newUrl } }));
-        notify('Foto de perfil actualizada', 'success');
-      }
-    } catch (error) {
-      console.error('Error subiendo foto de perfil:', error);
-      notify('No se pudo subir la foto', 'error');
-    } finally {
-      setPhotoUploading(false);
-    }
-  };
-
-  const onBannerImageChange = async (event) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    const formData = new FormData();
-    formData.append('file', file);
-    setBannerUploading(true);
-    try {
-      const res = await uploadBannerPhoto(formData);
-      if (res.data?.url) {
-        const newUrl = resolveImageUrl(res.data.url);
-        setBannerUrl(newUrl);
-        setBannerColor(null);
-        window.dispatchEvent(new CustomEvent('profile-banner-updated', { detail: { bannerUrl: newUrl, bannerColor: null } }));
-        notify('Banner actualizado', 'success');
-        setShowBannerEditor(false);
-      }
-    } catch {
-      notify('No se pudo subir el banner', 'error');
-    } finally {
-      setBannerUploading(false);
-    }
-  };
-
-  const onBannerColorSelect = async (color) => {
-    try {
-      await saveBannerColor(color);
-      setBannerColor(color);
-      setBannerUrl(null);
-      window.dispatchEvent(new CustomEvent('profile-banner-updated', { detail: { bannerUrl: null, bannerColor: color } }));
-      notify('Color de banner guardado', 'success');
-      setShowBannerEditor(false);
-    } catch {
-      notify('No se pudo guardar el color', 'error');
-    }
-  };
 
   const onActualizarPerfil = async () => {
     try {
@@ -541,20 +474,9 @@ export default function SeccionMiPerfil({ userId }) {
             padding: "1.5rem"
           }}
         >
-          <button
-            type="button"
-            aria-label="Cerrar detalles de fidelización"
+          <ModalBackdrop
+            label="Cerrar detalles de fidelización"
             onClick={() => setMostrarDetallesFidelizacion(false)}
-            style={{
-              position: "absolute",
-              inset: 0,
-              width: "100%",
-              height: "100%",
-              padding: 0,
-              border: 0,
-              background: "transparent",
-              cursor: "default"
-            }}
           />
           <div
             style={{

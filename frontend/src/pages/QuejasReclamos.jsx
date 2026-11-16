@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { crearQueja, getOrdenes, getQuejas, getApiBaseUrl, cancelarQueja, getMensajesReclamo, enviarMensajeReclamo } from "../services/api";
 import { IconCheck, IconAlertTriangle, IconEye, IconBook, IconPackage, IconInfo, IconTruck, IconMessage, IconStore, IconStoreAlt } from "../components/Icons";
+import { tiempoTranscurrido } from "../utils/catalogo";
 
 const MOTIVO_ICON_MAP = {
   "Libro dañado o defectuoso": <IconBook width={15} height={15} />,
@@ -189,19 +190,6 @@ export default function QuejasReclamos() {
   };
 
   const EC = darkMode ? ESTADO_CONFIG_DARK : ESTADO_CONFIG;
-
-  function tiempoTranscurrido(fechaStr) {
-    if (!fechaStr) return null;
-    const diff = Date.now() - new Date(fechaStr).getTime();
-    const mins = Math.floor(diff / 60000);
-    if (mins < 60) return `hace ${mins} min`;
-    const hrs = Math.floor(mins / 60);
-    if (hrs < 24) return `hace ${hrs} h`;
-    const days = Math.floor(hrs / 24);
-    if (days < 30) return `hace ${days} día${days > 1 ? 's' : ''}`;
-    const months = Math.floor(days / 30);
-    return `hace ${months} mes${months > 1 ? 'es' : ''}`;
-  }
 
   const cargar = useCallback(async () => {
     setCargando(true);

@@ -1,4 +1,3 @@
-import anyio
 from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Form, Body # ⬅️ ASEGÚRATE DE QUE 'Body' ESTÉ AQUÍ
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from typing import List, Optional
@@ -7,6 +6,7 @@ import os, uuid
 from datetime import datetime, timedelta, timezone
 
 from app.auth import verify_token
+from app.utils.router_helpers import guardar_upload as _guardar_upload
 from app.models.libro import (
     eliminar_libro_por_admin,
     ocultar_libro,
@@ -36,11 +36,6 @@ UPLOAD_DIGITAL_DIR = "uploads/libros_digitales"
 os.makedirs(UPLOAD_DIGITAL_DIR, exist_ok=True)
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-
-async def _guardar_upload(file: UploadFile, filepath: str) -> None:
-    async with await anyio.open_file(filepath, "wb") as destination:
-        while chunk := await file.read(1024 * 1024):
-            await destination.write(chunk)
 
 NIVELES_FIDELIZACION = (
     "Bronce", "Plata", "Oro", "Zafiro", "Rubi", "Esmeralda",
@@ -73,6 +68,14 @@ def verificar_tienda_activa(tienda):
             detail="Tu tienda ha sido suspendida por incumplir las normas. Comunícate con el administrador."
         )
     return True
+
+
+def _obtener_tienda_activa(user):
+    tienda = obtener_tienda_por_usuario(int(user["sub"]))
+    if not tienda:
+        raise HTTPException(status_code=404, detail="No tienes una tienda registrada")
+    verificar_tienda_activa(tienda)
+    return tienda
 
 
 def validar_configuracion_acceso_anticipado(
@@ -119,55 +122,35 @@ def listar_categorias():
 # GET /libros/mis-libros
 @router.get("/mis-libros")
 def mis_libros(user=Depends(get_current_user)):
-    id_usuario = int(user["sub"])
-    tienda = obtener_tienda_por_usuario(id_usuario)
-    if not tienda:
-        raise HTTPException(status_code=404, detail="No tienes una tienda registrada")
-    verificar_tienda_activa(tienda)
+    tienda = _obtener_tienda_activa(user)
     return obtener_libros_por_tienda(tienda["id_tienda"])
 
 
 # GET /libros/mis-pedidos
 @router.get("/mis-pedidos")
 def mis_pedidos(user=Depends(get_current_user)):
-    id_usuario = int(user["sub"])
-    tienda = obtener_tienda_por_usuario(id_usuario)
-    if not tienda:
-        raise HTTPException(status_code=404, detail="No tienes una tienda registrada")
-    verificar_tienda_activa(tienda)
+    tienda = _obtener_tienda_activa(user)
     return obtener_pedidos_tienda(tienda["id_tienda"])
 
 
 # GET /libros/mis-ventas
 @router.get("/mis-ventas")
 def mis_ventas(user=Depends(get_current_user)):
-    id_usuario = int(user["sub"])
-    tienda = obtener_tienda_por_usuario(id_usuario)
-    if not tienda:
-        raise HTTPException(status_code=404, detail="No tienes una tienda registrada")
-    verificar_tienda_activa(tienda)
+    tienda = _obtener_tienda_activa(user)
     return obtener_ventas_tienda(tienda["id_tienda"])
 
 
 # GET /libros/stats
 @router.get("/stats")
 def stats_ventas(user=Depends(get_current_user)):
-    id_usuario = int(user["sub"])
-    tienda = obtener_tienda_por_usuario(id_usuario)
-    if not tienda:
-        raise HTTPException(status_code=404, detail="No tienes una tienda registrada")
-    verificar_tienda_activa(tienda)
+    tienda = _obtener_tienda_activa(user)
     return obtener_stats_ventas(tienda["id_tienda"])
 
 
 # GET /libros/top-vendidos
 @router.get("/top-vendidos")
 def top_vendidos(user=Depends(get_current_user)):
-    id_usuario = int(user["sub"])
-    tienda = obtener_tienda_por_usuario(id_usuario)
-    if not tienda:
-        raise HTTPException(status_code=404, detail="No tienes una tienda registrada")
-    verificar_tienda_activa(tienda)
+    tienda = _obtener_tienda_activa(user)
     return obtener_top_vendidos(tienda["id_tienda"], limite=5)
 
 
@@ -176,11 +159,7 @@ def top_vendidos(user=Depends(get_current_user)):
 # Opcional: ?umbral=5 para cambiar el límite (por defecto 3)
 @router.get("/alertas-stock")
 def alertas_stock(umbral: int = 3, user=Depends(get_current_user)):
-    id_usuario = int(user["sub"])
-    tienda = obtener_tienda_por_usuario(id_usuario)
-    if not tienda:
-        raise HTTPException(status_code=404, detail="No tienes una tienda registrada")
-    verificar_tienda_activa(tienda)
+    tienda = _obtener_tienda_activa(user)
     return obtener_alertas_stock(tienda["id_tienda"], umbral)
 
 
@@ -218,12 +197,7 @@ async def publicar_libro(
         )
     )
 
-    id_usuario = int(user["sub"])
-    tienda = obtener_tienda_por_usuario(id_usuario)
-    if not tienda:
-        raise HTTPException(status_code=404, detail="No tienes una tienda registrada")
-
-    verificar_tienda_activa(tienda)
+    tienda = _obtener_tienda_activa(user)
 
     resultado = crear_libro(
         id_tienda=tienda["id_tienda"],
@@ -293,12 +267,7 @@ def editar(
         )
     )
 
-    id_usuario = int(user["sub"])
-    tienda = obtener_tienda_por_usuario(id_usuario)
-    if not tienda:
-        raise HTTPException(status_code=404, detail="No tienes una tienda registrada")
-
-    verificar_tienda_activa(tienda)
+    tienda = _obtener_tienda_activa(user)
 
     resultado = editar_libro(
         id_libro=id_libro,
@@ -336,12 +305,7 @@ def eliminar(id_libro: int, user=Depends(get_current_user)):
         return {"mensaje": "Libro eliminado por el Administrador"}
 
     # SI ES VENDEDOR: Mantiene la lógica estricta de seguridad
-    id_usuario = int(user["sub"])
-    tienda = obtener_tienda_por_usuario(id_usuario)
-    if not tienda:
-        raise HTTPException(status_code=404, detail="No tienes una tienda registrada")
-
-    verificar_tienda_activa(tienda)
+    tienda = _obtener_tienda_activa(user)
 
     resultado = eliminar_libro(id_libro, tienda["id_tienda"])
     if not resultado["ok"]:
@@ -354,12 +318,7 @@ def eliminar(id_libro: int, user=Depends(get_current_user)):
 # Usado por el vendedor desde el dashboard
 @router.patch("/{id_libro}/stock")
 def update_stock(id_libro: int, stock: int = Form(...), user=Depends(get_current_user)):
-    id_usuario = int(user["sub"])
-    tienda = obtener_tienda_por_usuario(id_usuario)
-    if not tienda:
-        raise HTTPException(status_code=404, detail="No tienes una tienda registrada")
-
-    verificar_tienda_activa(tienda)
+    tienda = _obtener_tienda_activa(user)
 
     if stock < 0:
         raise HTTPException(status_code=400, detail="El stock no puede ser negativo")
@@ -393,22 +352,6 @@ def descontar(id_libro: int, cantidad: int = Form(...)):
     return resultado
 
 # PATCH /libros/{id_libro}/ocultar
-from pydantic import BaseModel
-
-class OcultarPayload(BaseModel):
-    oculto: bool
-
-# PATCH /libros/{id_libro}/ocultar
-from pydantic import BaseModel
-
-# 🚨 La clase DEBE estar arriba de la función
-class OcultarPayload(BaseModel):
-    oculto: bool
-
-# PATCH /libros/{id_libro}/ocultar
-from fastapi import Body # 🚨 Asegúrate de agregar Body en tus imports de fastapi arriba
-
-# PATCH /libros/{id_libro}/ocultar
 # PATCH /libros/{id_libro}/ocultar
 @router.patch("/{id_libro}/ocultar")
 def ocultar(id_libro: int, payload: dict = Body(...), user=Depends(get_current_user)):
@@ -421,12 +364,7 @@ def ocultar(id_libro: int, payload: dict = Body(...), user=Depends(get_current_u
             raise HTTPException(status_code=500, detail=resultado["error"])
         return {"mensaje": "Estado de visibilidad del libro actualizado por el Administrador"}
 
-    id_usuario = int(user["sub"])
-    tienda = obtener_tienda_por_usuario(id_usuario)
-    if not tienda:
-        raise HTTPException(status_code=404, detail="No tienes una tienda registrada")
-        
-    verificar_tienda_activa(tienda)
+    tienda = _obtener_tienda_activa(user)
 
     resultado = ocultar_libro(id_libro, ocultar_estado, id_tienda=tienda["id_tienda"])
     if not resultado["ok"]:

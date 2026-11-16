@@ -1,6 +1,8 @@
-import { createElement, useState, useEffect, useCallback } from "react";
-import api, { uploadProfilePhoto, uploadBannerPhoto, saveBannerColor } from "../../services/api";
+import { createElement, useState, useEffect, useEffectEvent } from "react";
+import api from "../../services/api";
 import { notify } from "../ToastProvider";
+import useProfileMedia from "../../hooks/useProfileMedia";
+import useSyncedDarkMode from "../../hooks/useSyncedDarkMode";
 import {
   IconUser, IconUsers, IconBook, IconPackage, IconStore,
   IconAlertTriangle, IconTool, IconCheck, IconSettings
@@ -12,33 +14,30 @@ export default function SeccionPerfilAdmin({ stats, gestionProp }) {
   const [userEmail, setUserEmail] = useState("");
   const [userPhone, setUserPhone] = useState("");
   const [fechaRegistro, setFechaRegistro] = useState(null);
-  const [profilePhotoUrl, setProfilePhotoUrl] = useState(null);
-  const [photoUploading, setPhotoUploading] = useState(false);
-  const [bannerUrl, setBannerUrl] = useState(null);
-  const [bannerColor, setBannerColor] = useState('#7A1E3A');
-  const [bannerUploading, setBannerUploading] = useState(false);
-  const [showBannerEditor, setShowBannerEditor] = useState(false);
-  const [gestion, setGestion] = useState(() => gestionProp || { reclamos: 0, soporte: 0, resueltos: 0, pendientes: 0 });
-  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('darkMode') === 'true');
+  const {
+    profilePhotoUrl,
+    photoUploading,
+    bannerUrl,
+    bannerColor,
+    setBannerColor,
+    bannerUploading,
+    showBannerEditor,
+    setShowBannerEditor,
+    loadProfileMedia,
+    onProfilePhotoChange,
+    onBannerImageChange,
+    onBannerColorSelect,
+  } = useProfileMedia();
+  const [gestionLocal, setGestionLocal] = useState({ reclamos: 0, soporte: 0, resueltos: 0, pendientes: 0 });
+  const gestion = gestionProp ?? gestionLocal;
+  const [darkMode, setDarkMode] = useSyncedDarkMode();
 
-  useEffect(() => {
-    if (gestionProp) {
-      setGestion(gestionProp);
-    }
-  }, [gestionProp]);
-
-  const resolveImageUrl = (path) => {
-    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
-    if (!path) return null;
-    return `${baseUrl}/${path.replace(/^\//, '')}`;
-  };
-
-  const cargarGestion = useCallback(async () => {
+  const cargarGestion = useEffectEvent(async () => {
     if (gestionProp) return;
     try {
       const res = await api.get('/quejas/admin/todas');
       const lista = Array.isArray(res.data) ? res.data : [];
-      setGestion({
+      setGestionLocal({
         reclamos: lista.filter(s => s.tipo_solicitud === 'Reclamo').length,
         soporte: lista.filter(s => s.tipo_solicitud !== 'Reclamo').length,
         resueltos: lista.filter(s => s.estado === 'Resuelto').length,
@@ -47,19 +46,12 @@ export default function SeccionPerfilAdmin({ stats, gestionProp }) {
     } catch (error) {
       console.error('Error cargando gestión:', error);
     }
-  }, [gestionProp]);
+  });
 
-  const cargarPerfil = useCallback(async () => {
+  const cargarPerfil = useEffectEvent(async () => {
     try {
       const res = await api.get('/perfil/mi-perfil');
-      if (res.data?.foto_perfil) setProfilePhotoUrl(resolveImageUrl(res.data.foto_perfil));
-      if (res.data?.banner_perfil) {
-        setBannerUrl(resolveImageUrl(res.data.banner_perfil));
-        setBannerColor(null);
-      } else if (res.data?.banner_color) {
-        setBannerColor(res.data.banner_color);
-        setBannerUrl(null);
-      }
+      loadProfileMedia(res.data);
       if (res.data?.nombre_usuario) {
         const parts = res.data.nombre_usuario.split(" ");
         setUserName(parts[0] || "");
@@ -71,84 +63,16 @@ export default function SeccionPerfilAdmin({ stats, gestionProp }) {
     } catch (error) {
       console.error('Error cargando perfil:', error);
     }
-  }, []);
+  });
 
   useEffect(() => {
     void cargarPerfil();
     void cargarGestion();
-  }, [cargarPerfil, cargarGestion]);
-
-  useEffect(() => {
-    const handleDarkModeChange = () => setDarkMode(localStorage.getItem('darkMode') === 'true');
-    window.addEventListener('darkModeChange', handleDarkModeChange);
-    window.addEventListener('storage', handleDarkModeChange);
-    return () => {
-      window.removeEventListener('darkModeChange', handleDarkModeChange);
-      window.removeEventListener('storage', handleDarkModeChange);
-    };
-  }, []);
+  }, [gestionProp]);
 
   const onUserNameChange = (e) => setUserName(e.target.value);
   const onUserSurnameChange = (e) => setUserSurname(e.target.value);
   const onUserPhoneChange = (e) => setUserPhone(e.target.value);
-
-  const onProfilePhotoChange = async (event) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    const formData = new FormData();
-    formData.append('file', file);
-    setPhotoUploading(true);
-    try {
-      const res = await uploadProfilePhoto(formData);
-      if (res.data?.url) {
-        const newUrl = resolveImageUrl(res.data.url);
-        setProfilePhotoUrl(newUrl);
-        window.dispatchEvent(new CustomEvent('profile-photo-updated', { detail: { url: newUrl } }));
-        notify('Foto de perfil actualizada', 'success');
-      }
-    } catch (error) {
-      console.error('Error subiendo foto de perfil:', error);
-      notify('No se pudo subir la foto', 'error');
-    } finally {
-      setPhotoUploading(false);
-    }
-  };
-
-  const onBannerImageChange = async (event) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    const formData = new FormData();
-    formData.append('file', file);
-    setBannerUploading(true);
-    try {
-      const res = await uploadBannerPhoto(formData);
-      if (res.data?.url) {
-        const newUrl = resolveImageUrl(res.data.url);
-        setBannerUrl(newUrl);
-        setBannerColor(null);
-        window.dispatchEvent(new CustomEvent('profile-banner-updated', { detail: { bannerUrl: newUrl, bannerColor: null } }));
-        notify('Banner actualizado', 'success');
-        setShowBannerEditor(false);
-      }
-    } catch {
-      notify('No se pudo subir el banner', 'error');
-    } finally {
-      setBannerUploading(false);
-    }
-  };
-
-  const onBannerColorSelect = async (color) => {
-    try {
-      await saveBannerColor(color);
-      setBannerColor(color);
-      setBannerUrl(null);
-      window.dispatchEvent(new CustomEvent('profile-banner-updated', { detail: { bannerUrl: null, bannerColor: color } }));
-      notify('Color de banner guardado', 'success');
-      setShowBannerEditor(false);
-    } catch {
-      notify('No se pudo guardar el color', 'error');
-    }
-  };
 
   const onActualizarPerfil = async () => {
     try {

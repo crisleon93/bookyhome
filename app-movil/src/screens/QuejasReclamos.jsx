@@ -16,8 +16,7 @@ import {
   IconAlertTriangle, IconCheck, IconEye, IconChevronRight, IconMessage, IconStoreAlt,
 } from '../components/Icons';
 import { AuthContext } from '../context/AuthContext';
-import SidebarMenu from '../components/SidebarMenu';
-import SidebarVendedor from '../components/SidebarVendedor';
+import RoleBasedSidebar from '../components/RoleBasedSidebar';
 
 const PRIMARY = '#7A1E3A';
 const WHITE = '#FFFFFF';
@@ -817,23 +816,13 @@ export default function QuejasReclamos({ navigation }) {
         </View>
       </Modal>
 
-      {user?.rol === 'vendedor' ? (
-        <SidebarVendedor
-          visible={sidebarVisible}
-          onClose={() => setSidebarVisible(false)}
-          user={user}
-          navigation={navigation}
-          onSignOut={signOut}
-        />
-      ) : (
-        <SidebarMenu
-          visible={sidebarVisible}
-          onClose={() => setSidebarVisible(false)}
-          user={user}
-          navigation={navigation}
-          onSignOut={signOut}
-        />
-      )}
+      <RoleBasedSidebar
+        visible={sidebarVisible}
+        onClose={() => setSidebarVisible(false)}
+        user={user}
+        navigation={navigation}
+        onSignOut={signOut}
+      />
     </SafeAreaView>
   );
 }

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { crearSoporte, getSoporte } from '../services/api';
 import { IconCheck, IconTool, IconLock, IconCreditCard, IconShoppingBag, IconMessage, IconRefresh } from '../components/Icons';
+import { tiempoTranscurrido } from '../utils/catalogo';
 
 const CATEGORIAS = [
   { label: 'La página no carga', icon: <IconRefresh width={18} height={18} /> },
@@ -62,19 +63,6 @@ const fieldStyle = {
   background: '#fff',
   transition: 'border-color 0.2s, box-shadow 0.2s',
 };
-
-function tiempoTranscurrido(fechaStr) {
-  if (!fechaStr) return null;
-  const diff = Date.now() - new Date(fechaStr).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 60) return `hace ${mins} min`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `hace ${hrs} h`;
-  const days = Math.floor(hrs / 24);
-  if (days < 30) return `hace ${days} día${days > 1 ? 's' : ''}`;
-  const months = Math.floor(days / 30);
-  return `hace ${months} mes${months > 1 ? 'es' : ''}`;
-}
 
 export default function Soporte() {
   const [tickets, setTickets] = useState([]);

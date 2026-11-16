@@ -1,41 +1,12 @@
 import { jwtDecode } from "jwt-decode";
-import { getApiBaseUrl } from "../services/api";
-
-export const categoriaColor = (categoria = '', dark = false) => {
-  const texto = categoria.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-  if (dark) {
-    if (texto.includes('terror')) return { bg: '#1e1530', color: '#b48ce8' };
-    if (texto.includes('ciencia') || texto.includes('cientifica')) return { bg: '#0f2e1a', color: '#4ade80' };
-    if (texto.includes('romance')) return { bg: '#2e0d1e', color: '#f472b6' };
-    if (texto.includes('fantasia')) return { bg: '#0d1a3c', color: '#818cf8' };
-    if (texto.includes('historia')) return { bg: '#2a1a08', color: '#fbbf24' };
-    if (texto.includes('tecnologia')) return { bg: '#0a2a2e', color: '#22d3ee' };
-    if (texto.includes('juvenil')) return { bg: '#2a1e00', color: '#fcd34d' };
-    if (texto.includes('infantil')) return { bg: '#0a1e30', color: '#60a5fa' };
-    if (texto.includes('aventura')) return { bg: '#2a1500', color: '#fb923c' };
-    if (texto.includes('arte')) return { bg: '#1e0a24', color: '#d8b4fe' };
-    if (texto.includes('biografia')) return { bg: '#0d1f3c', color: '#7dd3fc' };
-    if (texto.includes('educacion')) return { bg: '#0f2e18', color: '#6ee7b7' };
-    if (texto.includes('ficcion')) return { bg: '#2e0d0d', color: '#f87171' };
-    if (texto.includes('comedia')) return { bg: '#2a2008', color: '#fcd34d' };
-    return { bg: '#2a1a24', color: '#e05a7a' };
-  }
-  if (texto.includes('terror')) return { bg: '#eee8f7', color: '#603a92' };
-  if (texto.includes('ciencia') || texto.includes('cientifica')) return { bg: '#e4f5e9', color: '#1f7a45' };
-  if (texto.includes('romance')) return { bg: '#fde8ef', color: '#b4235d' };
-  if (texto.includes('fantasia')) return { bg: '#e9edff', color: '#4156a6' };
-  if (texto.includes('historia')) return { bg: '#f8eddb', color: '#8c5a1d' };
-  if (texto.includes('tecnologia')) return { bg: '#e2f4f6', color: '#137783' };
-  if (texto.includes('juvenil')) return { bg: '#fff2d7', color: '#a25d00' };
-  if (texto.includes('infantil')) return { bg: '#e4f4ff', color: '#2775a7' };
-  if (texto.includes('aventura')) return { bg: '#fff0df', color: '#b85f11' };
-  if (texto.includes('arte')) return { bg: '#f4e6f6', color: '#86418f' };
-  if (texto.includes('biografia')) return { bg: '#e8eef8', color: '#365d96' };
-  if (texto.includes('educacion')) return { bg: '#e8f3e9', color: '#397542' };
-  if (texto.includes('ficcion')) return { bg: '#fce4ec', color: '#8b0000' };
-  if (texto.includes('comedia')) return { bg: '#fff8db', color: '#a25d00' };
-  return { bg: '#f4eef0', color: '#7a1e3a' };
-};
+import { resolveLibroCandidate } from "../utils/catalogo";
+export {
+  categoriaColor,
+  parseTiendaInfo,
+  tiempoTranscurrido,
+  resolveImageUrl,
+  resolveLibroCandidate,
+} from "../utils/catalogo";
 
 export const formatPrecio = (valor) => {
   if (!valor && valor !== 0) return "$0 COP";
@@ -93,34 +64,6 @@ export const infoEstadoEnvio = (pedido) => {
   if (/transito|en viaje|en ruta|camino|enviad|traslado|adelanto|forzado|registrad|cread|generad|emitid/.test(raw)) return { clase: "camino", texto: "En tránsito" };
   if (/devolu|rechaz|no entregad|excepci|nov/.test(raw)) return { clase: "devolucion", texto: "Devolución" };
   return { clase: "procesando", texto: raw.charAt(0).toUpperCase() + raw.slice(1) };
-};
-
-export const resolveImageUrl = (value) => {
-  if (!value || typeof value !== "string") return null;
-  const trimmed = value.trim();
-  if (!trimmed) return null;
-  if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) return trimmed;
-  if (trimmed.startsWith("/")) return `${getApiBaseUrl()}${trimmed}`;
-  return `${getApiBaseUrl()}/${trimmed}`;
-};
-
-export const resolveLibroCandidate = (candidate) => {
-  if (!candidate) return null;
-  if (Array.isArray(candidate)) {
-    for (const item of candidate) {
-      const resolved = resolveImageUrl(item);
-      if (resolved) return resolved;
-    }
-    return null;
-  }
-  if (typeof candidate === "string" && candidate.includes(",")) {
-    for (const part of candidate.split(",")) {
-      const resolved = resolveImageUrl(part);
-      if (resolved) return resolved;
-    }
-    return null;
-  }
-  return resolveImageUrl(candidate);
 };
 
 export const getLibroImageUrl = (libro) => {
