@@ -1,6 +1,6 @@
 FROM ghcr.io/astral-sh/uv:0.11.16 AS uv
 
-FROM python:3.11-slim
+FROM python:3.15-slim
 
 WORKDIR /app
 
