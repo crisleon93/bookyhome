@@ -373,7 +373,7 @@ describe('Librerias — getLogoUrl con URL relativa y absoluta', () => {
       }],
     })
     renderLibrerias()
-    await waitFor(() => screen.getByText('AB'))
+    await waitFor(() => expect(screen.getByText('AB')).toBeInTheDocument())
   })
 })
 
