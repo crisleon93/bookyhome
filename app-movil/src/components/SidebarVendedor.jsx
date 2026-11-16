@@ -9,18 +9,15 @@ import {
   IconNomina, IconStar, IconAlertTriangle, IconMail,
   IconBell, IconUser, IconSettings, IconTag, IconTicket, IconTruck,
 } from './Icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useNotifications } from '../context/NotificationContext';
-import { getConfigLibreria, getApiBaseUrl } from '../services/api';
+import { getConfigLibreria, getApiBaseUrl, getProfile, resolveImageUrl } from '../services/api';
 
 const { width } = Dimensions.get('window');
 const DRAWER_WIDTH = width * 0.78 > 300 ? 300 : width * 0.78;
 const PRIMARY  = '#7A1E3A';
 const DARK     = '#5A1228';
 const WHITE    = '#FFFFFF';
-const ITEM_BG  = 'rgba(255,255,255,0.08)';
-const ITEM_ACTIVE_BG = 'rgba(255,255,255,0.22)';
-const DIVIDER  = 'rgba(255,255,255,0.12)';
-
 const MenuItem = ({ icon, label, onPress, badge, soon }) => (
   <TouchableOpacity
     style={[styles.item, soon && styles.itemSoon]}
@@ -45,14 +42,17 @@ const MenuItem = ({ icon, label, onPress, badge, soon }) => (
   </TouchableOpacity>
 );
 
-const Sep = () => <View style={styles.sep} />;
-
 export default function SidebarVendedor({ visible, onClose, user, navigation, onSignOut }) {
   const slideAnim = useRef(new Animated.Value(-DRAWER_WIDTH)).current;
   const fadeAnim  = useRef(new Animated.Value(0)).current;
   const { unreadNotifCount, unreadMsgCount } = useNotifications();
   const [logoUrl, setLogoUrl] = useState(null);
-
+  const [bannerUrl, setBannerUrl] = useState(null);
+  const [bannerColor, setBannerColor] = useState(null);
+  const bannerGradientColors = typeof bannerColor === 'string' && bannerColor.startsWith('linear-gradient')
+    ? bannerColor.match(/#[0-9A-Fa-f]{6}/g)
+    : null;
+  const headerBackgroundColor = /^#[0-9A-Fa-f]{6}$/.test(bannerColor || '') ? bannerColor : DARK;
   useEffect(() => {
     if (user?.rol !== 'vendedor' || !user?.id_tienda) {
       setLogoUrl(null);
@@ -68,6 +68,25 @@ export default function SidebarVendedor({ visible, onClose, user, navigation, on
       })
       .catch(() => {});
   }, [user?.id_tienda, user?.rol]);
+
+  useEffect(() => {
+    if (!visible || user?.rol !== 'vendedor') return undefined;
+
+    let active = true;
+    getProfile()
+      .then(({ data }) => {
+        if (!active) return;
+        setBannerUrl(resolveImageUrl(data?.banner_perfil));
+        setBannerColor(data?.banner_perfil ? null : (data?.banner_color || null));
+      })
+      .catch((error) => {
+        if (active) console.warn('No se pudo cargar el banner del perfil para el menú.', error);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [visible, user?.rol]);
 
   useEffect(() => {
     if (visible) {
@@ -99,7 +118,15 @@ export default function SidebarVendedor({ visible, onClose, user, navigation, on
 
         <Animated.View style={[styles.drawer, { transform: [{ translateX: slideAnim }] }]}>
           {/* ── Cabecera ── */}
-          <View style={styles.header}>
+          <View style={[styles.header, { backgroundColor: headerBackgroundColor }]}>
+            {bannerUrl ? (
+              <Image source={{ uri: bannerUrl }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+            ) : bannerGradientColors?.length >= 2 ? (
+              <LinearGradient colors={bannerGradientColors} style={StyleSheet.absoluteFill} />
+            ) : null}
+            {(bannerUrl || bannerGradientColors?.length >= 2) && (
+              <View style={[StyleSheet.absoluteFill, styles.headerOverlay]} />
+            )}
             <View style={styles.avatarBox}>
               {logoUrl
                 ? <Image source={{ uri: logoUrl }} style={styles.avatarImg} />
@@ -125,25 +152,20 @@ export default function SidebarVendedor({ visible, onClose, user, navigation, on
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{ paddingVertical: 10, paddingBottom: 30 }}
           >
-            <MenuItem icon={<IconStoreAlt  size={19} color={WHITE} />} label="Inicio"             onPress={() => go('VendorHome')} />
-            <Sep />
-            <MenuItem icon={<IconBookOpen  size={19} color={WHITE} />} label="Mis Libros"         onPress={() => go('Libreria')} />
-            <MenuItem icon={<IconPlus      size={19} color={WHITE} />} label="Publicar Libro"     onPress={() => go('PublicarLibro')} />
-            <MenuItem icon={<IconTag       size={19} color={WHITE} />} label="Promociones"        onPress={() => go('PromocionesVendedor')} />
-            <MenuItem icon={<IconTicket    size={19} color={WHITE} />} label="Cupones"             onPress={() => go('CuponesVendedor')} />
-            <Sep />
-            <MenuItem icon={<IconCartAlt      size={19} color={WHITE} />} label="Ventas"          onPress={() => go('VentasVendedor')} />
-            <MenuItem icon={<IconShoppingBag  size={19} color={WHITE} />} label="Pedidos"         onPress={() => go('PedidosVendedor')} />
-            <MenuItem icon={<IconTruck        size={19} color={WHITE} />} label="Envíos"           onPress={() => go('EnviosVendedor')} />
-            <Sep />
-            <MenuItem icon={<IconStar      size={19} color={WHITE} />} label="Calificaciones"     onPress={() => go('CalificacionesVendedor')} />
+            <MenuItem icon={<IconStoreAlt  size={19} color={WHITE} />} label="Inicio" onPress={() => go('VendorHome')} />
+            <MenuItem icon={<IconBookOpen  size={19} color={WHITE} />} label="Mis Libros" onPress={() => go('Libreria')} />
+            <MenuItem icon={<IconPlus      size={19} color={WHITE} />} label="Publicar Libro" onPress={() => go('PublicarLibro')} />
+            <MenuItem icon={<IconTag       size={19} color={WHITE} />} label="Promociones" onPress={() => go('PromocionesVendedor')} />
+            <MenuItem icon={<IconTicket    size={19} color={WHITE} />} label="Cupones" onPress={() => go('CuponesVendedor')} />
+            <MenuItem icon={<IconCartAlt      size={19} color={WHITE} />} label="Ventas" onPress={() => go('VentasVendedor')} />
+            <MenuItem icon={<IconShoppingBag  size={19} color={WHITE} />} label="Pedidos" onPress={() => go('PedidosVendedor')} />
+            <MenuItem icon={<IconTruck        size={19} color={WHITE} />} label="Envíos" onPress={() => go('EnviosVendedor')} />
+            <MenuItem icon={<IconStar      size={19} color={WHITE} />} label="Calificaciones" onPress={() => go('CalificacionesVendedor')} />
             <MenuItem icon={<IconAlertTriangle size={19} color={WHITE} />} label="Quejas y reclamos" onPress={() => go('QuejasReclamos')} />
-            <Sep />
-            <MenuItem icon={<IconBell      size={19} color={WHITE} />} label="Notificaciones"     onPress={() => go('Notifications')} badge={unreadNotifCount} />
-            <MenuItem icon={<IconMail      size={19} color={WHITE} />} label="Mensajes"           onPress={() => go('Messages')} badge={unreadMsgCount} />
-            <Sep />
-            <MenuItem icon={<IconUser      size={19} color={WHITE} />} label="Perfil"             onPress={() => go('PerfilVendedor')} />
-            <MenuItem icon={<IconSettings  size={19} color={WHITE} />} label="Configuración"      onPress={() => go('ConfiguracionTienda')} />
+            <MenuItem icon={<IconBell      size={19} color={WHITE} />} label="Notificaciones" onPress={() => go('Notifications')} badge={unreadNotifCount} />
+            <MenuItem icon={<IconMail      size={19} color={WHITE} />} label="Mensajes" onPress={() => go('Messages')} badge={unreadMsgCount} />
+            <MenuItem icon={<IconUser      size={19} color={WHITE} />} label="Perfil" onPress={() => go('PerfilVendedor')} />
+            <MenuItem icon={<IconSettings  size={19} color={WHITE} />} label="Configuración" onPress={() => go('ConfiguracionTienda')} />
           </ScrollView>
 
           {/* ── Cerrar sesión ── */}
@@ -178,7 +200,8 @@ const styles = StyleSheet.create({
   },
 
   // cabecera
-  header:      { backgroundColor: DARK, paddingTop: Platform.OS === 'ios' ? 54 : 34, paddingBottom: 20, paddingHorizontal: 18, flexDirection: 'row', alignItems: 'center' },
+  header:      { backgroundColor: DARK, paddingTop: Platform.OS === 'ios' ? 54 : 34, paddingBottom: 20, paddingHorizontal: 18, flexDirection: 'row', alignItems: 'center', overflow: 'hidden' },
+  headerOverlay: { backgroundColor: 'rgba(0,0,0,0.3)' },
   avatarBox:   { width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.35)', overflow: 'hidden' },
   avatarImg:   { width: 44, height: 44, borderRadius: 22 },
   avatarText:  { fontSize: 18, fontWeight: '800', color: WHITE },
@@ -200,8 +223,6 @@ const styles = StyleSheet.create({
 
   soonChip:     { backgroundColor: 'rgba(255,255,255,0.15)', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10 },
   soonText:     { color: 'rgba(255,255,255,0.5)', fontSize: 9, fontWeight: '700' },
-
-  sep:          { height: 1, backgroundColor: DIVIDER, marginHorizontal: 18, marginVertical: 6 },
 
   // cerrar sesión
   logoutBox:   { padding: 16, paddingBottom: Platform.OS === 'ios' ? 32 : 16 },

@@ -73,7 +73,8 @@ export default function VentasVendedor({ navigation }) {
   const [error, setError] = useState('');
   const [ordenDetalle, setOrdenDetalle] = useState(null);
   const [paginaActual, setPaginaActual] = useState(1);
-  const [ventasPorPagina, setVentasPorPagina] = useState(10);
+  const [ventasPorPagina, setVentasPorPagina] = useState(8);
+  const opcionesPorPagina = [5, 8, 10, 20];
 
   const cargarVentas = useCallback(async (silencioso = false) => {
     if (!silencioso) setLoading(true);
@@ -134,6 +135,8 @@ export default function VentasVendedor({ navigation }) {
     { label: 'Libros vendidos', value: librosVendidos, icon: IconBook, color: '#6d28d9', background: '#ede9fe' },
     { label: 'Clientes', value: clientesUnicos, icon: IconUser, color: '#10b981', background: '#d1fae5' },
   ];
+  const paginasVisibles = Array.from({ length: totalPaginas }, (_, index) => index + 1)
+    .filter((page) => page === 1 || page === totalPaginas || Math.abs(page - paginaSegura) <= 1);
 
   const renderVenta = ({ item }) => {
     const fechaVenta = formatoFecha(item.fecha);
@@ -281,10 +284,32 @@ export default function VentasVendedor({ navigation }) {
             <View>
               {ventas.length > 0 && (
                 <View style={styles.pagination}>
-                  <Text style={styles.paginationInfo}>
-                    Mostrando {(paginaSegura - 1) * ventasPorPagina + 1}–
-                    {Math.min(paginaSegura * ventasPorPagina, ventas.length)} de {ventas.length} órdenes
-                  </Text>
+                  <View style={styles.paginationHeader}>
+                    <Text style={styles.paginationInfo}>
+                      Mostrando {(paginaSegura - 1) * ventasPorPagina + 1}–
+                      {Math.min(paginaSegura * ventasPorPagina, ventas.length)} de {ventas.length} órdenes
+                    </Text>
+                    <View style={styles.pageSizeRow}>
+                      <Text style={styles.pageSizeLabel}>Ver:</Text>
+                      {opcionesPorPagina.map((size) => (
+                        <TouchableOpacity
+                          key={size}
+                          style={[styles.pageSizeButton, ventasPorPagina === size && styles.pageSizeButtonActive]}
+                          onPress={() => {
+                            setVentasPorPagina(size);
+                            setPaginaActual(1);
+                          }}
+                          accessibilityRole="button"
+                          accessibilityState={{ selected: ventasPorPagina === size }}
+                        >
+                          <Text style={[styles.pageSizeText, ventasPorPagina === size && styles.pageSizeTextActive]}>
+                            {size}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  </View>
+
                   <View style={styles.paginationControls}>
                     <TouchableOpacity
                       style={[styles.pageButton, paginaSegura === 1 && styles.pageButtonDisabled]}
@@ -292,36 +317,38 @@ export default function VentasVendedor({ navigation }) {
                       disabled={paginaSegura === 1}
                       accessibilityLabel="Página anterior"
                     >
-                      <Text style={styles.pageButtonText}>‹</Text>
+                      <Text style={[styles.pageButtonText, paginaSegura === 1 && styles.pageButtonTextDisabled]}>Anterior</Text>
                     </TouchableOpacity>
-                    <Text style={styles.pageNumber}>{paginaSegura} / {totalPaginas}</Text>
+
+                    <View style={styles.pageNumberRow}>
+                      {paginasVisibles.map((page, index, array) => {
+                        const prevPage = array[index - 1];
+                        const showEllipsis = index > 0 && page - prevPage > 1;
+
+                        return (
+                          <React.Fragment key={page}>
+                            {showEllipsis ? <Text style={styles.pageEllipsis}>…</Text> : null}
+                            <TouchableOpacity
+                              style={[styles.pageNumberButton, paginaSegura === page && styles.pageNumberButtonActive]}
+                              onPress={() => setPaginaActual(page)}
+                              accessibilityRole="button"
+                              accessibilityState={{ selected: paginaSegura === page }}
+                            >
+                              <Text style={[styles.pageNumberText, paginaSegura === page && styles.pageNumberTextActive]}>{page}</Text>
+                            </TouchableOpacity>
+                          </React.Fragment>
+                        );
+                      })}
+                    </View>
+
                     <TouchableOpacity
                       style={[styles.pageButton, paginaSegura === totalPaginas && styles.pageButtonDisabled]}
                       onPress={() => setPaginaActual((page) => Math.min(totalPaginas, page + 1))}
                       disabled={paginaSegura === totalPaginas}
                       accessibilityLabel="Página siguiente"
                     >
-                      <Text style={styles.pageButtonText}>›</Text>
+                      <Text style={[styles.pageButtonText, paginaSegura === totalPaginas && styles.pageButtonTextDisabled]}>Siguiente</Text>
                     </TouchableOpacity>
-                  </View>
-                  <View style={styles.pageSizeRow}>
-                    <Text style={styles.pageSizeLabel}>Por página</Text>
-                    {[5, 10, 20].map((size) => (
-                      <TouchableOpacity
-                        key={size}
-                        style={[styles.pageSizeButton, ventasPorPagina === size && styles.pageSizeButtonActive]}
-                        onPress={() => {
-                          setVentasPorPagina(size);
-                          setPaginaActual(1);
-                        }}
-                        accessibilityRole="button"
-                        accessibilityState={{ selected: ventasPorPagina === size }}
-                      >
-                        <Text style={[styles.pageSizeText, ventasPorPagina === size && styles.pageSizeTextActive]}>
-                          {size}
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
                   </View>
                 </View>
               )}
@@ -395,15 +422,22 @@ const themeBaseStyles = StyleSheet.create({
   kpiInfo: { flex: 1, minWidth: 0 },
   kpiLabel: { color: MUTED, fontSize: 9, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.3, marginBottom: 4 },
   kpiValue: { color: TEXT, fontSize: 13, fontWeight: '900' },
-  pagination: { alignItems: 'center', backgroundColor: WHITE, borderWidth: 1, borderColor: BORDER, borderRadius: 13, padding: 12, marginTop: 2, marginBottom: 12 },
-  paginationInfo: { color: MUTED, fontSize: 11, fontWeight: '600', textAlign: 'center', marginBottom: 10 },
-  paginationControls: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 16 },
-  pageButton: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center', backgroundColor: '#f5e3e8', borderRadius: 10 },
+  pagination: { backgroundColor: WHITE, borderWidth: 1, borderColor: BORDER, borderRadius: 13, padding: 12, marginTop: 2, marginBottom: 12 },
+  paginationHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 12 },
+  paginationInfo: { color: TEXT, fontSize: 11, fontWeight: '700', flex: 1 },
+  paginationControls: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
+  pageButton: { minWidth: 92, height: 36, alignItems: 'center', justifyContent: 'center', backgroundColor: '#f5e3e8', borderRadius: 10, paddingHorizontal: 12 },
   pageButtonDisabled: { opacity: 0.4 },
-  pageButtonText: { color: PRIMARY, fontSize: 22, fontWeight: '800', lineHeight: 25 },
-  pageNumber: { color: TEXT, fontSize: 13, fontWeight: '800', minWidth: 48, textAlign: 'center' },
-  pageSizeRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 10 },
-  pageSizeLabel: { color: MUTED, fontSize: 11, marginRight: 2 },
+  pageButtonText: { color: PRIMARY, fontSize: 12, fontWeight: '800' },
+  pageButtonTextDisabled: { color: PRIMARY },
+  pageNumberRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', flex: 1, gap: 8 },
+  pageNumberButton: { minWidth: 30, height: 30, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 8, borderRadius: 8, backgroundColor: '#f7f4f2', borderWidth: 1, borderColor: BORDER },
+  pageNumberButtonActive: { backgroundColor: PRIMARY, borderColor: PRIMARY },
+  pageNumberText: { color: TEXT, fontSize: 12, fontWeight: '800' },
+  pageNumberTextActive: { color: WHITE },
+  pageEllipsis: { color: MUTED, fontSize: 16, fontWeight: '700', marginHorizontal: 2 },
+  pageSizeRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
+  pageSizeLabel: { color: MUTED, fontSize: 11, fontWeight: '700', marginRight: 2 },
   pageSizeButton: { minWidth: 32, alignItems: 'center', paddingHorizontal: 8, paddingVertical: 5, borderWidth: 1, borderColor: BORDER, borderRadius: 8, backgroundColor: WHITE },
   pageSizeButtonActive: { backgroundColor: PRIMARY, borderColor: PRIMARY },
   pageSizeText: { color: MUTED, fontSize: 11, fontWeight: '700' },
