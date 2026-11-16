@@ -1,0 +1,68 @@
+diff --git a/dist/es5/uri.all.js b/dist/es5/uri.all.js
+index 0706116fef7e309ea15e868343e2d4a673a7b9dd..100ee2a86ba63098b0abc269cd0c0bc8160933d4 100644
+--- a/dist/es5/uri.all.js
++++ b/dist/es5/uri.all.js
+@@ -753,10 +753,10 @@ function pctDecChars(str) {
+     while (i < il) {
+         var c = parseInt(str.substr(i + 1, 2), 16);
+         if (c < 128) {
+-            newStr += String.fromCharCode(c);
++            newStr += /^%[0-7][0-9A-F]$/i.test(str.substr(i, 3)) ? String.fromCharCode(c) : str.substr(i, 3);
+             i += 3;
+         } else if (c >= 194 && c < 224) {
+-            if (il - i >= 6) {
++            if (/^%[CD][0-9A-F]%[89AB][0-9A-F]$/i.test(str.substr(i, 6))) {
+                 var c2 = parseInt(str.substr(i + 4, 2), 16);
+                 newStr += String.fromCharCode((c & 31) << 6 | c2 & 63);
+             } else {
+@@ -764,8 +764,8 @@ function pctDecChars(str) {
+             }
+             i += 6;
+         } else if (c >= 224) {
+-            if (il - i >= 9) {
+-                var _c = parseInt(str.substr(i + 4, 2), 16);
++            var _c = parseInt(str.substr(i + 4, 2), 16);
++            if (/^%E[0-9A-F](%[89AB][0-9A-F]){2}$/i.test(str.substr(i, 9)) && (c !== 224 || _c >= 160) && (c !== 237 || _c < 160)) {
+                 var c3 = parseInt(str.substr(i + 7, 2), 16);
+                 newStr += String.fromCharCode((c & 15) << 12 | (_c & 63) << 6 | c3 & 63);
+             } else {
+@@ -971,10 +971,11 @@ function _recomposeAuthority(components, options) {
+ var RDS1 = /^\.\.?\//;
+ var RDS2 = /^\/\.(\/|$)/;
+ var RDS3 = /^\/\.\.(\/|$)/;
+-var RDS5 = /^\/?(?:.|\n)*?(?=\/|$)/;
++var RDS5 = /^\/?[\s\S]*?(?=\/|$)/;
+ function removeDotSegments(input) {
+     var output = [];
+     while (input.length) {
++        var before = input.length;
+         if (input.match(RDS1)) {
+             input = input.replace(RDS1, "");
+         } else if (input.match(RDS2)) {
+@@ -986,7 +987,7 @@ function removeDotSegments(input) {
+             input = "";
+         } else {
+             var im = input.match(RDS5);
+-            if (im) {
++            if (im && im[0].length) {
+                 var s = im[0];
+                 input = input.slice(s.length);
+                 output.push(s);
+@@ -994,6 +995,9 @@ function removeDotSegments(input) {
+                 throw new Error("Unexpected dot segment condition");
+             }
+         }
++        if (input.length >= before) {
++            throw new Error("Unexpected dot segment condition");
++        }
+     }
+     return output.join("");
+ }
+@@ -1284,6 +1288,7 @@ var handler$4 = {
+                 var hfield = hfields[x].split("=");
+                 switch (hfield[0]) {
+                     case "to":
++                        if (hfield[1] === undefined) break;
+                         var toAddrs = hfield[1].split(",");
+                         for (var _x = 0, _xl = toAddrs.length; _x < _xl; ++_x) {
+                             to.push(toAddrs[_x]);
