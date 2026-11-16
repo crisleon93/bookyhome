@@ -17,6 +17,16 @@ const BORDER = '#E0DBD4';
 const WHITE = '#FFFFFF';
 const ERROR = '#e53935';
 
+const isValidEmail = (email) => {
+  const atIndex = email.indexOf('@');
+  const lastDotIndex = email.lastIndexOf('.');
+  return !/\s/.test(email)
+    && atIndex > 0
+    && atIndex === email.lastIndexOf('@')
+    && lastDotIndex > atIndex + 1
+    && lastDotIndex < email.length - 1;
+};
+
 export default function RegisterLibrary({ navigation }) {
   const [nombre, setNombre] = useState('');
   const [libreria, setLibreria] = useState('');
@@ -50,7 +60,7 @@ export default function RegisterLibrary({ navigation }) {
 
     if (!email.trim()) {
       e.email = 'Este campo es obligatorio'; valid = false;
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    } else if (!isValidEmail(email)) {
       e.email = 'Ingresa un email válido'; valid = false;
     }
 

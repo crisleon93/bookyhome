@@ -152,7 +152,7 @@ export default function BookDetail({ route, navigation }) {
       }
     };
 
-    load();
+    void load();
     return () => { mounted = false; };
   }, [book]);
 

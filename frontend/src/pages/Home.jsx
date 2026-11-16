@@ -600,14 +600,15 @@ function Home() {
           <p>Libros para todos los gustos y momentos</p>
           <div className="category-grid">
             {CATEGORIES.map((c, i) => (
-              <div
+              <button
+                type="button"
                 key={i}
                 className="category-card"
-                style={{ backgroundImage: `url(${c.img})`, cursor: 'pointer' }}
+                style={{ backgroundImage: `url(${c.img})` }}
                 onClick={() => navigate(`/catalogo?categoria=${encodeURIComponent(c.name)}`)}
               >
                 <h3>{c.name}</h3>
-              </div>
+              </button>
             ))}
           </div>
           <div style={{ textAlign: 'center', marginTop: '2rem' }}>

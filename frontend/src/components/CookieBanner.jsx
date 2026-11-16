@@ -123,6 +123,7 @@ function CookieBanner() {
                 <span className="cookie-option__desc">Nos ayudan a entender cómo usas el sitio.</span>
               </div>
               <label className="cookie-switch" htmlFor="cookie-pref-analiticas">
+                <span className="cookie-switch__accessible-label">Permitir cookies analíticas</span>
                 <input
                   id="cookie-pref-analiticas"
                   name="cookie_pref_analiticas"
@@ -141,6 +142,7 @@ function CookieBanner() {
                 <span className="cookie-option__desc">Recuerdan tus preferencias y filtros.</span>
               </div>
               <label className="cookie-switch" htmlFor="cookie-pref-funcionales">
+                <span className="cookie-switch__accessible-label">Permitir cookies funcionales</span>
                 <input
                   id="cookie-pref-funcionales"
                   name="cookie_pref_funcionales"
@@ -159,6 +161,7 @@ function CookieBanner() {
                 <span className="cookie-option__desc">Contenido y anuncios personalizados.</span>
               </div>
               <label className="cookie-switch" htmlFor="cookie-pref-marketing">
+                <span className="cookie-switch__accessible-label">Permitir cookies de marketing</span>
                 <input
                   id="cookie-pref-marketing"
                   name="cookie_pref_marketing"

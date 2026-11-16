@@ -16,7 +16,7 @@ import {
 // ── Helpers ──
 const formatPrecio = (v) => {
   if (v == null) return "—";
-  return "$" + String(parseInt(v)).replace(/\B(?=(\d{3})+(?!\d))/g, ".") + " COP";
+  return "$" + Number.parseInt(v, 10).toLocaleString("es-CO") + " COP";
 };
 
 const formatFecha = (f) => {

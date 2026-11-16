@@ -16,6 +16,16 @@ import {
 import { LegalModal, Terminos, Privacidad } from '../components/Legal'
 import LeafletAddressPickerModal from '../components/LeafletAddressPickerModal'
 
+const isValidEmail = (email) => {
+  const atIndex = email.indexOf('@')
+  const lastDotIndex = email.lastIndexOf('.')
+  return !/\s/.test(email)
+    && atIndex > 0
+    && atIndex === email.lastIndexOf('@')
+    && lastDotIndex > atIndex + 1
+    && lastDotIndex < email.length - 1
+}
+
 function Libreria({ isModal = false, onSuccess }) {
   // ========================
   // Estado del formulario
@@ -71,7 +81,7 @@ function Libreria({ isModal = false, onSuccess }) {
     libreria.trim() &&
     ciudad &&
     direccion.trim() &&
-    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) &&
+    isValidEmail(email) &&
     /^\d{7,15}$/.test(telefono.trim()) &&
     password.length >= 8 &&
     password === confirmPassword &&
@@ -107,7 +117,7 @@ function Libreria({ isModal = false, onSuccess }) {
       setError('Ingresa un número de teléfono válido (solo números, entre 7 y 15 dígitos)')
       return false
     }
-    if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    if (!email.trim() || !isValidEmail(email)) {
       setError('Ingresa un email válido')
       return false
     }

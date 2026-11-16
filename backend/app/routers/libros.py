@@ -3,7 +3,7 @@ from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Form, B
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from typing import List, Optional
 from fastapi.responses import FileResponse
-import os, shutil, uuid
+import os, uuid
 from datetime import datetime, timedelta, timezone
 
 from app.auth import verify_token
@@ -252,8 +252,7 @@ async def publicar_libro(
                     continue
                 nombre_unico = f"{uuid.uuid4().hex}{ext}"
                 ruta = os.path.join(UPLOAD_DIR, nombre_unico)
-                with open(ruta, "wb") as f:
-                    shutil.copyfileobj(imagen.file, f)
+                await _guardar_upload(imagen, ruta)
                 url = f"/uploads/libros/{nombre_unico}"
                 agregar_imagen_libro(id_libro, url)
                 urls_guardadas.append(url)

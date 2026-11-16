@@ -1,6 +1,15 @@
 import { useState } from 'react'
 import { forgotPassword } from '../services/api'
 
+const isValidEmail = (email) => {
+  const atIndex = email.indexOf('@')
+  const lastDotIndex = email.lastIndexOf('.')
+  return !/\s/.test(email)
+    && atIndex > 0
+    && atIndex === email.lastIndexOf('@')
+    && lastDotIndex > atIndex + 1
+    && lastDotIndex < email.length - 1
+}
 
 const IconMail = () => (
   <svg className="auth-input-icon" xmlns="http://www.w3.org/2000/svg" fill="none"
@@ -27,7 +36,7 @@ function ForgotPassword({ isModal = false, onClose }) {
 
   const validate = () => {
     if (!email.trim()) { setEmailErr('Este campo es obligatorio'); return false }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setEmailErr('Ingresa un email válido'); return false }
+    if (!isValidEmail(email)) { setEmailErr('Ingresa un email válido'); return false }
     return true
   }
 

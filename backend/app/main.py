@@ -94,8 +94,10 @@ scheduler.add_job(expirar_impulsos_vencidos, "interval", minutes=60, id="expirar
 @asynccontextmanager
 async def lifespan(app):
     scheduler.start()
-    yield
-    scheduler.shutdown(wait=False)
+    try:
+        yield
+    finally:
+        scheduler.shutdown(wait=False)
 
 app = FastAPI(lifespan=lifespan)
 ensure_quejas_schema()

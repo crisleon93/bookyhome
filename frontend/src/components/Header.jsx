@@ -1434,7 +1434,7 @@ function Header({ variant, hasSidebar }) {
       )}
 
       {libreriaOpen && (
-        <div className="modal-overlay open" onClick={e => { if (e.target === e.currentTarget) setLibreriaOpen(false) }}>
+        <div className="modal-overlay open" role="presentation" onClick={e => { if (e.target === e.currentTarget) setLibreriaOpen(false) }}>
           <div className="modal-box" style={{ maxWidth: '800px', maxHeight: '90vh', overflowY: 'auto', position: 'relative' }}>
             <button className="modal-close" aria-label="Cerrar" onClick={() => setLibreriaOpen(false)}>
               <IconClose />

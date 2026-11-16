@@ -39,7 +39,7 @@ function FiltrosCatalogo({ onFiltrosChange }) {
       }
     };
 
-    cargarOpciones();
+    void cargarOpciones();
     return () => {
       mounted = false;
     };
@@ -101,8 +101,9 @@ function FiltrosCatalogo({ onFiltrosChange }) {
         <div className="filtros-panel">
           {/* BÚSQUEDA */}
           <div className="filtro-grupo">
-            <label>Buscar</label>
+            <label htmlFor="filtro-busqueda">Buscar</label>
             <input
+              id="filtro-busqueda"
               type="text"
               placeholder="Título, autor..."
               value={filtros.busqueda}
@@ -113,8 +114,9 @@ function FiltrosCatalogo({ onFiltrosChange }) {
 
           {/* CATEGORÍA */}
           <div className="filtro-grupo">
-            <label>Categoría</label>
+            <label htmlFor="filtro-categoria">Categoría</label>
             <select
+              id="filtro-categoria"
               value={filtros.categoria_id || ''}
               onChange={(e) => handleFiltroChange('categoria_id', e.target.value ? Number.parseInt(e.target.value) : null)}
               className="select-filtro"
@@ -130,9 +132,10 @@ function FiltrosCatalogo({ onFiltrosChange }) {
 
           {/* RANGO DE PRECIO */}
           <div className="filtro-grupo">
-            <label>Precio</label>
+            <label htmlFor="filtro-precio-min">Precio</label>
             <div className="rango-precio">
               <input
+                id="filtro-precio-min"
                 type="number"
                 min={opciones.precio_min}
                 max={opciones.precio_max}
@@ -149,6 +152,7 @@ function FiltrosCatalogo({ onFiltrosChange }) {
               <span>-</span>
               <input
                 type="number"
+                aria-label="Precio máximo"
                 min={opciones.precio_min}
                 max={opciones.precio_max}
                 value={filtros.precio_max}
@@ -169,11 +173,14 @@ function FiltrosCatalogo({ onFiltrosChange }) {
 
           {/* CALIFICACIÓN MÍNIMA */}
           <div className="filtro-grupo">
-            <label>Calificación mínima</label>
-            <div className="calificacion-filtro">
+            <span className="filtro-grupo__label">Calificación mínima</span>
+            <div className="calificacion-filtro" role="group" aria-label="Calificación mínima">
               {[0, 1, 2, 3, 4, 5].map(i => (
                 <button
                   key={i}
+                  type="button"
+                  aria-label={i === 0 ? 'Todas las calificaciones' : `${i} o más estrellas`}
+                  aria-pressed={filtros.calificacion_min === i}
                   className={`star-filter ${filtros.calificacion_min >= i ? 'activa' : ''}`}
                   onClick={() => handleFiltroChange('calificacion_min', i)}
                   title={i === 0 ? 'Todas' : `${i}+ estrellas`}
@@ -205,8 +212,9 @@ function FiltrosCatalogo({ onFiltrosChange }) {
 
           {/* ORDENAMIENTO */}
           <div className="filtro-grupo">
-            <label>Ordenar por</label>
+            <label htmlFor="filtro-orden">Ordenar por</label>
             <select
+              id="filtro-orden"
               value={filtros.ordenar_por}
               onChange={(e) => handleFiltroChange('ordenar_por', e.target.value)}
               className="select-filtro"

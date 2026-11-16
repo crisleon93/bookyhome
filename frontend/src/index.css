@@ -3288,6 +3288,15 @@ svg {
   cursor: pointer;
   background-size: cover;
   background-position: center;
+  color: inherit;
+  border: 0;
+  font: inherit;
+  text-align: left;
+  appearance: none;
+}
+.category-card:focus-visible {
+  outline: 3px solid var(--vinotinto);
+  outline-offset: 3px;
 }
 .category-card::before {
   content: '';
@@ -4078,6 +4087,17 @@ body.auth-page {
   height: 24px;
   flex-shrink: 0;
   cursor: pointer;
+}
+.cookie-switch__accessible-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 .cookie-switch input { opacity: 0; width: 0; height: 0; }
 
