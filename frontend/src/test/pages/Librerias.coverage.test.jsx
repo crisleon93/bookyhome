@@ -155,9 +155,12 @@ describe('Librerias — filtro por ciudad', () => {
     renderLibrerias()
     await waitFor(() => screen.getByText('Librería Central'))
 
-    // El botón de ciudad "Medellín" debe estar visible
-    const botonMedellin = screen.getByRole('button', { name: /medellín/i })
-    await user.click(botonMedellin)
+    // El botón de ciudad está en la barra de filtros (tiene un span con el conteo)
+    // Usamos getAllByRole y filtramos el que está dentro de la barra de ciudades
+    const botonesCiudad = screen.getAllByRole('button', { name: /medellín/i })
+    // El botón de filtro de ciudad es el que tiene aria-label vacío (no es una card)
+    const botonFiltro = botonesCiudad.find(b => !b.classList.contains('lib-card'))
+    await user.click(botonFiltro)
 
     expect(screen.getByText('Libros Medellín')).toBeInTheDocument()
     expect(screen.queryByText('Librería Central')).toBeNull()
@@ -276,8 +279,8 @@ describe('Librerias — parseTiendaInfo normaliza ciudades', () => {
     { ciudad_origen: 'neiva', expected: 'Neiva' },
     { ciudad_origen: 'villavicencio', expected: 'Villavicencio' },
     { ciudad_origen: 'pasto', expected: 'Pasto' },
-    { ciudad_origen: '', expected: 'Bogotá' },           // vacío → Bogotá por defecto
-    { ciudad_origen: 'colombia', expected: 'Bogotá' },   // "colombia" → Bogotá
+    { ciudad_origen: '', expected: 'Bogotá' },
+    { ciudad_origen: 'colombia', expected: 'Bogotá' },
   ]
 
   cases.forEach(({ ciudad_origen, expected }) => {
@@ -298,10 +301,12 @@ describe('Librerias — parseTiendaInfo normaliza ciudades', () => {
       })
 
       renderLibrerias()
-      // La ciudad normalizada aparece en el badge de la card
-      await waitFor(() =>
-        expect(screen.getByText(new RegExp(expected, 'i'))).toBeInTheDocument()
-      )
+      // La ciudad normalizada aparece en el span .lib-card__ciudad dentro de la card
+      await waitFor(() => {
+        const ciudadSpans = document.querySelectorAll('.lib-card__ciudad')
+        const encontrado = Array.from(ciudadSpans).some(el => el.textContent.includes(expected))
+        expect(encontrado).toBe(true)
+      })
     })
   })
 })
