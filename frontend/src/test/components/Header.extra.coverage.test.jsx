@@ -175,6 +175,203 @@ describe('Header — menú móvil', () => {
   })
 })
 
+describe('Header — registro, ubicación y sugerencias', () => {
+  it('abre y cierra las opciones de registro y guarda la ciudad de envío', async () => {
+    renderHeader()
+    fireEvent.click(screen.getByText('Crea tu cuenta'))
+    expect(await screen.findByText('¿Cómo quieres unirte a BookyHome?')).toBeTruthy()
+    fireEvent.click(screen.getByText('Soy comprador'))
+    expect(await screen.findByText('Register')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Cerrar' }))
+    expect(screen.queryByText('Register')).toBeNull()
+
+    fireEvent.click(screen.getByRole('button', { name: /Envíos a Colombia/ }))
+    expect(await screen.findByRole('dialog')).toBeTruthy()
+    fireEvent.mouseDown(screen.getByRole('button', { name: 'Medellín' }))
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(localStorage.getItem('bookyhome_location')).toBe('Medellín')
+    expect(screen.getByText('Envíos a Medellín, Colombia')).toBeTruthy()
+  })
+
+  it('muestra las sugerencias del catálogo y navega al libro seleccionado', async () => {
+    const api = await import('../../services/api')
+    api.default.get.mockImplementation((path) => path === '/catalogo/autocompletado'
+      ? Promise.resolve({
+        data: { sugerencias: [{
+          id_libro: 71,
+          titulo: 'Libro sugerido',
+          autor_libro: 'Autora',
+          precio_libro: 12000,
+          nombre_tienda: 'Tienda demo',
+        }] },
+      })
+      : Promise.resolve({ data: [] }))
+    renderHeader()
+    fireEvent.change(screen.getByPlaceholderText('Buscar libros...'), {
+      target: { value: 'Libro' },
+    })
+    expect(await screen.findByText('Libro sugerido', {}, { timeout: 2000 })).toBeTruthy()
+    fireEvent.click(screen.getByText('Libro sugerido'))
+    expect(mockNavigate).toHaveBeenCalledWith('/catalogo?q=Libro+sugerido&libro=71')
+  })
+})
+
+describe('Header — filtro avanzado del catálogo', () => {
+  it('aplica filtros por libro, los limpia y busca por nombre de librería', async () => {
+    const api = await import('../../services/api')
+    api.default.get.mockImplementation((path) => path === '/catalogo/filtros-disponibles'
+      ? Promise.resolve({
+        data: {
+          categorias: [{ id_categoria: 2, nombre_categoria: 'Ficción', cantidad_libros: 10 }],
+          precio_min: 0,
+          precio_max: 200000,
+          opciones_ordenamiento: [
+            { value: 'relevancia', label: 'Relevancia' },
+            { value: 'precio_asc', label: 'Menor precio' },
+          ],
+        },
+      })
+      : Promise.resolve({ data: [] }))
+    renderHeader()
+    fireEvent.click(screen.getByTitle('Filtros avanzados'))
+    expect(await screen.findByRole('dialog')).toBeTruthy()
+    fireEvent.change(screen.getByPlaceholderText('Título, autor o ISBN...'), {
+      target: { value: 'novela' },
+    })
+    fireEvent.change(screen.getAllByRole('combobox')[0], { target: { value: '2' } })
+    fireEvent.click(screen.getByRole('button', { name: '$30k–$70k' }))
+    fireEvent.click(screen.getByRole('button', { name: '4★+' }))
+    const stockSwitch = screen.getByRole('switch')
+    fireEvent.click(stockSwitch)
+    expect(stockSwitch).toHaveAttribute('aria-checked', 'false')
+    fireEvent.click(screen.getByRole('button', { name: 'Librerías' }))
+    fireEvent.change(screen.getByPlaceholderText('Buscar por nombre de tienda...'), {
+      target: { value: 'Central' },
+    })
+    fireEvent.change(screen.getByPlaceholderText('contacto@libreria.com'), {
+      target: { value: 'central@example.com' },
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Limpiar' }))
+    expect(screen.getByPlaceholderText('Buscar por nombre de tienda...')).toHaveValue('')
+    fireEvent.change(screen.getByPlaceholderText('Buscar por nombre de tienda...'), {
+      target: { value: 'Central' },
+    })
+    fireEvent.change(screen.getByPlaceholderText('contacto@libreria.com'), {
+      target: { value: 'central@example.com' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: /ver resultados/i }))
+    expect(mockNavigate).toHaveBeenCalledWith(
+      '/catalogo?nombre_tienda=Central&correo_vendedor=central%40example.com&precio_max=200000&disponible=true&ordenar_por=relevancia',
+    )
+    expect(screen.queryByRole('dialog')).toBeNull()
+  })
+})
+
+describe('Header — detección de ubicación', () => {
+  it('guarda la ciudad devuelta por el servicio de geolocalización', async () => {
+    const previousGeolocation = Object.getOwnPropertyDescriptor(navigator, 'geolocation')
+    const previousFetch = globalThis.fetch
+    const getCurrentPosition = vi.fn((onSuccess) => onSuccess({
+      coords: { latitude: 4.65, longitude: -74.05 },
+    }))
+    Object.defineProperty(navigator, 'geolocation', {
+      configurable: true,
+      value: { getCurrentPosition },
+    })
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ address: { city: 'Bogotá', suburb: 'La Candelaria' } }),
+    })
+
+    try {
+      renderHeader()
+      fireEvent.click(screen.getByRole('button', { name: /Envíos a Colombia/ }))
+      await waitFor(() => {
+        expect(getCurrentPosition).toHaveBeenCalledOnce()
+        expect(localStorage.getItem('bookyhome_location')).toBe('Bogotá, La Candelaria')
+      })
+      expect(globalThis.fetch).toHaveBeenCalledWith(
+        expect.stringContaining('lat=4.65&lon=-74.05'),
+      )
+      expect(notify).toHaveBeenCalledWith(
+        'Ubicación detectada: Bogotá, La Candelaria',
+        'success',
+      )
+    } finally {
+      if (previousGeolocation) {
+        Object.defineProperty(navigator, 'geolocation', previousGeolocation)
+      } else {
+        delete navigator.geolocation
+      }
+      if (previousFetch) globalThis.fetch = previousFetch
+      else delete globalThis.fetch
+    }
+  })
+
+  it('explica el permiso necesario cuando la geolocalización es denegada', async () => {
+    const previousGeolocation = Object.getOwnPropertyDescriptor(navigator, 'geolocation')
+    Object.defineProperty(navigator, 'geolocation', {
+      configurable: true,
+      value: { getCurrentPosition: vi.fn((_, onError) => onError()) },
+    })
+    try {
+      renderHeader()
+      fireEvent.click(screen.getByRole('button', { name: /Envíos a Colombia/ }))
+      expect(await screen.findByText(/Permite el acceso a tu ubicación/)).toBeTruthy()
+    } finally {
+      if (previousGeolocation) {
+        Object.defineProperty(navigator, 'geolocation', previousGeolocation)
+      } else {
+        delete navigator.geolocation
+      }
+    }
+  })
+})
+
+describe('Header — búsqueda y controles de sesión', () => {
+  it('navega búsquedas vacías y con término para visitantes y compradores', async () => {
+    const { unmount } = renderHeader()
+    const searchForm = document.querySelector('.search-wrapper')
+    fireEvent.submit(searchForm)
+    expect(mockNavigate).toHaveBeenLastCalledWith('/catalogo')
+    fireEvent.change(screen.getByPlaceholderText('Buscar libros...'), {
+      target: { value: '  poesía  ' },
+    })
+    fireEvent.submit(searchForm)
+    expect(mockNavigate).toHaveBeenLastCalledWith('/catalogo?q=poes%C3%ADa')
+
+    unmount()
+    mockNavigate.mockClear()
+    const { jwtDecode } = await import('jwt-decode')
+    jwtDecode.mockReturnValue({ rol: 'comprador', sub: '1' })
+    localStorage.setItem('token', 'buyer-token')
+    renderHeader()
+    const loggedInSearch = document.querySelector('.search-wrapper')
+    fireEvent.submit(loggedInSearch)
+    expect(mockNavigate).toHaveBeenLastCalledWith('/?seccion=Catálogo')
+    fireEvent.change(screen.getByPlaceholderText('Buscar libros...'), {
+      target: { value: 'ensayo' },
+    })
+    fireEvent.submit(loggedInSearch)
+    expect(mockNavigate).toHaveBeenLastCalledWith('/?seccion=Catálogo&q=ensayo')
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir menú' }))
+    expect(screen.getByRole('button', { name: 'Cerrar menú' })).toHaveAttribute('aria-expanded', 'true')
+  })
+
+  it('muestra la contraseña y cierra el login al pulsar el fondo del modal', async () => {
+    renderHeader()
+    abrirModalLogin()
+    await screen.findByRole('heading', { name: /iniciar sesión/i })
+    const password = document.getElementById('login-password')
+    fireEvent.click(document.querySelector('.toggle-password'))
+    expect(password).toHaveAttribute('type', 'text')
+    const overlay = document.querySelector('.modal-overlay')
+    fireEvent.click(overlay, { target: overlay })
+    expect(screen.queryByRole('heading', { name: /iniciar sesión/i })).toBeNull()
+  })
+})
+
 // ── Cerrar modal con ESC ──────────────────────────────────────────────────────
 
 describe('Header — cerrar modal de login', () => {

@@ -133,7 +133,7 @@ describe('ListaDeseos web', () => {
     mocks.getLibrosListaDeseos.mockResolvedValue({ data: [favorite] })
     renderWishlist()
     await screen.findByText('Cuentos de prueba')
-    fireEvent.click(screen.getByRole('button', { name: /Para leer/ }))
+    fireEvent.click(screen.getAllByRole('button', { name: /Para leer/ })[0])
     expect(await screen.findByText('Para leer', { selector: 'h3' })).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: /Quitar/i }))
@@ -145,5 +145,76 @@ describe('ListaDeseos web', () => {
     fireEvent.click(screen.getByTitle('Eliminar lista'))
     await waitFor(() => expect(mocks.eliminarListaDeseos).toHaveBeenCalledWith(4))
     expect(mocks.notify).toHaveBeenCalledWith('Lista eliminada', 'success')
+  })
+
+  it('conserva los datos y presenta errores cuando fallan las acciones de listas', async () => {
+    const onIrCatalogo = vi.fn()
+    mocks.crearListaDeseos.mockRejectedValueOnce({
+      response: { data: { detail: 'No se pudo guardar la lista' } },
+    })
+    mocks.agregarLibroListaDeseos.mockRejectedValueOnce(new Error('offline'))
+    mocks.eliminarFavorito.mockRejectedValueOnce(new Error('offline'))
+    window.confirm.mockReturnValue(false)
+    const { unmount } = renderWishlist({ embedded: true, onIrCatalogo })
+    await screen.findByText('Cuentos de prueba')
+
+    fireEvent.click(screen.getByRole('button', { name: /Nueva/i }))
+    fireEvent.change(screen.getByPlaceholderText('Nombre de la lista'), {
+      target: { value: 'Pendientes' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Crear' }))
+    expect(await screen.findByText('No se pudo guardar la lista')).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Agregar a lista' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Para leer', exact: true }))
+    await waitFor(() => expect(mocks.notify).toHaveBeenCalledWith('No se pudo agregar a la lista', 'error'))
+
+    fireEvent.click(screen.getByRole('button', { name: /Quitar/i }))
+    await waitFor(() => expect(mocks.notify).toHaveBeenCalledWith('No se pudo eliminar de favoritos', 'error'))
+
+    fireEvent.click(screen.getAllByRole('button', { name: /Para leer/ })[0])
+    await screen.findByText('Para leer', { selector: 'h3' })
+    fireEvent.click(screen.getByTitle('Eliminar lista'))
+    expect(mocks.eliminarListaDeseos).not.toHaveBeenCalled()
+
+    unmount()
+    mocks.getFavoritos.mockResolvedValue({ data: [] })
+    mocks.getListasDeseos.mockResolvedValue({ data: [] })
+    renderWishlist({ embedded: true, onIrCatalogo })
+    fireEvent.click(await screen.findByRole('button', { name: 'Explorar catálogo' }))
+    expect(onIrCatalogo).toHaveBeenCalledOnce()
+  })
+
+  it('muestra errores al cargar o borrar listas y conserva los favoritos', async () => {
+    mocks.getListasDeseos.mockRejectedValueOnce({
+      response: { data: { detail: 'No se pudieron cargar las listas ahora' } },
+    })
+    const { unmount } = renderWishlist()
+    expect(await screen.findByText('No se pudieron cargar las listas ahora')).toBeTruthy()
+    expect(screen.getByText('Cuentos de prueba')).toBeTruthy()
+
+    unmount()
+    mocks.eliminarListaDeseos.mockRejectedValueOnce({
+      response: { data: { detail: 'No se pudo borrar' } },
+    })
+    renderWishlist()
+    await screen.findByText('Cuentos de prueba')
+    fireEvent.click(screen.getAllByRole('button', { name: /Para leer/ })[0])
+    await screen.findByText('Para leer', { selector: 'h3' })
+    fireEvent.click(screen.getByTitle('Eliminar lista'))
+    await waitFor(() => {
+      expect(mocks.notify).toHaveBeenCalledWith('No se pudo borrar', 'error')
+    })
+  })
+
+  it('aplica el tema oscuro al cargar y responde a cambios de almacenamiento', async () => {
+    localStorage.setItem('darkMode', 'true')
+    renderWishlist({ embedded: true })
+    const badge = await screen.findByText('Ficción')
+    expect(badge.style.background).toBe('rgb(46, 13, 13)')
+
+    localStorage.setItem('darkMode', 'false')
+    window.dispatchEvent(new Event('storage'))
+    await waitFor(() => expect(badge.style.background).toBe('rgb(252, 228, 236)'))
   })
 })

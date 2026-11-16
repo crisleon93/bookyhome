@@ -268,4 +268,66 @@ describe('secciones personales del comprador', () => {
     fireEvent.click(within(screen.getByRole('dialog')).getAllByLabelText('Cerrar detalles de fidelización').at(-1))
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
   })
+
+  it('sube foto y banner, guarda un color sólido y notifica a los componentes del perfil', async () => {
+    const { uploadProfilePhoto, uploadBannerPhoto } = await import('../../services/api')
+    const profileUpdated = vi.fn()
+    const bannerUpdated = vi.fn()
+    window.addEventListener('profile-photo-updated', profileUpdated)
+    window.addEventListener('profile-banner-updated', bannerUpdated)
+    uploadProfilePhoto.mockResolvedValue({ data: { url: '/uploads/profile.jpg' } })
+    uploadBannerPhoto.mockResolvedValue({ data: { url: '/uploads/banner.jpg' } })
+    api.get.mockResolvedValue({ data: { nombre_usuario: 'Ana Ruiz' } })
+    render(<SeccionMiPerfil userId={8} />)
+
+    fireEvent.change(document.getElementById('foto-perfil-input'), {
+      target: { files: [new File(['photo'], 'profile.png', { type: 'image/png' })] },
+    })
+    await waitFor(() => expect(uploadProfilePhoto).toHaveBeenCalledOnce())
+    expect(await screen.findByAltText('Foto de perfil')).toHaveAttribute(
+      'src',
+      'http://127.0.0.1:8000/uploads/profile.jpg',
+    )
+    expect(profileUpdated).toHaveBeenCalledOnce()
+
+    fireEvent.click(screen.getByRole('button', { name: /Editar/ }))
+    fireEvent.change(document.getElementById('banner-img-input'), {
+      target: { files: [new File(['banner'], 'banner.png', { type: 'image/png' })] },
+    })
+    await waitFor(() => expect(uploadBannerPhoto).toHaveBeenCalledOnce())
+    expect(bannerUpdated).toHaveBeenCalledOnce()
+    expect(screen.queryByText('Colores sólidos')).toBeNull()
+
+    fireEvent.click(screen.getByRole('button', { name: /Editar/ }))
+    fireEvent.click(screen.getByTitle('#1E3A7A'))
+    await waitFor(() => expect(saveBannerColor).toHaveBeenCalledWith('#1E3A7A'))
+    expect(notify).toHaveBeenCalledWith('Color de banner guardado', 'success')
+    expect(bannerUpdated).toHaveBeenCalledTimes(2)
+
+    window.removeEventListener('profile-photo-updated', profileUpdated)
+    window.removeEventListener('profile-banner-updated', bannerUpdated)
+  })
+
+  it('mantiene el perfil usable si fallan la carga de foto, el banner o la actualización', async () => {
+    const { uploadProfilePhoto, uploadBannerPhoto } = await import('../../services/api')
+    uploadProfilePhoto.mockRejectedValue(new Error('photo failed'))
+    uploadBannerPhoto.mockRejectedValue(new Error('banner failed'))
+    api.get.mockRejectedValueOnce(new Error('profile unavailable'))
+    api.put.mockRejectedValueOnce(new Error('update failed'))
+    getEstadisticasUsuario.mockRejectedValueOnce(new Error('stats unavailable'))
+    render(<SeccionMiPerfil userId={10} />)
+
+    fireEvent.change(document.getElementById('foto-perfil-input'), {
+      target: { files: [new File(['photo'], 'profile.png', { type: 'image/png' })] },
+    })
+    await waitFor(() => expect(notify).toHaveBeenCalledWith('No se pudo subir la foto', 'error'))
+    fireEvent.click(screen.getByRole('button', { name: /Editar/ }))
+    fireEvent.change(document.getElementById('banner-img-input'), {
+      target: { files: [new File(['banner'], 'banner.png', { type: 'image/png' })] },
+    })
+    await waitFor(() => expect(notify).toHaveBeenCalledWith('No se pudo subir el banner', 'error'))
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }))
+    await waitFor(() => expect(notify).toHaveBeenCalledWith('Error al actualizar perfil', 'error'))
+    expect(screen.getByText('Bronce')).toBeTruthy()
+  })
 })

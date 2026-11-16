@@ -246,4 +246,69 @@ describe('AuthProvider — comportamiento de sesión', () => {
     fireEvent.click(screen.getByText('unlock'))
     await waitFor(() => expect(document.querySelector('[data-result]').textContent).toBe(JSON.stringify({ success: false, reason: 'failed', error: 'denied' })))
   })
+
+  it('restaura una sesión válida sin biometría y limpia una sesión normal al salir', async () => {
+    const restoredToken = fakeJwt({
+      sub: '31',
+      nombre: 'Marta',
+      exp: Math.floor(Date.now() / 1000) + 3600,
+    })
+    AsyncStorage.getItem.mockImplementation(async (key) => key === 'token' ? restoredToken : 'false')
+    render(React.createElement(AuthProvider, null, React.createElement(AuthProbe)))
+
+    expect(await screen.findByText('Marta')).toBeTruthy()
+    expect(api.defaults.headers.common.Authorization).toBe(`Bearer ${restoredToken}`)
+    fireEvent.click(screen.getByText('sign out'))
+
+    await waitFor(() => expect(AsyncStorage.multiRemove).toHaveBeenCalledWith(['token', 'biometricEnabled']))
+    expect(screen.getByText('anonymous')).toBeTruthy()
+    expect(api.defaults.headers.common.Authorization).toBeUndefined()
+  })
+
+  it('ignora el inicio vacío y usa los valores seguros cuando el token no se puede decodificar', async () => {
+    function InvalidTokenProbe() {
+      const auth = useContext(AuthContext)
+      return React.createElement('button', {
+        onClick: async () => {
+          await auth.signIn(null)
+          await auth.signIn('not-a-jwt')
+        },
+      }, auth.user?.nombre || 'anonymous')
+    }
+
+    render(React.createElement(AuthProvider, null, React.createElement(InvalidTokenProbe)))
+    fireEvent.click(await screen.findByText('anonymous'))
+
+    expect(await screen.findByText('usuario')).toBeTruthy()
+    expect(AsyncStorage.setItem).toHaveBeenCalledWith('token', 'not-a-jwt')
+    expect(AsyncStorage.setItem).toHaveBeenCalledWith('biometricEnabled', 'false')
+    expect(api.defaults.headers.common.Authorization).toBe('Bearer not-a-jwt')
+  })
+
+  it('limpia las credenciales de almacenamiento al recibir un 401', async () => {
+    render(React.createElement(AuthProvider, null, React.createElement(AuthProbe)))
+    await screen.findByText('ready')
+    const [, onRejected] = api.interceptors.response.use.mock.calls.at(-1)
+    const error = { response: { status: 401 } }
+
+    await expect(onRejected(error)).rejects.toBe(error)
+    expect(AsyncStorage.multiRemove).toHaveBeenCalledWith(['token', 'biometricEnabled'])
+    expect(api.defaults.headers.common.Authorization).toBeUndefined()
+  })
+
+  it('devuelve el error cuando la autenticación biométrica lanza una excepción', async () => {
+    const restoredToken = fakeJwt({ sub: '20', nombre: 'Luis', exp: Math.floor(Date.now() / 1000) + 3600 })
+    AsyncStorage.getItem.mockImplementation(async (key) => key === 'token' ? restoredToken : 'true')
+    LocalAuthentication.hasHardwareAsync.mockResolvedValue(true)
+    LocalAuthentication.isEnrolledAsync.mockResolvedValue(true)
+    LocalAuthentication.authenticateAsync.mockRejectedValue(new Error('sensor unavailable'))
+    render(React.createElement(AuthProvider, null, React.createElement(AuthProbe)))
+    await screen.findByText('locked')
+
+    fireEvent.click(screen.getByText('unlock'))
+
+    await waitFor(() => expect(document.querySelector('[data-result]').textContent).toBe(
+      JSON.stringify({ success: false, reason: 'failed', error: 'sensor unavailable' }),
+    ))
+  })
 })

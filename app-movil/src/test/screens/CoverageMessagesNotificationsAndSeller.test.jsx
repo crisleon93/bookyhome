@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import React from 'react';
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import Messages from '../../screens/Messages';
 import MetodosCobroVendedor from '../../screens/MetodosCobroVendedor';
@@ -437,6 +437,60 @@ describe('Notifications', () => {
     fireEvent.click(screen.getByText('Sí, eliminar'));
     await waitFor(() => expect(mocks.api.deleteNotification).toHaveBeenCalledWith(8));
   });
+
+  it('ordena, cambia el tamaño de página y borra todas las notificaciones elegidas', async () => {
+    mocks.api.getNotifications.mockResolvedValue({
+      data: {
+        notificaciones: [
+          { ...notification, id_notificacion: 8, titulo: '🔔 Mensaje reciente', fecha_creacion: '2026-03-22T12:00:00' },
+          { ...notification, id_notificacion: 9, tipo: 'pedido', titulo: 'Pedido anterior', leida: true, fecha_creacion: '2026-03-19T12:00:00' },
+        ],
+      },
+    })
+    render(
+      <NotificationContext.Provider value={notificationContext}>
+        {withAuth(<Notifications navigation={navigation} />)}
+      </NotificationContext.Provider>,
+    )
+    expect(await screen.findByText('Mensaje reciente')).toBeTruthy()
+    fireEvent.click(screen.getByText('Más recientes'))
+    fireEvent.click(screen.getByText('Más antiguas'))
+    expect(screen.getAllByText(/Pedido anterior|Mensaje reciente/)[0].textContent).toContain('Pedido anterior')
+    fireEvent.click(screen.getByText('10 por pág.⌄'))
+    fireEvent.click(screen.getByText('5 por página'))
+    expect(screen.getByText('5 por pág.⌄')).toBeTruthy()
+
+    fireEvent.click(screen.getByText('🗑️ Eliminar mensajes'))
+    const bulkModal = screen.getByTestId('modal')
+    fireEvent.click(within(bulkModal).getByText('Todas las notificaciones'))
+    fireEvent.click(within(bulkModal).getByText('Eliminar'))
+    await waitFor(() => expect(mocks.api.deleteNotificationsByFilter).toHaveBeenCalledWith('todas'))
+    expect(await screen.findByText('Sin notificaciones')).toBeTruthy()
+  })
+
+  it('muestra la vista del vendedor y navega según el tipo de notificación', async () => {
+    mocks.api.getNotifications.mockResolvedValue({
+      data: {
+        notificaciones: [
+          { ...notification, tipo: 'mensaje', referencia_id: null, titulo: 'Nuevo mensaje' },
+          { ...notification, id_notificacion: 9, tipo: 'sistema', titulo: 'Actualización del sistema' },
+        ],
+      },
+    })
+    render(
+      <NotificationContext.Provider value={notificationContext}>
+        {withAuth(<Notifications navigation={navigation} />, vendor)}
+      </NotificationContext.Provider>,
+    )
+    expect(await screen.findByText('Mantente al día con tus pedidos y mensajes')).toBeTruthy()
+    fireEvent.click(screen.getByText('Nuevo mensaje'))
+    await waitFor(() => expect(navigation.navigate).toHaveBeenCalledWith('Messages'))
+    fireEvent.click(screen.getByText('Actualización del sistema'))
+    await waitFor(() => expect(navigation.navigate).toHaveBeenCalledWith('QuejasReclamos'))
+    fireEvent.click(screen.getByText('☰'))
+    expect(screen.getByText('Cerrar menú vendedor')).toBeTruthy()
+    fireEvent.click(screen.getByText('Cerrar menú vendedor'))
+  })
 });
 
 describe('PedidosVendedor', () => {

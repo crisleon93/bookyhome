@@ -35,6 +35,8 @@ vi.mock('react-native', async () => {
     children,
     onPress,
     onLongPress,
+    onPressIn,
+    onPressOut,
     onChangeText,
     value,
     placeholder,
@@ -44,7 +46,12 @@ vi.mock('react-native', async () => {
     if (tag === 'button') {
       return ReactModule.createElement('button', {
         type: 'button',
-        onClick: onPress,
+        onClick: (event) => {
+          event.stopPropagation()
+          onPress?.()
+        },
+        onMouseDown: onPressIn,
+        onMouseUp: onPressOut,
         onContextMenu: onLongPress,
         'aria-label': accessibilityLabel,
       }, children)
@@ -90,7 +97,14 @@ vi.mock('react-native', async () => {
       : null,
     Platform: { OS: 'web', select: (options) => options.web || options.default },
     ScrollView: element('div'),
-    SectionList: () => null,
+    SectionList: ({ sections = [], renderItem, renderSectionHeader }) => (
+      ReactModule.createElement('div', null, sections.map((section) => ReactModule.createElement(
+        ReactModule.Fragment,
+        { key: section.id },
+        renderSectionHeader?.({ section }),
+        section.data.map((item, index) => renderItem({ item, index, section })),
+      )))
+    ),
     Share: { share: vi.fn().mockResolvedValue({}) },
     StyleSheet: { create: (styles) => styles },
     Text: element('span'),
@@ -111,7 +125,13 @@ vi.mock('@react-native-async-storage/async-storage', () => ({
   },
 }))
 vi.mock('expo-av', () => ({
-  Audio: { Recording: class {}, Sound: { createAsync: vi.fn() } },
+  Audio: {
+    Recording: class {},
+    RecordingOptionsPresets: { HIGH_QUALITY: {} },
+    requestPermissionsAsync: vi.fn(),
+    setAudioModeAsync: vi.fn(),
+    Sound: { createAsync: vi.fn() },
+  },
 }))
 vi.mock('expo-file-system/legacy', () => ({
   EncodingType: { Base64: 'base64' },
@@ -120,6 +140,7 @@ vi.mock('expo-file-system/legacy', () => ({
   readAsStringAsync: vi.fn(),
 }))
 vi.mock('expo-image-picker', () => ({
+  launchCameraAsync: vi.fn(),
   launchImageLibraryAsync: vi.fn(),
   requestCameraPermissionsAsync: vi.fn(),
   requestMediaLibraryPermissionsAsync: vi.fn(),
@@ -128,7 +149,8 @@ vi.mock('expo-document-picker', () => ({ getDocumentAsync: vi.fn() }))
 vi.mock('expo-clipboard', () => ({ setStringAsync: vi.fn() }))
 vi.mock('react-native-svg', () => {
   const Shape = () => null
-  return { default: Shape, Path: Shape, Circle: Shape, Rect: Shape, Polygon: Shape, SvgUri: Shape }
+  const SvgUri = ({ uri }) => React.createElement('span', null, uri?.split('/').pop())
+  return { default: Shape, Path: Shape, Circle: Shape, Rect: Shape, Polygon: Shape, SvgUri }
 })
 vi.mock('expo-linear-gradient', () => ({ LinearGradient: ({ children }) => <div>{children}</div> }))
 vi.mock('../../context/AuthContext', async () => {
@@ -158,9 +180,9 @@ vi.mock('../../services/api', () => ({
   eliminarSalaChat: mocks.deleteChat,
 }))
 vi.mock('../../data/chatEmojiData', () => ({
-  EMOJI_CATEGORIES: [{ id: 'smileys', name: 'Caritas', emojis: ['😀', '❤️'] }],
-  GIF_OPTIONS: [],
-  STICKER_OPTIONS: [],
+  EMOJI_CATEGORIES: [{ id: 'smileys', name: 'Caritas', icon: '😄', emojis: ['😀', '❤️'] }],
+  GIF_OPTIONS: [{ id: 'gif-1', title: 'Celebration', url: 'https://example.test/celebration.gif' }],
+  STICKER_OPTIONS: [{ id: 'sticker-1', label: 'Thumbs up', emoji: '👍', url: 'https://example.test/thumb.svg' }],
 }))
 
 afterEach(cleanup)
@@ -361,5 +383,160 @@ describe('Chat móvil', () => {
     fireEvent.click(screen.getByText('0:07'))
     await waitFor(() => expect(sound.pauseAsync).toHaveBeenCalledOnce())
     act(() => sound.setOnPlaybackStatusUpdate.mock.calls[0][0]({ didJustFinish: true }))
+  })
+
+  it('filtra emojis, GIF y stickers y envía el medio seleccionado', async () => {
+    render(withAuth(<Chat />))
+    await screen.findByText('Tu pedido está listo')
+    const composer = screen.getByPlaceholderText('Escribe un mensaje')
+    const buttons = composer.parentElement.querySelectorAll('button')
+
+    fireEvent.click(buttons[1])
+    fireEvent.change(screen.getByPlaceholderText('Buscar emoji'), { target: { value: '😀' } })
+    expect(screen.getByText('1f600.svg')).toBeTruthy()
+    fireEvent.click(screen.getByText('GIF'))
+    fireEvent.change(screen.getByPlaceholderText('Buscar GIF...'), { target: { value: 'no existe' } })
+    expect(screen.queryByText('Celebration')).toBeNull()
+    fireEvent.change(screen.getByPlaceholderText('Buscar GIF...'), { target: { value: '' } })
+    fireEvent.click(screen.getByText('Celebration'))
+    await waitFor(() => expect(mocks.sendMessage).toHaveBeenCalledWith({
+      id_sala: 12,
+      mensaje: expect.stringContaining('"nombre":"Celebration"'),
+    }))
+
+    fireEvent.click(buttons[1])
+    fireEvent.click(screen.getByLabelText('Stickers'))
+    fireEvent.click(screen.getByText('Thumbs up'))
+    await waitFor(() => expect(mocks.sendMessage).toHaveBeenLastCalledWith({
+      id_sala: 12,
+      mensaje: expect.stringContaining('"tipo":"image/svg+xml"'),
+    }))
+  })
+
+  it('adjunta documentos, audio, imágenes y fotos tomadas con cámara', async () => {
+    const picker = await import('expo-image-picker')
+    const documents = await import('expo-document-picker')
+    const fileSystem = await import('expo-file-system/legacy')
+    documents.getDocumentAsync
+      .mockResolvedValueOnce({
+        canceled: false,
+        assets: [{ uri: 'file:///manual.pdf', name: 'manual.pdf', mimeType: 'application/pdf' }],
+      })
+      .mockResolvedValueOnce({
+        canceled: false,
+        assets: [{ uri: 'file:///voice.mp3', name: 'voice.mp3', mimeType: 'audio/mpeg' }],
+      })
+    picker.requestMediaLibraryPermissionsAsync.mockResolvedValue({ granted: true })
+    picker.launchImageLibraryAsync.mockResolvedValue({
+      canceled: false,
+      assets: [{ uri: 'file:///cover.png', fileName: 'cover.png', mimeType: 'image/png', base64: 'cG5n' }],
+    })
+    picker.requestCameraPermissionsAsync.mockResolvedValue({ granted: true })
+    picker.launchCameraAsync.mockResolvedValue({
+      canceled: false,
+      assets: [{ uri: 'file:///camera.jpg', mimeType: 'image/jpeg', base64: 'anBn' }],
+    })
+    fileSystem.readAsStringAsync.mockResolvedValue('YmluYXJ5')
+    render(withAuth(<Chat />))
+    await screen.findByText('Tu pedido está listo')
+    const composer = screen.getByPlaceholderText('Escribe un mensaje')
+    const openAttachments = () => fireEvent.click(composer.parentElement.querySelectorAll('button')[0])
+
+    openAttachments()
+    fireEvent.click(screen.getByText('Documento'))
+    await waitFor(() => expect(mocks.sendMessage).toHaveBeenLastCalledWith({
+      id_sala: 12,
+      mensaje: expect.stringContaining('"nombre":"manual.pdf"'),
+    }))
+
+    openAttachments()
+    fireEvent.click(screen.getByText('Audio'))
+    await waitFor(() => expect(mocks.sendMessage).toHaveBeenLastCalledWith({
+      id_sala: 12,
+      mensaje: expect.stringContaining('"duracion":"Audio adjunto"'),
+    }))
+
+    openAttachments()
+    fireEvent.click(screen.getByText('Fotos y videos'))
+    await waitFor(() => expect(mocks.sendMessage).toHaveBeenLastCalledWith({
+      id_sala: 12,
+      mensaje: expect.stringContaining('"url":"data:image/png;base64,cG5n"'),
+    }))
+
+    openAttachments()
+    fireEvent.click(screen.getByText('Cámara'))
+    await waitFor(() => expect(mocks.sendMessage).toHaveBeenLastCalledWith({
+      id_sala: 12,
+      mensaje: expect.stringContaining('"nombre":"foto.jpg"'),
+    }))
+  })
+
+  it('graba una nota de voz y la envía como contenido codificado', async () => {
+    const { Audio } = await import('expo-av')
+    const fileSystem = await import('expo-file-system/legacy')
+    const recording = {
+      prepareToRecordAsync: vi.fn().mockResolvedValue(undefined),
+      startAsync: vi.fn().mockResolvedValue(undefined),
+      stopAndUnloadAsync: vi.fn().mockResolvedValue(undefined),
+      getURI: vi.fn(() => 'file:///recording.m4a'),
+    }
+    Audio.requestPermissionsAsync.mockResolvedValue({ granted: true })
+    Audio.setAudioModeAsync.mockResolvedValue(undefined)
+    Audio.Recording = class {
+      constructor() {
+        return recording
+      }
+    }
+    fileSystem.readAsStringAsync.mockResolvedValue('YXVkaW8=')
+    render(withAuth(<Chat />))
+    await screen.findByText('Tu pedido está listo')
+    const microphone = screen.getByPlaceholderText('Escribe un mensaje').parentElement.querySelectorAll('button')[2]
+
+    fireEvent.mouseDown(microphone)
+    await waitFor(() => expect(recording.startAsync).toHaveBeenCalledOnce())
+    fireEvent.mouseUp(microphone)
+
+    await waitFor(() => expect(mocks.sendMessage).toHaveBeenCalledWith({
+      id_sala: 12,
+      mensaje: expect.stringContaining('"duracion":"0:01"'),
+    }))
+    expect(fileSystem.readAsStringAsync).toHaveBeenCalledWith(
+      'file:///recording.m4a',
+      { encoding: 'base64' },
+    )
+  })
+
+  it('permite administrar favoritos, exportar y eliminar la conversación', async () => {
+    const { Linking, Share } = await import('react-native')
+    render(withAuth(<Chat />))
+    await screen.findByText('Tu pedido está listo')
+
+    fireEvent.click(screen.getAllByRole('button')[1])
+    expect(Share.share).toHaveBeenCalledWith(expect.objectContaining({ message: expect.stringContaining('videollamada') }))
+    fireEvent.click(screen.getAllByRole('button')[2])
+    expect(Linking.openURL).toHaveBeenCalledWith('tel:3001234567')
+
+    const openMenu = async (itemText) => {
+      fireEvent.click(screen.getAllByRole('button')[4])
+      await screen.findByText(itemText)
+    }
+    await openMenu('Añadir a Favoritos')
+    fireEvent.click(screen.getByText('Añadir a Favoritos'))
+    await waitFor(() => expect(AsyncStorage.setItem).toHaveBeenCalledWith('chat_favorito_12', '1'))
+    await waitFor(() => expect(screen.queryByText('Añadir a Favoritos')).toBeNull())
+    await openMenu('Añadir a la lista')
+    fireEvent.click(screen.getByText('Añadir a la lista'))
+    await waitFor(() => expect(AsyncStorage.setItem).toHaveBeenCalledWith('chat_lista_12', '1'))
+    await waitFor(() => expect(screen.queryByText('Añadir a la lista')).toBeNull())
+    await openMenu('Exportar chat')
+    fireEvent.click(screen.getByText('Exportar chat'))
+    expect(Share.share).toHaveBeenCalledWith(expect.objectContaining({ message: expect.stringContaining('Hola Ana') }))
+
+    await openMenu('Eliminar chat')
+    fireEvent.click(screen.getByText('Eliminar chat'))
+    const confirmation = mocks.alert.mock.lastCall[2].find((option) => option.text === 'Eliminar')
+    await act(async () => confirmation.onPress())
+    expect(mocks.deleteChat).toHaveBeenCalledWith(12)
+    expect(mocks.navigation.goBack).toHaveBeenCalledOnce()
   })
 })

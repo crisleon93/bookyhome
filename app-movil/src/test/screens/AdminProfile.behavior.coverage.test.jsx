@@ -171,4 +171,54 @@ describe('AdminProfile', () => {
     expect(Alert.alert).toHaveBeenCalledWith('Dato requerido', 'El nombre no puede quedar vacío.')
     expect(updateProfile).not.toHaveBeenCalled()
   })
+
+  it('guarda las fotos seleccionadas junto al perfil y notifica sus URL', async () => {
+    const picker = await import('expo-image-picker')
+    const api = await import('../../services/api')
+    const onProfilePhotoChange = vi.fn()
+    const onProfileBannerChange = vi.fn()
+    picker.requestMediaLibraryPermissionsAsync.mockResolvedValue({ granted: true })
+    picker.launchImageLibraryAsync
+      .mockResolvedValueOnce({
+        canceled: false,
+        assets: [{ uri: 'file:///profile.webp', file: new Blob(['photo']) }],
+      })
+      .mockResolvedValueOnce({
+        canceled: false,
+        assets: [{ uri: 'file:///banner.png', file: new Blob(['banner']) }],
+      })
+    api.uploadProfilePhoto.mockResolvedValue({ data: { url: '/uploads/profile.webp' } })
+    api.uploadBannerPhoto.mockResolvedValue({ data: { banner_perfil: '/uploads/banner.png' } })
+    render(<AdminProfile onProfilePhotoChange={onProfilePhotoChange} onProfileBannerChange={onProfileBannerChange} />)
+
+    await screen.findByText('Información personal')
+    fireEvent.click(screen.getByText('Cambiar foto'))
+    await waitFor(() => expect(picker.launchImageLibraryAsync).toHaveBeenCalledOnce())
+    fireEvent.click(screen.getByText('Editar banner'))
+    fireEvent.click(screen.getByText('Elegir imagen'))
+    await waitFor(() => expect(picker.launchImageLibraryAsync).toHaveBeenCalledTimes(2))
+    fireEvent.click(screen.getByText('Guardar cambios'))
+
+    await waitFor(() => {
+      expect(api.uploadProfilePhoto).toHaveBeenCalledOnce()
+      expect(api.uploadBannerPhoto).toHaveBeenCalledOnce()
+    })
+    expect(onProfilePhotoChange).toHaveBeenCalledWith('https://api.example.test/uploads/profile.webp')
+    expect(onProfileBannerChange).toHaveBeenCalledWith('https://api.example.test/uploads/banner.png', null)
+    expect(Alert.alert).toHaveBeenCalledWith('Listo', 'El perfil se actualizó correctamente.')
+  })
+
+  it('advierte si no hay permiso para seleccionar una foto', async () => {
+    const picker = await import('expo-image-picker')
+    picker.requestMediaLibraryPermissionsAsync.mockResolvedValue({ granted: false })
+    render(<AdminProfile />)
+
+    await screen.findByText('Información personal')
+    fireEvent.click(screen.getByText('Cambiar foto'))
+
+    await waitFor(() => expect(Alert.alert).toHaveBeenCalledWith(
+      'Permiso requerido',
+      'Permite el acceso a la galería para seleccionar una imagen.',
+    ))
+  })
 })

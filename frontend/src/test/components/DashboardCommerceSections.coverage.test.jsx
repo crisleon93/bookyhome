@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import SeccionCarrito from '../../components/dashboard/SeccionCarrito'
 import SeccionMisCompras from '../../components/dashboard/SeccionMisCompras'
 import SeccionNotificaciones from '../../components/dashboard/SeccionNotificaciones'
-import api, { actualizarCostoEnvio, cancelarMisPendientes, checkoutCarrito, getCarrito, getDevoluciones, getDirecciones, getOrden, getOrdenes, postPayment, removeFromCart, sendConfirmationEmail } from '../../services/api'
+import api, { actualizarCostoEnvio, cancelarMisPendientes, checkoutCarrito, getCarrito, getDevoluciones, getDirecciones, getOrden, getOrdenes, notificarLlegadaTienda, postPayment, removeFromCart, reservarRetiroEnTienda, sendConfirmationEmail } from '../../services/api'
 import { notificacionesService } from '../../services/notificaciones'
 import { notify } from '../../components/ToastProvider'
 
@@ -84,6 +84,15 @@ describe('secciones de compras y notificaciones', () => {
     removeFromCart.mockResolvedValue({})
     cancelarMisPendientes.mockResolvedValue({ data: { canceladas: 1 } })
     actualizarCostoEnvio.mockResolvedValue({ data: { ok: true, total: 14000, costo_envio: 0 } })
+    reservarRetiroEnTienda.mockResolvedValue({
+      data: {
+        ok: true,
+        pin_retiro: '4821',
+        estado_retiro: 'reservado',
+        tienda: { nombre_tienda: 'Librería Central', direccion: 'Calle 10' },
+      },
+    })
+    notificarLlegadaTienda.mockResolvedValue({ data: { ok: true } })
     postPayment.mockResolvedValue({ data: { ok: true } })
     sendConfirmationEmail.mockResolvedValue({})
     notificacionesService.obtener.mockResolvedValue({ notificaciones: [] })
@@ -134,6 +143,105 @@ describe('secciones de compras y notificaciones', () => {
       tipo_entrega: 'domicilio',
     })
     expect(getOrden).toHaveBeenCalledWith(77)
+  })
+
+  it('valida campos de tarjeta antes de intentar cobrar y muestra errores de cupón', async () => {
+    getCarrito.mockResolvedValue({ data: [{
+      id_libro: 33, titulo: 'Libro con pago seguro', precio_libro: 14000, cantidad: 1,
+    }] })
+    checkoutCarrito.mockResolvedValue({
+      data: { ok: true, order: { id_orden: 79, estado: 'pendiente', total: 14000 } },
+    })
+    getOrden.mockResolvedValue({ data: { id_orden: 79, estado: 'pendiente', total: 14000 } })
+    api.post.mockImplementation((path) => path === '/cupones/validar'
+      ? Promise.resolve({ data: { valido: false } })
+      : Promise.resolve({ data: {} }))
+    render(<SeccionCarrito userId={7} />)
+
+    await screen.findAllByText('Libro con pago seguro')
+    fireEvent.click(screen.getByRole('button', { name: /Continuar con el pago/ }))
+    await screen.findByText('2. Entrega y Pago')
+    fireEvent.change(screen.getByPlaceholderText('Código de cupón'), {
+      target: { value: 'NO-EXISTE' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Aplicar' }))
+    expect(await screen.findByText('El cupón ingresado no es válido.')).toBeTruthy()
+    expect(api.post).toHaveBeenCalledWith('/cupones/validar', {
+      codigo: 'NO-EXISTE',
+      order_id: 79,
+      total: 14000,
+    })
+
+    fireEvent.submit(document.querySelector('.checkout-payment-form'))
+    expect(await screen.findByText(/Número de tarjeta inválido/)).toBeTruthy()
+    expect(screen.getByText(/Nombre completo es requerido/)).toBeTruthy()
+    expect(screen.getByText(/Fecha inválida/)).toBeTruthy()
+    expect(screen.getByText(/CVV inválido/)).toBeTruthy()
+    expect(postPayment).not.toHaveBeenCalled()
+  })
+
+  it('valida las credenciales de PayPal y crea el recibo de Efecty', async () => {
+    getCarrito.mockResolvedValue({ data: [{
+      id_libro: 33, titulo: 'Libro para pagos alternativos', precio_libro: 14000, cantidad: 1,
+    }] })
+    checkoutCarrito.mockResolvedValue({
+      data: { ok: true, order: { id_orden: 80, estado: 'pendiente', total: 14000 } },
+    })
+    getOrden.mockResolvedValue({ data: { id_orden: 80, estado: 'pendiente', total: 14000 } })
+
+    render(<SeccionCarrito userId={7} />)
+    await screen.findAllByText('Libro para pagos alternativos')
+    fireEvent.click(screen.getByRole('button', { name: /Continuar con el pago/ }))
+    await screen.findByText('2. Entrega y Pago')
+
+    fireEvent.click(screen.getByRole('button', { name: /PayPal/ }))
+    expect(screen.getByText('PayPal Checkout')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: /— Pagar/ }))
+    fireEvent.submit(screen.getByLabelText('Correo electrónico de PayPal').closest('form'))
+    expect(await screen.findByText('Ingresa tu correo y contraseña')).toBeTruthy()
+    expect(postPayment).not.toHaveBeenCalled()
+
+    fireEvent.click(screen.getByRole('button', { name: /Punto Efecty/ }))
+    expect(screen.getByText('Puntos de Pago Efecty')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Generar Código de Pago Efecty' }))
+    expect(await screen.findByText('CUPÓN DE PAGO OFICIAL')).toBeTruthy()
+    expect(screen.getByText('110954')).toBeTruthy()
+  })
+
+  it('reserva el retiro en tienda, muestra el PIN y notifica la llegada', async () => {
+    getCarrito.mockResolvedValue({ data: [{
+      id_libro: 33, id_tienda: 8, nombre_tienda: 'Librería Central',
+      titulo: 'Libro para recoger', precio_libro: 14000, cantidad: 1,
+    }] })
+    checkoutCarrito.mockResolvedValue({
+      data: { ok: true, order: { id_orden: 81, estado: 'pendiente', total: 14000, items: [] } },
+    })
+    getOrden.mockResolvedValue({
+      data: { id_orden: 81, estado: 'pendiente', total: 14000, tipo_entrega: 'domicilio' },
+    })
+
+    render(<SeccionCarrito userId={7} />)
+    await screen.findAllByText('Libro para recoger')
+    fireEvent.click(screen.getByRole('button', { name: /Continuar con el pago/ }))
+    await screen.findByText('2. Entrega y Pago')
+    fireEvent.click(screen.getByRole('button', { name: /Retiro en Tienda/ }))
+    expect(screen.getByText('Costo de envío: $0')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: /Nequi \/ Daviplata/ }))
+    fireEvent.click(screen.getByRole('button', { name: /Confirmar Reserva con Nequi/ }))
+
+    expect(await screen.findByText('¡Reserva Confirmada con Éxito!')).toBeTruthy()
+    expect(screen.getByText('4821')).toBeTruthy()
+    expect(screen.getByText('Librería Central')).toBeTruthy()
+    expect(reservarRetiroEnTienda).toHaveBeenCalledWith(81, 'Nequi')
+    fireEvent.click(screen.getByRole('button', { name: /Ya llegué a la librería/ }))
+    await waitFor(() => {
+      expect(notificarLlegadaTienda).toHaveBeenCalledWith(81)
+      expect(notify).toHaveBeenCalledWith(
+        '¡Se notificó tu llegada a la librería con éxito!',
+        'success',
+      )
+    })
+    expect(screen.getByText('¡Llegada Notificada al Vendedor!')).toBeTruthy()
   })
 
   it('muestra el error de la API cuando no se puede iniciar el checkout', async () => {
@@ -226,6 +334,60 @@ describe('secciones de compras y notificaciones', () => {
     })
     expect(sendConfirmationEmail).toHaveBeenCalledWith(78)
     expect(screen.queryByRole('dialog')).toBeNull()
+  })
+
+  it('cobra la tarjeta con la dirección guardada y presenta el comprobante de compra', async () => {
+    getCarrito.mockResolvedValue({ data: [{
+      id_libro: 33, titulo: 'Libro con dirección guardada', precio_libro: 14000, cantidad: 1,
+    }] })
+    getDirecciones.mockResolvedValue({ data: [{
+      id_direccion: 12,
+      alias_direccion: 'Casa',
+      direccion_completa: 'Calle 20 # 10-15',
+      ciudad: 'Bogotá',
+      departamento: 'Cundinamarca',
+      telefono_contacto: '3001234567',
+      es_principal: true,
+    }] })
+    checkoutCarrito.mockResolvedValue({
+      data: { ok: true, order: { id_orden: 82, estado: 'pendiente', total: 14000 } },
+    })
+    getOrden.mockResolvedValue({ data: { id_orden: 82, estado: 'pendiente', total: 14000 } })
+    actualizarCostoEnvio.mockResolvedValue({
+      data: { ok: true, total: 15000, costo_envio: 1000 },
+    })
+
+    render(<SeccionCarrito userId={7} />)
+    await screen.findAllByText('Libro con dirección guardada')
+    fireEvent.click(screen.getByRole('button', { name: /Continuar con el pago/ }))
+    await screen.findByText('2. Entrega y Pago')
+    fireEvent.change(screen.getByRole('combobox'), { target: { value: '12' } })
+    expect(screen.getByText('Calle 20 # 10-15 • Bogotá, Cundinamarca • 📞 3001234567')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: /Tarjeta$/ }))
+    fireEvent.change(screen.getByPlaceholderText('0000 0000 0000 0000'), {
+      target: { value: '4111 1111 1111 1111' },
+    })
+    fireEvent.change(screen.getByLabelText('Vencimiento (MM/AA)'), { target: { value: '1228' } })
+    fireEvent.change(screen.getByLabelText('Código CVV'), { target: { value: '123' } })
+    fireEvent.change(screen.getByLabelText(/Nombre del Titular/), { target: { value: 'Ana Compradora' } })
+
+    vi.useFakeTimers()
+    fireEvent.submit(document.querySelector('.checkout-payment-form'))
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2000)
+    })
+    vi.useRealTimers()
+
+    await waitFor(() => {
+      expect(postPayment).toHaveBeenCalledWith({
+        order_id: 82,
+        amount: 15000,
+        payment_method: 'Tarjeta de Crédito',
+        tipo_entrega: 'domicilio',
+        id_direccion: 12,
+      })
+    })
+    expect(sendConfirmationEmail).toHaveBeenCalledWith(82)
   })
 
   it('filtra compras por libro y abre el detalle actualizado de una orden', async () => {
@@ -334,5 +496,54 @@ describe('secciones de compras y notificaciones', () => {
     expect(screen.getByRole('dialog')).toBeTruthy()
     fireEvent.click(screen.getByText('Cancelar'))
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+  })
+
+  it('filtra, ordena y marca como leídas las notificaciones automáticas', async () => {
+    getOrdenes.mockResolvedValue({
+      data: [
+        { id_orden: 101, estado: 'entregada', total: 24000, fecha: '2025-01-03T12:00:00' },
+        { id_orden: 102, estado: 'enviado', total: 18000, fecha: '2025-01-01T12:00:00' },
+        { id_orden: 103, estado: 'pagado', total: 9000, fecha: '2025-01-02T12:00:00' },
+        { id_orden: 104, estado: 'cancelada', total: 1000 },
+      ],
+    })
+    notificacionesService.obtener.mockResolvedValue({
+      notificaciones: [{
+        id_notificacion: 9, tipo: 'sistema', titulo: 'Reclamo actualizado',
+        descripcion: 'Revisa tu caso', fecha_creacion: '2025-01-04T12:00:00', leida: true,
+      }],
+    })
+    render(<SeccionNotificaciones />)
+
+    expect(await screen.findByText('Compra entregada')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: /Pedidos y envíos/ }))
+    expect(screen.getByText('Compra en camino')).toBeTruthy()
+    expect(screen.queryByText('Reclamo actualizado')).toBeNull()
+    fireEvent.change(screen.getByLabelText('Ordenar notificaciones'), { target: { value: 'antiguas' } })
+    fireEvent.click(screen.getByRole('button', { name: /No leídas/ }))
+    fireEvent.click(screen.getByRole('button', { name: 'Marcar todas como leídas' }))
+
+    await waitFor(() => expect(notificacionesService.marcarTodasLeidas).toHaveBeenCalledOnce())
+    expect(notificacionesService.obtener).toHaveBeenCalled()
+    expect(screen.getByText('Compra entregada')).toBeTruthy()
+  })
+
+  it('elimina una notificación automática y elimina masivamente las restantes', async () => {
+    getOrdenes.mockResolvedValue({
+      data: [
+        { id_orden: 111, estado: 'pendiente', total: 12000 },
+        { id_orden: 112, estado: 'pagado', total: 25000 },
+      ],
+    })
+    render(<SeccionNotificaciones />)
+    expect(await screen.findByText('Pago Pendiente')).toBeTruthy()
+    fireEvent.click(screen.getAllByTitle('Eliminar')[0])
+    await waitFor(() => expect(screen.queryByText('Pago Pendiente')).toBeNull())
+
+    fireEvent.click(screen.getByRole('button', { name: /Eliminar mensajes/ }))
+    fireEvent.click(screen.getByLabelText('Todas las notificaciones'))
+    fireEvent.click(screen.getByRole('button', { name: 'Eliminar', exact: true }))
+    await waitFor(() => expect(notificacionesService.eliminarVarias).toHaveBeenCalledWith('todas'))
+    expect(screen.queryByRole('dialog')).toBeNull()
   })
 })

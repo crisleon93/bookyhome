@@ -336,6 +336,36 @@ describe('Additional mobile screen coverage', () => {
     expect(mocks.getBusquedaAvanzada).toHaveBeenCalledWith({ ordenar_por: 'recientes', limite: 12, pagina: 1 })
   })
 
+  it('filtra cupones por tipo y vencimiento y abre el historial de compras', async () => {
+    const soon = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString()
+    mocks.getCuponesDisponibles.mockResolvedValue({
+      data: [
+        { ...coupons[0], fecha_fin: soon },
+        { ...coupons[1], fecha_fin: '2031-01-01' },
+      ],
+    })
+    renderAsBuyer(<PostLogin navigation={navigation} />)
+
+    expect(await screen.findByText('Tus últimas compras')).toBeTruthy()
+    fireEvent.click(screen.getByText('Ver todos'))
+    const modal = screen.getByTestId('modal')
+    fireEvent.click(within(modal).getByText('Todos'))
+    fireEvent.click(within(modal).getByText('Por tienda'))
+    expect(within(modal).getByText('BOOK10')).toBeTruthy()
+    expect(within(modal).queryByText('GLOBAL5')).toBeNull()
+
+    fireEvent.click(within(modal).getByText('Cualquier vencimiento'))
+    fireEvent.click(within(modal).getByText('Vencen en 7 días'))
+    expect(within(modal).getByText('BOOK10')).toBeTruthy()
+    fireEvent.click(within(modal).getByText('Por tienda'))
+    fireEvent.click(within(modal).getByText('Globales'))
+    expect(within(modal).getByText('No hay cupones que coincidan.')).toBeTruthy()
+    fireEvent.click(screen.getByLabelText('Cerrar cupones'))
+
+    fireEvent.click(screen.getByText('Libro comprado'))
+    expect(mocks.navigationNavigate).toHaveBeenCalledWith('History')
+  })
+
   it('guarda el perfil y el banner, muestra estadísticas y detalles de fidelización', async () => {
     renderAsBuyer(<Profile />)
     expect(await screen.findByText('Información Personal')).toBeTruthy()

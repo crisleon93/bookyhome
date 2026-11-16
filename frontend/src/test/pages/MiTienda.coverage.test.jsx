@@ -521,4 +521,148 @@ describe('MiTienda', () => {
     expect(await screen.findByText(/Configuración de tienda/i)).toBeTruthy()
     u6()
   })
+
+  it('valida el nombre de la tienda antes de guardar sus opciones de configuración', async () => {
+    const getDefault = mocks.apiGet.getMockImplementation()
+    mocks.apiGet.mockImplementation((path) => path === '/configuracion'
+      ? Promise.resolve({ data: { alertas_email: true, costo_envio: 5000 } })
+      : getDefault(path))
+    renderSeller('?seccion=Configuración')
+    await screen.findByRole('heading', { name: 'Configuración de tienda' })
+
+    const name = screen.getByLabelText(/Nombre de la tienda/)
+    const save = screen.getByRole('button', { name: /Guardar cambios/ })
+    await waitFor(() => expect(name.value).toBe('Librería Central'))
+    fireEvent.change(name, { target: { value: ' ' } })
+    fireEvent.click(save)
+    expect(await screen.findByText(/El nombre de la tienda es obligatorio/)).toBeTruthy()
+
+    fireEvent.change(name, { target: { value: 'AB' } })
+    fireEvent.click(save)
+    expect(await screen.findByText(/El nombre debe tener al menos 3 caracteres/)).toBeTruthy()
+
+    fireEvent.change(name, { target: { value: 'Librería Renovada' } })
+    fireEvent.click(save)
+    await waitFor(() => {
+      expect(mocks.apiPut).toHaveBeenCalledWith(
+        '/tiendas/mi-tienda',
+        expect.objectContaining({ nombre_tienda: 'Librería Renovada' }),
+      )
+      expect(mocks.apiPut).toHaveBeenCalledWith('/configuracion', expect.any(Object))
+    })
+    expect(await screen.findByText('✓ Cambios guardados')).toBeTruthy()
+  })
+
+  it('actualiza datos y preferencias del perfil, y personaliza foto y banner', async () => {
+    const profilePhotoUpdated = vi.fn()
+    const profileBannerUpdated = vi.fn()
+    window.addEventListener('profile-photo-updated', profilePhotoUpdated)
+    window.addEventListener('profile-banner-updated', profileBannerUpdated)
+    mocks.apiPost.mockImplementation((path) => Promise.resolve({
+      data: path === '/perfil/foto-perfil'
+        ? { url: '/uploads/seller.jpg' }
+        : { url: '/uploads/banner.jpg' },
+    }))
+    const { unmount } = renderSeller('?seccion=Perfil')
+    await screen.findByRole('tab', { name: /Mi perfil/ })
+    await screen.findByDisplayValue('Ana')
+
+    fireEvent.change(screen.getByLabelText('Nombre'), { target: { value: 'Ana María' } })
+    fireEvent.change(screen.getByLabelText('Apellidos'), { target: { value: 'Gómez' } })
+    fireEvent.change(screen.getByLabelText('Ciudad'), { target: { value: 'Cali' } })
+    fireEvent.click(screen.getAllByRole('button', { name: 'Activado' })[0])
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }))
+
+    await waitFor(() => {
+      expect(mocks.apiPut).toHaveBeenCalledWith('/perfil/mi-perfil', expect.objectContaining({
+        nombre_usuario: 'Ana María Gómez',
+        ciudad: 'Cali',
+      }))
+    })
+    expect(mocks.apiPut).toHaveBeenCalledWith('/perfil/preferencias', expect.objectContaining({
+      notificaciones_promociones: false,
+    }))
+
+    fireEvent.change(document.querySelector('input[type="file"][accept="image/*"]'), {
+      target: { files: [new File(['photo'], 'seller.png', { type: 'image/png' })] },
+    })
+    await waitFor(() => expect(mocks.apiPost).toHaveBeenCalledWith(
+      '/perfil/foto-perfil',
+      expect.any(FormData),
+      { headers: { 'Content-Type': 'multipart/form-data' } },
+    ))
+    expect(profilePhotoUpdated).toHaveBeenCalledOnce()
+
+    fireEvent.click(screen.getByRole('button', { name: '✏️ Editar banner' }))
+    fireEvent.change(document.getElementById('perfil-banner-upload'), {
+      target: { files: [new File(['banner'], 'banner.png', { type: 'image/png' })] },
+    })
+    await waitFor(() => expect(mocks.apiPost).toHaveBeenCalledWith(
+      '/perfil/banner',
+      expect.any(FormData),
+      { headers: { 'Content-Type': 'multipart/form-data' } },
+    ))
+    expect(profileBannerUpdated).toHaveBeenCalledOnce()
+
+    fireEvent.click(screen.getByRole('button', { name: '✏️ Editar banner' }))
+    fireEvent.click(screen.getByTitle('#1E3A7A'))
+    await waitFor(() => expect(mocks.apiPatch).toHaveBeenCalledWith(
+      '/perfil/banner-color',
+      { banner_color: '#1E3A7A' },
+    ))
+    expect(profileBannerUpdated).toHaveBeenCalledTimes(2)
+
+    unmount()
+    window.removeEventListener('profile-photo-updated', profilePhotoUpdated)
+    window.removeEventListener('profile-banner-updated', profileBannerUpdated)
+  })
+
+  it('permite cambiar a cobros y ver cuentas bancarias cargadas', async () => {
+    mocks.apiGet.mockImplementation((path) => path.includes('cuentas-bancarias')
+      ? Promise.resolve({ data: { cuentas: [{
+        id_cuenta: 3,
+        banco: 'Banco Central',
+        tipo_cuenta: 'Ahorros',
+        numero_cuenta: '12345678',
+        nombre_titular: 'Ana Vendedora',
+        cedula_titular: '100200300',
+        es_principal: true,
+      }] } })
+      : Promise.resolve({ data: [] }))
+    renderSeller('?seccion=Perfil&tab=cobro')
+    expect(await screen.findByText('Banco Central')).toBeTruthy()
+    expect(screen.getByRole('tab', { name: 'Métodos de cobro' })).toHaveAttribute('aria-selected', 'true')
+  })
+
+  it('registra una cuenta bancaria con los datos del titular', async () => {
+    mocks.apiGet.mockImplementation((path) => path.includes('cuentas-bancarias')
+      ? Promise.resolve({ data: { cuentas: [] } })
+      : Promise.resolve({ data: [] }))
+    renderSeller('?seccion=Perfil&tab=cobro')
+    await screen.findByRole('heading', { name: 'Cuentas Bancarias' })
+    fireEvent.click(screen.getByRole('button', { name: '+ Agregar Cuenta' }))
+
+    fireEvent.change(screen.getByLabelText('Tipo de cuenta bancaria'), { target: { value: 'Ahorros' } })
+    fireEvent.change(screen.getByLabelText('Banco'), { target: { value: 'Davivienda' } })
+    fireEvent.change(screen.getByLabelText('Número de cuenta'), { target: { value: '99887766' } })
+    fireEvent.change(screen.getByPlaceholderText('Nombre del titular'), { target: { value: 'Ana Vendedora' } })
+    fireEvent.change(screen.getByPlaceholderText('Cédula del titular'), { target: { value: '100200300' } })
+    fireEvent.click(screen.getByLabelText('Marcar como cuenta principal'))
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar' }))
+
+    await waitFor(() => {
+      expect(mocks.apiPost).toHaveBeenCalledWith(
+        '/api/v1/bookypago-finanzas/cuentas-bancarias/42',
+        {
+          tipo_cuenta: 'Ahorros',
+          banco: 'Davivienda',
+          numero_cuenta: '99887766',
+          nombre_titular: 'Ana Vendedora',
+          cedula_titular: '100200300',
+          es_principal: true,
+        },
+      )
+    })
+    expect(screen.queryByRole('heading', { name: 'Agregar Nueva Cuenta' })).toBeNull()
+  })
 })

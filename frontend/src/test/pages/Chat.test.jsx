@@ -50,11 +50,13 @@ class MockWebSocket {
   static OPEN = 1
   static CLOSING = 2
   static CLOSED = 3
+  static instances = []
 
   constructor() {
     this.readyState = 0
     this.close = vi.fn()
     this.send = vi.fn()
+    MockWebSocket.instances.push(this)
   }
 }
 
@@ -193,6 +195,7 @@ describe('Chat (frontend) — pantalla', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     localStorage.clear()
+    MockWebSocket.instances = []
     vi.stubGlobal('WebSocket', MockWebSocket)
   })
 
@@ -265,6 +268,220 @@ describe('Chat (frontend) — pantalla', () => {
     expect(chatService.enviarMensaje).toHaveBeenCalledWith(1, 'Mensaje sin conexión')
   })
 
+  it('actualiza conversaciones y estados recibidos mediante WebSocket', async () => {
+    const { chatService } = await import('../../services/chat')
+    chatService.getSalas.mockResolvedValueOnce({
+      salas: [
+        { id_sala: 1, nombre_tienda: 'Librería Central', ultimo_mensaje: '', no_leidos: 0 },
+        { id_sala: 2, nombre_tienda: 'Librería Sur', ultimo_mensaje: '', no_leidos: 0 },
+      ],
+    })
+    chatService.obtenerMensajes.mockResolvedValueOnce({ mensajes: [] })
+
+    render(<Chat />)
+    await screen.findAllByText('Librería Central')
+    await screen.findByText(/No hay mensajes aún/)
+    const socket = MockWebSocket.instances[0]
+    socket.readyState = MockWebSocket.OPEN
+    act(() => socket.onopen())
+
+    act(() => socket.onmessage({ data: JSON.stringify({
+      tipo: 'nuevo_mensaje',
+      mensaje: {
+        id_mensaje: 78,
+        id_sala: 2,
+        id_remitente: 2,
+        mensaje: 'Respuesta recibida',
+        enviado_en: '2026-03-20 10:01:00',
+      },
+    }) }))
+    const otherRoom = screen.getByText('Librería Sur').closest('.sala-item')
+    expect(within(otherRoom).getByText('Respuesta recibida')).toBeInTheDocument()
+    expect(within(otherRoom).getByText('1', { selector: '.notificacion-badge' })).toBeInTheDocument()
+
+    act(() => socket.onmessage({ data: JSON.stringify({
+      tipo: 'nuevo_mensaje',
+      mensaje: {
+        id_mensaje: 79,
+        id_sala: 1,
+        id_remitente: 2,
+        mensaje: 'Mensaje en la conversación abierta',
+        enviado_en: '2026-03-20 10:02:00',
+      },
+    }) }))
+    expect(await screen.findByText('Mensaje en la conversación abierta')).toBeInTheDocument()
+    expect(chatService.marcarSalaLeida).toHaveBeenCalledWith(1)
+
+    act(() => socket.onmessage({ data: JSON.stringify({ tipo: 'mensaje_entregado', id_mensaje: 79 }) }))
+    act(() => socket.onmessage({ data: JSON.stringify({ tipo: 'mensajes_leidos', id_sala: 1 }) }))
+    act(() => socket.onmessage({ data: JSON.stringify({ tipo: 'error', detalle: 'No autorizado' }) }))
+    act(() => socket.onmessage({ data: '{mal json' }))
+    expect(screen.getByText('Mensaje en la conversación abierta')).toBeInTheDocument()
+  })
+
+  it('ofrece las opciones de adjuntos y confirma archivos seleccionados', async () => {
+    const { chatService } = await import('../../services/chat')
+    const { notify } = await import('../../components/ToastProvider')
+    chatService.getSalas.mockResolvedValueOnce({
+      salas: [{ id_sala: 1, nombre_tienda: 'Librería Central', ultimo_mensaje: '', no_leidos: 0 }],
+    })
+    render(<Chat />)
+    await screen.findAllByText('Librería Central')
+    const fileInputs = document.querySelectorAll('input[type="file"]')
+    const attachments = [
+      ['Documento', 0, 'archivo.pdf', 'Documento "archivo.pdf" adjuntado'],
+      ['Fotos y videos', 1, 'foto.png', 'Archivo multimedia "foto.png" adjuntado'],
+      ['Cámara', 2, 'captura.jpg', 'Foto capturada: "captura.jpg"'],
+      ['Audio', 3, 'nota.mp3', 'Audio "nota.mp3" adjuntado'],
+    ]
+
+    for (const [label, inputIndex, filename, message] of attachments) {
+      fireEvent.click(screen.getByTitle('Adjuntar'))
+      fireEvent.click(screen.getByRole('button', { name: label }))
+      fireEvent.change(fileInputs[inputIndex], {
+        target: { files: [new File(['test'], filename)] },
+      })
+      expect(notify).toHaveBeenCalledWith(message, 'success')
+    }
+
+    for (const [label, message] of [
+      ['Contacto', 'Tarjeta de contacto compartida'],
+      ['Encuesta', 'Crear encuesta en el chat'],
+      ['Evento', 'Crear evento en calendario'],
+    ]) {
+      fireEvent.click(screen.getByTitle('Adjuntar'))
+      fireEvent.click(screen.getByRole('button', { name: label }))
+      expect(notify).toHaveBeenCalledWith(message, 'success')
+    }
+
+    fireEvent.click(screen.getByTitle('Adjuntar'))
+    fireEvent.click(screen.getByRole('button', { name: 'Nuevo sticker' }))
+    fireEvent.change(fileInputs[1], {
+      target: { files: [new File(['test'], 'sticker.webp')] },
+    })
+    expect(notify).toHaveBeenCalledWith('Archivo multimedia "sticker.webp" adjuntado', 'success')
+  })
+
+  it('informa si el navegador no soporta micrófono o se deniega el permiso', async () => {
+    const { chatService } = await import('../../services/chat')
+    const { notify } = await import('../../components/ToastProvider')
+    chatService.getSalas.mockResolvedValueOnce({
+      salas: [{ id_sala: 1, nombre_tienda: 'Librería Central', ultimo_mensaje: '', no_leidos: 0 }],
+    })
+    render(<Chat />)
+    await screen.findAllByText('Librería Central')
+
+    fireEvent.click(screen.getByTitle('Grabar nota de voz'))
+    expect(notify).toHaveBeenCalledWith('Tu navegador no soporta grabación de audio', 'error')
+
+    Object.defineProperty(navigator, 'mediaDevices', {
+      configurable: true,
+      value: { getUserMedia: vi.fn().mockRejectedValue(new Error('permission denied')) },
+    })
+    fireEvent.click(screen.getByTitle('Grabar nota de voz'))
+    await waitFor(() => {
+      expect(notify).toHaveBeenCalledWith(
+        'No se pudo acceder al micrófono. Verifica los permisos.',
+        'error',
+      )
+    })
+  })
+
+  it('graba y cancela una nota de voz liberando el micrófono', async () => {
+    const { chatService } = await import('../../services/chat')
+    const track = { stop: vi.fn() }
+    const recorder = {
+      state: 'inactive',
+      start: vi.fn(function () { this.state = 'recording' }),
+      stop: vi.fn(function () { this.state = 'inactive' }),
+    }
+    vi.stubGlobal('MediaRecorder', vi.fn(function () { return recorder }))
+    Object.defineProperty(navigator, 'mediaDevices', {
+      configurable: true,
+      value: { getUserMedia: vi.fn().mockResolvedValue({ getTracks: () => [track] }) },
+    })
+    chatService.getSalas.mockResolvedValueOnce({
+      salas: [{ id_sala: 1, nombre_tienda: 'Librería Central', ultimo_mensaje: '', no_leidos: 0 }],
+    })
+    render(<Chat />)
+    await screen.findAllByText('Librería Central')
+
+    fireEvent.click(screen.getByTitle('Grabar nota de voz'))
+    expect(await screen.findByTitle('Cancelar grabación')).toBeInTheDocument()
+    expect(recorder.start).toHaveBeenCalledWith(100)
+    fireEvent.click(screen.getByTitle('Cancelar grabación'))
+
+    expect(recorder.stop).toHaveBeenCalled()
+    expect(track.stop).toHaveBeenCalled()
+    expect(screen.getByTitle('Grabar nota de voz')).toBeInTheDocument()
+  })
+
+  it('inserta emojis, GIFs y stickers desde el selector del chat', async () => {
+    const { chatService } = await import('../../services/chat')
+    chatService.getSalas.mockResolvedValueOnce({
+      salas: [{ id_sala: 1, nombre_tienda: 'Librería Central', ultimo_mensaje: '', no_leidos: 0 }],
+    })
+    render(<Chat />)
+    await screen.findAllByText('Librería Central')
+
+    const emojiToggle = () => document.querySelector('.chat-input-capsule > button[title="Emojis"]')
+    fireEvent.click(emojiToggle())
+    expect(screen.getByPlaceholderText('Buscar emoji')).toBeInTheDocument()
+    const emoji = document.querySelector('.chat-emoji-tray-btn')
+    fireEvent.click(emoji)
+    expect(screen.getByPlaceholderText('Escribe un mensaje')).toHaveValue(emoji.title)
+    expect(document.querySelector('.chat-emoji-tray')).toBeInTheDocument()
+
+    fireEvent.click(emojiToggle())
+    fireEvent.click(emojiToggle())
+    fireEvent.click(screen.getByTitle('GIFs'))
+    const gif = document.querySelector('.chat-emoji-tray-gif-card')
+    const gifTitle = gif.querySelector('span').textContent
+    fireEvent.click(gif)
+    expect(screen.getByPlaceholderText('Escribe un mensaje').value).toMatch(/^\S+\[GIF: .+\]$/)
+    expect(document.querySelector('.chat-emoji-tray')).toBeNull()
+    expect(gifTitle).toBeTruthy()
+
+    fireEvent.click(emojiToggle())
+    fireEvent.click(screen.getByTitle('Stickers'))
+    const sticker = document.querySelector('.chat-emoji-tray-sticker-item')
+    fireEvent.click(sticker)
+    expect(screen.getByPlaceholderText('Escribe un mensaje').value.length).toBeGreaterThan(1)
+    expect(document.querySelector('.chat-emoji-tray')).toBeNull()
+  })
+
+  it('consulta los datos de contacto y cierra llamadas de audio y vídeo', async () => {
+    const { chatService } = await import('../../services/chat')
+    chatService.getSalas.mockResolvedValueOnce({
+      salas: [{
+        id_sala: 1,
+        nombre_tienda: 'Librería Central',
+        correo_tienda: 'contacto@central.test',
+        telefono_tienda: '3001234567',
+        ultimo_mensaje: '',
+        no_leidos: 0,
+      }],
+    })
+    render(<Chat />)
+    await screen.findAllByText('Librería Central')
+    fireEvent.click(screen.getByTitle('Ver información del contacto'))
+    expect(screen.getByRole('heading', { name: 'Info. del contacto' })).toBeInTheDocument()
+    expect(screen.getAllByText('contacto@central.test').length).toBeGreaterThanOrEqual(1)
+    expect(screen.getAllByText('3001234567').length).toBeGreaterThanOrEqual(1)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Llamar' }))
+    expect(screen.getByRole('dialog')).toHaveTextContent('Llamada de voz de BookyHome...')
+    fireEvent.click(screen.getByTitle('Finalizar llamada'))
+    expect(screen.queryByRole('dialog')).toBeNull()
+
+    fireEvent.click(screen.getByTitle('Videollamada'))
+    expect(screen.getByRole('dialog')).toHaveTextContent('Videollamada de BookyHome...')
+    fireEvent.click(screen.getByRole('button', { name: 'Cerrar llamada' }))
+    expect(screen.queryByRole('dialog')).toBeNull()
+    fireEvent.click(screen.getByTitle('Cerrar información'))
+    expect(screen.queryByRole('heading', { name: 'Info. del contacto' })).toBeNull()
+  })
+
   it('fija y añade a favoritos una conversación desde el menú contextual', async () => {
     const { chatService } = await import('../../services/chat')
     const { notify } = await import('../../components/ToastProvider')
@@ -325,6 +542,61 @@ describe('Chat (frontend) — pantalla', () => {
     expect(notify).toHaveBeenCalledWith('Mensaje eliminado ✓', 'success')
   })
 
+  it('copia, responde, fija y destaca mensajes desde el menú contextual', async () => {
+    const { chatService } = await import('../../services/chat')
+    const { notify } = await import('../../components/ToastProvider')
+    const writeText = vi.fn().mockResolvedValue(undefined)
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText },
+    })
+    chatService.getSalas.mockResolvedValueOnce({
+      salas: [{
+        id_sala: 1,
+        nombre_tienda: 'Librería Central',
+        ultimo_mensaje: 'Acciones de mensaje',
+        no_leidos: 0,
+      }],
+    })
+    chatService.obtenerMensajes.mockResolvedValueOnce({
+      mensajes: [{
+        id_mensaje: 71,
+        id_remitente: 2,
+        mensaje: 'Acciones de mensaje',
+        enviado_en: new Date().toISOString(),
+      }],
+    })
+    render(<Chat />)
+    await screen.findByText('Acciones de mensaje', { selector: '.mensaje-texto' })
+    const abrirMenu = () => fireEvent.contextMenu(document.querySelector('.mensaje'))
+
+    abrirMenu()
+    fireEvent.click(screen.getByRole('button', { name: 'Copiar' }))
+    await waitFor(() => expect(writeText).toHaveBeenCalledWith('Acciones de mensaje'))
+    expect(notify).toHaveBeenCalledWith('Texto copiado al portapapeles ✓', 'success')
+
+    abrirMenu()
+    fireEvent.click(screen.getByRole('button', { name: 'Responder' }))
+    expect(screen.getByText('Acciones de mensaje', { selector: '.reply-bar-text' })).toBeTruthy()
+    fireEvent.change(screen.getByPlaceholderText('Escribe un mensaje'), {
+      target: { value: 'Respuesta' },
+    })
+    fireEvent.click(screen.getByTitle('Enviar mensaje'))
+    await waitFor(() => expect(chatService.enviarMensaje).toHaveBeenCalledWith(
+      1,
+      '┌── 💬 Usuario: "Acciones de mensaje"\n└── Respuesta',
+    ))
+
+    abrirMenu()
+    fireEvent.click(screen.getByRole('button', { name: 'Fijar' }))
+    expect(notify).toHaveBeenCalledWith('Mensaje fijado 📌', 'success')
+
+    abrirMenu()
+    fireEvent.click(screen.getByRole('button', { name: 'Destacar' }))
+    expect(JSON.parse(localStorage.getItem('bkh_chat_destacados'))).toEqual([71])
+    expect(notify).toHaveBeenCalledWith('Mensaje destacado ⭐', 'success')
+  })
+
   it('guarda una reacción rápida en los mensajes propios', async () => {
     const { chatService } = await import('../../services/chat')
     chatService.getSalas.mockResolvedValueOnce({
@@ -375,6 +647,73 @@ describe('Chat (frontend) — pantalla', () => {
     const wasChecked = enterToSend.checked
     fireEvent.click(enterToSend)
     expect(enterToSend.checked).toBe(!wasChecked)
+  })
+
+  it('personaliza el texto y las reacciones desde los selectores de emoji', async () => {
+    const { chatService } = await import('../../services/chat')
+    chatService.getSalas.mockResolvedValueOnce({
+      salas: [{
+        id_sala: 1,
+        nombre_tienda: 'Librería Central',
+        ultimo_mensaje: 'Mensaje para reaccionar',
+        no_leidos: 0,
+      }],
+    })
+    chatService.obtenerMensajes.mockResolvedValueOnce({
+      mensajes: [{
+        id_mensaje: 61,
+        id_remitente: 2,
+        mensaje: 'Mensaje para reaccionar',
+        fecha_creacion: new Date().toISOString(),
+        enviado_en: new Date().toISOString(),
+      }],
+    })
+    render(<Chat />)
+    await screen.findByText('Mensaje para reaccionar', { selector: '.mensaje-texto' })
+
+    fireEvent.contextMenu(document.querySelector('.mensaje'))
+    fireEvent.click(screen.getByTitle('Más reacciones'))
+    const picker = screen.getByRole('dialog', { name: 'Seleccionar reacción' })
+    fireEvent.change(within(picker).getByPlaceholderText('Busca una reacción'), {
+      target: { value: '❤️' },
+    })
+    fireEvent.click(within(picker).getByRole('button', { name: '❤️', exact: true }))
+    expect(JSON.parse(localStorage.getItem('bkh_chat_reacciones'))[61]).toContain('❤️')
+
+    fireEvent.click(screen.getByTitle('Emojis'))
+    expect(document.querySelector('.chat-emoji-tray')).toBeTruthy()
+    fireEvent.click(document.querySelector('.chat-emoji-tray-btn'))
+    expect(screen.getByPlaceholderText('Escribe un mensaje').value).toBeTruthy()
+  })
+
+  it('recorre y restablece las secciones de apariencia del chat', async () => {
+    const { chatService } = await import('../../services/chat')
+    chatService.getSalas.mockResolvedValueOnce({
+      salas: [{
+        id_sala: 1,
+        nombre_tienda: 'Librería Central',
+        ultimo_mensaje: '',
+        no_leidos: 0,
+      }],
+    })
+    render(<Chat />)
+    await screen.findAllByText('Librería Central')
+    fireEvent.click(screen.getByTitle('Más opciones'))
+    fireEvent.click(screen.getByText('Info. del contacto'))
+    fireEvent.click(screen.getByTitle('Configuración y apariencia del chat'))
+    const dialog = screen.getByRole('dialog', { name: 'Configuración y Apariencia del Chat' })
+
+    fireEvent.click(within(dialog).getByRole('button', { name: /📋 Lista de Chats/ }))
+    fireEvent.click(within(dialog).getByRole('radio', { name: /Contorno Neón Oscuro/ }))
+    fireEvent.click(within(dialog).getByRole('button', { name: /💬 Burbujas/ }))
+    fireEvent.click(within(dialog).getByRole('radio', { name: /Verde Esmeralda/ }))
+    fireEvent.click(within(dialog).getByRole('button', { name: /🔤 Tamaño Letra/ }))
+    fireEvent.click(within(dialog).getByRole('button', { name: /Grande/ }))
+    fireEvent.click(within(dialog).getByRole('button', { name: /⚡ Preferencias/ }))
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Restablecer valores' }))
+    expect(JSON.parse(localStorage.getItem('bkh_chat_theme_settings')).tamanoFuente).toBe('mediana')
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Listo / Guardar' }))
+    expect(screen.queryByRole('dialog')).toBeNull()
   })
 
   it('actualiza el progreso de una nota de voz al mover el scrubber, pausar y terminar', async () => {

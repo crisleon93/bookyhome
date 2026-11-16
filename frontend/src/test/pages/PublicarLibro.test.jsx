@@ -6,7 +6,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import axios from '../../services/api'
@@ -118,6 +118,60 @@ describe('PublicarLibro — auditoría de validaciones client-side', () => {
     expect(axios.post).not.toHaveBeenCalled()
   })
 
+  it('valida en secuencia título, autor, descripción, precio, stock y estado', async () => {
+    const user = userEvent.setup()
+    axios.get.mockResolvedValue({ data: [{ id_categoria: 1, nombre_categoria: 'Ficción' }] })
+    renderPublicarLibro()
+    const submit = () => user.click(screen.getByRole('button', { name: 'Publicar libro' }))
+
+    await submit()
+    expect(await screen.findByRole('alert')).toHaveTextContent('Selecciona una categoría')
+    await user.selectOptions(await screen.findByLabelText('Categoría *'), '1')
+    await submit()
+    expect(screen.getByRole('alert')).toHaveTextContent('El título es obligatorio')
+    await user.type(screen.getByLabelText(/Título del libro/), 'Novela')
+    await submit()
+    expect(screen.getByRole('alert')).toHaveTextContent('El autor es obligatorio')
+    await user.type(screen.getByLabelText('Autor *'), 'Autora')
+    await submit()
+    expect(screen.getByRole('alert')).toHaveTextContent('La descripción es obligatoria')
+    await user.type(screen.getByLabelText(/Descripción/), 'Una historia')
+    await submit()
+    expect(screen.getByRole('alert')).toHaveTextContent('El precio debe ser mayor a $0')
+    await user.type(screen.getByLabelText('Precio (COP) *'), '10000')
+    await submit()
+    expect(screen.getByRole('alert')).toHaveTextContent('El stock debe ser al menos 1')
+    await user.type(screen.getByLabelText('Unidades disponibles *'), '1')
+    await submit()
+    expect(screen.getByRole('alert')).toHaveTextContent('Selecciona el estado del libro')
+    expect(axios.post).not.toHaveBeenCalled()
+  })
+
+  it('muestra el error de publicación devuelto por el servidor', async () => {
+    const user = userEvent.setup()
+    axios.get.mockResolvedValue({ data: [{ id_categoria: 1, nombre_categoria: 'Ficción' }] })
+    axios.post.mockRejectedValueOnce({
+      response: { data: { detail: 'No se pudo guardar el libro' } },
+    })
+    renderPublicarLibro()
+
+    await user.type(await screen.findByLabelText(/Título del libro/), 'Libro rechazado')
+    await user.type(screen.getByLabelText('Autor *'), 'Autora')
+    await user.selectOptions(screen.getByLabelText('Categoría *'), '1')
+    await user.type(screen.getByLabelText(/Descripción/), 'Descripción')
+    await user.click(screen.getByRole('radio', { name: /Nuevo/ }))
+    await user.type(screen.getByLabelText('Precio (COP) *'), '14000')
+    await user.type(screen.getByLabelText('Unidades disponibles *'), '2')
+    await user.click(screen.getByRole('button', { name: 'Publicar libro' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('No se pudo guardar el libro')
+    expect(axios.post).toHaveBeenCalledWith(
+      '/libros/publicar',
+      expect.any(FormData),
+      { headers: { 'Content-Type': 'multipart/form-data' } },
+    )
+  })
+
   it('publica el libro con los campos y opciones del formulario', async () => {
     const user = userEvent.setup()
     axios.get.mockImplementation((path) => path === '/libros/categorias'
@@ -164,5 +218,112 @@ describe('PublicarLibro — auditoría de validaciones client-side', () => {
     expect(variant).toHaveTextContent('Tapa Dura · Español · 1ra Edición')
     await user.click(variant.querySelector('button'))
     expect(screen.getAllByText('Tapa Dura')).toHaveLength(1)
+  })
+
+  it('previsualiza imágenes válidas, rechaza formatos inválidos y permite quitar la portada', async () => {
+    const user = userEvent.setup()
+    renderPublicarLibro()
+    const imageInput = document.querySelector('input[type="file"][multiple]')
+    const photo = new File(['cover'], 'cover.png', { type: 'image/png' })
+    const invalid = new File(['document'], 'book.pdf', { type: 'application/pdf' })
+    await user.upload(imageInput, [photo, invalid])
+
+    expect(await screen.findByAltText('preview 1')).toBeInTheDocument()
+    expect(screen.getByText('Portada')).toBeInTheDocument()
+    expect(screen.queryByAltText('preview 2')).toBeNull()
+    await user.click(screen.getByRole('button', { name: 'Eliminar imagen' }))
+    expect(screen.queryByAltText('preview 1')).toBeNull()
+    expect(screen.getByRole('button', { name: /Añadir foto/ })).toBeInTheDocument()
+  })
+
+  it('valida el acceso anticipado y envía el nivel y la fecha elegidos', async () => {
+    const user = userEvent.setup()
+    axios.get.mockResolvedValue({ data: [{ id_categoria: 1, nombre_categoria: 'Ficción' }] })
+    renderPublicarLibro()
+    await user.type(await screen.findByLabelText(/Título del libro/), 'Lanzamiento exclusivo')
+    await user.type(screen.getByLabelText('Autor *'), 'Autora')
+    await user.selectOptions(screen.getByLabelText('Categoría *'), '1')
+    await user.type(screen.getByLabelText(/Descripción/), 'Una historia nueva')
+    await user.click(screen.getByRole('radio', { name: /Nuevo/ }))
+    await user.type(screen.getByLabelText('Precio (COP) *'), '22000')
+    await user.type(screen.getByLabelText('Unidades disponibles *'), '3')
+    await user.click(screen.getByLabelText('Preparar acceso anticipado para este libro'))
+    await user.click(screen.getByRole('button', { name: 'Publicar libro' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Indica cuándo estará disponible el libro para todos',
+    )
+
+    await user.selectOptions(screen.getByLabelText('Nivel mínimo del comprador'), 'Oro')
+    const futureDate = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000)
+    const localDate = new Date(futureDate.getTime() - futureDate.getTimezoneOffset() * 60000)
+      .toISOString()
+      .slice(0, 16)
+    fireEvent.change(screen.getByLabelText('Disponible para todos desde (hora Colombia)'), {
+      target: { value: localDate },
+    })
+    await user.click(screen.getByRole('button', { name: 'Publicar libro' }))
+
+    await waitFor(() => expect(axios.post).toHaveBeenCalledWith(
+      '/libros/publicar',
+      expect.any(FormData),
+      { headers: { 'Content-Type': 'multipart/form-data' } },
+    ))
+    const payload = axios.post.mock.calls[0][1]
+    expect(payload.get('acceso_anticipado')).toBe('true')
+    expect(payload.get('nivel_minimo_acceso')).toBe('Oro')
+    expect(payload.get('fecha_lanzamiento_publico')).toBe(localDate)
+  })
+
+  it('muestra errores al cargar categorías y guarda las imágenes de perfil del vendedor', async () => {
+    axios.get.mockImplementation((path) => path === '/configuracion'
+      ? Promise.resolve({ data: { logo_url: '/tienda/logo.png', banner_url: 'https://cdn.example/banner.jpg' } })
+      : Promise.resolve({ data: { unexpected: true } }))
+    localStorage.setItem('vendedor_user_photo_url', 'legacy-photo')
+    localStorage.setItem('vendedor_banner_url', 'legacy-banner')
+
+    renderPublicarLibro()
+    expect(await screen.findByRole('alert')).toHaveTextContent('No se pudieron cargar las categorías')
+    await waitFor(() => {
+      expect(localStorage.getItem('vendedor_user_photo_url_1')).toBe('http://localhost:8000/tienda/logo.png')
+      expect(localStorage.getItem('vendedor_banner_url_1')).toBe('https://cdn.example/banner.jpg')
+    })
+    expect(localStorage.getItem('vendedor_user_photo_url')).toBeNull()
+    expect(localStorage.getItem('vendedor_banner_url')).toBeNull()
+  })
+
+  it('publica una variante digital y adjunta el archivo cuando el servidor la crea', async () => {
+    const user = userEvent.setup()
+    axios.get.mockResolvedValue({ data: [{ id_categoria: 1, nombre_categoria: 'Ficción' }] })
+    axios.post.mockImplementation((path) => {
+      if (path === '/libros/publicar') return Promise.resolve({ data: { id_libro: 99 } })
+      if (path === '/libros/99/variantes') return Promise.resolve({ data: { id_variante: 12 } })
+      return Promise.resolve({ data: { ok: true } })
+    })
+    renderPublicarLibro()
+
+    await user.selectOptions(await screen.findByLabelText('Tipo'), 'Digital')
+    await user.type(screen.getByLabelText('Precio (COP)'), '12000')
+    await user.type(screen.getByLabelText('Stock'), '1')
+    await user.upload(
+      screen.getByLabelText('Archivo PDF / EPUB'),
+      new File(['ebook'], 'novela.epub', { type: 'application/epub+zip' }),
+    )
+    await user.click(screen.getByRole('button', { name: '+ Agregar variante' }))
+
+    await user.type(screen.getByLabelText(/Título del libro/), 'Novela digital')
+    await user.type(screen.getByLabelText('Autor *'), 'Autora')
+    await user.selectOptions(screen.getByLabelText('Categoría *'), '1')
+    await user.type(screen.getByLabelText(/Descripción/), 'Edición electrónica')
+    await user.click(screen.getByRole('radio', { name: /Nuevo/ }))
+    await user.type(screen.getByLabelText('Precio (COP) *'), '12000')
+    await user.type(screen.getByLabelText('Unidades disponibles *'), '1')
+    await user.click(screen.getByRole('button', { name: 'Publicar libro' }))
+
+    await waitFor(() => expect(axios.post).toHaveBeenCalledWith(
+      '/libros/99/variantes/12/archivo',
+      expect.any(FormData),
+      { headers: { 'Content-Type': 'multipart/form-data' } },
+    ))
+    expect(await screen.findByText('¡Libro publicado!')).toBeInTheDocument()
   })
 })
