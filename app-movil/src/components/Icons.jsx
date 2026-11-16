@@ -351,6 +351,14 @@ export const IconCheck = ({ size = 18, color = '#2e7d32' }) => (
   </Svg>
 );
 
+export const IconBan = ({ size = 20, color = '#B91C1C' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+    stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <Circle cx="12" cy="12" r="10" />
+    <Line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+  </Svg>
+);
+
 // ── Moneda / Precio ─────────────────────────────────────────────────────────
 export const IconDollar = ({ size = 20, color = '#7A1E3A' }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

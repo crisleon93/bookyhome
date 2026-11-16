@@ -450,17 +450,18 @@ export default function AdminSection({ route, navigation }) {
         <View style={styles.actionRow}>
           <TouchableOpacity
             style={[styles.actionBtn, styles.actionBtnHalf, {
-              backgroundColor: oculto ? '#ECFDF5' : '#FFFBEB',
-              borderColor:      oculto ? '#A7F3D0' : '#FDE68A',
+              backgroundColor: oculto ? '#6c757d' : VINOTINTO,
+              borderColor:      oculto ? '#6c757d' : VINOTINTO,
+              opacity:          oculto ? 0.6 : 1,
             }]}
             onPress={() => toggleOcultar(l)}
             activeOpacity={0.75}
           >
             {oculto
-              ? <IconEye    size={13} color="#047857" />
-              : <IconEyeOff size={13} color="#B45309" />
+              ? <IconEye    size={13} color={WHITE} />
+              : <IconEyeOff size={13} color={WHITE} />
             }
-            <Text style={[styles.actionText, { color: oculto ? '#047857' : '#B45309' }]}>
+            <Text style={[styles.actionText, { color: WHITE }]}>
               {oculto ? 'Mostrar' : 'Ocultar'}
             </Text>
           </TouchableOpacity>

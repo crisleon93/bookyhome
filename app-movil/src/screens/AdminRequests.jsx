@@ -1,21 +1,31 @@
-import { useThemedStyles } from '../context/ThemeContext';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
+  ActivityIndicator as NativeActivityIndicator,
   Alert,
-  FlatList,
-  Image,
+  FlatList as NativeFlatList,
+  Image as NativeImage,
   Modal,
-  RefreshControl,
-  ScrollView,
+  RefreshControl as NativeRefreshControl,
+  ScrollView as NativeScrollView,
   StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+  Text as NativeText,
+  TextInput as NativeTextInput,
+  TouchableOpacity as NativeTouchableOpacity,
+  View as NativeView,
 } from 'react-native';
+import { createThemeAwareComponent } from '../context/ThemeContext';
 import { getApiBaseUrl, getMensajesSolicitudAdmin, enviarMensajeSolicitudAdmin, resolverSolicitudAdmin } from '../services/api';
 import { IconAlertTriangle, IconCheck, IconEye, IconEyeOff, IconMail, IconMessage, IconStoreAlt, IconTool, IconUser } from '../components/Icons';
+
+const ActivityIndicator = createThemeAwareComponent(NativeActivityIndicator, ['style'], ['color']);
+const FlatList = createThemeAwareComponent(NativeFlatList, ['style', 'contentContainerStyle']);
+const Image = createThemeAwareComponent(NativeImage);
+const RefreshControl = createThemeAwareComponent(NativeRefreshControl, ['style'], ['tintColor', 'colors', 'progressBackgroundColor']);
+const ScrollView = createThemeAwareComponent(NativeScrollView, ['style', 'contentContainerStyle']);
+const Text = createThemeAwareComponent(NativeText);
+const TextInput = createThemeAwareComponent(NativeTextInput, ['style'], ['placeholderTextColor', 'selectionColor', 'underlineColorAndroid']);
+const TouchableOpacity = createThemeAwareComponent(NativeTouchableOpacity);
+const View = createThemeAwareComponent(NativeView);
 
 const PRIMARY = '#7A1E3A';
 const BG = '#F9F6F1';
@@ -305,7 +315,7 @@ function SupportRequestCard({ item, onSetResolution }) {
 }
 
 export default function AdminRequests({ type, solicitudes = [], loading, refreshing, error, onRefresh }) {
-  const styles = useThemedStyles(themeBaseStyles);
+  const styles = themeBaseStyles;
   const isSupport = type === 'soporte';
   const [query, setQuery] = useState('');
   const [stateFilter, setStateFilter] = useState('Todos');
@@ -457,14 +467,19 @@ export default function AdminRequests({ type, solicitudes = [], loading, refresh
             {!isSupport && (
               <View style={styles.statsRow}>
                 {[
-                  ['Total', counts.total, PRIMARY],
-                  ['Abiertos', counts.open, '#1D4ED8'],
-                  ['En revisión', counts.review, '#C2410C'],
-                  ['Resueltos', counts.resolved, '#166534'],
-                ].map(([label, value, color]) => (
+                  { label: 'Total reclamos', value: counts.total, color: '#1F2937', labelColor: '#52637A', iconColor: PRIMARY, bg: '#FDF2F4', border: '#F0DDE4', Icon: IconAlertTriangle },
+                  { label: 'Abiertos', value: counts.open, color: '#1D4ED8', labelColor: '#1D4ED8', iconColor: '#1D4ED8', bg: '#EFF6FF', border: '#BFDBFE', Icon: IconAlertTriangle },
+                  { label: 'En revisión', value: counts.review, color: '#EA580C', labelColor: '#EA580C', iconColor: '#EA580C', bg: '#FFF7ED', border: '#FED7AA', Icon: IconTool },
+                  { label: 'Resueltos', value: counts.resolved, color: '#166534', labelColor: '#166534', iconColor: '#166534', bg: '#F0FDF4', border: '#BBF7D0', Icon: IconCheck },
+                ].map(({ label, value, color, labelColor, iconColor, bg, border, Icon }) => (
                   <View key={label} style={styles.stat}>
-                    <Text style={[styles.statValue, { color }]}>{value}</Text>
-                    <Text style={styles.statLabel}>{label}</Text>
+                    <View style={[styles.statIcon, { backgroundColor: bg, borderColor: border }]}>
+                      <Icon size={20} color={iconColor} />
+                    </View>
+                    <View style={styles.statContent}>
+                      <Text style={[styles.statLabel, { color: labelColor }]} numberOfLines={1}>{label}</Text>
+                      <Text style={[styles.statValue, { color }]}>{value}</Text>
+                    </View>
                   </View>
                 ))}
               </View>
@@ -632,9 +647,11 @@ const themeBaseStyles = StyleSheet.create({
   container: { flex: 1, backgroundColor: BG },
   list: { padding: 14, paddingBottom: 32 },
   statsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
-  stat: { flexGrow: 1, flexBasis: '22%', minWidth: 72, backgroundColor: '#fff', borderRadius: 12, borderWidth: 1, borderColor: BORDER, padding: 10 },
-  statValue: { fontSize: 20, fontWeight: '900' },
-  statLabel: { fontSize: 10, color: GRAY, marginTop: 3, fontWeight: '700' },
+  stat: { flexGrow: 1, flexBasis: '47%', minWidth: 140, minHeight: 76, flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#fff', borderRadius: 14, borderWidth: 1, borderColor: BORDER, padding: 12 },
+  statIcon: { width: 40, height: 40, flexShrink: 0, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderRadius: 12 },
+  statContent: { flex: 1, minWidth: 0 },
+  statValue: { fontSize: 22, lineHeight: 26, fontWeight: '900' },
+  statLabel: { fontSize: 9, color: GRAY, marginBottom: 2, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.3 },
   filters: { flexDirection: 'row', gap: 8, marginBottom: 10, alignItems: 'center' },
   filterPill: { borderWidth: 1, borderColor: BORDER, backgroundColor: '#fff', borderRadius: 18, paddingHorizontal: 12, paddingVertical: 7 },
   filterPillActive: { backgroundColor: PRIMARY, borderColor: PRIMARY },

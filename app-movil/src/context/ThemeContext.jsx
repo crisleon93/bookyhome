@@ -79,6 +79,30 @@ export function adaptStyleForTheme(style, darkMode) {
   return darkMode ? mapStyleColors(style) : style;
 }
 
+export function createThemeAwareComponent(Component, styleProps = ['style'], colorProps = []) {
+  return React.forwardRef(function ThemeAwareComponent(props, ref) {
+    const { darkMode } = useAppTheme();
+    const themedProps = { ...props };
+
+    styleProps.forEach((prop) => {
+      if (themedProps[prop] !== undefined) {
+        themedProps[prop] = adaptStyleForTheme(themedProps[prop], darkMode);
+      }
+    });
+    colorProps.forEach((prop) => {
+      if (themedProps[prop] !== undefined) {
+        const styleProperty = prop.toLowerCase().includes('background') ? 'backgroundColor' : 'color';
+        const adaptColor = (color) => adaptStyleForTheme({ [styleProperty]: color }, darkMode)[styleProperty];
+        themedProps[prop] = Array.isArray(themedProps[prop])
+          ? themedProps[prop].map(adaptColor)
+          : adaptColor(themedProps[prop]);
+      }
+    });
+
+    return <Component {...themedProps} ref={ref} />;
+  });
+}
+
 function parseColor(value) {
   const normalized = value.toLowerCase().trim();
   const shortHex = normalized.match(/^#([0-9a-f]{3})$/i);

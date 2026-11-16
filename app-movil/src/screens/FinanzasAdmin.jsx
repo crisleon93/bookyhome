@@ -1,11 +1,26 @@
-import { useThemedStyles } from '../context/ThemeContext';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import {
+  ActivityIndicator as NativeActivityIndicator,
+  RefreshControl as NativeRefreshControl,
+  ScrollView as NativeScrollView,
+  StyleSheet,
+  Text as NativeText,
+  TouchableOpacity as NativeTouchableOpacity,
+  View as NativeView,
+} from 'react-native';
 import Svg, { Circle, Line, Path, Text as SvgText } from 'react-native-svg';
+import { createThemeAwareComponent } from '../context/ThemeContext';
 import { IconAlertTriangle, IconBolt, IconChartBar, IconPackage, IconRefresh, IconStore, IconTrendingUp, IconWallet } from '../components/Icons';
 import {
   getFinanzasBalance, getFinanzasEstadisticas, getFinanzasHistorial,
 } from '../services/api';
+
+const ActivityIndicator = createThemeAwareComponent(NativeActivityIndicator, ['style'], ['color']);
+const RefreshControl = createThemeAwareComponent(NativeRefreshControl, ['style'], ['tintColor', 'colors', 'progressBackgroundColor']);
+const ScrollView = createThemeAwareComponent(NativeScrollView, ['style', 'contentContainerStyle']);
+const Text = createThemeAwareComponent(NativeText);
+const TouchableOpacity = createThemeAwareComponent(NativeTouchableOpacity);
+const View = createThemeAwareComponent(NativeView);
 
 const VINOTINTO = '#7A1E3A';
 const BEIGE = '#F4EDE2';
@@ -267,7 +282,6 @@ function StatisticsPanel({ statistics, history, balance }) {
 }
 
 export default function FinanzasAdmin() {
-  const s = useThemedStyles(themeBaseS);
   const financeScrollRef = useRef(null);
   const financeViewportRef = useRef(null);
   const financeScrollOffset = useRef(0);

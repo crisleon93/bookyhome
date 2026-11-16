@@ -4,6 +4,7 @@ import {
   Image, StyleSheet, Text, TouchableOpacity, View,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useAppTheme } from '../context/ThemeContext';
 import { getApiBaseUrl } from '../services/api';
 import {
   IconAlertTriangle, IconBook, IconClose, IconLayoutDashboard, IconLogout,
@@ -45,10 +46,10 @@ function ComingSoonItem({ label, Icon }) {
 }
 
 // ─── Item navegable ───────────────────────────────────────────────────────────
-function NavItem({ label, Icon, isActive, onPress }) {
+function NavItem({ label, Icon, isActive, onPress, darkMode }) {
   return (
     <TouchableOpacity
-      style={[st.navItem, isActive && st.navItemActive]}
+      style={[st.navItem, isActive && (darkMode ? st.navItemActiveDark : st.navItemActive)]}
       onPress={onPress}
       activeOpacity={0.8}
       accessibilityRole="button"
@@ -56,8 +57,8 @@ function NavItem({ label, Icon, isActive, onPress }) {
       accessibilityState={{ selected: isActive }}
     >
       <View style={st.itemLeft}>
-        <Icon size={19} color={isActive ? VINOTINTO : WHITE} />
-        <Text style={[st.navLabel, isActive && st.navLabelActive]}>{label}</Text>
+        <Icon size={19} color={isActive ? (darkMode ? '#E05A7A' : VINOTINTO) : WHITE} />
+        <Text style={[st.navLabel, isActive && st.navLabelActive, isActive && darkMode && st.navLabelActiveDark]}>{label}</Text>
       </View>
       {isActive && (
         <View style={st.activeDot} />
@@ -72,6 +73,7 @@ export default function SidebarAdmin({
   onSelectDashboard, onSelectSection,
   activeSection = 'dashboard',
 }) {
+  const { darkMode } = useAppTheme();
   const slideAnim = useRef(new Animated.Value(-DRAWER_WIDTH)).current;
   const fadeAnim  = useRef(new Animated.Value(0)).current;
 
@@ -151,6 +153,7 @@ export default function SidebarAdmin({
                     label={sec.label}
                     Icon={sec.Icon}
                     isActive={activeSection === 'dashboard'}
+                    darkMode={darkMode}
                     onPress={() => { onClose(); onSelectDashboard?.(); }}
                   />
                 );
@@ -162,6 +165,7 @@ export default function SidebarAdmin({
                     label={sec.label}
                     Icon={sec.Icon}
                     isActive={activeSection === sec.id}
+                    darkMode={darkMode}
                     onPress={() => { onClose(); onSelectSection?.(sec.id); }}
                   />
                 );
@@ -174,13 +178,13 @@ export default function SidebarAdmin({
           {/* Cerrar sesión */}
           <View style={st.logoutBox}>
             <TouchableOpacity
-              style={st.logoutBtn}
+              style={[st.logoutBtn, darkMode && st.logoutBtnDark]}
               onPress={() => { onClose(); onSignOut?.(); }}
               activeOpacity={0.8}
               accessibilityLabel="Cerrar sesión"
             >
-              <IconLogout size={18} color={VINOTINTO} />
-              <Text style={st.logoutTxt}>Cerrar sesión</Text>
+              <IconLogout size={18} color={darkMode ? '#ECECEC' : VINOTINTO} />
+              <Text style={[st.logoutTxt, darkMode && st.logoutTxtDark]}>Cerrar sesión</Text>
             </TouchableOpacity>
           </View>
         </Animated.View>
@@ -233,12 +237,18 @@ const st = StyleSheet.create({
   navItemActive: {
     backgroundColor: WHITE,
   },
+  navItemActiveDark: {
+    backgroundColor: '#303030',
+  },
   navLabel:       { color: WHITE, fontSize: 14, fontWeight: '700', marginLeft: 13 },
   navLabelActive: { color: VINOTINTO, fontWeight: '800' },
+  navLabelActiveDark: { color: '#ECECEC' },
   activeDot:      { width: 7, height: 7, borderRadius: 4, backgroundColor: VINOTINTO },
 
   // Logout
   logoutBox: { padding: 16, paddingBottom: Platform.OS === 'ios' ? 32 : 16, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.12)' },
   logoutBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, backgroundColor: WHITE, borderRadius: 12, paddingVertical: 13 },
+  logoutBtnDark: { backgroundColor: '#303030' },
   logoutTxt: { color: VINOTINTO, fontSize: 14, fontWeight: '800' },
+  logoutTxtDark: { color: '#ECECEC' },
 });
