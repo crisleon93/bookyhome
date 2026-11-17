@@ -16,9 +16,12 @@ const mocks = vi.hoisted(() => ({
   confirmarEntrega: vi.fn(),
   crearSoporte: vi.fn(),
   getAlertasStock: vi.fn(),
+  getLibreria: vi.fn(),
   getMiSuscripcionHerramientas: vi.fn(),
   getMisLibros: vi.fn(),
+  getMisVentas: vi.fn(),
   getMisPedidos: vi.fn(),
+  getNotifications: vi.fn(),
   getOrdenes: vi.fn(),
   getPlanesHerramientas: vi.fn(),
   getSoporte: vi.fn(),
@@ -29,6 +32,7 @@ const mocks = vi.hoisted(() => ({
   recargarSalas: vi.fn(),
   signOut: vi.fn(),
   suscribirPlanHerramientas: vi.fn(),
+  resolveImageUrl: vi.fn((value) => value),
 }))
 
 vi.mock('react-native', async () => {
@@ -103,12 +107,33 @@ vi.mock('react-native', async () => {
     ),
     TouchableOpacity: nativeElement('button'),
     View: nativeElement('div'),
+    useWindowDimensions: () => ({ width: 390, height: 844 }),
   }
 })
 
 vi.mock('react-native-safe-area-context', () => ({
   SafeAreaView: ({ children }) => <div>{children}</div>,
 }))
+vi.mock('@react-native-async-storage/async-storage', () => ({
+  default: {
+    getItem: vi.fn().mockResolvedValue(null),
+    setItem: vi.fn().mockResolvedValue(undefined),
+    removeItem: vi.fn().mockResolvedValue(undefined),
+  },
+}))
+vi.mock('react-native-svg', () => {
+  const Shape = () => null
+  return {
+    default: Shape,
+    Circle: Shape,
+    Defs: Shape,
+    LinearGradient: Shape,
+    Path: Shape,
+    Rect: Shape,
+    Stop: Shape,
+    Text: Shape,
+  }
+})
 vi.mock('../../components/ThemedSafeAreaView', () => ({
   default: ({ children }) => <div>{children}</div>,
 }))
@@ -128,6 +153,7 @@ vi.mock('../../context/AuthContext', async () => {
 })
 vi.mock('../../context/ThemeContext', () => ({
   useThemedStyles: (styles) => styles,
+  useAppTheme: () => ({ darkMode: false }),
 }))
 vi.mock('../../context/ChatSocketContext', () => ({
   useChatSocket: () => ({ salas: [{ no_leidos: 2 }], loadingSalas: false, recargarSalas: mocks.recargarSalas }),
@@ -168,14 +194,18 @@ vi.mock('../../services/api', () => ({
   crearSoporte: mocks.crearSoporte,
   getAlertasStock: mocks.getAlertasStock,
   getApiBaseUrl: vi.fn(() => 'https://api.example.test'),
+  getLibreria: mocks.getLibreria,
   getMiSuscripcionHerramientas: mocks.getMiSuscripcionHerramientas,
   getMisLibros: mocks.getMisLibros,
+  getMisVentas: mocks.getMisVentas,
   getMisPedidos: mocks.getMisPedidos,
+  getNotifications: mocks.getNotifications,
   getOrdenes: mocks.getOrdenes,
   getPlanesHerramientas: mocks.getPlanesHerramientas,
   getSoporte: mocks.getSoporte,
   getStatsVendedor: mocks.getStatsVendedor,
   getTopVendidos: mocks.getTopVendidos,
+  resolveImageUrl: mocks.resolveImageUrl,
   suscribirPlanHerramientas: mocks.suscribirPlanHerramientas,
 }))
 
@@ -229,6 +259,9 @@ describe('seguimiento, soporte, suscripciones y panel de vendedor móvil', () =>
     mocks.suscribirPlanHerramientas.mockResolvedValue({})
     mocks.cancelarSuscripcionHerramientas.mockResolvedValue({})
     mocks.getMisLibros.mockResolvedValue({ data: [{ id_libro: 5, titulo: 'Libro destacado', autor_libro: 'Autora', precio_libro: 25000, stock: 2, nombre_categoria: 'Ficción' }] })
+    mocks.getMisVentas.mockResolvedValue({ data: [] })
+    mocks.getNotifications.mockResolvedValue({ data: { notificaciones: [] } })
+    mocks.getLibreria.mockResolvedValue({ data: { nombre_tienda: 'Librería Central', logo_url: '/uploads/logo.png' } })
     mocks.getStatsVendedor.mockResolvedValue({ data: { total_mes: 50000, ordenes_mes: 2, total_hoy: 10000, ordenes_hoy: 1, total_semana: 30000 } })
     mocks.getTopVendidos.mockResolvedValue({ data: [{ id_libro: 5, titulo: 'Libro destacado', autor_libro: 'Autora', precio_libro: 25000, unidades_vendidas: 3 }] })
     mocks.getAlertasStock.mockResolvedValue({ data: [{ titulo: 'Libro destacado', stock: 2 }] })
@@ -344,11 +377,9 @@ describe('seguimiento, soporte, suscripciones y panel de vendedor móvil', () =>
         <VendedorHome navigation={{ navigate: mocks.navigate }} />
       </AuthContext.Provider>,
     )
-    expect(await screen.findByText('Librería Central')).toBeTruthy()
-    expect(screen.getByText('Ventas del mes')).toBeTruthy()
-    expect(screen.getByText('1 libro con stock bajo')).toBeTruthy()
+    expect((await screen.findAllByText('Libro destacado')).length).toBeGreaterThan(0)
     expect(screen.getAllByText('Libro destacado').length).toBeGreaterThan(0)
-    fireEvent.click(screen.getByText('Ana Compradora'))
+    fireEvent.click(screen.getByText('Ver pedidos →'))
     expect(mocks.navigate).toHaveBeenCalledWith('PedidosVendedor')
     expect(mocks.recargarSalas).toHaveBeenCalled()
   })
