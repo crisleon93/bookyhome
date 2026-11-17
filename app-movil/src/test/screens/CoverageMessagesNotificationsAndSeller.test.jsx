@@ -174,6 +174,7 @@ vi.mock('../../services/api', () => ({
 vi.mock('../../components/Icons', () => {
   const Icon = () => null;
   return {
+    IconBook: Icon,
     IconChevronRight: Icon,
     IconCreditCard: Icon,
     IconDollar: Icon,
@@ -185,6 +186,7 @@ vi.mock('../../components/Icons', () => {
     IconSearch: Icon,
     IconShoppingBag: Icon,
     IconStar: Icon,
+    IconUser: Icon,
     IconTruck: Icon,
   };
 });

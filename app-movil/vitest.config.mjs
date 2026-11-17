@@ -16,6 +16,7 @@ export default defineConfig({
   },
   test: {
     environment: 'jsdom',
+    setupFiles: ['./app-movil/src/test/setup.js'],
     include: ['app-movil/src/test/**/*.test.{js,jsx}'],
     coverage: {
       provider: 'v8',

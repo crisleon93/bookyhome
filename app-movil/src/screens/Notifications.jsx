@@ -454,6 +454,9 @@ export default function Notifications({ navigation }) {
             </TouchableOpacity>
             <View style={styles.vendorHeaderCopy}>
               <Text style={styles.vendorHeaderTitle}>Notificaciones</Text>
+              <Text style={styles.vendorHeaderSubtitle}>
+                Mantente al día con tus pedidos y mensajes
+              </Text>
             </View>
             {unreadCount > 0 && (
               <View style={styles.vendorUnreadBadge}>
@@ -872,6 +875,7 @@ const baseStyles = StyleSheet.create({
   },
   menuIcon: { color: PRIMARY, fontSize: 20, fontWeight: '700' },
   vendorHeaderTitle: { fontSize: 19, fontWeight: '900', color: PRIMARY, letterSpacing: -0.3 },
+  vendorHeaderSubtitle: { marginTop: 2, fontSize: 13, color: MUTED },
   vendorUnreadBadge: {
     backgroundColor: PRIMARY,
     borderRadius: 14,

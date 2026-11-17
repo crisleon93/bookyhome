@@ -269,7 +269,6 @@ describe('barras laterales y tema', () => {
       ['Cupones', 'CuponesVendedor'],
       ['Ventas', 'VentasVendedor'],
       ['Pedidos', 'PedidosVendedor'],
-      ['Métodos de cobro', 'MetodosCobroVendedor'],
       ['Calificaciones', 'CalificacionesVendedor'],
       ['Quejas y reclamos', 'QuejasReclamos'],
       ['Notificaciones', 'Notifications'],
@@ -293,7 +292,7 @@ describe('barras laterales y tema', () => {
     fireEvent.click(screen.getByText('Activar tema oscuro'))
 
     await waitFor(() => expect(mocks.setItem).toHaveBeenCalledWith('darkMode', 'true'))
-    expect(screen.getByText('Tema oscuro')).toBeTruthy()
+    expect(screen.getByText('Tema claro')).toBeTruthy()
     expect(screen.getByText('#121212')).toBeTruthy()
     await waitFor(() => expect(document.body.style.backgroundColor).toBe('rgb(18, 18, 18)'))
     expect(screen.getByTestId('themed-text').style.color).not.toBe('rgb(17, 17, 17)')

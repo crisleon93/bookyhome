@@ -6,6 +6,8 @@ import { AuthContext } from '../../context/AuthContext';
 
 vi.mock('react-native', () => ({
   ActivityIndicator: () => <span>Loading navigation</span>,
+  Platform: { OS: 'web', select: (values) => values.web || values.default },
+  TurboModuleRegistry: { getEnforcing: () => ({}) },
   StyleSheet: { create: (styles) => styles },
   View: ({ children }) => <div>{children}</div>,
 }));

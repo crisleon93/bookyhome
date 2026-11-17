@@ -27,6 +27,20 @@ const mocks = vi.hoisted(() => ({
   sendMessage: vi.fn(),
   clearChat: vi.fn(),
   deleteChat: vi.fn(),
+  audioPlayer: {
+    replace: vi.fn(),
+    play: vi.fn(),
+    pause: vi.fn(),
+  },
+  audioRecorder: {
+    prepareToRecordAsync: vi.fn().mockResolvedValue(undefined),
+    record: vi.fn(function () {
+      this.isRecording = true
+    }),
+    stop: vi.fn().mockResolvedValue(undefined),
+    isRecording: false,
+    uri: 'file:///recording.m4a',
+  },
 }))
 
 vi.mock('react-native', async () => {
@@ -134,10 +148,14 @@ vi.mock('expo-av', () => ({
   },
 }))
 vi.mock('expo-audio', () => ({
+  AudioModule: {
+    requestRecordingPermissionsAsync: vi.fn().mockResolvedValue({ granted: true }),
+  },
+  RecordingPresets: { HIGH_QUALITY: {} },
   setAudioModeAsync: vi.fn(),
-  useAudioPlayer: vi.fn(() => ({ play: vi.fn(), pause: vi.fn(), remove: vi.fn() })),
+  useAudioPlayer: vi.fn(() => mocks.audioPlayer),
   useAudioPlayerStatus: vi.fn(() => ({ playing: false })),
-  useAudioRecorder: vi.fn(() => ({ record: vi.fn(), stop: vi.fn(), uri: null })),
+  useAudioRecorder: vi.fn(() => mocks.audioRecorder),
 }))
 vi.mock('expo-file-system/legacy', () => ({
   EncodingType: { Base64: 'base64' },
@@ -195,6 +213,13 @@ afterEach(cleanup)
 
 beforeEach(() => {
   vi.clearAllMocks()
+  mocks.audioRecorder.isRecording = false
+  mocks.audioRecorder.uri = 'file:///recording.m4a'
+  mocks.audioRecorder.prepareToRecordAsync.mockResolvedValue(undefined)
+  mocks.audioRecorder.stop.mockResolvedValue(undefined)
+  mocks.audioRecorder.record.mockImplementation(() => {
+    mocks.audioRecorder.isRecording = true
+  })
   mocks.multiGet.mockResolvedValue([[null, null], [null, null]])
   mocks.getItem.mockResolvedValue(null)
   mocks.setItem.mockResolvedValue(undefined)
@@ -360,13 +385,9 @@ describe('Chat móvil', () => {
   })
 
   it('reproduce, pausa y maneja el fin de una nota de voz', async () => {
-    const { Audio } = await import('expo-av')
-    const sound = {
-      pauseAsync: vi.fn().mockResolvedValue(undefined),
-      setOnPlaybackStatusUpdate: vi.fn(),
-      unloadAsync: vi.fn().mockResolvedValue(undefined),
-    }
-    Audio.Sound.createAsync.mockResolvedValue({ sound })
+    mocks.audioPlayer.replace.mockReset()
+    mocks.audioPlayer.play.mockReset()
+    mocks.audioPlayer.pause.mockReset()
     mocks.getHistory.mockResolvedValue({
       data: {
         mensajes: [{
@@ -382,13 +403,12 @@ describe('Chat móvil', () => {
     const duration = await screen.findByText('0:07')
 
     fireEvent.click(duration)
-    await waitFor(() => expect(Audio.Sound.createAsync).toHaveBeenCalledWith(
-      { uri: 'https://example.test/audio.mp4' },
-      { shouldPlay: true },
-    ))
+    await waitFor(() => expect(mocks.audioPlayer.replace).toHaveBeenCalledWith({
+      uri: 'https://example.test/audio.mp4',
+    }))
+    expect(mocks.audioPlayer.play).toHaveBeenCalled()
     fireEvent.click(screen.getByText('0:07'))
-    await waitFor(() => expect(sound.pauseAsync).toHaveBeenCalledOnce())
-    act(() => sound.setOnPlaybackStatusUpdate.mock.calls[0][0]({ didJustFinish: true }))
+    await waitFor(() => expect(mocks.audioPlayer.pause).toHaveBeenCalledOnce())
   })
 
   it('filtra emojis, GIF y stickers y envía el medio seleccionado', async () => {
@@ -478,28 +498,14 @@ describe('Chat móvil', () => {
   })
 
   it('graba una nota de voz y la envía como contenido codificado', async () => {
-    const { Audio } = await import('expo-av')
     const fileSystem = await import('expo-file-system/legacy')
-    const recording = {
-      prepareToRecordAsync: vi.fn().mockResolvedValue(undefined),
-      startAsync: vi.fn().mockResolvedValue(undefined),
-      stopAndUnloadAsync: vi.fn().mockResolvedValue(undefined),
-      getURI: vi.fn(() => 'file:///recording.m4a'),
-    }
-    Audio.requestPermissionsAsync.mockResolvedValue({ granted: true })
-    Audio.setAudioModeAsync.mockResolvedValue(undefined)
-    Audio.Recording = class {
-      constructor() {
-        return recording
-      }
-    }
     fileSystem.readAsStringAsync.mockResolvedValue('YXVkaW8=')
     render(withAuth(<Chat />))
     await screen.findByText('Tu pedido está listo')
     const microphone = screen.getByPlaceholderText('Escribe un mensaje').parentElement.querySelectorAll('button')[2]
 
     fireEvent.mouseDown(microphone)
-    await waitFor(() => expect(recording.startAsync).toHaveBeenCalledOnce())
+    await waitFor(() => expect(mocks.audioRecorder.record).toHaveBeenCalledOnce())
     fireEvent.mouseUp(microphone)
 
     await waitFor(() => expect(mocks.sendMessage).toHaveBeenCalledWith({

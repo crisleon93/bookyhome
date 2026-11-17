@@ -20,7 +20,10 @@ const mocks = vi.hoisted(() => ({
   getLibrosListaDeseos: vi.fn(),
   getListaDeseos: vi.fn(),
   getMisLibros: vi.fn(),
+  getCategorias: vi.fn(),
   getTiendasDestacadas: vi.fn(),
+  resolveImageUrl: vi.fn((value) => value),
+  updateStockLibro: vi.fn(),
   navigation: { navigate: vi.fn(), goBack: vi.fn() },
   removeFavorito: vi.fn(),
   removeFromListaDeseos: vi.fn(),
@@ -135,7 +138,10 @@ vi.mock('../../services/api', () => ({
   getLibrosListaDeseos: mocks.getLibrosListaDeseos,
   getListaDeseos: mocks.getListaDeseos,
   getMisLibros: mocks.getMisLibros,
+  getCategorias: mocks.getCategorias,
   getTiendasDestacadas: mocks.getTiendasDestacadas,
+  resolveImageUrl: mocks.resolveImageUrl,
+  updateStockLibro: mocks.updateStockLibro,
   removeFavorito: mocks.removeFavorito,
   removeFromListaDeseos: mocks.removeFromListaDeseos,
 }))
@@ -185,6 +191,8 @@ beforeEach(() => {
   mocks.navigation.navigate = vi.fn()
   mocks.getMisLibros.mockResolvedValue({ data: [book] })
   mocks.getAlertasStock.mockResolvedValue({ data: [{ id_libro: 17, titulo: book.titulo, stock: 2 }] })
+  mocks.getCategorias.mockResolvedValue({ data: [{ id_categoria: 1, nombre_categoria: 'Ficción' }] })
+  mocks.updateStockLibro.mockResolvedValue({ data: { ok: true } })
   mocks.deleteLibro.mockResolvedValue({})
   mocks.getTiendasDestacadas.mockResolvedValue({ data: [store] })
   mocks.getFavoritos.mockResolvedValue({ data: [book] })
