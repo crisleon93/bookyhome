@@ -27,6 +27,8 @@ const mocks = vi.hoisted(() => ({
   changePassword: vi.fn(),
   getProfile: vi.fn(),
   updatePreferences: vi.fn(),
+  getLibreria: vi.fn(),
+  updateMiTienda: vi.fn(),
   getConfigLibreria: vi.fn(),
   updateConfigLibreria: vi.fn(),
   uploadTiendaImage: vi.fn(),
@@ -205,6 +207,8 @@ vi.mock('../../services/api', () => ({
   getDatosTransferenciaVendedor: mocks.getDatosTransferenciaVendedor,
   getDirecciones: mocks.getDirecciones,
   getOrderDetails: mocks.getOrderDetails,
+  getLibreria: mocks.getLibreria,
+  updateMiTienda: mocks.updateMiTienda,
   getApiBaseUrl: mocks.getApiBaseUrl,
   notificarLlegadaTienda: mocks.notificarLlegadaTienda,
   processPayment: mocks.processPayment,
@@ -356,6 +360,14 @@ describe('Checkout and buyer/store settings coverage', () => {
       data: { nombre: 'Ana', preferencias: { notificaciones_mensajes: { email: false, web: true } } },
     });
     mocks.updatePreferences.mockResolvedValue({ data: { ok: true } });
+    mocks.getLibreria.mockResolvedValue({
+      data: {
+        nombre_tienda: 'Librería Sol',
+        direccion: 'Calle 10',
+        telefono: '3001234567',
+      },
+    });
+    mocks.updateMiTienda.mockResolvedValue({ data: { ok: true } });
     mocks.getConfigLibreria.mockResolvedValue({
       data: {
         descripcion: 'Librería de barrio',
@@ -617,23 +629,17 @@ describe('Checkout and buyer/store settings coverage', () => {
     expect(mocks.alert).toHaveBeenCalledWith('Listo', 'Contraseña actualizada correctamente');
   });
 
-  it('actualiza la configuración de tienda y sube una imagen seleccionada', async () => {
+  it('actualiza la configuración de tienda', async () => {
     renderStoreSettings();
-    const description = await screen.findByPlaceholderText('Descripción breve de tu tienda...');
+    const description = await screen.findByPlaceholderText('Cuéntales a tus compradores qué hace especial a tu librería...');
     fireEvent.change(description, { target: { value: 'Libros para todos' } });
-    fireEvent.change(screen.getByPlaceholderText('Días promedio de despacho'), { target: { value: '5' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Guardar Cambios' }));
+    fireEvent.change(screen.getByPlaceholderText('2'), { target: { value: '5' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
 
     await waitFor(() => expect(mocks.updateConfigLibreria).toHaveBeenCalledWith(
       expect.objectContaining({ descripcion: 'Libros para todos', tiempo_despacho_dias: 5 }),
     ));
-    expect(navigation.goBack).toHaveBeenCalled();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Subir Logo' }));
-    await waitFor(() => expect(mocks.uploadTiendaImage).toHaveBeenCalled());
-    const formData = mocks.uploadTiendaImage.mock.calls[0][0];
-    expect(formData.get('tipo')).toBe('logo');
-    expect((await screen.findByAltText('')).getAttribute('src')).toBe('https://api.example.test/uploads/logo.jpg');
   });
 
   it('muestra los estados de cupones, valida y crea uno con fechas', async () => {

@@ -6,11 +6,6 @@
     "orientation": "portrait",
     "icon": "./src/assets/icon.png",
     "userInterfaceStyle": "light",
-    "splash": {
-      "image": "./src/assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
-    },
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
@@ -30,8 +25,7 @@
       "adaptiveIcon": {
         "foregroundImage": "./src/assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      },
-      "edgeToEdgeEnabled": true
+      }
     },
     "web": {
       "favicon": "./src/assets/favicon.png"
@@ -60,7 +54,23 @@
         {
           "locationWhenInUsePermission": "BookyHome necesita tu ubicación para centrar el mapa en la dirección de envío."
         }
-      ]
+      ],
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "BookyHome necesita acceso al micrófono para grabar notas de voz.",
+          "enableBackgroundPlayback": false
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "image": "./src/assets/splash-icon.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#ffffff"
+        }
+      ],
+      "@react-native-community/datetimepicker"
     ]
   }
 }

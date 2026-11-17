@@ -4,14 +4,29 @@ import { describe, expect, it, vi } from 'vitest';
 import AppNavigator from '../../navigation/AppNavigator';
 import { AuthContext } from '../../context/AuthContext';
 
+vi.mock('expo-image-picker', () => ({
+  MediaType: { Images: 'images' },
+  MediaTypeOptions: { Images: 'images' },
+  requestMediaLibraryPermissionsAsync: vi.fn().mockResolvedValue({ granted: false }),
+  launchImageLibraryAsync: vi.fn().mockResolvedValue({ canceled: true, assets: [] }),
+}));
+
+vi.mock('@react-navigation/native', () => ({
+  useNavigation: () => ({ navigate: vi.fn(), goBack: vi.fn(), setOptions: vi.fn() }),
+  useRoute: () => ({ params: {} }),
+  useFocusEffect: () => {},
+}));
+
 vi.mock('react-native', () => ({
   ActivityIndicator: () => <span>Loading navigation</span>,
+  Platform: { OS: 'web', select: (values) => values.web || values.default },
+  TurboModuleRegistry: { getEnforcing: () => ({}) },
   StyleSheet: { create: (styles) => styles },
   View: ({ children }) => <div>{children}</div>,
 }));
 
-vi.mock('@react-navigation/native-stack', async () => {
-  const ReactModule = await vi.importActual('react');
+vi.mock('@react-navigation/native-stack', () => {
+  const ReactModule = React;
   const Container = ({ children, initialRouteName }) => ReactModule.createElement(
     'div',
     { 'data-initial-route': initialRouteName },
@@ -63,9 +78,11 @@ vi.mock('../../screens/Libreria', () => ({ default: () => null }));
 vi.mock('../../screens/PublicarLibro', () => ({ default: () => null }));
 vi.mock('../../screens/ConfiguracionTienda', () => ({ default: () => null }));
 vi.mock('../../screens/PerfilTienda', () => ({ default: () => null }));
+vi.mock('../../screens/PerfilVendedor', () => ({ default: () => null }));
 vi.mock('../../screens/Messages', () => ({ default: () => null }));
 vi.mock('../../screens/Chat', () => ({ default: () => null }));
 vi.mock('../../screens/QuejasReclamos', () => ({ default: () => null }));
+vi.mock('../../screens/QuejasVendedor', () => ({ default: () => null }));
 vi.mock('../../screens/Direcciones', () => ({ default: () => null }));
 vi.mock('../../screens/SoporteTecnico', () => ({ default: () => null }));
 vi.mock('../../screens/VendedorHome', () => ({ default: () => null }));

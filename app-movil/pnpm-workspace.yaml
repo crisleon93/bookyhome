@@ -21,5 +21,4 @@ overrides:
 # Mitigar CVE-2026-112366 hasta que picomatch publique versiones corregidas.
 patchedDependencies:
   picomatch@2.3.2: ../patches/picomatch@2.3.2.patch
-  picomatch@4.0.5: ../patches/picomatch@4.0.5.patch
   picomatch@4.0.7: ../patches/picomatch@4.0.7.patch

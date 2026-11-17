@@ -1,14 +1,7 @@
 // src/components/Footer.jsx
 import React, { useContext, useRef, useState } from 'react';
 import {
-  Modal,
-  Pressable,
-  ScrollView,
-  Text,
-  TouchableOpacity,
-  View,
-  StyleSheet,
-  useWindowDimensions,
+  Modal, Pressable, ScrollView, Text, TouchableOpacity, View, StyleSheet, useWindowDimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -246,33 +239,34 @@ export default function Footer({ style }) {
   return (
     <>
       <View
-        ref={footerRef}
-        collapsable={false}
-        onLayout={measurePosition}
-        style={[
-          styles.footer,
-          darkMode && styles.footerDark,
-          {
-            width,
-            marginLeft: -leftOffset,
-            marginBottom: -BOTTOM_GUTTER,
-            paddingBottom: styles.footer.paddingBottom + BOTTOM_GUTTER + insets.bottom,
-          },
-          style,
-        ]}
-      >
-        <View style={styles.grid}>
-          {COLUMNS.map((col) => (
-            <View key={col.title} style={styles.column}>
-              <Text style={[styles.colTitle, darkMode && styles.colTitleDark]}>{col.title}</Text>
-              {col.links.map((link) => (
-                <TouchableOpacity key={link} onPress={() => handleLinkPress(link)} activeOpacity={0.7}>
-                  <Text style={[styles.colLink, darkMode && styles.colLinkDark]}>{link}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          ))}
-        </View>
+      ref={footerRef}
+      collapsable={false}
+      onLayout={measurePosition}
+      style={[
+        styles.footer,
+        {
+          width,
+          marginLeft: -leftOffset,
+          marginBottom: -BOTTOM_GUTTER,
+          paddingBottom: styles.footer.paddingBottom + BOTTOM_GUTTER + insets.bottom,
+        },
+        style,
+      ]}
+    >
+
+      {/* Columnas */}
+      <View style={styles.grid}>
+        {COLUMNS.map((col, i) => (
+          <View key={i} style={styles.column}>
+            <Text style={styles.colTitle}>{col.title}</Text>
+            {col.links.map((link, j) => (
+              <TouchableOpacity key={j} onPress={() => handleLinkPress(link)} activeOpacity={0.7}>
+                <Text style={styles.colLink}>{link}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        ))}
+      </View>
 
         <View style={[styles.divider, darkMode && styles.dividerDark]} />
 

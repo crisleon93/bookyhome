@@ -1,3 +1,4 @@
+import { useThemedStyles } from '../context/ThemeContext';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -304,6 +305,7 @@ function SupportRequestCard({ item, onSetResolution }) {
 }
 
 export default function AdminRequests({ type, solicitudes = [], loading, refreshing, error, onRefresh }) {
+  const styles = useThemedStyles(themeBaseStyles);
   const isSupport = type === 'soporte';
   const [query, setQuery] = useState('');
   const [stateFilter, setStateFilter] = useState('Todos');
@@ -626,7 +628,7 @@ export default function AdminRequests({ type, solicitudes = [], loading, refresh
   );
 }
 
-const styles = StyleSheet.create({
+const themeBaseStyles = StyleSheet.create({
   container: { flex: 1, backgroundColor: BG },
   list: { padding: 14, paddingBottom: 32 },
   statsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
@@ -759,3 +761,4 @@ const styles = StyleSheet.create({
   chatInput: { flex: 1, maxHeight: 100, borderWidth: 1, borderColor: BORDER, borderRadius: 18, paddingHorizontal: 13, paddingVertical: 9, color: '#222' },
   sendButton: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: PRIMARY },
 });
+const styles = themeBaseStyles;

@@ -7,11 +7,13 @@ import SidebarAdmin from '../../components/SidebarAdmin'
 import SidebarMenu from '../../components/SidebarMenu'
 import SidebarVendedor from '../../components/SidebarVendedor'
 import { ThemeProvider, adaptStyleForTheme, useAppTheme, useThemedStyles } from '../../context/ThemeContext'
+import { AuthContext } from '../../context/AuthContext'
 
 const mocks = vi.hoisted(() => ({
   getConfigLibreria: vi.fn(),
   getProfile: vi.fn(),
   getApiBaseUrl: vi.fn(() => 'https://api.example.test'),
+  resolveImageUrl: vi.fn((value) => value),
   navigate: vi.fn(),
   onClose: vi.fn(),
   onSelectDashboard: vi.fn(),
@@ -98,6 +100,7 @@ vi.mock('../../services/api', () => ({
   getApiBaseUrl: mocks.getApiBaseUrl,
   getConfigLibreria: mocks.getConfigLibreria,
   getProfile: mocks.getProfile,
+  resolveImageUrl: mocks.resolveImageUrl,
 }))
 vi.mock('../../components/Icons', () => {
   const Icon = () => null
@@ -259,7 +262,10 @@ describe('barras laterales y tema', () => {
       />,
     )
     expect(screen.getByText('Librería Central')).toBeTruthy()
-    await waitFor(() => expect(container.querySelector('img')?.getAttribute('src')).toBe('https://api.example.test/uploads/logo.png'))
+    await waitFor(() => {
+      const images = Array.from(container.querySelectorAll('img'))
+      expect(images.some((image) => image.getAttribute('src') === 'https://api.example.test/uploads/logo.png')).toBe(true)
+    })
     vi.useFakeTimers()
     const sellerRoutes = [
       ['Inicio', 'VendorHome'],
@@ -269,32 +275,33 @@ describe('barras laterales y tema', () => {
       ['Cupones', 'CuponesVendedor'],
       ['Ventas', 'VentasVendedor'],
       ['Pedidos', 'PedidosVendedor'],
-      ['Métodos de cobro', 'MetodosCobroVendedor'],
       ['Calificaciones', 'CalificacionesVendedor'],
       ['Quejas y reclamos', 'QuejasReclamos'],
       ['Notificaciones', 'Notifications'],
       ['Mensajes', 'Messages'],
-      ['Perfil', 'PerfilTienda'],
+      ['Perfil', 'PerfilVendedor'],
       ['Configuración', 'ConfiguracionTienda'],
-      ['Suscripciones', 'SuscripcionesVendedor'],
-      ['Impulsos', 'ImpulsosVendedor'],
     ]
     for (const [label, route] of sellerRoutes) {
       fireEvent.click(screen.getByText(label))
       await act(async () => { await vi.advanceTimersByTimeAsync(100) })
-      expect(mocks.navigate).toHaveBeenLastCalledWith(route, route === 'PerfilTienda' ? { id_tienda: 8 } : undefined)
+      expect(mocks.navigate).toHaveBeenLastCalledWith(route, undefined)
     }
     expect(mocks.getConfigLibreria).toHaveBeenCalledOnce()
   })
 
   it('persiste el tema oscuro, actualiza la paleta y transforma estilos', async () => {
-    render(<ThemeProvider><ThemeSummary /></ThemeProvider>)
+    render(
+      <AuthContext.Provider value={{ token: 'test-token', loading: false }}>
+        <ThemeProvider><ThemeSummary /></ThemeProvider>
+      </AuthContext.Provider>,
+    )
     expect(await screen.findByText('Tema claro')).toBeTruthy()
     fireEvent.click(screen.getByText('Activar tema oscuro'))
 
     await waitFor(() => expect(mocks.setItem).toHaveBeenCalledWith('darkMode', 'true'))
-    expect(screen.getByText('Tema oscuro')).toBeTruthy()
-    expect(screen.getByText('#121212')).toBeTruthy()
+    await waitFor(() => expect(screen.getByText('Tema oscuro')).toBeTruthy())
+    await waitFor(() => expect(screen.getByText('#121212')).toBeTruthy())
     await waitFor(() => expect(document.body.style.backgroundColor).toBe('rgb(18, 18, 18)'))
     expect(screen.getByTestId('themed-text').style.color).not.toBe('rgb(17, 17, 17)')
 

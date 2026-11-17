@@ -1,6 +1,7 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Appearance, Platform } from 'react-native';
+import { AuthContext } from './AuthContext';
 
 const ThemeContext = createContext({
   darkMode: false,
@@ -16,14 +17,28 @@ const ThemeContext = createContext({
   },
 });
 
+export function resolveDarkModeForSession(isAuthenticated, savedPreference) {
+  return Boolean(isAuthenticated && savedPreference);
+}
+
 export function ThemeProvider({ children }) {
   const [darkMode, setDarkModeState] = useState(false);
+  const [savedDarkMode, setSavedDarkMode] = useState(null);
+  const { token, loading: authLoading } = useContext(AuthContext);
 
   useEffect(() => {
     AsyncStorage.getItem('darkMode')
-      .then((savedMode) => setDarkModeState(savedMode === 'true'))
-      .catch((error) => console.warn('No se pudo cargar el tema guardado:', error));
+      .then((savedMode) => setSavedDarkMode(savedMode === 'true'))
+      .catch((error) => {
+        console.warn('No se pudo cargar el tema guardado:', error);
+        setSavedDarkMode(false);
+      });
   }, []);
+
+  useEffect(() => {
+    if (authLoading || savedDarkMode === null) return;
+    setDarkModeState(resolveDarkModeForSession(Boolean(token), savedDarkMode));
+  }, [authLoading, token, savedDarkMode]);
 
   useEffect(() => {
     if (Platform.OS !== 'web' && typeof Appearance.setColorScheme === 'function') {
@@ -35,10 +50,12 @@ export function ThemeProvider({ children }) {
     }
   }, [darkMode]);
 
-  const setDarkMode = async (enabled) => {
-    await AsyncStorage.setItem('darkMode', String(enabled));
-    setDarkModeState(enabled);
-  };
+  const setDarkMode = useCallback(async (enabled) => {
+    const preference = Boolean(enabled);
+    await AsyncStorage.setItem('darkMode', String(preference));
+    setSavedDarkMode(preference);
+    setDarkModeState(resolveDarkModeForSession(Boolean(token), preference));
+  }, [token]);
 
   const colors = useMemo(() => ({
     page: darkMode ? '#121212' : '#F9F6F1',
@@ -50,7 +67,7 @@ export function ThemeProvider({ children }) {
     inset: darkMode ? '#303030' : '#FAF8F6',
   }), [darkMode]);
 
-  const value = useMemo(() => ({ darkMode, setDarkMode, colors }), [darkMode, colors]);
+  const value = useMemo(() => ({ darkMode, setDarkMode, colors }), [darkMode, setDarkMode, colors]);
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }
 
@@ -109,12 +126,66 @@ function formatColor(channels, format, alpha) {
   return `#${values.map((channel) => channel.toString(16).padStart(2, '0')).join('')}`;
 }
 
+const DARK_BACKGROUND_COLORS = {
+  '#d1fae5': '#0d2e23',
+  '#dcfce7': '#0f2e1a',
+  '#dbeafe': '#0e1d39',
+  '#eff6ff': '#0d1f3c',
+  '#fef9c3': '#2a1a00',
+  '#fef3c7': '#2a1a08',
+  '#fffbeb': '#2a1a08',
+  '#fff7ed': '#2e1a08',
+  '#fee2e2': '#2e0d0d',
+  '#fef2f2': '#2e0d0d',
+  '#fdf2f4': '#2a1a24',
+  '#f7e8ec': '#2a1a24',
+  '#fff8f8': '#2a1a24',
+  '#fff8f5': '#2a1a08',
+  '#f3f4f6': '#1f2937',
+};
+
+const DARK_TEXT_COLORS = {
+  '#065f46': '#a7f3d0',
+  '#166534': '#86efac',
+  '#047857': '#4ade80',
+  '#1e40af': '#bfdbfe',
+  '#854d0e': '#fbbf24',
+  '#92400e': '#fbbf24',
+  '#991b1b': '#fca5a5',
+  '#b91c1c': '#fca5a5',
+  '#374151': '#e5e7eb',
+  '#4b5563': '#d1d5db',
+  '#7a1e3a': '#e05a7a',
+  '#5a1228': '#e05a7a',
+};
+
+const DARK_BORDER_COLORS = {
+  '#6ee7b7': '#1f7a5d',
+  '#bbf7d0': '#2a5a3a',
+  '#93c5fd': '#3b82f6',
+  '#fde047': '#b45309',
+  '#fca5a5': '#7f1d1d',
+  '#fecaca': '#7f1d1d',
+  '#d1d5db': '#374151',
+};
+
 function adaptColor(value, property) {
   if (typeof value !== 'string' || value === 'transparent' || value.startsWith('url(')) return value;
   const parsed = parseColor(value);
   if (!parsed || parsed.alpha < 0.5) return value;
 
   const propertyName = property.toLowerCase();
+  const normalized = value.toLowerCase().trim();
+  if (propertyName === 'backgroundcolor' && DARK_BACKGROUND_COLORS[normalized]) {
+    return DARK_BACKGROUND_COLORS[normalized];
+  }
+  if (propertyName === 'color' && DARK_TEXT_COLORS[normalized]) {
+    return DARK_TEXT_COLORS[normalized];
+  }
+  if (propertyName.includes('border') && DARK_BORDER_COLORS[normalized]) {
+    return DARK_BORDER_COLORS[normalized];
+  }
+
   const luminance = colorLuminance(parsed.channels);
   let channels = parsed.channels;
 

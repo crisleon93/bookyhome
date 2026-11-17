@@ -75,7 +75,8 @@ vi.mock('../../context/AuthContext', async () => {
 });
 
 vi.mock('../../context/ThemeContext', () => ({
-  useAppTheme: () => ({ darkMode: false }),
+  useAppTheme: () => ({ darkMode: false, colors: { page: '#F9F6F1', text: '#2A2A2A', muted: '#666666', card: '#FFFFFF', border: '#E0DBD4', inset: '#FAF8F6' } }),
+  useThemedStyles: (styles) => styles,
 }));
 
 vi.mock('../../components/Icons', () => {

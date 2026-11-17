@@ -15,6 +15,11 @@ vi.mock('react-native-safe-area-context', () => ({
   SafeAreaView: ({ children }) => children,
 }))
 
+vi.mock('../../context/ThemeContext', () => ({
+  useAppTheme: vi.fn(() => ({ darkMode: false, colors: {} })),
+  useThemedStyles: vi.fn((styles) => styles),
+}))
+
 vi.mock('../../components/Icons', () => ({
   IconBook: () => null, IconCheck: () => null, IconChevronLeft: () => null,
   IconEye: () => null, IconEyeOff: () => null, IconLock: () => null,

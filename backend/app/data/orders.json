@@ -527,5 +527,38 @@
     }
   ],
   "5": [],
-  "3": []
+  "3": [],
+  "300": [
+    {
+      "id_orden": 1,
+      "codigo_compra": "BH-BB8E58589A",
+      "fecha": "2026-11-08T22:52:40.260913Z",
+      "items": [
+        {
+          "id_libro": 5382,
+          "titulo": "Marie Curie",
+          "autor_libro": "Susan Quinn",
+          "precio_libro": 47000.0,
+          "cantidad": 1,
+          "imagen": "https://images.unsplash.com/photo-1516979187457-637abb4f9353?w=400&q=80",
+          "id_variante": null,
+          "variante_label": null,
+          "id_tienda": 153,
+          "nombre_tienda": ""
+        }
+      ],
+      "subtotal": 47000.0,
+      "costo_envio": 5000.0,
+      "total": 52000.0,
+      "estado": "pagado",
+      "tipo_entrega": "domicilio",
+      "pin_retiro": null,
+      "estado_retiro": null,
+      "fecha_limite_retiro": null,
+      "id_orden_db": 41271,
+      "estado_orden": "pagado",
+      "metodo_pago": "tarjeta",
+      "id_direccion": 146
+    }
+  ]
 }

@@ -58,7 +58,7 @@ class TestProcessPaymentSchema:
         """Todos los métodos de la whitelist deben pasar validación de schema."""
         orden_fake = {"id_orden": 1, "total": 50000, "estado": "pendiente",
                       "estado_orden": "pendiente", "items": [], "id_orden_db": 1}
-        metodos = ["tarjeta", "efectivo", "transferencia", "nequi", "daviplata", "pse"]
+        metodos = ["tarjeta", "efectivo", "transferencia", "nequi", "daviplata", "pse", "sucursal", "paypal"]
 
         for metodo in metodos:
             with patch("app.routers.payments.registrar_pago",

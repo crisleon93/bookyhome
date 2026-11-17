@@ -1,3 +1,4 @@
+import { useThemedStyles } from '../context/ThemeContext';
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, TextInput, StyleSheet, ActivityIndicator,
@@ -28,6 +29,7 @@ const isValidEmail = (email) => {
 };
 
 export default function RegisterLibrary({ navigation }) {
+  const styles = useThemedStyles(themeBaseStyles);
   const [nombre, setNombre] = useState('');
   const [libreria, setLibreria] = useState('');
   const [direccion, setDireccion] = useState('');
@@ -258,7 +260,7 @@ export default function RegisterLibrary({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
+const themeBaseStyles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#7A1E3A' },
   scrollContent: { flexGrow: 1 },
 
@@ -297,3 +299,4 @@ const styles = StyleSheet.create({
   },
   successBannerText: { color: '#2e7d32', fontSize: 13, fontWeight: '600', lineHeight: 19 },
 });
+const styles = themeBaseStyles;

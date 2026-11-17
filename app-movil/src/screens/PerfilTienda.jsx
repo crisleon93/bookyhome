@@ -1,3 +1,4 @@
+import { useThemedStyles } from '../context/ThemeContext';
 // src/screens/PerfilTienda.jsx
 // Perfil público de una librería — accesible sin login.
 // Muestra banner, logo, info, tabs (Catálogo / Políticas y Horario).
@@ -66,6 +67,7 @@ function LibroCard({ libro, base, cardWidth, coverHeight, onPress }) {
 
 // ════════════════════════════════════════════════════════════════════════════
 export default function PerfilTienda({ route, navigation }) {
+  const s = useThemedStyles(themeBaseS);
   const BASE = getApiBaseUrl();
   const { width: W } = useWindowDimensions();
   const GAP     = 12;
@@ -288,7 +290,7 @@ export default function PerfilTienda({ route, navigation }) {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-const s = StyleSheet.create({
+const themeBaseS = StyleSheet.create({
   safe:   { flex: 1, backgroundColor: VINOTINTO },
   scroll: { flex: 1, backgroundColor: BG },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, backgroundColor: BG },
@@ -379,3 +381,4 @@ const s = StyleSheet.create({
   policyTitle:      { fontSize: 16, fontWeight: '700', color: CARBON, marginBottom: 8 },
   policyText:       { fontSize: 14, color: GRAY, lineHeight: 22 },
 });
+const s = themeBaseS;

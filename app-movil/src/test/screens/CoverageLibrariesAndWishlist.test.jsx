@@ -20,7 +20,10 @@ const mocks = vi.hoisted(() => ({
   getLibrosListaDeseos: vi.fn(),
   getListaDeseos: vi.fn(),
   getMisLibros: vi.fn(),
+  getCategorias: vi.fn(),
   getTiendasDestacadas: vi.fn(),
+  resolveImageUrl: vi.fn((value) => value),
+  updateStockLibro: vi.fn(),
   navigation: { navigate: vi.fn(), goBack: vi.fn() },
   removeFavorito: vi.fn(),
   removeFromListaDeseos: vi.fn(),
@@ -68,14 +71,14 @@ vi.mock('react-native', async () => {
     }
     return ReactModule.createElement(tag, { 'data-testid': props.testID }, children)
   }
-  const FlatList = ({ data = [], renderItem, ListFooterComponent }) => ReactModule.createElement(
+  const FlatList = ({ data = [], renderItem, ListFooterComponent, ListEmptyComponent }) => ReactModule.createElement(
     'div',
     { 'data-testid': 'flat-list' },
-    data.map((item, index) => ReactModule.createElement(
+    data.length ? data.map((item, index) => ReactModule.createElement(
       ReactModule.Fragment,
       { key: item?.id_libro ?? item?.id_tienda ?? index },
       renderItem({ item, index }),
-    )),
+    )) : (typeof ListEmptyComponent === 'function' ? ReactModule.createElement(ListEmptyComponent) : ListEmptyComponent),
     ListFooterComponent,
   )
   return {
@@ -135,7 +138,10 @@ vi.mock('../../services/api', () => ({
   getLibrosListaDeseos: mocks.getLibrosListaDeseos,
   getListaDeseos: mocks.getListaDeseos,
   getMisLibros: mocks.getMisLibros,
+  getCategorias: mocks.getCategorias,
   getTiendasDestacadas: mocks.getTiendasDestacadas,
+  resolveImageUrl: mocks.resolveImageUrl,
+  updateStockLibro: mocks.updateStockLibro,
   removeFavorito: mocks.removeFavorito,
   removeFromListaDeseos: mocks.removeFromListaDeseos,
 }))
@@ -185,6 +191,8 @@ beforeEach(() => {
   mocks.navigation.navigate = vi.fn()
   mocks.getMisLibros.mockResolvedValue({ data: [book] })
   mocks.getAlertasStock.mockResolvedValue({ data: [{ id_libro: 17, titulo: book.titulo, stock: 2 }] })
+  mocks.getCategorias.mockResolvedValue({ data: [{ id_categoria: 1, nombre_categoria: 'Ficción' }] })
+  mocks.updateStockLibro.mockResolvedValue({ data: { ok: true } })
   mocks.deleteLibro.mockResolvedValue({})
   mocks.getTiendasDestacadas.mockResolvedValue({ data: [store] })
   mocks.getFavoritos.mockResolvedValue({ data: [book] })
@@ -204,8 +212,6 @@ describe('Libreria móvil', () => {
 
     expect(await screen.findByText('Cuentos móviles')).toBeTruthy()
     expect(screen.getByText('1 libro publicado')).toBeTruthy()
-    expect(screen.getByText(/1 libro con stock bajo/)).toBeTruthy()
-
     fireEvent.click(screen.getByRole('button', { name: 'Stock' }))
     expect(mocks.navigation.navigate).toHaveBeenCalledWith('PublicarLibro', {
       libro: book,

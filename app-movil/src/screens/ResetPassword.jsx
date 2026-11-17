@@ -1,3 +1,4 @@
+import { useThemedStyles } from '../context/ThemeContext';
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity,
@@ -7,6 +8,7 @@ import { resetPassword } from '../services/api';
 import Footer from '../components/Footer';
 
 export default function ResetPassword({ route, navigation }) {
+  const s = useThemedStyles(themeBaseS);
   // El token llega por deep link como parámetro de navegación
   const token = route?.params?.token || '';
   const [password, setPassword] = useState('');
@@ -110,7 +112,7 @@ export default function ResetPassword({ route, navigation }) {
   );
 }
 
-const s = StyleSheet.create({
+const themeBaseS = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#FAF8F5' },
   content: { padding: 28, paddingTop: 48, alignItems: 'center' },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FAF8F5', padding: 28 },
@@ -127,3 +129,4 @@ const s = StyleSheet.create({
   btn: { backgroundColor: '#7A1E3A', borderRadius: 12, paddingVertical: 14, paddingHorizontal: 36, alignItems: 'center', marginTop: 8, width: '100%', elevation: 2 },
   btnText: { color: 'white', fontWeight: '800', fontSize: 16 },
 });
+const s = themeBaseS;

@@ -30,9 +30,11 @@ import Libreria from '../screens/Libreria';
 import PublicarLibro from '../screens/PublicarLibro';
 import ConfiguracionTienda from '../screens/ConfiguracionTienda';
 import PerfilTienda from '../screens/PerfilTienda';
+import PerfilVendedor from '../screens/PerfilVendedor';
 import Messages from '../screens/Messages';
 import Chat from '../screens/Chat';
 import QuejasReclamos from '../screens/QuejasReclamos';
+import QuejasVendedor from '../screens/QuejasVendedor';
 import Direcciones from '../screens/Direcciones';
 import SoporteTecnico from '../screens/SoporteTecnico';
 
@@ -52,7 +54,7 @@ const Stack = createNativeStackNavigator();
 
 export default function AppNavigator() {
   const { user, token, loading, biometricLocked } = useContext(AuthContext);
-  const { darkMode, colors } = useAppTheme();
+  const { colors } = useAppTheme();
   const isAuthenticated = Boolean(token || user);
   const userRole = String(user?.rol || '').trim().toLowerCase();
   const isAdmin = userRole === 'admin' || userRole === 'administrador';
@@ -96,6 +98,7 @@ export default function AppNavigator() {
           <Stack.Screen name="PublicarLibro" component={PublicarLibro} options={{ headerShown: false }} />
           <Stack.Screen name="VentasVendedor" component={VentasVendedor} options={{ headerShown: false }} />
           <Stack.Screen name="PedidosVendedor" component={PedidosVendedor} options={{ headerShown: false }} />
+          <Stack.Screen name="EnviosVendedor" component={PedidosVendedor} options={{ headerShown: false }} />
           <Stack.Screen name="MetodosCobroVendedor" component={MetodosCobroVendedor} options={{ headerShown: false }} />
           <Stack.Screen name="CalificacionesVendedor" component={CalificacionesVendedor} options={{ headerShown: false }} />
           <Stack.Screen name="SuscripcionesVendedor" component={SuscripcionesVendedor} options={{ headerShown: false }} />
@@ -104,6 +107,7 @@ export default function AppNavigator() {
           <Stack.Screen name="CuponesVendedor" component={CuponesVendedor} options={{ headerShown: false }} />
           <Stack.Screen name="Direcciones" component={Direcciones} options={{ title: 'Mis direcciones' }} />
           <Stack.Screen name="ConfiguracionTienda" component={ConfiguracionTienda} options={{ headerShown: false }} />
+          <Stack.Screen name="PerfilVendedor" component={PerfilVendedor} options={{ headerShown: false }} />
           <Stack.Screen name="PerfilTienda" component={PerfilTienda} options={{ headerShown: false }} />
           <Stack.Screen name="Notifications" component={Notifications} options={{ headerShown: false }} />
           <Stack.Screen
@@ -116,7 +120,7 @@ export default function AppNavigator() {
             component={Chat}
             options={{ headerShown: false }}
           />
-          <Stack.Screen name="QuejasReclamos" component={QuejasReclamos} options={{ headerShown: false }} />
+          <Stack.Screen name="QuejasReclamos" component={QuejasVendedor} options={{ headerShown: false }} />
         </>
       ) : isAdmin ? (
         // ─── Rutas admin ─────────────────────────────────────────────────────
@@ -126,7 +130,7 @@ export default function AppNavigator() {
       ) : (
         // ─── Rutas comprador ─────────────────────────────────────────────────
         <Stack.Group screenOptions={{
-          headerStyle: { backgroundColor: darkMode ? '#1e1e1e' : '#7A1E3A' },
+          headerStyle: { backgroundColor: '#7A1E3A' },
           headerTintColor: '#FFFFFF',
           headerTitleStyle: { color: '#FFFFFF' },
           headerLeft: () => <MobileMenuButton tintColor="#FFFFFF" />,
@@ -141,7 +145,7 @@ export default function AppNavigator() {
             component={History}
             options={{
               title: 'Mis compras',
-              headerStyle: { backgroundColor: darkMode ? '#1e1e1e' : '#7A1E3A' },
+              headerStyle: { backgroundColor: '#7A1E3A' },
               headerTintColor: '#FFFFFF',
               headerTitleStyle: { color: '#FFFFFF' },
               headerLeft: () => <MobileMenuButton tintColor="#FFFFFF" />,

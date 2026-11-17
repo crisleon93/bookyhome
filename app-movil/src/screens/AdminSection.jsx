@@ -1,3 +1,4 @@
+import { useThemedStyles } from '../context/ThemeContext';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -125,6 +126,7 @@ const getRolColors = (rol) =>
 const PER_PAGE = 10;
 
 export default function AdminSection({ route, navigation }) {
+  const styles = useThemedStyles(themeBaseStyles);
   const section = route.params?.section || 'usuarios';
   const config  = CONFIG[section] || CONFIG.usuarios;
 
@@ -704,7 +706,7 @@ export default function AdminSection({ route, navigation }) {
 }
 
 // ─── Estilos ──────────────────────────────────────────────────────────────────
-const styles = StyleSheet.create({
+const themeBaseStyles = StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: BEIGE,
@@ -941,3 +943,4 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
 });
+const styles = themeBaseStyles;

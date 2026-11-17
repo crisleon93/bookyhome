@@ -83,7 +83,7 @@ class CategoriaRespuesta(BaseModel):
 class PagoRequest(BaseModel):
     order_id: int
     amount: float = Field(..., gt=0, description="Debe ser mayor a 0")
-    payment_method: Literal["tarjeta", "efectivo", "transferencia", "nequi", "daviplata", "pse"] 
+    payment_method: Literal["tarjeta", "efectivo", "transferencia", "nequi", "daviplata", "pse", "sucursal", "paypal"]
     coupon_code: Optional[str] = None
     tipo_entrega: Optional[str] = None  # 'domicilio' | 'retiro_tienda'
     id_direccion: Optional[int] = None  # dirección de envío si tipo_entrega == 'domicilio'

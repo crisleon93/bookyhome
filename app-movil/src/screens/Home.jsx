@@ -1,3 +1,4 @@
+import { useThemedStyles } from '../context/ThemeContext';
 // src/screens/Home.jsx — Landing pública (usuario NO autenticado)
 // Estructura idéntica al frontend web, adaptada a React Native.
 //
@@ -132,6 +133,7 @@ function TiendaLogo({ tienda, base }) {
 
 // ════════════════════════════════════════════════════════════════════════════
 export default function Home({ navigation }) {
+  const s = useThemedStyles(themeBaseS);
   const BASE = getApiBaseUrl();
 
   // ── Hero carousel ────────────────────────────────────────────────────────
@@ -477,7 +479,7 @@ export default function Home({ navigation }) {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-const s = StyleSheet.create({
+const themeBaseS = StyleSheet.create({
   safe: { flex: 1, backgroundColor: VINOTINTO },
 
   // Hero
@@ -566,3 +568,4 @@ const s = StyleSheet.create({
   libCtaBtn:   { backgroundColor: WHITE, borderRadius: 6, paddingHorizontal: 28, paddingVertical: 13 },
   libCtaBtnTxt:{ color: VINOTINTO, fontWeight: '800', fontSize: 15 },
 });
+const s = themeBaseS;
