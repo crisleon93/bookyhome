@@ -133,6 +133,12 @@ vi.mock('expo-av', () => ({
     Sound: { createAsync: vi.fn() },
   },
 }))
+vi.mock('expo-audio', () => ({
+  setAudioModeAsync: vi.fn(),
+  useAudioPlayer: vi.fn(() => ({ play: vi.fn(), pause: vi.fn(), remove: vi.fn() })),
+  useAudioPlayerStatus: vi.fn(() => ({ playing: false })),
+  useAudioRecorder: vi.fn(() => ({ record: vi.fn(), stop: vi.fn(), uri: null })),
+}))
 vi.mock('expo-file-system/legacy', () => ({
   EncodingType: { Base64: 'base64' },
   documentDirectory: '/docs/',

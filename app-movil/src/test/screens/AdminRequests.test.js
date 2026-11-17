@@ -6,9 +6,18 @@ import { describe, it, expect, vi } from 'vitest'
 
 vi.mock('react-native', () => ({
   ActivityIndicator: () => null, Alert: { alert: vi.fn() }, FlatList: () => null,
-  Image: () => null, Modal: () => null, RefreshControl: () => null,
+  Image: () => null, Modal: () => null, Platform: { OS: 'web' }, RefreshControl: () => null,
   ScrollView: () => null, StyleSheet: { create: (s) => s },
   Text: () => null, TextInput: () => null, TouchableOpacity: () => null, View: () => null,
+}))
+
+vi.mock('react-native-safe-area-context', () => ({
+  SafeAreaView: ({ children }) => children,
+}))
+
+vi.mock('../../context/ThemeContext', () => ({
+  useAppTheme: vi.fn(() => ({ darkMode: false, colors: {} })),
+  useThemedStyles: vi.fn((styles) => styles),
 }))
 
 vi.mock('../../services/api', () => ({

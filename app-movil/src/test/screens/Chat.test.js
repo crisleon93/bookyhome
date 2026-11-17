@@ -24,6 +24,12 @@ vi.mock('@react-native-async-storage/async-storage', () => ({
 }))
 
 vi.mock('expo-av', () => ({ Audio: { Recording: { createAsync: vi.fn() }, Sound: {} } }))
+vi.mock('expo-audio', () => ({
+  setAudioModeAsync: vi.fn(),
+  useAudioPlayer: vi.fn(() => ({ play: vi.fn(), pause: vi.fn(), remove: vi.fn() })),
+  useAudioPlayerStatus: vi.fn(() => ({ playing: false })),
+  useAudioRecorder: vi.fn(() => ({ record: vi.fn(), stop: vi.fn(), uri: null })),
+}))
 vi.mock('expo-file-system/legacy', () => ({ downloadAsync: vi.fn(), documentDirectory: '/docs/' }))
 vi.mock('expo-image-picker', () => ({
   launchImageLibraryAsync: vi.fn(() => Promise.resolve({ canceled: true })),
@@ -37,7 +43,7 @@ vi.mock('expo-linear-gradient', () => ({ LinearGradient: () => null }))
 vi.mock('../../context/AuthContext', () => ({ AuthContext: {} }))
 vi.mock('../../context/ThemeContext', () => ({
   useAppTheme: vi.fn(() => ({ darkMode: false, colors: {} })),
-  useThemedStyles: vi.fn((fn) => fn({})),
+  useThemedStyles: vi.fn((styles) => styles),
 }))
 vi.mock('../../context/ChatSocketContext', () => ({ useChatSocket: vi.fn(() => ({ salas: [], conectado: false })) }))
 vi.mock('../../services/api', () => ({

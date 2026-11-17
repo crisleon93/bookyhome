@@ -33,6 +33,10 @@ vi.mock('../../components/Footer', () => ({ default: () => null }))
 vi.mock('../../components/Icons', () => ({
   IconMail: () => null, IconLock: () => null,
 }))
+vi.mock('../../context/ThemeContext', () => ({
+  useAppTheme: vi.fn(() => ({ darkMode: false, colors: {} })),
+  useThemedStyles: vi.fn((styles) => styles),
+}))
 
 vi.mock('react', async () => {
   const actual = await vi.importActual('react')

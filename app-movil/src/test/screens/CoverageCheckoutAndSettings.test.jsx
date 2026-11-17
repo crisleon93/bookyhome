@@ -619,7 +619,7 @@ describe('Checkout and buyer/store settings coverage', () => {
 
   it('actualiza la configuración de tienda y sube una imagen seleccionada', async () => {
     renderStoreSettings();
-    const description = await screen.findByPlaceholderText('Descripción breve de tu tienda...');
+    const description = await screen.findByPlaceholderText('Cuéntales a tus compradores qué hace especial a tu librería...');
     fireEvent.change(description, { target: { value: 'Libros para todos' } });
     fireEvent.change(screen.getByPlaceholderText('Días promedio de despacho'), { target: { value: '5' } });
     fireEvent.click(screen.getByRole('button', { name: 'Guardar Cambios' }));

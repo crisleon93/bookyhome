@@ -176,9 +176,12 @@ vi.mock('../../components/Icons', () => {
   return {
     IconChevronRight: Icon,
     IconCreditCard: Icon,
+    IconDollar: Icon,
+    IconFilter: Icon,
     IconMenu: Icon,
     IconMessage: Icon,
     IconPackage: Icon,
+    IconRefresh: Icon,
     IconSearch: Icon,
     IconShoppingBag: Icon,
     IconStar: Icon,
