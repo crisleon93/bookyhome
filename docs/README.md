@@ -11,6 +11,9 @@ Los documentos de `docs/requisitos` deben servir como guia para construir y vali
 ```text
 docs/
   README.md
+  diagrama-clases-bookyhome.md  Modelo de clases, persistencia y arquitectura verificados contra código/SQL
+  diagramas-secuencia-bookyhome.md  Secuencias de los flujos principales
+  flujo-integral-bookyhome.md  Recorrido funcional integral
   implantacion/  Evidencias de plataforma, migracion y respaldos
   aceptacion/  Casos de prueba y evidencias de aceptacion
   calidad/  Marco ISO/IEC 25000, CMMI, PSP, RNF y lecciones aprendidas
