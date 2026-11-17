@@ -23,6 +23,7 @@ import { AuthContext } from '../context/AuthContext';
 import Footer from '../components/Footer';
 import SidebarVendedor from '../components/SidebarVendedor';
 import CalendarioPicker from '../components/CalendarioPicker';
+import DiscountTypeSelector from '../components/DiscountTypeSelector';
 import {
   getOfertas,
   getOfertaById,
@@ -402,30 +403,12 @@ function FormOferta({ libros, ofertaEditar, onGuardado, onCancelar }) {
 
       {/* Tipo de descuento */}
       <Text style={[styles.label, { marginTop: 16 }]}>Tipo de descuento *</Text>
-      {TIPOS.map((opc) => {
-        const sel = form.tipo_descuento === opc.tipo;
-        return (
-          <TouchableOpacity
-            key={opc.tipo}
-            style={[styles.tipoCard, sel && { borderColor: PRIMARY, backgroundColor: PRIMARY + '08' }]}
-            onPress={() => setField('tipo_descuento', opc.tipo)}
-            activeOpacity={0.7}
-          >
-            <View style={[styles.tipoIcon, { backgroundColor: opc.bg }]}>
-              <Text style={{ fontSize: 16 }}>{opc.icon}</Text>
-            </View>
-            <View style={{ flex: 1, marginLeft: 12 }}>
-              <Text style={[styles.tipoLabel, sel && { color: PRIMARY }]}>{opc.label}</Text>
-              <Text style={styles.tipoDesc}>{opc.desc}</Text>
-            </View>
-            {sel && (
-              <View style={styles.tipoCheck}>
-                <Text style={styles.tipoCheckMark}>✓</Text>
-              </View>
-            )}
-          </TouchableOpacity>
-        );
-      })}
+      <DiscountTypeSelector
+        options={TIPOS}
+        selectedType={form.tipo_descuento}
+        onSelect={(tipo) => setField('tipo_descuento', tipo)}
+        accentColor={PRIMARY}
+      />
 
       {/* Valor del descuento */}
       {form.tipo_descuento !== 'especial' && (
@@ -951,20 +934,6 @@ const themeBaseStyles = StyleSheet.create({
     paddingHorizontal: 12, paddingVertical: 12,
   },
   inputSuffixText:{ fontWeight: '800', color: PRIMARY, fontSize: 13 },
-
-  tipoCard: {
-    flexDirection: 'row', alignItems: 'center',
-    borderWidth: 1.5, borderColor: BORDER, borderRadius: 12,
-    padding: 12, marginBottom: 8, backgroundColor: WHITE,
-  },
-  tipoIcon:      { width: 38, height: 38, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  tipoLabel:     { fontSize: 14, fontWeight: '800', color: TEXT, marginBottom: 2 },
-  tipoDesc:      { fontSize: 12, color: MUTED },
-  tipoCheck: {
-    width: 20, height: 20, borderRadius: 10,
-    backgroundColor: PRIMARY, alignItems: 'center', justifyContent: 'center',
-  },
-  tipoCheckMark: { color: WHITE, fontSize: 11, fontWeight: '900' },
 
   fechasBox: {
     backgroundColor: '#fafafa', borderRadius: 12,

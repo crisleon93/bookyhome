@@ -18,6 +18,16 @@ const GRAY = '#888';
 const BORDER = '#E0DBD4';
 const WHITE = '#FFFFFF';
 
+const isValidEmail = (email) => {
+  const atIndex = email.indexOf('@');
+  const lastDotIndex = email.lastIndexOf('.');
+  return !/\s/.test(email)
+    && atIndex > 0
+    && atIndex === email.lastIndexOf('@')
+    && lastDotIndex > atIndex + 1
+    && lastDotIndex < email.length - 1;
+};
+
 // ── Contenido legal ──────────────────────────────────────────────
 const TERMINOS_SECCIONES = [
   { h: '1. Aceptación de los Términos', p: 'Al registrarte en BookyHome, declaras que tienes al menos 18 años o cuentas con autorización de un tutor legal, y aceptas cumplir estos términos en su totalidad.' },
@@ -117,7 +127,7 @@ export default function Register({ navigation }) {
       Alert.alert('Error', 'Ingresa tu nombre completo');
       return false;
     }
-    if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    if (!email.trim() || !isValidEmail(email)) {
       Alert.alert('Error', 'Ingresa un email válido');
       return false;
     }

@@ -1,6 +1,7 @@
 // src/pages/Chat.jsx
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import useSyncedDarkMode from "../hooks/useSyncedDarkMode";
 import { getToken } from "../hooks/useAuth";
 import { chatService } from "../services/chat";
 import { jwtDecode } from "jwt-decode";
@@ -762,21 +763,7 @@ function ChatEmojiPickerTray({ onSelectEmoji, onClose, config }) {
 // Modal de Configuración y Personalización del Chat
 function ChatSettingsModal({ config, setConfig, onClose }) {
   const [activeTab, setActiveTab] = useState("apariencia"); // "apariencia" | "salas" | "burbujas" | "texto" | "general"
-  const [modoOscuroGlobal, setModoOscuroGlobal] = useState(() => (
-    typeof document !== "undefined" && document.documentElement.classList.contains("dark")
-  ));
-
-  useEffect(() => {
-    const actualizarModo = () => setModoOscuroGlobal(
-      document.documentElement.classList.contains("dark")
-    );
-    window.addEventListener("darkModeChange", actualizarModo);
-    window.addEventListener("storage", actualizarModo);
-    return () => {
-      window.removeEventListener("darkModeChange", actualizarModo);
-      window.removeEventListener("storage", actualizarModo);
-    };
-  }, []);
+  const [modoOscuroGlobal] = useSyncedDarkMode({ source: 'document' });
 
   const fondos = [
     { id: "beige_dots", nombre: "Clásico BookyHome", color: "#EFEAE2", desc: "Beige con textura punteada" },

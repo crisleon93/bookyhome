@@ -55,6 +55,13 @@ def get_current_user_rol(credentials: HTTPAuthorizationCredentials = Depends(sec
     return payload.get("rol")
 
 
+def _es_participante_autorizado(sala, user_id: int, rol: str) -> bool:
+    es_admin = (rol or '').lower() in ('admin', 'administrador')
+    es_comprador_dueno = rol != 'vendedor' and user_id == sala['id_comprador']
+    es_vendedor_dueno = rol == 'vendedor' and user_id == sala['id_vendedor']
+    return es_comprador_dueno or es_vendedor_dueno or es_admin
+
+
 # ============= ENDPOINTS =============
 
 @router.get("/salas")
@@ -214,11 +221,7 @@ def obtener_mensajes_sala(
         if not sala:
             raise HTTPException(status_code=404, detail="Sala no encontrada")
 
-        es_admin = (rol or '').lower() in ('admin', 'administrador')
-        es_comprador_dueno = rol != 'vendedor' and user_id == sala['id_comprador']
-        es_vendedor_dueno = rol == 'vendedor' and user_id == sala['id_vendedor']
-
-        if not (es_comprador_dueno or es_vendedor_dueno or es_admin):
+        if not _es_participante_autorizado(sala, user_id, rol):
             raise HTTPException(status_code=403, detail="No tienes acceso a esta sala")
 
         query = """
@@ -283,13 +286,7 @@ def _guardar_mensaje_sync(id_sala: int, user_id: int, texto: str) -> dict:
     db = get_db()
     cursor = db.cursor(dictionary=True)
     try:
-        cursor.execute("""
-            SELECT sc.id_usuario as id_comprador, t.id_usuario as id_vendedor
-            FROM salasChats sc
-            JOIN tiendas t ON sc.id_tienda = t.id_tienda
-            WHERE sc.id_sala = %s
-        """, (id_sala,))
-        sala_info = cursor.fetchone()
+        sala_info = _obtener_participantes_sala(cursor, id_sala)
         if not sala_info:
             raise HTTPException(status_code=404, detail="Sala no encontrada")
 
@@ -435,11 +432,7 @@ def marcar_mensaje_leido(
         if not info:
             raise HTTPException(status_code=404, detail="Mensaje no encontrado")
 
-        es_admin = (rol or '').lower() in ('admin', 'administrador')
-        es_comprador_dueno = rol != 'vendedor' and user_id == info['id_comprador']
-        es_vendedor_dueno = rol == 'vendedor' and user_id == info['id_vendedor']
-
-        if not (es_comprador_dueno or es_vendedor_dueno or es_admin):
+        if not _es_participante_autorizado(info, user_id, rol):
             raise HTTPException(status_code=403, detail="No tienes acceso a este mensaje")
 
         cursor.execute("""
@@ -480,11 +473,7 @@ async def marcar_sala_leida(
         if not sala:
             raise HTTPException(status_code=404, detail="Sala no encontrada")
 
-        es_admin = (rol or '').lower() in ('admin', 'administrador')
-        es_comprador_dueno = rol != 'vendedor' and user_id == sala['id_comprador']
-        es_vendedor_dueno = rol == 'vendedor' and user_id == sala['id_vendedor']
-
-        if not (es_comprador_dueno or es_vendedor_dueno or es_admin):
+        if not _es_participante_autorizado(sala, user_id, rol):
             raise HTTPException(status_code=403, detail="No tienes acceso a esta sala")
 
         cursor.execute("""
@@ -538,11 +527,7 @@ def eliminar_sala_chat(
         if not sala:
             raise HTTPException(status_code=404, detail="Sala no encontrada")
 
-        es_admin = (rol or '').lower() in ('admin', 'administrador')
-        es_comprador = rol != 'vendedor' and user_id == sala['id_comprador']
-        es_vendedor = rol == 'vendedor' and user_id == sala['id_vendedor']
-
-        if not (es_comprador or es_vendedor or es_admin):
+        if not _es_participante_autorizado(sala, user_id, rol):
             raise HTTPException(status_code=403, detail="No tienes permiso para eliminar esta sala")
 
         # Eliminar mensajes primero (FK)
@@ -585,11 +570,7 @@ def vaciar_mensajes_sala(
         if not sala:
             raise HTTPException(status_code=404, detail="Sala no encontrada")
 
-        es_admin = (rol or '').lower() in ('admin', 'administrador')
-        es_comprador = rol != 'vendedor' and user_id == sala['id_comprador']
-        es_vendedor = rol == 'vendedor' and user_id == sala['id_vendedor']
-
-        if not (es_comprador or es_vendedor or es_admin):
+        if not _es_participante_autorizado(sala, user_id, rol):
             raise HTTPException(status_code=403, detail="No tienes permiso para vaciar esta sala")
 
         cursor.execute("DELETE FROM mensajes WHERE id_sala = %s", (id_sala,))

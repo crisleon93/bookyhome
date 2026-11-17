@@ -90,7 +90,8 @@
   gap: 0.6rem;
 }
 
-.filtro-grupo label {
+.filtro-grupo label,
+.filtro-grupo__label {
   font-weight: 600;
   color: #2a2a2a;
   font-size: 0.9rem;
@@ -297,7 +298,8 @@
 .dark .filtros-panel {
   border-top-color: #333;
 }
-.dark .filtro-grupo label { color: #ececec; }
+.dark .filtro-grupo label,
+.dark .filtro-grupo__label { color: #ececec; }
 .dark .input-busqueda,
 .dark .select-filtro,
 .dark .input-precio {

@@ -81,7 +81,7 @@ export function AuthProvider({ children }) {
       }
     };
 
-    restore();
+    void restore();
 
     const handleAppStateChange = async (nextAppState) => {
       if (

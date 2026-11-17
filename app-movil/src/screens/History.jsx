@@ -46,6 +46,11 @@ const formatCurrency = (value) => Number(value || 0).toLocaleString('es-CO', {
   maximumFractionDigits: 0,
 });
 
+const calculateOrderSubtotal = (order) => (order?.items || []).reduce(
+  (subtotal, product) => subtotal + Number(product.precio_libro || 0) * Number(product.cantidad || 1),
+  0
+);
+
 const formatOrderDate = (value) => value
   ? new Date(value).toLocaleDateString('es-CO', {
     year: 'numeric',
@@ -414,10 +419,7 @@ export default function History({ navigation }) {
         return `<tr><td>${titulo}<br/><small>${autor} · Cantidad: ${cantidad}</small></td><td>${escaparHtml(formatCurrency(precio))}</td></tr>`;
       }).join('');
       const costoEnvio = Number(ordenSeleccionada.costo_envio || 0);
-      const subtotal = (ordenSeleccionada.items || []).reduce(
-        (suma, producto) => suma + Number(producto.precio_libro || 0) * Number(producto.cantidad || 1),
-        0
-      );
+      const subtotal = calculateOrderSubtotal(ordenSeleccionada);
       const subtotalRow = `<tr><td>Subtotal</td><td>${escaparHtml(formatCurrency(subtotal))}</td></tr>`;
       const deliveryRow = ordenSeleccionada.tipo_entrega !== 'retiro_tienda' && costoEnvio > 0
         ? `<tr><td>Domicilio</td><td>${escaparHtml(formatCurrency(costoEnvio))}</td></tr>`
@@ -559,10 +561,7 @@ export default function History({ navigation }) {
   const esCompraPagada = ['pagado', 'pagada'].includes(
     String(ordenSeleccionada?.estado || ordenSeleccionada?.estado_orden || '').toLowerCase()
   );
-  const subtotalComprobante = (ordenSeleccionada?.items || []).reduce(
-    (suma, producto) => suma + Number(producto.precio_libro || 0) * Number(producto.cantidad || 1),
-    0
-  );
+  const subtotalComprobante = calculateOrderSubtotal(ordenSeleccionada);
   const totalComprobante = Number(ordenSeleccionada?.total_con_descuento ?? ordenSeleccionada?.total ?? 0);
   const descuentoComprobante = Number(ordenSeleccionada?.total || 0) - Number(ordenSeleccionada?.total_con_descuento || 0);
 

@@ -50,6 +50,7 @@ vi.mock('../../pages/ForgotPassword', () => ({ default: () => <div>ForgotPasswor
 vi.mock('../../components/FiltrosCatalogo', () => ({ default: () => <div>Filtros</div> }))
 
 import { login } from '../../services/api'
+import api from '../../services/api'
 import { notify } from '../../components/ToastProvider'
 
 // ── Helper: abrir modal de login ──────────────────────────────────────────────
@@ -183,6 +184,37 @@ describe('Header — Login: submit exitoso', () => {
       expect(login).toHaveBeenCalledWith(
         expect.objectContaining({ email: 'user@test.com', password: 'Password1!' })
       )
+    })
+  })
+
+  describe('Header — filtros del catálogo', () => {
+    beforeEach(() => {
+      vi.clearAllMocks()
+      localStorage.clear()
+      api.get.mockImplementation(() => Promise.resolve({
+        data: {
+          categorias: [{ id_categoria: 3, nombre_categoria: 'Ficción', cantidad_libros: 4 }],
+          precio_min: 0,
+          precio_max: 1000000,
+          opciones_ordenamiento: [],
+        },
+      }))
+    })
+
+    it('aplica búsqueda y filtros de categoría en la navegación del catálogo', async () => {
+      renderHeader()
+      fireEvent.click(screen.getByTitle('Filtros avanzados'))
+
+      const search = await screen.findByPlaceholderText('Título, autor o ISBN...')
+      fireEvent.change(search, { target: { value: 'fantasía' } })
+      fireEvent.change(screen.getAllByRole('combobox')[0], { target: { value: '3' } })
+      fireEvent.click(screen.getByRole('button', { name: /Ver resultados/i }))
+
+      await waitFor(() => {
+        expect(mockNavigate).toHaveBeenCalledWith(
+          expect.stringMatching(/^\/catalogo\?q=fantas%C3%ADa&categoria_id=3/),
+        )
+      })
     })
   })
 

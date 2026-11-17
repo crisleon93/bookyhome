@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import api, { getApiBaseUrl } from "../services/api";
 import { notify } from "./ToastProvider";
+import useSyncedDarkMode from "../hooks/useSyncedDarkMode";
+import PromoSectionHeading from "./PromoSectionHeading";
 import {
   IconTag,
   IconCheck,
@@ -16,7 +18,7 @@ import {
 // ── Helpers ──
 const formatPrecio = (v) => {
   if (v == null) return "—";
-  return "$" + String(parseInt(v)).replace(/\B(?=(\d{3})+(?!\d))/g, ".") + " COP";
+  return "$" + Number.parseInt(v, 10).toLocaleString("es-CO") + " COP";
 };
 
 const formatFecha = (f) => {
@@ -1131,7 +1133,9 @@ function ModalEliminarOferta({ oferta, onClose, onEliminado, darkMode = false })
   return (
     <div
       role="presentation"
-      onClick={onClose}
+      onClick={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
       style={{
         position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)",
         display: "flex", alignItems: "center", justifyContent: "center",
@@ -1141,7 +1145,6 @@ function ModalEliminarOferta({ oferta, onClose, onEliminado, darkMode = false })
       <div
         role="dialog"
         aria-modal="true"
-        onClick={(e) => e.stopPropagation()}
         style={{
           background: panelBg, borderRadius: "16px", padding: "28px",
           maxWidth: "420px", width: "95%",
@@ -1386,23 +1389,13 @@ function GrupoOfertas({ titulo, lista, colorAccent, icon, onEditar, onEliminar, 
 //  COMPONENTE PRINCIPAL — SeccionOfertas
 // ══════════════════════════════════════════════
 export default function SeccionOfertas() {
-  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('darkMode') === 'true');
+  const [darkMode] = useSyncedDarkMode();
   const [ofertas, setOfertas] = useState([]);
   const [libros, setLibros] = useState([]);
   const [loading, setLoading] = useState(true);
   const [mostrarForm, setMostrarForm] = useState(false);
   const [ofertaEditar, setOfertaEditar] = useState(null);
   const [ofertaEliminar, setOfertaEliminar] = useState(null);
-
-  useEffect(() => {
-    const syncDarkMode = () => setDarkMode(localStorage.getItem('darkMode') === 'true');
-    window.addEventListener('darkModeChange', syncDarkMode);
-    window.addEventListener('storage', syncDarkMode);
-    return () => {
-      window.removeEventListener('darkModeChange', syncDarkMode);
-      window.removeEventListener('storage', syncDarkMode);
-    };
-  }, []);
 
   const cargar = useCallback(async () => {
     await Promise.resolve();
@@ -1451,27 +1444,14 @@ export default function SeccionOfertas() {
         display: "flex", alignItems: "center", justifyContent: "space-between",
         gap: "16px", flexWrap: "wrap"
       }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
-          <div style={{
-            width: "50px", height: "50px", borderRadius: "14px",
-            background: "linear-gradient(135deg, #7A1E3A 0%, #C5425A 100%)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            boxShadow: "0 4px 14px rgba(122,30,58,0.25)", flexShrink: 0
-          }}>
-            <IconTag width={24} height={24} strokeWidth={2.2} style={{ color: "white" }} />
-          </div>
-          <div>
-            <h1 style={{ margin: 0, fontSize: "1.45rem", fontWeight: 900, color: darkMode ? "#f3f4f6" : "#1f2937" }}>
-              Promociones y descuentos
-            </h1>
-            <p style={{ margin: 0, fontSize: "0.85rem", color: darkMode ? "#b8b8b8" : "#6b7280", marginTop: "2px" }}>
-              {activas.length > 0
-                ? `${activas.length} activa${activas.length > 1 ? "s" : ""} ahora · ${ofertas.length} en total`
-                : `${ofertas.length} oferta${ofertas.length !== 1 ? "s" : ""} creada${ofertas.length !== 1 ? "s" : ""}`
-              }
-            </p>
-          </div>
-        </div>
+        <PromoSectionHeading
+          darkMode={darkMode}
+          title="Promociones y descuentos"
+          summary={activas.length > 0
+            ? `${activas.length} activa${activas.length > 1 ? "s" : ""} ahora · ${ofertas.length} en total`
+            : `${ofertas.length} oferta${ofertas.length !== 1 ? "s" : ""} creada${ofertas.length !== 1 ? "s" : ""}`
+          }
+        />
 
         {/* Stats + botón */}
         <div style={{ display: "flex", gap: "12px", alignItems: "center", flexWrap: "wrap" }}>

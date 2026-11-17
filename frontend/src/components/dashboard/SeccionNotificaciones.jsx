@@ -17,6 +17,53 @@ const OPCIONES_ELIMINAR = [
   { value: "todas",   label: "Todas las notificaciones" },
 ];
 
+export function NotificacionesHeader({
+  noLeidas,
+  onMarcarTodasLeidas,
+  onEliminarMensajes,
+  deleteButtonClassName,
+}) {
+  return (
+    <div className="notif-header notif-header--embedded" style={{ flexWrap: "wrap", gap: 10 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <h1 style={{ margin: 0 }}>Notificaciones</h1>
+        {noLeidas > 0 && (
+          <span style={{
+            background: "#7A1E3A", color: "#fff",
+            fontSize: "0.72rem", fontWeight: 800,
+            padding: "2px 10px", borderRadius: 20
+          }}>
+            {noLeidas} sin leer
+          </span>
+        )}
+      </div>
+
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        {noLeidas > 0 && (
+          <button className="btn-marcar-todas" onClick={onMarcarTodasLeidas}>
+            Marcar todas como leídas
+          </button>
+        )}
+        <button
+          className={deleteButtonClassName || undefined}
+          onClick={onEliminarMensajes}
+          style={{
+            display: "inline-flex", alignItems: "center", gap: 6,
+            padding: "7px 14px", borderRadius: 8,
+            background: "#FEF2F2", border: "1.5px solid #FECACA",
+            color: "#DC2626", fontSize: "0.82rem", fontWeight: 700,
+            cursor: "pointer", transition: "all 0.18s"
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = "#DC2626"; e.currentTarget.style.color = "#fff"; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = "#FEF2F2"; e.currentTarget.style.color = "#DC2626"; }}
+        >
+          🗑️ Eliminar mensajes
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function SeccionNotificaciones() {
   // ── Datos ─────────────────────────────────────────────────────────────────
   const [notificaciones, setNotificaciones]           = useState([]);
@@ -225,43 +272,12 @@ export default function SeccionNotificaciones() {
       <div className="notificaciones-wrapper">
 
         {/* ── HEADER ── */}
-        <div className="notif-header notif-header--embedded" style={{ flexWrap: "wrap", gap: 10 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <h1 style={{ margin: 0 }}>Notificaciones</h1>
-            {noLeidas > 0 && (
-              <span style={{
-                background: "#7A1E3A", color: "#fff",
-                fontSize: "0.72rem", fontWeight: 800,
-                padding: "2px 10px", borderRadius: 20
-              }}>
-                {noLeidas} sin leer
-              </span>
-            )}
-          </div>
-
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            {noLeidas > 0 && (
-              <button className="btn-marcar-todas" onClick={handleMarcarTodasLeidas}>
-                Marcar todas como leídas
-              </button>
-            )}
-            <button
-              className="btn-eliminar-mensajes"
-              onClick={() => { setDeleteFilter("leidas"); setShowDeleteModal(true); }}
-              style={{
-                display: "inline-flex", alignItems: "center", gap: 6,
-                padding: "7px 14px", borderRadius: 8,
-                background: "#FEF2F2", border: "1.5px solid #FECACA",
-                color: "#DC2626", fontSize: "0.82rem", fontWeight: 700,
-                cursor: "pointer", transition: "all 0.18s"
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = "#DC2626"; e.currentTarget.style.color = "#fff"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = "#FEF2F2"; e.currentTarget.style.color = "#DC2626"; }}
-            >
-              🗑️ Eliminar mensajes
-            </button>
-          </div>
-        </div>
+        <NotificacionesHeader
+          noLeidas={noLeidas}
+          onMarcarTodasLeidas={handleMarcarTodasLeidas}
+          onEliminarMensajes={() => { setDeleteFilter("leidas"); setShowDeleteModal(true); }}
+          deleteButtonClassName="btn-eliminar-mensajes"
+        />
 
         {/* ── FILTROS DE CATEGORÍA ── */}
         <div className="notif-filtros">

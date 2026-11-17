@@ -195,3 +195,132 @@ class TestAsignarLibrosOferta:
             result = mod.asignar_libros_oferta(id_oferta=1, ids_libros=[1, 2])
 
         assert result["ok"] is False
+
+
+# ---------------------------------------------------------------------------
+# obtener_ofertas_tienda
+# ---------------------------------------------------------------------------
+
+class TestObtenerOfertasTienda:
+    def test_retorna_lista_de_ofertas(self):
+        db_mock, cursor_mock = MagicMock(), MagicMock()
+        db_mock.cursor.return_value = cursor_mock
+        cursor_mock.fetchall.return_value = [
+            {"id_oferta": 1, "nombre_oferta": "Promo", "estado": "activa", "total_libros": 3},
+            {"id_oferta": 2, "nombre_oferta": "Verano", "estado": "proxima", "total_libros": 1},
+        ]
+
+        with patch.object(mod, "get_db", return_value=db_mock):
+            result = mod.obtener_ofertas_tienda(id_tienda=1)
+
+        assert len(result) == 2
+        assert result[0]["nombre_oferta"] == "Promo"
+
+    def test_retorna_lista_vacia_sin_ofertas(self):
+        db_mock, cursor_mock = MagicMock(), MagicMock()
+        db_mock.cursor.return_value = cursor_mock
+        cursor_mock.fetchall.return_value = []
+
+        with patch.object(mod, "get_db", return_value=db_mock):
+            result = mod.obtener_ofertas_tienda(id_tienda=99)
+
+        assert result == []
+
+
+# ---------------------------------------------------------------------------
+# obtener_oferta_detalle
+# ---------------------------------------------------------------------------
+
+class TestObtenerOfertaDetalle:
+    def test_retorna_oferta_con_libros(self):
+        db_mock, cursor_mock = MagicMock(), MagicMock()
+        db_mock.cursor.return_value = cursor_mock
+        cursor_mock.fetchone.return_value = {
+            "id_oferta": 1, "nombre_oferta": "Promo", "estado": "activa"
+        }
+        cursor_mock.fetchall.return_value = [
+            {"id_libro": 10, "titulo": "El Principito", "imagenes": "url1,url2"},
+            {"id_libro": 11, "titulo": "Cien años", "imagenes": None},
+        ]
+
+        with patch.object(mod, "get_db", return_value=db_mock):
+            result = mod.obtener_oferta_detalle(id_oferta=1, id_tienda=1)
+
+        assert result is not None
+        assert len(result["libros"]) == 2
+        assert result["libros"][0]["imagenes"] == ["url1", "url2"]
+        assert result["libros"][1]["imagenes"] == []
+
+    def test_retorna_none_si_oferta_no_existe(self):
+        db_mock, cursor_mock = MagicMock(), MagicMock()
+        db_mock.cursor.return_value = cursor_mock
+        cursor_mock.fetchone.return_value = None
+
+        with patch.object(mod, "get_db", return_value=db_mock):
+            result = mod.obtener_oferta_detalle(id_oferta=999, id_tienda=1)
+
+        assert result is None
+
+    def test_retorna_none_si_tienda_no_coincide(self):
+        db_mock, cursor_mock = MagicMock(), MagicMock()
+        db_mock.cursor.return_value = cursor_mock
+        cursor_mock.fetchone.return_value = None
+
+        with patch.object(mod, "get_db", return_value=db_mock):
+            result = mod.obtener_oferta_detalle(id_oferta=1, id_tienda=99)
+
+        assert result is None
+
+
+# ---------------------------------------------------------------------------
+# obtener_oferta_activa_libro
+# ---------------------------------------------------------------------------
+
+class TestObtenerOfertaActivaLibro:
+    def test_retorna_oferta_con_precio_descuento(self):
+        db_mock, cursor_mock = MagicMock(), MagicMock()
+        db_mock.cursor.return_value = cursor_mock
+        cursor_mock.fetchone.return_value = {
+            "id_oferta": 1,
+            "nombre_oferta": "Promo 20%",
+            "tipo_descuento": "porcentaje",
+            "valor_descuento": 20,
+            "fecha_fin": "2026-12-31",
+            "precio_libro": 50000,
+        }
+
+        with patch.object(mod, "get_db", return_value=db_mock):
+            result = mod.obtener_oferta_activa_libro(id_libro=1)
+
+        assert result is not None
+        assert result["precio_original"] == 50000.0
+        assert result["precio_descuento"] == 40000.0
+        assert result["ahorro"] == 10000.0
+
+    def test_retorna_none_si_no_hay_oferta_activa(self):
+        db_mock, cursor_mock = MagicMock(), MagicMock()
+        db_mock.cursor.return_value = cursor_mock
+        cursor_mock.fetchone.return_value = None
+
+        with patch.object(mod, "get_db", return_value=db_mock):
+            result = mod.obtener_oferta_activa_libro(id_libro=99)
+
+        assert result is None
+
+    def test_calcula_ahorro_tipo_fijo(self):
+        db_mock, cursor_mock = MagicMock(), MagicMock()
+        db_mock.cursor.return_value = cursor_mock
+        cursor_mock.fetchone.return_value = {
+            "id_oferta": 2,
+            "nombre_oferta": "Descuento fijo",
+            "tipo_descuento": "fijo",
+            "valor_descuento": 5000,
+            "fecha_fin": "2026-12-31",
+            "precio_libro": 20000,
+        }
+
+        with patch.object(mod, "get_db", return_value=db_mock):
+            result = mod.obtener_oferta_activa_libro(id_libro=5)
+
+        assert result["precio_descuento"] == 15000.0
+        assert result["ahorro"] == 5000.0

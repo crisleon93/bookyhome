@@ -96,7 +96,7 @@ function ResenaLibro({ idLibro, idUsuario }) {
       setCalificacion(0);
       setComentario('');
       setMostrarFormulario(false);
-      cargarResenas();
+      await cargarResenas();
     } catch (error) {
       const mensaje = error.response?.data?.detail || 'Error al guardar la reseña';
       notify(mensaje, 'error');
@@ -111,7 +111,7 @@ function ResenaLibro({ idLibro, idUsuario }) {
     try {
       await api.delete(`/resenas/${idResena}`);
       notify('Reseña eliminada', 'success');
-      cargarResenas();
+      await cargarResenas();
     } catch {
       notify('Error al eliminar reseña', 'error');
     }
@@ -166,12 +166,14 @@ function ResenaLibro({ idLibro, idUsuario }) {
       {mostrarFormulario && (
         <form className="resena-formulario" onSubmit={handleEnviarResena}>
           <div className="form-group">
-            <label>Mi calificación:</label>
-            <div className="calificacion-selector">
+            <span id="resena-calificacion-label" className="resena-form-label">Mi calificación:</span>
+            <div className="calificacion-selector" role="group" aria-labelledby="resena-calificacion-label">
               {[1, 2, 3, 4, 5].map((i) => (
                 <button
                   key={i}
                   type="button"
+                  aria-label={`${i} ${i === 1 ? 'estrella' : 'estrellas'}`}
+                  aria-pressed={calificacion === i}
                   className={`star-btn ${calificacion >= i ? 'activa' : ''}`}
                   onClick={() => setCalificacion(i)}
                 >
@@ -182,8 +184,9 @@ function ResenaLibro({ idLibro, idUsuario }) {
           </div>
 
           <div className="form-group">
-            <label>Mi comentario (máximo 500 caracteres):</label>
+            <label htmlFor="resena-comentario">Mi comentario (máximo 500 caracteres):</label>
             <textarea
+              id="resena-comentario"
               value={comentario}
               onChange={(e) => setComentario(e.target.value.slice(0, 500))}
               placeholder="Comparte la experiencia con este libro..."

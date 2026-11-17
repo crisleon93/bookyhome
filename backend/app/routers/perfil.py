@@ -1,9 +1,12 @@
-import anyio
 from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Form
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel, EmailStr, Field, field_validator
 from app.database import get_db
 from app.auth import verify_token
+from app.utils.router_helpers import (
+    guardar_upload as _guardar_upload,
+    obtener_resumen_calificaciones_tienda,
+)
 import os
 import json
 import re
@@ -11,12 +14,6 @@ from datetime import datetime, timezone
 
 router = APIRouter(prefix="/perfil", tags=["Perfil Usuario"])
 security = HTTPBearer(auto_error=False)
-
-
-async def _guardar_upload(file: UploadFile, filepath: str) -> None:
-    async with await anyio.open_file(filepath, "wb") as destination:
-        while chunk := await file.read(1024 * 1024):
-            await destination.write(chunk)
 
 
 class ActualizarEstadoOrden(BaseModel):
@@ -504,42 +501,19 @@ def actualizar_preferencias(data: PreferenciasUsuario, user_id: int = Depends(ge
     try:
         preferencias_dict = {}
         
-        # Procesar cada tipo de notificación si está presente
-        if data.notificaciones_mensajes:
-            preferencias_dict['notificaciones_mensajes'] = {
-                'email': data.notificaciones_mensajes.email,
-                'web': data.notificaciones_mensajes.web
-            }
-        if data.notificaciones_resenas:
-            preferencias_dict['notificaciones_resenas'] = {
-                'email': data.notificaciones_resenas.email,
-                'web': data.notificaciones_resenas.web
-            }
-        if data.notificaciones_ofertas:
-            preferencias_dict['notificaciones_ofertas'] = {
-                'email': data.notificaciones_ofertas.email,
-                'web': data.notificaciones_ofertas.web
-            }
-        if data.notificaciones_pedidos:
-            preferencias_dict['notificaciones_pedidos'] = {
-                'email': data.notificaciones_pedidos.email,
-                'web': data.notificaciones_pedidos.web
-            }
-        if data.notificaciones_entregas:
-            preferencias_dict['notificaciones_entregas'] = {
-                'email': data.notificaciones_entregas.email,
-                'web': data.notificaciones_entregas.web
-            }
-        if data.notificaciones_pagos:
-            preferencias_dict['notificaciones_pagos'] = {
-                'email': data.notificaciones_pagos.email,
-                'web': data.notificaciones_pagos.web
-            }
-        if data.notificaciones_sistema:
-            preferencias_dict['notificaciones_sistema'] = {
-                'email': data.notificaciones_sistema.email,
-                'web': data.notificaciones_sistema.web
-            }
+        for tipo_notificacion in (
+            "mensajes",
+            "resenas",
+            "ofertas",
+            "pedidos",
+            "entregas",
+            "pagos",
+            "sistema",
+        ):
+            clave = f"notificaciones_{tipo_notificacion}"
+            canal = getattr(data, clave)
+            if canal:
+                preferencias_dict[clave] = {"email": canal.email, "web": canal.web}
 
         preferencias_json = json.dumps(preferencias_dict)
         
@@ -778,51 +752,7 @@ def obtener_calificaciones_tienda(id_tienda: int):
     db = get_db()
     cursor = db.cursor(dictionary=True)
     try:
-        # Obtener calificaciones individuales
-        query = """
-            SELECT 
-                ct.id_calificacion,
-                ct.id_usuario,
-                u.nombre_usuario,
-                ct.id_tienda,
-                t.nombre_tienda,
-                ct.calificacion,
-                ct.comentario,
-                ct.fecha_calificacion
-            FROM calificaciones_tiendas ct
-            JOIN usuarios u ON ct.id_usuario = u.id_usuario
-            JOIN tiendas t ON ct.id_tienda = t.id_tienda
-            WHERE ct.id_tienda = %s
-            ORDER BY ct.fecha_calificacion DESC
-        """
-        cursor.execute(query, (id_tienda,))
-        calificaciones = cursor.fetchall()
-        
-        # Calcular mÃ©tricas directamente
-        cursor.execute("""
-            SELECT 
-                ROUND(AVG(ct.calificacion), 2) AS calificacion_media,
-                COUNT(ct.id_calificacion) AS total_opiniones,
-                SUM(CASE WHEN ct.calificacion = 5 THEN 1 ELSE 0 END) AS total_5_estrellas
-            FROM calificaciones_tiendas ct
-            WHERE ct.id_tienda = %s
-        """, (id_tienda,))
-        metricas = cursor.fetchone()
-        
-        # Calcular distribuciÃ³n de estrellas
-        distribucion = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}
-        for cal in calificaciones:
-            estrellas = cal["calificacion"]
-            if estrellas in distribucion:
-                distribucion[estrellas] += 1
-        
-        return {
-            "promedio": round(metricas["calificacion_media"], 1) if metricas and metricas["calificacion_media"] else 0,
-            "total": metricas["total_opiniones"] if metricas else 0,
-            "total_5_estrellas": metricas["total_5_estrellas"] if metricas else 0,
-            "distribucion": distribucion,
-            "calificaciones": calificaciones
-        }
+        return obtener_resumen_calificaciones_tienda(cursor, id_tienda)
     finally:
         cursor.close()
         db.close()

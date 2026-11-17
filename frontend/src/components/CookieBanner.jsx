@@ -89,9 +89,20 @@ function CookieBanner() {
 
       {/* ── Modal de configuración ── */}
       {showConfig && (
-        <div className="cookie-modal-overlay" onClick={cerrarModal}>
-          <div className="cookie-modal" onClick={e => e.stopPropagation()}>
-            <h2 className="cookie-modal__title">🍪 Configurar cookies</h2>
+        <div
+          className="cookie-modal-overlay"
+          role="presentation"
+          onClick={e => {
+            if (e.target === e.currentTarget) cerrarModal()
+          }}
+        >
+          <div
+            className="cookie-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="cookie-modal-title"
+          >
+            <h2 id="cookie-modal-title" className="cookie-modal__title">🍪 Configurar cookies</h2>
             <p className="cookie-modal__subtitle">
               Elige qué tipos de cookies deseas permitir. Las esenciales siempre están activas.
             </p>
@@ -112,6 +123,7 @@ function CookieBanner() {
                 <span className="cookie-option__desc">Nos ayudan a entender cómo usas el sitio.</span>
               </div>
               <label className="cookie-switch" htmlFor="cookie-pref-analiticas">
+                <span className="cookie-switch__accessible-label">Permitir cookies analíticas</span>
                 <input
                   id="cookie-pref-analiticas"
                   name="cookie_pref_analiticas"
@@ -130,6 +142,7 @@ function CookieBanner() {
                 <span className="cookie-option__desc">Recuerdan tus preferencias y filtros.</span>
               </div>
               <label className="cookie-switch" htmlFor="cookie-pref-funcionales">
+                <span className="cookie-switch__accessible-label">Permitir cookies funcionales</span>
                 <input
                   id="cookie-pref-funcionales"
                   name="cookie_pref_funcionales"
@@ -148,6 +161,7 @@ function CookieBanner() {
                 <span className="cookie-option__desc">Contenido y anuncios personalizados.</span>
               </div>
               <label className="cookie-switch" htmlFor="cookie-pref-marketing">
+                <span className="cookie-switch__accessible-label">Permitir cookies de marketing</span>
                 <input
                   id="cookie-pref-marketing"
                   name="cookie_pref_marketing"

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { getUserRole } from '../hooks/useAuth';
 import api, { getApiBaseUrl } from '../services/api';
 import { notify } from '../components/ToastProvider';
+import { tiempoTranscurrido as tiempoTranscurridoAdmin } from '../utils/catalogo';
 import BookyPagoFinanzas from './BookyPagoFinanzas';
 import SeccionPerfilAdmin from '../components/dashboard/SeccionPerfilAdmin';
 import {
@@ -132,19 +133,6 @@ const AvatarUsuario = React.memo(function AvatarUsuario({ usuario, size = 38, fo
     </div>
   );
 });
-
-function tiempoTranscurridoAdmin(fechaStr) {
-  if (!fechaStr) return null;
-  const diff = Date.now() - new Date(fechaStr).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 60) return `hace ${mins} min`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `hace ${hrs} h`;
-  const days = Math.floor(hrs / 24);
-  if (days < 30) return `hace ${days} día${days > 1 ? 's' : ''}`;
-  const months = Math.floor(days / 30);
-  return `hace ${months} mes${months > 1 ? 'es' : ''}`;
-}
 
 const CardReclamoAdmin = React.memo(function CardReclamoAdmin({ reclamo, onAbrirChat, onAbrirModal, onVerEvidencia }) {
   const [expandido, setExpandido] = useState(false);

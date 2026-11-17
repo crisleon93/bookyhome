@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import api from "../services/api";
+import useSyncedDarkMode from "../hooks/useSyncedDarkMode";
 
 const TIPO_BADGE = {
   home: { label: "🏠 Página Principal", color: "#7A1E3A" },
@@ -32,13 +33,7 @@ export default function SeccionImpulsos({ tiendaId, onNavegar, darkMode = false 
   const [tab, setTab] = useState("contratar"); // "contratar" | "activos"
 
   // Sync darkMode from localStorage
-  const [localDarkMode, setLocalDarkMode] = useState(() => localStorage.getItem('darkMode') === 'true');
-  useEffect(() => {
-    const handler = () => setLocalDarkMode(localStorage.getItem('darkMode') === 'true');
-    window.addEventListener('darkModeChange', handler);
-    window.addEventListener('storage', handler);
-    return () => { window.removeEventListener('darkModeChange', handler); window.removeEventListener('storage', handler); };
-  }, []);
+  const [localDarkMode] = useSyncedDarkMode();
 
   const effectiveDarkMode = darkMode || localDarkMode;
 

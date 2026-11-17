@@ -218,7 +218,7 @@ export default function Checkout({ route, navigation }) {
         setLoading(false);
       }
     };
-    fetchOrder();
+    void fetchOrder();
   }, [orderId]);
 
   useEffect(() => {
@@ -572,9 +572,13 @@ export default function Checkout({ route, navigation }) {
                 <TouchableOpacity 
                   key={`dl-${idx}`}
                   style={[styles.homeBtn, { backgroundColor: '#2e7d32', marginBottom: 10 }]}
-                  onPress={() => {
-                     const url = `${getApiBaseUrl()}/libros/descargar/${item.id_variante}?token=${token}`;
-                     Linking.openURL(url);
+                  onPress={async () => {
+                    const url = `${getApiBaseUrl()}/libros/descargar/${item.id_variante}?token=${token}`;
+                    try {
+                      await Linking.openURL(url);
+                    } catch {
+                      Alert.alert('Error', 'No se pudo abrir la descarga del libro digital.');
+                    }
                   }}
                 >
                   <Text style={styles.homeBtnText}>📥 Descargar {item.titulo}</Text>

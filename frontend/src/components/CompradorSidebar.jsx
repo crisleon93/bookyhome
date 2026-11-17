@@ -7,11 +7,12 @@ import {
   IconAlertTriangle,
   IconTool,
   IconSettings,
-  IconChevronLeft,
   IconMenu,
   IconLogOut,
   IconMapPin as IconLocation
 } from "./Icons";
+import SidebarExpandedHeader from "./SidebarExpandedHeader";
+import SidebarIcon from "./SidebarIcon";
 
 const VINOTINTO = '#7A1E3A';
 const WHITE = '#FFFFFF';
@@ -36,13 +37,6 @@ const MENU_LINKS = [
   { name: "Mis Direcciones", label: "Direcciones" },
   { name: "Configuración", label: "Configuración" },
 ];
-
-function SidebarIcon(props) {
-  const IconComp = props.Icon;
-  return (
-    <IconComp className="" width={props.size || 20} height={props.size || 20} strokeWidth={2} style={{ color: WHITE, display: 'block' }} />
-  );
-}
 
 export default function CompradorSidebar({ userName, userEmail, profilePhotoUrl, bannerUrl, bannerColor, activeSide, onSelect }) {
   const navigate = useNavigate();
@@ -70,53 +64,17 @@ export default function CompradorSidebar({ userName, userEmail, profilePhotoUrl,
       {/* Header */}
       {sidebarOpen ? (
         /* ── Sidebar ABIERTO: banner como fondo, avatar + info encima ── */
-        <div style={{
-          flexShrink: 0,
-          margin: '-16px -14px 10px -14px',
-          width: 'calc(100% + 28px)',
-          borderRadius: '0',
-          background: bannerUrl
-            ? `url(${bannerUrl}) center/cover no-repeat`
-            : (bannerColor || '#5a1528'),
-          padding: '10px 14px',
-          position: 'relative',
-        }}>
-          {/* Contenido encima del overlay */}
-          <div style={{ position: 'relative', zIndex: 1 }}>
-            {/* Fila: avatar a la izq, botón < a la der */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
-              {avatarSrc ? (
-                <img src={avatarSrc} alt={avatarAlt} style={{
-                  width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover',
-                  border: '2px solid rgba(255,255,255,0.5)', flexShrink: 0,
-                }} />
-              ) : (
-                <div style={{
-                  width: '40px', height: '40px', borderRadius: '50%', flexShrink: 0,
-                  background: 'rgba(255,255,255,0.2)', border: '2px solid rgba(255,255,255,0.4)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontWeight: 700, color: WHITE, textTransform: 'uppercase', fontSize: '1rem',
-                }}>
-                  {(userName || 'U').charAt(0)}
-                </div>
-              )}
-              <button
-                onClick={() => setSidebarOpen(false)}
-                style={{
-                  background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.3)',
-                  color: WHITE, width: '26px', height: '26px', borderRadius: '6px',
-                  cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}
-                title="Contraer menú"
-              >
-                <SidebarIcon Icon={IconChevronLeft} size={15} />
-              </button>
-            </div>
-            {/* Nombre y email debajo */}
-            <div style={{ fontSize: '0.88rem', fontWeight: 700, color: WHITE, textShadow: '0 1px 3px rgba(0,0,0,0.6)' }}>{userName || 'Usuario'}</div>
-            <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.9)', textShadow: '0 1px 3px rgba(0,0,0,0.6)' }}>{userEmail || ''}</div>
-          </div>
-        </div>
+        <SidebarExpandedHeader
+          bannerUrl={bannerUrl}
+          backgroundFallback={bannerColor || '#5a1528'}
+          avatarSrc={avatarSrc}
+          avatarAlt={avatarAlt}
+          userName={userName}
+          nameFallback="Usuario"
+          avatarFallback="U"
+          subtitle={userEmail || ''}
+          onCollapse={() => setSidebarOpen(false)}
+        />
       ) : (
         /* ── Sidebar CERRADO: banner de fondo + hamburguesa + avatar ── */
         <div style={{
