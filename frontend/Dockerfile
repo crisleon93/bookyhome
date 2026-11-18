@@ -1,14 +1,15 @@
 # 1. Traemos una base de Linux ultra ligera que ya viene con Node 20 instalado
 FROM node:20-alpine
 
-# 2. Instalamos pnpm de forma global dentro de la caja de Docker
-RUN npm install -g pnpm
+# 2. Instalamos pnpm de forma global dentro de la caja de Docker (versión fija para reproducibilidad)
+RUN npm install -g pnpm@12.21.0
 
 # 3. Creamos la carpeta interna donde vivirá el proyecto dentro de la caja
 WORKDIR /app
 
-# 4. Copiamos el package.json y el pnpm-lock.yaml fresquito que acabas de generar
-COPY package.json pnpm-lock.yaml ./
+# 4. Copiamos el package.json, el pnpm-lock.yaml y los patches necesarios
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY patches/ ./patches/
 
 # 5. Instalamos las dependencias de forma exacta y segura dentro de la caja
 RUN pnpm install --frozen-lockfile
