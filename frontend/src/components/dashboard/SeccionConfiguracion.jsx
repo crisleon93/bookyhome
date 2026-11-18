@@ -1,14 +1,9 @@
 import { IconSettings, IconEyeOpen, IconEyeClosed } from "../Icons";
 import { notify } from "../ToastProvider";
 import { useState, useEffect } from "react";
+import { isStrongPassword } from "../../utils/passwordValidation";
 
 const PASSWORD_REQUIREMENTS = "Mínimo 8 caracteres, una mayúscula, un número y un carácter especial";
-
-const isStrongPassword = (password) =>
-  password.length >= 8 &&
-  /[A-Z]/.test(password) &&
-  /[0-9]/.test(password) &&
-  /[^A-Za-z0-9]/.test(password);
 
 export default function SeccionConfiguracion({ userId }) {
   const [preferencias, setPreferencias] = useState({

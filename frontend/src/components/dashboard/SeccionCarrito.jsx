@@ -22,6 +22,8 @@ import api, {
   normalizarMetodoPagoApi,
 } from "../../services/api";
 import { useNavigate, useLocation } from "react-router-dom";
+import useSyncedDarkMode from "../../hooks/useSyncedDarkMode";
+import ModalBackdrop from "../ModalBackdrop";
 
 const mapMetodoPagoToId = (metodo) => {
   if (!metodo) return "tarjeta";
@@ -133,7 +135,7 @@ const BookCoverThumbnail = ({ imgUrl, titulo, autor }) => {
 export default function SeccionCarrito({ userId }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('darkMode') === 'true');
+  const [darkMode] = useSyncedDarkMode();
   const [carrito, setCarrito] = useState([]);
   const [ordenes, setOrdenes] = useState([]);
   const [direcciones, setDirecciones] = useState([]);
@@ -216,16 +218,6 @@ export default function SeccionCarrito({ userId }) {
   const idVisible = (orden) => orden?.id_orden_db || orden?.id_orden;
 
   const [eliminandoId, setEliminandoId] = useState(null);
-
-  useEffect(() => {
-    const handleDarkModeChange = () => setDarkMode(localStorage.getItem('darkMode') === 'true');
-    window.addEventListener('darkModeChange', handleDarkModeChange);
-    window.addEventListener('storage', handleDarkModeChange);
-    return () => {
-      window.removeEventListener('darkModeChange', handleDarkModeChange);
-      window.removeEventListener('storage', handleDarkModeChange);
-    };
-  }, []);
 
   const getCartImageUrl = (item) => {
     const raw = item?.imagen || item?.imagen_portada || item?.portada || item?.foto || item?.imagen_url || (Array.isArray(item?.imagenes) ? item.imagenes[0] : null);
@@ -5525,21 +5517,10 @@ export default function SeccionCarrito({ userId }) {
           className="modal-overlay open"
           style={{ zIndex: 1100 }}
         >
-          <button
-            type="button"
-            aria-label="Cerrar confirmación de cancelación"
+          <ModalBackdrop
+            label="Cerrar confirmación de cancelación"
             disabled={cancelandoOrden}
             onClick={() => setOrdenACancelar(null)}
-            style={{
-              position: "absolute",
-              inset: 0,
-              width: "100%",
-              height: "100%",
-              padding: 0,
-              border: 0,
-              background: "transparent",
-              cursor: "default"
-            }}
           />
           <div
             className="pl-card"

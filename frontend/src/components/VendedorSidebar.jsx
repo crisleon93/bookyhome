@@ -13,12 +13,13 @@ import {
   IconMail,
   IconBell,
   IconTag,
-  IconChevronLeft,
   IconMenu,
   IconLogOut,
   IconStar,
   IconTruck
 } from './Icons';
+import SidebarExpandedHeader from './SidebarExpandedHeader';
+import SidebarIcon from './SidebarIcon';
 
 const VINOTINTO = '#7A1E3A';
 const WHITE = '#FFFFFF';
@@ -65,13 +66,6 @@ const ICONS = {
   Perfil: <IconUser width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
   Configuración: <IconSettings width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
 };
-
-function SidebarIcon(props) {
-  const IconComp = props.Icon;
-  return (
-    <IconComp className="" width={props.size || 20} height={props.size || 20} strokeWidth={2} style={{ color: WHITE, display: 'block' }} />
-  );
-}
 
 export default function VendedorSidebar({ userName = 'Vendedor', profileImage = null, userPhotoUrl = null, bannerUrl = null, activeSide = 'Inicio', setActiveSide, handleLogout }) {
   const navigate = useNavigate();
@@ -120,57 +114,18 @@ export default function VendedorSidebar({ userName = 'Vendedor', profileImage = 
       {/* Header con banner de fondo */}
       {sidebarOpen ? (
         /* ── Sidebar ABIERTO: banner como fondo, avatar + info encima ── */
-        <div style={{
-          flexShrink: 0,
-          margin: '-16px -14px 10px -14px',
-          width: 'calc(100% + 28px)',
-          borderRadius: '0',
-          background: bannerUrl
-            ? `url(${bannerUrl}) center/cover no-repeat`
-            : VINOTINTO,
-          padding: '10px 14px 10px 14px',
-          position: 'relative',
-        }}>
-          {/* Overlay oscuro sobre el banner */}
-          {bannerUrl && (
-            <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.35)' }} />
-          )}
-          {/* Contenido encima del overlay */}
-          <div style={{ position: 'relative', zIndex: 1 }}>
-            {/* Fila: avatar a la izq, botón < a la der */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
-              {avatarSrc ? (
-                <img src={avatarSrc} alt={avatarAlt} style={{
-                  width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover',
-                  border: '2px solid rgba(255,255,255,0.5)', flexShrink: 0,
-                }} />
-              ) : (
-                <div style={{
-                  width: '40px', height: '40px', borderRadius: '50%', flexShrink: 0,
-                  background: 'rgba(255,255,255,0.2)', border: '2px solid rgba(255,255,255,0.4)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontWeight: 700, color: WHITE, textTransform: 'uppercase', fontSize: '1rem',
-                }}>
-                  {(userName || 'V').charAt(0)}
-                </div>
-              )}
-              <button
-                onClick={handleToggleSidebar}
-                style={{
-                  background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.3)',
-                  color: WHITE, width: '26px', height: '26px', borderRadius: '6px',
-                  cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}
-                title="Contraer menú"
-              >
-                <SidebarIcon Icon={IconChevronLeft} size={15} />
-              </button>
-            </div>
-            {/* Nombre y rol debajo */}
-            <div style={{ fontSize: '0.88rem', fontWeight: 700, color: WHITE, textShadow: '0 1px 3px rgba(0,0,0,0.6)' }}>{userName || 'Vendedor'}</div>
-            <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.9)', textShadow: '0 1px 3px rgba(0,0,0,0.6)' }}>Panel de ventas</div>
-          </div>
-        </div>
+        <SidebarExpandedHeader
+          bannerUrl={bannerUrl}
+          backgroundFallback={VINOTINTO}
+          showBannerOverlay
+          avatarSrc={avatarSrc}
+          avatarAlt={avatarAlt}
+          userName={userName}
+          nameFallback="Vendedor"
+          avatarFallback="V"
+          subtitle="Panel de ventas"
+          onCollapse={handleToggleSidebar}
+        />
       ) : (
         /* ── Sidebar CERRADO: banner de fondo + hamburguesa + avatar ── */
         <div style={{

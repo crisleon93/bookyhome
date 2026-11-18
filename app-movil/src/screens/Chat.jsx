@@ -428,6 +428,12 @@ export default function Chat() {
   const [segundosGrabacion, setSegundosGrabacion] = useState(0);
   const [audioReproduciendo, setAudioReproduciendo] = useState(null);
 
+  useEffect(() => {
+    if (audioPlayerStatus.didJustFinish) {
+      setAudioReproduciendo(null);
+    }
+  }, [audioPlayerStatus.didJustFinish]);
+
   const flatListRef = useRef(null);
   const sectionListRef = useRef(null);
   const montadoRef = useRef(true);
@@ -726,9 +732,6 @@ export default function Chat() {
       audioPlayer.replace({ uri: datos.url });
       audioPlayer.play();
       setAudioReproduciendo(mensaje.id_mensaje);
-      sound.setOnPlaybackStatusUpdate((status) => {
-        if (status.didJustFinish) setAudioReproduciendo(null);
-      });
     } catch (e) {
       Alert.alert('Audio no disponible', 'No se pudo reproducir esta nota de voz.');
     }

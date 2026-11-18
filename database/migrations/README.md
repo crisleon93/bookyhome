@@ -10,6 +10,7 @@ El procedimiento completo para aplicar migraciones, crear backups y restaurar da
 
 1. **NO** copies y pegues el código de estos archivos dentro del archivo principal `database/bookyhome.sql`. Ese archivo es solo para la carga inicial de una base de datos virgen.
 2. **NO** intentes buscar las tablas en tu gestor (ej. phpMyAdmin) para agregar las columnas a mano. Deja que el script haga el trabajo por ti para evitar errores humanos.
+3. **NO** crees un archivo `000-schema.sql`. Fue eliminado intencionalmente por estar vacío y no cumplir ninguna función. El schema base está en `database/bookyhome.sql`.
 
 ---
 

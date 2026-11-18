@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { getCuponesTienda, crearCupon, editarCupon, eliminarCupon } from "../services/api";
 import { notify } from "./ToastProvider";
+import PromoSectionHeading from "./PromoSectionHeading";
 import {
   IconTag,
   IconPlus,
@@ -457,27 +458,14 @@ export default function SeccionCuponesVendedor({ tiendaId, darkMode = false }) {
         display: "flex", alignItems: "center", justifyContent: "space-between",
         gap: "16px", flexWrap: "wrap"
       }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
-          <div style={{
-            width: "50px", height: "50px", borderRadius: "14px",
-            background: "linear-gradient(135deg, #7A1E3A 0%, #C5425A 100%)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            boxShadow: "0 4px 14px rgba(122,30,58,0.25)", flexShrink: 0
-          }}>
-            <IconTag width={24} height={24} strokeWidth={2.2} style={{ color: "white" }} />
-          </div>
-          <div>
-            <h1 style={{ margin: 0, fontSize: "1.45rem", fontWeight: 900, color: darkMode ? "#f3f4f6" : "#1f2937" }}>
-              Cupones de descuento
-            </h1>
-            <p style={{ margin: "2px 0 0", fontSize: "0.85rem", color: darkMode ? "#b8b8b8" : "#6b7280" }}>
-              {activos.length > 0
-                ? `${activos.length} activo${activos.length > 1 ? "s" : ""} ahora · ${coupons.length} en total`
-                : `${coupons.length} cupón${coupons.length !== 1 ? "es" : ""} creado${coupons.length !== 1 ? "s" : ""}`
-              }
-            </p>
-          </div>
-        </div>
+        <PromoSectionHeading
+          darkMode={darkMode}
+          title="Cupones de descuento"
+          summary={activos.length > 0
+            ? `${activos.length} activo${activos.length > 1 ? "s" : ""} ahora · ${coupons.length} en total`
+            : `${coupons.length} cupón${coupons.length !== 1 ? "es" : ""} creado${coupons.length !== 1 ? "s" : ""}`
+          }
+        />
 
         {/* Stats + botón */}
         <div style={{ display: "flex", gap: "12px", alignItems: "center", flexWrap: "wrap" }}>

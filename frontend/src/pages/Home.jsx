@@ -142,7 +142,7 @@ const STEPS = [
 function Modal({ open, onClose, title, subtitle, children }) {
   if (!open) return null
   return (
-    <div className={`modal-overlay ${open ? 'open' : ''}`} onClick={e => { if (e.target === e.currentTarget) onClose() }}>
+    <div className={`modal-overlay ${open ? 'open' : ''}`} role="presentation" onClick={e => { if (e.target === e.currentTarget) onClose() }}>
       <div className="modal-card">
         <button className="modal-close" aria-label="Cerrar" onClick={onClose}><IconClose /></button>
         <h2 className="modal-title">{title}</h2>
@@ -600,14 +600,15 @@ function Home() {
           <p>Libros para todos los gustos y momentos</p>
           <div className="category-grid">
             {CATEGORIES.map((c, i) => (
-              <div
+              <button
+                type="button"
                 key={i}
                 className="category-card"
-                style={{ backgroundImage: `url(${c.img})`, cursor: 'pointer' }}
+                style={{ backgroundImage: `url(${c.img})` }}
                 onClick={() => navigate(`/catalogo?categoria=${encodeURIComponent(c.name)}`)}
               >
                 <h3>{c.name}</h3>
-              </div>
+              </button>
             ))}
           </div>
           <div style={{ textAlign: 'center', marginTop: '2rem' }}>

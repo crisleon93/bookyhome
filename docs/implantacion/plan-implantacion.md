@@ -31,7 +31,7 @@ Versiones observadas en las imágenes/contenedores del entorno de desarrollo o f
 | Docker Engine | Ejecución de contenedores | Servidor 29.7.2, observado en Docker Desktop | Apache-2.0 | Sin costo para Docker Engine; Docker Desktop tiene términos de uso propios |
 | Docker Compose | Orquestación local/servidor | 5.5.0 en Windows; 5.5.1 en prueba Linux | Apache-2.0 | Sin costo |
 | MySQL Community Server | Base de datos | 8.0.46 | GPL-2.0 | Sin costo para Community; soporte/ediciones comerciales son opcionales |
-| Python | Runtime del backend | 3.10.21 (`python:3.10-slim`) | PSF License | No |
+| Python | Runtime del backend | 3.11 (`python:3.11-slim`) | PSF License | No |
 | FastAPI | Framework de API | 0.135.1 | MIT | No |
 | Uvicorn | Servidor ASGI | 0.42.0 | BSD-3-Clause | No |
 | Pydantic | Validación y modelos | 2.12.5 | MIT | No |
@@ -84,7 +84,7 @@ Prueba simulada: 10 clientes concurrentes; cada uno realizó 15 solicitudes GET 
 | Red | 100 Mbps simétricos | 1 Gbps en LAN y conexión estable a Internet | Estimación para una aplicación web de carga inicial baja/media; el ancho de banda real debe ajustarse al tráfico, las imágenes y el número de usuarios. No se ejecutó una prueba de red. |
 | Arquitectura | x86_64 / amd64 | x86_64 / amd64 | Es la arquitectura seleccionada para el servidor y compatible con las imágenes Docker usadas. |
 | Sistema operativo | Ubuntu Server 24.04 LTS | Ubuntu Server 24.04 LTS actualizado | Versión LTS seleccionada; el mantenimiento estándar llega hasta mayo de 2029. |
-| Docker / runtime | Docker Engine y Docker Compose; imágenes MySQL 8, Python 3.10 y Node 20 | Versiones soportadas y fijadas, monitorización y actualizaciones controladas | Los tres servicios se ejecutan actualmente mediante Compose. La versión del motor Linux de producción aún debe registrarse. |
+| Docker / runtime | Docker Engine y Docker Compose; imágenes MySQL 8, Python 3.11 y Node 20 | Versiones soportadas y fijadas, monitorización y actualizaciones controladas | Los tres servicios se ejecutan actualmente mediante Compose. La versión del motor Linux de producción aún debe registrarse. |
 | Puertos | Desarrollo: 5173 (frontend), 8000 (API), 3306 (MySQL) | Producción: 80/443 públicos; 8000 y 3306 solo en red interna | El Compose actual publica los tres puertos en el host. En producción se debe restringir MySQL y colocar la API detrás de un proxy/firewall. |
 | Crecimiento estimado de datos | 6 GB/año (estimación inicial) | 18 GB para 3 años, más respaldos | Supuesto de planificación: 100 imágenes/mes × 3 MB × 12 = 3.6 GB/año; datos de BD/logs estimados en 0.2 GB/mes × 12 = 2.4 GB/año; total 6 GB/año. Sustituir el supuesto por el volumen real al medir el uso. |
 
@@ -656,7 +656,7 @@ Evidencia de alerta: respaldo no ejecutado tras reinicio del servidor → alerta
 |---|---|---|
 | MySQL 8.0.46 | 🔴 EOL desde abril 2026 | Migrar a MySQL 8.4 LTS — sprint S09 |
 | Node.js 20 LTS | 🔴 EOL desde abril 2026 | Actualizar a Node.js 22 LTS — sprint S09 |
-| Python 3.10 | 🟡 EOL octubre 2026 (este mes) | Actualizar a Python 3.12 — PR abierto |
+| Python 3.11 | 🟡 EOL octubre 2027 | Actualizar a Python 3.12 como siguiente paso del plan de ciclo de vida |
 
 **Dependabot** activo para 5 ecosistemas: uv (backend), npm (frontend), npm (app-movil), docker, github-actions. Agrupa actualizaciones de producción en PRs unificados.
 

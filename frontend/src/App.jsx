@@ -109,6 +109,7 @@ function MainLayout() {
         <Route path="/register" element={<Navigate to="/" replace />} />
         <Route path="/forgot-password" element={<Navigate to="/" replace />} />
         <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/post-login" element={<Home />} />
         <Route path="/legal" element={<Navigate to="/" replace />} />
         <Route path="/terminos" element={<LegalPage type="terminos" />} />
         <Route path="/privacidad" element={<LegalPage type="privacidad" />} />

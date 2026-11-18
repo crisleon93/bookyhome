@@ -3,6 +3,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel
 from app.database import get_db
 from app.auth import verify_token
+from app.utils.router_helpers import obtener_resumen_calificaciones_tienda
 import json
 import os
 
@@ -35,6 +36,28 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
         raise HTTPException(status_code=401, detail="Token invÃ¡lido")
     return int(payload.get("sub"))
 
+
+def _usuario_compro_en_tienda_entregada(usuario_orders, id_tienda: int) -> bool:
+    for order in usuario_orders:
+        if order.get('estado', '').lower() != 'entregada':
+            continue
+        for item in order.get('items', []):
+            db = get_db()
+            cursor = db.cursor(dictionary=True)
+            try:
+                cursor.execute(
+                    "SELECT id_tienda FROM libros WHERE id_libro = %s",
+                    (item.get('id_libro'),),
+                )
+                libro = cursor.fetchone()
+                if libro and libro['id_tienda'] == id_tienda:
+                    return True
+            finally:
+                cursor.close()
+                db.close()
+    return False
+
+
 # ============= ENDPOINTS =============
 
 @router.get("/tienda/{id_tienda}")
@@ -43,51 +66,7 @@ def obtener_calificaciones_tienda(id_tienda: int):
     db = get_db()
     cursor = db.cursor(dictionary=True)
     try:
-        # Obtener calificaciones individuales
-        query = """
-            SELECT 
-                ct.id_calificacion,
-                ct.id_usuario,
-                u.nombre_usuario,
-                ct.id_tienda,
-                t.nombre_tienda,
-                ct.calificacion,
-                ct.comentario,
-                ct.fecha_calificacion
-            FROM calificaciones_tiendas ct
-            JOIN usuarios u ON ct.id_usuario = u.id_usuario
-            JOIN tiendas t ON ct.id_tienda = t.id_tienda
-            WHERE ct.id_tienda = %s
-            ORDER BY ct.fecha_calificacion DESC
-        """
-        cursor.execute(query, (id_tienda,))
-        calificaciones = cursor.fetchall()
-        
-        # Calcular mÃ©tricas directamente
-        cursor.execute("""
-            SELECT 
-                ROUND(AVG(ct.calificacion), 2) AS calificacion_media,
-                COUNT(ct.id_calificacion) AS total_opiniones,
-                SUM(CASE WHEN ct.calificacion = 5 THEN 1 ELSE 0 END) AS total_5_estrellas
-            FROM calificaciones_tiendas ct
-            WHERE ct.id_tienda = %s
-        """, (id_tienda,))
-        metricas = cursor.fetchone()
-        
-        # Calcular distribuciÃ³n de estrellas
-        distribucion = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}
-        for cal in calificaciones:
-            estrellas = cal["calificacion"]
-            if estrellas in distribucion:
-                distribucion[estrellas] += 1
-        
-        return {
-            "promedio": round(metricas["calificacion_media"], 1) if metricas and metricas["calificacion_media"] else 0,
-            "total": metricas["total_opiniones"] if metricas else 0,
-            "total_5_estrellas": metricas["total_5_estrellas"] if metricas else 0,
-            "distribucion": distribucion,
-            "calificaciones": calificaciones
-        }
+        return obtener_resumen_calificaciones_tienda(cursor, id_tienda)
     finally:
         cursor.close()
         db.close()
@@ -115,25 +94,7 @@ def crear_calificacion_tienda(data: CalificacionTiendaCreate, user_id: int = Dep
     
     # Verificar que el usuario haya comprado en esa tienda y estÃ© entregada
     usuario_orders = orders.get(str(user_id), [])
-    ha_comprado_entregada = False
-    
-    for order in usuario_orders:
-        if order.get('estado', '').lower() == 'entregada':
-            for item in order.get('items', []):
-                # Obtener tienda del libro
-                db = get_db()
-                cursor = db.cursor(dictionary=True)
-                try:
-                    cursor.execute("SELECT id_tienda FROM libros WHERE id_libro = %s", (item.get('id_libro'),))
-                    libro = cursor.fetchone()
-                    if libro and libro['id_tienda'] == data.id_tienda:
-                        ha_comprado_entregada = True
-                        break
-                finally:
-                    cursor.close()
-                    db.close()
-        if ha_comprado_entregada:
-            break
+    ha_comprado_entregada = _usuario_compro_en_tienda_entregada(usuario_orders, data.id_tienda)
     
     if not ha_comprado_entregada:
         raise HTTPException(status_code=403, detail="Solo puedes calificar tiendas donde hayas realizado compras entregadas")
@@ -262,26 +223,7 @@ def usuario_puede_calificar_tienda(id_tienda: int, user_id: int = Depends(get_cu
     # Verificar que el usuario haya comprado en esa tienda y estÃ© entregada
     usuario_orders = orders.get(str(user_id), [])
     
-    ha_comprado_entregada = False
-    
-    for order in usuario_orders:
-        estado = order.get('estado', '').lower()
-        if estado == 'entregada':
-            for item in order.get('items', []):
-                # Obtener tienda del libro
-                db = get_db()
-                cursor = db.cursor(dictionary=True)
-                try:
-                    cursor.execute("SELECT id_tienda FROM libros WHERE id_libro = %s", (item.get('id_libro'),))
-                    libro = cursor.fetchone()
-                    if libro and libro['id_tienda'] == id_tienda:
-                        ha_comprado_entregada = True
-                        break
-                finally:
-                    cursor.close()
-                    db.close()
-        if ha_comprado_entregada:
-            break
+    ha_comprado_entregada = _usuario_compro_en_tienda_entregada(usuario_orders, id_tienda)
     
     # Verificar si ya calificÃ³
     db = get_db()

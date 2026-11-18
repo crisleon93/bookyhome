@@ -22,8 +22,7 @@ import {
 } from '../services/api';
 import { useNotifications } from '../context/NotificationContext';
 import { AuthContext } from '../context/AuthContext';
-import SidebarMenu from '../components/SidebarMenu';
-import SidebarVendedor from '../components/SidebarVendedor';
+import RoleBasedSidebar from '../components/RoleBasedSidebar';
 import Footer from '../components/Footer';
 import {
   IconCreditCard,
@@ -455,6 +454,9 @@ export default function Notifications({ navigation }) {
             </TouchableOpacity>
             <View style={styles.vendorHeaderCopy}>
               <Text style={styles.vendorHeaderTitle}>Notificaciones</Text>
+              <Text style={styles.vendorHeaderSubtitle}>
+                Mantente al día con tus pedidos y mensajes
+              </Text>
             </View>
             {unreadCount > 0 && (
               <View style={styles.vendorUnreadBadge}>
@@ -824,65 +826,13 @@ export default function Notifications({ navigation }) {
         </TouchableOpacity>
       </Modal>
 
-      <Modal
-        visible={filterVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setFilterVisible(false)}
-      >
-        <TouchableOpacity
-          style={styles.modalOverlay}
-          activeOpacity={1}
-          onPress={() => setFilterVisible(false)}
-        >
-          <View style={styles.optionsModal}>
-            <Text style={styles.optionsTitle}>Filtrar notificaciones</Text>
-            {filterOptions.map((option) => {
-              const selected = filter === option.key;
-              const count = getFilterCount(option);
-              return (
-                <TouchableOpacity
-                  key={option.key}
-                  style={[styles.optionRow, selected && styles.optionRowSelected]}
-                  onPress={() => {
-                    setFilter(option.key);
-                    setPage(1);
-                    setFilterVisible(false);
-                  }}
-                >
-                  <Text style={[styles.optionText, selected && styles.optionTextSelected]}>
-                    {option.label}
-                  </Text>
-                  <View style={styles.filterModalRight}>
-                    <Text style={[styles.filterModalCount, selected && styles.filterModalCountSelected]}>
-                      {count > 99 ? '99+' : count}
-                    </Text>
-                    {selected && <Text style={styles.optionCheck}>✓</Text>}
-                  </View>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        </TouchableOpacity>
-      </Modal>
-
-      {user?.rol === 'vendedor' ? (
-        <SidebarVendedor
-          visible={sidebarVisible}
-          onClose={() => setSidebarVisible(false)}
-          user={user}
-          navigation={navigation}
-          onSignOut={signOut}
-        />
-      ) : (
-        <SidebarMenu
-          visible={sidebarVisible}
-          onClose={() => setSidebarVisible(false)}
-          user={user}
-          navigation={navigation}
-          onSignOut={signOut}
-        />
-      )}
+      <RoleBasedSidebar
+        visible={sidebarVisible}
+        onClose={() => setSidebarVisible(false)}
+        user={user}
+        navigation={navigation}
+        onSignOut={signOut}
+      />
     </SafeAreaView>
   );
 }
@@ -925,6 +875,7 @@ const baseStyles = StyleSheet.create({
   },
   menuIcon: { color: PRIMARY, fontSize: 20, fontWeight: '700' },
   vendorHeaderTitle: { fontSize: 19, fontWeight: '900', color: PRIMARY, letterSpacing: -0.3 },
+  vendorHeaderSubtitle: { marginTop: 2, fontSize: 13, color: MUTED },
   vendorUnreadBadge: {
     backgroundColor: PRIMARY,
     borderRadius: 14,

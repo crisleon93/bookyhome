@@ -18,13 +18,23 @@ const GRAY = '#888';
 const BORDER = '#E0DBD4';
 const WHITE = '#FFFFFF';
 
+const isValidEmail = (email) => {
+  const atIndex = email.indexOf('@');
+  const lastDotIndex = email.lastIndexOf('.');
+  return !/\s/.test(email)
+    && atIndex > 0
+    && atIndex === email.lastIndexOf('@')
+    && lastDotIndex > atIndex + 1
+    && lastDotIndex < email.length - 1;
+};
+
 export default function ForgotPassword({ navigation }) {
   const styles = useThemedStyles(themeBaseStyles);
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleForgot = async () => {
-    if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    if (!email.trim() || !isValidEmail(email)) {
       Alert.alert('Error', 'Ingresa un email válido');
       return;
     }

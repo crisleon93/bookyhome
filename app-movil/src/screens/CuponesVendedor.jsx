@@ -21,6 +21,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { AuthContext } from '../context/AuthContext';
 import SidebarVendedor from '../components/SidebarVendedor';
 import CalendarioPicker from '../components/CalendarioPicker';
+import DiscountTypeSelector from '../components/DiscountTypeSelector';
 import Footer from '../components/Footer';
 import {
   getCuponesVendedor,
@@ -290,32 +291,13 @@ function FormCupon({ cuponEditar, onGuardado, onCancelar }) {
 
       {/* Tipo de descuento */}
       <Text style={[styles.label, { marginTop: 16 }]}>Tipo de descuento *</Text>
-      <View style={styles.tiposRow}>
-        {TIPOS.map((opc) => {
-          const sel = form.tipo_descuento === opc.tipo;
-          return (
-            <TouchableOpacity
-              key={opc.tipo}
-              style={[styles.tipoCard, sel && { borderColor: PRIMARY, backgroundColor: PRIMARY + '08' }]}
-              onPress={() => set('tipo_descuento', opc.tipo)}
-              activeOpacity={0.7}
-            >
-              <View style={[styles.tipoIcon, { backgroundColor: opc.bg }]}>
-                <Text style={{ fontSize: 16 }}>{opc.icon}</Text>
-              </View>
-              <View style={{ flex: 1, marginLeft: 10 }}>
-                <Text style={[styles.tipoLabel, sel && { color: PRIMARY }]}>{opc.label}</Text>
-                <Text style={styles.tipoDesc}>{opc.desc}</Text>
-              </View>
-              {sel && (
-                <View style={styles.tipoCheck}>
-                  <Text style={styles.tipoCheckMark}>✓</Text>
-                </View>
-              )}
-            </TouchableOpacity>
-          );
-        })}
-      </View>
+      <DiscountTypeSelector
+        options={TIPOS}
+        selectedType={form.tipo_descuento}
+        onSelect={(tipo) => set('tipo_descuento', tipo)}
+        accentColor={PRIMARY}
+        labelMarginLeft={10}
+      />
 
       {/* Valor */}
       <Text style={[styles.label, { marginTop: 16 }]}>
@@ -806,21 +788,6 @@ const themeBaseStyles = StyleSheet.create({
     paddingHorizontal: 12, justifyContent: 'center',
   },
   inputSuffixText: { fontWeight: '800', color: PRIMARY, fontSize: 13 },
-
-  tiposRow:   { gap: 8 },
-  tipoCard: {
-    flexDirection: 'row', alignItems: 'center',
-    borderWidth: 1.5, borderColor: BORDER, borderRadius: 12,
-    padding: 12, backgroundColor: WHITE,
-  },
-  tipoIcon:      { width: 38, height: 38, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  tipoLabel:     { fontSize: 14, fontWeight: '800', color: TEXT, marginBottom: 2 },
-  tipoDesc:      { fontSize: 12, color: MUTED },
-  tipoCheck: {
-    width: 20, height: 20, borderRadius: 10,
-    backgroundColor: PRIMARY, alignItems: 'center', justifyContent: 'center',
-  },
-  tipoCheckMark: { color: WHITE, fontSize: 11, fontWeight: '900' },
 
   fechasBox: {
     backgroundColor: '#fafafa', borderRadius: 12,

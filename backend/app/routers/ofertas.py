@@ -46,6 +46,24 @@ def get_tienda(user):
     return tienda
 
 
+def _validar_descuento(tipo_descuento: str, valor_descuento: float) -> None:
+    if tipo_descuento not in TIPOS_VALIDOS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"tipo_descuento debe ser: {', '.join(TIPOS_VALIDOS)}",
+        )
+
+    if tipo_descuento in ("porcentaje", "fijo") and valor_descuento <= 0:
+        raise HTTPException(status_code=400, detail="El valor del descuento debe ser mayor a 0")
+
+    if tipo_descuento == "porcentaje" and valor_descuento > 100:
+        raise HTTPException(status_code=400, detail="El porcentaje no puede ser mayor a 100")
+
+
+def _parsear_ids_libros(ids_libros: str) -> list[int]:
+    return [int(x.strip()) for x in ids_libros.split(",") if x.strip().isdigit()]
+
+
 # ══════════════════════════════════════════════
 #  RUTAS FIJAS — PRIMERO
 # ══════════════════════════════════════════════
@@ -71,17 +89,7 @@ def crear(
     user=Depends(get_current_user),
 ):
     # Validaciones
-    if tipo_descuento not in TIPOS_VALIDOS:
-        raise HTTPException(status_code=400,
-            detail=f"tipo_descuento debe ser: {', '.join(TIPOS_VALIDOS)}")
-
-    if tipo_descuento in ("porcentaje", "fijo") and valor_descuento <= 0:
-        raise HTTPException(status_code=400,
-            detail="El valor del descuento debe ser mayor a 0")
-
-    if tipo_descuento == "porcentaje" and valor_descuento > 100:
-        raise HTTPException(status_code=400,
-            detail="El porcentaje no puede ser mayor a 100")
+    _validar_descuento(tipo_descuento, valor_descuento)
 
     inicio = parse_fecha(fecha_inicio)
     fin = parse_fecha(fecha_fin)
@@ -108,7 +116,7 @@ def crear(
         raise HTTPException(status_code=500, detail=resultado["error"])
 
     # Asignar libros
-    lista_ids = [int(x.strip()) for x in ids_libros.split(",") if x.strip().isdigit()]
+    lista_ids = _parsear_ids_libros(ids_libros)
     if lista_ids:
         asignar_libros_oferta(resultado["id_oferta"], lista_ids)
 
@@ -143,17 +151,7 @@ def editar(
     ids_libros:      str   = Form(...),
     user=Depends(get_current_user),
 ):
-    if tipo_descuento not in TIPOS_VALIDOS:
-        raise HTTPException(status_code=400,
-            detail=f"tipo_descuento debe ser: {', '.join(TIPOS_VALIDOS)}")
-
-    if tipo_descuento in ("porcentaje", "fijo") and valor_descuento <= 0:
-        raise HTTPException(status_code=400,
-            detail="El valor del descuento debe ser mayor a 0")
-
-    if tipo_descuento == "porcentaje" and valor_descuento > 100:
-        raise HTTPException(status_code=400,
-            detail="El porcentaje no puede ser mayor a 100")
+    _validar_descuento(tipo_descuento, valor_descuento)
 
     inicio = parse_fecha(fecha_inicio)
     fin = parse_fecha(fecha_fin)
@@ -180,7 +178,7 @@ def editar(
         )
 
     # Reasignar libros
-    lista_ids = [int(x.strip()) for x in ids_libros.split(",") if x.strip().isdigit()]
+    lista_ids = _parsear_ids_libros(ids_libros)
     asignar_libros_oferta(id_oferta, lista_ids)
 
     return {"mensaje": "Oferta actualizada correctamente"}

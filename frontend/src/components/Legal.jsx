@@ -4,7 +4,7 @@ import { IconCheck, IconClose } from './Icons';
 export function LegalModal({ open, onClose, onAccept, title, accepted, children }) {
   if (!open) return null;
   return (
-    <div className="modal-overlay open" onClick={e => { if (e.target === e.currentTarget) onClose() }}>
+    <div className="modal-overlay open" role="presentation" onClick={e => { if (e.target === e.currentTarget) onClose() }}>
       <div className="modal-card" style={{ maxWidth: '600px', maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}>
         <button className="modal-close" aria-label="Cerrar" onClick={onClose}><IconClose /></button>
         <h2 className="modal-title" style={{ fontSize: '1.2rem', marginBottom: '1rem' }}>{title}</h2>

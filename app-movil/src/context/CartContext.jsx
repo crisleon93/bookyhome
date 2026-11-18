@@ -38,7 +38,7 @@ export function CartProvider({ children }) {
         cantidad: qty,
         titulo: book.titulo,
         autor_libro: book.autor_libro || book.autor,
-        precio_libro: parseFloat(book.precio_libro || book.precio || 0),
+        precio_libro: Number.parseFloat(book.precio_libro || book.precio || 0),
         imagen: book.imagen,
         id_variante: book.id_variante,
         variante_label: book.variante_label
