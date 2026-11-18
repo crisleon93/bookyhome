@@ -82,9 +82,15 @@ export const updateProfile = (payload) => api.put('/perfil/actualizar', payload)
 export const updatePreferences = (payload) => api.put('/perfil/preferencias', payload);
 export const changePassword = (payload) => api.put('/perfil/cambiar-password', payload);
 export const uploadProfilePhoto = (formData) =>
-  api.post('/perfil/foto-perfil', formData);
+  api.post('/perfil/foto-perfil', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+    timeout: 60000,
+  });
 export const uploadBannerPhoto = (formData) =>
-  api.post('/perfil/banner', formData);
+  api.post('/perfil/banner', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+    timeout: 60000,
+  });
 export const saveBannerColor = (bannerColor) => api.patch('/perfil/banner-color', { banner_color: bannerColor });
 export const getEstadisticasUsuario = () => api.get('/perfil/estadisticas/usuario');
 export const getPurchaseHistory = () => api.get('/perfil/historial/compras');

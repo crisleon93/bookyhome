@@ -5,6 +5,7 @@ import {
   FlatList as NativeFlatList,
   Image as NativeImage,
   Modal,
+  PanResponder,
   RefreshControl as NativeRefreshControl,
   ScrollView as NativeScrollView,
   StyleSheet,
@@ -15,7 +16,7 @@ import {
 } from 'react-native';
 import { createThemeAwareComponent } from '../context/ThemeContext';
 import { getApiBaseUrl, getMensajesSolicitudAdmin, enviarMensajeSolicitudAdmin, resolverSolicitudAdmin } from '../services/api';
-import { IconAlertTriangle, IconCheck, IconEye, IconEyeOff, IconMail, IconMessage, IconStoreAlt, IconTool, IconUser } from '../components/Icons';
+import { IconAlertTriangle, IconCheck, IconChevronLeft, IconEye, IconEyeOff, IconMail, IconMessage, IconStoreAlt, IconTool, IconUser } from '../components/Icons';
 
 const ActivityIndicator = createThemeAwareComponent(NativeActivityIndicator, ['style'], ['color']);
 const FlatList = createThemeAwareComponent(NativeFlatList, ['style', 'contentContainerStyle']);
@@ -330,6 +331,15 @@ export default function AdminRequests({ type, solicitudes = [], loading, refresh
   const [sending, setSending] = useState(false);
   const [page, setPage] = useState(1);
   const listRef = useRef(null);
+  const chatSwipeResponder = useMemo(() => PanResponder.create({
+    onMoveShouldSetPanResponderCapture: (_, gesture) =>
+      gesture.x0 <= 32 && gesture.dx > 18 && Math.abs(gesture.dx) > Math.abs(gesture.dy) * 1.3,
+    onPanResponderRelease: (_, gesture) => {
+      if (gesture.dx > 90 && Math.abs(gesture.dx) > Math.abs(gesture.dy) * 1.3) {
+        setSelected(null);
+      }
+    },
+  }), []);
 
   const sectionItems = useMemo(() => {
     const requestType = (item) => (item.tipo_solicitud || '').toLowerCase();
@@ -608,12 +618,23 @@ export default function AdminRequests({ type, solicitudes = [], loading, refresh
       </Modal>
 
       <Modal visible={!!selected} animationType="slide" onRequestClose={() => setSelected(null)}>
-        <View style={styles.chatPage}>
+        <View style={styles.chatPage} {...chatSwipeResponder.panHandlers}>
           <View style={styles.chatHeader}>
-            <TouchableOpacity onPress={() => setSelected(null)}><Text style={styles.closeText}>Cerrar</Text></TouchableOpacity>
-            <View style={{ flex: 1 }}>
+            <TouchableOpacity
+              style={styles.chatBackButton}
+              onPress={() => setSelected(null)}
+              activeOpacity={0.75}
+              accessibilityRole="button"
+              accessibilityLabel="Volver a quejas y reclamos"
+              accessibilityHint="También puedes deslizar hacia la derecha desde el borde izquierdo."
+            >
+              <IconChevronLeft size={23} color={PRIMARY} />
+            </TouchableOpacity>
+            <View style={styles.chatHeading}>
               <Text style={styles.chatTitle}>Conversación #{selected?.id_solicitud}</Text>
-              <Text style={styles.metaText}>{selected?.comprador || 'Comprador'}{selected?.nombre_tienda ? ` · ${selected.nombre_tienda}` : ''}</Text>
+              <Text style={styles.chatSubtitle} numberOfLines={1}>
+                {selected?.comprador || 'Comprador'}{selected?.nombre_tienda ? ` · ${selected.nombre_tienda}` : ''}
+              </Text>
             </View>
           </View>
           {chatLoading ? <ActivityIndicator style={{ marginTop: 24 }} color={PRIMARY} /> : (
@@ -622,18 +643,31 @@ export default function AdminRequests({ type, solicitudes = [], loading, refresh
               keyExtractor={(message, index) => String(message.id_mensaje || index)}
               contentContainerStyle={styles.chatList}
               ListEmptyComponent={<Text style={styles.empty}>Aún no hay mensajes en esta conversación.</Text>}
-              renderItem={({ item }) => (
-                <View style={styles.message}>
-                  <Text style={styles.messageAuthor}>{item.nombre_usuario || item.rol || 'Usuario'}</Text>
-                  <Text style={styles.messageText}>{item.mensaje}</Text>
-                  <Text style={styles.messageDate}>{formatDate(item.fecha_creacion)}</Text>
-                </View>
-              )}
+              renderItem={({ item }) => {
+                const isAdminMessage = String(item.rol || '').toLowerCase().includes('admin');
+                return (
+                  <View style={[styles.messageRow, isAdminMessage && styles.messageRowAdmin]}>
+                    <View style={[styles.message, isAdminMessage && styles.messageAdmin]}>
+                      <Text style={[styles.messageAuthor, isAdminMessage && styles.messageAuthorAdmin]}>
+                        {item.nombre_usuario || item.rol || 'Usuario'}
+                      </Text>
+                      <Text style={[styles.messageText, isAdminMessage && styles.messageTextAdmin]}>{item.mensaje}</Text>
+                      <Text style={[styles.messageDate, isAdminMessage && styles.messageDateAdmin]}>{formatDate(item.fecha_creacion)}</Text>
+                    </View>
+                  </View>
+                );
+              }}
             />
           )}
           <View style={styles.chatComposer}>
             <TextInput style={styles.chatInput} value={chatText} onChangeText={setChatText} placeholder="Escribe un mensaje..." multiline />
-            <TouchableOpacity style={styles.sendButton} onPress={sendMessage} disabled={sending || !chatText.trim()}>
+            <TouchableOpacity
+              style={[styles.sendButton, (sending || !chatText.trim()) && styles.sendButtonDisabled]}
+              onPress={sendMessage}
+              disabled={sending || !chatText.trim()}
+              accessibilityRole="button"
+              accessibilityLabel="Enviar mensaje"
+            >
               {sending ? <ActivityIndicator color="#fff" /> : <IconMessage size={18} color="#fff" />}
             </TouchableOpacity>
           </View>
@@ -714,9 +748,9 @@ const themeBaseStyles = StyleSheet.create({
   card: { backgroundColor: '#fff', borderRadius: 15, borderWidth: 1.5, borderColor: '#B9A99A', marginBottom: 12, elevation: 2, overflow: 'hidden' },
   cardHeader: { padding: 13 },
   cardHeaderExpanded: { borderBottomWidth: 1, borderBottomColor: BORDER, backgroundColor: '#FFFCFA' },
-  cardHeaderTop: { flexDirection: 'row', alignItems: 'flex-start', gap: 9 },
-  bookThumbnail: { width: 54, height: 68, borderRadius: 9, backgroundColor: '#F3F4F6' },
-  cardFallback: { width: 54, height: 68, borderRadius: 9, backgroundColor: PRIMARY, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 3 },
+  cardHeaderTop: { flexDirection: 'row', alignItems: 'stretch', gap: 9 },
+  bookThumbnail: { width: 54, minHeight: 68, alignSelf: 'stretch', borderRadius: 9, backgroundColor: '#F3F4F6' },
+  cardFallback: { width: 54, minHeight: 68, alignSelf: 'stretch', borderRadius: 9, backgroundColor: PRIMARY, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 3 },
   cardFallbackText: { color: '#fff', fontSize: 11, fontWeight: '900', textAlign: 'center' },
   cardMain: { flex: 1, minWidth: 0 },
   cardEyebrow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 3 },
@@ -766,16 +800,25 @@ const themeBaseStyles = StyleSheet.create({
   confirmButton: { backgroundColor: PRIMARY, minHeight: 38, justifyContent: 'center', borderRadius: 9, paddingHorizontal: 12 },
   confirmText: { color: '#fff', fontWeight: '800', fontSize: 12 },
   chatPage: { flex: 1, backgroundColor: BG, paddingTop: 24 },
-  chatHeader: { backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: BORDER, padding: 14, flexDirection: 'row', alignItems: 'center', gap: 14 },
-  closeText: { color: PRIMARY, fontSize: 13, fontWeight: '800' },
+  chatHeader: { backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: BORDER, paddingHorizontal: 16, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', gap: 12, elevation: 2 },
+  chatBackButton: { width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FDF2F4', borderWidth: 1, borderColor: '#F0DDE4' },
+  chatHeading: { flex: 1, minWidth: 0 },
   chatTitle: { color: '#222', fontSize: 16, fontWeight: '800' },
-  chatList: { padding: 14, flexGrow: 1 },
-  message: { alignSelf: 'flex-start', maxWidth: '90%', backgroundColor: '#fff', borderRadius: 12, padding: 11, marginBottom: 9, borderWidth: 1, borderColor: BORDER },
+  chatSubtitle: { color: GRAY, fontSize: 12, marginTop: 3 },
+  chatList: { padding: 14, flexGrow: 1, justifyContent: 'flex-end' },
+  messageRow: { width: '100%', flexDirection: 'row', justifyContent: 'flex-start' },
+  messageRowAdmin: { justifyContent: 'flex-end' },
+  message: { maxWidth: '90%', backgroundColor: '#fff', borderRadius: 16, borderBottomLeftRadius: 5, padding: 12, marginBottom: 10, borderWidth: 1, borderColor: BORDER, elevation: 1 },
+  messageAdmin: { backgroundColor: PRIMARY, borderColor: PRIMARY, borderBottomLeftRadius: 16, borderBottomRightRadius: 5 },
   messageAuthor: { fontSize: 11, color: PRIMARY, fontWeight: '800', marginBottom: 4 },
-  messageText: { color: '#333', fontSize: 13, lineHeight: 18 },
-  messageDate: { color: '#888', fontSize: 10, marginTop: 5, textAlign: 'right' },
-  chatComposer: { flexDirection: 'row', alignItems: 'flex-end', gap: 8, padding: 12, backgroundColor: '#fff', borderTopWidth: 1, borderColor: BORDER },
-  chatInput: { flex: 1, maxHeight: 100, borderWidth: 1, borderColor: BORDER, borderRadius: 18, paddingHorizontal: 13, paddingVertical: 9, color: '#222' },
-  sendButton: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: PRIMARY },
+  messageAuthorAdmin: { color: '#FCE7EF' },
+  messageText: { color: '#333', fontSize: 13, lineHeight: 19 },
+  messageTextAdmin: { color: '#fff' },
+  messageDate: { color: '#888', fontSize: 10, marginTop: 6, textAlign: 'right' },
+  messageDateAdmin: { color: 'rgba(255,255,255,0.72)' },
+  chatComposer: { flexDirection: 'row', alignItems: 'flex-end', gap: 10, paddingHorizontal: 14, paddingVertical: 12, backgroundColor: '#fff', borderTopWidth: 1, borderColor: BORDER, elevation: 4 },
+  chatInput: { flex: 1, minHeight: 44, maxHeight: 110, backgroundColor: '#FAFAFA', borderWidth: 1, borderColor: BORDER, borderRadius: 22, paddingHorizontal: 16, paddingVertical: 11, color: '#222' },
+  sendButton: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: PRIMARY, elevation: 2 },
+  sendButtonDisabled: { backgroundColor: '#BFA0AA', elevation: 0 },
 });
 const styles = themeBaseStyles;

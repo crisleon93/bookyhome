@@ -546,43 +546,44 @@ function BookExpandedDetails({ book, hidden, onToggleHidden, onDelete }) {
 
   return (
     <View style={s.expandBox}>
-      <View style={s.detailRow}>
-        <Text style={s.detailLabel}>Precio</Text>
-        <View style={s.priceBadge}>
-          <Text style={s.priceTxt}>{fmtPrice(book.precio_libro)}</Text>
+      <View style={s.bookDetailsGrid}>
+        <View style={s.bookDetailCell}>
+          <Text style={s.bookDetailLabel}>Precio</Text>
+          <View style={s.priceBadge}>
+            <Text style={s.priceTxt}>{fmtPrice(book.precio_libro)}</Text>
+          </View>
         </View>
-      </View>
-      <View style={s.detailRow}>
-        <Text style={s.detailLabel}>Tienda</Text>
-        <Text style={[s.detailValue, { color: VINOTINTO, fontWeight: '700' }]} numberOfLines={1}>
-          {book.nombre_tienda || '—'}
-        </Text>
-      </View>
-      <View style={s.detailRow}>
-        <Text style={s.detailLabel}>Categoría</Text>
-        <View style={[s.badge, {
-          alignSelf: 'flex-start',
-          maxWidth: '100%',
-          backgroundColor: '#F5F5F5',
-          borderColor: BORDER,
-        }]}>
-          <Text style={[s.badgeTxt, { color: CARBON, flexShrink: 1 }]}>{book.nombre_categoria || 'Sin categoría'}</Text>
-        </View>
-      </View>
-      <View style={[s.detailRow, { marginBottom: 14 }]}>
-        <Text style={s.detailLabel}>Estado</Text>
-        <View style={[s.badge, {
-          alignSelf: 'flex-start',
-          maxWidth: '100%',
-          backgroundColor: visibilityBackground,
-          borderColor: visibilityBorder,
-        }]}>
-          {hidden
-            ? <IconEyeOff size={11} color={visibilityColor} />
-            : <IconEye size={11} color={visibilityColor} />}
-          <Text style={[s.badgeTxt, { color: visibilityColor, marginLeft: 3, flexShrink: 1 }]}>
-            {hidden ? 'Oculto en catálogo' : 'Visible en catálogo'}
+        <View style={s.bookDetailCell}>
+          <Text style={s.bookDetailLabel}>Tienda</Text>
+          <Text style={[s.bookDetailValue, { color: VINOTINTO }]} numberOfLines={2}>
+            {book.nombre_tienda || '—'}
           </Text>
+        </View>
+        <View style={s.bookDetailCell}>
+          <Text style={s.bookDetailLabel}>Categoría</Text>
+          <Text style={s.bookDetailValue} numberOfLines={2}>
+            {book.nombre_categoria || 'Sin categoría'}
+          </Text>
+        </View>
+        <View style={s.bookDetailCell}>
+          <Text style={s.bookDetailLabel}>Estado</Text>
+          <View style={[s.bookDetailStatus, {
+            alignSelf: 'flex-start',
+            maxWidth: '100%',
+            backgroundColor: visibilityBackground,
+            borderColor: visibilityBorder,
+            borderWidth: 1,
+            borderRadius: 12,
+            paddingHorizontal: 7,
+            paddingVertical: 4,
+          }]}>
+            {hidden
+              ? <IconEyeOff size={11} color={visibilityColor} />
+              : <IconEye size={11} color={visibilityColor} />}
+            <Text style={[s.badgeTxt, { color: visibilityColor, flexShrink: 1 }]} numberOfLines={1}>
+              {hidden ? 'Oculto' : 'Visible en catálogo'}
+            </Text>
+          </View>
         </View>
       </View>
       <View style={s.actionRow}>
@@ -1776,7 +1777,7 @@ export default function AdminHome() {
     const expanded = expandedLibro === l.id_libro;
 
     return (
-      <View style={[s.card, oculto && s.cardOculto]}>
+      <View style={[s.card, s.bookCard, oculto && s.cardOculto]}>
         {/* Fila principal siempre visible */}
         <View style={s.cardTop}>
           <TouchableOpacity
@@ -1956,8 +1957,8 @@ export default function AdminHome() {
           accessibilityLabel={expanded ? 'Ocultar detalles de la orden' : 'Ver detalles de la orden'}
           accessibilityState={{ expanded }}
         >
-          <View style={s.requestStyleOrderIcon}>
-            <IconPackage size={20} color="#1D4ED8" />
+          <View style={[s.requestStyleOrderIcon, { backgroundColor: ec.bg }]}>
+            <IconPackage size={25} color={ec.color} />
           </View>
           <View style={s.requestStyleOrderMain}>
             <View style={s.requestStyleOrderEyebrow}>
@@ -1968,7 +1969,7 @@ export default function AdminHome() {
                   <Text style={[s.requestStyleOrderStatusText, { color: ec.color }]} numberOfLines={1}>{ec.label}</Text>
                 </View>
                 <View style={s.requestStyleExpandIcon}>
-                  {expanded ? <IconEyeOff size={16} color={VINOTINTO} /> : <IconEye size={16} color={VINOTINTO} />}
+                  {expanded ? <IconEyeOff size={19} color={VINOTINTO} /> : <IconEye size={19} color={VINOTINTO} />}
                 </View>
               </View>
             </View>
@@ -1984,8 +1985,8 @@ export default function AdminHome() {
                 {o.fecha ? new Date(o.fecha).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Sin fecha'}
               </Text>
               {!!o.codigo_compra && <Text style={s.requestStyleOrderCode}>{o.codigo_compra}</Text>}
-              <View style={s.priceBadge}>
-                <Text style={s.priceTxt} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
+              <View style={[s.priceBadge, s.requestStyleOrderPrice]}>
+                <Text style={[s.priceTxt, s.requestStyleOrderPriceText]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
                   {fmtPrice(o.total)}
                 </Text>
               </View>
@@ -2901,28 +2902,31 @@ const s = StyleSheet.create({
 
   // Tarjeta de ítem
   card:         { backgroundColor: WHITE, borderWidth: 1, borderColor: BORDER, borderRadius: 16, padding: 14, marginBottom: 10 },
+  bookCard:     { borderWidth: 1.5, borderColor: '#C4C7CC' },
   userCard:     { borderLeftWidth: 4, paddingLeft: 11 },
   cardBloqueado:{ borderColor: '#FECACA' },
   cardOculto:   { borderColor: '#E9D5FF', opacity: 0.85 },
   orderCard:    { borderLeftWidth: 4, paddingLeft: 11 },
   requestStyleOrderCard: { backgroundColor: WHITE, borderWidth: 1.5, borderColor: '#B9A99A', borderLeftWidth: 4, borderRadius: 15, marginBottom: 12, elevation: 2, overflow: 'hidden' },
-  requestStyleOrderHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, padding: 13 },
+  requestStyleOrderHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14 },
   requestStyleOrderHeaderExpanded: { borderBottomWidth: 1, borderBottomColor: BORDER, backgroundColor: '#FFFCFA' },
-  requestStyleOrderIcon: { width: 48, height: 56, alignItems: 'center', justifyContent: 'center', borderRadius: 9, backgroundColor: '#EFF6FF' },
-  requestStyleOrderMain: { flex: 1, minWidth: 0 },
-  requestStyleOrderEyebrow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 3 },
-  requestStyleOrderNumber: { color: GRAY, fontSize: 10, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.3 },
-  requestStyleOrderRight: { flexDirection: 'row', alignItems: 'center', gap: 4, marginLeft: 'auto' },
-  requestStyleOrderStatus: { minHeight: 22, maxWidth: 105, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, borderWidth: 1, borderRadius: 12, paddingHorizontal: 6, paddingVertical: 3 },
-  requestStyleOrderStatusText: { fontSize: 9, fontWeight: '800' },
-  requestStyleExpandIcon: { width: 24, height: 24, borderRadius: 12, borderWidth: 1, borderColor: '#F0DDE4', backgroundColor: '#FDF2F4', alignItems: 'center', justifyContent: 'center' },
-  requestStyleOrderTitle: { color: CARBON, fontSize: 14, lineHeight: 19, fontWeight: '800' },
+  requestStyleOrderIcon: { width: 60, height: 64, alignItems: 'center', justifyContent: 'center', borderRadius: 12, backgroundColor: '#EFF6FF' },
+  requestStyleOrderMain: { flex: 1, minWidth: 0, alignSelf: 'stretch', justifyContent: 'center' },
+  requestStyleOrderEyebrow: { flexDirection: 'row', alignItems: 'center', gap: 7, marginBottom: 5 },
+  requestStyleOrderNumber: { color: GRAY, fontSize: 11, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.3, flexShrink: 1 },
+  requestStyleOrderRight: { flexDirection: 'row', alignItems: 'center', gap: 6, marginLeft: 'auto' },
+  requestStyleOrderStatus: { minHeight: 28, maxWidth: 118, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, borderWidth: 1, borderRadius: 14, paddingHorizontal: 9, paddingVertical: 4 },
+  requestStyleOrderStatusText: { fontSize: 10, fontWeight: '800' },
+  requestStyleExpandIcon: { width: 30, height: 30, borderRadius: 15, borderWidth: 1, borderColor: '#F0DDE4', backgroundColor: '#FDF2F4', alignItems: 'center', justifyContent: 'center' },
+  requestStyleOrderTitle: { color: CARBON, fontSize: 15, lineHeight: 20, fontWeight: '800' },
   requestStyleOrderAdditional: { color: GRAY, fontSize: 12, fontWeight: '500' },
-  requestStyleOrderBuyer: { color: GRAY, fontSize: 11, marginTop: 3 },
+  requestStyleOrderBuyer: { color: GRAY, fontSize: 12, marginTop: 4 },
   requestStyleOrderBuyerStrong: { color: CARBON, fontWeight: '700' },
-  requestStyleOrderMeta: { alignItems: 'flex-start', gap: 2, marginTop: 4 },
-  requestStyleOrderDateText: { color: GRAY, fontSize: 10, fontWeight: '600' },
-  requestStyleOrderCode: { color: GRAY, fontSize: 10, fontWeight: '700' },
+  requestStyleOrderMeta: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 6, marginTop: 6 },
+  requestStyleOrderDateText: { color: GRAY, fontSize: 11, fontWeight: '600' },
+  requestStyleOrderCode: { color: GRAY, fontSize: 11, fontWeight: '700' },
+  requestStyleOrderPrice: { marginTop: 0, marginLeft: 'auto', paddingHorizontal: 10, paddingVertical: 5 },
+  requestStyleOrderPriceText: { fontSize: 13 },
   requestStyleOrderDetails: { padding: 13, gap: 11, backgroundColor: WHITE },
   cardTop:      { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
   bookMainPress: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center' },
@@ -2979,7 +2983,7 @@ const s = StyleSheet.create({
   // Acordeón libro
   expandBox:    { borderTopWidth: 1, borderTopColor: BEIGE, marginTop: 4, paddingTop: 12, gap: 12 },
   bookDetailsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  bookDetailCell: { flexBasis: '48%', flexGrow: 1, minWidth: 130, minHeight: 58, justifyContent: 'center', backgroundColor: BEIGE, borderWidth: 1, borderColor: BORDER, borderRadius: 10, paddingHorizontal: 11, paddingVertical: 8 },
+  bookDetailCell: { flexBasis: '48%', flexGrow: 1, minWidth: 130, minHeight: 58, justifyContent: 'center', backgroundColor: '#FAFAFA', borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 10, paddingHorizontal: 11, paddingVertical: 8 },
   bookDetailLabel: { color: GRAY, fontSize: 10, fontWeight: '700', marginBottom: 4 },
   bookDetailValue: { color: CARBON, fontSize: 12, fontWeight: '800', flexShrink: 1 },
   bookDetailStatus: { flexDirection: 'row', alignItems: 'center', gap: 5 },
