@@ -73,6 +73,7 @@ vi.mock('react-native', async () => {
     Modal: ({ visible, children }) => visible
       ? ReactModule.createElement('div', { role: 'dialog' }, children)
       : null,
+    PanResponder: { create: () => ({ panHandlers: {} }) },
     RefreshControl: () => null,
     ScrollView: element('div'),
     StyleSheet: { create: (styles) => styles },
@@ -93,6 +94,7 @@ vi.mock('../../components/Icons', () => {
   return {
     IconAlertTriangle: Icon,
     IconCheck: Icon,
+    IconChevronLeft: Icon,
     IconEye: Icon,
     IconEyeOff: Icon,
     IconMail: Icon,
@@ -150,7 +152,7 @@ describe('AdminRequests', () => {
     fireEvent.change(screen.getByPlaceholderText('Escribe un mensaje...'), {
       target: { value: '  Estamos atendiendo el caso  ' },
     })
-    fireEvent.click(screen.getByRole('button', { name: 'Enviar' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Enviar mensaje' }))
     await waitFor(() => {
       expect(enviarMensajeSolicitudAdmin).toHaveBeenCalledWith(31, 'Estamos atendiendo el caso')
       expect(getMensajesSolicitudAdmin).toHaveBeenCalledWith(31)

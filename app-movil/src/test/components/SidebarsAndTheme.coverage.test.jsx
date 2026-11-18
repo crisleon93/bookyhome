@@ -72,10 +72,12 @@ vi.mock('react-native', async () => {
     Appearance: { setColorScheme: vi.fn() },
     Dimensions: { get: () => ({ width: 390, height: 844 }) },
     Image: NativeElement('img'),
+    PanResponder: { create: () => ({ panHandlers: {} }) },
     Modal: ({ visible, children }) => visible
       ? ReactModule.createElement('div', { role: 'dialog' }, children)
       : null,
     Platform: { OS: 'web', select: (values) => values.web || values.default },
+    Pressable: NativeElement('button'),
     ScrollView: NativeElement('div'),
     StyleSheet: { absoluteFill: {}, create: (styles) => styles, flatten: (style) => style },
     Text: NativeElement('span'),

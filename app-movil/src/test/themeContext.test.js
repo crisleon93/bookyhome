@@ -35,6 +35,26 @@ describe('adaptStyleForTheme', () => {
     expect(adaptStyleForTheme(styles, false)).toBe(styles);
   });
 
+  it('uses the web admin dark palette for mobile page, card, text, and border colors', () => {
+    const styles = adaptStyleForTheme({
+      page: { backgroundColor: '#F9F6F1' },
+      card: { backgroundColor: '#FFFFFF' },
+      text: { color: '#2A2A2A' },
+      muted: { color: '#666666' },
+      border: { borderColor: '#E0DBD4' },
+      inset: { backgroundColor: '#FAF8F6' },
+    }, true);
+
+    expect(styles).toEqual({
+      page: { backgroundColor: '#1a1a1a' },
+      card: { backgroundColor: '#1e1e1e' },
+      text: { color: '#e0e0e0' },
+      muted: { color: '#c8c8c8' },
+      border: { borderColor: '#333333' },
+      inset: { backgroundColor: '#252525' },
+    });
+  });
+
   it('keeps the saved preference while disabling dark mode for public sessions', () => {
     expect(resolveDarkModeForSession(false, true)).toBe(false);
     expect(resolveDarkModeForSession(true, true)).toBe(true);

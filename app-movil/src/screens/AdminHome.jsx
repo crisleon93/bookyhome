@@ -2,20 +2,32 @@ import React, {
   useCallback, useContext, useEffect, useMemo, useRef, useState,
 } from 'react';
 import {
-  ActivityIndicator, FlatList, Image, Modal,
-  Platform, RefreshControl, ScrollView,
-  StyleSheet, Text, TextInput, TouchableOpacity, View, useWindowDimensions,
+  ActivityIndicator as NativeActivityIndicator,
+  FlatList as NativeFlatList,
+  Image as NativeImage,
+  Modal,
+  Platform,
+  RefreshControl as NativeRefreshControl,
+  ScrollView as NativeScrollView,
+  StyleSheet,
+  Text as NativeText,
+  TextInput as NativeTextInput,
+  TouchableOpacity as NativeTouchableOpacity,
+  View as NativeView,
+  useWindowDimensions,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import Svg, { Circle, Path } from 'react-native-svg';
+import { SafeAreaView as NativeSafeAreaView } from 'react-native-safe-area-context';
 import { AuthContext } from '../context/AuthContext';
+import { createThemeAwareComponent } from '../context/ThemeContext';
 import SidebarAdmin from '../components/SidebarAdmin';
 import FinanzasAdmin from './FinanzasAdmin';
 import AdminRequests from './AdminRequests';
 import AdminProfile from './AdminProfile';
 import {
-  IconAlertTriangle, IconBook, IconCheck,
+  IconAlertTriangle, IconBan, IconBook, IconCheck, IconDollar,
   IconEye, IconEyeOff, IconLock, IconMenu,
-  IconPackage, IconStore, IconTrash, IconUnlock, IconUser, IconUsers,
+  IconPackage, IconStore, IconTrash, IconTruck, IconUnlock, IconUser, IconUsers,
   IconCart, IconClose, IconFilter, IconMail, IconPhone, IconSearch, IconShield, IconSettings, IconTool,
 } from '../components/Icons';
 import {
@@ -24,6 +36,20 @@ import {
   getAdminLibros, getAdminOrdenes, getAdminSolicitudes,
   getAdminTiendas, getAdminUsuarios, ocultarLibroAdmin,
 } from '../services/api';
+
+const ActivityIndicator = createThemeAwareComponent(NativeActivityIndicator, ['style'], ['color']);
+const FlatList = createThemeAwareComponent(NativeFlatList, [
+  'style', 'contentContainerStyle', 'columnWrapperStyle',
+  'ListHeaderComponentStyle', 'ListFooterComponentStyle',
+]);
+const Image = createThemeAwareComponent(NativeImage);
+const RefreshControl = createThemeAwareComponent(NativeRefreshControl, ['style'], ['tintColor', 'colors', 'progressBackgroundColor']);
+const ScrollView = createThemeAwareComponent(NativeScrollView, ['style', 'contentContainerStyle']);
+const SafeAreaView = createThemeAwareComponent(NativeSafeAreaView);
+const Text = createThemeAwareComponent(NativeText);
+const TextInput = createThemeAwareComponent(NativeTextInput, ['style'], ['placeholderTextColor', 'selectionColor', 'underlineColorAndroid']);
+const TouchableOpacity = createThemeAwareComponent(NativeTouchableOpacity);
+const View = createThemeAwareComponent(NativeView);
 
 // ─── Paleta ───────────────────────────────────────────────────────────────────
 const VINOTINTO      = '#7A1E3A';
@@ -58,6 +84,15 @@ const ORDEN_ESTADOS = {
 const getOrdenEstado = (estado) =>
   ORDEN_ESTADOS[(estado || '').toLowerCase()] ||
   { bg: '#F3F4F6', color: GRAY, border: '#D1D5DB', dot: '#9CA3AF', label: estado || 'Desconocido' };
+
+const ORDER_STATUS_FILTERS = [
+  { value: 'pagado', label: 'Pagado', color: '#047857', bg: '#ecfdf5' },
+  { value: 'entregada', label: 'Entregada', color: '#D97706', bg: '#fffbeb' },
+  { value: 'enviado', label: 'Enviado', color: '#ea580c', bg: '#fff7ed' },
+  { value: 'cancelada', label: 'Cancelada', color: '#B91C1C', bg: '#fef2f2' },
+  { value: 'completada', label: 'Completada', color: '#1d4ed8', bg: '#eff6ff' },
+  { value: 'finalizada', label: 'Finalizada', color: '#6d28d9', bg: '#f5f3ff' },
+];
 
 const COLORS = {
   usuarios: { soft: '#FDF2F4', main: VINOTINTO,  value: VINOTINTO,  border: '#F8D2DA' },
@@ -469,10 +504,13 @@ const sortOrders = (orders) => orders.slice().sort((a, b) => {
   return (b.id_orden || 0) - (a.id_orden || 0);
 });
 
-const filterOrders = (orders, query, status) => orders.filter((order) =>
-  matchesSearch(query, order.id_orden, order.estado) &&
-  (status === 'todos' || (order.estado || '').trim().toLowerCase() === status)
-);
+const filterOrders = (orders, query, status) => orders.filter((order) => {
+  const orderStatus = (order.estado || '').trim().toLowerCase();
+  const matchesStatus = status === 'todos' ||
+    (status === 'entregada' && ['entregada', 'entregado'].includes(orderStatus)) ||
+    orderStatus === status;
+  return matchesSearch(query, order.id_orden, order.estado) && matchesStatus;
+});
 
 const getSectionItems = ({ activeSection, data, query, role, userStatus, category, storeStatus, orderStatus }) => {
   if (activeSection === 'usuarios') {
@@ -512,48 +550,60 @@ function BookExpandedDetails({ book, hidden, onToggleHidden, onDelete }) {
 
   return (
     <View style={s.expandBox}>
-      <View style={s.detailRow}>
-        <Text style={s.detailLabel}>Precio</Text>
-        <View style={s.priceBadge}>
-          <Text style={s.priceTxt}>{fmtPrice(book.precio_libro)}</Text>
+      <View style={s.bookDetailsGrid}>
+        <View style={s.bookDetailCell}>
+          <Text style={s.bookDetailLabel}>Precio</Text>
+          <View style={s.priceBadge}>
+            <Text style={s.priceTxt}>{fmtPrice(book.precio_libro)}</Text>
+          </View>
         </View>
-      </View>
-      <View style={s.detailRow}>
-        <Text style={s.detailLabel}>Tienda</Text>
-        <Text style={[s.detailValue, { color: VINOTINTO, fontWeight: '700' }]} numberOfLines={1}>
-          {book.nombre_tienda || '—'}
-        </Text>
-      </View>
-      <View style={s.detailRow}>
-        <Text style={s.detailLabel}>Categoría</Text>
-        <View style={[s.badge, { backgroundColor: '#F3E8FF', borderColor: '#E9D5FF' }]}>
-          <Text style={[s.badgeTxt, { color: '#7E22CE' }]}>{book.nombre_categoria || 'Sin categoría'}</Text>
-        </View>
-      </View>
-      <View style={[s.detailRow, { marginBottom: 14 }]}>
-        <Text style={s.detailLabel}>Estado</Text>
-        <View style={[s.badge, { backgroundColor: visibilityBackground, borderColor: visibilityBorder }]}>
-          {hidden
-            ? <IconEyeOff size={11} color={visibilityColor} />
-            : <IconEye size={11} color={visibilityColor} />}
-          <Text style={[s.badgeTxt, { color: visibilityColor, marginLeft: 3 }]}>
-            {hidden ? 'Oculto en catálogo' : 'Visible en catálogo'}
+        <View style={s.bookDetailCell}>
+          <Text style={s.bookDetailLabel}>Tienda</Text>
+          <Text style={[s.bookDetailValue, { color: VINOTINTO }]} numberOfLines={2}>
+            {book.nombre_tienda || '—'}
           </Text>
+        </View>
+        <View style={s.bookDetailCell}>
+          <Text style={s.bookDetailLabel}>Categoría</Text>
+          <Text style={s.bookDetailValue} numberOfLines={2}>
+            {book.nombre_categoria || 'Sin categoría'}
+          </Text>
+        </View>
+        <View style={s.bookDetailCell}>
+          <Text style={s.bookDetailLabel}>Estado</Text>
+          <View style={[s.bookDetailStatus, {
+            alignSelf: 'flex-start',
+            maxWidth: '100%',
+            backgroundColor: visibilityBackground,
+            borderColor: visibilityBorder,
+            borderWidth: 1,
+            borderRadius: 12,
+            paddingHorizontal: 7,
+            paddingVertical: 4,
+          }]}>
+            {hidden
+              ? <IconEyeOff size={11} color={visibilityColor} />
+              : <IconEye size={11} color={visibilityColor} />}
+            <Text style={[s.badgeTxt, { color: visibilityColor, flexShrink: 1 }]} numberOfLines={1}>
+              {hidden ? 'Oculto' : 'Visible en catálogo'}
+            </Text>
+          </View>
         </View>
       </View>
       <View style={s.actionRow}>
         <TouchableOpacity
           style={[s.actionBtn, s.actionHalf, {
-            backgroundColor: hidden ? '#ECFDF5' : '#FFFBEB',
-            borderColor: hidden ? '#A7F3D0' : '#FDE68A',
+            backgroundColor: hidden ? '#6c757d' : VINOTINTO,
+            borderColor: hidden ? '#6c757d' : VINOTINTO,
+            opacity: hidden ? 0.6 : 1,
           }]}
           onPress={onToggleHidden}
           activeOpacity={0.75}
         >
           {hidden
-            ? <IconEye size={13} color="#047857" />
-            : <IconEyeOff size={13} color="#B45309" />}
-          <Text style={[s.actionTxt, { color: hidden ? '#047857' : '#B45309' }]}>
+            ? <IconEye size={13} color={WHITE} />
+            : <IconEyeOff size={13} color={WHITE} />}
+          <Text style={[s.actionTxt, { color: WHITE }]}>
             {hidden ? 'Mostrar' : 'Ocultar'}
           </Text>
         </TouchableOpacity>
@@ -1508,10 +1558,6 @@ export default function AdminHome() {
     counts[categoria] = (counts[categoria] || 0) + 1;
     return counts;
   }, {}), [data.libros]);
-  const estadosOrden = useMemo(() => Array.from(new Set(
-    data.ordenes.map((orden) => (orden.estado || '').trim().toLowerCase()).filter(Boolean)
-  )).sort((a, b) => getOrdenEstado(a).label.localeCompare(getOrdenEstado(b).label, 'es')), [data.ordenes]);
-
   // ── Filtrado y paginación por sección ─────────────────────────────────────
   const sectionItems = useMemo(() => {
     return getSectionItems({
@@ -1735,7 +1781,7 @@ export default function AdminHome() {
     const expanded = expandedLibro === l.id_libro;
 
     return (
-      <View style={[s.card, oculto && s.cardOculto]}>
+      <View style={[s.card, s.bookCard, oculto && s.cardOculto]}>
         {/* Fila principal siempre visible */}
         <View style={s.cardTop}>
           <TouchableOpacity
@@ -1915,8 +1961,8 @@ export default function AdminHome() {
           accessibilityLabel={expanded ? 'Ocultar detalles de la orden' : 'Ver detalles de la orden'}
           accessibilityState={{ expanded }}
         >
-          <View style={s.requestStyleOrderIcon}>
-            <IconPackage size={20} color="#1D4ED8" />
+          <View style={[s.requestStyleOrderIcon, { backgroundColor: ec.bg }]}>
+            <IconPackage size={25} color={ec.color} />
           </View>
           <View style={s.requestStyleOrderMain}>
             <View style={s.requestStyleOrderEyebrow}>
@@ -1927,7 +1973,7 @@ export default function AdminHome() {
                   <Text style={[s.requestStyleOrderStatusText, { color: ec.color }]} numberOfLines={1}>{ec.label}</Text>
                 </View>
                 <View style={s.requestStyleExpandIcon}>
-                  {expanded ? <IconEyeOff size={16} color={VINOTINTO} /> : <IconEye size={16} color={VINOTINTO} />}
+                  {expanded ? <IconEyeOff size={19} color={VINOTINTO} /> : <IconEye size={19} color={VINOTINTO} />}
                 </View>
               </View>
             </View>
@@ -1943,8 +1989,8 @@ export default function AdminHome() {
                 {o.fecha ? new Date(o.fecha).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Sin fecha'}
               </Text>
               {!!o.codigo_compra && <Text style={s.requestStyleOrderCode}>{o.codigo_compra}</Text>}
-              <View style={s.priceBadge}>
-                <Text style={s.priceTxt} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
+              <View style={[s.priceBadge, s.requestStyleOrderPrice]}>
+                <Text style={[s.priceTxt, s.requestStyleOrderPriceText]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
                   {fmtPrice(o.total)}
                 </Text>
               </View>
@@ -1963,24 +2009,23 @@ export default function AdminHome() {
               <Text style={s.orderItemsTitle}>Artículos</Text>
               <Text style={s.orderItemsCount}>{items.length}</Text>
             </View>
-            {items.length > 0 ? items.slice(0, 2).map((item, index) => (
+            {items.length > 0 ? items.map((item, index) => (
               <View style={s.orderItemRow} key={`${item.id_libro || item.titulo || 'item'}-${index}`}>
-                <Text style={s.orderItemName} numberOfLines={1}>{item.titulo || 'Libro sin título'}</Text>
+                <Text style={s.orderItemName} numberOfLines={2}>{item.titulo || 'Libro sin título'}</Text>
                 <Text style={s.orderItemMeta}>×{item.cantidad || 1}</Text>
               </View>
             )) : (
               <Text style={s.orderItemEmpty}>No hay artículos disponibles</Text>
             )}
-            {items.length > 2 && <Text style={s.orderItemMore}>y {items.length - 2} más</Text>}
           </View>
           <View style={s.orderMetaGrid}>
             <View style={s.orderMetaCell}>
               <Text style={s.orderInfoLabel}>PAGO</Text>
-              <Text style={s.orderInfoValue} numberOfLines={1}>{o.metodo_pago || 'No especificado'}</Text>
+              <Text style={[s.orderInfoValue, s.orderMetaValue]} numberOfLines={2}>{o.metodo_pago || 'No especificado'}</Text>
             </View>
             <View style={s.orderMetaCell}>
               <Text style={s.orderInfoLabel}>ENTREGA</Text>
-              <Text style={s.orderInfoValue}>{tipoEntrega}</Text>
+              <Text style={[s.orderInfoValue, s.orderMetaValue]} numberOfLines={2}>{tipoEntrega}</Text>
             </View>
           </View>
         </View>}
@@ -2081,6 +2126,20 @@ export default function AdminHome() {
     ];
   }, [activeSection, data.usuarios, data.tiendas]);
 
+  const ordenesKpi = useMemo(() => {
+    if (activeSection !== 'ordenes') return null;
+    const countByStatus = (statuses) => data.ordenes.filter((order) =>
+      statuses.includes((order.estado || '').toLowerCase())
+    ).length;
+    return [
+      { key: 'total', label: 'Total órdenes', value: data.ordenes.length, Icon: IconPackage, color: VINOTINTO, bg: '#fdf2f4', border: '#f0dde4' },
+      { key: 'pagadas', label: 'Pagadas', value: countByStatus(['pagado']), Icon: IconDollar, color: '#047857', bg: '#ecfdf5', border: '#a7f3d0' },
+      { key: 'entregadas', label: 'Entregadas', value: countByStatus(['entregada', 'entregado']), Icon: IconCheck, color: '#D97706', bg: '#fffbeb', border: '#fde68a' },
+      { key: 'enviadas', label: 'Enviadas', value: countByStatus(['enviado']), Icon: IconTruck, color: '#ea580c', bg: '#fff7ed', border: '#fdba74' },
+      { key: 'canceladas', label: 'Canceladas', value: countByStatus(['cancelada']), Icon: IconBan, color: '#B91C1C', bg: '#fef2f2', border: '#fecaca' },
+    ];
+  }, [activeSection, data.ordenes]);
+
   const SectionListHeader = useMemo(() => (
     <View style={{ marginBottom: 12 }}>
 
@@ -2139,6 +2198,37 @@ export default function AdminHome() {
                 </View>
                 <Text style={[s.kpiCardUsuarioSub, { color: '#9CA3AF' }]}>{k.sub}</Text>
               </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+      )}
+
+      {activeSection === 'ordenes' && ordenesKpi && (
+        <View style={s.orderKpiGrid}>
+          <View style={s.orderKpiRow}>
+            {ordenesKpi.slice(0, 2).map(({ key, label, value, Icon, color, bg, border }) => (
+              <View key={key} style={[s.orderKpiCard, { borderColor: BORDER }]}>
+                <View style={[s.orderKpiIcon, { backgroundColor: bg, borderColor: border }]}>
+                  <Icon size={20} color={color} />
+                </View>
+                <View style={s.orderKpiInfo}>
+                  <Text style={s.orderKpiLabel} numberOfLines={1}>{label}</Text>
+                  <Text style={[s.orderKpiValue, { color }]}>{value}</Text>
+                </View>
+              </View>
+            ))}
+          </View>
+          <View style={s.orderKpiRow}>
+            {ordenesKpi.slice(2).map(({ key, label, value, Icon, color, bg, border }) => (
+              <View key={key} style={[s.orderKpiCardCompact, { borderColor: BORDER }]}>
+                <View style={[s.orderKpiIconCompact, { backgroundColor: bg, borderColor: border }]}>
+                  <Icon size={18} color={color} />
+                </View>
+                <View style={s.orderKpiInfoCompact}>
+                  <Text style={s.orderKpiLabelCompact} numberOfLines={1}>{label}</Text>
+                  <Text style={[s.orderKpiValueCompact, { color }]}>{value}</Text>
+                </View>
+              </View>
             ))}
           </View>
         </View>
@@ -2323,27 +2413,26 @@ export default function AdminHome() {
         <View style={s.orderStatusFilterSection}>
           <Text style={s.orderStatusFilterLabel}>Filtrar por estado</Text>
           <View style={s.orderStatusFilters}>
-            {[{ value: 'todos', label: 'Todos' }, ...estadosOrden.map((value) => ({
-              value,
-              label: getOrdenEstado(value).label,
-            }))].map(({ value, label }) => {
+            {[{ value: 'todos', label: 'Todas', color: VINOTINTO, bg: '#fdf2f4' }, ...ORDER_STATUS_FILTERS].map(({ value, label, color, bg }) => {
               const selected = filtroEstadoOrden === value;
-              const estado = value === 'todos' ? { color: '#1D4ED8', bg: '#EFF6FF', border: '#BFDBFE' } : getOrdenEstado(value);
               return (
                 <TouchableOpacity
                   key={value}
                   style={[
                     s.orderStatusFilter,
-                    { backgroundColor: selected ? estado.bg : WHITE, borderColor: selected ? estado.border : BORDER },
+                    {
+                      backgroundColor: selected ? bg : WHITE,
+                      borderColor: selected ? color : BORDER,
+                      borderWidth: selected ? 1.5 : 1,
+                    },
                   ]}
                   onPress={() => { setFiltroEstadoOrden(value); setPagina(1); }}
                   activeOpacity={0.75}
                   accessibilityRole="button"
                   accessibilityState={{ selected }}
                 >
-                  <Text style={[s.orderStatusFilterText, { color: selected ? estado.color : GRAY }]}>
-                    {label}
-                  </Text>
+                  {value !== 'todos' && <View style={[s.orderStatusDot, { backgroundColor: color }]} />}
+                  <Text style={[s.orderStatusFilterText, { color: selected ? color : GRAY }]}>{label}</Text>
                 </TouchableOpacity>
               );
             })}
@@ -2487,7 +2576,7 @@ export default function AdminHome() {
         {sectionCountLabel}
       </Text>
     </View>
-  ), [activeSection, busqueda, busquedaCategoria, filtroRol, filtroEstadoUsuario, filtroEstadoTienda, filtroCategoria, filtroEstadoOrden, estadosOrden, modalCategoriasVisible, categorias, librosPorCategoria, data.libros.length, data.tiendas, sectionItems.length, usuariosKpi, stats, windowWidth]);
+  ), [activeSection, busqueda, busquedaCategoria, filtroRol, filtroEstadoUsuario, filtroEstadoTienda, filtroCategoria, filtroEstadoOrden, modalCategoriasVisible, categorias, librosPorCategoria, data.libros.length, data.tiendas, sectionItems.length, usuariosKpi, ordenesKpi, stats, windowWidth]);
 
   // ── Paginación ────────────────────────────────────────────────────────────
   const SectionListFooter = useMemo(() => {
@@ -2735,6 +2824,18 @@ const s = StyleSheet.create({
   storeKpiInfo: { flex: 1, minWidth: 0 },
   storeKpiLabel: { color: GRAY, fontSize: 10, fontWeight: '800', letterSpacing: 0.4 },
   storeKpiValue: { fontSize: 25, lineHeight: 29, fontWeight: '900' },
+  orderKpiGrid: { gap: 8, marginBottom: 12 },
+  orderKpiRow: { flexDirection: 'row', gap: 8 },
+  orderKpiCard: { flex: 1, minWidth: 0, minHeight: 72, flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: WHITE, borderWidth: 1, borderRadius: 14, padding: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 6, elevation: 1 },
+  orderKpiIcon: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderRadius: 12 },
+  orderKpiInfo: { flex: 1, minWidth: 0 },
+  orderKpiLabel: { color: GRAY, fontSize: 9, fontWeight: '800', letterSpacing: 0.3, textTransform: 'uppercase' },
+  orderKpiValue: { fontSize: 23, lineHeight: 27, fontWeight: '900' },
+  orderKpiCardCompact: { flex: 1, minWidth: 0, minHeight: 82, alignItems: 'center', justifyContent: 'center', gap: 5, backgroundColor: WHITE, borderWidth: 1, borderRadius: 14, paddingHorizontal: 6, paddingVertical: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 6, elevation: 1 },
+  orderKpiIconCompact: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderRadius: 10 },
+  orderKpiInfoCompact: { alignItems: 'center', minWidth: 0, width: '100%' },
+  orderKpiLabelCompact: { color: GRAY, fontSize: 8, fontWeight: '800', letterSpacing: 0.1, textTransform: 'uppercase', textAlign: 'center' },
+  orderKpiValueCompact: { fontSize: 21, lineHeight: 24, fontWeight: '900' },
   pill:         { paddingHorizontal: 13, paddingVertical: 6, borderRadius: 20, backgroundColor: WHITE, borderWidth: 1, borderColor: BORDER },
   userRoleFilters: { flexDirection: 'row', gap: 7, marginBottom: 8 },
   rolePill:     { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, paddingHorizontal: 6 },
@@ -2751,9 +2852,10 @@ const s = StyleSheet.create({
   userStatusFilterTextSelected: { color: WHITE },
   userStatusActiveText: { color: '#166534' },
   userStatusBlockedText: { color: '#991B1B' },
-  orderStatusFilterSection: { marginBottom: 8 },
-  orderStatusFilterLabel: { color: GRAY, fontSize: 11, fontWeight: '700', marginBottom: 6 },
-  orderStatusFilters: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  orderStatusFilterSection: { backgroundColor: WHITE, borderWidth: 1, borderColor: BORDER, borderRadius: 14, padding: 8, marginBottom: 8 },
+  orderStatusFilterLabel: { color: '#555', fontSize: 10, fontWeight: '800', marginBottom: 6 },
+  orderStatusFilters: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-start', columnGap: 6, rowGap: 6 },
+  orderStatusDot: { width: 7, height: 7, borderRadius: 4, flexShrink: 0 },
   storeSearchAndFilters: { flexDirection: 'column', gap: 8, marginBottom: 8 },
   storeSearchBox: { width: '100%', minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 9, backgroundColor: WHITE, borderWidth: 1, borderColor: BORDER, borderRadius: 12, paddingHorizontal: 12 },
   storeSearchInput: { flex: 1, minWidth: 0, color: CARBON, fontSize: 13, paddingVertical: 8, outlineStyle: 'none' },
@@ -2764,8 +2866,8 @@ const s = StyleSheet.create({
   storeStatusDot: { width: 7, height: 7, borderRadius: 4 },
   storeStatusPillText: { fontSize: 11, fontWeight: '700' },
   storeStatusPillTextMobile: { fontSize: 10 },
-  orderStatusFilter: { minHeight: 30, justifyContent: 'center', paddingHorizontal: 10, paddingVertical: 5, borderWidth: 1, borderRadius: 16 },
-  orderStatusFilterText: { fontSize: 10, fontWeight: '700' },
+  orderStatusFilter: { flexBasis: '31%', minHeight: 30, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 3, paddingHorizontal: 4, paddingVertical: 4, borderWidth: 1, borderRadius: 18 },
+  orderStatusFilterText: { fontSize: 9, fontWeight: '700' },
   clearFiltersBtn: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', gap: 5, marginBottom: 8, paddingVertical: 5, paddingHorizontal: 2 },
   clearFiltersTxt: { color: VINOTINTO, fontSize: 12, fontWeight: '700' },
   categoryFilter: { backgroundColor: WHITE, borderWidth: 1, borderColor: BORDER, borderRadius: 12, padding: 11, marginBottom: 8 },
@@ -2806,28 +2908,31 @@ const s = StyleSheet.create({
 
   // Tarjeta de ítem
   card:         { backgroundColor: WHITE, borderWidth: 1, borderColor: BORDER, borderRadius: 16, padding: 14, marginBottom: 10 },
+  bookCard:     { borderWidth: 1.5, borderColor: '#C4C7CC' },
   userCard:     { borderLeftWidth: 4, paddingLeft: 11 },
   cardBloqueado:{ borderColor: '#FECACA' },
   cardOculto:   { borderColor: '#E9D5FF', opacity: 0.85 },
   orderCard:    { borderLeftWidth: 4, paddingLeft: 11 },
   requestStyleOrderCard: { backgroundColor: WHITE, borderWidth: 1.5, borderColor: '#B9A99A', borderLeftWidth: 4, borderRadius: 15, marginBottom: 12, elevation: 2, overflow: 'hidden' },
-  requestStyleOrderHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, padding: 13 },
+  requestStyleOrderHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14 },
   requestStyleOrderHeaderExpanded: { borderBottomWidth: 1, borderBottomColor: BORDER, backgroundColor: '#FFFCFA' },
-  requestStyleOrderIcon: { width: 48, height: 56, alignItems: 'center', justifyContent: 'center', borderRadius: 9, backgroundColor: '#EFF6FF' },
-  requestStyleOrderMain: { flex: 1, minWidth: 0 },
-  requestStyleOrderEyebrow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 3 },
-  requestStyleOrderNumber: { color: GRAY, fontSize: 10, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.3 },
-  requestStyleOrderRight: { flexDirection: 'row', alignItems: 'center', gap: 4, marginLeft: 'auto' },
-  requestStyleOrderStatus: { minHeight: 22, maxWidth: 105, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, borderWidth: 1, borderRadius: 12, paddingHorizontal: 6, paddingVertical: 3 },
-  requestStyleOrderStatusText: { fontSize: 9, fontWeight: '800' },
-  requestStyleExpandIcon: { width: 24, height: 24, borderRadius: 12, borderWidth: 1, borderColor: '#F0DDE4', backgroundColor: '#FDF2F4', alignItems: 'center', justifyContent: 'center' },
-  requestStyleOrderTitle: { color: CARBON, fontSize: 14, lineHeight: 19, fontWeight: '800' },
+  requestStyleOrderIcon: { width: 60, height: 64, alignItems: 'center', justifyContent: 'center', borderRadius: 12, backgroundColor: '#EFF6FF' },
+  requestStyleOrderMain: { flex: 1, minWidth: 0, alignSelf: 'stretch', justifyContent: 'center' },
+  requestStyleOrderEyebrow: { flexDirection: 'row', alignItems: 'center', gap: 7, marginBottom: 5 },
+  requestStyleOrderNumber: { color: GRAY, fontSize: 11, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.3, flexShrink: 1 },
+  requestStyleOrderRight: { flexDirection: 'row', alignItems: 'center', gap: 6, marginLeft: 'auto' },
+  requestStyleOrderStatus: { minHeight: 28, maxWidth: 118, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, borderWidth: 1, borderRadius: 14, paddingHorizontal: 9, paddingVertical: 4 },
+  requestStyleOrderStatusText: { fontSize: 10, fontWeight: '800' },
+  requestStyleExpandIcon: { width: 30, height: 30, borderRadius: 15, borderWidth: 1, borderColor: '#F0DDE4', backgroundColor: '#FDF2F4', alignItems: 'center', justifyContent: 'center' },
+  requestStyleOrderTitle: { color: CARBON, fontSize: 15, lineHeight: 20, fontWeight: '800' },
   requestStyleOrderAdditional: { color: GRAY, fontSize: 12, fontWeight: '500' },
-  requestStyleOrderBuyer: { color: GRAY, fontSize: 11, marginTop: 3 },
+  requestStyleOrderBuyer: { color: GRAY, fontSize: 12, marginTop: 4 },
   requestStyleOrderBuyerStrong: { color: CARBON, fontWeight: '700' },
-  requestStyleOrderMeta: { alignItems: 'flex-start', gap: 2, marginTop: 4 },
-  requestStyleOrderDateText: { color: GRAY, fontSize: 10, fontWeight: '600' },
-  requestStyleOrderCode: { color: GRAY, fontSize: 10, fontWeight: '700' },
+  requestStyleOrderMeta: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 6, marginTop: 6 },
+  requestStyleOrderDateText: { color: GRAY, fontSize: 11, fontWeight: '600' },
+  requestStyleOrderCode: { color: GRAY, fontSize: 11, fontWeight: '700' },
+  requestStyleOrderPrice: { marginTop: 0, marginLeft: 'auto', paddingHorizontal: 10, paddingVertical: 5 },
+  requestStyleOrderPriceText: { fontSize: 13 },
   requestStyleOrderDetails: { padding: 13, gap: 11, backgroundColor: WHITE },
   cardTop:      { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
   bookMainPress: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center' },
@@ -2855,20 +2960,20 @@ const s = StyleSheet.create({
   orderCode:    { color: GRAY, fontSize: 10, fontWeight: '600', marginTop: 3 },
   orderSummary: { width: 118, alignItems: 'stretch', gap: 6, marginLeft: 8 },
   orderInfo:    { backgroundColor: '#FAF8F5', borderRadius: 12, padding: 11, gap: 10 },
-  orderBuyerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, paddingBottom: 9, borderBottomWidth: 1, borderBottomColor: BORDER },
+  orderBuyerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, paddingHorizontal: 10, paddingVertical: 9, borderWidth: 1, borderColor: BORDER, borderRadius: 9, backgroundColor: '#FAF8F5' },
   orderInfoLabel: { color: GRAY, fontSize: 9, fontWeight: '800', letterSpacing: 0.5 },
-  orderInfoValue: { color: CARBON, fontSize: 11, fontWeight: '700', flexShrink: 1, textAlign: 'right' },
-  orderItemsSection: { gap: 6 },
-  orderItemsHeading: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 1 },
-  orderItemsTitle: { color: CARBON, fontSize: 11, fontWeight: '800' },
+  orderInfoValue: { color: CARBON, fontSize: 11, fontWeight: '700', flexShrink: 1, textAlign: 'right', lineHeight: 16 },
+  orderItemsSection: { gap: 7, padding: 10, borderWidth: 1, borderColor: BORDER, borderRadius: 10, backgroundColor: '#FAF8F5' },
+  orderItemsHeading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 1 },
+  orderItemsTitle: { color: CARBON, fontSize: 12, fontWeight: '800' },
   orderItemsCount: { minWidth: 17, height: 17, lineHeight: 17, borderRadius: 9, overflow: 'hidden', textAlign: 'center', backgroundColor: '#E8EEF8', color: '#365D96', fontSize: 10, fontWeight: '800' },
-  orderItemRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 5, paddingHorizontal: 8, borderRadius: 7, backgroundColor: WHITE },
-  orderItemName: { flex: 1, minWidth: 0, color: CARBON, fontSize: 11 },
-  orderItemMeta: { color: GRAY, fontSize: 11, fontWeight: '700' },
-  orderItemMore: { color: GRAY, fontSize: 10, paddingLeft: 8 },
+  orderItemRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 8, paddingHorizontal: 9, borderRadius: 8, backgroundColor: WHITE, borderWidth: 1, borderColor: '#EAE5DE' },
+  orderItemName: { flex: 1, minWidth: 0, color: CARBON, fontSize: 11, lineHeight: 16 },
+  orderItemMeta: { color: '#365D96', backgroundColor: '#E8EEF8', borderRadius: 10, paddingHorizontal: 8, paddingVertical: 4, fontSize: 10, fontWeight: '800', overflow: 'hidden' },
   orderItemEmpty: { color: GRAY, fontSize: 11, fontStyle: 'italic', paddingLeft: 2 },
   orderMetaGrid: { flexDirection: 'row', gap: 8 },
-  orderMetaCell: { flex: 1, minWidth: 0, gap: 4, padding: 8, borderRadius: 8, backgroundColor: WHITE },
+  orderMetaCell: { flex: 1, minWidth: 0, gap: 4, padding: 9, borderRadius: 9, backgroundColor: '#FAF8F5', borderWidth: 1, borderColor: BORDER },
+  orderMetaValue: { textAlign: 'left' },
   userAvatarHalf: { flex: 1, minWidth: 0, minHeight: 124, alignItems: 'center', justifyContent: 'center', paddingRight: 8 },
   userAvatar: { width: 88, height: 88, marginRight: 0, borderWidth: 2, borderRadius: 44, overflow: 'hidden' },
   userAvatarImage: { width: '100%', height: '100%' },
@@ -2884,7 +2989,7 @@ const s = StyleSheet.create({
   // Acordeón libro
   expandBox:    { borderTopWidth: 1, borderTopColor: BEIGE, marginTop: 4, paddingTop: 12, gap: 12 },
   bookDetailsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  bookDetailCell: { flexBasis: '48%', flexGrow: 1, minWidth: 130, minHeight: 58, justifyContent: 'center', backgroundColor: BEIGE, borderWidth: 1, borderColor: BORDER, borderRadius: 10, paddingHorizontal: 11, paddingVertical: 8 },
+  bookDetailCell: { flexBasis: '48%', flexGrow: 1, minWidth: 130, minHeight: 58, justifyContent: 'center', backgroundColor: '#FAFAFA', borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 10, paddingHorizontal: 11, paddingVertical: 8 },
   bookDetailLabel: { color: GRAY, fontSize: 10, fontWeight: '700', marginBottom: 4 },
   bookDetailValue: { color: CARBON, fontSize: 12, fontWeight: '800', flexShrink: 1 },
   bookDetailStatus: { flexDirection: 'row', alignItems: 'center', gap: 5 },
