@@ -1,0 +1,14 @@
+# Forzar LF en archivos de texto para compatibilidad con Linux en Docker
+* text=auto eol=lf
+
+# Los archivos .patch SIEMPRE deben ser LF (los parsers de pnpm/git en Linux no toleran CRLF)
+*.patch text eol=lf
+
+# Archivos binarios (sin conversión de EOL)
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
