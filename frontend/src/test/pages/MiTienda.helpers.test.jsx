@@ -4,6 +4,8 @@ import {
   BadgeEstado,
   BadgeCategoriaLibro,
   AlertaStock,
+  ModalEditarLibro,
+  ModalVentaFisica,
   ModalStock,
   ModalCodigoLibro,
   ModalRetiroTienda,
@@ -31,12 +33,14 @@ import {
 const mocks = vi.hoisted(() => ({
   apiGet: vi.fn(),
   apiPatch: vi.fn(),
+  apiPut: vi.fn(),
 }))
 
 vi.mock('../../services/api', () => ({
   default: {
     get: mocks.apiGet,
     patch: mocks.apiPatch,
+    put: mocks.apiPut,
   },
   getApiBaseUrl: () => 'https://api.bookyhome.test',
   habilitarPagoRetiro: vi.fn(),
@@ -58,6 +62,7 @@ describe('MiTienda - Helper functions and utility components', () => {
   beforeEach(() => {
     localStorage.clear()
     vi.clearAllMocks()
+    mocks.apiPut.mockResolvedValue({ data: {} })
   })
 
   describe('categoriaColor', () => {
@@ -285,6 +290,91 @@ describe('MiTienda - Helper functions and utility components', () => {
     })
   })
 
+  describe('ModalEditarLibro', () => {
+    it('validates required fields and early-access publication timing before saving', async () => {
+      const onClose = vi.fn()
+      const onGuardado = vi.fn()
+      mocks.apiPut.mockRejectedValueOnce({ response: { data: { detail: 'No se pudo guardar' } } })
+      render(
+        <ModalEditarLibro
+          libro={{
+            id_libro: 15,
+            id_categoria: 2,
+            titulo: 'Libro de prueba',
+            autor_libro: 'Autora',
+            descripcion_libro: 'Descripción',
+            precio_libro: 20000,
+            stock: 3,
+            estado_libro: 'nuevo',
+          }}
+          categorias={[
+            { id_categoria: 2, nombre_categoria: 'Ficción' },
+            { id_categoria: 3, nombre_categoria: 'Historia' },
+          ]}
+          onClose={onClose}
+          onGuardado={onGuardado}
+        />,
+      )
+
+      const submit = () => fireEvent.submit(document.querySelector('.modal-form'))
+      const title = screen.getByLabelText('Título *')
+      const author = screen.getByLabelText('Autor *')
+      const category = screen.getByLabelText('Categoría *')
+      const price = screen.getByLabelText('Precio (COP) *')
+      const stock = screen.getByLabelText('Stock *')
+
+      fireEvent.change(title, { target: { value: ' ' } })
+      submit()
+      expect(screen.getByText('El título es obligatorio')).toBeInTheDocument()
+
+      fireEvent.change(title, { target: { value: 'Libro editado' } })
+      fireEvent.change(author, { target: { value: ' ' } })
+      submit()
+      expect(screen.getByText('El autor es obligatorio')).toBeInTheDocument()
+
+      fireEvent.change(author, { target: { value: 'Autora' } })
+      fireEvent.change(category, { target: { value: '' } })
+      submit()
+      expect(screen.getByText('Selecciona una categoría')).toBeInTheDocument()
+
+      fireEvent.change(category, { target: { value: '2' } })
+      fireEvent.change(price, { target: { value: '0' } })
+      submit()
+      expect(screen.getByText('El precio debe ser mayor a 0')).toBeInTheDocument()
+
+      fireEvent.change(price, { target: { value: '25000' } })
+      fireEvent.change(stock, { target: { value: '-1' } })
+      submit()
+      expect(screen.getByText('El stock no puede ser negativo')).toBeInTheDocument()
+
+      fireEvent.change(stock, { target: { value: '4' } })
+      fireEvent.click(document.querySelector('input[name="acceso_anticipado"]'))
+      submit()
+      expect(screen.getByText('Indica cuándo estará disponible el libro para todos')).toBeInTheDocument()
+
+      const toInputValue = (hours) => {
+        const date = new Date(Date.now() + hours * 60 * 60 * 1000)
+        return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16)
+      }
+      const releaseDate = screen.getByLabelText('Disponible para todos desde (hora Colombia)')
+      fireEvent.change(releaseDate, { target: { value: toInputValue(1) } })
+      submit()
+      expect(screen.getByText('La disponibilidad pública debe ser al menos 24 horas después')).toBeInTheDocument()
+
+      fireEvent.change(releaseDate, { target: { value: toInputValue(48) } })
+      submit()
+      expect(await screen.findByText('No se pudo guardar')).toBeInTheDocument()
+      expect(mocks.apiPut).toHaveBeenCalledWith(
+        '/libros/15',
+        expect.any(FormData),
+        { headers: { 'Content-Type': 'multipart/form-data' } },
+      )
+      expect(onGuardado).not.toHaveBeenCalled()
+      fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }))
+      expect(onClose).toHaveBeenCalledOnce()
+    })
+  })
+
   describe('ModalStock', () => {
     it('permite cambiar stock con botones y guardar actualización', async () => {
       const onClose = vi.fn()
@@ -350,6 +440,40 @@ describe('MiTienda - Helper functions and utility components', () => {
     })
   })
 
+  describe('ModalVentaFisica', () => {
+    it('selects a book with the keyboard and clamps the quantity to available stock', async () => {
+      mocks.apiPatch.mockResolvedValueOnce({ data: {} })
+      const onClose = vi.fn()
+      const onVendido = vi.fn()
+      const libros = [
+        { id_libro: 5, titulo: 'Libro disponible', autor_libro: 'Autora', stock: 2, precio_libro: 15000 },
+        { id_libro: 6, titulo: 'Libro agotado', autor_libro: 'Autor', stock: 0, precio_libro: 10000 },
+      ]
+      render(<ModalVentaFisica libro={null} libros={libros} onClose={onClose} onVendido={onVendido} />)
+
+      const search = screen.getByPlaceholderText('Buscar por título, autor o categoría...')
+      fireEvent.change(search, { target: { value: 'no existe' } })
+      expect(screen.getByText('No se encontraron libros con ese término')).toBeInTheDocument()
+      fireEvent.click(screen.getByRole('button', { name: '✕' }))
+
+      fireEvent.keyDown(screen.getByRole('option', { name: /Libro disponible/ }), { key: 'Enter', code: 'Enter' })
+      fireEvent.change(screen.getByLabelText('Cantidad vendida *'), { target: { value: '9' } })
+      expect(screen.getByLabelText('Cantidad vendida *')).toHaveValue(2)
+      fireEvent.change(screen.getByLabelText('Cantidad vendida *'), { target: { value: '0' } })
+      expect(screen.getByLabelText('Cantidad vendida *')).toHaveValue(1)
+      fireEvent.change(screen.getByLabelText('Cantidad vendida *'), { target: { value: '2' } })
+      fireEvent.click(screen.getByRole('button', { name: 'Confirmar Venta' }))
+
+      await waitFor(() => expect(mocks.apiPatch).toHaveBeenCalledWith(
+        '/libros/5/stock',
+        expect.any(FormData),
+        { headers: { 'Content-Type': 'multipart/form-data' } },
+      ))
+      expect(await screen.findByText('¡Venta registrada con éxito!')).toBeInTheDocument()
+      expect(mocks.apiPatch.mock.calls[0][1].get('stock')).toBe('0')
+    })
+  })
+
   describe('ModalCodigoLibro', () => {
     it('renderiza ID de libro y código de barras', () => {
       const onClose = vi.fn()
@@ -366,6 +490,26 @@ describe('MiTienda - Helper functions and utility components', () => {
 
       fireEvent.click(screen.getByRole('button', { name: 'x' }))
       expect(onClose).toHaveBeenCalled()
+    })
+
+    it('copies the digital book code or exposes it when clipboard access fails', async () => {
+      const alert = vi.spyOn(window, 'alert').mockImplementation(() => {})
+      const error = vi.spyOn(console, 'error').mockImplementation(() => {})
+      render(<ModalCodigoLibro libro={{ id_libro: 42, titulo: 'Rayuela' }} onClose={vi.fn()} />)
+      fireEvent.click(screen.getByRole('button', { name: 'Copiar Código Digital' }))
+      expect(alert).toHaveBeenCalledWith(
+        'No se pudo copiar el código. Puedes copiarlo manualmente: BKH-00042',
+      )
+      expect(error).toHaveBeenCalled()
+
+      const writeText = vi.fn().mockResolvedValue(undefined)
+      Object.defineProperty(navigator, 'clipboard', {
+        configurable: true,
+        value: { writeText },
+      })
+      fireEvent.click(screen.getByRole('button', { name: 'Copiar Código Digital' }))
+      await waitFor(() => expect(writeText).toHaveBeenCalledWith('BKH-00042'))
+      expect(alert).toHaveBeenCalledWith('Código electrónico BKH-00042 copiado al portapapeles')
     })
   })
 

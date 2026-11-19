@@ -6,7 +6,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import Register from '../../pages/Register'
@@ -347,5 +347,60 @@ describe('Register — contraseña media', () => {
     // Abc12345 → longitud ≥8 ✅, mayúscula ✅, número ✅, especial ❌ → score 3 → media
     await user.type(screen.getByLabelText(/^contraseña$/i), 'Abc12345')
     expect(screen.getByText(/contraseña media/i)).toBeInTheDocument()
+  })
+})
+
+describe('Register — submit validation branches', () => {
+  it('reports missing and invalid values when the form is submitted directly', () => {
+    renderRegister()
+    const form = screen.getByLabelText(/^nombre$/i).closest('form')
+    const submit = () => fireEvent.submit(form)
+
+    submit()
+    expect(notify).toHaveBeenLastCalledWith('El nombre es obligatorio', 'error')
+
+    fireEvent.change(screen.getByLabelText(/^nombre$/i), { target: { value: 'Juan' } })
+    submit()
+    expect(notify).toHaveBeenLastCalledWith('Los apellidos son obligatorios', 'error')
+
+    fireEvent.change(screen.getByLabelText(/apellidos/i), { target: { value: 'Pérez' } })
+    submit()
+    expect(notify).toHaveBeenLastCalledWith('Ingresa un email válido', 'error')
+
+    fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'juan@test.com' } })
+    submit()
+    expect(notify).toHaveBeenLastCalledWith('El teléfono es obligatorio', 'error')
+
+    fireEvent.change(screen.getByLabelText(/teléfono/i), { target: { value: '12ab' } })
+    submit()
+    expect(notify).toHaveBeenLastCalledWith(
+      'Ingresa un número de teléfono válido (solo números, entre 7 y 15 dígitos)',
+      'error',
+    )
+
+    fireEvent.change(screen.getByLabelText(/teléfono/i), { target: { value: '3001234567' } })
+    fireEvent.change(screen.getByLabelText(/^contraseña$/i), { target: { value: 'short' } })
+    submit()
+    expect(notify).toHaveBeenLastCalledWith('La contraseña debe tener al menos 8 caracteres', 'error')
+
+    fireEvent.change(screen.getByLabelText(/^contraseña$/i), { target: { value: 'abcdefgh1' } })
+    submit()
+    expect(notify).toHaveBeenLastCalledWith(
+      'La contraseña debe incluir una mayúscula, un número y un carácter especial',
+      'error',
+    )
+
+    fireEvent.change(screen.getByLabelText(/^contraseña$/i), { target: { value: 'Segura123!' } })
+    fireEvent.change(screen.getByLabelText(/confirmar contraseña/i), { target: { value: 'Otra123!' } })
+    submit()
+    expect(notify).toHaveBeenLastCalledWith('Las contraseñas no coinciden', 'error')
+
+    fireEvent.change(screen.getByLabelText(/confirmar contraseña/i), { target: { value: 'Segura123!' } })
+    submit()
+    expect(notify).toHaveBeenLastCalledWith(
+      'Debes aceptar tanto los Términos y Condiciones como la Política de Privacidad',
+      'error',
+    )
+    expect(register).not.toHaveBeenCalled()
   })
 })

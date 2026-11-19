@@ -45,7 +45,11 @@ vi.mock('../../services/notificaciones', () => ({
 vi.mock('../../components/VendedorSidebar', () => ({
   default: ({ activeSide, setActiveSide, handleLogout }) => (
     <nav aria-label="Secciones de tienda">
-      {['Inicio', 'Mis Libros', 'Ventas', 'Pedidos', 'Notificaciones', 'Perfil'].map((section) => (
+      {[
+        'Inicio', 'Mis Libros', 'Ventas', 'Pedidos', 'Notificaciones', 'Perfil',
+        'Mensajes', 'Calificaciones', 'Quejas y reclamos', 'Soporte técnico',
+        'Envíos', 'Clientes', 'Configuración', 'Promociones', 'Cupones',
+      ].map((section) => (
         <button
           key={section}
           type="button"
@@ -211,6 +215,62 @@ describe('MiTienda', () => {
     expect(screen.getByText('Cien años de soledad')).toBeTruthy()
   })
 
+  it('filters inventory by category, availability, condition and sort order', async () => {
+    const defaultGet = mocks.apiGet.getMockImplementation()
+    mocks.apiGet.mockImplementation((path) => {
+      if (path === '/libros/categorias') {
+        return Promise.resolve({ data: [
+          { id_categoria: 2, nombre_categoria: 'Ficción' },
+          { id_categoria: 4, nombre_categoria: 'Clásicos' },
+        ] })
+      }
+      if (path === '/libros/mis-libros') {
+        return Promise.resolve({ data: [books[0], { ...books[1], id_categoria: 4, nombre_categoria: 'Clásicos' }] })
+      }
+      return defaultGet(path)
+    })
+    renderSeller()
+    await screen.findByRole('heading', { name: 'Mis Libros Publicados' })
+    const filters = screen.getAllByRole('combobox')
+
+    fireEvent.change(filters[0], { target: { value: '2' } })
+    expect(screen.getByText('Cien años de soledad')).toBeInTheDocument()
+    expect(screen.queryByText('La casa de los espíritus')).toBeNull()
+
+    fireEvent.change(filters[0], { target: { value: 'todas' } })
+    fireEvent.change(filters[1], { target: { value: 'agotados' } })
+    expect(screen.getByText('La casa de los espíritus')).toBeInTheDocument()
+    expect(screen.queryByText('Cien años de soledad')).toBeNull()
+
+    fireEvent.change(filters[1], { target: { value: 'todos' } })
+    fireEvent.change(filters[2], { target: { value: 'nuevo' } })
+    expect(screen.getByText('Cien años de soledad')).toBeInTheDocument()
+    expect(screen.queryByText('La casa de los espíritus')).toBeNull()
+
+    fireEvent.change(filters[2], { target: { value: 'todos' } })
+    fireEvent.change(filters[3], { target: { value: 'titulo_desc' } })
+    const titles = Array.from(document.querySelectorAll('.libro-main-title')).map((el) => el.textContent.trim())
+    expect(titles[0]).toBe('La casa de los espíritus')
+    fireEvent.change(screen.getByPlaceholderText('Buscar por título, autor o categoría...'), {
+      target: { value: 'título que no existe' },
+    })
+    expect(screen.getByText('No se encontraron libros')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Limpiar filtros' }))
+    expect(screen.getByText('Cien años de soledad')).toBeInTheDocument()
+    fireEvent.change(screen.getByLabelText('Ver:'), { target: { value: '10' } })
+    expect(screen.getByText('La casa de los espíritus')).toBeInTheDocument()
+  })
+
+  it('shows the empty inventory prompt when no books have been published', async () => {
+    mocks.apiGet.mockImplementation((path) => path === '/libros/mis-libros'
+      ? Promise.resolve({ data: [] })
+      : Promise.resolve({ data: [] }))
+    renderSeller()
+    expect(await screen.findByText('No tienes libros publicados')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: '+ Publicar primer libro' }))
+    expect(mocks.navigate).toHaveBeenCalledWith('/vendedor/publicar')
+  })
+
   it('registra una venta presencial y confirma el descuento de inventario', async () => {
     renderSeller()
     await screen.findByRole('heading', { name: 'Mis Libros Publicados' })
@@ -271,6 +331,124 @@ describe('MiTienda', () => {
     expect(mocks.apiGet).toHaveBeenCalledWith('/libros/mis-libros')
   })
 
+  it('caches store branding and loads profile photo, banner and notification preferences', async () => {
+    const defaultGet = mocks.apiGet.getMockImplementation()
+    mocks.apiGet.mockImplementation((path) => {
+      if (path === '/configuracion') {
+        return Promise.resolve({ data: {
+          logo_url: '/uploads/tienda.png',
+          banner_url: '/uploads/portada.png',
+        } })
+      }
+      if (path === '/perfil/mi-perfil') {
+        return Promise.resolve({ data: {
+          nombre_usuario: 'Ana Vendedora',
+          foto_perfil: '/uploads/perfil.png',
+          banner_perfil: '/uploads/perfil-banner.png',
+          preferencias: {
+            notificaciones_promociones: false,
+            notificaciones_pedidos: true,
+            notificaciones_novedades: true,
+          },
+        } })
+      }
+      return defaultGet(path)
+    })
+    renderSeller('?seccion=Perfil')
+
+    expect(await screen.findByRole('heading', { name: 'Mi Perfil' })).toBeInTheDocument()
+    await waitFor(() => {
+      expect(localStorage.getItem('vendedor_user_photo_url_42')).toBe('https://api.example.test/uploads/tienda.png')
+      expect(localStorage.getItem('vendedor_banner_url_42')).toBe('https://api.example.test/uploads/portada.png')
+    })
+    expect(screen.getByDisplayValue('Ana')).toBeInTheDocument()
+  })
+
+  it('explores chart periods and renders populated sales, bestseller and low-stock summaries', async () => {
+    const defaultGet = mocks.apiGet.getMockImplementation()
+    mocks.apiGet.mockImplementation((path) => {
+      if (path === '/libros/top-vendidos') {
+        return Promise.resolve({ data: Array.from({ length: 6 }, (_, index) => ({
+          id_libro: 50 + index,
+          titulo: `Libro destacado ${index + 1}`,
+          autor_libro: 'Autora de prueba',
+          nombre_categoria: index === 0 ? 'Ficción' : '',
+          precio_libro: 15000 + index * 1000,
+          unidades_vendidas: index + 1,
+          total_generado: index === 0 ? 90000 : 0,
+          estado_libro: 'nuevo',
+          imagen_url: index === 0 ? '/uploads/portada.png' : null,
+        })) })
+      }
+      if (path === '/libros/alertas-stock?umbral=3') {
+        return Promise.resolve({ data: Array.from({ length: 6 }, (_, index) => ({
+          id_libro: 70 + index,
+          titulo: `Stock bajo ${index + 1}`,
+          stock: index,
+        })) })
+      }
+      return defaultGet(path)
+    })
+    renderSeller('?seccion=Inicio')
+
+    expect(await screen.findByText('Libro destacado 1')).toBeInTheDocument()
+    expect(screen.getByText('Stock bajo 1')).toBeInTheDocument()
+    expect(screen.getByText('Ver 1 libro(s) más en Mis Libros →')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Mes' }))
+    expect(document.querySelector('.current-period-label')).toHaveTextContent(/Este mes/)
+    fireEvent.click(screen.getByTitle('Ver mes anterior'))
+    expect(screen.getByTitle('Volver al período actual')).toBeInTheDocument()
+    fireEvent.click(screen.getByTitle('Volver al período actual'))
+
+    fireEvent.click(screen.getByRole('button', { name: 'Año' }))
+    expect(document.querySelector('.current-period-label')).toHaveTextContent(/Este año/)
+    fireEvent.click(screen.getByTitle('Ver año anterior'))
+    fireEvent.click(screen.getByTitle('Ver año siguiente'))
+    fireEvent.click(screen.getByTitle('Vista en Barras'))
+    expect(document.querySelector('.modern-bars-viewport')).toBeInTheDocument()
+    fireEvent.mouseEnter(document.querySelector('.modern-bar-col'))
+    fireEvent.click(screen.getByTitle('Vista en Curva Suave'))
+    fireEvent.mouseEnter(document.querySelector('.svg-point-group'))
+
+    fireEvent.click(screen.getAllByTitle('Ajustar stock')[0])
+    expect(await screen.findByText('Gestionar stock')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }))
+    fireEvent.change(screen.getByLabelText('Avisar cuando queden:'), { target: { value: '0' } })
+    expect(localStorage.getItem('stockUmbral')).toBe('0')
+  })
+
+  it('navigates historical chart years across clean scale ranges and missing sale dates', async () => {
+    const now = new Date()
+    const year = now.getFullYear()
+    const sales = [
+      { id_orden: 1, fecha: now.toISOString(), total: 70000 },
+      { id_orden: 2, fecha: new Date(year, now.getMonth(), 10), total: 1000 },
+      { id_orden: 3, fecha: null, total: 9000000 },
+      ...[150000, 350000, 800000, 1100000, 1300000, 1700000, 2200000, 3000000, 6000000, 8000000]
+        .map((total, index) => ({
+          id_orden: index + 10,
+          fecha: new Date(year - index - 1, 5, 15).toISOString(),
+          total,
+        })),
+    ]
+    const defaultGet = mocks.apiGet.getMockImplementation()
+    mocks.apiGet.mockImplementation((path) => path === '/libros/mis-ventas'
+      ? Promise.resolve({ data: sales })
+      : defaultGet(path))
+    renderSeller('?seccion=Inicio')
+    await screen.findByRole('heading', { name: /Ana Vendedora/ })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Año' }))
+    expect(document.querySelector('.current-period-label')).toHaveTextContent(/Este año/)
+    for (let offset = 1; offset <= 11; offset += 1) {
+      fireEvent.click(screen.getByTitle('Ver año anterior'))
+    }
+    expect(document.querySelector('.current-period-label')).toHaveTextContent(`Año ${year - 11}`)
+    fireEvent.click(screen.getByTitle('Ver año siguiente'))
+    expect(document.querySelector('.current-period-label')).toHaveTextContent(`Año ${year - 10}`)
+  })
+
   it('agrupa ventas de una orden y permite consultar el detalle de sus libros', async () => {
     const getDefault = mocks.apiGet.getMockImplementation()
     mocks.apiGet.mockImplementation((path) => {
@@ -318,7 +496,7 @@ describe('MiTienda', () => {
     expect(await screen.findByText('Nuevo mensaje')).toBeTruthy()
     expect(screen.getByText('Nuevo pedido')).toBeTruthy()
 
-    fireEvent.click(screen.getByRole('button', { name: /Mensajes/ }))
+    fireEvent.click(document.querySelector('.notif-filtros button:last-child'))
     expect(screen.getByText('Nuevo mensaje')).toBeTruthy()
     expect(screen.queryByText('Nuevo pedido')).toBeNull()
     fireEvent.click(screen.getByText('✓'))
@@ -328,6 +506,68 @@ describe('MiTienda', () => {
     fireEvent.click(screen.getByText('Todas las notificaciones'))
     fireEvent.click(screen.getByRole('button', { name: 'Eliminar', exact: true }))
     await waitFor(() => expect(mocks.notificaciones.eliminarVarias).toHaveBeenCalledWith('todas'))
+  })
+
+  it('elimina una sola notificación después de confirmar', async () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
+    mocks.notificaciones.obtener
+      .mockResolvedValueOnce({ notificaciones: notifications })
+      .mockResolvedValueOnce({ notificaciones: [notifications[1]] })
+    renderSeller('?seccion=Notificaciones')
+    expect(await screen.findByText('Nuevo mensaje')).toBeInTheDocument()
+
+    fireEvent.click(document.querySelector('.notif-item .btn-eliminar'))
+    await waitFor(() => expect(mocks.notificaciones.eliminar).toHaveBeenCalledWith(10))
+    expect(screen.queryByText('Nuevo mensaje')).toBeNull()
+    expect(screen.getByText('Nuevo pedido')).toBeInTheDocument()
+  })
+
+  it('routes notification clicks to messages, orders, promotions and complaints', async () => {
+    mocks.notificaciones.obtener.mockResolvedValue({
+      notificaciones: [
+        ...notifications,
+        {
+          id_notificacion: 12,
+          tipo: 'resena',
+          titulo: 'Nueva reseña',
+          descripcion: 'Recibiste una reseña',
+          fecha_creacion: '2026-03-21T12:00:00',
+          leida: true,
+        },
+        {
+          id_notificacion: 13,
+          tipo: 'sistema',
+          titulo: 'Nuevo reclamo',
+          descripcion: 'Tienes un reclamo pendiente',
+          fecha_creacion: '2026-03-22T12:00:00',
+          leida: true,
+        },
+      ],
+    })
+    renderSeller('?seccion=Notificaciones')
+    expect(await screen.findByText('Nuevo mensaje')).toBeInTheDocument()
+
+    const openNotification = (title) => {
+      fireEvent.click(screen.getByText(title).closest('.notif-item-open'))
+    }
+    openNotification('Nuevo mensaje')
+    expect(screen.getByRole('button', { name: 'Mensajes' })).toHaveAttribute('aria-current', 'page')
+    expect(screen.getByText('Chat mock')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Notificaciones' }))
+    await screen.findByText('Nuevo pedido')
+    openNotification('Nuevo pedido')
+    expect(screen.getByRole('button', { name: 'Pedidos' })).toHaveAttribute('aria-current', 'page')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Notificaciones' }))
+    await screen.findByText('Nueva reseña')
+    openNotification('Nueva reseña')
+    expect(screen.getByRole('button', { name: 'Promociones' })).toHaveAttribute('aria-current', 'page')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Notificaciones' }))
+    await screen.findByText('Nuevo reclamo')
+    openNotification('Nuevo reclamo')
+    expect(screen.getByRole('button', { name: 'Quejas y reclamos' })).toHaveAttribute('aria-current', 'page')
   })
 
   it('marca todas como leídas y actualiza datos de perfil', async () => {
@@ -446,6 +686,34 @@ describe('MiTienda', () => {
     })
   })
 
+  it('confirma y finaliza la entrega de un pedido de retiro ya pagado', async () => {
+    mocks.apiGet.mockImplementation((path) => path === '/libros/mis-pedidos'
+      ? Promise.resolve({ data: [{
+        id_orden: 302,
+        codigo_compra: 'RET-302',
+        cliente: 'Laura Compradora',
+        correo_cliente: 'laura@example.test',
+        fecha: '2026-03-20T10:00:00',
+        estado: 'pagado',
+        tipo_entrega: 'retiro_tienda',
+        estado_retiro: 'habilitado_pago',
+        metodo_pago: 'transferencia',
+        total: 22000,
+        libros: [{ id_libro: 5, titulo: 'Libro reservado', cantidad: 1, precio_libro: 22000 }],
+      }] })
+      : Promise.resolve({ data: [] }))
+    mocks.confirmarEntregaRetiro.mockResolvedValueOnce({ data: { ok: true } })
+
+    renderSeller('?seccion=Pedidos')
+    expect(await screen.findByText('Laura Compradora')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: /Entregar Libro \(Ya Pagado\)/ }))
+    expect(screen.getByRole('dialog', { name: 'Confirmar entrega en tienda' })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: /Entregar Libro Físico/ }))
+
+    await waitFor(() => expect(mocks.confirmarEntregaRetiro).toHaveBeenCalledWith(302, false))
+    expect(await screen.findByText(/ha sido finalizada y entregada al cliente/)).toBeInTheDocument()
+  })
+
   it('gestiona la sección de Envíos y aplica filtros', async () => {
     const orders = [
       {
@@ -551,6 +819,75 @@ describe('MiTienda', () => {
       expect(mocks.apiPut).toHaveBeenCalledWith('/configuracion', expect.any(Object))
     })
     expect(await screen.findByText('✓ Cambios guardados')).toBeTruthy()
+  })
+
+  it('saves identity, policy, shipping and visual settings for the store', async () => {
+    const defaultGet = mocks.apiGet.getMockImplementation()
+    mocks.apiGet.mockImplementation((path) => {
+      if (path === '/configuracion') {
+        return Promise.resolve({ data: {
+          horario_atencion: '',
+          politica_devoluciones: '',
+          politica_envios: '',
+          tiempo_despacho_dias: 2,
+          descripcion: '',
+          ciudad_origen: '',
+          email_publico: '',
+          tarifa_envio: 0,
+        } })
+      }
+      if (path === '/tiendas/mi-tienda') {
+        return Promise.resolve({ data: { id_tienda: 9, nombre_tienda: 'Librería Central', fecha_creacion: '2024-01-01' } })
+      }
+      return defaultGet(path)
+    })
+    const darkModeChanged = vi.fn()
+    window.addEventListener('darkModeChange', darkModeChanged)
+    renderSeller('?seccion=Configuración')
+    await screen.findByRole('heading', { name: 'Configuración de tienda' })
+
+    fireEvent.change(screen.getByLabelText('Teléfono de contacto'), { target: { value: '3005550011' } })
+    fireEvent.change(screen.getByLabelText('Dirección física'), { target: { value: 'Calle 50' } })
+    fireEvent.change(screen.getByLabelText('Ciudad de origen'), { target: { value: 'Cali' } })
+    fireEvent.change(screen.getByLabelText('Email público'), { target: { value: 'contacto@letras.test' } })
+    fireEvent.change(screen.getByLabelText('Horario de atención'), { target: { value: 'Lun a sábados' } })
+    fireEvent.change(screen.getByLabelText('Describe tu tienda'), { target: { value: 'Libros seleccionados' } })
+    fireEvent.change(screen.getByLabelText('Días promedio de despacho'), { target: { value: '4' } })
+    fireEvent.change(screen.getByLabelText('Política de envíos'), { target: { value: 'Envíos nacionales' } })
+    fireEvent.change(screen.getByLabelText('Política de devoluciones'), { target: { value: 'Cambios en 30 días' } })
+    fireEvent.change(document.querySelectorAll('input[type="number"]')[1], { target: { value: '8500' } })
+    const shippingFee = document.querySelectorAll('input[type="number"]')[1]
+    fireEvent.focus(shippingFee)
+    fireEvent.mouseEnter(screen.getByRole('button', { name: /Guardar cambios/ }))
+    fireEvent.mouseLeave(screen.getByRole('button', { name: /Guardar cambios/ }))
+    fireEvent.click(screen.getByRole('button', { name: /Guardar cambios/ }))
+
+    await waitFor(() => expect(mocks.apiPut).toHaveBeenCalledWith('/configuracion', expect.objectContaining({
+      ciudad_origen: 'Cali',
+      email_publico: 'contacto@letras.test',
+      horario_atencion: 'Lun a sábados',
+      descripcion: 'Libros seleccionados',
+      tiempo_despacho_dias: 4,
+      politica_envios: 'Envíos nacionales',
+      politica_devoluciones: 'Cambios en 30 días',
+      tarifa_envio: 8500,
+    })))
+    fireEvent.change(shippingFee, { target: { value: '' } })
+    fireEvent.blur(shippingFee)
+    expect(shippingFee).toHaveValue(0)
+    fireEvent.click(screen.getByLabelText('Activar modo oscuro'))
+    expect(localStorage.getItem('darkMode')).toBe('true')
+    expect(darkModeChanged).toHaveBeenCalledOnce()
+    window.removeEventListener('darkModeChange', darkModeChanged)
+  })
+
+  it('shows the backend error when store configuration cannot be saved', async () => {
+    mocks.apiPut.mockRejectedValueOnce({ response: { data: { detail: 'Tienda no disponible' } } })
+    renderSeller('?seccion=Configuración')
+    await screen.findByRole('heading', { name: 'Configuración de tienda' })
+    fireEvent.change(screen.getByLabelText(/Nombre de la tienda/), { target: { value: 'Letras nuevas' } })
+    fireEvent.click(screen.getByRole('button', { name: /Guardar cambios/ }))
+    expect(await screen.findByText('⚠️ Error: Tienda no disponible')).toBeInTheDocument()
   })
 
   it('actualiza datos y preferencias del perfil, y personaliza foto y banner', async () => {

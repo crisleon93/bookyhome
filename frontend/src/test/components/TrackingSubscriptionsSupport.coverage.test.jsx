@@ -174,6 +174,47 @@ describe('seguimiento, suscripciones y soporte web', () => {
     expect(screen.getByText(/Detalles de tu Suscripci/)).toBeTruthy()
   })
 
+  it('muestra errores al cargar planes o al intentar contratar una suscripción', async () => {
+    api.get.mockRejectedValueOnce(new Error('offline'))
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const firstRender = render(<SeccionSuscripciones tiendaId={4} />)
+    expect(await screen.findByText('No se pudieron cargar los datos de los planes y tu suscripción.')).toBeTruthy()
+    firstRender.unmount()
+
+    api.get.mockImplementation((path) => Promise.resolve({
+      data: path === '/herramientas/planes' ? plans : { activa: false },
+    }))
+    api.post.mockRejectedValueOnce({ response: { data: { detail: 'Pago rechazado' } } })
+    render(<SeccionSuscripciones tiendaId={4} />)
+    fireEvent.click(await screen.findAllByRole('button', { name: 'Cambiar a este Plan' }).then((buttons) => buttons[0]))
+    expect(await screen.findByText('Pago rechazado')).toBeTruthy()
+    expect(consoleError).toHaveBeenCalled()
+    consoleError.mockRestore()
+  })
+
+  it('respeta la cancelación del diálogo y muestra una falla al cancelar un plan activo', async () => {
+    api.get.mockImplementation((path) => Promise.resolve({
+      data: path === '/herramientas/planes' ? plans : {
+        activa: true,
+        suscripcion: { id_plan: 2, metodo_pago: 'Transferencia', monto_pagado: 29000 },
+      },
+    }))
+    api.delete.mockRejectedValueOnce({ response: { data: { detail: 'No se pudo cancelar' } } })
+    const confirm = vi.spyOn(window, 'confirm')
+      .mockReturnValueOnce(false)
+      .mockReturnValueOnce(true)
+
+    render(<SeccionSuscripciones tiendaId={4} darkMode />)
+    const cancelButton = await screen.findByRole('button', { name: 'Cancelar Suscripción' })
+    fireEvent.click(cancelButton)
+    expect(api.delete).not.toHaveBeenCalled()
+
+    fireEvent.click(cancelButton)
+    expect(await screen.findByText('No se pudo cancelar')).toBeTruthy()
+    expect(api.delete).toHaveBeenCalledWith('/herramientas/cancelar')
+    confirm.mockRestore()
+  })
+
   it('crea un ticket y permite filtrar y contraer el historial', async () => {
     getSoporte
       .mockResolvedValueOnce({ data: supportTickets })
