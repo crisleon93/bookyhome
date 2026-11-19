@@ -1,21 +1,32 @@
-import { useThemedStyles } from '../context/ThemeContext';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
+  ActivityIndicator as NativeActivityIndicator,
   Alert,
-  FlatList,
-  Image,
+  FlatList as NativeFlatList,
+  Image as NativeImage,
   Modal,
-  RefreshControl,
-  ScrollView,
+  PanResponder,
+  RefreshControl as NativeRefreshControl,
+  ScrollView as NativeScrollView,
   StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+  Text as NativeText,
+  TextInput as NativeTextInput,
+  TouchableOpacity as NativeTouchableOpacity,
+  View as NativeView,
 } from 'react-native';
+import { createThemeAwareComponent } from '../context/ThemeContext';
 import { getApiBaseUrl, getMensajesSolicitudAdmin, enviarMensajeSolicitudAdmin, resolverSolicitudAdmin } from '../services/api';
-import { IconAlertTriangle, IconCheck, IconEye, IconEyeOff, IconMail, IconMessage, IconStoreAlt, IconTool, IconUser } from '../components/Icons';
+import { IconAlertTriangle, IconCheck, IconChevronLeft, IconEye, IconEyeOff, IconMail, IconMessage, IconStoreAlt, IconTool, IconUser } from '../components/Icons';
+
+const ActivityIndicator = createThemeAwareComponent(NativeActivityIndicator, ['style'], ['color']);
+const FlatList = createThemeAwareComponent(NativeFlatList, ['style', 'contentContainerStyle']);
+const Image = createThemeAwareComponent(NativeImage);
+const RefreshControl = createThemeAwareComponent(NativeRefreshControl, ['style'], ['tintColor', 'colors', 'progressBackgroundColor']);
+const ScrollView = createThemeAwareComponent(NativeScrollView, ['style', 'contentContainerStyle']);
+const Text = createThemeAwareComponent(NativeText);
+const TextInput = createThemeAwareComponent(NativeTextInput, ['style'], ['placeholderTextColor', 'selectionColor', 'underlineColorAndroid']);
+const TouchableOpacity = createThemeAwareComponent(NativeTouchableOpacity);
+const View = createThemeAwareComponent(NativeView);
 
 const PRIMARY = '#7A1E3A';
 const BG = '#F9F6F1';
@@ -305,7 +316,7 @@ function SupportRequestCard({ item, onSetResolution }) {
 }
 
 export default function AdminRequests({ type, solicitudes = [], loading, refreshing, error, onRefresh }) {
-  const styles = useThemedStyles(themeBaseStyles);
+  const styles = themeBaseStyles;
   const isSupport = type === 'soporte';
   const [query, setQuery] = useState('');
   const [stateFilter, setStateFilter] = useState('Todos');
@@ -320,6 +331,15 @@ export default function AdminRequests({ type, solicitudes = [], loading, refresh
   const [sending, setSending] = useState(false);
   const [page, setPage] = useState(1);
   const listRef = useRef(null);
+  const chatSwipeResponder = useMemo(() => PanResponder.create({
+    onMoveShouldSetPanResponderCapture: (_, gesture) =>
+      gesture.x0 <= 32 && gesture.dx > 18 && Math.abs(gesture.dx) > Math.abs(gesture.dy) * 1.3,
+    onPanResponderRelease: (_, gesture) => {
+      if (gesture.dx > 90 && Math.abs(gesture.dx) > Math.abs(gesture.dy) * 1.3) {
+        setSelected(null);
+      }
+    },
+  }), []);
 
   const sectionItems = useMemo(() => {
     const requestType = (item) => (item.tipo_solicitud || '').toLowerCase();
@@ -457,14 +477,19 @@ export default function AdminRequests({ type, solicitudes = [], loading, refresh
             {!isSupport && (
               <View style={styles.statsRow}>
                 {[
-                  ['Total', counts.total, PRIMARY],
-                  ['Abiertos', counts.open, '#1D4ED8'],
-                  ['En revisión', counts.review, '#C2410C'],
-                  ['Resueltos', counts.resolved, '#166534'],
-                ].map(([label, value, color]) => (
+                  { label: 'Total reclamos', value: counts.total, color: '#1F2937', labelColor: '#52637A', iconColor: PRIMARY, bg: '#FDF2F4', border: '#F0DDE4', Icon: IconAlertTriangle },
+                  { label: 'Abiertos', value: counts.open, color: '#1D4ED8', labelColor: '#1D4ED8', iconColor: '#1D4ED8', bg: '#EFF6FF', border: '#BFDBFE', Icon: IconAlertTriangle },
+                  { label: 'En revisión', value: counts.review, color: '#EA580C', labelColor: '#EA580C', iconColor: '#EA580C', bg: '#FFF7ED', border: '#FED7AA', Icon: IconTool },
+                  { label: 'Resueltos', value: counts.resolved, color: '#166534', labelColor: '#166534', iconColor: '#166534', bg: '#F0FDF4', border: '#BBF7D0', Icon: IconCheck },
+                ].map(({ label, value, color, labelColor, iconColor, bg, border, Icon }) => (
                   <View key={label} style={styles.stat}>
-                    <Text style={[styles.statValue, { color }]}>{value}</Text>
-                    <Text style={styles.statLabel}>{label}</Text>
+                    <View style={[styles.statIcon, { backgroundColor: bg, borderColor: border }]}>
+                      <Icon size={20} color={iconColor} />
+                    </View>
+                    <View style={styles.statContent}>
+                      <Text style={[styles.statLabel, { color: labelColor }]} numberOfLines={1}>{label}</Text>
+                      <Text style={[styles.statValue, { color }]}>{value}</Text>
+                    </View>
                   </View>
                 ))}
               </View>
@@ -593,12 +618,23 @@ export default function AdminRequests({ type, solicitudes = [], loading, refresh
       </Modal>
 
       <Modal visible={!!selected} animationType="slide" onRequestClose={() => setSelected(null)}>
-        <View style={styles.chatPage}>
+        <View style={styles.chatPage} {...chatSwipeResponder.panHandlers}>
           <View style={styles.chatHeader}>
-            <TouchableOpacity onPress={() => setSelected(null)}><Text style={styles.closeText}>Cerrar</Text></TouchableOpacity>
-            <View style={{ flex: 1 }}>
+            <TouchableOpacity
+              style={styles.chatBackButton}
+              onPress={() => setSelected(null)}
+              activeOpacity={0.75}
+              accessibilityRole="button"
+              accessibilityLabel="Volver a quejas y reclamos"
+              accessibilityHint="También puedes deslizar hacia la derecha desde el borde izquierdo."
+            >
+              <IconChevronLeft size={23} color={PRIMARY} />
+            </TouchableOpacity>
+            <View style={styles.chatHeading}>
               <Text style={styles.chatTitle}>Conversación #{selected?.id_solicitud}</Text>
-              <Text style={styles.metaText}>{selected?.comprador || 'Comprador'}{selected?.nombre_tienda ? ` · ${selected.nombre_tienda}` : ''}</Text>
+              <Text style={styles.chatSubtitle} numberOfLines={1}>
+                {selected?.comprador || 'Comprador'}{selected?.nombre_tienda ? ` · ${selected.nombre_tienda}` : ''}
+              </Text>
             </View>
           </View>
           {chatLoading ? <ActivityIndicator style={{ marginTop: 24 }} color={PRIMARY} /> : (
@@ -607,18 +643,31 @@ export default function AdminRequests({ type, solicitudes = [], loading, refresh
               keyExtractor={(message, index) => String(message.id_mensaje || index)}
               contentContainerStyle={styles.chatList}
               ListEmptyComponent={<Text style={styles.empty}>Aún no hay mensajes en esta conversación.</Text>}
-              renderItem={({ item }) => (
-                <View style={styles.message}>
-                  <Text style={styles.messageAuthor}>{item.nombre_usuario || item.rol || 'Usuario'}</Text>
-                  <Text style={styles.messageText}>{item.mensaje}</Text>
-                  <Text style={styles.messageDate}>{formatDate(item.fecha_creacion)}</Text>
-                </View>
-              )}
+              renderItem={({ item }) => {
+                const isAdminMessage = String(item.rol || '').toLowerCase().includes('admin');
+                return (
+                  <View style={[styles.messageRow, isAdminMessage && styles.messageRowAdmin]}>
+                    <View style={[styles.message, isAdminMessage && styles.messageAdmin]}>
+                      <Text style={[styles.messageAuthor, isAdminMessage && styles.messageAuthorAdmin]}>
+                        {item.nombre_usuario || item.rol || 'Usuario'}
+                      </Text>
+                      <Text style={[styles.messageText, isAdminMessage && styles.messageTextAdmin]}>{item.mensaje}</Text>
+                      <Text style={[styles.messageDate, isAdminMessage && styles.messageDateAdmin]}>{formatDate(item.fecha_creacion)}</Text>
+                    </View>
+                  </View>
+                );
+              }}
             />
           )}
           <View style={styles.chatComposer}>
             <TextInput style={styles.chatInput} value={chatText} onChangeText={setChatText} placeholder="Escribe un mensaje..." multiline />
-            <TouchableOpacity style={styles.sendButton} onPress={sendMessage} disabled={sending || !chatText.trim()}>
+            <TouchableOpacity
+              style={[styles.sendButton, (sending || !chatText.trim()) && styles.sendButtonDisabled]}
+              onPress={sendMessage}
+              disabled={sending || !chatText.trim()}
+              accessibilityRole="button"
+              accessibilityLabel="Enviar mensaje"
+            >
               {sending ? <ActivityIndicator color="#fff" /> : <IconMessage size={18} color="#fff" />}
             </TouchableOpacity>
           </View>
@@ -632,9 +681,11 @@ const themeBaseStyles = StyleSheet.create({
   container: { flex: 1, backgroundColor: BG },
   list: { padding: 14, paddingBottom: 32 },
   statsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
-  stat: { flexGrow: 1, flexBasis: '22%', minWidth: 72, backgroundColor: '#fff', borderRadius: 12, borderWidth: 1, borderColor: BORDER, padding: 10 },
-  statValue: { fontSize: 20, fontWeight: '900' },
-  statLabel: { fontSize: 10, color: GRAY, marginTop: 3, fontWeight: '700' },
+  stat: { flexGrow: 1, flexBasis: '47%', minWidth: 140, minHeight: 76, flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#fff', borderRadius: 14, borderWidth: 1, borderColor: BORDER, padding: 12 },
+  statIcon: { width: 40, height: 40, flexShrink: 0, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderRadius: 12 },
+  statContent: { flex: 1, minWidth: 0 },
+  statValue: { fontSize: 22, lineHeight: 26, fontWeight: '900' },
+  statLabel: { fontSize: 9, color: GRAY, marginBottom: 2, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.3 },
   filters: { flexDirection: 'row', gap: 8, marginBottom: 10, alignItems: 'center' },
   filterPill: { borderWidth: 1, borderColor: BORDER, backgroundColor: '#fff', borderRadius: 18, paddingHorizontal: 12, paddingVertical: 7 },
   filterPillActive: { backgroundColor: PRIMARY, borderColor: PRIMARY },
@@ -697,9 +748,9 @@ const themeBaseStyles = StyleSheet.create({
   card: { backgroundColor: '#fff', borderRadius: 15, borderWidth: 1.5, borderColor: '#B9A99A', marginBottom: 12, elevation: 2, overflow: 'hidden' },
   cardHeader: { padding: 13 },
   cardHeaderExpanded: { borderBottomWidth: 1, borderBottomColor: BORDER, backgroundColor: '#FFFCFA' },
-  cardHeaderTop: { flexDirection: 'row', alignItems: 'flex-start', gap: 9 },
-  bookThumbnail: { width: 54, height: 68, borderRadius: 9, backgroundColor: '#F3F4F6' },
-  cardFallback: { width: 54, height: 68, borderRadius: 9, backgroundColor: PRIMARY, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 3 },
+  cardHeaderTop: { flexDirection: 'row', alignItems: 'stretch', gap: 9 },
+  bookThumbnail: { width: 54, minHeight: 68, alignSelf: 'stretch', borderRadius: 9, backgroundColor: '#F3F4F6' },
+  cardFallback: { width: 54, minHeight: 68, alignSelf: 'stretch', borderRadius: 9, backgroundColor: PRIMARY, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 3 },
   cardFallbackText: { color: '#fff', fontSize: 11, fontWeight: '900', textAlign: 'center' },
   cardMain: { flex: 1, minWidth: 0 },
   cardEyebrow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 3 },
@@ -749,16 +800,25 @@ const themeBaseStyles = StyleSheet.create({
   confirmButton: { backgroundColor: PRIMARY, minHeight: 38, justifyContent: 'center', borderRadius: 9, paddingHorizontal: 12 },
   confirmText: { color: '#fff', fontWeight: '800', fontSize: 12 },
   chatPage: { flex: 1, backgroundColor: BG, paddingTop: 24 },
-  chatHeader: { backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: BORDER, padding: 14, flexDirection: 'row', alignItems: 'center', gap: 14 },
-  closeText: { color: PRIMARY, fontSize: 13, fontWeight: '800' },
+  chatHeader: { backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: BORDER, paddingHorizontal: 16, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', gap: 12, elevation: 2 },
+  chatBackButton: { width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FDF2F4', borderWidth: 1, borderColor: '#F0DDE4' },
+  chatHeading: { flex: 1, minWidth: 0 },
   chatTitle: { color: '#222', fontSize: 16, fontWeight: '800' },
-  chatList: { padding: 14, flexGrow: 1 },
-  message: { alignSelf: 'flex-start', maxWidth: '90%', backgroundColor: '#fff', borderRadius: 12, padding: 11, marginBottom: 9, borderWidth: 1, borderColor: BORDER },
+  chatSubtitle: { color: GRAY, fontSize: 12, marginTop: 3 },
+  chatList: { padding: 14, flexGrow: 1, justifyContent: 'flex-end' },
+  messageRow: { width: '100%', flexDirection: 'row', justifyContent: 'flex-start' },
+  messageRowAdmin: { justifyContent: 'flex-end' },
+  message: { maxWidth: '90%', backgroundColor: '#fff', borderRadius: 16, borderBottomLeftRadius: 5, padding: 12, marginBottom: 10, borderWidth: 1, borderColor: BORDER, elevation: 1 },
+  messageAdmin: { backgroundColor: PRIMARY, borderColor: PRIMARY, borderBottomLeftRadius: 16, borderBottomRightRadius: 5 },
   messageAuthor: { fontSize: 11, color: PRIMARY, fontWeight: '800', marginBottom: 4 },
-  messageText: { color: '#333', fontSize: 13, lineHeight: 18 },
-  messageDate: { color: '#888', fontSize: 10, marginTop: 5, textAlign: 'right' },
-  chatComposer: { flexDirection: 'row', alignItems: 'flex-end', gap: 8, padding: 12, backgroundColor: '#fff', borderTopWidth: 1, borderColor: BORDER },
-  chatInput: { flex: 1, maxHeight: 100, borderWidth: 1, borderColor: BORDER, borderRadius: 18, paddingHorizontal: 13, paddingVertical: 9, color: '#222' },
-  sendButton: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: PRIMARY },
+  messageAuthorAdmin: { color: '#FCE7EF' },
+  messageText: { color: '#333', fontSize: 13, lineHeight: 19 },
+  messageTextAdmin: { color: '#fff' },
+  messageDate: { color: '#888', fontSize: 10, marginTop: 6, textAlign: 'right' },
+  messageDateAdmin: { color: 'rgba(255,255,255,0.72)' },
+  chatComposer: { flexDirection: 'row', alignItems: 'flex-end', gap: 10, paddingHorizontal: 14, paddingVertical: 12, backgroundColor: '#fff', borderTopWidth: 1, borderColor: BORDER, elevation: 4 },
+  chatInput: { flex: 1, minHeight: 44, maxHeight: 110, backgroundColor: '#FAFAFA', borderWidth: 1, borderColor: BORDER, borderRadius: 22, paddingHorizontal: 16, paddingVertical: 11, color: '#222' },
+  sendButton: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: PRIMARY, elevation: 2 },
+  sendButtonDisabled: { backgroundColor: '#BFA0AA', elevation: 0 },
 });
 const styles = themeBaseStyles;

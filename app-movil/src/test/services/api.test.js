@@ -183,6 +183,23 @@ describe('servicio móvil de API', () => {
     expect(formData.get('stock')).toBe('8');
     expect(config.headers['Content-Type']).toBe('multipart/form-data');
   });
+
+  it('envía fotos de perfil y banner como multipart con tiempo suficiente para subirlas', async () => {
+    const api = await loadApi();
+    const formData = new FormData();
+
+    api.uploadProfilePhoto(formData);
+    api.uploadBannerPhoto(formData);
+
+    expect(mocks.client.post).toHaveBeenNthCalledWith(1, '/perfil/foto-perfil', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 60000,
+    });
+    expect(mocks.client.post).toHaveBeenNthCalledWith(2, '/perfil/banner', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 60000,
+    });
+  });
 });
 
 function apiClientConfig() {

@@ -61,10 +61,10 @@ export function ThemeProvider({ children }) {
     page: darkMode ? '#121212' : '#F9F6F1',
     card: darkMode ? '#1E1E1E' : '#FFFFFF',
     surface: darkMode ? '#252525' : '#FFFFFF',
-    text: darkMode ? '#ECECEC' : '#2A2A2A',
+    text: darkMode ? '#E0E0E0' : '#2A2A2A',
     muted: darkMode ? '#C8C8C8' : '#666666',
-    border: darkMode ? '#3A3A3A' : '#E0DBD4',
-    inset: darkMode ? '#303030' : '#FAF8F6',
+    border: darkMode ? '#333333' : '#E0DBD4',
+    inset: darkMode ? '#2A2A2A' : '#FAF8F6',
   }), [darkMode]);
 
   const value = useMemo(() => ({ darkMode, setDarkMode, colors }), [darkMode, setDarkMode, colors]);
@@ -77,6 +77,30 @@ export function useAppTheme() {
 
 export function adaptStyleForTheme(style, darkMode) {
   return darkMode ? mapStyleColors(style) : style;
+}
+
+export function createThemeAwareComponent(Component, styleProps = ['style'], colorProps = []) {
+  return React.forwardRef(function ThemeAwareComponent(props, ref) {
+    const { darkMode } = useAppTheme();
+    const themedProps = { ...props };
+
+    styleProps.forEach((prop) => {
+      if (themedProps[prop] !== undefined) {
+        themedProps[prop] = adaptStyleForTheme(themedProps[prop], darkMode);
+      }
+    });
+    colorProps.forEach((prop) => {
+      if (themedProps[prop] !== undefined) {
+        const styleProperty = prop.toLowerCase().includes('background') ? 'backgroundColor' : 'color';
+        const adaptColor = (color) => adaptStyleForTheme({ [styleProperty]: color }, darkMode)[styleProperty];
+        themedProps[prop] = Array.isArray(themedProps[prop])
+          ? themedProps[prop].map(adaptColor)
+          : adaptColor(themedProps[prop]);
+      }
+    });
+
+    return <Component {...themedProps} ref={ref} />;
+  });
 }
 
 function parseColor(value) {
@@ -127,6 +151,12 @@ function formatColor(channels, format, alpha) {
 }
 
 const DARK_BACKGROUND_COLORS = {
+  '#ffffff': '#1e1e1e',
+  '#fff': '#1e1e1e',
+  '#f9f6f1': '#1a1a1a',
+  '#f4ede2': '#1a1a1a',
+  '#faf8f6': '#252525',
+  '#fafafa': '#2a2a2a',
   '#d1fae5': '#0d2e23',
   '#dcfce7': '#0f2e1a',
   '#dbeafe': '#0e1d39',
@@ -141,10 +171,12 @@ const DARK_BACKGROUND_COLORS = {
   '#f7e8ec': '#2a1a24',
   '#fff8f8': '#2a1a24',
   '#fff8f5': '#2a1a08',
-  '#f3f4f6': '#1f2937',
+  '#f3f4f6': '#2a2a2a',
 };
 
 const DARK_TEXT_COLORS = {
+  '#2a2a2a': '#e0e0e0',
+  '#666666': '#c8c8c8',
   '#065f46': '#a7f3d0',
   '#166534': '#86efac',
   '#047857': '#4ade80',
@@ -160,6 +192,7 @@ const DARK_TEXT_COLORS = {
 };
 
 const DARK_BORDER_COLORS = {
+  '#e0dbd4': '#333333',
   '#6ee7b7': '#1f7a5d',
   '#bbf7d0': '#2a5a3a',
   '#93c5fd': '#3b82f6',

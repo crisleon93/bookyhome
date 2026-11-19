@@ -7,6 +7,7 @@ import { describe, it, expect, vi } from 'vitest'
 vi.mock('react-native', () => ({
   ActivityIndicator: () => null, Alert: { alert: vi.fn() }, FlatList: () => null,
   Image: () => null, Modal: () => null, Platform: { OS: 'web' }, RefreshControl: () => null,
+  PanResponder: { create: () => ({ panHandlers: {} }) },
   ScrollView: () => null, StyleSheet: { create: (s) => s },
   Text: () => null, TextInput: () => null, TouchableOpacity: () => null, View: () => null,
 }))
@@ -16,6 +17,7 @@ vi.mock('react-native-safe-area-context', () => ({
 }))
 
 vi.mock('../../context/ThemeContext', () => ({
+  createThemeAwareComponent: (Component) => Component,
   useAppTheme: vi.fn(() => ({ darkMode: false, colors: {} })),
   useThemedStyles: vi.fn((styles) => styles),
 }))
@@ -29,7 +31,7 @@ vi.mock('../../services/api', () => ({
 
 vi.mock('../../components/Icons', () => ({
   IconAlertTriangle: () => null, IconCheck: () => null, IconEye: () => null,
-  IconEyeOff: () => null, IconMail: () => null, IconMessage: () => null,
+  IconChevronLeft: () => null, IconEyeOff: () => null, IconMail: () => null, IconMessage: () => null,
   IconStoreAlt: () => null, IconTool: () => null, IconUser: () => null,
 }))
 

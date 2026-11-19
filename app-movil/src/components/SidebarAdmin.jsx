@@ -1,17 +1,18 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import {
-  Animated, Dimensions, Modal, Platform, ScrollView,
+  Animated, Dimensions, Modal, PanResponder, Platform, Pressable, ScrollView,
   Image, StyleSheet, Text, TouchableOpacity, View,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useAppTheme } from '../context/ThemeContext';
 import { getApiBaseUrl } from '../services/api';
 import {
-  IconAlertTriangle, IconBook, IconClose, IconLayoutDashboard, IconLogout,
+  IconAlertTriangle, IconBook, IconChevronRight, IconClose, IconLayoutDashboard, IconLogout,
   IconPackage, IconSettings, IconStore, IconTool, IconTrendingUp, IconUser, IconWallet,
 } from './Icons';
 
 const { width } = Dimensions.get('window');
-const DRAWER_WIDTH  = Math.min(320, width * 0.82);
+const DRAWER_WIDTH  = Math.min(250, width * 0.72);
 const VINOTINTO      = '#7A1E3A';
 const VINOTINTO_DARK = '#5e1629';
 const WHITE          = '#FFFFFF';
@@ -48,7 +49,7 @@ function ComingSoonItem({ label, Icon }) {
 function NavItem({ label, Icon, isActive, onPress }) {
   return (
     <TouchableOpacity
-      style={[st.navItem, isActive && st.navItemActive]}
+      style={st.navItem}
       onPress={onPress}
       activeOpacity={0.8}
       accessibilityRole="button"
@@ -56,12 +57,10 @@ function NavItem({ label, Icon, isActive, onPress }) {
       accessibilityState={{ selected: isActive }}
     >
       <View style={st.itemLeft}>
-        <Icon size={19} color={isActive ? VINOTINTO : WHITE} />
-        <Text style={[st.navLabel, isActive && st.navLabelActive]}>{label}</Text>
+        <Icon size={19} color={WHITE} />
+        <Text style={st.navLabel}>{label}</Text>
       </View>
-      {isActive && (
-        <View style={st.activeDot} />
-      )}
+      <IconChevronRight size={15} color="rgba(255,255,255,0.4)" />
     </TouchableOpacity>
   );
 }
@@ -72,8 +71,36 @@ export default function SidebarAdmin({
   onSelectDashboard, onSelectSection,
   activeSection = 'dashboard',
 }) {
+  const { darkMode } = useAppTheme();
   const slideAnim = useRef(new Animated.Value(-DRAWER_WIDTH)).current;
   const fadeAnim  = useRef(new Animated.Value(0)).current;
+  const swipeResponder = useMemo(() => PanResponder.create({
+    onMoveShouldSetPanResponderCapture: (_, gesture) =>
+      gesture.dx < -8 && Math.abs(gesture.dx) > Math.abs(gesture.dy) * 1.2,
+    onPanResponderMove: (_, gesture) => {
+      slideAnim.setValue(Math.max(-DRAWER_WIDTH, Math.min(0, gesture.dx)));
+    },
+    onPanResponderRelease: (_, gesture) => {
+      if (gesture.dx <= -DRAWER_WIDTH * 0.3 || gesture.vx <= -0.7) {
+        onClose();
+        return;
+      }
+      Animated.spring(slideAnim, {
+        toValue: 0,
+        useNativeDriver: Platform.OS !== 'web',
+        speed: 24,
+        bounciness: 4,
+      }).start();
+    },
+    onPanResponderTerminate: () => {
+      Animated.spring(slideAnim, {
+        toValue: 0,
+        useNativeDriver: Platform.OS !== 'web',
+        speed: 24,
+        bounciness: 4,
+      }).start();
+    },
+  }), [onClose, slideAnim]);
 
   useEffect(() => {
     Animated.parallel([
@@ -106,12 +133,20 @@ export default function SidebarAdmin({
     <Modal visible={visible} transparent animationType="none" onRequestClose={onClose}>
       <View style={st.root}>
         {/* Fondo oscuro */}
-        <Animated.View style={[st.overlay, { opacity: fadeAnim }]}>
-          <TouchableOpacity style={{ flex: 1 }} onPress={onClose} activeOpacity={1} />
+        <Animated.View pointerEvents="box-none" style={[st.overlay, { opacity: fadeAnim }]}>
+          <Pressable
+            style={StyleSheet.absoluteFillObject}
+            onPress={onClose}
+            accessibilityRole="button"
+            accessibilityLabel="Cerrar menú"
+          />
         </Animated.View>
 
         {/* Drawer */}
-        <Animated.View style={[st.drawer, { transform: [{ translateX: slideAnim }] }]}>
+        <Animated.View
+          {...swipeResponder.panHandlers}
+          style={[st.drawer, { transform: [{ translateX: slideAnim }] }]}
+        >
 
           {/* Cabecera con avatar */}
           <View style={[st.header, { backgroundColor: bannerBackgroundColor }]}>
@@ -174,13 +209,13 @@ export default function SidebarAdmin({
           {/* Cerrar sesión */}
           <View style={st.logoutBox}>
             <TouchableOpacity
-              style={st.logoutBtn}
+              style={[st.logoutBtn, darkMode && st.logoutBtnDark]}
               onPress={() => { onClose(); onSignOut?.(); }}
               activeOpacity={0.8}
               accessibilityLabel="Cerrar sesión"
             >
-              <IconLogout size={18} color={VINOTINTO} />
-              <Text style={st.logoutTxt}>Cerrar sesión</Text>
+              <IconLogout size={18} color={darkMode ? '#ECECEC' : VINOTINTO} />
+              <Text style={[st.logoutTxt, darkMode && st.logoutTxtDark]}>Cerrar sesión</Text>
             </TouchableOpacity>
           </View>
         </Animated.View>
@@ -195,10 +230,6 @@ const st = StyleSheet.create({
   overlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.55)' },
   drawer:  {
     width: DRAWER_WIDTH, height: '100%', backgroundColor: VINOTINTO,
-    ...Platform.select({
-      ios:     { shadowColor: '#000', shadowOffset: { width: 3, height: 0 }, shadowOpacity: 0.35, shadowRadius: 8 },
-      android: { elevation: 10 },
-    }),
   },
 
   // Cabecera
@@ -228,17 +259,14 @@ const st = StyleSheet.create({
   navItem: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingVertical: 12, paddingHorizontal: 18, marginHorizontal: 8, marginBottom: 3,
-    backgroundColor: 'rgba(255,255,255,0.10)', borderRadius: 12,
-  },
-  navItemActive: {
-    backgroundColor: WHITE,
+    borderRadius: 12,
   },
   navLabel:       { color: WHITE, fontSize: 14, fontWeight: '700', marginLeft: 13 },
-  navLabelActive: { color: VINOTINTO, fontWeight: '800' },
-  activeDot:      { width: 7, height: 7, borderRadius: 4, backgroundColor: VINOTINTO },
 
   // Logout
   logoutBox: { padding: 16, paddingBottom: Platform.OS === 'ios' ? 32 : 16, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.12)' },
   logoutBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, backgroundColor: WHITE, borderRadius: 12, paddingVertical: 13 },
+  logoutBtnDark: { backgroundColor: '#303030' },
   logoutTxt: { color: VINOTINTO, fontSize: 14, fontWeight: '800' },
+  logoutTxtDark: { color: '#ECECEC' },
 });

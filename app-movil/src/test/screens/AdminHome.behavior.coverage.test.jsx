@@ -177,10 +177,12 @@ vi.mock('../../components/Icons', () => {
   const Menu = () => <span>Abrir menú</span>
   return {
     IconAlertTriangle: Icon,
+    IconBan: Icon,
     IconBook: Icon,
     IconCart: Icon,
     IconCheck: Icon,
     IconClose: Icon,
+    IconDollar: Icon,
     IconEye: Icon,
     IconEyeOff: Icon,
     IconFilter: Icon,
@@ -195,6 +197,7 @@ vi.mock('../../components/Icons', () => {
     IconStore: Icon,
     IconTool: Icon,
     IconTrash: Icon,
+    IconTruck: Icon,
     IconUnlock: Icon,
     IconUser: Icon,
     IconUsers: Icon,
@@ -300,7 +303,7 @@ describe('AdminHome: flujos de administración', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Ocultar' }))
 
     await waitFor(() => expect(ocultarLibroAdmin).toHaveBeenCalledWith(5, true))
-    expect(await screen.findByText('Oculto')).toBeTruthy()
+    expect(await screen.findAllByText('Oculto')).not.toHaveLength(0)
 
     fireEvent.click(screen.getByRole('button', { name: 'Eliminar' }))
     const confirmation = screen.getByRole('dialog')
@@ -362,7 +365,7 @@ describe('AdminHome: flujos de administración', () => {
     fireEvent.click(orderButtons[0])
     expect(screen.getAllByText('Ana Compradora')).not.toHaveLength(0)
     expect(screen.getByText('Libro adicional')).toBeTruthy()
-    expect(screen.getByText('y 1 más')).toBeTruthy()
+    expect(screen.getByText('Tercer libro')).toBeTruthy()
     expect(screen.getByText('Tarjeta')).toBeTruthy()
     expect(screen.getByText('Domicilio')).toBeTruthy()
 
@@ -461,7 +464,7 @@ describe('AdminHome: flujos de administración', () => {
     const orderFilters = screen.getByText('Filtrar por estado').parentElement
     fireEvent.click(within(orderFilters).getByRole('button', { name: 'Pagado' }))
     expect(screen.getByText('Ana Compradora')).toBeTruthy()
-    fireEvent.click(within(orderFilters).getByRole('button', { name: 'Todos' }))
+    fireEvent.click(within(orderFilters).getByRole('button', { name: 'Todas' }))
   })
 
   it('propaga cambios del perfil de administrador al usuario del menú', async () => {

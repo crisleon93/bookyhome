@@ -362,9 +362,10 @@ describe('Catalogo screen', () => {
   it('muestra la paginación al medir la lista y carga la página siguiente', async () => {
     renderCatalogo();
     await screen.findByText('Libro móvil');
+    await waitFor(() => expect(screen.queryByText('Cargando catálogo...')).toBeNull());
 
     fireEvent.click(screen.getByTestId('list-layout'));
-    expect(screen.getByText('Pág. 1 / 2')).toBeTruthy();
+    expect(await screen.findByText('Pág. 1 / 2')).toBeTruthy();
     fireEvent.click(screen.getByText('Siguiente →'));
 
     await waitFor(() => expect(mocks.getBusquedaAvanzada).toHaveBeenCalledWith(
