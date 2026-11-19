@@ -240,7 +240,23 @@ export const resolveImageUrl = (value) => {
   const baseUrl = String(api.defaults.baseURL || '').replace(/\/+$/, '');
   const apiOrigin = baseUrl.match(/^https?:\/\/[^/]+/i)?.[0];
   if (/^https?:\/\//i.test(candidate)) {
-    const isLoopbackUrl = /^https?:\/\/(?:localhost|127\.\d{1,3}\.\d{1,3}\.\d{1,3}|\[::1\])(?=[:/]|$)/i.test(candidate);
+    const authority = candidate.slice(candidate.indexOf('://') + 3).split(/[/?#]/, 1)[0];
+    const hostAndPort = authority.split('@').pop();
+    const bracketEnd = hostAndPort.startsWith('[') ? hostAndPort.indexOf(']') : -1;
+    const hasValidIpv6Host = bracketEnd >= 0
+      && (bracketEnd === hostAndPort.length - 1 || hostAndPort[bracketEnd + 1] === ':');
+    const hostname = bracketEnd >= 0
+      ? (hasValidIpv6Host ? hostAndPort.slice(0, bracketEnd + 1).toLowerCase() : '')
+      : hostAndPort.split(':', 1)[0].toLowerCase();
+    const ipv4Parts = hostname.split('.');
+    const isLoopbackIpv4 = ipv4Parts.length === 4
+      && ipv4Parts[0] === '127'
+      && ipv4Parts.slice(1).every((part) =>
+        part.length > 0
+        && part.length <= 3
+        && [...part].every((character) => character >= '0' && character <= '9')
+      );
+    const isLoopbackUrl = hostname === 'localhost' || hostname === '[::1]' || isLoopbackIpv4;
     return isLoopbackUrl && apiOrigin
       ? candidate.replace(/^https?:\/\/[^/]+/i, apiOrigin)
       : candidate;
