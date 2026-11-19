@@ -2,11 +2,11 @@
 
 ## Alcance y fuentes
 
-Este documento describe la arquitectura y el modelo de dominio que se encuentran implementados en el repositorio. La referencia principal para las entidades y sus claves foráneas es `database/bookyhome.sql` (43 tablas). También se contrastaron las migraciones, las ampliaciones de esquema que ejecuta `backend/app/database.py`, los routers/modelos FastAPI y los clientes web y móvil. La migración `008_add_push_tokens.sql` define una tabla adicional que no está en el SQL inicial; se identifica por separado porque las migraciones se aplican manualmente y el backend actual no contiene operaciones que la usen.
+Este documento describe la arquitectura y el modelo de dominio que se encuentran implementados en el repositorio. La referencia principal para las entidades y sus claves foráneas es `database/bookyhome.sql` (43 tablas). También se contrastaron las migraciones, las ampliaciones de esquema que ejecuta `backend/app/database.py`, los routers/modelos FastAPI y los clientes web y móvil. La migración `008_add_push_tokens.sql` define una tabla adicional que no está en el SQL inicial; se identifica por separado porque su existencia depende de que esa migración se haya aplicado y el backend actual no contiene operaciones que la usen.
 
 El proyecto no está implementado como un conjunto de clases de dominio Python: la lógica de negocio está distribuida entre routers y funciones de modelos, mientras que las entidades persistentes son tablas MySQL. Por eso, los diagramas de clases representan principalmente el **modelo de datos relacional**. Al final se incluye también la vista de clases Python que sí existen, los DTO Pydantic y los componentes funcionales de los clientes; no se presentan páginas React como clases de dominio.
 
-Los bloques Mermaid pueden visualizarse en GitHub, en VS Code con una extensión compatible con Mermaid o copiarse a un editor Mermaid para exportarlos como SVG/PNG. Los casos de uso se documentan por separado en [`casos-de-uso/README.md`](casos-de-uso/README.md), con vistas generales y por actor, imágenes PNG/SVG y fuentes `.puml`/`.dot`.
+Los bloques Mermaid pueden visualizarse en GitHub, en VS Code con una extensión compatible con Mermaid o copiarse a un editor Mermaid para exportarlos como imagen. Los casos de uso se documentan por separado en [`casos-de-uso/README.md`](casos-de-uso/README.md), con imágenes PNG separadas por plataforma.
 
 ## 1. Arquitectura general
 
@@ -54,7 +54,6 @@ flowchart LR
     Models --> MySQL
     Models --> JSON
     FastAPI --> Uploads
-    WS --> MySQL
     FastAPI --> SMTP
     FastAPI -. "si se configura" .-> IA
     Scheduler --> Models
@@ -70,7 +69,7 @@ flowchart LR
 | Routers y modelos | Los routers validan/autorizan operaciones; algunos delegan en funciones de `backend/app/models/` y otros consultan MySQL directamente. |
 | MySQL | Persistencia relacional principal: usuarios, tiendas, catálogo, órdenes, pagos, envíos y módulos asociados. |
 | JSON local | El modelo de carrito usa `cart_store.json`; el checkout también mantiene órdenes en `orders.json`. Los flujos de finanzas usan `finanzas.json` y `pagos_vendedores.json`. El código intenta reflejar las órdenes y sus detalles en MySQL. |
-| WebSocket | Entrega eventos de chat a las conexiones activas por usuario; los mensajes persistidos se almacenan en MySQL. |
+| WebSocket | `ConnectionManager` mantiene conexiones activas en memoria y entrega eventos a usuarios conectados. El router de chat persiste mensajes y notificaciones en MySQL. |
 | Scheduler | Registra tareas para auto-confirmar entregas y expirar impulsos vencidos. |
 | SMTP / IA | El correo se usa, entre otros flujos, para autenticación y notificaciones. El proveedor de IA es opcional; el asistente tiene un flujo local de respaldo. |
 
@@ -646,16 +645,15 @@ classDiagram
 - `salasChats` tiene una restricción única por pareja usuario-tienda; en consecuencia, el modelo permite una sala de atención por cada combinación.
 - La tabla `reportes_contenido` identifica el objeto reportado mediante `tipo_contenido` e `id_contenido`; es una referencia polimórfica y no tiene una FK directa hacia libro/reseña/tienda/mensaje.
 - `solicitudes_soporte` contiene `id_usuario` e `id_orden`, pero el SQL declara explícitamente FK solo para `id_tienda`. Por tanto, las relaciones a usuario y orden no se muestran como relaciones FK.
-- `log_actividad` es una bitácora general, no una entidad dependiente con una FK a cada tabla afectada.
+- `log_actividad` es una bitácora SQL genérica sin FK a las tablas afectadas; los triggers registran algunos eventos concretos, no una auditoría administrativa completa.
 - `PushToken` representa la tabla `push_tokens` de la migración opcional 008. Su FK a usuario tiene `ON DELETE CASCADE`, pero no se incluye en el esquema inicial ni hay acceso a esa tabla en el backend revisado.
 - La tabla `favoritos` representa la lista predeterminada de favoritos; las listas personalizadas se modelan aparte con `lista_deseos` y `lista_deseos_libros`.
 - Las calificaciones de libros (`resenas_libros`) y las calificaciones de tiendas (`calificaciones_tiendas`) son entidades diferentes.
+- `calificaciones_tiendas` existe como tabla. El router independiente de calificaciones no se registra en `main.py`, aunque `perfil.py` contiene endpoints activos para operaciones equivalentes.
 
 ## 5. Secuencia de checkout (flujo implementado)
 
-La colección completa de diagramas de secuencia solicitada para la aplicación web —registro, recuperación, catálogo, compra, perfil, publicación y ofertas— se documenta en [`diagramas-secuencia-bookyhome.md`](diagramas-secuencia-bookyhome.md).
-
-La colección ampliada también incluye chat, notificaciones, soporte, moderación, devoluciones, envíos/retiro, herramientas, impulsos y finanzas. Las limitaciones reales de implementación se mantienen identificadas para no presentar como terminado un requisito parcial o pendiente.
+La colección de diagramas de secuencia —con flujos de registro, recuperación, catálogo, compra, perfil, publicación, ofertas, chat, notificaciones, soporte, moderación, devoluciones, envíos/retiro, herramientas, impulsos y finanzas— se documenta en [`diagramas-secuencia-bookyhome.md`](diagramas-secuencia-bookyhome.md). Sus limitaciones reales se identifican para no presentar como terminado un requisito parcial o pendiente.
 
 La secuencia distingue el flujo del carrito del mecanismo relacional, porque el checkout conserva datos en JSON y luego intenta reflejarlos en MySQL.
 
@@ -697,11 +695,12 @@ La definición principal del esquema contiene 43 tablas, todas representadas en 
 | Área | Tablas |
 |---|---|
 | Identidad y perfil | `usuarios`, `direcciones_envio`, `notificaciones` |
-| Tienda y catálogo | `tiendas`, `categorias`, `libros`, `imagenes_libro`, `libro_variantes`, `tienda_configuracion`, `tienda_vacaciones`, `historial_precios`, `log_actividad` |
+| Tienda y catálogo | `tiendas`, `categorias`, `libros`, `imagenes_libro`, `libro_variantes`, `tienda_configuracion`, `tienda_vacaciones`, `historial_precios` |
 | Compra y postventa | `carrito_compras`, `ordenes_compra`, `detalle_orden`, `pagos`, `envios`, `empresas_mensajeria`, `devoluciones` |
 | Promoción, herramientas y finanzas | `ofertas`, `oferta_libros`, `cupones_descuento`, `uso_cupones`, `comisiones`, `historial_pagos_vendedor`, `metodos_cobro_vendedor`, `metricas_tienda`, `tipos_impulso`, `impulsos_contratados`, `pagos_impulsos`, `planes_herramientas`, `suscripciones_herramientas` |
 | Comunidad y comunicación | `favoritos`, `resenas_libros`, `calificaciones_tiendas`, `suscripciones_tienda`, `lista_deseos`, `lista_deseos_libros`, `salasChats`, `mensajes` |
 | Moderación y soporte | `reportes_contenido`, `solicitudes_soporte`, `mensajes_reclamo` |
+| Registro de eventos SQL | `log_actividad` |
 
 Además de estas tablas, el SQL contiene vistas, procedimientos almacenados y triggers para búsquedas, reportes, métricas, notificaciones, comisiones, disponibilidad e inventario. No se dibujan como entidades porque son lógica de consulta/automatización y no objetos de dominio persistentes independientes.
 
@@ -930,7 +929,7 @@ En web y móvil los datos del dominio se representan como objetos JavaScript y c
 
 ## 10. Inventario exhaustivo de atributos persistentes
 
-La siguiente matriz transcribe los nombres de **todos los campos** de las 43 tablas de `database/bookyhome.sql`. Las clases con nombres traducidos o en singular corresponden a la tabla indicada. Las claves y cardinalidades se muestran en las relaciones Mermaid anteriores; tipos, nulabilidad, valores por defecto e índices se consultan en el DDL fuente.
+La siguiente matriz transcribe los nombres de **todos los campos** de las 43 tablas de `database/bookyhome.sql`. Las clases con nombres traducidos o en singular corresponden a la tabla indicada. Las claves y cardinalidades se muestran en las relaciones Mermaid anteriores; los tipos, nulabilidad, valores por defecto e índices deben consultarse en el DDL y las migraciones aplicables, que pueden modificarlos.
 
 | Tabla SQL | Clase del diagrama | Campos del esquema inicial |
 |---|---|---|
