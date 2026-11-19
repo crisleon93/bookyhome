@@ -191,6 +191,25 @@ describe('barras laterales y tema', () => {
     expect(mocks.onSignOut).toHaveBeenCalledOnce()
   })
 
+  it('usa la identidad predeterminada y resuelve imágenes locales del administrador', () => {
+    const { container, rerender } = render(
+      <SidebarAdmin
+        visible
+        user={{ foto_perfil: '/uploads/admin.png', banner_perfil: '/uploads/banner.png', banner_color: '#123456' }}
+        onClose={mocks.onClose}
+      />,
+    )
+
+    expect(screen.getAllByText('Administrador')).toHaveLength(2)
+    const imageSources = Array.from(container.querySelectorAll('img'))
+      .map((image) => image.getAttribute('src'))
+    expect(imageSources).toContain('https://api.example.test/uploads/admin.png')
+    expect(imageSources).toContain('https://api.example.test/uploads/banner.png')
+
+    rerender(<SidebarAdmin visible user={{}} onClose={mocks.onClose} />)
+    expect(screen.getByText('A')).toBeTruthy()
+  })
+
   it('muestra las opciones de comprador y programa la navegación tras cerrar el menú', async () => {
     vi.useFakeTimers()
     render(
@@ -322,5 +341,23 @@ describe('barras laterales y tema', () => {
     expect(styles.image).toBe('url(https://example.test/a.png)')
     expect(styles.nested[0].color).not.toBe('black')
     expect(adaptStyleForTheme(styles, false)).toBe(styles)
+  })
+
+  it('usa el tema claro si falla la lectura de la preferencia guardada', async () => {
+    const warning = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    mocks.getItem.mockRejectedValueOnce(new Error('almacenamiento no disponible'))
+
+    render(
+      <AuthContext.Provider value={{ token: 'test-token', loading: false }}>
+        <ThemeProvider><ThemeSummary /></ThemeProvider>
+      </AuthContext.Provider>,
+    )
+
+    expect(await screen.findByText('Tema claro')).toBeTruthy()
+    expect(warning).toHaveBeenCalledWith(
+      'No se pudo cargar el tema guardado:',
+      expect.any(Error),
+    )
+    warning.mockRestore()
   })
 })

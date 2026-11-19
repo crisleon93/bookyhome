@@ -383,6 +383,20 @@ describe('AdminHome: flujos de administración', () => {
     expect(getAdminSolicitudes).toHaveBeenCalledOnce()
   })
 
+  it('muestra el reporte global con métricas de libros, tiendas y órdenes', async () => {
+    render(<AdminHome />)
+    await screen.findByText('Usuarios Totales')
+    fireEvent.click(screen.getByText('Abrir menú'))
+    fireEvent.click(screen.getByRole('button', { name: 'Admin: reportes' }))
+
+    expect(await screen.findByText('Libros por Categoría')).toBeTruthy()
+    expect(screen.getByText('Fantasía')).toBeTruthy()
+    expect(screen.getByText('Tiendas por Estado')).toBeTruthy()
+    expect(screen.getByText('1 de 1')).toBeTruthy()
+    expect(screen.getByText('Órdenes por Estado')).toBeTruthy()
+    expect(screen.getByText('50%')).toBeTruthy()
+  })
+
   it('refresca los datos del dashboard, de una sección y de las solicitudes', async () => {
     render(<AdminHome />)
     await screen.findByText('Usuarios Totales')
