@@ -3,10 +3,16 @@ import { describe, expect, it, vi } from 'vitest'
 import {
   AcercaDeNosotros,
   ComoComprar,
+  Contacto,
+  CentroDeVendedores,
   DevolucionesInfo,
+  EnviosYEntregas,
+  FAQVendedores,
   LegalModal,
+  PlanesYTarifas,
   Privacidad,
   Terminos,
+  VenderEnBookyHome,
 } from '../../components/Legal'
 
 describe('LegalModal', () => {
@@ -51,7 +57,13 @@ describe('LegalModal', () => {
 describe('Páginas legales', () => {
   it.each([
     [AcercaDeNosotros, 'Nuestra misión'],
+    [Contacto, 'Soporte y atención'],
+    [VenderEnBookyHome, '¿Cómo funciona?'],
+    [PlanesYTarifas, 'Publicación'],
+    [CentroDeVendedores, 'Desde ahí puedes'],
+    [FAQVendedores, '¿Necesito ser una librería para vender?'],
     [ComoComprar, '1. Explora el catálogo'],
+    [EnviosYEntregas, '¿Cómo se gestionan?'],
     [DevolucionesInfo, 'Cuándo puedes devolver'],
     [Privacidad, /Información que Recopilamos/],
     [Terminos, /Aceptación de los Términos/],

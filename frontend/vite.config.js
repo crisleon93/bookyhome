@@ -19,7 +19,7 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       // Solo medir cobertura de la lógica de negocio (pages + components)
-      include: ['src/main.jsx', 'src/App.jsx', 'src/pages/**', 'src/components/**', 'src/context/**', 'src/services/**', 'src/hooks/**'],
+      include: ['src/main.jsx', 'src/App.jsx', 'src/pages/**', 'src/components/**', 'src/context/**', 'src/services/**', 'src/hooks/**', 'src/utils/**'],
       exclude: ['src/assets/**', 'src/styles/**'],
       reporter: ['text', 'html', 'lcov'],
       thresholds: {

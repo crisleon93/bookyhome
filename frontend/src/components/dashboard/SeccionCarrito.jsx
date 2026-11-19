@@ -712,8 +712,8 @@ export default function SeccionCarrito({ userId }) {
         return;
       }
       const payload = {
-        order_id: parseInt(activeOrderId),
-        amount: parseFloat(amountToCharge),
+        order_id: Number.parseInt(activeOrderId, 10),
+        amount: Number.parseFloat(amountToCharge),
         payment_method: method,
         tipo_entrega: metodoEntrega,
         ...(metodoEntrega === 'domicilio' && direccionSeleccionadaId ? { id_direccion: Number(direccionSeleccionadaId) } : {}),

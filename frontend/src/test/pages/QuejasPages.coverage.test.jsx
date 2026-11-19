@@ -216,4 +216,25 @@ describe('QuejasVendedor web', () => {
     expect(removeSpy).toHaveBeenCalledWith('bookyhome-complaint-updated', expect.any(Function))
     expect(clearIntervalSpy).toHaveBeenCalled()
   })
+
+  it('opens and closes the photo evidence lightbox for the selected complaint', async () => {
+    mocks.getQuejasVendedor.mockResolvedValue({
+      data: [{
+        ...sellerComplaints[0],
+        evidencia_url: '/media/evidencia.jpg',
+      }],
+    })
+    render(<QuejasVendedor />)
+
+    fireEvent.click(await screen.findByText('Libro maltratado'))
+    fireEvent.click(screen.getByText('Ver evidencia'))
+
+    const dialog = screen.getByRole('dialog', { name: 'Evidencia fotográfica adjunta' })
+    expect(dialog.querySelector('img')).toHaveAttribute(
+      'src',
+      'https://api.example.test/media/evidencia.jpg',
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Cerrar evidencia' }))
+    expect(screen.queryByRole('dialog', { name: 'Evidencia fotográfica adjunta' })).toBeNull()
+  })
 })

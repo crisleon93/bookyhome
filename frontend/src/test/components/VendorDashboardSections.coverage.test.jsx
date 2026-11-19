@@ -167,6 +167,43 @@ describe('secciones del vendedor y administrador', () => {
     expect(onNavegar).toHaveBeenCalledWith('Suscripciones')
   })
 
+  it('requiere un libro para el impulso principal y permite cancelar uno activo', async () => {
+    api.get.mockImplementation((path) => {
+      if (path === '/impulsos/tipos') {
+        return Promise.resolve({ data: [{
+          id_tipo_impulso: 4, tipo: 'home', nombre: 'Destacado en portada',
+          descripcion: 'Impulso de portada', precio: 12000, duracion_dias: 7,
+        }] })
+      }
+      if (path === '/impulsos/mis-impulsos') {
+        return Promise.resolve({ data: [{
+          id_impulso: 9, tipo: 'desconocido', estado: 'Activo',
+          nombre_impulso: 'Campaña activa', fecha_inicio: '2026-11-01',
+          fecha_fin: '2026-11-08', monto_pagado: 12000,
+        }] })
+      }
+      if (path === '/libros/mis-libros') {
+        return Promise.resolve({ data: [{ id_libro: 5, titulo: 'Libro para impulsar' }] })
+      }
+      return Promise.resolve({ data: [] })
+    })
+    api.post.mockRejectedValueOnce({ response: { data: { detail: 'No se pudo contratar' } } })
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
+
+    render(<SeccionImpulsos tiendaId={2} />)
+    fireEvent.click(await screen.findByText('Destacado en portada'))
+    const libro = screen.getByLabelText('Selecciona el libro a impulsar *')
+    fireEvent.change(libro, { target: { value: '5' } })
+    fireEvent.click(screen.getByRole('button', { name: /Contratar por/ }))
+    expect(await screen.findByText('No se pudo contratar')).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('button', { name: /Mis Impulsos Activos/ }))
+    expect(screen.getByText('Campaña activa')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }))
+    await waitFor(() => expect(api.delete).toHaveBeenCalledWith('/impulsos/9'))
+    expect(await screen.findByText('Impulso cancelado correctamente.')).toBeTruthy()
+  })
+
   it('abre el formulario de ofertas y ejecuta la validación del nombre requerido', async () => {
     render(<SeccionOfertas />)
     fireEvent.click(await screen.findByRole('button', { name: 'Nueva oferta' }))

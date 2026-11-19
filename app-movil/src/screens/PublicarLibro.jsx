@@ -138,11 +138,11 @@ export default function PublicarLibro({ navigation, route }) {
     const e = {};
     if (!form.titulo.trim())  e.titulo = 'El título es obligatorio';
     if (!form.autor.trim())   e.autor  = 'El autor es obligatorio';
-    if (!form.precio || isNaN(form.precio) || parseFloat(form.precio) <= 0)
+    if (!form.precio || Number.isNaN(Number(form.precio)) || Number.parseFloat(form.precio) <= 0)
       e.precio = 'Ingresa un precio válido';
     if (!form.id_categoria)   e.id_categoria = 'Selecciona una categoría';
     if (!form.estado)         e.estado = 'Selecciona el estado del libro';
-    if (form.stock === '' || isNaN(form.stock) || parseInt(form.stock) < 0)
+    if (form.stock === '' || Number.isNaN(Number(form.stock)) || Number.parseInt(form.stock, 10) < 0)
       e.stock = 'Ingresa un stock válido';
     setErrores(e);
     return Object.keys(e).length === 0;

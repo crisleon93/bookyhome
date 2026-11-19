@@ -214,7 +214,7 @@ describe('CalificacionesVendedor — ramas extra', () => {
     renderConUsuario(<CalificacionesVendedor navigation={{ navigate: vi.fn() }} />)
     await screen.findByText('Aún no tienes calificaciones')
     fireEvent.click(screen.getByText('Footer'))
-    // No debe lanzar
+    expect(screen.getByText('Aún no tienes calificaciones')).toBeTruthy()
   })
 
   it('las iniciales se forman con las dos primeras palabras del nombre', async () => {
