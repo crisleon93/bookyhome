@@ -20,6 +20,7 @@ overrides:
   uuid@^7: 14.0.0
   postcss: 8.5.32
   shell-quote: 1.11.0
+  braces: 3.0.3
 
 patchedDependencies:
   picomatch@2.3.2: e662ac00569116ba1c32f46c976da1b72e185b1e0f58ff7c1cad19ed422bb7ab

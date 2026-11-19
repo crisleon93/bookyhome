@@ -18,7 +18,10 @@ overrides:
   'uuid@^7': 14.0.0
   postcss: 8.5.32
   shell-quote: 1.11.0
+  # Mitigar CVE-2026-93687 (Uncontrolled Recursion) en braces@3.0.3 (transitiva de runtime).
+  braces: 3.0.3
 # Mitigar CVE-2026-112366 hasta que picomatch publique versiones corregidas.
+# CVE-2026-103387, CVE-2026-93690, CVE-2026-93751 mitigados via patch de uri-js@4.4.1 (ver frontend/pnpm-workspace.yaml).
 patchedDependencies:
   picomatch@2.3.2: ../patches/picomatch@2.3.2.patch
   picomatch@4.0.7: ../patches/picomatch@4.0.7.patch
