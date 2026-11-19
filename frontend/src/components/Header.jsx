@@ -1018,9 +1018,9 @@ function Header({ variant, hasSidebar }) {
 
     if (isLoggedIn && userRole !== 'vendedor') {
       params.append('seccion', 'Catálogo');
-      navigate(`/?${params.toString()}`);
+      void navigate(`/?${params.toString()}`);
     } else {
-      navigate(`/catalogo?${params.toString()}`);
+      void navigate(`/catalogo?${params.toString()}`);
     }
   };
 
@@ -1052,11 +1052,11 @@ function Header({ variant, hasSidebar }) {
       // Disparar evento para que App.jsx detecte el cambio
       window.dispatchEvent(new CustomEvent('auth-change', { detail: { authenticated: true } }));
       if (decoded.rol === 'vendedor') {
-        navigate('/mi-tienda', { replace: true });
+        void navigate('/mi-tienda', { replace: true });
       } else if (decoded.rol === 'admin' || decoded.rol === 'administrador') {
-        navigate('/admin', { replace: true });
+        void navigate('/admin', { replace: true });
       } else {
-        navigate('/', { replace: true }); // Comprador va al Home con sidebar
+        void navigate('/', { replace: true }); // Comprador va al Home con sidebar
       }
     } catch (err) {
       const message = err.response?.data?.detail || 'Email o contraseña incorrectos';
