@@ -152,4 +152,72 @@ describe('ChatSocketProvider', () => {
     })
     expect(screen.getByTestId('state').textContent).toBe('1:false:false:ninguno')
   })
+
+  it('cubre error fuera de provider, onopen, onerror, onclose y mensaje_enviado', async () => {
+    // 1. Outside provider throws
+    expect(() => render(<Consumer />)).toThrow('useChatSocket debe usarse dentro de ChatSocketProvider')
+
+    // 2. Open, error, and close
+    renderProvider()
+    await waitFor(() => expect(screen.getByTestId('state').textContent).toContain('1:false:false'))
+    const socket = MockWebSocket.instances[0]
+
+    // ws.onopen
+    await act(async () => {
+      socket.onopen()
+    })
+    expect(screen.getByTestId('state').textContent).toContain('1:true:false')
+
+    // ws.onerror
+    const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+    socket.onerror({ message: 'Connection dropped' })
+    expect(consoleSpy).toHaveBeenCalledWith('WS error:', 'Connection dropped')
+
+    // ws.onmessage con mensaje_enviado (esPropio=true)
+    await act(async () => {
+      socket.onmessage({
+        data: JSON.stringify({
+          tipo: 'mensaje_enviado',
+          mensaje: { id_sala: 1, mensaje: 'Mi propio mensaje', enviado_en: '2026-03-02' },
+        }),
+      })
+    })
+    expect(screen.getByTestId('state').textContent).toBe('1:true:false:Mi propio mensaje')
+
+    // ws.onmessage con sala que no existe en el estado local (idx === -1)
+    await act(async () => {
+      socket.onmessage({
+        data: JSON.stringify({
+          tipo: 'nuevo_mensaje',
+          mensaje: { id_sala: 9999, mensaje: 'Sala ajena', enviado_en: '2026-03-02' },
+        }),
+      })
+    })
+
+    // ws.onclose con 4401 (sin reconexión)
+    await act(async () => {
+      socket.onclose({ code: 4401 })
+    })
+    expect(screen.getByTestId('state').textContent).toContain('1:false:false')
+
+    // ws.onclose con código normal (dispara timeout de reconexión)
+    const timeoutSpy = vi.spyOn(global, 'setTimeout')
+    await act(async () => {
+      socket.onclose({ code: 1006 })
+    })
+    expect(timeoutSpy).toHaveBeenCalled()
+
+    consoleSpy.mockRestore()
+  })
+
+  it('maneja error al cargar salas', async () => {
+    mocks.getSalasUsuario.mockRejectedValueOnce(new Error('Network error'))
+    const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+    renderProvider()
+
+    await waitFor(() => {
+      expect(consoleSpy).toHaveBeenCalledWith('Error cargando salas:', 'Network error')
+    })
+    consoleSpy.mockRestore()
+  })
 })

@@ -28,7 +28,7 @@ const ICONS = {
   "Configuración": <IconSettings width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
 };
 
-const MENU_LINKS = [
+export const MENU_LINKS = [
   { name: "Inicio", label: "Inicio" },
   { name: "Catálogo", label: "Catálogo" },
   { name: "Mis Compras", label: "Mis compras" },

@@ -493,3 +493,22 @@ describe('AdminDashboard — alertas de atención', () => {
     expect(await screen.findByText(/No carga el panel/)).toBeInTheDocument()
   })
 })
+
+describe('AdminDashboard — control de acceso y logout', () => {
+  it('redirige a / cuando el usuario no tiene rol de admin', async () => {
+    const { getUserRole } = await import('../../hooks/useAuth')
+    getUserRole.mockReturnValueOnce('comprador')
+    renderAdmin()
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith('/')
+    })
+  })
+
+  it('cierra sesión y navega a / al hacer clic en el botón de logout del sidebar', async () => {
+    const user = userEvent.setup()
+    renderAdmin()
+    const logoutBtn = await screen.findByRole('button', { name: /Cerrar sesión/i })
+    await user.click(logoutBtn)
+    expect(mockNavigate).toHaveBeenCalledWith('/')
+  })
+})

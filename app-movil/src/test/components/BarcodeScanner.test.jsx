@@ -135,4 +135,31 @@ describe('BarcodeScanner', () => {
       expect(mocks.alert).toHaveBeenCalledWith('Error', expect.any(String), expect.any(Array))
     )
   })
+
+  it('ejecuta el temporizador de cierre exitoso llamando a onClose', async () => {
+    vi.useFakeTimers()
+    mocks.useCameraPermissions.mockReturnValue([{ granted: true }, mocks.requestPermission])
+    baseProps.onBarcodeDetected.mockResolvedValue()
+    mocks.onBarcodeScanned.mockImplementation((cb) => cb?.({ type: 'ean13', data: '9780061965777' }))
+
+    render(<BarcodeScanner {...baseProps} />)
+    fireEvent.click(screen.getByTestId('camera'))
+    await vi.advanceTimersByTimeAsync(600)
+    expect(baseProps.onClose).toHaveBeenCalled()
+    vi.useRealTimers()
+  })
+
+  it('no llama a onClose si el componente se desmonta antes de que expire el temporizador', async () => {
+    vi.useFakeTimers()
+    mocks.useCameraPermissions.mockReturnValue([{ granted: true }, mocks.requestPermission])
+    baseProps.onBarcodeDetected.mockResolvedValue()
+    mocks.onBarcodeScanned.mockImplementation((cb) => cb?.({ type: 'ean13', data: '9780061965777' }))
+
+    const { unmount } = render(<BarcodeScanner {...baseProps} />)
+    fireEvent.click(screen.getByTestId('camera'))
+    unmount()
+    await vi.advanceTimersByTimeAsync(600)
+    expect(baseProps.onClose).not.toHaveBeenCalled()
+    vi.useRealTimers()
+  })
 })

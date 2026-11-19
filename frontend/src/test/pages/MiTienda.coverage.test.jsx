@@ -1002,4 +1002,17 @@ describe('MiTienda', () => {
     })
     expect(screen.queryByRole('heading', { name: 'Agregar Nueva Cuenta' })).toBeNull()
   })
+
+  it('redirige a / si no hay token o cuando se hace logout', async () => {
+    localStorage.removeItem('token')
+    const { unmount } = render(<MiTienda />)
+    expect(mocks.navigate).toHaveBeenCalledWith('/')
+    unmount()
+
+    mocks.navigate.mockClear()
+    localStorage.setItem('token', 'fake.token')
+    render(<MiTienda />)
+    fireEvent.click(screen.getByRole('button', { name: 'Cerrar sesión' }))
+    expect(mocks.navigate).toHaveBeenCalledWith('/')
+  })
 })

@@ -77,4 +77,14 @@ describe('Footer', () => {
     expect(mocks.navigate).toHaveBeenNthCalledWith(2, '/lista-deseos')
     expect(mocks.navigate).toHaveBeenNthCalledWith(3, '/?seccion=Soporte%20t%C3%A9cnico')
   })
+
+  it('abre el modal de join al hacer clic en Iniciar sesión / Registro aun teniendo token', () => {
+    localStorage.setItem('token', 'session-token')
+    const openJoin = vi.fn()
+    window.addEventListener('bookyhome:open-join', openJoin)
+    renderFooter()
+    fireEvent.click(screen.getByRole('button', { name: 'Iniciar sesión / Registro' }))
+    expect(openJoin).toHaveBeenCalledOnce()
+    window.removeEventListener('bookyhome:open-join', openJoin)
+  })
 })

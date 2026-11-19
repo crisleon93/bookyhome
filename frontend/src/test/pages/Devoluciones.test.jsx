@@ -241,4 +241,14 @@ describe('Devoluciones — flujos de solicitudes y reclamos', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Enviar solicitud' }))
       expect(await screen.findByText('Solicitud rechazada')).toBeInTheDocument()
     })
+
+    it('redirige a /login cuando el servicio responde con 401', async () => {
+      getOrdenes.mockRejectedValueOnce({
+        response: { status: 401, data: { detail: 'No autorizado' } },
+      })
+      render(<MemoryRouter><Devoluciones /></MemoryRouter>)
+      await waitFor(() => {
+        expect(mockNavigate).toHaveBeenCalledWith('/login')
+      })
+    })
 })

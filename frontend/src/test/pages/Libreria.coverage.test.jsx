@@ -187,4 +187,15 @@ describe('Libreria registration form', () => {
     expect(await screen.findByText('Correo ocupado')).toBeInTheDocument()
     await waitFor(() => expect(mocks.notify).toHaveBeenCalledWith('Correo ocupado', 'error'))
   })
+
+  it('redirige a /login tras registro exitoso cuando no es modal', async () => {
+    vi.useFakeTimers()
+    render(<MemoryRouter><Libreria /></MemoryRouter>)
+    fillValidForm()
+    submitForm()
+    await act(async () => { await Promise.resolve() })
+    await act(async () => { await vi.advanceTimersByTimeAsync(2500) })
+    expect(mocks.navigate).toHaveBeenCalledWith('/login')
+    vi.useRealTimers()
+  })
 })

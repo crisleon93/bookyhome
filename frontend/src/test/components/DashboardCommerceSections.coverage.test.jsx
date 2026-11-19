@@ -111,6 +111,26 @@ describe('secciones de compras y notificaciones', () => {
     expect(mocks.navigate).toHaveBeenCalledWith('/?seccion=Catálogo')
   })
 
+  it('limpia el param pagarOrden en la URL al volver al carrito desde checkout', async () => {
+    mocks.location = { search: '?pagarOrden=101', state: null }
+    getCarrito.mockResolvedValue({ data: [] })
+    getDirecciones.mockResolvedValue({ data: [] })
+    getOrden.mockResolvedValue({
+      data: {
+        id_orden: 101,
+        estado: 'pendiente',
+        total: 10000,
+        tipo_entrega: 'domicilio',
+        items: [{ id_libro: 1, titulo: 'Libro Orden', precio_libro: 10000, cantidad: 1 }],
+      },
+    })
+    render(<SeccionCarrito userId={7} />)
+    const volverBtn = await screen.findByRole('button', { name: /Volver al carrito/i })
+    fireEvent.click(volverBtn)
+    expect(mocks.navigate).toHaveBeenCalledWith('/?seccion=Carrito', { replace: true, state: {} })
+    mocks.location = { search: '', state: null }
+  })
+
   it('elimina un libro del carrito y vuelve a cargar sus datos', async () => {
     getCarrito.mockResolvedValue({ data: [{
       id_libro: 33, titulo: 'Libro del carrito', autor_libro: 'Autora', precio_libro: 14000, cantidad: 1,
@@ -951,6 +971,29 @@ describe('secciones de compras y notificaciones', () => {
     expect(screen.getByRole('dialog')).toBeTruthy()
     fireEvent.click(screen.getByText('Cancelar'))
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+  })
+
+  it('navega a Mis Compras y Quejas y reclamos al hacer clic en notificaciones de pedido y sistema', async () => {
+    getOrdenes.mockResolvedValue({ data: [] })
+    notificacionesService.obtener.mockResolvedValue({
+      notificaciones: [
+        {
+          id_notificacion: 21, tipo: 'pedido', titulo: 'Pedido confirmado',
+          descripcion: 'Orden en camino', fecha_creacion: '2025-01-05T12:00:00', leida: true,
+        },
+        {
+          id_notificacion: 22, tipo: 'sistema', titulo: 'Alerta del sistema',
+          descripcion: 'Revisa tu reclamo', fecha_creacion: '2025-01-05T13:00:00', leida: true,
+        },
+      ],
+    })
+    render(<SeccionNotificaciones />)
+    expect(await screen.findByText('Pedido confirmado')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir notificación: Pedido confirmado' }))
+    expect(mocks.navigate).toHaveBeenCalledWith('/?seccion=Mis%20Compras')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir notificación: Alerta del sistema' }))
+    expect(mocks.navigate).toHaveBeenCalledWith('/?seccion=Quejas%20y%20reclamos')
   })
 
   it('filtra, ordena y marca como leídas las notificaciones automáticas', async () => {
