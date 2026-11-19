@@ -51,9 +51,9 @@ function Footer({ hasSidebar = false }) {
       return;
     }
 
-    if (target === 'compras') navigate('/?seccion=Mis%20Compras');
-    else if (target === 'favoritos') navigate('/lista-deseos');
-    else if (target === 'soporte') navigate('/?seccion=Soporte%20t%C3%A9cnico');
+    if (target === 'compras') void navigate('/?seccion=Mis%20Compras');
+    else if (target === 'favoritos') void navigate('/lista-deseos');
+    else if (target === 'soporte') void navigate('/?seccion=Soporte%20t%C3%A9cnico');
     else openAuthModal('join');
   };
 

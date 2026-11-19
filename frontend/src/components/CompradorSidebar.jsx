@@ -131,11 +131,11 @@ export default function CompradorSidebar({ userName, userEmail, profilePhotoUrl,
                   return;
                 }
                 if (item.path) {
-                  navigate(item.path);
+                  void navigate(item.path);
                   return;
                 }
                 if (item.name === "Catálogo") {
-                  navigate("/catalogo");
+                  void navigate("/catalogo");
                 }
               }}
               title={!sidebarOpen ? item.label : undefined}
@@ -169,7 +169,7 @@ export default function CompradorSidebar({ userName, userEmail, profilePhotoUrl,
           localStorage.removeItem('token');
           document.documentElement.classList.remove('dark');
           window.dispatchEvent(new CustomEvent('auth-change', { detail: { authenticated: false } }));
-          navigate('/');
+          void navigate('/');
         }}
         title={!sidebarOpen ? 'Cerrar sesión' : undefined}
         style={{

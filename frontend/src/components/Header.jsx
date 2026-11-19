@@ -977,9 +977,9 @@ function Header({ variant, hasSidebar }) {
     params.set('libro', String(sugerencia.id_libro));
 
     if (isLoggedIn && userRole !== 'vendedor') {
-      navigate(`/?seccion=Catálogo&${params.toString()}`);
+      void navigate(`/?seccion=Catálogo&${params.toString()}`);
     } else {
-      navigate(`/catalogo?${params.toString()}`);
+      void navigate(`/catalogo?${params.toString()}`);
     }
   };
 
@@ -987,15 +987,15 @@ function Header({ variant, hasSidebar }) {
     e.preventDefault();
     if (isLoggedIn && userRole !== 'vendedor') {
       if (searchTerm.trim()) {
-        navigate(`/?seccion=Catálogo&q=${encodeURIComponent(searchTerm.trim())}`);
+        void navigate(`/?seccion=Catálogo&q=${encodeURIComponent(searchTerm.trim())}`);
       } else {
-        navigate('/?seccion=Catálogo');
+        void navigate('/?seccion=Catálogo');
       }
     } else {
       if (searchTerm.trim()) {
-        navigate(`/catalogo?q=${encodeURIComponent(searchTerm.trim())}`);
+        void navigate(`/catalogo?q=${encodeURIComponent(searchTerm.trim())}`);
       } else {
-        navigate('/catalogo');
+        void navigate('/catalogo');
       }
     }
   };
