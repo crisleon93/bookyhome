@@ -6,7 +6,7 @@ Este documento describe la arquitectura y el modelo de dominio que se encuentran
 
 El proyecto no está implementado como un conjunto de clases de dominio Python: la lógica de negocio está distribuida entre routers y funciones de modelos, mientras que las entidades persistentes son tablas MySQL. Por eso, los diagramas de clases representan principalmente el **modelo de datos relacional**. Al final se incluye también la vista de clases Python que sí existen, los DTO Pydantic y los componentes funcionales de los clientes; no se presentan páginas React como clases de dominio.
 
-Los bloques Mermaid pueden visualizarse en GitHub, en VS Code con una extensión compatible con Mermaid o copiarse a un editor Mermaid para exportarlos como imagen. Los casos de uso se documentan por separado en [`casos-de-uso/README.md`](casos-de-uso/README.md), con imágenes PNG separadas por plataforma.
+Los bloques Mermaid pueden visualizarse en GitHub, en VS Code con una extensión compatible con Mermaid o copiarse a un editor Mermaid para exportarlos como imagen. Los casos de uso se documentan por separado en [`casos-de-uso/README.md`](../casos-de-uso/README.md), con imágenes PNG separadas por plataforma.
 
 ## 1. Arquitectura general
 
@@ -653,7 +653,7 @@ classDiagram
 
 ## 5. Secuencia de checkout (flujo implementado)
 
-La colección de diagramas de secuencia —con flujos de registro, recuperación, catálogo, compra, perfil, publicación, ofertas, chat, notificaciones, soporte, moderación, devoluciones, envíos/retiro, herramientas, impulsos y finanzas— se documenta en [`diagramas-secuencia-bookyhome.md`](diagramas-secuencia-bookyhome.md). Sus limitaciones reales se identifican para no presentar como terminado un requisito parcial o pendiente.
+La colección de diagramas de secuencia —con flujos de registro, recuperación, catálogo, compra, perfil, publicación, ofertas, chat, notificaciones, soporte, moderación, devoluciones, envíos/retiro, herramientas, impulsos y finanzas— se documenta en [`diagramas-secuencia-bookyhome.md`](../diagramas-de-secuencia/diagramas-secuencia-bookyhome.md). Sus limitaciones reales se identifican para no presentar como terminado un requisito parcial o pendiente.
 
 La secuencia distingue el flujo del carrito del mecanismo relacional, porque el checkout conserva datos en JSON y luego intenta reflejarlos en MySQL.
 
@@ -704,7 +704,7 @@ La definición principal del esquema contiene 43 tablas, todas representadas en 
 
 Además de estas tablas, el SQL contiene vistas, procedimientos almacenados y triggers para búsquedas, reportes, métricas, notificaciones, comisiones, disponibilidad e inventario. No se dibujan como entidades porque son lógica de consulta/automatización y no objetos de dominio persistentes independientes.
 
-La clase adicional `PushToken` corresponde a la tabla `push_tokens`, definida solo en [`database/migrations/008_add_push_tokens.sql`](../database/migrations/008_add_push_tokens.sql): `id_token`, `id_usuario`, `expo_push_token`, `creado_en` y `actualizado_en`. Tiene FK a `usuarios` con borrado en cascada, pero no está en `bookyhome.sql` ni se encontró código backend que la consulte; se considera una extensión opcional del esquema, no una dependencia garantizada de la aplicación.
+La clase adicional `PushToken` corresponde a la tabla `push_tokens`, definida solo en [`database/migrations/008_add_push_tokens.sql`](../../database/migrations/008_add_push_tokens.sql): `id_token`, `id_usuario`, `expo_push_token`, `creado_en` y `actualizado_en`. Tiene FK a `usuarios` con borrado en cascada, pero no está en `bookyhome.sql` ni se encontró código backend que la consulte; se considera una extensión opcional del esquema, no una dependencia garantizada de la aplicación.
 
 ## 7. Diferencias principales frente al diagrama anterior
 

@@ -12,9 +12,12 @@ Los documentos de `docs/requisitos` deben servir como guia para construir y vali
 docs/
   README.md
   casos-de-uso/  Diagramas de casos de uso web y móvil, organizados por plataforma
-  diagrama-clases-bookyhome.md  Modelo de clases, persistencia y arquitectura verificados contra código/SQL
-  diagramas-secuencia-bookyhome.md  Secuencias de los flujos principales
-  flujo-integral-bookyhome.md  Recorrido funcional integral
+  diagramas-de-clases/
+    diagrama-clases-bookyhome.md  Modelo de clases, persistencia y arquitectura verificados contra código/SQL
+  diagramas-de-secuencia/
+    diagramas-secuencia-bookyhome.md  Secuencias de los flujos principales
+  diagramas-de-flujo/
+    flujo-integral-bookyhome.md  Recorrido funcional integral
   implantacion/  Evidencias de plataforma, migracion y respaldos
   aceptacion/  Casos de prueba y evidencias de aceptacion
   calidad/  Marco ISO/IEC 25000, CMMI, PSP, RNF y lecciones aprendidas

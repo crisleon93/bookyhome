@@ -1,6 +1,6 @@
 # Inconsistencias funcionales por revisar
 
-Este registro separa los hallazgos de los [diagramas de secuencia](../diagramas-secuencia-bookyhome.md) para que puedan resolverse después. Se basa en una revisión estática de las 42 historias, las pantallas/rutas y los endpoints del repositorio. No se modificó la implementación de estas funciones.
+Este registro separa los hallazgos de los [diagramas de secuencia](../diagramas-de-secuencia/diagramas-secuencia-bookyhome.md) para que puedan resolverse después. Se basa en una revisión estática de las 42 historias, las pantallas/rutas y los endpoints del repositorio. No se modificó la implementación de estas funciones.
 
 **Estado**
 
