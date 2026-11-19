@@ -15,6 +15,18 @@ export default function BarcodeScanner({ visible, onClose, onBarcodeDetected }) 
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
   const [loading, setLoading] = useState(false);
+  const isMountedRef = React.useRef(true);
+  const timeoutRef = React.useRef(null);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
 
   if (!permission) {
     return <View />;
@@ -74,10 +86,14 @@ export default function BarcodeScanner({ visible, onClose, onBarcodeDetected }) 
       await onBarcodeDetected(cleanedData);
       
       // Cerrar el escáner después de un escaneo exitoso
-      setTimeout(() => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      timeoutRef.current = setTimeout(() => {
+        if (!isMountedRef.current) return;
         onClose();
-        setScanned(false);
-        setLoading(false);
+        if (isMountedRef.current) {
+          setScanned(false);
+          setLoading(false);
+        }
       }, 500);
       
     } catch (error) {

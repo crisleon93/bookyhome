@@ -79,7 +79,7 @@ export default function PublicarLibro() {
       return;
     }
     // Navegar indicando la subsección deseada para que MiTienda la abra.
-    navigate(`/mi-tienda?seccion=${encodeURIComponent(name)}`);
+    void navigate(`/mi-tienda?seccion=${encodeURIComponent(name)}`);
   };
 
   const [form, setForm] = useState({
@@ -272,7 +272,7 @@ export default function PublicarLibro() {
           handleLogout={() => {
             localStorage.removeItem("token");
             window.dispatchEvent(new CustomEvent('auth-change', { detail: { authenticated: false } }));
-            navigate("/");
+            void navigate("/");
           }}
         />
         <main className="dashboard-main">
@@ -297,7 +297,7 @@ export default function PublicarLibro() {
         handleLogout={() => {
           localStorage.removeItem("token");
           window.dispatchEvent(new CustomEvent('auth-change', { detail: { authenticated: false } }));
-          navigate("/");
+          void navigate("/");
         }}
       />
       <main className="dashboard-main">

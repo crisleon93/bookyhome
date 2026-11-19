@@ -244,11 +244,11 @@ export default function SeccionNotificaciones() {
   const handleClickNotificacion = async (notif) => {
     if (!notif.leida) await handleMarcarLeida(notif.id_notificacion);
     if (notif.es_automatica || notif.tipo === "pedido" || notif.tipo === "pago") {
-      navigate("/?seccion=Mis%20Compras");
+      void navigate("/?seccion=Mis%20Compras");
     } else if (notif.tipo === "mensaje" && notif.referencia_id) {
-      navigate(`/?seccion=Mensajes&sala=${notif.referencia_id}`);
+      void navigate(`/?seccion=Mensajes&sala=${notif.referencia_id}`);
     } else if (notif.tipo === "sistema") {
-      navigate("/?seccion=Quejas%20y%20reclamos");
+      void navigate("/?seccion=Quejas%20y%20reclamos");
     }
   };
 

@@ -98,7 +98,7 @@ export default function VendedorSidebar({ userName = 'Vendedor', profileImage = 
   const onLogout = handleLogout || (() => {
     localStorage.removeItem('token');
     document.documentElement.classList.remove('dark');
-    navigate('/');
+    void navigate('/');
   });
 
   return (
@@ -185,7 +185,7 @@ export default function VendedorSidebar({ userName = 'Vendedor', profileImage = 
             onClick={() => {
               if (item.path) {
                 if (setActiveSide) setActiveSide(item.name);
-                navigate(item.path);
+                void navigate(item.path);
                 return;
               }
               if (setActiveSide) {

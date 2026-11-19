@@ -339,7 +339,7 @@ function Home() {
   // Handle section selection
   const handleSelectSection = (seccion) => {
     startTransition(() => setActiveSide(seccion))
-    navigate(`/?seccion=${encodeURIComponent(seccion)}`, { replace: true })
+    void navigate(`/?seccion=${encodeURIComponent(seccion)}`, { replace: true })
   }
   
   // Handle URL params for section

@@ -144,11 +144,11 @@ export default function LibreriasDestacadas() {
   if (!loading && tiendas.length === 0) return null;
 
   const handleVerTienda = (tienda) => {
-    navigate(`/tienda/${tienda.id_tienda}`);
+    void navigate(`/tienda/${tienda.id_tienda}`);
   };
 
   const handleVerTodas = () => {
-    navigate('/librerias');
+    void navigate('/librerias');
   };
 
   return (

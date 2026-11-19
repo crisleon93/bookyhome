@@ -41,7 +41,7 @@ export default function Historial() {
 
   useEffect(() => {
     if (!token) {
-      navigate("/login");
+      void navigate("/login");
       return;
     }
     void cargarHistorial();
@@ -63,7 +63,7 @@ export default function Historial() {
   // ============= NAVEGAR =============
   const handleClickLibro = (item) => {
     if (item.id_libro) {
-      navigate('/catalogo');
+      void navigate('/catalogo');
     }
   };
 

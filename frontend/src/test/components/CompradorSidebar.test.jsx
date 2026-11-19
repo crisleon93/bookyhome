@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { fireEvent, render, screen } from '@testing-library/react'
-import CompradorSidebar from '../../components/CompradorSidebar'
+import CompradorSidebar, { MENU_LINKS } from '../../components/CompradorSidebar'
 
 const mocks = vi.hoisted(() => ({ navigate: vi.fn() }))
 
@@ -63,5 +63,16 @@ describe('CompradorSidebar', () => {
       type: 'auth-change',
       detail: { authenticated: false },
     }))
+  })
+
+  it('navega a item.path cuando el elemento define una ruta y no hay onSelect', () => {
+    MENU_LINKS[0].path = '/inicio-ruta'
+    try {
+      render(<CompradorSidebar userName="Bea" activeSide="Inicio" />)
+      fireEvent.click(screen.getByTitle('Inicio'))
+      expect(mocks.navigate).toHaveBeenCalledWith('/inicio-ruta')
+    } finally {
+      delete MENU_LINKS[0].path
+    }
   })
 })

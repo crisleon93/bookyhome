@@ -371,11 +371,11 @@ export default function SeccionCarrito({ userId }) {
     setReservaConfirmada(false);
 
     // Limpiar el state de la URL para que no se reactive al recargar
-    navigate('/?seccion=Carrito', { replace: true, state: {} });
+    void navigate('/?seccion=Carrito', { replace: true, state: {} });
   }, [location.state]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const onGoToCatalog = () => {
-    navigate('/?seccion=Catálogo');
+    void navigate('/?seccion=Catálogo');
   };
 
   const onCheckout = () => {
@@ -410,7 +410,7 @@ export default function SeccionCarrito({ userId }) {
     setOrder(null);
     setBuyNowData(null);
     setPaymentSuccess(false);
-    navigate('/?seccion=Carrito', { replace: true });
+    void navigate('/?seccion=Carrito', { replace: true });
     setCardNumber("");
     setCardName("");
     setCardExpiry("");
@@ -432,7 +432,7 @@ export default function SeccionCarrito({ userId }) {
 
     // Si veníamos con el param pagarOrden, limpiarlo en la URL
     if (location.search && location.search.includes('pagarOrden')) {
-      navigate('/?seccion=Carrito', { replace: true, state: {} });
+      void navigate('/?seccion=Carrito', { replace: true, state: {} });
     }
     
     loadData();

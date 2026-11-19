@@ -217,4 +217,29 @@ describe('ListaDeseos web', () => {
     window.dispatchEvent(new Event('storage'))
     await waitFor(() => expect(badge.style.background).toBe('rgb(252, 228, 236)'))
   })
+
+  it('redirige a /login si no hay token de autenticación', async () => {
+    localStorage.removeItem('token')
+    renderWishlist()
+    await waitFor(() => {
+      expect(mocks.navigate).toHaveBeenCalledWith('/login')
+    })
+  })
+
+  it('navega a catálogo por defecto al hacer clic en Ver detalle y Explorar catálogo', async () => {
+    mocks.getFavoritos.mockResolvedValueOnce({ data: [favorite] })
+    mocks.getListasDeseos.mockResolvedValueOnce({ data: [] })
+    const { unmount } = renderWishlist()
+    const verDetalleBtn = await screen.findByRole('button', { name: 'Ver detalle' })
+    fireEvent.click(verDetalleBtn)
+    expect(mocks.navigate).toHaveBeenCalledWith('/?seccion=Cat%C3%A1logo')
+    unmount()
+
+    mocks.getFavoritos.mockResolvedValueOnce({ data: [] })
+    mocks.getListasDeseos.mockResolvedValueOnce({ data: [] })
+    renderWishlist()
+    const explorarBtn = await screen.findByRole('button', { name: 'Explorar catálogo' })
+    fireEvent.click(explorarBtn)
+    expect(mocks.navigate).toHaveBeenCalledWith('/?seccion=Cat%C3%A1logo')
+  })
 })

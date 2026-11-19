@@ -613,3 +613,32 @@ describe('Chat extra — mensaje con imagen adjunta', () => {
     expect(await screen.findByText('Mira esta foto')).toBeInTheDocument()
   })
 })
+
+describe('Chat extra — navegación sin autenticación y selección de sala', () => {
+  it('redirige a /login cuando no existe token de autenticación', async () => {
+    const { getToken } = await import('../../hooks/useAuth')
+    getToken.mockReturnValueOnce(null)
+    render(<Chat />)
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith('/login')
+    })
+  })
+
+  it('navega a /chat/:id_sala cuando se selecciona una sala no embebida', async () => {
+    const { chatService } = await import('../../services/chat')
+    chatService.getSalas.mockResolvedValueOnce({
+      salas: [
+        { id_sala: 42, nombre_tienda: 'Librería Aventura', ultimo_mensaje: 'Hola', no_leidos: 0 },
+        { id_sala: 43, nombre_tienda: 'Librería Fantasía', ultimo_mensaje: 'Adiós', no_leidos: 0 },
+      ],
+    })
+    chatService.obtenerMensajes.mockResolvedValue({ mensajes: [] })
+    render(<Chat embedded={false} />)
+    expect((await screen.findAllByText('Librería Fantasía')).length).toBeGreaterThan(0)
+    const salaItems = document.querySelectorAll('.sala-item')
+    fireEvent.click(salaItems[1])
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith('/chat/43')
+    })
+  })
+})

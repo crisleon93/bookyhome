@@ -28,7 +28,7 @@ const ICONS = {
   "Configuración": <IconSettings width={20} height={20} strokeWidth={2.2} style={{ color: WHITE }} />,
 };
 
-const MENU_LINKS = [
+export const MENU_LINKS = [
   { name: "Inicio", label: "Inicio" },
   { name: "Catálogo", label: "Catálogo" },
   { name: "Mis Compras", label: "Mis compras" },
@@ -131,11 +131,11 @@ export default function CompradorSidebar({ userName, userEmail, profilePhotoUrl,
                   return;
                 }
                 if (item.path) {
-                  navigate(item.path);
+                  void navigate(item.path);
                   return;
                 }
                 if (item.name === "Catálogo") {
-                  navigate("/catalogo");
+                  void navigate("/catalogo");
                 }
               }}
               title={!sidebarOpen ? item.label : undefined}
@@ -169,7 +169,7 @@ export default function CompradorSidebar({ userName, userEmail, profilePhotoUrl,
           localStorage.removeItem('token');
           document.documentElement.classList.remove('dark');
           window.dispatchEvent(new CustomEvent('auth-change', { detail: { authenticated: false } }));
-          navigate('/');
+          void navigate('/');
         }}
         title={!sidebarOpen ? 'Cerrar sesión' : undefined}
         style={{

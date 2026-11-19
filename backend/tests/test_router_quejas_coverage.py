@@ -54,40 +54,40 @@ def test_customer_complaints_enrich_order_items_and_default_on_failure(monkeypat
     db.close.assert_called_once()
 
 
-@pytest.mark.anyio
-async def test_create_complaint_validates_required_fields_and_order(monkeypatch):
+def test_create_complaint_validates_required_fields_and_order(monkeypatch):
+    import asyncio
     with pytest.raises(HTTPException) as empty:
-        await mod.crear_queja(1, " ", "detalle", user={"sub": "2"})
+        asyncio.run(mod.crear_queja(1, " ", "detalle", user={"sub": "2"}))
     assert empty.value.status_code == 400
 
     with pytest.raises(HTTPException) as invalid_file:
-        await mod.crear_queja(
+        asyncio.run(mod.crear_queja(
             1, "Motivo", "detalle",
             evidencia=MagicMock(filename="payload.txt", content_type="text/plain"),
             user={"sub": "2"},
-        )
+        ))
     assert invalid_file.value.status_code == 400
 
     db, cursor = _db()
     monkeypatch.setattr(mod, "get_db", lambda: db)
     with patch.object(mod, "_order_store", return_value=None):
         with pytest.raises(HTTPException) as missing:
-            await mod.crear_queja(1, "Motivo", "detalle", evidencia=None, user={"sub": "2"})
+            asyncio.run(mod.crear_queja(1, "Motivo", "detalle", evidencia=None, user={"sub": "2"}))
     assert missing.value.status_code == 404
     db.rollback.assert_called_once()
 
 
-@pytest.mark.anyio
-async def test_create_complaint_saves_and_notifies_participants(monkeypatch):
+def test_create_complaint_saves_and_notifies_participants(monkeypatch):
+    import asyncio
     db, cursor = _db()
     cursor.fetchone.side_effect = [None, {"id_tienda": 6}, {"id_usuario": 7}]
     cursor.fetchall.return_value = [{"id_usuario": 1}, {"id_usuario": 2}]
     cursor.lastrowid = 22
     monkeypatch.setattr(mod, "get_db", lambda: db)
     with patch.object(mod, "_order_store", return_value={"id_tienda": None}):
-        result = await mod.crear_queja(
+        result = asyncio.run(mod.crear_queja(
             14, "Motivo", " Detalle ", evidencia=None, user={"sub": "5"},
-        )
+        ))
 
     assert result == {"ok": True, "id_solicitud": 22}
     insert = cursor.execute.call_args_list[2]
@@ -153,3 +153,74 @@ def test_create_support_notifies_admins_and_admin_resolution_validates_role(monk
         13, mod.Resolucion(estado="Resuelto", respuesta="Listo"), {"sub": "1", "rol": "admin"},
     ) == {"ok": True}
     assert db.commit.call_count == 2
+
+
+def test_current_user_and_todas_quejas_forbidden(monkeypatch):
+    creds = MagicMock(credentials="invalid-token")
+    monkeypatch.setattr(mod, "verify_token", lambda tok: None)
+    with pytest.raises(HTTPException) as exc:
+        mod.current_user(creds)
+    assert exc.value.status_code == 401
+
+    monkeypatch.setattr(mod, "verify_token", lambda tok: {"sub": "1", "rol": "cliente"})
+    assert mod.current_user(creds) == {"sub": "1", "rol": "cliente"}
+
+    with pytest.raises(HTTPException) as exc403:
+        mod.todas_las_quejas(user={"rol": "cliente"})
+    assert exc403.value.status_code == 403
+
+
+def test_quejas_vendedor_and_mi_soporte(monkeypatch):
+    db, cursor = _db()
+    cursor.fetchall.side_effect = [
+        [
+            {"id_solicitud": 1, "id_usuario": 10, "id_orden": 100},
+            {"id_solicitud": 2, "id_usuario": 11, "id_orden": 200},
+        ],
+        [{"id_solicitud": 3, "asunto": "Consulta", "descripcion": "Detalle"}],
+    ]
+    monkeypatch.setattr(mod, "get_db", lambda: db)
+    with patch("app.models.payments.obtener_orden", side_effect=[
+        {"items": [{"titulo": "Libro", "imagen_url": "cover.jpg"}], "total": 45000},
+        RuntimeError("order error"),
+    ]):
+        vendedor_res = mod.quejas_vendedor({"sub": "5"})
+
+    assert len(vendedor_res) == 2
+    assert vendedor_res[0]["titulo_libro"] == "Libro"
+    assert vendedor_res[0]["total_orden"] == 45000
+    assert vendedor_res[1]["titulo_libro"] is None
+
+    soporte_res = mod.mi_soporte({"sub": "5"})
+    assert len(soporte_res) == 1
+    assert soporte_res[0]["asunto"] == "Consulta"
+
+
+def test_enviar_mensaje_reclamo_branches(monkeypatch):
+    db, cursor = _db()
+    cursor.fetchone.side_effect = [
+        {"id_solicitud": 1, "tipo_solicitud": "reclamo", "id_comprador": 10, "id_vendedor": 20},
+        {"id_solicitud": 2, "tipo_solicitud": "reclamo", "id_comprador": 10, "id_vendedor": 20},
+    ]
+    monkeypatch.setattr(mod, "get_db", lambda: db)
+
+    # Buyer responds
+    res_comprador = mod.enviar_mensaje_reclamo(1, mod.MensajeReclamo(mensaje="Comprador mensaje"), {"sub": "10"})
+    assert res_comprador == {"ok": True}
+
+    # Admin sends message
+    res_admin = mod.enviar_mensaje_reclamo(2, mod.MensajeReclamo(mensaje="Admin mensaje"), {"sub": "99", "rol": "admin"})
+    assert res_admin == {"ok": True}
+
+
+def test_crear_queja_conflict_active_claim(monkeypatch):
+    import asyncio
+    db, cursor = _db()
+    cursor.fetchone.return_value = {"id_solicitud": 50}
+    monkeypatch.setattr(mod, "get_db", lambda: db)
+
+    with patch.object(mod, "_order_store", return_value={"id_tienda": 1}):
+        with pytest.raises(HTTPException) as exc:
+            asyncio.run(mod.crear_queja(1, "Motivo", "Descripcion", evidencia=None, user={"sub": "2"}))
+    assert exc.value.status_code == 409
+

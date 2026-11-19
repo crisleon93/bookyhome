@@ -253,4 +253,42 @@ describe('Header — Login: submit exitoso', () => {
       expect(screen.getByText(/email o contraseña incorrectos/i)).toBeInTheDocument()
     })
   })
+
+  it('redirige a /mi-tienda cuando el rol decodificado es vendedor', async () => {
+    const { jwtDecode } = await import('jwt-decode')
+    jwtDecode.mockReturnValue({ rol: 'vendedor', sub: '2' })
+    login.mockResolvedValueOnce({ data: { access_token: 'vendedor.jwt.token' } })
+    const user = userEvent.setup()
+    renderHeader()
+    abrirModalLogin()
+    await esperarModal()
+
+    await user.type(getEmailInput(), 'vendedor@test.com')
+    await user.type(getPassInput(), 'Password1!')
+    await user.click(screen.getByRole('button', { name: /iniciar sesión/i }))
+
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith('/mi-tienda', { replace: true })
+    })
+    jwtDecode.mockReturnValue({ rol: 'comprador', sub: '1' })
+  })
+
+  it('redirige a /admin cuando el rol decodificado es admin', async () => {
+    const { jwtDecode } = await import('jwt-decode')
+    jwtDecode.mockReturnValue({ rol: 'admin', sub: '3' })
+    login.mockResolvedValueOnce({ data: { access_token: 'admin.jwt.token' } })
+    const user = userEvent.setup()
+    renderHeader()
+    abrirModalLogin()
+    await esperarModal()
+
+    await user.type(getEmailInput(), 'admin@test.com')
+    await user.type(getPassInput(), 'Password1!')
+    await user.click(screen.getByRole('button', { name: /iniciar sesión/i }))
+
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith('/admin', { replace: true })
+    })
+    jwtDecode.mockReturnValue({ rol: 'comprador', sub: '1' })
+  })
 })

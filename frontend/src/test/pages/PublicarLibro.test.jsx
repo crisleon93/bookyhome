@@ -25,8 +25,17 @@ vi.mock('../../services/api', () => ({
   getApiBaseUrl: vi.fn(() => 'http://localhost:8000'),
 }))
 
+const mockNavigate = vi.fn()
+
 vi.mock('../../components/VendedorSidebar', () => ({
-  default: ({ children }) => <div data-testid="sidebar">{children}</div>,
+  default: ({ setActiveSide, handleLogout, children }) => (
+    <div data-testid="sidebar">
+      {children}
+      <button data-testid="nav-mis-libros" onClick={() => setActiveSide && setActiveSide('Mis Libros')}>Mis Libros</button>
+      <button data-testid="nav-publicar" onClick={() => setActiveSide && setActiveSide('Publicar Libro')}>Publicar</button>
+      <button data-testid="sidebar-logout" onClick={() => handleLogout && handleLogout()}>Logout</button>
+    </div>
+  ),
 }))
 
 vi.mock('../../components/ToastProvider', () => ({
@@ -35,7 +44,7 @@ vi.mock('../../components/ToastProvider', () => ({
 
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom')
-  return { ...actual, useNavigate: vi.fn(() => vi.fn()) }
+  return { ...actual, useNavigate: () => mockNavigate }
 })
 
 import PublicarLibro from '../../pages/PublicarLibro'
@@ -325,5 +334,27 @@ describe('PublicarLibro — auditoría de validaciones client-side', () => {
       { headers: { 'Content-Type': 'multipart/form-data' } },
     ))
     expect(await screen.findByText('¡Libro publicado!')).toBeInTheDocument()
+
+    // Test line 275: logout en vista de exito
+    await user.click(screen.getByTestId('sidebar-logout'))
+    expect(mockNavigate).toHaveBeenCalledWith('/')
+  })
+
+  it('navega mediante el sidebar y permite cerrar sesión desde el sidebar', async () => {
+    const user = userEvent.setup()
+    axios.get.mockResolvedValue({ data: [] })
+    renderPublicarLibro()
+
+    // Line 78: seleccionar Publicar Libro no navega
+    await user.click(screen.getByTestId('nav-publicar'))
+    expect(mockNavigate).not.toHaveBeenCalled()
+
+    // Line 82: navegar a otra sección
+    await user.click(screen.getByTestId('nav-mis-libros'))
+    expect(mockNavigate).toHaveBeenCalledWith('/mi-tienda?seccion=Mis%20Libros')
+
+    // Line 300: cerrar sesión desde vista normal
+    await user.click(screen.getByTestId('sidebar-logout'))
+    expect(mockNavigate).toHaveBeenCalledWith('/')
   })
 })

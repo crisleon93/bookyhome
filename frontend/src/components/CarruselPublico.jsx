@@ -318,13 +318,13 @@ export default function CarruselPublico({ onVerDetalles }) {
     });
   }, [fetchSeccion]);
 
-  const irACatalogo = (params) => navigate(`/catalogo?${new URLSearchParams(params).toString()}`);
+  const irACatalogo = (params) => void navigate(`/catalogo?${new URLSearchParams(params).toString()}`);
 
   const handleVerDetalles = (libro) => {
     if (onVerDetalles) {
       onVerDetalles(libro);
     } else {
-      navigate(`/catalogo?q=${encodeURIComponent(libro.titulo)}`);
+      void navigate(`/catalogo?q=${encodeURIComponent(libro.titulo)}`);
     }
   };
 

@@ -1330,7 +1330,7 @@ export default function MiTienda() {
     localStorage.removeItem("token");
     document.documentElement.classList.remove('dark');
     window.dispatchEvent(new CustomEvent('auth-change', { detail: { authenticated: false } }));
-    navigate("/");
+    void navigate("/");
   };
   const [userName,      setUserName]      = useState(() => {
     const token = localStorage.getItem("token");
@@ -1793,7 +1793,7 @@ export default function MiTienda() {
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    if (!token) { navigate("/"); return; }
+    if (!token) { void navigate("/"); return; }
 
     let mounted = true;
 

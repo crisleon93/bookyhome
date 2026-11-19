@@ -175,3 +175,47 @@ class TestEnsureFunctions:
         with patch("app.database.get_db", side_effect=Exception("sin BD")):
             from app.database import ensure_acceso_anticipado_libros_schema
             ensure_acceso_anticipado_libros_schema()
+
+    def test_ensure_functions_ejecutan_ddl_con_bd(self):
+        mock_conn = MagicMock()
+        mock_cursor = MagicMock()
+        mock_conn.cursor.return_value = mock_cursor
+
+        # 1. When tables/columns do not exist yet (fetchone returns None or table not found)
+        mock_cursor.fetchone.return_value = None
+        with patch("app.database.get_db", return_value=mock_conn):
+            from app.database import (
+                ensure_quejas_schema,
+                ensure_banner_perfil_schema,
+                ensure_retiro_schema,
+                ensure_tarifa_envio_schema,
+                ensure_acceso_anticipado_libros_schema,
+            )
+            ensure_quejas_schema()
+            ensure_banner_perfil_schema()
+            ensure_retiro_schema()
+            ensure_tarifa_envio_schema()
+            ensure_acceso_anticipado_libros_schema()
+
+        assert mock_conn.commit.call_count >= 5
+
+        # 2. When tables and columns already exist
+        mock_cursor.fetchone.return_value = ("existing_column",)
+        with patch("app.database.get_db", return_value=mock_conn):
+            ensure_quejas_schema()
+            ensure_banner_perfil_schema()
+            ensure_retiro_schema()
+            ensure_tarifa_envio_schema()
+            ensure_acceso_anticipado_libros_schema()
+
+        # 3. When cursor throws error during DDL, executes rollback
+        mock_cursor.execute.side_effect = Exception("DDL syntax error")
+        with patch("app.database.get_db", return_value=mock_conn):
+            ensure_quejas_schema()
+            ensure_banner_perfil_schema()
+            ensure_retiro_schema()
+            ensure_tarifa_envio_schema()
+            ensure_acceso_anticipado_libros_schema()
+
+        assert mock_conn.rollback.call_count >= 5
+

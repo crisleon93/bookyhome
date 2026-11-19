@@ -1441,7 +1441,7 @@ export default function Chat({
 
   useEffect(() => {
     if (!token) {
-      navigate("/login");
+      void navigate("/login");
       return;
     }
 
@@ -1997,7 +1997,7 @@ export default function Chat({
     }
 
     if (!embedded) {
-      navigate(`/chat/${sala.id_sala}`);
+      void navigate(`/chat/${sala.id_sala}`);
     }
   };
 

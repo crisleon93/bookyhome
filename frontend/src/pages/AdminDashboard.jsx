@@ -896,7 +896,7 @@ export default function AdminDashboard() {
   useEffect(() => {
     const role = getUserRole();
     if (role !== 'admin') {
-      navigate('/');
+      void navigate('/');
       return;
     }
 
@@ -1540,7 +1540,7 @@ export default function AdminDashboard() {
             localStorage.removeItem('token');
             localStorage.removeItem('darkMode');
             document.documentElement.classList.remove('dark');
-            navigate('/');
+            void navigate('/');
           }}
           title={!sidebarOpen ? 'Cerrar sesión' : undefined}
           style={{
