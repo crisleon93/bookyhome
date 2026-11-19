@@ -22,3 +22,4 @@ overrides:
 patchedDependencies:
   picomatch@2.3.2: ../patches/picomatch@2.3.2.patch
   picomatch@4.0.7: ../patches/picomatch@4.0.7.patch
+  react-native-webview@17.1.0: patches/react-native-webview@17.1.0.patch

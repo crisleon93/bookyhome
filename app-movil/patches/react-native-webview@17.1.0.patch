@@ -1,0 +1,53 @@
+diff --git a/android/src/main/java/com/reactnativecommunity/webview/RNCWebView.java b/android/src/main/java/com/reactnativecommunity/webview/RNCWebView.java
+index 6b368976c2100a2ff06ea96ec2a010ff34965a97..4521cb039e9c55df9413104103e947658a9c9e28 100644
+--- a/android/src/main/java/com/reactnativecommunity/webview/RNCWebView.java
++++ b/android/src/main/java/com/reactnativecommunity/webview/RNCWebView.java
+@@ -346,9 +346,10 @@ public class RNCWebView extends WebView implements LifecycleEventListener {
+ 
+     private void injectJavascriptObject() {
+       if (getSettings().getJavaScriptEnabled()) {
++        String injectedObjectJson = injectedJavaScriptObject == null ? "null" : JSONObject.quote(injectedJavaScriptObject);
+         String js = "(function(){\n" +
+           "    window." + JAVASCRIPT_INTERFACE + " = window." + JAVASCRIPT_INTERFACE + " || {};\n" +
+-          "    window." + JAVASCRIPT_INTERFACE + ".injectedObjectJson = function () { return " + (injectedJavaScriptObject == null ? null : ("`" + injectedJavaScriptObject + "`")) + "; };\n" +
++          "    window." + JAVASCRIPT_INTERFACE + ".injectedObjectJson = function () { return " + injectedObjectJson + "; };\n" +
+           "})();";
+         evaluateJavascriptWithFallback(js);
+       }
+diff --git a/android/src/main/java/com/reactnativecommunity/webview/URLUtil.java b/android/src/main/java/com/reactnativecommunity/webview/URLUtil.java
+index 7d965374c6160448926223a1458267f8e2a7ebb8..e0e41ac5c2a310817f71e0360f57db51c3e52228 100644
+--- a/android/src/main/java/com/reactnativecommunity/webview/URLUtil.java
++++ b/android/src/main/java/com/reactnativecommunity/webview/URLUtil.java
+@@ -167,6 +167,8 @@ public final class URLUtil {
+                         return URLDecoder.decode(m.group(4), m.group(3).isEmpty() ? "UTF-8" : m.group(3));
+                     } catch (UnsupportedEncodingException e) {
+                         // Skip the ext-parameter as the encoding is unsupported
++                    } catch (IllegalArgumentException e) {
++                        // Skip malformed percent-encoding in the ext-parameter
+                     }
+                 }
+                 return m.group(2);
+diff --git a/apple/RNCWebViewImpl.m b/apple/RNCWebViewImpl.m
+index bb6f8281fed5a603e1bcec3fd945f637e20abc1a..2cdf542e40840bee5e76208879dbaa99db9d97e5 100644
+--- a/apple/RNCWebViewImpl.m
++++ b/apple/RNCWebViewImpl.m
+@@ -1682,6 +1682,10 @@ didFinishNavigation:(WKNavigation *)navigation
+ - (void)setInjectedJavaScriptObject:(NSString *)source
+ {
+   _injectedJavaScriptObject = source;
++  NSString *escapedSource = source ?: @"";
++  escapedSource = [escapedSource stringByReplacingOccurrencesOfString:@"\\" withString:@"\\\\"];
++  escapedSource = [escapedSource stringByReplacingOccurrencesOfString:@"`" withString:@"\\`"];
++  escapedSource = [escapedSource stringByReplacingOccurrencesOfString:@"${" withString:@"\\${"];
+   self.injectedObjectJsonScript = [
+     [WKUserScript alloc]
+     initWithSource: [
+@@ -1690,7 +1694,7 @@ didFinishNavigation:(WKNavigation *)navigation
+        @"window.%@ = window.%@ || {};"
+       "window.%@.injectedObjectJson = function () {"
+       "  return `%@`;"
+-      "};", MessageHandlerName, MessageHandlerName, MessageHandlerName, source
++      "};", MessageHandlerName, MessageHandlerName, MessageHandlerName, escapedSource
+     ]
+     injectionTime:WKUserScriptInjectionTimeAtDocumentStart
+     /* TODO: For a separate (minor) PR: use logic like this (as react-native-wkwebview does) so that messaging can be used in all frames if desired.
