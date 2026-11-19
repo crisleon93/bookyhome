@@ -77,8 +77,8 @@ describe('VerifyEmail — ramas extra', () => {
     render(<VerifyEmail route={{ params: { token: 'ok-token' } }} navigation={navigation} />)
     // Esperar cualquier estado final para que el Footer esté en el DOM
     await screen.findByText('¡Cuenta verificada!')
-    // No lanza error al hacer clic en el Footer
     fireEvent.click(screen.getByText('Footer'))
+    expect(screen.getByText('¡Cuenta verificada!')).toBeTruthy()
   })
 
   it('llama a verifyEmail con el token correcto en el reintento', async () => {

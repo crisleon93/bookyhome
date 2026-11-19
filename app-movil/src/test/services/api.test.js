@@ -259,6 +259,14 @@ describe('servicio móvil de API', () => {
       .toBe('https://cdn.example.test/book.jpg');
     expect(api.resolveImageUrl('http://localhost:3000/book.jpg'))
       .toBe('https://api.example.test/book.jpg');
+    expect(api.resolveImageUrl('http://127.0.0.1:8000/book.jpg'))
+      .toBe('https://api.example.test/book.jpg');
+    expect(api.resolveImageUrl('http://127.12.34.56/book.jpg'))
+      .toBe('https://api.example.test/book.jpg');
+    expect(api.resolveImageUrl('http://128.0.0.1/book.jpg'))
+      .toBe('http://128.0.0.1/book.jpg');
+    expect(api.resolveImageUrl('http://[::1]:8000/book.jpg'))
+      .toBe('https://api.example.test/book.jpg');
     expect(api.resolveImageUrl('/uploads/book.jpg'))
       .toBe('https://api.example.test/uploads/book.jpg');
     expect(api.resolveImageUrl('uploads/book.jpg'))

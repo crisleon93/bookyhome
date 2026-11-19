@@ -240,7 +240,7 @@ export const resolveImageUrl = (value) => {
   const baseUrl = String(api.defaults.baseURL || '').replace(/\/+$/, '');
   const apiOrigin = baseUrl.match(/^https?:\/\/[^/]+/i)?.[0];
   if (/^https?:\/\//i.test(candidate)) {
-    const isLoopbackUrl = /^https?:\/\/(?:localhost|127(?:\.\d{1,3}){3}|\[::1\])(?=[:/]|$)/i.test(candidate);
+    const isLoopbackUrl = /^https?:\/\/(?:localhost|127\.\d{1,3}\.\d{1,3}\.\d{1,3}|\[::1\])(?=[:/]|$)/i.test(candidate);
     return isLoopbackUrl && apiOrigin
       ? candidate.replace(/^https?:\/\/[^/]+/i, apiOrigin)
       : candidate;

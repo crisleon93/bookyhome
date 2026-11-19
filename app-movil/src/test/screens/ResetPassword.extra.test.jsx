@@ -124,6 +124,6 @@ describe('ResetPassword móvil — ramas extra', () => {
 
     // Footer aparece en el estado de éxito también
     fireEvent.click(screen.getByText('Footer'))
-    // No debe lanzar
+    expect(screen.getByText('Contraseña actualizada')).toBeTruthy()
   })
 })
