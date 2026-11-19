@@ -51,3 +51,20 @@ index bb6f8281fed5a603e1bcec3fd945f637e20abc1a..2cdf542e40840bee5e76208879dbaa99
      ]
      injectionTime:WKUserScriptInjectionTimeAtDocumentStart
      /* TODO: For a separate (minor) PR: use logic like this (as react-native-wkwebview does) so that messaging can be used in all frames if desired.
+diff --git a/windows/ReactNativeWebView/RCTWebView2ComponentView.cpp b/windows/ReactNativeWebView/RCTWebView2ComponentView.cpp
+--- a/windows/ReactNativeWebView/RCTWebView2ComponentView.cpp
++++ b/windows/ReactNativeWebView/RCTWebView2ComponentView.cpp
+@@ -465,9 +465,12 @@ void RCTWebView2ComponentView::OnCoreWebView2NewWindowRequested(
+     } else {
+         try {
+             winrt::Windows::Foundation::Uri uri(args.Uri());
+-            winrt::Windows::System::Launcher::LaunchUriAsync(uri);
++            auto scheme = uri.SchemeName();
++            if ((scheme == L"http" || scheme == L"https") && args.IsUserInitiated()) {
++                winrt::Windows::System::Launcher::LaunchUriAsync(uri);
++            }
+             args.Handled(true);
+         } catch (winrt::hresult_error&) {
+             // Do Nothing
+         }
+     }
