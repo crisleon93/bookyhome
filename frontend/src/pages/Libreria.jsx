@@ -160,7 +160,7 @@ function Libreria({ isModal = false, onSuccess }) {
         if (isModal && onSuccess) {
           onSuccess()
         } else {
-          navigate('/login')
+          void navigate('/login')
         }
       }, 2500)
     } catch (err) {

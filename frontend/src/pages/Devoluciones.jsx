@@ -91,7 +91,7 @@ export default function Devoluciones({ embedded = false }) {
       setDevoluciones([...(devolucionesRes.data || []), ...solicitudes]);
     } catch (err) {
       if (err.response?.status === 401) {
-        navigate('/login');
+        void navigate('/login');
         return;
       }
       setError(err.response?.data?.detail || 'No se pudieron cargar los datos de devoluciones');
@@ -103,7 +103,7 @@ export default function Devoluciones({ embedded = false }) {
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) {
-      navigate('/login');
+      void navigate('/login');
       return;
     }
     void cargarDatos();

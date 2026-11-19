@@ -310,7 +310,7 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
     const token = localStorage.getItem('token');
     if (!token) {
       notify('Debes iniciar sesión para comprar', 'error');
-      navigate('/login');
+      void navigate('/login');
       return;
     }
     if (libro.stock === 0) {
@@ -320,7 +320,7 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
 
     // NO creamos orden aquí. Solo navegamos al carrito con los datos del libro
     // en el state. La orden se crea únicamente cuando el usuario confirme el pago.
-    navigate('/?seccion=Carrito', {
+    void navigate('/?seccion=Carrito', {
       state: {
         buyNow: {
           id_libro: libro.id_libro,
@@ -373,7 +373,7 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
     const token = localStorage.getItem('token');
     if (!token) {
       notify('Debes iniciar sesión para contactar al vendedor', 'error');
-      navigate('/login');
+      void navigate('/login');
       return;
     }
 
@@ -393,7 +393,7 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
       }
 
       // Navegar a PostLogin con la sección Mensajes y el id_sala seleccionado
-      navigate(`/?seccion=Mensajes&sala=${idSala}`);
+      void navigate(`/?seccion=Mensajes&sala=${idSala}`);
     } catch (error) {
       console.error('Error al crear sala de chat:', error);
       const errorMsg = error.response?.data?.detail || error.message || 'No se pudo iniciar el chat. Intenta nuevamente.';

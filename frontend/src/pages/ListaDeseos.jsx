@@ -88,7 +88,7 @@ export default function ListaDeseos({ embedded = false, onVerLibro, onIrCatalogo
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) {
-      navigate('/login');
+      void navigate('/login');
       return;
     }
     void cargarListas();
@@ -157,7 +157,7 @@ export default function ListaDeseos({ embedded = false, onVerLibro, onIrCatalogo
       onVerLibro(libro);
       return;
     }
-    navigate('/?seccion=Cat%C3%A1logo');
+    void navigate('/?seccion=Cat%C3%A1logo');
   };
 
   const handleQuitarLibro = async (idLibro) => {
@@ -188,7 +188,7 @@ export default function ListaDeseos({ embedded = false, onVerLibro, onIrCatalogo
       onIrCatalogo();
       return;
     }
-    navigate('/?seccion=Cat%C3%A1logo');
+    void navigate('/?seccion=Cat%C3%A1logo');
   };
 
   const listaSeleccionada = listas.find((l) => l.id_lista === listaSeleccionadaId);
