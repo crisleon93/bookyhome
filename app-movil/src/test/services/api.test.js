@@ -273,6 +273,14 @@ describe('servicio móvil de API', () => {
       .toBe('https://api.example.test/uploads/book.jpg');
   });
 
+  it('quita todas las barras finales de la URL base al resolver imágenes', async () => {
+    process.env.EXPO_PUBLIC_API_URL = 'https://api.example.test///';
+    const api = await loadApi();
+
+    expect(api.resolveImageUrl('/uploads/book.jpg'))
+      .toBe('https://api.example.test/uploads/book.jpg');
+  });
+
   it('sube variantes digitales desde web y rechaza respuestas de archivo fallidas', async () => {
     vi.resetModules();
     mocks.platform = 'web';

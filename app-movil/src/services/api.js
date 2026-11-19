@@ -237,7 +237,12 @@ export const resolveImageUrl = (value) => {
   if (!candidate) return null;
   if (/^(data:|blob:)/i.test(candidate)) return candidate;
 
-  const baseUrl = String(api.defaults.baseURL || '').replace(/\/+$/, '');
+  const configuredBaseUrl = String(api.defaults.baseURL || '');
+  let baseUrlEnd = configuredBaseUrl.length;
+  while (baseUrlEnd > 0 && configuredBaseUrl[baseUrlEnd - 1] === '/') {
+    baseUrlEnd -= 1;
+  }
+  const baseUrl = configuredBaseUrl.slice(0, baseUrlEnd);
   const apiOrigin = baseUrl.match(/^https?:\/\/[^/]+/i)?.[0];
   if (/^https?:\/\//i.test(candidate)) {
     const authority = candidate.slice(candidate.indexOf('://') + 3).split(/[/?#]/, 1)[0];
