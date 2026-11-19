@@ -1,8 +1,9 @@
 diff --git a/android/src/main/java/com/reactnativecommunity/webview/RNCWebView.java b/android/src/main/java/com/reactnativecommunity/webview/RNCWebView.java
-index 80c68034b193a47bedb56ca527352de9548e8ac6..a4089be415e9afd251269c3a081ef24e35953744 100644
+index 6b368976c2100a2ff06ea96ec2a010ff34965a97..4521cb039e9c55df9413104103e947658a9c9e28 100644
 --- a/android/src/main/java/com/reactnativecommunity/webview/RNCWebView.java
 +++ b/android/src/main/java/com/reactnativecommunity/webview/RNCWebView.java
-@@ -275,8 +275,9 @@ public class RNCWebView extends WebView implements LifecycleEventListener {
+@@ -346,9 +346,10 @@ public class RNCWebView extends WebView implements LifecycleEventListener {
+ 
      private void injectJavascriptObject() {
        if (getSettings().getJavaScriptEnabled()) {
 +        String injectedObjectJson = injectedJavaScriptObject == null ? "null" : JSONObject.quote(injectedJavaScriptObject);
@@ -27,10 +28,10 @@ index 7d965374c6160448926223a1458267f8e2a7ebb8..e0e41ac5c2a310817f71e0360f57db51
                  }
                  return m.group(2);
 diff --git a/apple/RNCWebViewImpl.m b/apple/RNCWebViewImpl.m
-index 38904266dc37b006274104f4680778ffbfece369..5a430cfe105c92422a0f016b9f0188b66ac301a1 100644
+index bb6f8281fed5a603e1bcec3fd945f637e20abc1a..2cdf542e40840bee5e76208879dbaa99db9d97e5 100644
 --- a/apple/RNCWebViewImpl.m
 +++ b/apple/RNCWebViewImpl.m
-@@ -1735,6 +1735,10 @@ didFinishNavigation:(WKNavigation *)navigation
+@@ -1682,6 +1682,10 @@ didFinishNavigation:(WKNavigation *)navigation
  - (void)setInjectedJavaScriptObject:(NSString *)source
  {
    _injectedJavaScriptObject = source;
@@ -41,7 +42,7 @@ index 38904266dc37b006274104f4680778ffbfece369..5a430cfe105c92422a0f016b9f0188b6
    self.injectedObjectJsonScript = [
      [WKUserScript alloc]
      initWithSource: [
-@@ -1743,7 +1747,7 @@ didFinishNavigation:(WKNavigation *)navigation
+@@ -1690,7 +1694,7 @@ didFinishNavigation:(WKNavigation *)navigation
         @"window.%@ = window.%@ || {};"
        "window.%@.injectedObjectJson = function () {"
        "  return `%@`;"
@@ -50,3 +51,20 @@ index 38904266dc37b006274104f4680778ffbfece369..5a430cfe105c92422a0f016b9f0188b6
      ]
      injectionTime:WKUserScriptInjectionTimeAtDocumentStart
      /* TODO: For a separate (minor) PR: use logic like this (as react-native-wkwebview does) so that messaging can be used in all frames if desired.
+diff --git a/windows/ReactNativeWebView/RCTWebView2ComponentView.cpp b/windows/ReactNativeWebView/RCTWebView2ComponentView.cpp
+--- a/windows/ReactNativeWebView/RCTWebView2ComponentView.cpp
++++ b/windows/ReactNativeWebView/RCTWebView2ComponentView.cpp
+@@ -465,9 +465,12 @@ void RCTWebView2ComponentView::OnCoreWebView2NewWindowRequested(
+     } else {
+         try {
+             winrt::Windows::Foundation::Uri uri(args.Uri());
+-            winrt::Windows::System::Launcher::LaunchUriAsync(uri);
++            auto scheme = uri.SchemeName();
++            if ((scheme == L"http" || scheme == L"https") && args.IsUserInitiated()) {
++                winrt::Windows::System::Launcher::LaunchUriAsync(uri);
++            }
+             args.Handled(true);
+         } catch (winrt::hresult_error&) {
+             // Do Nothing
+         }
+     }
