@@ -5,9 +5,24 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import AdminSection from '../../screens/AdminSection'
 import { Alert } from 'react-native'
-import { bloquearUsuario, getAdminLibros, getAdminUsuarios, ocultarLibroAdmin } from '../../services/api'
+import {
+  bloquearUsuario,
+  getAdminLibros,
+  getAdminOrdenes,
+  getAdminTiendas,
+  getAdminUsuarios,
+  ocultarLibroAdmin,
+} from '../../services/api'
 
-const mocks = vi.hoisted(() => ({ alert: vi.fn(), bloquear: vi.fn(), ocultar: vi.fn(), libros: vi.fn(), usuarios: vi.fn() }))
+const mocks = vi.hoisted(() => ({
+  alert: vi.fn(),
+  bloquear: vi.fn(),
+  libros: vi.fn(),
+  ordenes: vi.fn(),
+  ocultar: vi.fn(),
+  tiendas: vi.fn(),
+  usuarios: vi.fn(),
+}))
 
 vi.mock('react-native', async () => {
   const ReactModule = await vi.importActual('react')
@@ -76,8 +91,8 @@ vi.mock('../../services/api', () => ({
   cambiarEstadoTienda: vi.fn(),
   eliminarLibroAdmin: vi.fn(),
   getAdminLibros: mocks.libros,
-  getAdminOrdenes: vi.fn().mockResolvedValue({ data: [] }),
-  getAdminTiendas: vi.fn().mockResolvedValue({ data: [] }),
+  getAdminOrdenes: mocks.ordenes,
+  getAdminTiendas: mocks.tiendas,
   getAdminUsuarios: mocks.usuarios,
   ocultarLibroAdmin: mocks.ocultar,
 }))
@@ -113,6 +128,8 @@ beforeEach(() => {
   mocks.libros.mockResolvedValue({
     data: [{ id_libro: 5, titulo: 'Libro de prueba', nombre_categoria: 'Fantasía' }],
   })
+  mocks.ordenes.mockResolvedValue({ data: [] })
+  mocks.tiendas.mockResolvedValue({ data: [] })
 })
 
 describe('AdminSection', () => {
@@ -156,5 +173,42 @@ describe('AdminSection', () => {
     expect(screen.getByText('Sin resultados para los filtros aplicados.')).toBeTruthy()
     expect(getAdminUsuarios).not.toHaveBeenCalled()
     expect(getAdminLibros).toHaveBeenCalledOnce()
+  })
+
+  it('filtra tiendas por estado y órdenes por identificador o estado', async () => {
+    mocks.tiendas.mockResolvedValueOnce({
+      data: [
+        { id_tienda: 8, nombre_tienda: 'Librería Central', estado_tienda: 'activa', telefono: '5550100' },
+        { id_tienda: 9, nombre_tienda: 'Libros del Sur', estado_tienda: 'suspendida' },
+      ],
+    })
+    const navigation = { goBack: vi.fn() }
+    const { rerender } = render(
+      <AdminSection route={{ params: { section: 'tiendas' } }} navigation={navigation} />,
+    )
+
+    expect(await screen.findByText('Librería Central')).toBeTruthy()
+    fireEvent.change(screen.getByPlaceholderText('Buscar por nombre o estado…'), {
+      target: { value: 'suspendida' },
+    })
+    expect(screen.getByText('Libros del Sur')).toBeTruthy()
+    expect(screen.queryByText('Librería Central')).toBeNull()
+
+    mocks.ordenes.mockResolvedValueOnce({
+      data: [
+        { id_orden: 120, estado: 'pagado', total: 24000, fecha: '2026-01-01' },
+        { id_orden: 121, estado: 'pendiente', total: 0 },
+      ],
+    })
+    rerender(<AdminSection route={{ params: { section: 'ordenes' } }} navigation={navigation} />)
+
+    expect(await screen.findByText('Orden #120')).toBeTruthy()
+    fireEvent.change(screen.getByPlaceholderText('Buscar por ID o estado…'), {
+      target: { value: 'pendiente' },
+    })
+    expect(screen.getByText('Orden #121')).toBeTruthy()
+    expect(screen.queryByText('Orden #120')).toBeNull()
+    expect(getAdminTiendas).toHaveBeenCalledOnce()
+    expect(getAdminOrdenes).toHaveBeenCalledOnce()
   })
 })

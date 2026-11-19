@@ -191,4 +191,32 @@ describe('AdminRequests', () => {
     ))
     expect(Alert.alert).toHaveBeenCalledWith('Actualizado', expect.any(String))
   })
+
+  it('informa los errores al cargar la conversación y al enviar un mensaje', async () => {
+    mocks.getMensajes.mockRejectedValueOnce({
+      response: { data: { detail: 'No se pudo acceder al chat.' } },
+    })
+    render(<AdminRequests type="reclamos" solicitudes={[complaint]} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Ver detalles' }))
+    fireEvent.click(screen.getByText('Contactar / Chat con la tienda'))
+    await waitFor(() => {
+      expect(Alert.alert).toHaveBeenCalledWith('Error', 'No se pudo acceder al chat.')
+    })
+
+    mocks.getMensajes.mockResolvedValue({ data: [] })
+    fireEvent.click(screen.getByText('Contactar / Chat con la tienda'))
+    expect(await screen.findByText('Conversación #31')).toBeTruthy()
+    fireEvent.change(screen.getByPlaceholderText('Escribe un mensaje...'), {
+      target: { value: 'Necesito ayuda con el reclamo' },
+    })
+    mocks.enviarMensaje.mockRejectedValueOnce({
+      response: { data: { detail: 'El mensaje no se envió.' } },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Enviar mensaje' }))
+
+    await waitFor(() => {
+      expect(Alert.alert).toHaveBeenCalledWith('Error', 'El mensaje no se envió.')
+    })
+  })
 })

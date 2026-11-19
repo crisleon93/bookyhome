@@ -16,6 +16,7 @@ const mocks = vi.hoisted(() => {
 
   return {
     client,
+    platform: 'android',
     create: vi.fn((config) => {
       client.defaults = config;
       return client;
@@ -28,7 +29,7 @@ vi.mock('axios', () => ({
 }));
 
 vi.mock('react-native', () => ({
-  Platform: { OS: 'android' },
+  Platform: { get OS() { return mocks.platform; } },
 }));
 
 const originalApiUrl = process.env.EXPO_PUBLIC_API_URL;
@@ -40,6 +41,7 @@ describe('servicio móvil de API', () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
+    mocks.platform = 'android';
     process.env.EXPO_PUBLIC_API_URL = 'https://api.example.test';
     process.env.NODE_ENV = 'test';
   });
@@ -57,6 +59,7 @@ describe('servicio móvil de API', () => {
       process.env.NODE_ENV = originalNodeEnv;
     }
 
+    vi.unstubAllGlobals();
     vi.restoreAllMocks();
   });
 
@@ -199,6 +202,91 @@ describe('servicio móvil de API', () => {
       headers: { 'Content-Type': 'multipart/form-data' },
       timeout: 60000,
     });
+  });
+
+  it('envía todas las operaciones exportadas a un método HTTP', async () => {
+    const api = await loadApi();
+    const payload = {
+      token: 'token',
+      id: 'id',
+      id_libro: 'libro',
+      id_lista: 'lista',
+      id_orden: 'orden',
+      id_tienda: 'tienda',
+      idVendedor: 'vendedor',
+      idCuenta: 'cuenta',
+      idMetodo: 'metodo',
+      estado: 'estado',
+      respuesta: 'respuesta',
+      mensaje: 'mensaje',
+      bloqueado: true,
+      oculto: false,
+      motivo: 'motivo',
+    };
+    const operations = Object.entries(api).filter(([name, value]) =>
+      typeof value === 'function' && !['getApiBaseUrl', 'resolveImageUrl'].includes(name)
+    );
+
+    for (const [name, operation] of operations) {
+      if (name === 'subirArchivoVariante') {
+        await operation('libro', 'variante', {
+          uri: 'file:///libro.pdf',
+          name: 'libro.pdf',
+          mimeType: 'application/pdf',
+        });
+      } else {
+        await operation(payload);
+      }
+    }
+
+    const requests = ['get', 'post', 'put', 'patch', 'delete']
+      .flatMap((method) => mocks.client[method].mock.calls.map(([url]) => ({ method, url })));
+    expect(requests).toHaveLength(operations.length);
+    expect(requests.every(({ url }) => typeof url === 'string' && url.length > 0)).toBe(true);
+    expect(requests.some(({ method, url }) => method === 'get' && url === '/usuarios')).toBe(true);
+    expect(requests.some(({ method, url }) => method === 'patch' && url === '/perfil/banner-color')).toBe(true);
+    expect(api.getApiBaseUrl()).toBe('https://api.example.test');
+  });
+
+  it('normaliza URL de imágenes remotas, locales y relativas', async () => {
+    const api = await loadApi();
+
+    expect(api.resolveImageUrl(null)).toBeNull();
+    expect(api.resolveImageUrl(' , /fallback.jpg')).toBeNull();
+    expect(api.resolveImageUrl('data:image/png;base64,abc')).toBe('data:image/png;base64');
+    expect(api.resolveImageUrl('blob:https://app.example.test/image')).toBe('blob:https://app.example.test/image');
+    expect(api.resolveImageUrl('https://cdn.example.test/book.jpg,/fallback.jpg'))
+      .toBe('https://cdn.example.test/book.jpg');
+    expect(api.resolveImageUrl('http://localhost:3000/book.jpg'))
+      .toBe('https://api.example.test/book.jpg');
+    expect(api.resolveImageUrl('/uploads/book.jpg'))
+      .toBe('https://api.example.test/uploads/book.jpg');
+    expect(api.resolveImageUrl('uploads/book.jpg'))
+      .toBe('https://api.example.test/uploads/book.jpg');
+  });
+
+  it('sube variantes digitales desde web y rechaza respuestas de archivo fallidas', async () => {
+    vi.resetModules();
+    mocks.platform = 'web';
+    const api = await loadApi();
+    const file = new Blob(['contenido'], { type: 'application/pdf' });
+
+    await api.subirArchivoVariante('libro', 'variante', {
+      uri: 'https://files.example.test/libro.pdf',
+      name: 'libro.pdf',
+      file,
+    });
+    expect(mocks.client.post).toHaveBeenCalledWith(
+      '/libros/libro/variantes/variante/archivo',
+      expect.any(FormData),
+      { headers: { 'Content-Type': 'multipart/form-data' } },
+    );
+
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false }));
+    await expect(api.subirArchivoVariante('libro', 'variante', {
+      uri: 'https://files.example.test/fallido.pdf',
+      name: 'fallido.pdf',
+    })).rejects.toThrow('No se pudo leer el archivo digital seleccionado.');
   });
 });
 
