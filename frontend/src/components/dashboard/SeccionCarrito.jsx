@@ -4,6 +4,7 @@ import { notify } from "../ToastProvider";
 import api, {
   getCarrito,
   removeFromCart,
+  updateCartQuantity,
   checkoutCarrito,
   checkoutDirecto,
   getOrdenes,
@@ -218,6 +219,7 @@ export default function SeccionCarrito({ userId }) {
   const idVisible = (orden) => orden?.id_orden_db || orden?.id_orden;
 
   const [eliminandoId, setEliminandoId] = useState(null);
+  const [actualizandoId, setActualizandoId] = useState(null);
 
   const getCartImageUrl = (item) => {
     const raw = item?.imagen || item?.imagen_portada || item?.portada || item?.foto || item?.imagen_url || (Array.isArray(item?.imagenes) ? item.imagenes[0] : null);
@@ -238,6 +240,22 @@ export default function SeccionCarrito({ userId }) {
       notify("No se pudo eliminar el libro", "error");
     } finally {
       setEliminandoId(null);
+    }
+  };
+
+  const handleUpdateQuantity = async (idLibro, nuevaCantidad) => {
+    if (nuevaCantidad <= 0) {
+      handleEliminarItem(idLibro);
+      return;
+    }
+    setActualizandoId(idLibro);
+    try {
+      await updateCartQuantity(idLibro, nuevaCantidad);
+      loadData();
+    } catch {
+      notify("No se pudo actualizar la cantidad", "error");
+    } finally {
+      setActualizandoId(null);
     }
   };
 
@@ -5259,9 +5277,68 @@ export default function SeccionCarrito({ userId }) {
                               {item.autor_libro ? `✍️ ${item.autor_libro}` : "Segunda mano / Editorial"}
                             </p>
                             <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
-                              <span style={{ fontSize: "0.8rem", fontWeight: 700, background: darkMode ? "#303030" : "#FFFFFF", color: darkMode ? "#c8c8c8" : "#374151", padding: "4px 10px", borderRadius: "6px", border: `1px solid ${darkMode ? '#4a4a4a' : '#D1D5DB'}` }}>
-                                Cantidad: <strong>{item.cantidad}</strong>
-                              </span>
+                              <div style={{ display: "flex", alignItems: "center", gap: "0", borderRadius: "8px", border: `1.5px solid ${darkMode ? '#4a4a4a' : '#D1D5DB'}`, overflow: "hidden", background: darkMode ? "#303030" : "#FFFFFF" }}>
+                                <button
+                                  onClick={() => handleUpdateQuantity(item.id_libro, item.cantidad - 1)}
+                                  disabled={actualizandoId === item.id_libro}
+                                  style={{
+                                    width: 32,
+                                    height: 32,
+                                    border: "none",
+                                    background: "transparent",
+                                    color: item.cantidad <= 1 ? "#DC2626" : (darkMode ? "#c8c8c8" : "#374151"),
+                                    fontWeight: 900,
+                                    fontSize: "1.1rem",
+                                    cursor: actualizandoId === item.id_libro ? "not-allowed" : "pointer",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    transition: "all 0.15s"
+                                  }}
+                                  title={item.cantidad <= 1 ? "Eliminar del carrito" : "Reducir cantidad"}
+                                >
+                                  {item.cantidad <= 1 ? (
+                                    <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+                                      <polyline points="3 6 5 6 21 6" />
+                                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                    </svg>
+                                  ) : "−"}
+                                </button>
+                                <span style={{
+                                  minWidth: 36,
+                                  textAlign: "center",
+                                  fontWeight: 800,
+                                  fontSize: "0.9rem",
+                                  color: darkMode ? "#ececec" : "#111827",
+                                  borderLeft: `1px solid ${darkMode ? '#4a4a4a' : '#E5E7EB'}`,
+                                  borderRight: `1px solid ${darkMode ? '#4a4a4a' : '#E5E7EB'}`,
+                                  padding: "4px 0",
+                                  userSelect: "none"
+                                }}>
+                                  {actualizandoId === item.id_libro ? "..." : item.cantidad}
+                                </span>
+                                <button
+                                  onClick={() => handleUpdateQuantity(item.id_libro, item.cantidad + 1)}
+                                  disabled={actualizandoId === item.id_libro}
+                                  style={{
+                                    width: 32,
+                                    height: 32,
+                                    border: "none",
+                                    background: "transparent",
+                                    color: darkMode ? "#c8c8c8" : "#374151",
+                                    fontWeight: 900,
+                                    fontSize: "1.1rem",
+                                    cursor: actualizandoId === item.id_libro ? "not-allowed" : "pointer",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    transition: "all 0.15s"
+                                  }}
+                                  title="Aumentar cantidad"
+                                >
+                                  +
+                                </button>
+                              </div>
                               <span style={{ fontSize: "0.84rem", color: darkMode ? "#aaa" : "#6B7280" }}>
                                 Unitario: <strong>{formatCurrency(item.precio_libro)}</strong>
                               </span>

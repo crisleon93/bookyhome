@@ -232,7 +232,17 @@ function Home() {
   const [bannerUrl, setBannerUrl] = useState(null)
   const [bannerColor, setBannerColor] = useState('#7A1E3A')
   const [loading, setLoading] = useState(false)
-  const [activeSide, setActiveSide] = useState('Inicio')
+  const [activeSide, setActiveSide] = useState(() => {
+    try {
+      const params = new URLSearchParams(window.location.search)
+      const sec = params.get('seccion')
+      if (sec) return sec === 'Direcciones' ? 'Mi Perfil' : sec
+      const guardado = localStorage.getItem('bkh_active_seccion')
+      return guardado || 'Inicio'
+    } catch {
+      return 'Inicio'
+    }
+  })
   const [catalogoLibroInicial, setCatalogoLibroInicial] = useState(null)
   const [selectedSalaInChat, setSelectedSalaInChat] = useState(null)
 
@@ -339,7 +349,10 @@ function Home() {
   // Handle section selection
   const handleSelectSection = (seccion) => {
     startTransition(() => setActiveSide(seccion))
-    void navigate(`/?seccion=${encodeURIComponent(seccion)}`, { replace: true })
+    try {
+      localStorage.setItem('bkh_active_seccion', seccion)
+    } catch {}
+    void navigate(`/?seccion=${encodeURIComponent(seccion)}`)
   }
   
   // Handle URL params for section
@@ -347,17 +360,21 @@ function Home() {
     const params = new URLSearchParams(location.search)
     const seccion = params.get('seccion')
     const salaParam = params.get('sala')
-    if (seccion && isAuthenticated) {
+    if (seccion) {
+      const secNormalized = seccion === 'Direcciones' ? 'Mi Perfil' : seccion
       startTransition(() => {
-        setActiveSide(seccion === 'Direcciones' ? 'Mi Perfil' : seccion)
+        setActiveSide(secNormalized)
       })
+      try {
+        localStorage.setItem('bkh_active_seccion', secNormalized)
+      } catch {}
     }
     if (salaParam) {
       startTransition(() => {
         setSelectedSalaInChat(Number(salaParam))
       })
     }
-  }, [location.search, isAuthenticated])
+  }, [location.search])
   
   // Helper functions now live in their respective section components
   

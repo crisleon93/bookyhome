@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { agregarFavorito, eliminarFavorito, getFavoritos } from '../services/api';
+import { agregarFavorito, eliminarFavorito, getFavoritos, getOfertaActivaLibro } from '../services/api';
 import { notify } from './ToastProvider';
 import { categoriaColor, resolveLibroCandidate } from '../utils/catalogo';
 
@@ -22,9 +22,10 @@ const IMG_DEFAULT = 'https://images.unsplash.com/photo-1512820790803-83ca734da79
 const VINOTINTO = '#7A1E3A';
 const VINOTINTO2 = '#9B2648';
 
-const LibroCard = ({ libro, onVerDetalles }) => {
+const LibroCard = ({ libro, onVerDetalles, onToggleComparar, isComparando = false }) => {
   const [enFavoritos, setEnFavoritos] = useState(false);
   const [wishlistLoading, setWishlistLoading] = useState(false);
+  const [oferta, setOferta] = useState(libro?.oferta || null);
 
   // Dark mode
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('darkMode') === 'true');
@@ -88,6 +89,19 @@ const LibroCard = ({ libro, onVerDetalles }) => {
 
     void cargarEstado();
   }, [libro]);
+
+  useEffect(() => {
+    if (!libro?.id_libro || libro.oferta) return;
+    let cancel = false;
+    getOfertaActivaLibro(libro.id_libro)
+      .then((res) => {
+        if (!cancel && res.data && res.data.id_oferta) {
+          setOferta(res.data);
+        }
+      })
+      .catch(() => {});
+    return () => { cancel = true; };
+  }, [libro?.id_libro, libro?.oferta]);
 
   const agregarAFavoritos = async () => {
     setWishlistLoading(true);
@@ -184,7 +198,7 @@ const LibroCard = ({ libro, onVerDetalles }) => {
         )}
         
         {/* Badge estado sin stock — dentro del overflow:hidden está bien */}
-        {outOfStock && (
+        {outOfStock ? (
           <span style={{
             position: 'absolute',
             top: 8,
@@ -196,7 +210,26 @@ const LibroCard = ({ libro, onVerDetalles }) => {
             borderRadius: '20px',
             fontWeight: 600
           }}>Sin stock</span>
-        )}
+        ) : oferta ? (
+          <span style={{
+            position: 'absolute',
+            top: 8,
+            left: 8,
+            background: 'linear-gradient(135deg, #DC2626 0%, #B91C1C 100%)',
+            color: 'white',
+            fontSize: '0.68rem',
+            padding: '3px 8px',
+            borderRadius: '20px',
+            fontWeight: 800,
+            boxShadow: '0 2px 6px rgba(220, 38, 38, 0.45)',
+            letterSpacing: '0.02em',
+            zIndex: 2,
+          }}>
+            {(oferta.tipo_descuento || '').toLowerCase() === 'porcentaje'
+              ? `-${Math.round(oferta.valor_descuento)}%`
+              : 'OFERTA'}
+          </span>
+        ) : null}
 
         {/* Botón favoritos superpuesto */}
         <button
@@ -230,7 +263,7 @@ const LibroCard = ({ libro, onVerDetalles }) => {
       </div>
 
       {/* Badge impulsado — FUERA del overflow:hidden, superpuesto sobre la card */}
-      {libro.es_impulsado && (() => {
+      {Boolean(libro.es_impulsado) && (() => {
         const tipo = libro.impulso_tipo || 'home';
         const config = {
           home:      { icon: '⭐', label: 'Destacado',    bg: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)', color: '#78350f', shadow: 'rgba(251,191,36,0.45)', tooltip: 'Libro destacado en la página principal' },
@@ -313,9 +346,25 @@ const LibroCard = ({ libro, onVerDetalles }) => {
           </span>
         </div>
 
-        <p style={{ margin: '0 0 4px 0', fontSize: '0.95rem', fontWeight: 800, color: darkMode ? '#ff4f83' : VINOTINTO }}>
-          ${price.toLocaleString('es-CO')}
-        </p>
+        {oferta && Number(oferta.precio_descuento) < price ? (
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', margin: '0 0 4px 0', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: '1rem', fontWeight: 900, color: '#DC2626' }}>
+              ${Math.round(oferta.precio_descuento).toLocaleString('es-CO')}
+            </span>
+            <span style={{ fontSize: '0.76rem', textDecoration: 'line-through', color: darkMode ? '#888' : '#9CA3AF', fontWeight: 600 }}>
+              ${price.toLocaleString('es-CO')}
+            </span>
+            {(oferta.tipo_descuento || '').toLowerCase() === 'porcentaje' && (
+              <span style={{ fontSize: '0.68rem', color: '#DC2626', fontWeight: 800, background: '#FEE2E2', padding: '1px 5px', borderRadius: '4px' }}>
+                -{Math.round(oferta.valor_descuento)}%
+              </span>
+            )}
+          </div>
+        ) : (
+          <p style={{ margin: '0 0 4px 0', fontSize: '0.95rem', fontWeight: 800, color: darkMode ? '#ff4f83' : VINOTINTO }}>
+            ${price.toLocaleString('es-CO')}
+          </p>
+        )}
         
         {libro.nombre_tienda && (
           <div style={{ display: 'flex', alignItems: 'center', gap: '4px', margin: '0 0 8px 0', overflow: 'hidden' }}>
@@ -329,27 +378,56 @@ const LibroCard = ({ libro, onVerDetalles }) => {
           </div>
         )}
 
-        {/* Botón Ver detalles - siempre al fondo */}
-        <button
-          onClick={() => onVerDetalles && onVerDetalles(libro)}
-          style={{
-            width: '100%',
-            marginTop: 'auto',
-            padding: '10px 12px',
-            background: VINOTINTO,
-            color: 'white',
-            border: 'none',
-            borderRadius: '6px',
-            fontSize: '0.8rem',
-            fontWeight: '600',
-            cursor: 'pointer',
-            transition: 'all 0.15s',
-          }}
-          onMouseEnter={e => { e.currentTarget.style.background = VINOTINTO2; }}
-          onMouseLeave={e => { e.currentTarget.style.background = VINOTINTO; }}
-        >
-          Ver detalles
-        </button>
+        {/* Botones de Acción - uno abajo del otro */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: 'auto' }}>
+          <button
+            onClick={() => onVerDetalles && onVerDetalles(libro)}
+            style={{
+              width: '100%',
+              padding: '8px 12px',
+              background: VINOTINTO,
+              color: 'white',
+              border: 'none',
+              borderRadius: '6px',
+              fontSize: '0.82rem',
+              fontWeight: '600',
+              cursor: 'pointer',
+              transition: 'all 0.15s',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = VINOTINTO2; }}
+            onMouseLeave={e => { e.currentTarget.style.background = VINOTINTO; }}
+          >
+            Ver detalles
+          </button>
+          {onToggleComparar && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleComparar(libro);
+              }}
+              style={{
+                width: '100%',
+                padding: '6px 12px',
+                background: isComparando ? '#166534' : (darkMode ? '#303030' : '#F3F4F6'),
+                color: isComparando ? '#FFFFFF' : (darkMode ? '#ECECEC' : '#374151'),
+                border: isComparando ? '1.5px solid #166534' : `1.5px solid ${darkMode ? '#4A4A4A' : '#D1D5DB'}`,
+                borderRadius: '6px',
+                fontSize: '0.76rem',
+                fontWeight: '600',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px',
+                transition: 'all 0.15s',
+              }}
+              title={isComparando ? 'Quitar de la comparación' : 'Agregar a la comparación'}
+            >
+              <span>⇄</span>
+              <span>{isComparando ? 'Comparando' : 'Comparar'}</span>
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

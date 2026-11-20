@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
-import api, { addToCart, removeFromCart, getCarrito, getApiBaseUrl, usuarioPuedeCalificarTienda, crearCalificacionTienda, getCalificacionesTienda, actualizarCalificacionTienda } from '../services/api';
+import { useSearchParams, useNavigate, useLocation } from 'react-router-dom';
+import api, { addToCart, removeFromCart, getCarrito, getApiBaseUrl, usuarioPuedeCalificarTienda, crearCalificacionTienda, getCalificacionesTienda, actualizarCalificacionTienda, getOfertaActivaLibro, getOrdenes } from '../services/api';
 import { notify } from '../components/ToastProvider';
 import LibroCard from '../components/LibroCard';
 import ResenaLibro from '../components/ResenaLibro';
+import ModalCompararLibros from '../components/ModalCompararLibros';
 
 const categoriaClase = (categoria = '') => {
   const texto = categoria.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
@@ -52,6 +53,7 @@ const CatalogoLoading = () => (
 const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const [libros, setLibros] = useState([]);
   const [loading, setLoading] = useState(true);
   const [pagina, setPagina] = useState(1);
@@ -74,7 +76,50 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
   const [paginaOpinionesTienda, setPaginaOpinionesTienda] = useState(1);
   const [calificacionForm, setCalificacionForm] = useState({ calificacion: 5, comentario: '' });
   const [enviandoCalificacion, setEnviandoCalificacion] = useState(false);
+  const [ofertaActiva, setOfertaActiva] = useState(null);
+  const [librosComparar, setLibrosComparar] = useState(() => {
+    try {
+      const guardado = localStorage.getItem('bkh_libros_comparar');
+      return guardado ? JSON.parse(guardado) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [mostrarModalComparar, setMostrarModalComparar] = useState(() => {
+    try {
+      return sessionStorage.getItem('bkh_modal_comparar_abierto') === 'true';
+    } catch {
+      return false;
+    }
+  });
   const ultimaBusquedaRef = React.useRef(null);
+
+  // Persistencia de libros en comparación (RF-033)
+  useEffect(() => {
+    try {
+      if (librosComparar.length > 0) {
+        localStorage.setItem('bkh_libros_comparar', JSON.stringify(librosComparar));
+      } else {
+        localStorage.removeItem('bkh_libros_comparar');
+      }
+      window.dispatchEvent(new Event('bkh-comparar-updated'));
+    } catch (e) {
+      console.warn('Error al guardar librosComparar en localStorage', e);
+    }
+  }, [librosComparar]);
+
+  // Persistencia del estado abierto del modal comparador
+  useEffect(() => {
+    try {
+      if (mostrarModalComparar && librosComparar.length >= 2) {
+        sessionStorage.setItem('bkh_modal_comparar_abierto', 'true');
+      } else {
+        sessionStorage.removeItem('bkh_modal_comparar_abierto');
+      }
+    } catch (e) {
+      console.warn('Error al guardar modal de comparación en sessionStorage', e);
+    }
+  }, [mostrarModalComparar, librosComparar.length]);
 
   // Dark mode
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('darkMode') === 'true');
@@ -87,15 +132,15 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
 
   // Colores reutilizables
   const dm = {
-    sectionBg:    darkMode ? '#1e1e1e' : '#faf8f6',
-    cardBg:       darkMode ? '#252525' : 'white',
-    cardBorder:   darkMode ? '#333' : '#e0e0e0',
-    textPrimary:  darkMode ? '#ececec' : '#2c2c2c',
-    textSecondary:darkMode ? '#c8c8c8' : '#555',
-    textMuted:    darkMode ? '#999' : '#666',
-    inputBorder:  darkMode ? '#3a3a3a' : '#ddd',
-    inputBg:      darkMode ? '#2a2a2a' : 'white',
-    inputColor:   darkMode ? '#ececec' : 'inherit',
+    sectionBg: darkMode ? '#1e1e1e' : '#faf8f6',
+    cardBg: darkMode ? '#252525' : 'white',
+    cardBorder: darkMode ? '#333' : '#e0e0e0',
+    textPrimary: darkMode ? '#ececec' : '#2c2c2c',
+    textSecondary: darkMode ? '#c8c8c8' : '#555',
+    textMuted: darkMode ? '#999' : '#666',
+    inputBorder: darkMode ? '#3a3a3a' : '#ddd',
+    inputBg: darkMode ? '#2a2a2a' : 'white',
+    inputColor: darkMode ? '#ececec' : 'inherit',
   };
 
   const [filtros, setFiltros] = useState({
@@ -149,7 +194,11 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
   // Fetch del detalle del libro cuando cambia la URL ?libro=ID, incluso sin recargar la página.
   useEffect(() => {
     const libroId = searchParams.get('libro');
-    if (!libroId) return;
+    if (!libroId) {
+      setMostrarDetalles(false);
+      setLibroSeleccionado(null);
+      return;
+    }
 
     api.get(`/catalogo/libro/${libroId}`)
       .then(res => {
@@ -162,13 +211,34 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
       })
       .catch(() => {
         setMostrarDetalles(false);
+        setLibroSeleccionado(null);
         setSearchParams(prev => {
           const next = new URLSearchParams(prev);
           next.delete('libro');
+          next.set('seccion', 'Catálogo');
           return next;
         }, { replace: true });
       });
   }, [searchParams, setSearchParams]);
+
+  // Cargar oferta activa cuando se selecciona un libro
+  useEffect(() => {
+    if (!libroSeleccionado?.id_libro) {
+      setOfertaActiva(null);
+      return;
+    }
+    let cancel = false;
+    getOfertaActivaLibro(libroSeleccionado.id_libro)
+      .then(res => {
+        if (!cancel) {
+          setOfertaActiva(res.data && res.data.id_oferta ? res.data : null);
+        }
+      })
+      .catch(() => {
+        if (!cancel) setOfertaActiva(null);
+      });
+    return () => { cancel = true; };
+  }, [libroSeleccionado?.id_libro]);
 
   useEffect(() => {
     if (!libroInicial) return;
@@ -186,7 +256,7 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
   const cargarLibros = React.useCallback(async () => {
     try {
       const params = new URLSearchParams();
-      
+
       if (filtros.q) params.append('q', filtros.q);
       if (filtros.nombre_tienda) params.append('nombre_tienda', filtros.nombre_tienda);
       if (filtros.correo_vendedor) params.append('correo_vendedor', filtros.correo_vendedor);
@@ -221,19 +291,19 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
   useEffect(() => {
     void cargarLibros();
   }, [cargarLibros]);
-  
+
   // Registrar impresiones de libros impulsados visibles
   useEffect(() => {
     if (!libros || libros.length === 0) return;
-    
+
     const impulsados = libros.filter(l => l.id_impulso && l.es_impulsado);
     if (impulsados.length === 0) return;
-    
+
     // Registrar impresión una sola vez por cada libro impulsado visible
     const registradas = new Set();
     impulsados.forEach(libro => {
       if (!registradas.has(libro.id_impulso)) {
-        api.post(`/impulsos/${libro.id_impulso}/impresion`).catch(() => {});
+        api.post(`/impulsos/${libro.id_impulso}/impresion`).catch(() => { });
         registradas.add(libro.id_impulso);
       }
     });
@@ -250,7 +320,7 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
           setAddedToCartIds(new Set(items.map(i => i.id_libro)));
         }
       })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   const handleAddToCart = async (libro) => {
@@ -261,12 +331,15 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
     }
     setAddingId(libro.id_libro);
     try {
+      const precioUnitario = (ofertaActiva && libro.id_libro === libroSeleccionado?.id_libro)
+        ? ofertaActiva.precio_descuento
+        : (libro.precio_libro ?? libro.precio ?? 0);
       await addToCart({
         id_libro: libro.id_libro,
         cantidad: 1,
         titulo: libro.titulo,
         autor_libro: libro.autor_libro,
-        precio_libro: libro.precio_libro,
+        precio_libro: precioUnitario,
         imagen: libro.imagen_url || null,
         id_tienda: libro.id_tienda || null,
         nombre_tienda: libro.nombre_tienda || '',
@@ -320,12 +393,16 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
 
     // NO creamos orden aquí. Solo navegamos al carrito con los datos del libro
     // en el state. La orden se crea únicamente cuando el usuario confirme el pago.
+    const precioUnitario = (ofertaActiva && libro.id_libro === libroSeleccionado?.id_libro)
+      ? ofertaActiva.precio_descuento
+      : Number(libro.precio_libro ?? libro.precio ?? 0);
+
     void navigate('/?seccion=Carrito', {
       state: {
         buyNow: {
           id_libro: libro.id_libro,
           cantidad: 1,
-          precio_libro: Number(libro.precio_libro ?? libro.precio ?? 0),
+          precio_libro: precioUnitario,
           titulo: libro.titulo,
           autor_libro: libro.autor_libro || libro.autor || '',
           imagen: libro.imagen_url || libro.imagen_principal || null,
@@ -334,22 +411,39 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
       }
     });
   };
+
+  const handleToggleComparar = (libro) => {
+    setLibrosComparar(prev => {
+      const existe = prev.some(l => l.id_libro === libro.id_libro);
+      if (existe) {
+        notify(`"${libro.titulo}" removido de la comparación`, 'info');
+        return prev.filter(l => l.id_libro !== libro.id_libro);
+      }
+      if (prev.length >= 4) {
+        notify('Puedes comparar hasta 4 libros a la vez', 'info');
+        return prev;
+      }
+      notify(`"${libro.titulo}" agregado para comparar`, 'success');
+      return [...prev, libro];
+    });
+  };
   const handleVerDetalles = (libro) => {
     // Registrar clic si el libro tiene impulso activo
     if (libro.id_impulso) {
-      api.post(`/impulsos/${libro.id_impulso}/clic`).catch(() => {});
+      api.post(`/impulsos/${libro.id_impulso}/clic`).catch(() => { });
     }
-    
+
     setLibroSeleccionado(libro);
     setImagenActiva(null);
     setZoomActivo(false);
     setMostrarDetalles(true);
-    // Sincronizar con la URL para que el reload funcione
+    // Sincronizar con la URL para que el reload funcione y la flecha del navegador retroceda al catalogo
     setSearchParams(prev => {
       const next = new URLSearchParams(prev);
+      next.set('seccion', 'Catálogo');
       next.set('libro', libro.id_libro);
       return next;
-    }, { replace: true });
+    });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -361,12 +455,13 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
   const handleVolverCatalogo = () => {
     setMostrarDetalles(false);
     setLibroSeleccionado(null);
-    // Limpiar el param ?libro= de la URL
+    // Limpiar el param ?libro= de la URL asegurando que permanezca en la sección Catálogo
     setSearchParams(prev => {
       const next = new URLSearchParams(prev);
       next.delete('libro');
+      next.set('seccion', 'Catálogo');
       return next;
-    }, { replace: true });
+    });
   };
 
   const handleContactar = async () => {
@@ -387,7 +482,7 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
       // Crear o obtener sala de chat con la tienda
       const response = await chatService.crearSala(libroSeleccionado.id_tienda);
       const idSala = response.id_sala;
-      
+
       if (!idSala) {
         throw new Error('No se recibió id_sala del servidor');
       }
@@ -400,6 +495,41 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
       notify(errorMsg, 'error');
     } finally {
       setContactando(false);
+    }
+  };
+
+  const handleCompartirLibro = () => {
+    const enlace = `${window.location.origin}/?seccion=Cat%C3%A1logo&libro=${libroSeleccionado.id_libro}`;
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(enlace);
+      notify('Enlace del libro copiado al portapapeles!', 'success');
+    } else {
+      notify(enlace, 'info');
+    }
+  };
+
+  const handleReportarLibro = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      notify('Debes iniciar sesion para reportar un problema con tu pedido', 'error');
+      void navigate('/login');
+      return;
+    }
+    try {
+      const res = await getOrdenes();
+      const ordenes = res.data || [];
+      const ordenConLibro = ordenes.find(ord =>
+        (ord.items || []).some(item => Number(item.id_libro) === Number(libroSeleccionado.id_libro))
+      );
+      if (!ordenConLibro) {
+        notify('Solo puedes radicar una queja o reclamo sobre libros que hayas comprado previamente', 'error');
+        return;
+      }
+      const targetId = ordenConLibro.id_orden_db || ordenConLibro.id_orden;
+      notify(`Orden #${targetId} localizada. Redirigiendo a Quejas y Reclamos...`, 'success');
+      void navigate(`/?seccion=Quejas y reclamos&ordenId=${targetId}`);
+    } catch {
+      notify('No se pudo verificar el historial de compras. Intenta de nuevo mas tarde.', 'error');
     }
   };
 
@@ -416,7 +546,7 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
           comentario: calificacionForm.comentario
         });
         notify('¡Calificación actualizada!', 'success');
-        
+
         // Actualizar la calificación existente con los nuevos datos
         setCalificacionExistente({
           ...calificacionExistente,
@@ -431,7 +561,7 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
           comentario: calificacionForm.comentario
         });
         notify('¡Gracias por calificar la tienda!', 'success');
-        
+
         // Crear el objeto de calificación existente con los datos del servidor o simulados
         setCalificacionExistente({
           id_calificacion: response.data?.id_calificacion || Date.now(), // ID del servidor o temporal
@@ -440,7 +570,7 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
           fecha_calificacion: new Date().toISOString()
         });
       }
-      
+
       setCalificacionEnviada(true);
       setMostrarCalificacionTienda(false);
       const calificacionesActualizadas = await getCalificacionesTienda(libroSeleccionado.id_tienda);
@@ -457,7 +587,7 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
   // Verificar si el usuario puede calificar cuando se selecciona un libro
   useEffect(() => {
     if (!libroSeleccionado?.id_tienda) return;
-    
+
     const verificarPermiso = async () => {
       try {
         const calificacionesResponse = await getCalificacionesTienda(libroSeleccionado.id_tienda);
@@ -478,7 +608,7 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
       try {
         const response = await usuarioPuedeCalificarTienda(libroSeleccionado.id_tienda);
         setPuedeCalificar(response.data?.puede_calificar || false);
-        
+
         // Si ya calificó, cargar su calificación existente
         if (response.data?.ya_califico) {
           // Cargar las calificaciones de la tienda para encontrar la del usuario
@@ -701,38 +831,69 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
             </div>
             <div className="detalle-summary">
               <div className="detalle-summary-left">
-              {libroSeleccionado.nombre_categoria && (
-                <span className={`categoria-badge ${categoriaClase(libroSeleccionado.nombre_categoria)}`} style={{ marginBottom: '12px' }}>
-                  {libroSeleccionado.nombre_categoria}
-                </span>
-              )}
-              <h2 style={{ fontSize: '2.2rem', fontWeight: '700', margin: '0 0 8px 0', lineHeight: '1.2', color: '#2c2c2c' }}>{libroSeleccionado.titulo}</h2>
-              <p style={{ fontSize: '1.2rem', color: '#666', fontWeight: '600', margin: '0 0 16px 0' }}>{libroSeleccionado.autor_libro || libroSeleccionado.autor || 'Autor no disponible'}</p>
-              
-              {/* Calificación */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-                <div style={{ display: 'flex', gap: '2px' }}>
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <svg key={star} width="20" height="20" viewBox="0 0 24 24" fill={star <= (libroSeleccionado.calificacion || 4) ? '#ffc107' : '#e0e0e0'} stroke="none">
-                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                    </svg>
-                  ))}
+                {libroSeleccionado.nombre_categoria && (
+                  <span className={`categoria-badge ${categoriaClase(libroSeleccionado.nombre_categoria)}`} style={{ marginBottom: '12px' }}>
+                    {libroSeleccionado.nombre_categoria}
+                  </span>
+                )}
+                <h2 style={{ fontSize: '2.2rem', fontWeight: '700', margin: '0 0 8px 0', lineHeight: '1.2', color: '#2c2c2c' }}>{libroSeleccionado.titulo}</h2>
+                <p style={{ fontSize: '1.2rem', color: '#666', fontWeight: '600', margin: '0 0 16px 0' }}>{libroSeleccionado.autor_libro || libroSeleccionado.autor || 'Autor no disponible'}</p>
+
+                {/* Calificación */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+                  <div style={{ display: 'flex', gap: '2px' }}>
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <svg key={star} width="20" height="20" viewBox="0 0 24 24" fill={star <= (libroSeleccionado.calificacion || 4) ? '#ffc107' : '#e0e0e0'} stroke="none">
+                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                      </svg>
+                    ))}
+                  </div>
+                  <span style={{ fontSize: '0.9rem', color: '#666' }}>({libroSeleccionado.calificacion || 4}.0)</span>
+                  <span style={{ fontSize: '0.85rem', color: '#999' }}>• {Number(libroSeleccionado.total_resenas || 0)} reseñas</span>
                 </div>
-                <span style={{ fontSize: '0.9rem', color: '#666' }}>({libroSeleccionado.calificacion || 4}.0)</span>
-                <span style={{ fontSize: '0.85rem', color: '#999' }}>• {Number(libroSeleccionado.total_resenas || 0)} reseñas</span>
-              </div>
 
-              {libroSeleccionado.nombre_tienda && (
-                <p style={{ fontSize: '0.95rem', color: '#777', margin: '0 0 16px 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                    <circle cx="12" cy="10" r="3"></circle>
-                  </svg>
-                  {libroSeleccionado.nombre_tienda}
-                </p>
-              )}
+                {libroSeleccionado.nombre_tienda && (
+                  <p style={{ fontSize: '0.95rem', color: '#777', margin: '0 0 16px 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                      <circle cx="12" cy="10" r="3"></circle>
+                    </svg>
+                    {libroSeleccionado.nombre_tienda}
+                  </p>
+                )}
 
-              <p className="detalle-price">${Number(libroSeleccionado.precio_libro || libroSeleccionado.precio || 0).toLocaleString('es-CO')}</p>
+                {ofertaActiva ? (
+                  <div style={{ margin: '0 0 16px 0' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginBottom: '4px' }}>
+                      <span className="detalle-price" style={{ color: '#DC2626', margin: 0 }}>
+                        ${Number(ofertaActiva.precio_descuento).toLocaleString('es-CO')}
+                      </span>
+                      <span style={{ fontSize: '1.1rem', textDecoration: 'line-through', color: '#9CA3AF', fontWeight: 600 }}>
+                        ${Number(ofertaActiva.precio_original || libroSeleccionado.precio_libro || libroSeleccionado.precio || 0).toLocaleString('es-CO')}
+                      </span>
+                      <span style={{
+                        background: '#FEE2E2',
+                        color: '#DC2626',
+                        border: '1px solid #FCA5A5',
+                        padding: '3px 8px',
+                        borderRadius: '6px',
+                        fontSize: '0.82rem',
+                        fontWeight: 800
+                      }}>
+                        {ofertaActiva.tipo_descuento === 'porcentaje'
+                          ? `-${Math.round(ofertaActiva.valor_descuento)}% OFF`
+                          : `-$${Math.round(ofertaActiva.valor_descuento).toLocaleString('es-CO')} OFF`}
+                      </span>
+                    </div>
+                    {ofertaActiva.nombre_oferta && (
+                      <span style={{ fontSize: '0.8rem', color: '#B91C1C', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                        🏷️ Oferta: {ofertaActiva.nombre_oferta} (Ahorras ${Number(ofertaActiva.ahorro || 0).toLocaleString('es-CO')})
+                      </span>
+                    )}
+                  </div>
+                ) : (
+                  <p className="detalle-price">${Number(libroSeleccionado.precio_libro || libroSeleccionado.precio || 0).toLocaleString('es-CO')}</p>
+                )}
               </div>
 
               <div className="detalle-price-and-info">
@@ -770,154 +931,228 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
                 </div>
               </div>
 
-                <div className="detalle-hero-actions">
-                {/* Botón Comprar ahora */}
-                <button
-                  className="detalle-primary-action"
-                  onClick={() => handleComprarAhora(libroSeleccionado)}
-                  disabled={libroSeleccionado.stock === 0}
-                  style={{
-                    flex: '1 1 170px',
-                    minWidth: '160px',
-                    background: 'linear-gradient(135deg, var(--vinotinto, #7A1E3A) 0%, #9B2449 100%)',
-                    color: 'white',
-                    border: 'none',
-                    padding: '16px 22px',
-                    borderRadius: '8px',
-                    cursor: libroSeleccionado.stock === 0 ? 'not-allowed' : 'pointer',
-                    opacity: libroSeleccionado.stock === 0 ? 0.65 : 1,
-                    fontSize: '1.05rem',
-                    fontWeight: '700',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '8px',
-                    boxShadow: '0 4px 14px rgba(122, 30, 58, 0.28)',
-                    transition: 'all 0.2s ease'
-                  }}
-                  onMouseEnter={(e) => {
-                    if (libroSeleccionado.stock !== 0) {
-                      e.currentTarget.style.transform = 'translateY(-2px)';
-                      e.currentTarget.style.boxShadow = '0 6px 18px rgba(122, 30, 58, 0.38)';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = '0 4px 14px rgba(122, 30, 58, 0.28)';
-                  }}
-                >
-                  <>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
-                    </svg>
-                    {libroSeleccionado.stock === 0 ? 'Sin stock' : 'Comprar ahora'}
-                  </>
-                </button>
-
-                {/* Botón Agregar al carrito */}
-                <button
-                  className="detalle-cart-action"
-                  onClick={() => addedToCartIds.has(libroSeleccionado.id_libro) ? handleRemoveFromCart(libroSeleccionado) : handleAddToCart(libroSeleccionado)}
-                  disabled={addingId === libroSeleccionado.id_libro || libroSeleccionado.stock === 0}
-                  style={{
-                    flex: '1 1 170px',
-                    minWidth: '160px',
-                    background: addedToCartIds.has(libroSeleccionado.id_libro) ? '#fee2e2' : '#fdf2f4',
-                    color: addedToCartIds.has(libroSeleccionado.id_libro) ? '#dc2626' : 'var(--vinotinto, #7A1E3A)',
-                    border: `2px solid ${addedToCartIds.has(libroSeleccionado.id_libro) ? '#dc2626' : 'var(--vinotinto, #7A1E3A)'}`,
-                    padding: '16px 22px',
-                    borderRadius: '8px',
-                    cursor: addingId === libroSeleccionado.id_libro || libroSeleccionado.stock === 0 ? 'not-allowed' : 'pointer',
-                    opacity: addingId === libroSeleccionado.id_libro || libroSeleccionado.stock === 0 ? 0.65 : 1,
-                    fontSize: '1.05rem',
-                    fontWeight: '700',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '8px',
-                    transition: 'all 0.2s ease'
-                  }}
-                  onMouseEnter={(e) => {
-                    if (addingId !== libroSeleccionado.id_libro && libroSeleccionado.stock !== 0) {
-                      e.currentTarget.style.transform = 'translateY(-2px)';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'translateY(0)';
-                  }}
-                >
-                  {libroSeleccionado.stock === 0 ? 'Sin stock' : addingId === libroSeleccionado.id_libro ? 'Procesando…' : addedToCartIds.has(libroSeleccionado.id_libro) ? (
+              <div className="detalle-hero-actions" style={{ display: 'grid', gap: '12px' }}>
+                {/* Fila 1: Comprar + Carrito (50/50) */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  {/* Boton Comprar ahora */}
+                  <button
+                    className="detalle-primary-action"
+                    onClick={() => handleComprarAhora(libroSeleccionado)}
+                    disabled={libroSeleccionado.stock === 0}
+                    style={{
+                      height: '52px',
+                      background: 'linear-gradient(135deg, var(--vinotinto, #7A1E3A) 0%, #9B2449 100%)',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '8px',
+                      cursor: libroSeleccionado.stock === 0 ? 'not-allowed' : 'pointer',
+                      opacity: libroSeleccionado.stock === 0 ? 0.65 : 1,
+                      fontSize: '1.02rem',
+                      fontWeight: '700',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      boxShadow: '0 4px 14px rgba(122, 30, 58, 0.28)',
+                      transition: 'all 0.2s ease'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (libroSeleccionado.stock !== 0) {
+                        e.currentTarget.style.transform = 'translateY(-2px)';
+                        e.currentTarget.style.boxShadow = '0 6px 18px rgba(122, 30, 58, 0.38)';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = '0 4px 14px rgba(122, 30, 58, 0.28)';
+                    }}
+                  >
                     <>
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="3 6 5 6 21 6"></polyline>
-                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
                       </svg>
-                      Eliminar de carrito
+                      {libroSeleccionado.stock === 0 ? 'Sin stock' : 'Comprar ahora'}
                     </>
-                  ) : (
-                    <>
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <circle cx="9" cy="21" r="1"></circle>
-                        <circle cx="20" cy="21" r="1"></circle>
-                        <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
-                      </svg>
-                      Agregar al carrito
-                    </>
-                  )}
-                </button>
+                  </button>
 
-                {/* Botón Contactar librería */}
-                <button
-                  className="detalle-contact-action"
-                  onClick={handleContactar}
-                  disabled={contactando}
-                  style={{
-                    flex: '1 1 170px',
-                    minWidth: '160px',
-                    background: 'white',
-                    color: '#4b5563',
-                    border: '2px solid #d1d5db',
-                    padding: '16px 22px',
-                    borderRadius: '8px',
-                    cursor: contactando ? 'not-allowed' : 'pointer',
-                    fontSize: '1.05rem',
-                    fontWeight: '600',
-                    transition: 'all 0.2s ease',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '8px',
-                    opacity: contactando ? 0.65 : 1
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!contactando) {
+                  {/* Boton Agregar al carrito */}
+                  <button
+                    className="detalle-cart-action"
+                    onClick={() => addedToCartIds.has(libroSeleccionado.id_libro) ? handleRemoveFromCart(libroSeleccionado) : handleAddToCart(libroSeleccionado)}
+                    disabled={addingId === libroSeleccionado.id_libro || libroSeleccionado.stock === 0}
+                    style={{
+                      height: '52px',
+                      background: addedToCartIds.has(libroSeleccionado.id_libro) ? '#fee2e2' : '#fdf2f4',
+                      color: addedToCartIds.has(libroSeleccionado.id_libro) ? '#dc2626' : 'var(--vinotinto, #7A1E3A)',
+                      border: `2px solid ${addedToCartIds.has(libroSeleccionado.id_libro) ? '#dc2626' : 'var(--vinotinto, #7A1E3A)'}`,
+                      borderRadius: '8px',
+                      cursor: addingId === libroSeleccionado.id_libro || libroSeleccionado.stock === 0 ? 'not-allowed' : 'pointer',
+                      opacity: addingId === libroSeleccionado.id_libro || libroSeleccionado.stock === 0 ? 0.65 : 1,
+                      fontSize: '1.02rem',
+                      fontWeight: '700',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      transition: 'all 0.2s ease'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (addingId !== libroSeleccionado.id_libro && libroSeleccionado.stock !== 0) {
+                        e.currentTarget.style.transform = 'translateY(-2px)';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'translateY(0)';
+                    }}
+                  >
+                    {libroSeleccionado.stock === 0 ? 'Sin stock' : addingId === libroSeleccionado.id_libro ? 'Procesando...' : addedToCartIds.has(libroSeleccionado.id_libro) ? (
+                      <>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="3 6 5 6 21 6"></polyline>
+                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        </svg>
+                        Eliminar de carrito
+                      </>
+                    ) : (
+                      <>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <circle cx="9" cy="21" r="1"></circle>
+                          <circle cx="20" cy="21" r="1"></circle>
+                          <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                        </svg>
+                        Agregar al carrito
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                {/* Fila 2: Contactar + Compartir + Reportar (33/33/33) */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
+                  {/* Boton Contactar libreria */}
+                  <button
+                    className="detalle-contact-action"
+                    onClick={handleContactar}
+                    disabled={contactando}
+                    style={{
+                      height: '46px',
+                      background: 'white',
+                      color: '#4b5563',
+                      border: '2px solid #d1d5db',
+                      borderRadius: '8px',
+                      cursor: contactando ? 'not-allowed' : 'pointer',
+                      fontSize: '0.92rem',
+                      fontWeight: '600',
+                      transition: 'all 0.2s ease',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '6px',
+                      opacity: contactando ? 0.65 : 1
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!contactando) {
+                        e.currentTarget.style.borderColor = 'var(--vinotinto, #7A1E3A)';
+                        e.currentTarget.style.color = 'var(--vinotinto, #7A1E3A)';
+                        e.currentTarget.style.transform = 'translateY(-2px)';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderColor = '#d1d5db';
+                      e.currentTarget.style.color = '#4b5563';
+                      e.currentTarget.style.transform = 'translateY(0)';
+                    }}
+                  >
+                    {contactando ? (
+                      <>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ animation: 'spin 1s linear infinite' }}>
+                          <path d="M21 12a9 9 0 1 1-6.219-8.56"></path>
+                        </svg>
+                        Conectando...
+                      </>
+                    ) : (
+                      <>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+                        </svg>
+                        Contactar
+                      </>
+                    )}
+                  </button>
+
+                  {/* Boton Compartir enlace (HU-027 / RF-027) */}
+                  <button
+                    type="button"
+                    onClick={handleCompartirLibro}
+                    style={{
+                      height: '46px',
+                      background: darkMode ? '#2A2A2A' : '#F3F4F6',
+                      color: dm.textPrimary,
+                      border: `2px solid ${dm.cardBorder}`,
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      fontSize: '0.92rem',
+                      fontWeight: '700',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '6px',
+                      transition: 'all 0.2s ease',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = 'translateY(-2px)';
                       e.currentTarget.style.borderColor = 'var(--vinotinto, #7A1E3A)';
-                      e.currentTarget.style.color = 'var(--vinotinto, #7A1E3A)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.borderColor = dm.cardBorder;
+                    }}
+                    title="Compartir enlace directo de esta publicacion"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                      <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                    </svg>
+                    <span>Compartir</span>
+                  </button>
+
+                  {/* Boton Reportar libro (HU-008 / RF-019) */}
+                  <button
+                    type="button"
+                    onClick={handleReportarLibro}
+                    style={{
+                      height: '46px',
+                      background: 'transparent',
+                      color: '#DC2626',
+                      border: '2px solid #FECACA',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      fontSize: '0.92rem',
+                      fontWeight: '700',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '6px',
+                      transition: 'all 0.2s ease',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = '#FEF2F2';
+                      e.currentTarget.style.borderColor = '#DC2626';
                       e.currentTarget.style.transform = 'translateY(-2px)';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = '#d1d5db';
-                    e.currentTarget.style.color = '#4b5563';
-                    e.currentTarget.style.transform = 'translateY(0)';
-                  }}
-                >
-                  {contactando ? (
-                    <>
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ animation: 'spin 1s linear infinite' }}>
-                        <path d="M21 12a9 9 0 1 1-6.219-8.56"></path>
-                      </svg>
-                      Conectando...
-                    </>
-                  ) : (
-                    <>
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
-                      </svg>
-                      Contactar librería
-                    </>
-                  )}
-                </button>
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'transparent';
+                      e.currentTarget.style.borderColor = '#FECACA';
+                      e.currentTarget.style.transform = 'translateY(0)';
+                    }}
+                    title="Reportar esta publicacion"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
+                      <line x1="4" y1="22" x2="4" y2="15"></line>
+                    </svg>
+                    <span>Reportar</span>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -946,7 +1181,7 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
                   <div style={{ display: 'flex', gap: '2px' }}>
                     {[1, 2, 3, 4, 5].map((star) => (
                       <svg key={star} width="20" height="20" viewBox="0 0 24 24" fill={star <= Math.round(libroSeleccionado.calificacion_tienda) ? '#ffc107' : (darkMode ? '#444' : '#e0e0e0')} stroke="none">
-                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
                       </svg>
                     ))}
                   </div>
@@ -964,7 +1199,7 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
                       <div style={{ display: 'flex', gap: '2px' }}>
                         {[1, 2, 3, 4, 5].map((star) => (
                           <svg key={star} width="16" height="16" viewBox="0 0 24 24" fill={star <= (calificacionExistente?.calificacion || calificacionForm.calificacion) ? '#ffc107' : (darkMode ? '#444' : '#e0e0e0')} stroke="none">
-                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
                           </svg>
                         ))}
                       </div>
@@ -977,10 +1212,10 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
                     )}
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px' }}>
-                  <button type="button" onClick={() => { setCalificacionEnviada(false); setMostrarCalificacionTienda(true); if (calificacionExistente) setCalificacionForm({ calificacion: calificacionExistente.calificacion, comentario: calificacionExistente.comentario }); }}
-                    style={{ background: dm.cardBg, color: dm.textPrimary, border: `1px solid ${dm.inputBorder}`, padding: '9px 16px', borderRadius: '7px', cursor: 'pointer', fontSize: '0.9rem', fontWeight: '600' }}>
-                    Editar calificación
-                  </button>
+                    <button type="button" onClick={() => { setCalificacionEnviada(false); setMostrarCalificacionTienda(true); if (calificacionExistente) setCalificacionForm({ calificacion: calificacionExistente.calificacion, comentario: calificacionExistente.comentario }); }}
+                      style={{ background: dm.cardBg, color: dm.textPrimary, border: `1px solid ${dm.inputBorder}`, padding: '9px 16px', borderRadius: '7px', cursor: 'pointer', fontSize: '0.9rem', fontWeight: '600' }}>
+                      Editar calificación
+                    </button>
                   </div>
                 </div>
               ) : (!mostrarCalificacionTienda && !calificacionExistente && !calificacionEnviada) ? (
@@ -995,7 +1230,7 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
                       {[1, 2, 3, 4, 5].map((star) => (
                         <button key={star} type="button" aria-label={`${star} de 5 estrellas`} aria-pressed={calificacionForm.calificacion === star} onClick={() => setCalificacionForm({ ...calificacionForm, calificacion: star })} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px' }}>
                           <svg width="32" height="32" viewBox="0 0 24 24" fill={star <= calificacionForm.calificacion ? '#ffc107' : (darkMode ? '#444' : '#e0e0e0')} stroke="none" style={{ transition: 'all 0.2s ease' }}>
-                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
                           </svg>
                         </button>
                       ))}
@@ -1142,9 +1377,9 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
               ].map((item, i) => (
                 <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={darkMode ? '#4ade80' : '#4caf50'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    {item.icon === 'truck' && <><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></>}
-                    {item.icon === 'clock' && <><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></>}
-                    {item.icon === 'shield' && <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>}
+                    {item.icon === 'truck' && <><rect x="1" y="3" width="15" height="13" /><polygon points="16 8 20 8 23 11 23 16 16 16 16 8" /><circle cx="5.5" cy="18.5" r="2.5" /><circle cx="18.5" cy="18.5" r="2.5" /></>}
+                    {item.icon === 'clock' && <><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></>}
+                    {item.icon === 'shield' && <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />}
                   </svg>
                   <div>
                     <p style={{ fontSize: '0.9rem', fontWeight: '600', color: darkMode ? '#ececec' : '#2c2c2c', margin: 0 }}>{item.label}</p>
@@ -1161,13 +1396,13 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
             <div style={{ position: 'relative', padding: '0 44px' }}>
               <button type="button" aria-label="Ver libros relacionados anteriores" onClick={() => desplazarRelacionados(-1)} style={{ position: 'absolute', zIndex: 2, left: 0, top: '50%', transform: 'translateY(-50%)', width: 36, height: 36, borderRadius: '50%', border: `1px solid ${dm.cardBorder}`, background: dm.cardBg, color: dm.textPrimary, cursor: 'pointer', fontSize: '1.2rem', boxShadow: '0 3px 10px rgba(0,0,0,0.25)' }}>‹</button>
               <div ref={librosRelacionadosRef} style={{ overflow: 'hidden', padding: '2px 2px 12px' }}>
-              <div ref={librosRelacionadosTrackRef} style={{ display: 'flex', gap: '16px', width: 'max-content', willChange: 'transform' }}>
-                {[...librosRelacionados, ...librosRelacionados].map((libro, index) => (
-                  <div key={`${libro.id_libro}-${index}`} style={{ flex: '0 0 220px' }}>
-                    <LibroCard libro={libro} onVerDetalles={handleVerDetalles} />
-                  </div>
-                ))}
-              </div>
+                <div ref={librosRelacionadosTrackRef} style={{ display: 'flex', gap: '16px', width: 'max-content', willChange: 'transform' }}>
+                  {[...librosRelacionados, ...librosRelacionados].map((libro, index) => (
+                    <div key={`${libro.id_libro}-${index}`} style={{ flex: '0 0 220px' }}>
+                      <LibroCard libro={libro} onVerDetalles={handleVerDetalles} />
+                    </div>
+                  ))}
+                </div>
               </div>
               <button type="button" aria-label="Ver más libros relacionados" onClick={() => desplazarRelacionados(1)} style={{ position: 'absolute', zIndex: 2, right: 0, top: '50%', transform: 'translateY(-50%)', width: 36, height: 36, borderRadius: '50%', border: `1px solid ${dm.cardBorder}`, background: dm.cardBg, color: dm.textPrimary, cursor: 'pointer', fontSize: '1.2rem', boxShadow: '0 3px 10px rgba(0,0,0,0.25)' }}>›</button>
             </div>
@@ -1205,6 +1440,8 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
                 key={libro.id_libro}
                 libro={libro}
                 onVerDetalles={handleVerDetalles}
+                onToggleComparar={handleToggleComparar}
+                isComparando={librosComparar.some(l => l.id_libro === libro.id_libro)}
               />
             ))}
           </div>
@@ -1261,6 +1498,114 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
             </div>
           )}
         </>
+      )}
+
+      {/* Barra flotante de Comparación de Libros (RF-033) */}
+      {librosComparar.length > 0 && !mostrarDetalles && (
+        <div style={{
+          position: 'fixed',
+          bottom: '24px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          zIndex: 1000,
+          background: darkMode ? '#1E1E1E' : '#FFFFFF',
+          border: `2px solid ${darkMode ? '#555' : 'var(--vinotinto, #7A1E3A)'}`,
+          boxShadow: '0 12px 36px rgba(0,0,0,0.28)',
+          borderRadius: '50px',
+          padding: '10px 24px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '16px',
+          animation: 'slideUp 0.25s ease',
+          maxWidth: '92vw'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '1.25rem' }}>⚖️</span>
+            <span style={{ fontWeight: 800, fontSize: '0.9rem', color: darkMode ? '#ECECEC' : '#111827' }}>
+              {librosComparar.length} {librosComparar.length === 1 ? 'libro para comparar' : 'libros para comparar'}
+            </span>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <button
+              onClick={() => {
+                if (librosComparar.length < 2) {
+                  notify('Selecciona al menos 2 libros para comparar lado a lado', 'info');
+                  return;
+                }
+                setMostrarModalComparar(true);
+              }}
+              style={{
+                background: librosComparar.length >= 2 ? 'linear-gradient(135deg, #7A1E3A 0%, #902345 100%)' : '#9CA3AF',
+                color: '#FFFFFF',
+                border: 'none',
+                padding: '9px 20px',
+                borderRadius: '24px',
+                fontWeight: 800,
+                fontSize: '0.86rem',
+                cursor: librosComparar.length >= 2 ? 'pointer' : 'not-allowed',
+                boxShadow: librosComparar.length >= 2 ? '0 4px 12px rgba(122,30,58,0.35)' : 'none',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              <span>⇄</span>
+              <span>Ver Comparación {librosComparar.length >= 2 ? `(${librosComparar.length})` : ''}</span>
+            </button>
+
+            <button
+              onClick={() => {
+                setLibrosComparar([]);
+                setMostrarModalComparar(false);
+                try {
+                  localStorage.removeItem('bkh_libros_comparar');
+                  sessionStorage.removeItem('bkh_modal_comparar_abierto');
+                } catch {}
+                notify('Comparador limpiado', 'info');
+              }}
+              style={{
+                background: darkMode ? '#333' : '#F3F4F6',
+                border: `1px solid ${darkMode ? '#555' : '#D1D5DB'}`,
+                color: darkMode ? '#CCC' : '#4B5563',
+                padding: '8px 14px',
+                borderRadius: '24px',
+                fontWeight: 700,
+                fontSize: '0.8rem',
+                cursor: 'pointer'
+              }}
+              title="Limpiar libros seleccionados"
+            >
+              Limpiar
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Comparador Lado a Lado (RF-033) */}
+      {mostrarModalComparar && (
+        <ModalCompararLibros
+          librosIniciales={librosComparar}
+          onClose={() => {
+            setMostrarModalComparar(false);
+            try { sessionStorage.removeItem('bkh_modal_comparar_abierto'); } catch {}
+          }}
+          onQuitarLibro={(idLibro) => {
+            setLibrosComparar(prev => {
+              const actualizados = prev.filter(l => l.id_libro !== idLibro);
+              if (actualizados.length < 2) {
+                setMostrarModalComparar(false);
+                try { sessionStorage.removeItem('bkh_modal_comparar_abierto'); } catch {}
+              }
+              return actualizados;
+            });
+          }}
+          onAgregarAlCarrito={(libro) => {
+            handleAddToCart(libro);
+          }}
+          darkMode={darkMode}
+        />
       )}
     </main>
   );
