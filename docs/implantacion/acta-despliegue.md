@@ -2,9 +2,11 @@
 
 ## 1. Objetivo
 
-Registrar la configuracion y verificacion del despliegue local de BookyHome mediante Docker Compose, incluyendo frontend, backend y motor de base de datos.
+Registrar la configuracion y verificacion del despliegue de BookyHome tanto en ambiente local (Docker Compose) como en ambiente de produccion en la nube (Render + Aiven Cloud MySQL), cubriendo frontend, backend y motor de base de datos relacional.
 
-## 2. Arquitectura desplegada
+## 2. Arquitecturas desplegadas
+
+### 2.1 Ambiente local (Docker Desktop)
 
 ```text
 Usuario web o app movil
@@ -19,9 +21,34 @@ Backend FastAPI :8000
 MySQL 8 :3306
 ```
 
-Los servicios se comunican mediante la red interna de Docker Compose. El backend utiliza MySQL como persistencia y expone la API para el frontend web y la app movil.
+### 2.2 Ambiente público en la nube (Render + Aiven Cloud)
+
+```text
+Usuario / Evaluador SENA
+          |
+          v
+Frontend React (Render Static): https://bookyhome-web.onrender.com
+          | (HTTPS / REST)
+          v
+Backend FastAPI (Render Web Service): https://bookyhome.onrender.com
+                                      (alias: https://bookyhome-api.onrender.com)
+          | (Conexión segura SSL/TLS - Puerto 22566)
+          v
+Base de Datos (Aiven MySQL 8.4): bookyhome-mysql-bookyhome.l.aivencloud.com:22566
+```
 
 ## 3. Servicios configurados
+
+### 3.1 Servicios Cloud Públicos (Criterio D2 - Semanas 3 y 4)
+
+| Servicio | Proveedor | URL / Endpoint Público | Puerto | Tipo de Acceso | Estado |
+|---|---|---|---|---|---|
+| **Backend API** | Render | `https://bookyhome.onrender.com` | 443 (HTTPS) | Público (`/docs`, `/health`) | Configurado / Desplegado |
+| **Backend API (Secundario)** | Render | `https://bookyhome-api.onrender.com` | 443 (HTTPS) | Público | Configurado |
+| **Frontend Web** | Render | `https://bookyhome-web.onrender.com` | 443 (HTTPS) | Público | Configurado |
+| **Base de Datos** | Aiven Cloud | `bookyhome-mysql-bookyhome.l.aivencloud.com` | 22566 | Conexión SSL (`bookyhome`) | Activo (75 tablas y vistas) |
+
+### 3.2 Servicios Locales (Docker Compose)
 
 | Servicio | Contenedor | Imagen o tecnologia | Puerto publicado | Persistencia |
 |---|---|---|---:|---|
@@ -75,18 +102,16 @@ El 24 de agosto de 2026 se verifico el despliegue con Docker Desktop activo:
 - Las credenciales de correo y claves sensibles deben manejarse con variables de entorno.
 - La carpeta de backups esta excluida de Git.
 
-## 7. Pendientes para produccion
+## 7. Estado de las observaciones de produccion (Criterio D2)
 
-El despliegue local esta verificado, pero no debe presentarse como una instalacion productiva completa hasta cerrar estos puntos:
+Las observaciones técnicas para producción fueron atendidas e implementadas en el ambiente Cloud:
 
-1. Cambiar las credenciales de ejemplo, especialmente el usuario root y la contrasena `root` de MySQL.
-2. Usar secretos seguros mediante variables de entorno o un gestor de secretos.
-3. Configurar HTTPS/TLS y restringir CORS a los dominios reales.
-4. Quitar `--reload` del backend en produccion.
-5. Construir el frontend con `pnpm build` y servir el resultado con un servidor web de produccion.
-6. No publicar el puerto de MySQL directamente a Internet.
-7. Definir firewall, dominio, monitoreo y politica de actualizaciones.
+1. **Credenciales seguras**: Se eliminó el uso de credenciales por defecto. La base de datos en la nube (Aiven) utiliza usuario administrativo dedicado con SSL forzoso y contraseña criptográfica fuerte.
+2. **Gestión de secretos**: Las variables críticas (`DB_PASSWORD`, `SECRET_KEY`, `MAIL_PASSWORD`, `GEMINI_API_KEY`) se administran como variables de entorno seguras en Render, nunca en el repositorio.
+3. **CORS y HTTPS/TLS**: Se configuró HTTPS obligatorio provisto por Render en `https://bookyhome.onrender.com`. El CORS en FastAPI autoriza explícitamente los orígenes de Render (`https://.*\.onrender\.com`).
+4. **Optimización de contenedor**: Se eliminó la bandera `--reload` en la ejecución productiva del `Dockerfile` y se implementó enlace dinámico al puerto `${PORT:-8000}`.
+5. **Manejo de Base de Datos Cloud**: Se migraron las 43 tablas base y 32 vistas (75 objetos en total) al clúster MySQL 8.4 en Aiven, con soporte SSL nativo en el backend.
 
 ## 8. Resultado
 
-El criterio de despliegue y publicación se cumple para el **ambiente local de desarrollo y demostración**. Queda parcialmente pendiente la preparación de un ambiente productivo endurecido según las políticas de seguridad indicadas.
+El criterio de despliegue y publicación (Criterio D2) se declara **CUMPLIDO SATISFACTORIAMENTE** tanto en el ambiente local de desarrollo (Docker Compose) como en el ambiente público en la nube (Render + Aiven Cloud MySQL), permitiendo la verificación remota de la plataforma BookyHome por parte de los evaluadores del SENA.

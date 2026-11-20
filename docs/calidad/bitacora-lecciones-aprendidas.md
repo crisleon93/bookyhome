@@ -57,7 +57,7 @@ En la reunion de cierre de cada iteracion, el equipo revisara el estado de las a
 
 ## 11. Avance minimo del proyecto
 
-De acuerdo con el [Reporte de Estado de Requisitos](../requisitos/REPORTE_REQUISITOS.md), BookyHome tiene un avance verificado del **94.3%** sobre los requisitos funcionales y no funcionales: **50 de 53 requisitos implementados**. Este resultado **supera el avance minimo requerido del 90%** en 4.3 puntos porcentuales. El porcentaje fue recalculado en octubre 2026 tras verificacion directa en el codigo del frontend web y el backend.
+De acuerdo con el [Reporte de Estado de Requisitos](../REPORTE_REQUISITOS.md), BookyHome tiene un avance verificado del **94.3%** sobre los requisitos funcionales y no funcionales: **50 de 53 requisitos implementados**. Este resultado **supera el avance minimo requerido del 90%** en 4.3 puntos porcentuales. El porcentaje fue recalculado en octubre 2026 tras verificacion directa en el codigo del frontend web y el backend.
 
 El calculo se compone de:
 

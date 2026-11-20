@@ -62,7 +62,7 @@ def _check_ai_assistant() -> dict:
     return {"status": "degraded", "detail": "sin API key de IA"}
 
 
-@router.get("/health", tags=["Salud"])
+@router.api_route("/health", methods=["GET", "HEAD"], tags=["Salud"])
 def health():
     """
     Endpoint de salud.

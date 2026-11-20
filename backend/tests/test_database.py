@@ -219,3 +219,21 @@ class TestEnsureFunctions:
 
         assert mock_conn.rollback.call_count >= 5
 
+    def test_get_db_con_database_url(self):
+        mock_conn = MagicMock()
+        mock_conn.is_connected.return_value = True
+        env = {
+            "DATABASE_URL": "mysql://dbuser:dbpass@clouddb.io:3308/customdb",
+        }
+        with patch.dict(os.environ, env, clear=True), \
+             patch("mysql.connector.connect", return_value=mock_conn) as mock_connect:
+            from app.database import get_db
+            conn = get_db()
+            assert conn is mock_conn
+            _, kwargs = mock_connect.call_args
+            assert kwargs["host"] == "clouddb.io"
+            assert kwargs["port"] == 3308
+            assert kwargs["user"] == "dbuser"
+            assert kwargs["password"] == "dbpass"
+            assert kwargs["database"] == "customdb"
+

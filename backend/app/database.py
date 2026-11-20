@@ -234,24 +234,41 @@ def ensure_acceso_anticipado_libros_schema():
             db.close()
 
 
-def get_db():
+from urllib.parse import urlparse
+
+
+def get_db(intentos_maximos=10, segundos_espera=3):
     # ========================
-    # Configuración de conexión
+    # Configuración de conexión (compatible con local, Docker, Railway, Render, Aiven)
     # ========================
-    db_host = os.getenv('DB_HOST', 'mysql')
-    db_port = int(os.getenv('DB_PORT', '3306'))
-    db_user = os.getenv('DB_USER', 'root')
-    db_password = os.getenv('DB_PASSWORD', 'root')
-    db_name = os.getenv('DB_NAME', 'bookyhome')
+    db_host = os.getenv('DB_HOST') or os.getenv('MYSQLHOST') or os.getenv('MYSQL_HOST') or 'mysql'
+    db_port = int(os.getenv('DB_PORT') or os.getenv('MYSQLPORT') or os.getenv('MYSQL_PORT') or '3306')
+    db_user = os.getenv('DB_USER') or os.getenv('MYSQLUSER') or os.getenv('MYSQL_USER') or 'root'
+    db_password = os.getenv('DB_PASSWORD') or os.getenv('MYSQLPASSWORD') or os.getenv('MYSQL_PASSWORD') or 'root'
+    db_name = os.getenv('DB_NAME') or os.getenv('MYSQLDATABASE') or os.getenv('MYSQL_DATABASE') or 'bookyhome'
+
+    db_url = os.getenv('DATABASE_URL') or os.getenv('MYSQL_URL')
+    if db_url:
+        try:
+            parsed = urlparse(db_url)
+            if parsed.hostname:
+                db_host = parsed.hostname
+            if parsed.port:
+                db_port = parsed.port
+            if parsed.username:
+                db_user = parsed.username
+            if parsed.password:
+                db_password = parsed.password
+            if parsed.path and len(parsed.path) > 1:
+                db_name = parsed.path.lstrip('/')
+        except Exception:
+            pass
 
     hosts = [db_host]
     if db_host in {'mysql', 'localhost'}:
         hosts.extend(['127.0.0.1', 'localhost'])
     elif db_host == '127.0.0.1':
         hosts = ['127.0.0.1', 'localhost']
-
-    intentos_maximos = 10
-    segundos_espera = 3
 
     # ========================
     # Reintentos mientras MySQL se inicializa
@@ -260,6 +277,17 @@ def get_db():
         last_error = None
         for host in hosts:
             try:
+                # Parámetros opcionales de SSL (requerido por Aiven y otros proveedores cloud)
+                ssl_config = {}
+                if os.getenv("DB_SSL", "").lower() in ("true", "1", "required"):
+                    ssl_config["ssl_disabled"] = False
+                    ca_path = os.getenv("DB_SSL_CA")
+                    if ca_path and os.path.isfile(ca_path):
+                        ssl_config["ssl_ca"] = ca_path
+                elif host and not any(h in host for h in ("localhost", "127.0.0.1", "mysql")):
+                    # Hosts remotos: habilitar SSL por defecto
+                    ssl_config["ssl_disabled"] = False
+
                 conexion = mysql.connector.connect(
                     host=host,
                     port=db_port,
@@ -269,7 +297,8 @@ def get_db():
                     charset='utf8mb4',
                     use_unicode=True,
                     connection_timeout=10,
-                    use_pure=True
+                    use_pure=True,
+                    **ssl_config
                 )
                 if conexion.is_connected():
                     return conexion

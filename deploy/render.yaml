@@ -15,15 +15,17 @@ services:
     plan: free
     envVars:
       - key: DB_HOST
-        sync: false          # Se completa en el panel de Render
+        sync: false          # Host de Aiven MySQL
       - key: DB_PORT
-        value: "5432"        # Neon usa PostgreSQL
+        sync: false          # Puerto de Aiven (ej: 22566)
       - key: DB_USER
         sync: false
       - key: DB_PASSWORD
         sync: false
       - key: DB_NAME
         value: bookyhome
+      - key: DB_SSL
+        value: "required"
       - key: PUBLIC_API_URL
         value: https://bookyhome-api.onrender.com
       - key: FRONTEND_URL

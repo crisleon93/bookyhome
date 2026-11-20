@@ -159,3 +159,41 @@ class TestValidateConfigWarnings:
             resultado = validate_config()
         assert resultado["missing"] == []
         assert resultado["placeholder"] == []
+
+
+# ---------------------------------------------------------------------------
+# Compatibilidad con Railway / Render / URL de BD
+# ---------------------------------------------------------------------------
+
+class TestCompatibilidadEntornoCloud:
+    def test_resuelve_desde_database_url(self):
+        env = {
+            "DATABASE_URL": "mysql://user_cloud:pass_cloud@cloudhost.com:3307/db_cloud",
+            "SECRET_KEY": "clave_secreta_real_de_64_hex",
+        }
+        with patch.dict(os.environ, env, clear=True):
+            resultado = validate_config()
+            assert resultado["missing"] == []
+            assert os.environ["DB_HOST"] == "cloudhost.com"
+            assert os.environ["DB_PORT"] == "3307"
+            assert os.environ["DB_USER"] == "user_cloud"
+            assert os.environ["DB_PASSWORD"] == "pass_cloud"
+            assert os.environ["DB_NAME"] == "db_cloud"
+
+    def test_resuelve_desde_mysqlhost_railway(self):
+        env = {
+            "MYSQLHOST": "railway-host.internal",
+            "MYSQLPORT": "3306",
+            "MYSQLUSER": "railway_user",
+            "MYSQLPASSWORD": "railway_password",
+            "MYSQLDATABASE": "railway_db",
+            "SECRET_KEY": "clave_secreta_real_de_64_hex",
+        }
+        with patch.dict(os.environ, env, clear=True):
+            resultado = validate_config()
+            assert resultado["missing"] == []
+            assert os.environ["DB_HOST"] == "railway-host.internal"
+            assert os.environ["DB_PORT"] == "3306"
+            assert os.environ["DB_USER"] == "railway_user"
+            assert os.environ["DB_PASSWORD"] == "railway_password"
+            assert os.environ["DB_NAME"] == "railway_db"

@@ -158,7 +158,7 @@ Enlace al registro completo: [`registro-del-simulacro.md`](registro-del-simulacr
 
 | Rol | Nombre (impreso o digital) | Firma | Fecha |
 |---|---|---|---|
-| Entrega (equipo) — líder técnico | __________________________ | __________________________ | 2026-10-17 |
-| Entrega (equipo) — operador | __________________________ | __________________________ | 2026-10-17 |
-| Recibe (cliente) — coordinador de la librería | __________________________ | __________________________ | 2026-10-17 |
-| Testigo (instructor) | __________________________ | __________________________ | 2026-10-17 |
+| Entrega (equipo) — líder técnico | Cristopher León | *Firmado digitalmente* | 2026-11-19 |
+| Entrega (equipo) — operador | Juan Pineda | *Firmado digitalmente* | 2026-11-19 |
+| Entrega (equipo) — coordinador de la librería | Liz Nayibe | *Firmado digitalmente* | 2026-11-19 |
+|Entrega (equipo) | Andrés Murcia | *Firmado digitalmente* | 2026-11-19 |

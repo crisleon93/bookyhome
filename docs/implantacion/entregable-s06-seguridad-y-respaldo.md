@@ -203,56 +203,61 @@ Solo el puerto 443 (Caddy) responde desde fuera. Los puertos 3306 (MySQL) y 8000
 
 ---
 
-## 7.3 Roles de la base de datos
+## 7.3 Roles y usuarios de la base de datos
 
-BookyHome usa MySQL 8. Los roles se crean con `CREATE USER` + `GRANT` porque MySQL no tiene el concepto de roles separados de usuarios como PostgreSQL; el efecto es equivalente: cada rol es un usuario con un conjunto fijo de privilegios.
+BookyHome usa MySQL 8. Los roles y cuentas de usuario se gestionan mediante `CREATE USER` + `GRANT` aplicando el **Principio de Mínimo Privilegio (Principle of Least Privilege)**: cada integrante del equipo y servicio cuenta exclusivamente con los privilegios requeridos para su labor, evitando el uso de la cuenta `root` en el desarrollo y en producción.
 
-| Rol | Privilegios | No puede | Lo usa | Dónde vive su contraseña |
+| Usuario / Rol | Integrante / Función | Privilegios Otorgados | Restricciones de Seguridad | Dónde vive su contraseña |
 |---|---|---|---|---|
-| `bookyhome_owner` | `ALL PRIVILEGES ON bookyhome.*` (incluye CREATE, ALTER, DROP, INDEX) | Crear usuarios ni bases de datos (sin privilegios globales) | Migraciones (`database/migrations/*.sql`) | Gestor de contraseñas (Bitwarden) |
-| `bookyhome_app` | `SELECT, INSERT, UPDATE, DELETE ON bookyhome.*` | `CREATE`, `ALTER`, `DROP`, `TRUNCATE`, `INDEX`, `REFERENCES`, `GRANT OPTION` | La app (backend FastAPI, `.env.prod`) | `/opt/bookyhome/deploy/.env.prod` (permisos 600) |
+| `cristopher_admin` | Cristopher León | **Dueño / Administrador DBA** | `ALL PRIVILEGES ON bookyhome.* WITH GRANT OPTION` | Control total del esquema, migraciones DDL y administración de cuentas del equipo | Gestor de contraseñas |
+| `liz_nayibe` | Liz Nayibe | **Desarrolladora (DML)** | `SELECT, INSERT, UPDATE, DELETE ON bookyhome.*` | `DROP`, `ALTER`, `CREATE`, `GRANT OPTION` denegados | Entorno local / MySQL Workbench |
+| `juan_pineda` | Juan Pineda | **Desarrollador (DML)** | `SELECT, INSERT, UPDATE, DELETE ON bookyhome.*` | `DROP`, `ALTER`, `CREATE`, `GRANT OPTION` denegados | Entorno local / MySQL Workbench |
+| `andres_murcia` | Andrés Murcia | **Desarrollador (DML)** | `SELECT, INSERT, UPDATE, DELETE ON bookyhome.*` | `DROP`, `ALTER`, `CREATE`, `GRANT OPTION` denegados | Entorno local / MySQL Workbench |
+| `bookyhome_app` | Backend FastAPI | **Usuario de Servicio (Aplicación)** | `SELECT, INSERT, UPDATE, DELETE ON bookyhome.*` | `CREATE`, `ALTER`, `DROP`, `TRUNCATE`, `INDEX`, `GRANT OPTION` denegados | `.env.prod` (permisos 600) / Variables en Render |
 
-Enlace al script de roles en el repositorio: [`scripts/crear-roles-bd.sh`](../../scripts/crear-roles-bd.sh)
-
-El script no contiene contraseñas reales: las genera con `openssl rand -base64 24` si no se pasan por variables de entorno, y las muestra una sola vez para anotarlas en el gestor de contraseñas.
+Enlace a la migración inicial de roles en el repositorio: [`database/migrations/000_usuarios_y_privilegios_equipo.sql`](../../database/migrations/000_usuarios_y_privilegios_equipo.sql)  
+Enlace al script de automatización: [`scripts/crear-roles-bd.sh`](../../scripts/crear-roles-bd.sh)  
+Documento complementario de evidencia técnica: [`docs/calidad/gestion-usuarios-base-datos.md`](../calidad/gestion-usuarios-base-datos.md)
 
 ### ¿Cómo se aplican las migraciones con el rol dueño en tu despliegue?
 
-1. El operador (`luis`) se conecta al servidor por SSH con su llave.
-2. Ejecuta las migraciones con el rol `bookyhome_owner` (no con `root` ni con `bookyhome_app`):
+1. El administrador (`cristopher_admin` / operador) se conecta al entorno o servidor.
+2. Ejecuta las migraciones con el rol administrador (no con `root` ni con `bookyhome_app`):
 
 ```bash
-# En el servidor, desde /opt/bookyhome
-export DB_MIGRATION_PASSWORD=$(cat /opt/bookyhome/deploy/.env.prod | grep DB_MIGRATION_PASSWORD | cut -d= -f2)
-
+# Aplicación de migraciones secuenciales desde 000
 for f in database/migrations/*.sql; do
   echo "Aplicando: $f"
   docker exec -i bookyhome-mysql \
-    mysql -u bookyhome_owner -p"$DB_MIGRATION_PASSWORD" bookyhome \
+    mysql -u cristopher_admin -p"$DB_MIGRATION_PASSWORD" bookyhome \
     < "$f"
 done
 ```
 
-3. La aplicación (backend FastAPI) se conecta siempre con `bookyhome_app`, que no tiene privilegios DDL. Si alguien encuentra una inyección SQL en la API, el peor caso es manipular o borrar filas de tablas existentes; no puede crear, alterar ni borrar tablas, ni escalar a otras bases de datos.
+3. La aplicación (backend FastAPI) se conecta siempre con `bookyhome_app`, que no tiene privilegios DDL. Si alguien encuentra una inyección SQL en la API, el peor caso es manipular o consultar filas de tablas existentes; no puede crear, alterar ni borrar tablas (`DROP TABLE`), ni escalar a otras bases de datos.
 
-4. El rol `root` de MySQL solo se usa para la creación inicial de la base, los roles y emergencias. La contraseña de root no está en `.env.prod` ni en el repositorio.
+4. El rol `root` de MySQL solo se usa para la inicialización del contenedor y emergencias de bajo nivel. La contraseña de root no está en `.env.prod` ni en el repositorio.
 
 ---
 
 ## 7.4 Pruebas de privilegios
 
-| Rol | Operación | Esperado | Obtenido |
+| Usuario / Rol | Operación | Esperado | Obtenido (Evidencia MySQL Workbench / CLI) |
 |---|---|---|---|
-| `bookyhome_app` | `DROP TABLE usuarios` | Error: sin permiso | `ERROR 1142 (42000): DROP command denied to user 'bookyhome_app'@'%' for table 'usuarios'` |
-| `bookyhome_app` | `CREATE TABLE hack (id INT)` | Error: sin permiso | `ERROR 1142 (42000): CREATE command denied to user 'bookyhome_app'@'%' for database 'bookyhome'` |
-| `bookyhome_app` | `ALTER TABLE libros ADD COLUMN x INT` | Error: sin permiso | `ERROR 1142 (42000): ALTER command denied to user 'bookyhome_app'@'%' for table 'libros'` |
-| `bookyhome_app` | `TRUNCATE TABLE usuarios` | Error: sin permiso | `ERROR 1142 (42000): DROP command denied to user 'bookyhome_app'@'%' for table 'usuarios'` |
-| `bookyhome_app` | `SELECT * FROM usuarios` | Datos visibles | 285 filas devueltas ✅ |
+| `liz_nayibe` | `DROP TABLE usuarios` | Error: sin permiso | `ERROR 1142 (42000): DROP command denied to user 'liz_nayibe'@'172.18.0.1' for table 'usuarios'` ✅ |
+| `liz_nayibe` | `SELECT id_libro, titulo, autor_libro, precio_libro, stock FROM libros LIMIT 5` | Datos visibles | 5 filas devueltas (`El nombre del viento`, `Orgullo y prejuicio`, etc.) ✅ |
+| `juan_pineda` | `DROP TABLE tiendas` | Error: sin permiso | `ERROR 1142 (42000): DROP command denied to user 'juan_pineda'@'%' for table 'tiendas'` ✅ |
+| `andres_murcia` | `ALTER TABLE libros ADD COLUMN test INT` | Error: sin permiso | `ERROR 1142 (42000): ALTER command denied to user 'andres_murcia'@'%' for table 'libros'` ✅ |
+| `bookyhome_app` | `DROP TABLE usuarios` | Error: sin permiso | `ERROR 1142 (42000): DROP command denied to user 'bookyhome_app'@'%' for table 'usuarios'` ✅ |
+| `bookyhome_app` | `CREATE TABLE hack (id INT)` | Error: sin permiso | `ERROR 1142 (42000): CREATE command denied to user 'bookyhome_app'@'%' for database 'bookyhome'` ✅ |
+| `bookyhome_app` | `ALTER TABLE libros ADD COLUMN x INT` | Error: sin permiso | `ERROR 1142 (42000): ALTER command denied to user 'bookyhome_app'@'%' for table 'libros'` ✅ |
+| `bookyhome_app` | `TRUNCATE TABLE usuarios` | Error: sin permiso | `ERROR 1142 (42000): DROP command denied to user 'bookyhome_app'@'%' for table 'usuarios'` ✅ |
+| `bookyhome_app` | `SELECT * FROM usuarios` | Datos visibles | Filas devueltas correctamente ✅ |
 | `bookyhome_app` | `INSERT INTO tiendas (...) VALUES (...)` | Fila insertada | 1 fila afectada ✅ |
-| `bookyhome_app` | `GRANT SELECT ON bookyhome.* TO 'otro'@'%'` | Error: sin permiso | `ERROR 1044 (42000): Access denied for user 'bookyhome_app'@'%' to database 'bookyhome'` |
-| `bookyhome_owner` | `CREATE TABLE prueba_permisos (id INT)` | Tabla creada | Query OK, 0 rows affected ✅ |
-| `bookyhome_owner` | `DROP TABLE prueba_permisos` | Tabla eliminada | Query OK, 0 rows affected ✅ |
-| `bookyhome_owner` | `CREATE USER 'intruso'@'%' IDENTIFIED BY 'x'` | Error: sin permiso global | `ERROR 1227 (42000): Access denied; you need (at least one of) the CREATE USER privilege(s) for this operation` |
+| `bookyhome_app` | `GRANT SELECT ON bookyhome.* TO 'otro'@'%'` | Error: sin permiso | `ERROR 1044 (42000): Access denied for user 'bookyhome_app'@'%' to database 'bookyhome'` ✅ |
+| `cristopher_admin` | `CREATE TABLE prueba_permisos (id INT)` | Tabla creada | Query OK, 0 rows affected ✅ |
+| `cristopher_admin` | `DROP TABLE prueba_permisos` | Tabla eliminada | Query OK, 0 rows affected ✅ |
+| `cristopher_admin` | `SHOW GRANTS` | Privilegios globales de DB | `GRANT ALL PRIVILEGES ON bookyhome.* TO 'cristopher_admin'@'%' WITH GRANT OPTION` ✅ |
 | `respaldo` | `docker exec bookyhome-mysql mysqldump ...` | Volcado generado | 174 MB generados ✅ |
 
 ---

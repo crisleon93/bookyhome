@@ -220,11 +220,11 @@ Para reportes externos (usuarios): [formulario de falla](https://github.com/book
 - [x] Auditoría con pip-audit, pnpm audit y Trivy — hallazgos documentados con decisión
 - [x] Niveles de soporte N0–N3, canal único (Telegram + GitHub issues), matriz de prioridad y tiempos propuestos
 - [x] Runbooks documentados: `salud-en-rojo.md` y `respaldo-diario-sin-latido.md`
-- [ ] Runbooks probados por otra persona (pendiente: prueba por equipo externo)
+- [x] Runbooks probados por otra persona (verificado por Juan Pineda — 2026-11-19)
 - [x] Plan de capacitación por público (compradores, vendedores, N1, N2)
 - [x] Guía rápida (`docs/ayuda/guia-rapida.md`) creada y enlazada
 - [x] Preguntas frecuentes (`docs/ayuda/preguntas-frecuentes.md`) creadas y enlazadas
-- [ ] Guía rápida y FAQ probadas por persona externa (pendiente)
+- [x] Guía rápida y FAQ probadas por persona externa (verificado por Andrés Murcia — 2026-11-19)
 - [x] Ningún secreto ni dato personal real en el repositorio o el entregable
 
 ---

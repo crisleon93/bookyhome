@@ -542,27 +542,32 @@ SSH endurecido (`/etc/ssh/sshd_config.d/10-endurecer.conf`): `PasswordAuthentica
 
 UFW: `default deny incoming`; puertos abiertos: 22 (SSH), 80/443 (Caddy). MySQL (3306) y API (8000) no expuestos al host (solo red interna Docker). Ver evidencia con `docker compose ps` y `nc -zv` desde otro equipo en el entregable.
 
-### 7.3 Roles de la base de datos
+### 7.3 Roles y usuarios de la base de datos
 
-| Rol | Privilegios | No puede | Lo usa | Dónde vive la contraseña |
+| Usuario / Rol | Integrante / Función | Privilegios | Restricciones de Seguridad | Dónde vive la contraseña |
 |---|---|---|---|---|
-| `bookyhome_owner` | `ALL PRIVILEGES ON bookyhome.*` (DDL incluido) | Crear usuarios ni bases | Migraciones | Gestor de contraseñas (Bitwarden) |
-| `bookyhome_app` | `SELECT, INSERT, UPDATE, DELETE` | `CREATE`, `ALTER`, `DROP`, `TRUNCATE`, `INDEX`, `GRANT` | La app (backend) | `.env.prod` del servidor (600) |
+| `cristopher_admin` | Cristopher León | `ALL PRIVILEGES ON bookyhome.* WITH GRANT OPTION` | Control total del esquema y gestión de cuentas | Gestor de contraseñas |
+| `liz_nayibe` | Liz Nayibe | `SELECT, INSERT, UPDATE, DELETE` | `CREATE`, `ALTER`, `DROP`, `GRANT` denegados | Entorno local / MySQL Workbench |
+| `juan_pineda` | Juan Pineda | `SELECT, INSERT, UPDATE, DELETE` | `CREATE`, `ALTER`, `DROP`, `GRANT` denegados | Entorno local / MySQL Workbench |
+| `andres_murcia` | Andrés Murcia | `SELECT, INSERT, UPDATE, DELETE` | `CREATE`, `ALTER`, `DROP`, `GRANT` denegados | Entorno local / MySQL Workbench |
+| `bookyhome_app` | Backend FastAPI | `SELECT, INSERT, UPDATE, DELETE` | `CREATE`, `ALTER`, `DROP`, `TRUNCATE`, `INDEX`, `GRANT` | `.env.prod` del servidor (600) / Render |
 
-Script: [`scripts/crear-roles-bd.sh`](../../scripts/crear-roles-bd.sh) (sin contraseñas reales; las genera con `openssl rand`).
+Scripts y migraciones: [`database/migrations/000_usuarios_y_privilegios_equipo.sql`](../../database/migrations/000_usuarios_y_privilegios_equipo.sql) y [`scripts/crear-roles-bd.sh`](../../scripts/crear-roles-bd.sh).
 
 ### 7.4 Pruebas de privilegios
 
-| Rol | Operación | Resultado |
+| Usuario / Rol | Operación | Resultado |
 |---|---|---|
+| `liz_nayibe` | `DROP TABLE usuarios` | ❌ `ERROR 1142: DROP command denied` |
+| `liz_nayibe` | `SELECT id_libro, titulo, ... FROM libros` | ✅ 5 filas devueltas |
 | `bookyhome_app` | `DROP TABLE usuarios` | ❌ `DROP command denied` |
 | `bookyhome_app` | `CREATE TABLE hack (id INT)` | ❌ `CREATE command denied` |
 | `bookyhome_app` | `ALTER TABLE libros ADD COLUMN x INT` | ❌ `ALTER command denied` |
 | `bookyhome_app` | `TRUNCATE TABLE usuarios` | ❌ `DROP command denied` |
 | `bookyhome_app` | `GRANT SELECT ON bookyhome.* TO 'otro'@'%'` | ❌ `Access denied` |
 | `bookyhome_app` | `SELECT * FROM usuarios` | ✅ 285 filas |
-| `bookyhome_owner` | `CREATE TABLE prueba (id INT)` | ✅ Tabla creada |
-| `bookyhome_owner` | `CREATE USER 'intruso'@'%'` | ❌ `Access denied; you need CREATE USER` |
+| `cristopher_admin` | `CREATE TABLE prueba (id INT)` | ✅ Tabla creada |
+| `cristopher_admin` | `SHOW GRANTS` | ✅ Control total con GRANT OPTION |
 
 ### 7.5 Inventario de secretos
 

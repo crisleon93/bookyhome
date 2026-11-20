@@ -69,7 +69,14 @@ from app.routers.bookypago_finanzas import router as bookypago_finanzas_router
 from app.routers.calificaciones_tiendas import router as calificaciones_tiendas_router
 from app.routers.asistente import router as asistente_router
 from app.routers.health import router as health_router
-from app.database import ensure_quejas_schema, ensure_banner_perfil_schema, ensure_retiro_schema, ensure_tarifa_envio_schema, ensure_acceso_anticipado_libros_schema
+from app.database import (
+    get_db,
+    ensure_quejas_schema,
+    ensure_banner_perfil_schema,
+    ensure_retiro_schema,
+    ensure_tarifa_envio_schema,
+    ensure_acceso_anticipado_libros_schema,
+)
 from app.config import validate_config
 
 
@@ -91,8 +98,25 @@ scheduler.add_job(ejecutar_auto_confirmacion, "cron", hour=3, minute=0, id="auto
 # Expira impulsos vencidos cada hora
 scheduler.add_job(expirar_impulsos_vencidos, "interval", minutes=60, id="expirar_impulsos")
 
+def init_all_schemas():
+    """Ejecuta migraciones ligeras al arrancar si la base de datos está disponible."""
+    try:
+        conn = get_db(intentos_maximos=2, segundos_espera=1)
+        conn.close()
+    except Exception as exc:
+        import sys
+        print(f"[DATABASE] Saltando inicialización de esquemas al arrancar (BD aún no disponible): {exc}", file=sys.stderr, flush=True)
+        return
+    ensure_quejas_schema()
+    ensure_banner_perfil_schema()
+    ensure_retiro_schema()
+    ensure_tarifa_envio_schema()
+    ensure_acceso_anticipado_libros_schema()
+
+
 @asynccontextmanager
 async def lifespan(app):
+    init_all_schemas()
     scheduler.start()
     try:
         yield
@@ -100,11 +124,6 @@ async def lifespan(app):
         scheduler.shutdown(wait=False)
 
 app = FastAPI(lifespan=lifespan)
-ensure_quejas_schema()
-ensure_banner_perfil_schema()
-ensure_retiro_schema()
-ensure_tarifa_envio_schema()
-ensure_acceso_anticipado_libros_schema()
 
 
 # ========================
@@ -118,6 +137,9 @@ origins = [
     "http://127.0.0.1:8081",
     "http://localhost:8082",       # Expo web (puerto alternativo)
     "http://127.0.0.1:8082",
+    "https://bookyhome.onrender.com",
+    "https://bookyhome-web.onrender.com",
+    "https://bookyhome-api.onrender.com",
 ]
 
 # Permite payloads de hasta 20MB (necesario para audio base64 en mensajes de voz)
@@ -142,7 +164,7 @@ app.add_middleware(MaxBodySizeMiddleware, max_body_size=20 * 1024 * 1024)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
-    allow_origin_regex=r"https?://(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+):\d+",
+    allow_origin_regex=r"(https?://(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+)(:\d+)?|https://.*\.onrender\.com|https://.*\.railway\.app)",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -211,10 +233,8 @@ app.include_router(bookypago_finanzas_router, prefix="/api/v1/bookypago-finanzas
 app.include_router(health_router, tags=["Salud"])
 
 
-@app.get("/")
-
+@app.api_route("/", methods=["GET", "HEAD"])
 def root():
-
     return {"mensaje": "BookyHome API funcionando"}
 
 

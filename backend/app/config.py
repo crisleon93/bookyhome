@@ -40,6 +40,38 @@ OPTIONAL_VARS = [
 ]
 
 
+def _resolver_compatibilidad_entorno():
+    """Mapea variables de Railway / Aiven / Render / URLs a nombres estándar."""
+    db_url = os.getenv("DATABASE_URL") or os.getenv("MYSQL_URL")
+    if db_url:
+        try:
+            from urllib.parse import urlparse
+            parsed = urlparse(db_url)
+            if parsed.hostname and not os.getenv("DB_HOST"):
+                os.environ["DB_HOST"] = parsed.hostname
+            if parsed.port and not os.getenv("DB_PORT"):
+                os.environ["DB_PORT"] = str(parsed.port)
+            if parsed.username and not os.getenv("DB_USER"):
+                os.environ["DB_USER"] = parsed.username
+            if parsed.password and not os.getenv("DB_PASSWORD"):
+                os.environ["DB_PASSWORD"] = parsed.password
+            if parsed.path and len(parsed.path) > 1 and not os.getenv("DB_NAME"):
+                os.environ["DB_NAME"] = parsed.path.lstrip("/")
+        except Exception:
+            pass
+
+    if not os.getenv("DB_HOST") and os.getenv("MYSQLHOST"):
+        os.environ["DB_HOST"] = os.getenv("MYSQLHOST")
+    if not os.getenv("DB_PORT") and os.getenv("MYSQLPORT"):
+        os.environ["DB_PORT"] = str(os.getenv("MYSQLPORT"))
+    if not os.getenv("DB_USER") and os.getenv("MYSQLUSER"):
+        os.environ["DB_USER"] = os.getenv("MYSQLUSER")
+    if not os.getenv("DB_PASSWORD") and os.getenv("MYSQLPASSWORD"):
+        os.environ["DB_PASSWORD"] = os.getenv("MYSQLPASSWORD")
+    if not os.getenv("DB_NAME") and os.getenv("MYSQLDATABASE"):
+        os.environ["DB_NAME"] = os.getenv("MYSQLDATABASE")
+
+
 def _is_placeholder(value: str) -> bool:
     """Detecta valores de ejemplo que el desarrollador olvidó reemplazar."""
     placeholders = {
@@ -62,6 +94,8 @@ def validate_config() -> dict:
     Retorna un dict con el estado de cada variable.
     Si falta una obligatoria, termina el proceso con exit(1) y un mensaje claro.
     """
+    _resolver_compatibilidad_entorno()
+
     missing = []
     placeholder = []
     warnings = []
