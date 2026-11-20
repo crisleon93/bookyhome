@@ -178,7 +178,9 @@ flowchart TD
     publish["Publica imágenes en GHCR"]
     test["Levanta stack de prueba<br/>y ejecuta smoke test"]
     deploy["Solicita despliegue en Render"]
-    verify{"¿Versión esperada y<br/>smoke test de producción OK?"}
+    verifyVersion{"¿/health reporta la versión esperada<br/>tras los reintentos?"}
+    smokeProduction["Ejecuta smoke test de producción"]
+    verifySmoke{"¿Smoke test pasa?"}
     release([Release verificado])
     blocked([CI bloquea el PR;<br/>corregir y volver a ejecutar])
     failure([Falló verificación del release;<br/>revisar deploy y logs])
@@ -195,10 +197,13 @@ flowchart TD
 
     commit --> ci
     ci -- Sí --> mysql --> migrations --> stack --> smoke --> unit --> merge
-    merge -- Sí --> tag --> build --> publish --> test --> deploy --> verify
+    merge -- Sí --> tag --> build --> publish --> test --> deploy --> verifyVersion
     merge -- No --> blocked --> commit
-    verify -- Sí --> release
-    verify -- No --> failure
+    verifyVersion -- Sí --> smokeProduction
+    verifyVersion -- "No: el workflow continúa" --> smokeProduction
+    smokeProduction --> verifySmoke
+    verifySmoke -- Sí --> release
+    verifySmoke -- No --> failure
     failure -. "Si se decide revertir" .-> manual --> restore --> rollbackVerify
     rollbackVerify -- Sí --> rollbackDone
     rollbackVerify -- No --> failure
@@ -206,7 +211,7 @@ flowchart TD
     deployvm -- "Health o humo falla" --> rbvm --> deployvm
 ```
 
-`ci.yml`, `release.yml` y `rollback.yml` describen rutas distintas. El procedimiento `scripts/desplegar.sh` es la ruta de despliegue de servidor propio, con respaldo previo y rollback automático. El Blueprint de Render/Neon se conserva como alternativa documentada; la implantación advierte que Neon/PostgreSQL no es compatible directamente con el backend MySQL y requiere adaptar el motor o alojar backend y MySQL en una red compatible. En los workflows actuales, los comandos de migración y el paso de pruebas unitarias de CI toleran errores (`|| true`); por ello, el resultado verde no certifica por sí solo que todas las migraciones o pruebas unitarias hayan pasado.
+`ci.yml`, `release.yml` y `rollback.yml` describen rutas distintas. El procedimiento `scripts/desplegar.sh` es la ruta de despliegue de servidor propio, con respaldo previo y rollback automático. El Blueprint de Render/Neon se conserva como alternativa documentada; la implantación advierte que Neon/PostgreSQL no es compatible directamente con el backend MySQL y requiere adaptar el motor o alojar backend y MySQL en una red compatible. En los workflows actuales, los comandos de migración y el paso de pruebas unitarias de CI toleran errores (`|| true`); por ello, el resultado verde no certifica por sí solo que todas las migraciones o pruebas unitarias hayan pasado. Además, `release.yml` registra la versión reportada por `/health`, pero no falla explícitamente si no coincide después de los reintentos: en ese caso continúa con el smoke test. El script de despliegue de servidor propio sí exige la versión esperada y ejecuta rollback si no coincide.
 
 ## 3. Identidad, sesión y autorización
 
@@ -271,11 +276,11 @@ flowchart TD
     auth["Inicia sesión / regístrate"]
     action{"Elige una acción"}
     favorite["Guarda o quita favorito;<br/>administra lista de deseos"]
-    share["Comparte publicación<br/>si la función está disponible"]
+    share["Compartir publicación<br/>HU-027: pendiente"]
     compare["Comparación lado a lado<br/>RF-033: pendiente / postergada"]
-    recommendations["Recomendaciones personalizadas<br/>según historial, si la función activa lo permite"]
+    recommendations["Recomendaciones personalizadas<br/>HU-009 / HU-026: pendientes"]
     cart["Agrega libro y variante<br/>al carrito autenticado"]
-    history["Registra y consulta actividad<br/>según las pantallas/endpoints activos"]
+    history["Consulta historial disponible;<br/>registro automático de actividad pendiente"]
 
     visit --> list --> search --> results
     results -- No --> empty --> search
@@ -285,13 +290,13 @@ flowchart TD
     login -- "Sí" --> auth --> action
     action -- "Favorito / lista" --> favorite
     action -- "Agregar a carrito" --> cart
+    action -- "Consultar historial" --> history
     detail -.-> share
     detail -.-> compare
     detail -.-> recommendations
-    detail --> history
 ```
 
-El catálogo público permite navegar, buscar, filtrar y consultar el detalle. Las acciones personales requieren autenticación. La matriz documental marca recomendaciones y compartir publicaciones dentro del alcance; su disponibilidad concreta depende de la pantalla y el endpoint implementados. RF-033 no se representa como una función terminada.
+El catálogo público permite navegar, buscar, filtrar y consultar el detalle. Las acciones personales requieren autenticación. Compartir publicaciones y las recomendaciones no se encontraron implementadas; se muestran como pendientes, no como acciones activas. La pantalla de historial permite consultar interacciones, pero no se encontraron llamadas automáticas desde la navegación para registrarlas. RF-033 no se representa como una función terminada.
 
 ### 4.2 Carrito, checkout, pago y pedido
 
@@ -307,61 +312,78 @@ flowchart TD
     review["Revisa carrito"]
     direct["Desde el detalle selecciona<br/>libro/cantidad para Comprar ahora"]
     reviewDirect["Continúa al checkout<br/>directo"]
-    quantity["Cantidad de un ítem existente"]
-    qstatus{"¿La cambia de forma<br/>independiente?"}
-    partial["RF-034 parcial: la documentación<br/>reporta que falta endpoint/control<br/>de actualización de cantidad"]
+    quantity["Intenta cambiar la cantidad<br/>de un ítem existente"]
+    partial["RF-034 parcial: la API no tiene<br/>operación independiente de actualización;<br/>agregar el mismo libro suma cantidad"]
     delivery{"¿Domicilio o retiro en tienda?"}
     address{"¿Dirección requerida<br/>y disponible?"}
-    choose["Valida/aplica cupón cuando corresponde;<br/>calcula subtotal, envío por tienda<br/>y total; retiro puede no cobrar envío"]
+    choose["Calcula subtotal, envío por tienda<br/>y total; retiro puede no cobrar envío"]
+    coupon{"¿Comprador usa cupón?"}
+    couponFlow["Valida cupón antes del pedido"]
     orderTiming{"¿Compra normal<br/>o Comprar ahora?"}
     order["Checkout del carrito crea<br/>orden pendiente y vacía carrito"]
     pay["Envía solicitud de pago"]
     payment{"¿Validaciones internas<br/>de pago satisfactorias?"}
-    orderCreated{"¿Orden ya creada<br/>en checkout?"}
-    directOrder["Comprar ahora crea orden<br/>durante el flujo de pago y retira<br/>solo ese libro del carrito"]
+    directOrder["Comprar ahora crea orden<br/>al iniciar la confirmación de pago;<br/>retira solo ese libro del carrito"]
+    orderReady["Orden creada;<br/>continúa según entrega"]
+    deliveryFlow{"¿Cómo se entrega?"}
     fail([Muestra rechazo o error;<br/>permite corregir/reintentar])
     paid["La aplicación registra pago/orden<br/>y procesos financieros/notificaciones"]
     shipping{"¿Tipo de entrega?"}
     ship["Vendedor despacha y registra<br/>empresa/guía de envío"]
-    pickup["Retiro: reserva, PIN/fecha<br/>y confirmación en tienda"]
+    pickup["Reserva de retiro y PIN/fecha;<br/>aún no se cobra"]
+    arrival["Comprador notifica que llegó<br/>a la tienda"]
+    enablePickupPay["Vendedor verifica y habilita<br/>el pago de retiro"]
+    pickupPay["Comprador realiza el pago"]
+    pickupDelivery["Vendedor confirma entrega<br/>del libro"]
+    couponUsed{"¿Se usó un cupón?"}
+    applyCoupon["Tras el pago, intenta registrar<br/>el uso del cupón"]
     delivered["Se confirma entrega"]
     history["Comprador consulta pedidos,<br/>historial y estado"]
-    cancel["Opcional: solicita cancelar<br/>si el estado de la orden lo permite"]
-    reviewAfter["Puede solicitar reseña verificada<br/>si cumple la compra elegible"]
+    cancel["Opcional: solicita cancelación;<br/>API actual no valida el estado permitido"]
+    reviewAfter["Puede publicar reseña tras compra entregada;<br/>no hay distintivo visual verificado"]
     return["Puede solicitar devolución<br/>si la orden cumple elegibilidad;<br/>revisión/cambio de estado es limitado"]
     finish([Flujo de compra consultable])
 
     start --> mode
     mode -- "Carrito" --> add --> stockCart
     stockCart -- No --> reject
-    stockCart -- Sí --> persist --> review --> quantity --> qstatus
+    stockCart -- Sí --> persist --> review
+    review --> delivery
+    review -. "Intento de cambiar cantidad" .-> quantity --> partial
     mode -- "Comprar ahora" --> direct --> stockDirect
     stockDirect -- No --> reject
     stockDirect -- Sí --> reviewDirect
-    qstatus -- "No / limitación conocida" --> partial --> delivery
-    qstatus -- "Sí, cuando la acción está disponible" --> delivery
     delivery -- Domicilio --> address
     address -- No --> fail
     address -- Sí --> choose
     delivery -- "Retiro en tienda" --> choose
-    choose --> orderTiming
-    orderTiming -- "Carrito" --> order --> pay
-    orderTiming -- "Comprar ahora" --> pay
+    choose --> coupon
+    coupon -- Sí --> couponFlow --> orderTiming
+    coupon -- No --> orderTiming
+    orderTiming -- "Carrito" --> order --> orderReady
+    orderTiming -- "Comprar ahora" --> directOrder --> orderReady
+    orderReady --> deliveryFlow
+    deliveryFlow -- Domicilio --> pay
+    deliveryFlow -- Retiro --> pickup --> arrival --> enablePickupPay --> pickupPay --> pay
     pay --> payment
     payment -- No --> fail
-    payment -- Sí --> orderCreated
-    orderCreated -- Sí --> paid
-    orderCreated -- No --> directOrder --> paid
+    payment -- Sí --> paid
     reviewDirect --> delivery
+    paid --> shipping
+    paid --> couponUsed
+    couponUsed -- Sí --> applyCoupon --> history
+    couponUsed -- No --> history
+    paid --> history
     shipping -- Domicilio --> ship --> delivered
-    shipping -- Retiro --> pickup --> delivered
+    shipping -- Retiro --> pickupDelivery
+    pickupDelivery --> delivered
     delivered --> history
     history -. "Opcional, según estado" .-> cancel --> finish
     history -. "Opcional, si es elegible" .-> reviewAfter --> finish
     history -. "Opcional, si cumple condiciones" .-> return --> finish
 ```
 
-La web y la app móvil ofrecen entrada al carrito, checkout y seguimiento, con pantallas distintas. El checkout normal crea una orden antes de pagar; «Comprar ahora» sigue una ruta que crea la orden desde el flujo de pago y quita ese libro del carrito. Se pueden aplicar cupones y calcular el envío por tienda; el retiro puede usar reserva, PIN y confirmación de llegada/entrega. La confirmación de entrega despachada también puede ejecutarse automáticamente después de diez días desde el despacho.
+La web y la app móvil ofrecen entrada al carrito, checkout y seguimiento, con pantallas distintas. El checkout normal crea una orden antes de pagar; «Comprar ahora» sigue una ruta que crea la orden al iniciar la confirmación de pago y quita ese libro del carrito. La pantalla valida el cupón antes del pedido y, tras un pago exitoso, intenta registrar su uso; los errores al aplicar el cupón no bloquean el mensaje de éxito. El endpoint de pago acepta montos menores al total sin comprobar que el descuento corresponda al cupón; el pago se anota en el registro de inconsistencias. Se calcula el envío por tienda; en retiro se genera una reserva/PIN, el comprador notifica su llegada y el vendedor habilita el pago y confirma la entrega. La confirmación de entrega despachada también puede ejecutarse automáticamente después de diez días desde el despacho.
 
 Los almacenes JSON mantienen datos de carrito/órdenes y el backend intenta sincronizar partes con MySQL; ciertos fallos de persistencia SQL no cancelan todas las respuestas de la operación. La solicitud de pago se procesa dentro de la aplicación y se registra como aprobada por el flujo actual: no se identificó confirmación de una pasarela externa real. No se debe dibujar esta persistencia como una transacción distribuida atómica. Las devoluciones permiten consultar elegibilidad y registrar una solicitud; el router expone un flujo limitado para su decisión/cambio de estado.
 
@@ -449,13 +471,14 @@ flowchart TD
     realtime["WebSocket notifica en tiempo real<br/>a participantes conectados"]
     createNotif["Crea notificación<br/>para el destinatario"]
     read["Marca conversación como leída"]
-    notif["Consulta/marca notificaciones<br/>de mensajes, pedidos y novedades"]
-    review["Crea o edita reseña/comentario"]
-    eligible{"¿Cumple reglas de reseña<br/>y compra verificada?"}
-    verified["Guarda reseña y distintivo<br/>si compra elegible"]
+    notif["Consulta/marca notificaciones<br/>de mensajes, pedidos y novedades;<br/>sin segmentación por intereses"]
+    review["Crea reseña"]
+    eligible{"¿La compra entregada<br/>es elegible?"}
+    verified["Guarda reseña;<br/>sin distintivo visual verificado"]
     invalid([Rechaza duplicado o<br/>compra no elegible])
-    history["Actividad/historial de interacción<br/>se registra o consulta"]
-    complaint["Crea reporte/reclamo;<br/>adjunta evidencia si corresponde"]
+    history["Consulta historial disponible;<br/>registro automático pendiente"]
+    complaint["Crea reclamo asociado<br/>a orden o soporte"]
+    postReport["HU-008 pendiente:<br/>no existe reporte desde publicación"]
     validate{"¿Pertenece al usuario<br/>y pasa validaciones?"}
     support["Guarda solicitud y mensajes;<br/>permite seguimiento"]
     response["Vendedor/soporte responde<br/>o actualiza estado"]
@@ -468,14 +491,13 @@ flowchart TD
     eligible -- No --> invalid
     interact -- Historial --> history
     interact -- Reporte/soporte --> complaint --> validate
+    interact -. "Reportar publicación no está disponible" .-> postReport
     validate -- No --> invalid
     validate -- Sí --> support --> response
-    save --> history
     save --> createNotif --> notif
-    verified --> history
 ```
 
-La documentación distingue reportar una publicación, dar seguimiento al caso y moderar contenido. Las reseñas verificadas dependen de la validación de una compra elegible. El canal en tiempo real es complementario al almacenamiento persistente del chat; no sustituye la consulta HTTP ni el control de permisos.
+Los reclamos disponibles se asocian a órdenes o soporte; no se encontró una acción para reportar una publicación. Las reseñas solo se permiten tras una compra entregada, pero no se encontró distintivo visual de verificación. Consultar el historial no implica que la navegación registre actividad automáticamente. El canal en tiempo real es complementario al almacenamiento persistente del chat; no sustituye la consulta HTTP ni el control de permisos.
 
 ## 7. Administración y control
 
@@ -489,13 +511,13 @@ flowchart TD
     block["Bloquea / desbloquea cuenta"]
     account["Usuario bloqueado no accede<br/>a operaciones privadas"]
     books["Gestiona o modera libros"]
-    categories["Gestiona categorías"]
+    categories["Solo consulta categorías;<br/>CRUD administrativo no encontrado"]
     stores["Revisa o cambia estado<br/>de tiendas"]
     orders["Consulta y gestiona órdenes"]
-    reports["Consulta reportes, quejas<br/>y reclamos pendientes"]
-    moderate["Modera publicación/contenido;<br/>actualiza estado y respuesta"]
+    reports["Consulta quejas/reclamos<br/>asociados a órdenes o soporte"]
+    moderate["Atiende reclamo de orden/soporte;<br/>actualiza estado o respuesta"]
     finance["Consulta panel de finanzas,<br/>operaciones y métricas"]
-    audit["Eventos e historial<br/>para seguimiento/auditoría"]
+    audit["Hay log SQL de eventos puntuales;<br/>sin auditoría administrativa completa"]
     finish([Operación administrativa terminada])
 
     admin --> auth
@@ -508,10 +530,10 @@ flowchart TD
     actions --> orders --> finish
     actions --> reports --> moderate --> finish
     actions --> finance --> finish
-    reports --> audit --> finish
+    actions -. "No hay panel/flujo admin encontrado" .-> audit
 ```
 
-La protección de interfaz no reemplaza la comprobación de rol en el backend. El registro público no debe asignar privilegios administrativos. La documentación también menciona gestión de finanzas, libros, tiendas, órdenes, soporte y auditoría; el detalle de los permisos está en la guía de implantación.
+La protección de interfaz no reemplaza la comprobación de rol en el backend. El registro público no debe asignar privilegios administrativos. Se encontraron consultas de categorías, pero no operaciones administrativas CRUD; los reclamos de órdenes/soporte no equivalen a reportar una publicación. Existe la tabla `log_actividad` y hay triggers que registran algunos eventos SQL (por ejemplo, cancelaciones y eliminaciones), pero no se encontró un panel o flujo de auditoría administrativa completa.
 
 ## 8. Datos, migraciones y continuidad
 
@@ -598,15 +620,15 @@ Los estados de esta tabla reflejan el reporte de requisitos revisado en octubre 
 | Flujo | RF relacionados | Estado documentado |
 |---|---|---|
 | Identidad, sesión y perfil | RF-001, RF-002, RF-003, RF-004, RF-015 | I |
-| Publicación, catálogo, categorías y disponibilidad | RF-005, RF-006, RF-007, RF-008, RF-009, RF-010, RF-018, RF-037, RF-038, RF-039 | I |
+| Publicación, catálogo, categorías y disponibilidad | RF-005, RF-006, RF-007, RF-008, RF-009, RF-010, RF-018, RF-037, RF-038, RF-039 | I según reporte; RF-018 en discrepancia |
 | Comunicación, comunidad y actividad | RF-011, RF-012, RF-013, RF-014, RF-016, RF-017, RF-031, RF-035, RF-041 | I |
 | Carrito, pagos, pedidos y envíos | RF-023, RF-024, RF-025, RF-032, RF-034 | RF-034 P; los demás I |
 | Reportes y administración | RF-019, RF-020, RF-021, RF-022, RF-036 | I |
-| Recomendaciones, difusión, métricas y sincronización | RF-026, RF-027, RF-028, RF-029, RF-030 | I según el reporte; confirmar cada función en la pantalla/API correspondiente |
+| Recomendaciones, difusión, métricas y sincronización | RF-026, RF-027, RF-028, RF-029, RF-030 | I según reporte; HU-009/HU-026/HU-027 y segmentación de HU-035 no verificadas |
 | Comparación de libros | RF-033 | F |
 | Promociones y descuentos visibles | RF-040 | P |
 
-**Limitaciones conocidas de aceptación:** RF-034 no ofrece actualización independiente de cantidad de un ítem; RF-040 tiene gestión de ofertas, pero la aceptación documenta que el precio promocional no se muestra completamente en catálogo; RF-033 no está implementado y aparece postergado al roadmap v2. La calificación de tiendas se documenta como implementada en un módulo, pero su router no está registrado en `main.py`, por lo que no se debe presentarla como una ruta activa sin verificar.
+**Limitaciones conocidas de aceptación:** RF-034 no ofrece actualización independiente de cantidad de un ítem; RF-040 tiene gestión de ofertas, pero la aceptación documenta que el precio promocional no se muestra completamente en catálogo; RF-033 no está implementado y aparece postergado al roadmap v2. RF-018 figura como implementado en el reporte y se asocia a HU-040, pero no se encontraron las rutas CRUD de categorías que ese requisito enumera; la historia se mantiene como pendiente en el registro de inconsistencias. La calificación de tiendas se documenta como implementada en un módulo, pero su router no está registrado en `main.py`, por lo que no se debe presentarla como una ruta activa sin verificar.
 
 ### Requisitos no funcionales (RNF)
 
@@ -658,12 +680,12 @@ La calidad y operación asociadas incluyen pruebas unitarias del backend y suite
 
 ### Documentación consultada
 
-- [Requisitos funcionales y no funcionales](./REPORTE_REQUISITOS.md), [conciliación RF-HU](./requisitos/CONCILIACION_RF.md), historias en `./requisitos/HIS/` y requisitos en `./requisitos/RF/` y `./requisitos/RNF/`.
-- [Casos de uso](./casos-de-uso/README.md), [diagramas de secuencia](./diagramas-secuencia-bookyhome.md) y [diagrama UML](./diagrama-uml-bookyhome.md).
-- [Manual de usuario](./manuales/manual-usuario.md), [manual técnico](./manuales/manual-tecnico.md), [manual de instalación](./manuales/manual-instalacion.md) y guías de [autenticación](../autenticacion.md) y [registro](../registro.md).
-- [Plan de implantación](./implantacion/plan-implantacion.md), [plan de migración](./implantacion/entregable-s02-planes.md), estrategia de [hosting y dominio](./implantacion/entregable-s03-hosting-y-dominio.md), [despliegue](./implantacion/entregable-s04-procedimiento-despliegue.md), [configuración y verificación](./implantacion/entregable-s05-configuracion-y-verificacion.md), [seguridad y respaldos](./implantacion/entregable-s06-seguridad-y-respaldo.md), [pipeline y monitoreo](./implantacion/entregable-s07-pipeline-y-monitoreo.md), [mantenimiento y soporte](./implantacion/entregable-s08-mantenimiento-soporte-y-capacitacion.md), [aceptación](./implantacion/entregable-s09-aceptacion-y-entrega.md), automatización de [instalación](./implantacion/entregable-s10-instalacion-ejecutable.md), [actas](./implantacion/acta-despliegue.md) y [runbooks](./runbooks/).
-- [Plan de testing](<./Plan de Testing BookyHome (Copy).md>), [evaluación de RNF](./calidad/evaluacion-rnf.md), [cobertura de pruebas](./calidad/cobertura-tests.md), [auditoría de dependencias](./calidad/auditoria-dependencias.md), [refactorización](./calidad/evaluacion-refactorizacion-backend.md), [lecciones aprendidas](./calidad/bitacora-lecciones-aprendidas.md), [informe de calidad](./manuales/informe-calidad.md) y [marco de calidad](./calidad/marco-calidad-psp.md).
-- [Compose local](../docker-compose.yml), [Compose producción](../deploy/compose.prod.yaml), [Caddy producción](../deploy/Caddyfile.prod), [CI](../.github/workflows/ci.yml), [release](../.github/workflows/release.yml), [rollback](../.github/workflows/rollback.yml), scripts operativos, `infra/` y `database/`.
+- [Requisitos funcionales y no funcionales](../REPORTE_REQUISITOS.md), [conciliación RF-HU](../requisitos/CONCILIACION_RF.md), historias en `../requisitos/HIS/` y requisitos en `../requisitos/RF/` y `../requisitos/RNF/`.
+- [Casos de uso](../casos-de-uso/README.md), [diagramas de secuencia](../diagramas-de-secuencia/diagramas-secuencia-bookyhome.md) y [diagrama de clases](../diagramas-de-clases/diagrama-clases-bookyhome.md).
+- [Manual de usuario](../manuales/manual-usuario.md), [manual técnico](../manuales/manual-tecnico.md), [manual de instalación](../manuales/manual-instalacion.md) y guías de [autenticación](../../autenticacion.md) y [registro](../../registro.md).
+- [Plan de implantación](../implantacion/plan-implantacion.md), [plan de migración](../implantacion/entregable-s02-planes.md), estrategia de [hosting y dominio](../implantacion/entregable-s03-hosting-y-dominio.md), [despliegue](../implantacion/entregable-s04-procedimiento-despliegue.md), [configuración y verificación](../implantacion/entregable-s05-configuracion-y-verificacion.md), [seguridad y respaldos](../implantacion/entregable-s06-seguridad-y-respaldo.md), [pipeline y monitoreo](../implantacion/entregable-s07-pipeline-y-monitoreo.md), [mantenimiento y soporte](../implantacion/entregable-s08-mantenimiento-soporte-y-capacitacion.md), [aceptación](../implantacion/entregable-s09-aceptacion-y-entrega.md), automatización de [instalación](../implantacion/entregable-s10-instalacion-ejecutable.md), [actas](../implantacion/acta-despliegue.md) y [runbooks](../runbooks/).
+- [Plan de testing](<../Plan de Testing BookyHome (Copy).md>), [evaluación de RNF](../calidad/evaluacion-rnf.md), [cobertura de pruebas](../calidad/cobertura-tests.md), [auditoría de dependencias](../calidad/auditoria-dependencias.md), [refactorización](../calidad/evaluacion-refactorizacion-backend.md), [lecciones aprendidas](../calidad/bitacora-lecciones-aprendidas.md), [informe de calidad](../manuales/informe-calidad.md) y [marco de calidad](../calidad/marco-calidad-psp.md).
+- [Compose local](../../docker-compose.yml), [Compose producción](../../deploy/compose.prod.yaml), [Caddy producción](../../deploy/Caddyfile.prod), [CI](../../.github/workflows/ci.yml), [release](../../.github/workflows/release.yml), [rollback](../../.github/workflows/rollback.yml), scripts operativos, `infra/` y `database/`.
 
 ### Diferencias que deben conservarse al leer los diagramas
 
@@ -677,5 +699,5 @@ La calidad y operación asociadas incluyen pruebas unitarias del backend y suite
 
 ### Referencias adicionales del proyecto
 
-- [Documentación principal](../README.md), [backend](../backend/README.md), [web](../frontend/README.md), [app móvil](../app-movil/README.md).
-- [Migraciones de BD](../database/migrations/README.md), [respaldos](./implantacion/plan-migracion-respaldos.md), [ayuda al usuario](./ayuda/guia-rapida.md) y [preguntas frecuentes](./ayuda/preguntas-frecuentes.md).
+- [Documentación principal](../../README.md), [backend](../../backend/README.md), [web](../../frontend/README.md), [app móvil](../../app-movil/README.md).
+- [Migraciones de BD](../../database/migrations/README.md), [respaldos](../implantacion/plan-migracion-respaldos.md), [ayuda al usuario](../ayuda/guia-rapida.md) y [preguntas frecuentes](../ayuda/preguntas-frecuentes.md).
