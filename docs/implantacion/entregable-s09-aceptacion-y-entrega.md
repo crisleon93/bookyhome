@@ -18,7 +18,7 @@
 | 2. Migración | ✅ Sí | Objetivo medible, origen de datos, estrategia big-bang, mapeo, rollback y evidencia de migración ejecutada (8/8 huellas idénticas, 17 min). |
 | 3. Respaldo | ✅ Sí | Plan final con restic + mysqldump, regla 3-2-1, cron diario, retención 7d/4w/12m y restauración probada en 4 min 12 s (RTO 96.5 % de margen). |
 | 4. Hosting y dominio | ✅ Sí | Estrategia por componente, dominio, registros DNS, diagrama de camino de petición, Caddyfile y estimación de costos. |
-| 5. Instalación | ✅ Sí | Proceso de liberación SemVer, despliegue en servidor Linux y en Render/Neon, prueba de humo 5/5 PASS, estimación de costos. |
+| 5. Instalación | ✅ Sí | Proceso de liberación SemVer, despliegue en servidor Linux y en Render/Aiven, prueba de humo 5/5 PASS, estimación de costos. |
 | 6. Configuración | ✅ Sí | Inventario de variables con validación al arrancar, servicios con healthcheck, endpoint `/health`, pruebas F-01–F-08 y lista de verificación posterior al despliegue (11/11). |
 | 7. Seguridad | ✅ Sí | Usuarios de SO, SSH endurecido, UFW, roles de BD con pruebas de privilegios (5 denegaciones + 2 aprobadas), inventario de secretos sin secretos en el historial de Git. |
 | 8. Pipeline y monitoreo | ✅ Sí | Tres workflows (ci/release/rollback), regla de `main`, evidencia de PR rechazado + liberación v1.0.1 + rollback v1.0.0, despliegue con rollback automático, Uptime Kuma con 5 monitores y evidencia de alerta real. |

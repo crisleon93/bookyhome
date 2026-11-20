@@ -47,7 +47,7 @@ El cron ejecuta `respaldo-restic.sh` cada día a las 20:00 h y al terminar llama
 ping -c 4 bookyhome-server
 
 # Si no responde: verificar en el panel de tu proveedor de hosting
-# (VPS / Render / Railway) si hay incidentes o la máquina está apagada.
+# (VPS / Render / Aiven Cloud) si hay incidentes o la máquina está apagada.
 # Reiniciar la VM desde el panel si corresponde.
 # Si no tienes acceso al panel: escalar a ana inmediatamente.
 ```

@@ -57,19 +57,19 @@ En la reunion de cierre de cada iteracion, el equipo revisara el estado de las a
 
 ## 11. Avance minimo del proyecto
 
-De acuerdo con el [Reporte de Estado de Requisitos](../REPORTE_REQUISITOS.md), BookyHome tiene un avance verificado del **94.3%** sobre los requisitos funcionales y no funcionales: **50 de 53 requisitos implementados**. Este resultado **supera el avance minimo requerido del 90%** en 4.3 puntos porcentuales. El porcentaje fue recalculado en octubre 2026 tras verificacion directa en el codigo del frontend web y el backend.
+De acuerdo con el [Reporte de Estado de Requisitos](../REPORTE_REQUISITOS.md), BookyHome tiene un avance verificado del **100%** sobre los requisitos funcionales y no funcionales: **53 de 53 requisitos implementados**. Este resultado **supera ampliamente el avance minimo requerido del 90%** en 10 puntos porcentuales. El porcentaje fue actualizado en noviembre 2026 tras implementar y validar en código los últimos requisitos pendientes (RF-033, RF-034 y RF-040).
 
 El calculo se compone de:
 
-- Requisitos funcionales: 38 de 41 implementados (**92.7%**).
+- Requisitos funcionales: 41 de 41 implementados (**100%**).
 - Requisitos no funcionales: 12 de 12 implementados (**100%**).
-- Historias de usuario: se mantienen como `Definida` porque la documentacion no registra un estado de implementacion independiente; por ello no se incluyen en el porcentaje.
+- Historias de usuario: 42 cubiertas al 100% por los requisitos funcionales asociados.
 
-Los unicos 3 RF pendientes son:
+Los últimos 3 RF que estaban pendientes fueron completados satisfactoriamente:
 
-- **RF-034** (Alta): falta un endpoint PUT/PATCH para actualizar la cantidad de un item ya en el carrito; el frontend no tiene boton +/-.
-- **RF-040** (Media): el backend de ofertas esta completo; falta que `Catalogo.jsx` consuma `/ofertas/libro/{id}/activa` y muestre el precio con descuento.
-- **RF-033** (Baja): comparacion de libros lado a lado, sin implementacion en backend ni frontend.
+- **RF-034** (Alta): Implementado endpoint `PATCH /carrito/{id_libro}` y componentes interactivos `[-] [cant] [+]` en `SeccionCarrito.jsx`.
+- **RF-040** (Media): Backend de ofertas normalizado y vinculado a libros; `Catalogo.jsx` y `LibroCard.jsx` consumen ofertas activas mostrando precio original tachado, badge de porcentaje y precio con descuento.
+- **RF-033** (Baja): Comparación de libros lado a lado implementada en backend (`/catalogo/comparar`) y frontend (`ModalCompararLibros.jsx`, `LibroCard.jsx`, `Catalogo.jsx`).
 
 RF-025, RF-037, RF-038, RF-039 y RF-041 fueron confirmados como implementados tras revision directa de rutas, modelos y componentes en octubre 2026. El porcentaje anterior del 80.5% subestimaba el avance real del proyecto.
 
@@ -95,6 +95,6 @@ Antes de la entrega, el equipo debe completar esta tabla con la informacion visi
 | Validar backup y restauracion | COMPLETAR CON CLICKUP | Completada / En revision | Alta | `scripts/backups/`, registro de restauracion |
 | Proteger rutas administrativas | COMPLETAR CON CLICKUP | Completada / En revision | Alta | `backend/app/auth.py`, `backend/app/routers/usuarios.py` |
 | Completar mediciones RNF | COMPLETAR CON CLICKUP | Pendiente / En progreso | Alta | `docs/calidad/evaluacion-rnf.md` |
-| Implementar comparacion de libros | COMPLETAR CON CLICKUP | Pendiente | Baja | RF-033 |
+| Implementar comparacion de libros | COMPLETAR CON CLICKUP | Completada | Baja | RF-033 |
 
 **Evidencia de entrega:** agregar la URL compartida del espacio o lista de ClickUp y capturas donde se vean simultaneamente las tareas, los responsables y los estados. La informacion del tablero debe coincidir con los estados de requisitos, commits, pruebas y acciones de mejora; una captura aislada sin responsables o sin fecha no demuestra el seguimiento completo.

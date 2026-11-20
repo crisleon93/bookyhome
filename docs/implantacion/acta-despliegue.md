@@ -31,7 +31,6 @@ Frontend React (Render Static): https://bookyhome-web.onrender.com
           | (HTTPS / REST)
           v
 Backend FastAPI (Render Web Service): https://bookyhome.onrender.com
-                                      (alias: https://bookyhome-api.onrender.com)
           | (Conexión segura SSL/TLS - Puerto 22566)
           v
 Base de Datos (Aiven MySQL 8.4): bookyhome-mysql-bookyhome.l.aivencloud.com:22566
@@ -44,9 +43,8 @@ Base de Datos (Aiven MySQL 8.4): bookyhome-mysql-bookyhome.l.aivencloud.com:2256
 | Servicio | Proveedor | URL / Endpoint Público | Puerto | Tipo de Acceso | Estado |
 |---|---|---|---|---|---|
 | **Backend API** | Render | `https://bookyhome.onrender.com` | 443 (HTTPS) | Público (`/docs`, `/health`) | Configurado / Desplegado |
-| **Backend API (Secundario)** | Render | `https://bookyhome-api.onrender.com` | 443 (HTTPS) | Público | Configurado |
-| **Frontend Web** | Render | `https://bookyhome-web.onrender.com` | 443 (HTTPS) | Público | Configurado |
-| **Base de Datos** | Aiven Cloud | `bookyhome-mysql-bookyhome.l.aivencloud.com` | 22566 | Conexión SSL (`bookyhome`) | Activo (75 tablas y vistas) |
+| **Frontend Web** | Render | `https://bookyhome-web.onrender.com` | 443 (HTTPS) | Público | Configurado / Desplegado |
+| **Base de Datos** | Aiven Cloud | `bookyhome-mysql-bookyhome.l.aivencloud.com` | 22566 | Conexión SSL (`bookyhome`) | Activo (75 tablas y vistas, 20 triggers, 45 rutinas, 380k+ filas) |
 
 ### 3.2 Servicios Locales (Docker Compose)
 
