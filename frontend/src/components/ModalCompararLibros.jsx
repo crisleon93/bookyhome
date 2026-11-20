@@ -95,6 +95,9 @@ export default function ModalCompararLibros({
 
   return (
     <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Comparativa de libros"
       style={{
         position: 'fixed',
         inset: 0,
@@ -108,8 +111,10 @@ export default function ModalCompararLibros({
         animation: 'fadeIn 0.2s ease',
       }}
       onClick={onClose}
+      onKeyDown={(e) => { if (e.key === 'Escape') onClose(); }}
     >
       <div
+        role="document"
         style={{
           background: dm.bg,
           color: dm.text,

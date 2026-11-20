@@ -245,7 +245,7 @@ export default function SeccionCarrito({ userId }) {
 
   const handleUpdateQuantity = async (idLibro, nuevaCantidad) => {
     if (nuevaCantidad <= 0) {
-      handleEliminarItem(idLibro);
+      void handleEliminarItem(idLibro);
       return;
     }
     setActualizandoId(idLibro);

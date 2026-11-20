@@ -70,7 +70,13 @@ export const addToCart = (payload) => api.post('/carrito', payload)
 export const removeFromCart = (id_libro) => api.delete(`/carrito/${id_libro}`)
 export const updateCartQuantity = (id_libro, cantidad) => api.patch(`/carrito/${id_libro}`, { cantidad })
 export const getOfertaActivaLibro = (idLibro) => api.get(`/ofertas/libro/${idLibro}/activa`)
-export const compararLibrosApi = (ids) => api.get(`/catalogo/comparar?ids=${Array.isArray(ids) ? ids.join(',') : ids}`)
+export const compararLibrosApi = (ids) => {
+  const sanitized = (Array.isArray(ids) ? ids : String(ids).split(','))
+    .map(id => parseInt(id, 10))
+    .filter(id => Number.isFinite(id) && id > 0);
+  if (!sanitized.length) return Promise.reject(new Error('IDs de libros no validos'));
+  return api.get('/catalogo/comparar', { params: { ids: sanitized.join(',') } });
+}
 export const checkoutCarrito = (payload = {}) => api.post('/carrito/checkout', payload)
 export const checkoutDirecto = (payload = {}) => api.post('/carrito/checkout-directo', payload)
 export const sincronizarOrdenes = () => api.post('/carrito/sincronizar-ordenes')

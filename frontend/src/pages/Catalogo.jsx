@@ -501,7 +501,7 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
   const handleCompartirLibro = () => {
     const enlace = `${window.location.origin}/?seccion=Cat%C3%A1logo&libro=${libroSeleccionado.id_libro}`;
     if (navigator.clipboard) {
-      navigator.clipboard.writeText(enlace);
+      void navigator.clipboard.writeText(enlace);
       notify('Enlace del libro copiado al portapapeles!', 'success');
     } else {
       notify(enlace, 'info');
@@ -1602,7 +1602,7 @@ const Catalogo = ({ libroInicial = null, onLibroInicialConsumido }) => {
             });
           }}
           onAgregarAlCarrito={(libro) => {
-            handleAddToCart(libro);
+            void handleAddToCart(libro);
           }}
           darkMode={darkMode}
         />
