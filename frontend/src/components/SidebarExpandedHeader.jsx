@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { IconChevronLeft } from "./Icons";
 import SidebarIcon from "./SidebarIcon";
 
@@ -15,6 +16,12 @@ export default function SidebarExpandedHeader({
   subtitle,
   onCollapse,
 }) {
+  const [imgError, setImgError] = useState(false);
+
+  useEffect(() => {
+    setImgError(false);
+  }, [avatarSrc]);
+
   return (
     <div style={{
       flexShrink: 0,
@@ -32,11 +39,16 @@ export default function SidebarExpandedHeader({
       )}
       <div style={{ position: 'relative', zIndex: 1 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
-          {avatarSrc ? (
-            <img src={avatarSrc} alt={avatarAlt} style={{
-              width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover',
-              border: '2px solid rgba(255,255,255,0.5)', flexShrink: 0,
-            }} />
+          {avatarSrc && !imgError ? (
+            <img
+              src={avatarSrc}
+              alt={avatarAlt}
+              onError={() => setImgError(true)}
+              style={{
+                width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover',
+                border: '2px solid rgba(255,255,255,0.5)', flexShrink: 0,
+              }}
+            />
           ) : (
             <div style={{
               width: '40px', height: '40px', borderRadius: '50%', flexShrink: 0,

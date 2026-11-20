@@ -17,20 +17,21 @@ Las variables se separan en tres categorías: **obligatorias** (la app no arranc
 
 | Variable | ¿Secreto? | Desarrollo | Servidor | Nube | Si falta… |
 |---|---|---|---|---|---|
-| `DB_HOST` | No | `mysql` (contenedor) | `mysql` (red Docker) | `roundhouse.proxy.rlwy.net` (Railway) | No arranca: mensaje claro |
-| `DB_PORT` | No | `3306` | `3306` | `3306` | No arranca: mensaje claro |
-| `DB_USER` | No | `root` | `root` | `root` | No arranca: mensaje claro |
-| `DB_PASSWORD` | **Sí** | `.env` local (no en repo) | `/opt/bookyhome/deploy/.env.prod` (permisos 600) | Panel de Railway (variable secreta) | No arranca: mensaje claro |
+| `DB_HOST` | No | `mysql` (contenedor) | `mysql` (red Docker) | `bookyhome-mysql-bookyhome.l.aivencloud.com` (Aiven) | No arranca: mensaje claro |
+| `DB_PORT` | No | `3306` | `3306` | `22566` | No arranca: mensaje claro |
+| `DB_USER` | No | `root` | `root` | `avnadmin` | No arranca: mensaje claro |
+| `DB_PASSWORD` | **Sí** | `.env` local (no en repo) | `/opt/bookyhome/deploy/.env.prod` (permisos 600) | Panel de Render / Aiven (variable secreta) | No arranca: mensaje claro |
 | `DB_NAME` | No | `bookyhome` | `bookyhome` | `bookyhome` | No arranca: mensaje claro |
 | `SECRET_KEY` | **Sí** | `.env` local | `.env.prod` (600) | Panel de Render (generateValue) | No arranca: mensaje claro |
+| `DB_SSL` | No | `false` | `false` | `true` | En Aiven es requerida para cifrado TLS |
 
 ### Variables de configuración (no secretos)
 
 | Variable | ¿Secreto? | Desarrollo | Servidor | Nube | Si falta… |
 |---|---|---|---|---|---|
-| `PUBLIC_API_URL` | No | `http://192.168.1.10:8000` | `https://api.bookyhome.com.co` | `https://bookyhome-api.onrender.com` | Advertencia; enlaces de correo usan default |
+| `PUBLIC_API_URL` | No | `http://192.168.1.10:8000` | `https://api.bookyhome.com.co` | `https://bookyhome.onrender.com` | Advertencia; enlaces de correo usan default |
 | `FRONTEND_URL` | No | `http://localhost:5173` | `https://bookyhome.com.co` | `https://bookyhome-web.onrender.com` | Advertencia; redirección de correo usa default |
-| `VITE_API_BASE_URL` | No | `http://localhost:8000` | `https://api.bookyhome.com.co` | `https://bookyhome-api.onrender.com` | Frontend no puede llamar a la API |
+| `VITE_API_BASE_URL` | No | `http://localhost:8000` | `https://api.bookyhome.com.co` | `https://bookyhome.onrender.com` | Frontend no puede llamar a la API |
 | `APP_VERSION` | No | `1.0.0` | `1.0.0` | `1.0.0` | `/health` reporta `unknown` |
 | `MAIL_STARTTLS` | No | `true` | `true` | `true` | Default `true` |
 | `MAIL_SSL_TLS` | No | `false` | `false` | `false` | Default `false` |
@@ -43,7 +44,7 @@ Las variables se separan en tres categorías: **obligatorias** (la app no arranc
 
 | Variable | ¿Dónde vive en desarrollo? | ¿Dónde vive en servidor? | ¿Dónde vive en nube? |
 |---|---|---|---|
-| `DB_PASSWORD` | `backend/.env` (no en repo) | `deploy/.env.prod` (permisos 600, no en repo) | Panel de Railway → Variables → tipo "secret" |
+| `DB_PASSWORD` | `backend/.env` (no en repo) | `deploy/.env.prod` (permisos 600, no en repo) | Panel de Render / Aiven → Variables → tipo "secret" |
 | `SECRET_KEY` | `backend/.env` (no en repo) | `deploy/.env.prod` (permisos 600) | Panel de Render → `generateValue: true` |
 | `MAIL_PASSWORD` | `backend/.env` (no en repo) | `deploy/.env.prod` (permisos 600) | Panel de Render → `sync: false` (secreto) |
 | `GEMINI_API_KEY` | `backend/.env` (no en repo) | `deploy/.env.prod` (permisos 600) | Panel de Render → `sync: false` (secreto) |

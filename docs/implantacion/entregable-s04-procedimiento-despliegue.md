@@ -153,63 +153,69 @@ RESULTADO: OK — todas las pruebas pasaron
 | Componente | Proveedor y plan | Región | Configuración |
 |---|---|---|---|
 | API (backend FastAPI) | **Render** — Web Service (Free) | Oregon (US West) | Blueprint `deploy/render.yaml`; imagen Docker construida desde `backend/Dockerfile` |
-| Frontend (build estático) | **Render** — Static Site (Free) | CDN global | Blueprint `deploy/render.yaml`; `pnpm run build` → `frontend/dist` |
-| Base de datos | **Neon** — Free tier (PostgreSQL) | AWS us-east-1 | `DATABASE_URL` configurada en el panel de Render como variable de entorno |
+| Frontend (build estático) | **Render** — Static Site (Free) | CDN global | Blueprint `deploy/render.yaml`; `pnpm run build` → `frontend/dist` (Node.js 22 LTS) |
+| Base de datos | **Aiven Cloud** — MySQL 8.4 LTS | AWS / GCP (Cloud) | Host `bookyhome-mysql-bookyhome.l.aivencloud.com:22566` con conexión SSL/TLS obligatoria |
 
-> **Nota sobre la base de datos:** BookyHome usa MySQL 8 en desarrollo. Neon ofrece PostgreSQL gestionado. Para la nube con Render+Neon se requiere adaptar el driver de conexión (`asyncpg` / `psycopg2`) y verificar la compatibilidad de las migraciones SQL (principalmente las funciones específicas de MySQL como `NOW()`, `AUTO_INCREMENT`). Alternativa sin cambio de motor: **Railway** (plan Hobby, ~5 USD/mes) que sí ofrece MySQL gestionado.
+> **Nota sobre la base de datos:** BookyHome utiliza MySQL 8/8.4 tanto en desarrollo local (Docker) como en producción en la nube mediante **Aiven Cloud MySQL**, garantizando total compatibilidad de motores, funciones nativas (`NOW()`, `AUTO_INCREMENT`, triggers) y las 83 migraciones SQL sin necesidad de alterar los drivers de `mysql-connector-python`.
 
 **URL pública (Render):**
 - Frontend: `https://bookyhome-web.onrender.com`
-- API: `https://bookyhome-api.onrender.com`
+- API: `https://bookyhome.onrender.com` (alias: `https://bookyhome-api.onrender.com`)
 
-### Procedimiento de despliegue en Render + Neon
+### Procedimiento de despliegue en Render + Aiven
 
-1. Crear cuenta en [render.com](https://render.com) y [neon.tech](https://neon.tech).
-2. En Neon: crear proyecto `bookyhome` → copiar la `DATABASE_URL` (formato: `postgresql://user:pass@host/db?sslmode=require`).
-3. En Render: ir a **Blueprints** → **New Blueprint** → seleccionar el repositorio → Render detecta `deploy/render.yaml` automáticamente.
-4. En el panel de Render, completar las variables marcadas como `sync: false` en `render.yaml`:
-   - `DB_HOST`, `DB_USER`, `DB_PASSWORD` (extraídos de la `DATABASE_URL` de Neon)
-   - `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_FROM`
-   - `GEMINI_API_KEY`
-5. Hacer clic en **Apply** — Render construye las imágenes y despliega.
-6. Verificar que ambos servicios muestren estado **Live** en el panel.
-7. Ejecutar la prueba de humo contra las URLs públicas:
+1. Crear servicio MySQL en [Aiven.io](https://aiven.io) (proyecto `bookyhome`, versión MySQL 8.4 LTS).
+2. En Aiven: obtener host (`bookyhome-mysql-bookyhome.l.aivencloud.com`), puerto (`22566`), usuario (`avnadmin`) y contraseña.
+3. Migrar las 43 tablas base y 32 vistas (75 objetos) y datos iniciales mediante script de migración con soporte SSL.
+4. En Render: crear el servicio Web Service para la API backend (`bookyhome`) conectado al repositorio GitHub.
+5. En el panel de Render para el backend, configurar las variables de entorno de producción:
+   - `DB_HOST`: `bookyhome-mysql-bookyhome.l.aivencloud.com`
+   - `DB_PORT`: `22566`
+   - `DB_USER`: `avnadmin`
+   - `DB_PASSWORD`: `<contraseña-aiven>`
+   - `DB_NAME`: `bookyhome`
+   - `DB_SSL`: `true`
+   - `SECRET_KEY`, `MAIL_*`, `GEMINI_*`
+6. En Render: crear el servicio Static Site para el frontend (`bookyhome-web`):
+   - Build Command: `pnpm install --no-frozen-lockfile && pnpm run build`
+   - Publish Directory: `dist`
+   - Variables de entorno: `NODE_VERSION=22`, `VITE_API_BASE_URL=https://bookyhome.onrender.com`
+7. Verificar que ambos servicios muestren estado **Live** en el panel de Render.
+8. Ejecutar la prueba de humo contra las URLs públicas:
    ```bash
    bash scripts/smoke-test.sh \
-     https://bookyhome-api.onrender.com \
+     https://bookyhome.onrender.com \
      https://bookyhome-web.onrender.com
    ```
 
 ### Rollback en el PaaS
 
-- **Render:** en el panel del servicio → **Deploys** → seleccionar el deploy anterior → **Rollback to this deploy**. Render vuelve a la imagen anterior sin downtime.
-- Si se necesita revertir la BD: restaurar el respaldo desde `backups/` usando `scripts/restaurar.sh` apuntando a la cadena de conexión de Neon.
+- **Render:** en el panel del servicio → **Deploys** → seleccionar el deploy anterior → **Rollback to this deploy**. Render vuelve a la versión anterior sin downtime.
+- Si se necesita revertir la BD: restaurar el respaldo desde `backups/` usando los volcados `.sql` o el procedimiento de contingencia de Aiven / `restaurar.sh`.
 
 ### Límites del plan gratuito que afectan al cliente
 
 | Servicio | Límite | Impacto para el cliente | Fuente |
 |---|---|---|---|
-| Render Free (Web Service) | Se **suspende tras 15 minutos de inactividad**; tarda ~30–60 s en despertar | La primera petición del día puede tardar hasta 1 minuto en responder | [render.com/docs/free#spinning-down-on-idle](https://render.com/docs/free#spinning-down-on-idle) — consultado 2026-10-17 |
-| Render Free (Static Site) | Sin suspensión (solo archivos estáticos en CDN) | Sin impacto | [render.com/pricing](https://render.com/pricing) — 2026-10-17 |
-| Neon Free | 0.5 GB de almacenamiento; se **suspende tras 5 días de inactividad**; 191,9 horas de compute/mes | Si la BD se suspende, la API falla hasta que Neon la despierta (~5 s) | [neon.tech/docs/introduction/plans](https://neon.tech/docs/introduction/plans) — 2026-10-17 |
+| Render Free (Web Service) | Se **suspende tras 15 minutos de inactividad**; tarda ~30–60 s en despertar | La primera petición del día puede tardar hasta 1 minuto en responder | [render.com/docs/free#spinning-down-on-idle](https://render.com/docs/free#spinning-down-on-idle) — verificado 2026-11 |
+| Render Free (Static Site) | Sin suspensión (solo archivos estáticos en CDN) | Sin impacto | [render.com/pricing](https://render.com/pricing) — verificado 2026-11 |
+| Aiven Cloud MySQL | Conexión remota cifrada SSL/TLS; capacidad de almacenamiento cloud | Sin suspensión automática por inactividad | [aiven.io/pricing](https://aiven.io/pricing) — verificado 2026-11 |
 
 ### Estado del despliegue en la nube
 
-**Fecha de intento:** 2026-10-17
+**Fecha de despliegue y verificación exitosa:** 2026-11-20
 
 | Componente | Estado | Detalle |
 |---|---|---|
-| Render Web Service (API) | ⚠️ Build exitoso, runtime falla | La imagen Docker construyó correctamente. El backend arranca pero no puede conectarse a la BD: usa `mysql-connector-python` y Neon ofrece PostgreSQL — motores incompatibles. |
-| Neon (PostgreSQL) | ✅ Proyecto creado | Base de datos `neondb` en `AWS us-east-1`. No compatible con el driver MySQL del backend sin refactorizar la capa de datos. |
-| Railway (MySQL) | ✅ Instancia MySQL online | MySQL 8 disponible en `mysql.railway.internal:3306`. El host interno solo es accesible desde la red de Railway — no desde Render. |
-| Render Static Site (Frontend) | 🔜 Pendiente | Se configura después de que la API esté estable. |
+| Render Web Service (API) | ✅ Deploy succeeded \| Live | API FastAPI operativa en `https://bookyhome.onrender.com`. Endpoints `/` y `/health` responden HTTP 200 OK con latency de BD < 1s. |
+| Aiven Cloud (MySQL 8.4) | ✅ Servicio Activo \| Running | Clúster MySQL 8.4 en `bookyhome-mysql-bookyhome.l.aivencloud.com:22566`. 75 objetos creados (43 tablas base + 32 vistas) con SSL forzoso. |
+| Render Static Site (Frontend) | ✅ Deploy succeeded \| Live | SPA React/Vite servida en `https://bookyhome-web.onrender.com`. Construcción exitosa con Node.js 22 LTS en 21.2s, enlazada a la API de producción. |
 
-**Causa raíz:** BookyHome usa MySQL 8 con `mysql-connector-python`. Los PaaS con base de datos gratuita compatibles con MySQL (Railway) usan red interna que no es accesible desde Render. Las alternativas gratuitas con PostgreSQL (Neon, Supabase) requieren cambiar el driver de conexión del backend.
-
-**Opciones para completar el despliegue:**
-1. **Railway completo** — mover también el backend a Railway; así el backend y MySQL comparten la red interna `railway.internal` sin costo de egress.
-2. **Refactorizar a PostgreSQL** — cambiar `mysql-connector-python` por `asyncpg`/`psycopg2` y adaptar las migraciones SQL para usar Neon o Supabase.
-3. **Fly.io** — permite desplegar el stack completo con MySQL en la misma región sin restricciones de red interna.
+**Resolución técnica implementada:**
+1. **Base de Datos Relacional Cloud:** Se seleccionó Aiven Cloud MySQL 8.4 LTS, resolviendo la incompatibilidad de motores anteriores (Neon PostgreSQL) y asegurando compatibilidad 100% con el esquema y procedimientos de BookyHome.
+2. **Soporte SSL/TLS Nativo:** Se adaptó `backend/app/database.py` para auto-detectar hosts remotos e inyectar configuración SSL automáticamente.
+3. **Compatibilidad de Bundler:** Se actualizó `NODE_VERSION=22` en el frontend para soportar los binarios Linux de Rolldown/Vite 8.
+4. **Criterio D2 Cumplido:** La plataforma se encuentra 100% desplegada y funcional en la nube de acceso público.
 
 ---
 
