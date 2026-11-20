@@ -14,7 +14,7 @@
 |---|---|---|---|
 | **Frontend (build estático — React/Vite)** | **Estático (CDN)** | **Render Static Site** | El build de Vite genera archivos HTML/CSS/JS puros; no necesita servidor de aplicaciones. Render entrega el sitio desde CDN con HTTPS automático y sin costo de servidor. |
 | **API REST (FastAPI/Uvicorn en Docker)** | **PaaS (contenedor)** | **Render Web Service** | Corre la imagen Docker sin administrar SO; gestiona escalado y reinicio automático. Alternativa: VM Ubuntu 24.04 LTS (servidor propio del cliente) con Docker Compose si se prefiere control total. |
-| **Base de datos MySQL 8** | **DBaaS / gestionado** | **PlanetScale (MySQL)** o **Railway** | Ofrece backups automáticos, conexiones seguras y panel de métricas sin administrar el servidor de base de datos. En la VM del cliente se puede usar el contenedor MySQL del Compose (ver plan de instalación §5). |
+| **Base de datos MySQL 8** | **DBaaS / gestionado** | **Aiven Cloud MySQL** (o PlanetScale/Railway) | Ofrece backups automáticos, conexiones seguras SSL y panel de métricas sin administrar el servidor de base de datos. En la VM del cliente se puede usar el contenedor MySQL del Compose (ver plan de instalación §5). |
 | **Archivos subidos (imágenes de libros)** | **Object storage** | **Backblaze B2 / Cloudflare R2** | Los volúmenes Docker no son apropiados para almacenamiento en PaaS. Object storage escala sin límite y se integra vía URL pública o presigned URL. En servidor propio se mantiene el volumen `uploads_data` detrás del proxy. |
 | **App móvil (Expo/React Native)** | **Sin servidor propio** | **Expo Application Services (EAS)** | La app es un cliente; se distribuye vía tiendas (Play Store / App Store) o como APK directo. No requiere hosting de servidor. |
 

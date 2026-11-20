@@ -336,7 +336,7 @@ No. La migración completó sin errores: 0 rechazos, 8/8 huellas coincidentes y 
 |---|---|---|---|
 | Frontend (build estático React/Vite) | Estático (CDN) | Render Static Site | Solo archivos HTML/CSS/JS; CDN y HTTPS incluidos sin costo de servidor |
 | API REST (FastAPI/Uvicorn en Docker) | PaaS (contenedor) | Render Web Service | Corre la imagen Docker sin administrar SO; escalado y reinicio automáticos |
-| Base de datos MySQL 8 | DBaaS / gestionado | PlanetScale o Railway | Backups automáticos y conexiones seguras sin gestionar el servidor de BD |
+| Base de datos MySQL 8 | DBaaS / gestionado | Aiven Cloud (o Railway/PlanetScale) | Backups automáticos y conexiones seguras SSL sin gestionar el servidor de BD |
 | Archivos subidos (imágenes de libros) | Object storage | Backblaze B2 / Cloudflare R2 | Los volúmenes Docker no escalan en PaaS; object storage integra con URL pública |
 | App móvil (Expo) | Sin servidor propio | Expo Application Services (EAS) | Cliente distribuido vía tiendas; no requiere hosting de servidor |
 
@@ -440,18 +440,18 @@ Todas las 83 migraciones de v1.0.0 son compatibles hacia atrás (columnas nullab
 
 | Componente | Proveedor | Plan |
 |---|---|---|
-| API | Render Web Service | Free (con suspensión por inactividad) |
-| Frontend | Render Static Site | Free (CDN, sin suspensión) |
-| Base de datos | Neon PostgreSQL | Free (0.5 GB, suspensión tras 5 días) |
+| API | Render Web Service | Free / Live (`https://bookyhome.onrender.com`) |
+| Frontend | Render Static Site | Free / Live (`https://bookyhome-web.onrender.com`) |
+| Base de datos | Aiven Cloud MySQL | MySQL 8.4 LTS (con SSL obligatorio) |
 
-Blueprint: `deploy/render.yaml`. URLs: `https://bookyhome-api.onrender.com` y `https://bookyhome-web.onrender.com`.
+Blueprint: `deploy/render.yaml`. URLs públicas verificadas: `https://bookyhome.onrender.com` (backend) y `https://bookyhome-web.onrender.com` (frontend).
 
 ### 5.4 Estimación de costos
 
 | Alternativa | Costo mensual | Costo anual |
 |---|---|---|
-| Render + Neon (gratuito) | $0 | $0 |
-| Render Starter + Railway MySQL | ~$12 | ~$144 |
+| Render + Aiven Cloud (nivel inicial) | $0 | $0 |
+| Render Starter + Aiven Business MySQL | ~$19 | ~$228 |
 
 **Recomendación:** iniciar con la alternativa gratuita los primeros 3 meses; migrar a la paga cuando haya más de ~20 usuarios activos diarios.
 
@@ -467,8 +467,9 @@ Las variables obligatorias (`DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_
 
 | Variable | ¿Secreto? | Desarrollo | Servidor | Nube | Si falta… |
 |---|---|---|---|---|---|
-| `DB_HOST` | No | `mysql` (contenedor) | `mysql` (red Docker) | `roundhouse.proxy.rlwy.net` | No arranca: mensaje claro |
-| `DB_PASSWORD` | **Sí** | `.env` local | `.env.prod` (600) | Panel de Railway | No arranca: mensaje claro |
+| `DB_HOST` | No | `mysql` (contenedor) | `mysql` (red Docker) | `bookyhome-mysql-bookyhome.l.aivencloud.com` | No arranca: mensaje claro |
+| `DB_PORT` | No | `3306` | `3306` | `22566` | No arranca: mensaje claro |
+| `DB_PASSWORD` | **Sí** | `.env` local | `.env.prod` (600) | Panel de Render / Aiven | No arranca: mensaje claro |
 | `SECRET_KEY` | **Sí** | `.env` local | `.env.prod` (600) | Panel de Render | No arranca: mensaje claro |
 | `MAIL_PASSWORD` | **Sí** | `.env` local | `.env.prod` (600) | Panel de Render | Advertencia; correo no funciona |
 | `GEMINI_API_KEY` | **Sí** | `.env` local | `.env.prod` (600) | Panel de Render | Advertencia; IA no funciona |
