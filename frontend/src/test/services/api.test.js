@@ -79,6 +79,7 @@ describe('servicio web de API', () => {
     api.getCarrito();
     api.addToCart(payload);
     api.removeFromCart(5);
+    api.updateCartQuantity(5, 3);
     api.checkoutCarrito();
     api.checkoutCarrito(payload);
     api.checkoutDirecto();
@@ -87,6 +88,7 @@ describe('servicio web de API', () => {
 
     expect(mocks.client.get).toHaveBeenCalledWith('/carrito');
     expect(mocks.client.delete).toHaveBeenCalledWith('/carrito/5');
+    expect(mocks.client.patch).toHaveBeenCalledWith('/carrito/5', { cantidad: 3 });
     expect(mocks.client.post.mock.calls).toEqual([
       ['/carrito', payload],
       ['/carrito/checkout', {}],
@@ -95,6 +97,22 @@ describe('servicio web de API', () => {
       ['/carrito/checkout-directo', payload],
       ['/carrito/sincronizar-ordenes'],
     ]);
+  });
+
+  it('gestiona ofertas activas y comparación de libros sanitizando entradas', async () => {
+    const api = await import('../../services/api');
+    api.getOfertaActivaLibro(10);
+    expect(mocks.client.get).toHaveBeenCalledWith('/ofertas/libro/10/activa');
+
+    await expect(api.getOfertaActivaLibro('invalido')).rejects.toThrow('ID de libro no valido');
+    await expect(api.getOfertaActivaLibro(-5)).rejects.toThrow('ID de libro no valido');
+    await expect(api.getOfertaActivaLibro(0)).rejects.toThrow('ID de libro no valido');
+
+    api.compararLibrosApi([1, 2, '3']);
+    expect(mocks.client.get).toHaveBeenCalledWith('/catalogo/comparar', { params: { ids: '1,2,3' } });
+
+    await expect(api.compararLibrosApi([])).rejects.toThrow('IDs de libros no validos');
+    await expect(api.compararLibrosApi(['abc', -1])).rejects.toThrow('IDs de libros no validos');
   });
 
   it('envía peticiones de pagos, órdenes y retiros con sus parámetros', async () => {
