@@ -5295,7 +5295,8 @@ export default function SeccionCarrito({ userId }) {
                                     justifyContent: "center",
                                     transition: "all 0.15s"
                                   }}
-                                  title={item.cantidad <= 1 ? "Eliminar del carrito" : "Reducir cantidad"}
+                                  title={item.cantidad <= 1 ? "Eliminar del carrito" : "Disminuir cantidad"}
+                                  aria-label={item.cantidad <= 1 ? "Eliminar del carrito" : "Disminuir cantidad"}
                                 >
                                   {item.cantidad <= 1 ? (
                                     <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">

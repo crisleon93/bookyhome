@@ -155,7 +155,7 @@ describe('secciones de compras y notificaciones', () => {
     fireEvent.click(incBtn)
     await waitFor(() => expect(updateCartQuantity).toHaveBeenCalledWith(33, 3))
 
-    const decBtn = screen.getByTitle('Reducir cantidad')
+    const decBtn = screen.getByTitle('Disminuir cantidad')
     fireEvent.click(decBtn)
     await waitFor(() => expect(updateCartQuantity).toHaveBeenCalledWith(33, 1))
   })
