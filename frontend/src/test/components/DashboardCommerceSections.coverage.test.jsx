@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import SeccionCarrito from '../../components/dashboard/SeccionCarrito'
 import SeccionMisCompras from '../../components/dashboard/SeccionMisCompras'
 import SeccionNotificaciones from '../../components/dashboard/SeccionNotificaciones'
-import api, { actualizarCostoEnvio, aplicarCupon, cancelarMisPendientes, cancelOrder, checkoutCarrito, checkoutDirecto, getCarrito, getDatosTransferenciaVendedor, getDevoluciones, getDirecciones, getOrden, getOrdenes, notificarLlegadaTienda, postPayment, removeFromCart, reservarRetiroEnTienda, sendConfirmationEmail } from '../../services/api'
+import api, { actualizarCostoEnvio, aplicarCupon, cancelarMisPendientes, cancelOrder, checkoutCarrito, checkoutDirecto, getCarrito, getDatosTransferenciaVendedor, getDevoluciones, getDirecciones, getOrden, getOrdenes, notificarLlegadaTienda, postPayment, removeFromCart, reservarRetiroEnTienda, sendConfirmationEmail, updateCartQuantity } from '../../services/api'
 import { notificacionesService } from '../../services/notificaciones'
 import { notify } from '../../components/ToastProvider'
 
@@ -38,6 +38,7 @@ vi.mock('../../services/api', async (importOriginal) => ({
   removeFromCart: vi.fn(),
   sendConfirmationEmail: vi.fn(),
   actualizarCostoEnvio: vi.fn(),
+  updateCartQuantity: vi.fn(() => Promise.resolve({ data: {} })),
 }))
 vi.mock('../../services/notificaciones', () => ({
   notificacionesService: {
@@ -137,10 +138,26 @@ describe('secciones de compras y notificaciones', () => {
     }] })
     render(<SeccionCarrito userId={7} />)
     expect((await screen.findAllByText('Libro del carrito')).length).toBeGreaterThan(0)
-    fireEvent.click(screen.getByTitle('Eliminar del carrito'))
+    fireEvent.click(screen.getAllByTitle('Eliminar del carrito')[0])
 
     await waitFor(() => expect(removeFromCart).toHaveBeenCalledWith(33))
     expect(notify).toHaveBeenCalledWith('Libro eliminado del carrito', 'info')
+  })
+
+  it('incrementa y decrementa cantidad en el carrito con los botones dedicados', async () => {
+    getCarrito.mockResolvedValue({ data: [{
+      id_libro: 33, titulo: 'Libro cantidad', autor_libro: 'Autora', precio_libro: 14000, cantidad: 2, stock: 10,
+    }] })
+    updateCartQuantity.mockResolvedValue({ data: { ok: true } })
+    render(<SeccionCarrito userId={7} />)
+    expect((await screen.findAllByText('Libro cantidad')).length).toBeGreaterThan(0)
+    const incBtn = screen.getByTitle('Aumentar cantidad')
+    fireEvent.click(incBtn)
+    await waitFor(() => expect(updateCartQuantity).toHaveBeenCalledWith(33, 3))
+
+    const decBtn = screen.getByTitle('Reducir cantidad')
+    fireEvent.click(decBtn)
+    await waitFor(() => expect(updateCartQuantity).toHaveBeenCalledWith(33, 1))
   })
 
   it('crea una orden antes de pasar al paso de entrega y pago', async () => {

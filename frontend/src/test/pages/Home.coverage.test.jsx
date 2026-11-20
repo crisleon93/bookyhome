@@ -147,7 +147,7 @@ describe('Home web', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Inicio' }))
     fireEvent.click(screen.getByRole('button', { name: 'Ver detalle de libro' }))
     expect(await screen.findByText('Catálogo autenticado')).toBeTruthy()
-    expect(mocks.navigate).toHaveBeenCalledWith('/?seccion=Cat%C3%A1logo', { replace: true })
+    expect(mocks.navigate).toHaveBeenCalledWith('/?seccion=Cat%C3%A1logo')
     fireEvent.click(screen.getByRole('button', { name: 'Inicio' }))
     fireEvent.click(screen.getByRole('button', { name: 'Mis Compras' }))
     expect(await screen.findByText('Sección compras')).toBeTruthy()

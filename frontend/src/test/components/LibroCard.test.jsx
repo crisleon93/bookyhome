@@ -17,6 +17,7 @@ vi.mock('../../services/api', () => ({
   eliminarFavorito: vi.fn(),
   getFavoritos: vi.fn(() => Promise.resolve({ data: [] })),
   getApiBaseUrl: vi.fn(() => 'http://localhost:8000'),
+  getOfertaActivaLibro: vi.fn(() => Promise.resolve({ data: null })),
 }))
 
 vi.mock('../ToastProvider', () => ({ notify: vi.fn() }))

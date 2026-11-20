@@ -68,6 +68,10 @@ vi.mock('../../services/api', () => ({
   crearCalificacionTienda: vi.fn(),
   getCalificacionesTienda: vi.fn(() => Promise.resolve({ data: { calificaciones: [] } })),
   actualizarCalificacionTienda: vi.fn(),
+  getOfertaActivaLibro: vi.fn(() => Promise.resolve({ data: null })),
+  compararLibrosApi: vi.fn(() => Promise.resolve({ data: { libros: [] } })),
+  getOrdenes: vi.fn(() => Promise.resolve({ data: [] })),
+  updateCartQuantity: vi.fn(() => Promise.resolve({ data: {} })),
 }))
 
 vi.mock('../../services/chat', () => ({
@@ -656,6 +660,58 @@ describe('Catalogo — resolveImagenUrl', () => {
     renderCatalogo()
     await waitFor(() => {
       expect(screen.getByTestId('librocard-1')).toBeInTheDocument()
+    })
+  })
+
+  describe('Catalogo — acciones adicionales de detalle (Reportar, Compartir, Comparar)', () => {
+    it('muestra error al reportar si no hay sesion iniciada', async () => {
+      localStorage.removeItem('token')
+      renderCatalogo()
+      await waitFor(() => screen.getByTestId('librocard-1'))
+      fireEvent.click(screen.getAllByRole('button', { name: /ver detalles/i })[0])
+      const reportBtn = await screen.findByRole('button', { name: /reportar/i })
+      fireEvent.click(reportBtn)
+      const toast = await import('../../components/ToastProvider')
+      expect(toast.notify).toHaveBeenCalledWith('Debes iniciar sesion para reportar un problema con tu pedido', 'error')
+    })
+
+    it('impide reportar si el usuario no ha comprado el libro', async () => {
+      localStorage.setItem('token', 'fake.token.jwt')
+      const apiModule = await import('../../services/api')
+      apiModule.getOrdenes.mockResolvedValueOnce({ data: [{ id_orden: 99, items: [{ id_libro: 999 }] }] })
+      renderCatalogo()
+      await waitFor(() => screen.getByTestId('librocard-1'))
+      fireEvent.click(screen.getAllByRole('button', { name: /ver detalles/i })[0])
+      const reportBtn = await screen.findByRole('button', { name: /reportar/i })
+      fireEvent.click(reportBtn)
+      const toast = await import('../../components/ToastProvider')
+      await waitFor(() => {
+        expect(toast.notify).toHaveBeenCalledWith('Solo puedes radicar una queja o reclamo sobre libros que hayas comprado previamente', 'error')
+      })
+    })
+
+    it('redirige a quejas y reclamos si el usuario ha comprado el libro', async () => {
+      localStorage.setItem('token', 'fake.token.jwt')
+      const apiModule = await import('../../services/api')
+      apiModule.getOrdenes.mockResolvedValueOnce({ data: [{ id_orden: 55, id_orden_db: 55, items: [{ id_libro: 1 }] }] })
+      renderCatalogo()
+      await waitFor(() => screen.getByTestId('librocard-1'))
+      fireEvent.click(screen.getAllByRole('button', { name: /ver detalles/i })[0])
+      const reportBtn = await screen.findByRole('button', { name: /reportar/i })
+      fireEvent.click(reportBtn)
+      await waitFor(() => {
+        expect(mockNavigate).toHaveBeenCalledWith('/?seccion=Quejas y reclamos&ordenId=55')
+      })
+    })
+
+    it('copia enlace al portapapeles al compartir', async () => {
+      renderCatalogo()
+      await waitFor(() => screen.getByTestId('librocard-1'))
+      fireEvent.click(screen.getAllByRole('button', { name: /ver detalles/i })[0])
+      const shareBtn = await screen.findByRole('button', { name: /compartir/i })
+      fireEvent.click(shareBtn)
+      const toast = await import('../../components/ToastProvider')
+      expect(toast.notify).toHaveBeenCalledWith('Enlace del libro copiado al portapapeles!', 'success')
     })
   })
 })
