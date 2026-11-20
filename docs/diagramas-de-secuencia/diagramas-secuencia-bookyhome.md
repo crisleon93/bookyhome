@@ -1,31 +1,36 @@
 # Diagramas de secuencia de BookyHome
 
-Estos diagramas representan los flujos principales implementados en la aplicación web de BookyHome. Los participantes se mantienen a nivel de arquitectura: interfaz React, cliente Axios, routers FastAPI, modelos, archivos JSON y MySQL.
+Estos diagramas representan los flujos principales encontrados en BookyHome. Los participantes se mantienen a nivel de arquitectura: interfaz web o móvil, cliente HTTP, routers FastAPI, modelos, archivos JSON y MySQL. La trazabilidad distingue las funciones completas de las parciales o pendientes.
 
 Las rutas y comportamientos fueron contrastados con `frontend/src`, `backend/app/routers`, `backend/app/models`, `app/auth.py` y `database/bookyhome.sql`.
 
 ## Alcance y trazabilidad
 
-El alcance anterior cubría siete procesos principales. Esta versión amplía la revisión a todos los módulos documentados y implementados en el proyecto. Los números HU/RF corresponden a `docs/requisitos/HIS/` y `docs/requisitos/RF/`.
+El alcance anterior cubría siete procesos principales. Esta versión amplía la revisión a los módulos documentados en el proyecto; las brechas sin flujo implementado se señalan aparte y no se presentan como funcionalidades existentes. Los números HU/RF corresponden a `docs/requisitos/HIS/` y `docs/requisitos/RF/`.
 
-| Área | HU relacionadas | RF relacionadas | Diagrama |
+| Área | HU relacionadas | RF relacionadas | Diagrama y alcance |
 |---|---|---|---|
-| Registro, autenticación y sesión | HU-001, HU-037, HU-038, HU-039 | RF-001, RF-002, RF-003, RF-004 | Secciones 1 y 2 |
-| Publicación, catálogo y disponibilidad | HU-002, HU-003, HU-004, HU-010, HU-011, HU-012, HU-016, HU-019, HU-040 | RF-005 a RF-010, RF-018, RF-037 a RF-039 | Secciones 3 y 6 |
-| Carrito, pedidos y pagos | HU-034, HU-021, HU-022, HU-041, HU-042 | RF-023 a RF-025, RF-034 | Sección 4 |
-| Perfil, compras e historial | HU-014, HU-018, HU-041 | RF-015, RF-017, RF-023, RF-041 | Sección 5 |
-| Promociones y herramientas | HU-020, HU-028 | RF-028, RF-040 | Secciones 7 y 12 |
-| Chat, notificaciones y soporte | HU-005, HU-013, HU-023, HU-036 | RF-011, RF-012, RF-019, RF-020, RF-036 | Secciones 8 y 10 |
-| Favoritos, reseñas y comunidad | HU-006, HU-007, HU-017, HU-031 | RF-013, RF-014, RF-016, RF-031 | Sección 9 |
-| Administración y usuarios | HU-025, HU-024 | RF-021, RF-022, RF-036 | Sección 11 |
-| Envios, devoluciones y finanzas | HU-032, HU-028 | RF-024, RF-032, RF-039 | Secciones 4, 10 y 12 |
-| Recomendaciones y difusión | HU-009, HU-026, HU-027 | RF-026, RF-027 | Sección 13 |
-| Sincronización multidispositivo | HU-029, HU-030 | RF-029, RF-030 | Secciones 4, 5 y 13 |
+| Registro, autenticación y sesión | HU-001, HU-037, HU-038, HU-039 | RF-001 a RF-004 | Secciones 1 a 3 |
+| Catálogo, publicación y disponibilidad | HU-002, HU-003, HU-004, HU-010, HU-011, HU-012, HU-016, HU-019 | RF-005 a RF-010, RF-018, RF-037 a RF-039 | Secciones 4, 7 y 8 |
+| Carrito, checkout y pago | HU-021, HU-022, HU-034 | RF-023 a RF-025, RF-034 | Sección 5; hay límites descritos en la sección 16 |
+| Perfil e historial de interacciones | HU-014, HU-018, HU-036 | RF-015, RF-017, RF-041 | Sección 6; HU-018 y HU-036 son parciales porque el frontend no registra automáticamente eventos |
+| Historial de compras y pedidos | HU-041, HU-042 | RF-023, RF-024 | Secciones 12 y 15 |
+| Promociones, herramientas y métricas | HU-020, HU-028 | RF-028, RF-040 | Secciones 8 y 13; HU-028 es parcial porque no se encontró un indicador de visitas |
+| Chat y soporte | HU-005, HU-013, HU-023 | RF-011, RF-012, RF-019, RF-020 | Secciones 10 y 11 |
+| Notificaciones de novedades | HU-035 | RF-005, RF-035, RF-040 | Sección 10 consulta notificaciones; HU-035 es parcial porque no se representa segmentación por intereses |
+| Favoritos, reseñas y comunidad | HU-006, HU-007, HU-017, HU-031 | RF-013, RF-014, RF-016, RF-031 | Sección 9; no se muestra distintivo visual de reseña verificada |
+| Administración y usuarios | HU-024, HU-025 | RF-021, RF-022, RF-036 | Sección 11 |
+| Envíos y devoluciones | HU-032, HU-042 | RF-024, RF-032, RF-039 | Sección 12 |
+| Reportar publicaciones | HU-008 | RF-019 | No se encontró un flujo para reportar directamente una publicación |
+| Recomendaciones y difusión | HU-009, HU-026, HU-027 | RF-026, RF-027 | Sin secuencia de funcionalidad completa: las brechas se detallan en la sección 16 |
+| Categorías | HU-040 | RF-018 | Sin flujo CRUD: solo se representa la consulta de categorías en la sección 7 |
+| Comparar libros | HU-033 | RF-033 | Sin secuencia: la función no tiene implementación encontrada |
+| Sincronización multidispositivo | HU-029, HU-030 | RF-029, RF-030 | Sección 14 muestra el consumo del backend compartido, no un proceso explícito de sincronización |
 
 ### Convenciones
 
 - `actor` representa al usuario humano.
-- `UI` representa componentes React y navegación del frontend web.
+- `UI` representa la pantalla web o móvil identificada en cada secuencia.
 - `Axios` representa el cliente compartido que adjunta `Authorization: Bearer <token>`.
 - `Router` representa los módulos FastAPI.
 - `Modelo` representa la lógica de `backend/app/models/`.
@@ -36,7 +41,7 @@ El alcance anterior cubría siete procesos principales. Esta versión amplía la
 ## 1. Registro, verificación de correo e inicio de sesión
 
 ```mermaid
-%%{init: {"theme":"base","themeVariables":{"background":"#0B1020","primaryColor":"#12344D","primaryTextColor":"#FFFFFF","primaryBorderColor":"#58A6FF","lineColor":"#58A6FF","textColor":"#FFFFFF","actorBkg":"#12344D","actorBorder":"#58A6FF","actorTextColor":"#FFFFFF","actorLineColor":"#58A6FF","signalColor":"#58A6FF","signalTextColor":"#FFFFFF","labelBoxBkgColor":"#12344D","labelBoxBorderColor":"#58A6FF","labelTextColor":"#FFFFFF","loopTextColor":"#FFFFFF","noteBkgColor":"#12344D","noteBorderColor":"#58A6FF","noteTextColor":"#FFFFFF","activationBkgColor":"#12344D","activationBorderColor":"#58A6FF","sequenceNumberColor":"#FFFFFF"}}}%%
+%%{init: {"theme":"base","themeVariables":{"background":"#000000","primaryColor":"#12344D","primaryTextColor":"#FFFFFF","primaryBorderColor":"#58A6FF","lineColor":"#58A6FF","textColor":"#FFFFFF","actorBkg":"#12344D","actorBorder":"#58A6FF","actorTextColor":"#FFFFFF","actorLineColor":"#58A6FF","signalColor":"#58A6FF","signalTextColor":"#FFFFFF","labelBoxBkgColor":"#12344D","labelBoxBorderColor":"#58A6FF","labelTextColor":"#FFFFFF","loopTextColor":"#FFFFFF","noteBkgColor":"#12344D","noteBorderColor":"#58A6FF","noteTextColor":"#FFFFFF","activationBkgColor":"#12344D","activationBorderColor":"#58A6FF","sequenceNumberColor":"#FFFFFF"}}}%%
 sequenceDiagram
     actor Usuario
     participant UI as Register / Login (React)
@@ -46,7 +51,7 @@ sequenceDiagram
     participant DB as MySQL usuarios
     participant SMTP as Servidor SMTP
 
-    rect rgb(18, 52, 77)
+    rect rgb(17, 20, 24)
     Note over Usuario,SMTP: Registro
     Usuario->>UI: Envía nombre, apellidos, correo,<br/>teléfono, contraseña y aceptaciones
     UI->>UI: Valida correo, teléfono, longitud,<br/>fortaleza y coincidencia de contraseña
@@ -70,18 +75,17 @@ sequenceDiagram
     end
     end
 
-    rect rgb(18, 52, 77)
-    Note over Usuario,SMTP: Verificación
-    Usuario->>SMTP: Abre enlace recibido
-    SMTP->>Auth: GET /verify-email?token=...
+    rect rgb(17, 20, 24)
+    Note over Usuario,Auth: Verificación
+    Usuario->>Auth: Abre enlace del correo<br/>GET /verify-email?token=...
     Auth->>Usuarios: obtener_usuario_por_token(token)
     Usuarios->>DB: Consulta y activa usuario
     DB-->>Usuarios: email_verificado=true
     Usuarios-->>Auth: Resultado
-    Auth-->>Usuario: Redirige o responde éxito
+    Auth-->>Usuario: Confirma la verificación
     end
 
-    rect rgb(18, 52, 77)
+    rect rgb(17, 20, 24)
     Note over Usuario,DB: Inicio de sesión
     Usuario->>UI: Ingresa correo y contraseña
     UI->>Axios: POST /login
@@ -111,7 +115,7 @@ sequenceDiagram
 ## 2. Cierre de sesión
 
 ```mermaid
-%%{init: {"theme":"base","themeVariables":{"background":"#0B1020","primaryColor":"#12344D","primaryTextColor":"#FFFFFF","primaryBorderColor":"#58A6FF","lineColor":"#58A6FF","textColor":"#FFFFFF","actorBkg":"#12344D","actorBorder":"#58A6FF","actorTextColor":"#FFFFFF","actorLineColor":"#58A6FF","signalColor":"#58A6FF","signalTextColor":"#FFFFFF","labelBoxBkgColor":"#12344D","labelBoxBorderColor":"#58A6FF","labelTextColor":"#FFFFFF","loopTextColor":"#FFFFFF","noteBkgColor":"#12344D","noteBorderColor":"#58A6FF","noteTextColor":"#FFFFFF","activationBkgColor":"#12344D","activationBorderColor":"#58A6FF","sequenceNumberColor":"#FFFFFF"}}}%%
+%%{init: {"theme":"base","themeVariables":{"background":"#000000","primaryColor":"#12344D","primaryTextColor":"#FFFFFF","primaryBorderColor":"#58A6FF","lineColor":"#58A6FF","textColor":"#FFFFFF","actorBkg":"#12344D","actorBorder":"#58A6FF","actorTextColor":"#FFFFFF","actorLineColor":"#58A6FF","signalColor":"#58A6FF","signalTextColor":"#FFFFFF","labelBoxBkgColor":"#12344D","labelBoxBorderColor":"#58A6FF","labelTextColor":"#FFFFFF","loopTextColor":"#FFFFFF","noteBkgColor":"#12344D","noteBorderColor":"#58A6FF","noteTextColor":"#FFFFFF","activationBkgColor":"#12344D","activationBorderColor":"#58A6FF","sequenceNumberColor":"#FFFFFF"}}}%%
 sequenceDiagram
     actor Usuario
     participant UI as Frontend React
@@ -131,7 +135,7 @@ El cierre de sesión es principalmente local: el frontend elimina el JWT. El bac
 ## 3. Recuperación de contraseña
 
 ```mermaid
-%%{init: {"theme":"base","themeVariables":{"background":"#0B1020","primaryColor":"#12344D","primaryTextColor":"#FFFFFF","primaryBorderColor":"#58A6FF","lineColor":"#58A6FF","textColor":"#FFFFFF","actorBkg":"#12344D","actorBorder":"#58A6FF","actorTextColor":"#FFFFFF","actorLineColor":"#58A6FF","signalColor":"#58A6FF","signalTextColor":"#FFFFFF","labelBoxBkgColor":"#12344D","labelBoxBorderColor":"#58A6FF","labelTextColor":"#FFFFFF","loopTextColor":"#FFFFFF","noteBkgColor":"#12344D","noteBorderColor":"#58A6FF","noteTextColor":"#FFFFFF","activationBkgColor":"#12344D","activationBorderColor":"#58A6FF","sequenceNumberColor":"#FFFFFF"}}}%%
+%%{init: {"theme":"base","themeVariables":{"background":"#000000","primaryColor":"#12344D","primaryTextColor":"#FFFFFF","primaryBorderColor":"#58A6FF","lineColor":"#58A6FF","textColor":"#FFFFFF","actorBkg":"#12344D","actorBorder":"#58A6FF","actorTextColor":"#FFFFFF","actorLineColor":"#58A6FF","signalColor":"#58A6FF","signalTextColor":"#FFFFFF","labelBoxBkgColor":"#12344D","labelBoxBorderColor":"#58A6FF","labelTextColor":"#FFFFFF","loopTextColor":"#FFFFFF","noteBkgColor":"#12344D","noteBorderColor":"#58A6FF","noteTextColor":"#FFFFFF","activationBkgColor":"#12344D","activationBorderColor":"#58A6FF","sequenceNumberColor":"#FFFFFF"}}}%%
 sequenceDiagram
     actor Usuario
     participant UI as Forgot / Reset Password
@@ -182,7 +186,7 @@ sequenceDiagram
 ## 4. Exploración del catálogo y detalle de un libro
 
 ```mermaid
-%%{init: {"theme":"base","themeVariables":{"background":"#0B1020","primaryColor":"#12344D","primaryTextColor":"#FFFFFF","primaryBorderColor":"#58A6FF","lineColor":"#58A6FF","textColor":"#FFFFFF","actorBkg":"#12344D","actorBorder":"#58A6FF","actorTextColor":"#FFFFFF","actorLineColor":"#58A6FF","signalColor":"#58A6FF","signalTextColor":"#FFFFFF","labelBoxBkgColor":"#12344D","labelBoxBorderColor":"#58A6FF","labelTextColor":"#FFFFFF","loopTextColor":"#FFFFFF","noteBkgColor":"#12344D","noteBorderColor":"#58A6FF","noteTextColor":"#FFFFFF","activationBkgColor":"#12344D","activationBorderColor":"#58A6FF","sequenceNumberColor":"#FFFFFF"}}}%%
+%%{init: {"theme":"base","themeVariables":{"background":"#000000","primaryColor":"#12344D","primaryTextColor":"#FFFFFF","primaryBorderColor":"#58A6FF","lineColor":"#58A6FF","textColor":"#FFFFFF","actorBkg":"#12344D","actorBorder":"#58A6FF","actorTextColor":"#FFFFFF","actorLineColor":"#58A6FF","signalColor":"#58A6FF","signalTextColor":"#FFFFFF","labelBoxBkgColor":"#12344D","labelBoxBorderColor":"#58A6FF","labelTextColor":"#FFFFFF","loopTextColor":"#FFFFFF","noteBkgColor":"#12344D","noteBorderColor":"#58A6FF","noteTextColor":"#FFFFFF","activationBkgColor":"#12344D","activationBorderColor":"#58A6FF","sequenceNumberColor":"#FFFFFF"}}}%%
 sequenceDiagram
     actor Usuario
     participant Cat as Página Catálogo
@@ -223,7 +227,7 @@ sequenceDiagram
 ## 5. Carrito, checkout y pago
 
 ```mermaid
-%%{init: {"theme":"base","themeVariables":{"background":"#0B1020","primaryColor":"#12344D","primaryTextColor":"#FFFFFF","primaryBorderColor":"#58A6FF","lineColor":"#58A6FF","textColor":"#FFFFFF","actorBkg":"#12344D","actorBorder":"#58A6FF","actorTextColor":"#FFFFFF","actorLineColor":"#58A6FF","signalColor":"#58A6FF","signalTextColor":"#FFFFFF","labelBoxBkgColor":"#12344D","labelBoxBorderColor":"#58A6FF","labelTextColor":"#FFFFFF","loopTextColor":"#FFFFFF","noteBkgColor":"#12344D","noteBorderColor":"#58A6FF","noteTextColor":"#FFFFFF","activationBkgColor":"#12344D","activationBorderColor":"#58A6FF","sequenceNumberColor":"#FFFFFF"}}}%%
+%%{init: {"theme":"base","themeVariables":{"background":"#000000","primaryColor":"#12344D","primaryTextColor":"#FFFFFF","primaryBorderColor":"#58A6FF","lineColor":"#58A6FF","textColor":"#FFFFFF","actorBkg":"#12344D","actorBorder":"#58A6FF","actorTextColor":"#FFFFFF","actorLineColor":"#58A6FF","signalColor":"#58A6FF","signalTextColor":"#FFFFFF","labelBoxBkgColor":"#12344D","labelBoxBorderColor":"#58A6FF","labelTextColor":"#FFFFFF","loopTextColor":"#FFFFFF","noteBkgColor":"#12344D","noteBorderColor":"#58A6FF","noteTextColor":"#FFFFFF","activationBkgColor":"#12344D","activationBorderColor":"#58A6FF","sequenceNumberColor":"#FFFFFF"}}}%%
 sequenceDiagram
     actor Comprador
     participant UI as SecciónCarrito / React
@@ -272,7 +276,7 @@ sequenceDiagram
     else Dirección válida o retiro en tienda
         PagoAPI->>Modelo: registrar_pago(...)
         Modelo->>JSON: Obtiene orden
-        Modelo->>Modelo: Valida monto y aplica cupón
+        Modelo->>Modelo: Verifica estado y que el monto<br/>no supere el total; registra cupón si se envió
         Modelo->>DB: Registra o consulta pago
         DB-->>Modelo: Estado del pago
         Modelo-->>PagoAPI: Resultado
@@ -294,13 +298,14 @@ sequenceDiagram
 ## 6. Perfil e historial del usuario
 
 ```mermaid
-%%{init: {"theme":"base","themeVariables":{"background":"#0B1020","primaryColor":"#12344D","primaryTextColor":"#FFFFFF","primaryBorderColor":"#58A6FF","lineColor":"#58A6FF","textColor":"#FFFFFF","actorBkg":"#12344D","actorBorder":"#58A6FF","actorTextColor":"#FFFFFF","actorLineColor":"#58A6FF","signalColor":"#58A6FF","signalTextColor":"#FFFFFF","labelBoxBkgColor":"#12344D","labelBoxBorderColor":"#58A6FF","labelTextColor":"#FFFFFF","loopTextColor":"#FFFFFF","noteBkgColor":"#12344D","noteBorderColor":"#58A6FF","noteTextColor":"#FFFFFF","activationBkgColor":"#12344D","activationBorderColor":"#58A6FF","sequenceNumberColor":"#FFFFFF"}}}%%
+%%{init: {"theme":"base","themeVariables":{"background":"#000000","primaryColor":"#12344D","primaryTextColor":"#FFFFFF","primaryBorderColor":"#58A6FF","lineColor":"#58A6FF","textColor":"#FFFFFF","actorBkg":"#12344D","actorBorder":"#58A6FF","actorTextColor":"#FFFFFF","actorLineColor":"#58A6FF","signalColor":"#58A6FF","signalTextColor":"#FFFFFF","labelBoxBkgColor":"#12344D","labelBoxBorderColor":"#58A6FF","labelTextColor":"#FFFFFF","loopTextColor":"#FFFFFF","noteBkgColor":"#12344D","noteBorderColor":"#58A6FF","noteTextColor":"#FFFFFF","activationBkgColor":"#12344D","activationBorderColor":"#58A6FF","sequenceNumberColor":"#FFFFFF"}}}%%
 sequenceDiagram
     actor Usuario
     participant UI as Perfil / Historial
     participant Axios as Cliente Axios
-    participant API as Router perfil / historial
-    participant Modelo as Modelos perfil / historial
+    participant API as Router perfil
+    participant Historial as Router /historial
+    participant Modelo as Modelo perfil
     participant DB as MySQL
 
     Usuario->>UI: Abre perfil
@@ -323,30 +328,29 @@ sequenceDiagram
     Modelo-->>UI: Perfil actualizado
 
     Usuario->>UI: Consulta historial
-    UI->>Axios: GET /historial-interacciones
-    Axios->>API: Filtro, límite y desplazamiento
-    API->>Modelo: Obtener historial y estadísticas
-    Modelo->>DB: Interacciones del usuario
-    DB-->>Modelo: Visualizaciones, compras, reseñas,<br/>favoritos y otros eventos
-    Modelo-->>API: Historial agregado
-    API-->>UI: Listado y estadísticas
+    UI->>Axios: GET /historial?tipo=...&limit=...&offset=...
+    Axios->>Historial: JWT, filtro, límite y desplazamiento
+    Historial->>DB: Consulta interacciones del usuario
+    DB-->>Historial: Interacciones paginadas
+    Historial-->>UI: Listado de interacciones
     UI-->>Usuario: Presenta filtros y resultados
 
     opt Eliminar interacción
         Usuario->>UI: Solicita eliminar
-        UI->>Axios: DELETE /historial-interacciones/{id}
-        Axios->>API: Id de interacción
-        API->>Modelo: Elimina solo si pertenece al usuario
-        Modelo->>DB: DELETE
-        DB-->>Modelo: Confirmación
-        Modelo-->>UI: Historial actualizado
+        UI->>Axios: DELETE /historial/{id_interaccion}
+        Axios->>Historial: Id de interacción y JWT
+        Historial->>DB: Elimina solo si pertenece al usuario
+        DB-->>Historial: Confirmación
+        Historial-->>UI: Historial actualizado
     end
 ```
+
+La API también expone `GET /historial/estadisticas`. El frontend permite consultar el historial, pero no se encontraron llamadas automáticas a `POST /historial` desde las acciones de navegación; por eso, el diagrama no representa el registro automático de cada interacción como si ya ocurriera.
 
 ## 7. Publicación y gestión de libros por el vendedor
 
 ```mermaid
-%%{init: {"theme":"base","themeVariables":{"background":"#0B1020","primaryColor":"#12344D","primaryTextColor":"#FFFFFF","primaryBorderColor":"#58A6FF","lineColor":"#58A6FF","textColor":"#FFFFFF","actorBkg":"#12344D","actorBorder":"#58A6FF","actorTextColor":"#FFFFFF","actorLineColor":"#58A6FF","signalColor":"#58A6FF","signalTextColor":"#FFFFFF","labelBoxBkgColor":"#12344D","labelBoxBorderColor":"#58A6FF","labelTextColor":"#FFFFFF","loopTextColor":"#FFFFFF","noteBkgColor":"#12344D","noteBorderColor":"#58A6FF","noteTextColor":"#FFFFFF","activationBkgColor":"#12344D","activationBorderColor":"#58A6FF","sequenceNumberColor":"#FFFFFF"}}}%%
+%%{init: {"theme":"base","themeVariables":{"background":"#000000","primaryColor":"#12344D","primaryTextColor":"#FFFFFF","primaryBorderColor":"#58A6FF","lineColor":"#58A6FF","textColor":"#FFFFFF","actorBkg":"#12344D","actorBorder":"#58A6FF","actorTextColor":"#FFFFFF","actorLineColor":"#58A6FF","signalColor":"#58A6FF","signalTextColor":"#FFFFFF","labelBoxBkgColor":"#12344D","labelBoxBorderColor":"#58A6FF","labelTextColor":"#FFFFFF","loopTextColor":"#FFFFFF","noteBkgColor":"#12344D","noteBorderColor":"#58A6FF","noteTextColor":"#FFFFFF","activationBkgColor":"#12344D","activationBorderColor":"#58A6FF","sequenceNumberColor":"#FFFFFF"}}}%%
 sequenceDiagram
     actor Vendedor
     participant UI as PublicarLibro / MiTienda
@@ -421,7 +425,7 @@ sequenceDiagram
 ## 8. Ofertas y control de stock
 
 ```mermaid
-%%{init: {"theme":"base","themeVariables":{"background":"#0B1020","primaryColor":"#12344D","primaryTextColor":"#FFFFFF","primaryBorderColor":"#58A6FF","lineColor":"#58A6FF","textColor":"#FFFFFF","actorBkg":"#12344D","actorBorder":"#58A6FF","actorTextColor":"#FFFFFF","actorLineColor":"#58A6FF","signalColor":"#58A6FF","signalTextColor":"#FFFFFF","labelBoxBkgColor":"#12344D","labelBoxBorderColor":"#58A6FF","labelTextColor":"#FFFFFF","loopTextColor":"#FFFFFF","noteBkgColor":"#12344D","noteBorderColor":"#58A6FF","noteTextColor":"#FFFFFF","activationBkgColor":"#12344D","activationBorderColor":"#58A6FF","sequenceNumberColor":"#FFFFFF"}}}%%
+%%{init: {"theme":"base","themeVariables":{"background":"#000000","primaryColor":"#12344D","primaryTextColor":"#FFFFFF","primaryBorderColor":"#58A6FF","lineColor":"#58A6FF","textColor":"#FFFFFF","actorBkg":"#12344D","actorBorder":"#58A6FF","actorTextColor":"#FFFFFF","actorLineColor":"#58A6FF","signalColor":"#58A6FF","signalTextColor":"#FFFFFF","labelBoxBkgColor":"#12344D","labelBoxBorderColor":"#58A6FF","labelTextColor":"#FFFFFF","loopTextColor":"#FFFFFF","noteBkgColor":"#12344D","noteBorderColor":"#58A6FF","noteTextColor":"#FFFFFF","activationBkgColor":"#12344D","activationBorderColor":"#58A6FF","sequenceNumberColor":"#FFFFFF"}}}%%
 sequenceDiagram
     actor Vendedor
     participant UI as Panel MiTienda
@@ -431,7 +435,7 @@ sequenceDiagram
     participant Modelo as Modelos oferta / libro
     participant DB as MySQL
 
-    rect rgb(18, 52, 77)
+    rect rgb(17, 20, 24)
     Note over Vendedor,DB: Crear oferta
     Vendedor->>UI: Define descuento, fechas y libros
     UI->>UI: Valida fechas y selección
@@ -453,7 +457,7 @@ sequenceDiagram
     end
     end
 
-    rect rgb(18, 52, 77)
+    rect rgb(17, 20, 24)
     Note over Vendedor,DB: Ajustar stock
     Vendedor->>UI: Solicita cambiar stock
     UI->>Axios: PATCH /libros/{id}/stock
@@ -468,7 +472,7 @@ sequenceDiagram
     UI-->>Vendedor: Refresca inventario
     end
 
-    rect rgb(18, 52, 77)
+    rect rgb(17, 20, 24)
     Note over Vendedor,DB: Alertas de inventario
     Vendedor->>UI: Consulta alertas
     UI->>Axios: GET /libros/alertas-stock?umbral=...
@@ -486,7 +490,7 @@ sequenceDiagram
 ## 9. Favoritos, listas de deseos y reseñas
 
 ```mermaid
-%%{init: {"theme":"base","themeVariables":{"background":"#0B1020","primaryColor":"#12344D","primaryTextColor":"#FFFFFF","primaryBorderColor":"#58A6FF","lineColor":"#58A6FF","textColor":"#FFFFFF","actorBkg":"#12344D","actorBorder":"#58A6FF","actorTextColor":"#FFFFFF","actorLineColor":"#58A6FF","signalColor":"#58A6FF","signalTextColor":"#FFFFFF","labelBoxBkgColor":"#12344D","labelBoxBorderColor":"#58A6FF","labelTextColor":"#FFFFFF","loopTextColor":"#FFFFFF","noteBkgColor":"#12344D","noteBorderColor":"#58A6FF","noteTextColor":"#FFFFFF","activationBkgColor":"#12344D","activationBorderColor":"#58A6FF","sequenceNumberColor":"#FFFFFF"}}}%%
+%%{init: {"theme":"base","themeVariables":{"background":"#000000","primaryColor":"#12344D","primaryTextColor":"#FFFFFF","primaryBorderColor":"#58A6FF","lineColor":"#58A6FF","textColor":"#FFFFFF","actorBkg":"#12344D","actorBorder":"#58A6FF","actorTextColor":"#FFFFFF","actorLineColor":"#58A6FF","signalColor":"#58A6FF","signalTextColor":"#FFFFFF","labelBoxBkgColor":"#12344D","labelBoxBorderColor":"#58A6FF","labelTextColor":"#FFFFFF","loopTextColor":"#FFFFFF","noteBkgColor":"#12344D","noteBorderColor":"#58A6FF","noteTextColor":"#FFFFFF","activationBkgColor":"#12344D","activationBorderColor":"#58A6FF","sequenceNumberColor":"#FFFFFF"}}}%%
 sequenceDiagram
     actor Usuario
     participant UI as ListaDeseos / Catálogo
@@ -497,7 +501,7 @@ sequenceDiagram
     participant Notif as Tabla notificaciones
     participant DB as MySQL
 
-    rect rgb(18, 52, 77)
+    rect rgb(17, 20, 24)
     Note over Usuario,DB: Favoritos
     Usuario->>UI: Agrega o elimina favorito
     alt Agregar
@@ -516,7 +520,7 @@ sequenceDiagram
     end
     end
 
-    rect rgb(18, 52, 77)
+    rect rgb(17, 20, 24)
     Note over Usuario,DB: Lista personalizada
     Usuario->>UI: Crea una lista y agrega libros
     UI->>Axios: POST /lista-deseos
@@ -532,8 +536,8 @@ sequenceDiagram
     Deseos-->>UI: Actualiza la lista
     end
 
-    rect rgb(18, 52, 77)
-    Note over Usuario,DB: Reseña verificada
+    rect rgb(17, 20, 24)
+    Note over Usuario,DB: Reseña de una compra entregada
     Usuario->>UI: Califica un libro comprado
     UI->>Axios: POST /resenas/crear
     Axios->>Reseñas: Calificación y comentario
@@ -554,10 +558,12 @@ sequenceDiagram
     end
 ```
 
+El backend exige una compra entregada para publicar la reseña. No se encontró un distintivo visual que la identifique como verificada.
+
 ## 10. Chat, notificaciones y soporte
 
 ```mermaid
-%%{init: {"theme":"base","themeVariables":{"background":"#0B1020","primaryColor":"#12344D","primaryTextColor":"#FFFFFF","primaryBorderColor":"#58A6FF","lineColor":"#58A6FF","textColor":"#FFFFFF","actorBkg":"#12344D","actorBorder":"#58A6FF","actorTextColor":"#FFFFFF","actorLineColor":"#58A6FF","signalColor":"#58A6FF","signalTextColor":"#FFFFFF","labelBoxBkgColor":"#12344D","labelBoxBorderColor":"#58A6FF","labelTextColor":"#FFFFFF","loopTextColor":"#FFFFFF","noteBkgColor":"#12344D","noteBorderColor":"#58A6FF","noteTextColor":"#FFFFFF","activationBkgColor":"#12344D","activationBorderColor":"#58A6FF","sequenceNumberColor":"#FFFFFF"}}}%%
+%%{init: {"theme":"base","themeVariables":{"background":"#000000","primaryColor":"#12344D","primaryTextColor":"#FFFFFF","primaryBorderColor":"#58A6FF","lineColor":"#58A6FF","textColor":"#FFFFFF","actorBkg":"#12344D","actorBorder":"#58A6FF","actorTextColor":"#FFFFFF","actorLineColor":"#58A6FF","signalColor":"#58A6FF","signalTextColor":"#FFFFFF","labelBoxBkgColor":"#12344D","labelBoxBorderColor":"#58A6FF","labelTextColor":"#FFFFFF","loopTextColor":"#FFFFFF","noteBkgColor":"#12344D","noteBorderColor":"#58A6FF","noteTextColor":"#FFFFFF","activationBkgColor":"#12344D","activationBorderColor":"#58A6FF","sequenceNumberColor":"#FFFFFF"}}}%%
 sequenceDiagram
     actor Comprador
     actor Vendedor
@@ -569,7 +575,7 @@ sequenceDiagram
     participant WS as WebSocket /ws
     participant DB as MySQL
 
-    rect rgb(18, 52, 77)
+    rect rgb(17, 20, 24)
     Note over Comprador,Vendedor: Conversación
     Comprador->>UI: Selecciona una tienda
     UI->>Axios: POST /chat/salas
@@ -591,7 +597,7 @@ sequenceDiagram
     Axios->>Chat: Actualiza mensaje_leido
     end
 
-    rect rgb(18, 52, 77)
+    rect rgb(17, 20, 24)
     Note over Comprador,Notif: Notificaciones
     Comprador->>UI: Consulta notificaciones
     UI->>Axios: GET /notificaciones
@@ -604,7 +610,7 @@ sequenceDiagram
     Axios->>Notif: Actualiza leida=true
     end
 
-    rect rgb(18, 52, 77)
+    rect rgb(17, 20, 24)
     Note over Comprador,Vendedor: Reclamo o soporte
     Comprador->>UI: Crea reclamo asociado a una orden
     UI->>Axios: POST /quejas multipart
@@ -629,7 +635,7 @@ sequenceDiagram
 ## 11. Administración, bloqueo y moderación
 
 ```mermaid
-%%{init: {"theme":"base","themeVariables":{"background":"#0B1020","primaryColor":"#12344D","primaryTextColor":"#FFFFFF","primaryBorderColor":"#58A6FF","lineColor":"#58A6FF","textColor":"#FFFFFF","actorBkg":"#12344D","actorBorder":"#58A6FF","actorTextColor":"#FFFFFF","actorLineColor":"#58A6FF","signalColor":"#58A6FF","signalTextColor":"#FFFFFF","labelBoxBkgColor":"#12344D","labelBoxBorderColor":"#58A6FF","labelTextColor":"#FFFFFF","loopTextColor":"#FFFFFF","noteBkgColor":"#12344D","noteBorderColor":"#58A6FF","noteTextColor":"#FFFFFF","activationBkgColor":"#12344D","activationBorderColor":"#58A6FF","sequenceNumberColor":"#FFFFFF"}}}%%
+%%{init: {"theme":"base","themeVariables":{"background":"#000000","primaryColor":"#12344D","primaryTextColor":"#FFFFFF","primaryBorderColor":"#58A6FF","lineColor":"#58A6FF","textColor":"#FFFFFF","actorBkg":"#12344D","actorBorder":"#58A6FF","actorTextColor":"#FFFFFF","actorLineColor":"#58A6FF","signalColor":"#58A6FF","signalTextColor":"#FFFFFF","labelBoxBkgColor":"#12344D","labelBoxBorderColor":"#58A6FF","labelTextColor":"#FFFFFF","loopTextColor":"#FFFFFF","noteBkgColor":"#12344D","noteBorderColor":"#58A6FF","noteTextColor":"#FFFFFF","activationBkgColor":"#12344D","activationBorderColor":"#58A6FF","sequenceNumberColor":"#FFFFFF"}}}%%
 sequenceDiagram
     actor Admin
     participant UI as AdminDashboard
@@ -684,7 +690,7 @@ sequenceDiagram
 ## 12. Envios, devoluciones y retiro en tienda
 
 ```mermaid
-%%{init: {"theme":"base","themeVariables":{"background":"#0B1020","primaryColor":"#12344D","primaryTextColor":"#FFFFFF","primaryBorderColor":"#58A6FF","lineColor":"#58A6FF","textColor":"#FFFFFF","actorBkg":"#12344D","actorBorder":"#58A6FF","actorTextColor":"#FFFFFF","actorLineColor":"#58A6FF","signalColor":"#58A6FF","signalTextColor":"#FFFFFF","labelBoxBkgColor":"#12344D","labelBoxBorderColor":"#58A6FF","labelTextColor":"#FFFFFF","loopTextColor":"#FFFFFF","noteBkgColor":"#12344D","noteBorderColor":"#58A6FF","noteTextColor":"#FFFFFF","activationBkgColor":"#12344D","activationBorderColor":"#58A6FF","sequenceNumberColor":"#FFFFFF"}}}%%
+%%{init: {"theme":"base","themeVariables":{"background":"#000000","primaryColor":"#12344D","primaryTextColor":"#FFFFFF","primaryBorderColor":"#58A6FF","lineColor":"#58A6FF","textColor":"#FFFFFF","actorBkg":"#12344D","actorBorder":"#58A6FF","actorTextColor":"#FFFFFF","actorLineColor":"#58A6FF","signalColor":"#58A6FF","signalTextColor":"#FFFFFF","labelBoxBkgColor":"#12344D","labelBoxBorderColor":"#58A6FF","labelTextColor":"#FFFFFF","loopTextColor":"#FFFFFF","noteBkgColor":"#12344D","noteBorderColor":"#58A6FF","noteTextColor":"#FFFFFF","activationBkgColor":"#12344D","activationBorderColor":"#58A6FF","sequenceNumberColor":"#FFFFFF"}}}%%
 sequenceDiagram
     actor Comprador
     actor Vendedor
@@ -735,14 +741,18 @@ sequenceDiagram
 ## 13. Herramientas, impulsos, finanzas y suscripciones
 
 ```mermaid
-%%{init: {"theme":"base","themeVariables":{"background":"#0B1020","primaryColor":"#12344D","primaryTextColor":"#FFFFFF","primaryBorderColor":"#58A6FF","lineColor":"#58A6FF","textColor":"#FFFFFF","actorBkg":"#12344D","actorBorder":"#58A6FF","actorTextColor":"#FFFFFF","actorLineColor":"#58A6FF","signalColor":"#58A6FF","signalTextColor":"#FFFFFF","labelBoxBkgColor":"#12344D","labelBoxBorderColor":"#58A6FF","labelTextColor":"#FFFFFF","loopTextColor":"#FFFFFF","noteBkgColor":"#12344D","noteBorderColor":"#58A6FF","noteTextColor":"#FFFFFF","activationBkgColor":"#12344D","activationBorderColor":"#58A6FF","sequenceNumberColor":"#FFFFFF"}}}%%
+%%{init: {"theme":"base","themeVariables":{"background":"#000000","primaryColor":"#12344D","primaryTextColor":"#FFFFFF","primaryBorderColor":"#58A6FF","lineColor":"#58A6FF","textColor":"#FFFFFF","actorBkg":"#12344D","actorBorder":"#58A6FF","actorTextColor":"#FFFFFF","actorLineColor":"#58A6FF","signalColor":"#58A6FF","signalTextColor":"#FFFFFF","labelBoxBkgColor":"#12344D","labelBoxBorderColor":"#58A6FF","labelTextColor":"#FFFFFF","loopTextColor":"#FFFFFF","noteBkgColor":"#12344D","noteBorderColor":"#58A6FF","noteTextColor":"#FFFFFF","activationBkgColor":"#12344D","activationBorderColor":"#58A6FF","sequenceNumberColor":"#FFFFFF"}}}%%
 sequenceDiagram
     actor Vendedor
+    actor Usuario
     participant UI as MiTienda / Finanzas
     participant Axios as Cliente Axios
     participant Herr as Router herramientas
     participant Impulso as Router impulsos
     participant Finanzas as Router bookypago-finanzas
+    participant Libros as Router /libros
+    participant Perfil as Router /perfil
+    participant Catalogo as Catálogo web / móvil
     participant DB as MySQL
 
     Vendedor->>UI: Consulta planes y suscripción
@@ -774,18 +784,52 @@ sequenceDiagram
         Finanzas->>DB: INSERT cuenta
     end
 
+    opt Consultar métricas disponibles
+        Vendedor->>UI: Consulta ventas e indicadores
+        UI->>Axios: GET /libros/stats
+        Axios->>Libros: JWT
+        Libros->>DB: Agrega ventas y órdenes<br/>del día, semana y mes
+        DB-->>Libros: Totales y cantidades
+        Libros-->>UI: Estadísticas disponibles
+        UI-->>Vendedor: Presenta resumen
+        UI->>Axios: GET /libros/mis-ventas y /libros/top-vendidos
+        Axios->>Libros: JWT
+        Libros->>DB: Consulta ventas y libros más vendidos
+        DB-->>Libros: Resultados
+        Libros-->>UI: Listados de ventas
+        Vendedor->>UI: Consulta calificaciones de la tienda
+        UI->>Axios: GET /perfil/calificaciones-tienda/{id_tienda}
+        Axios->>Perfil: Bearer JWT
+        Perfil->>DB: Verifica propiedad y consulta promedio,<br/>distribución y opiniones
+        DB-->>Perfil: Calificaciones de la tienda
+        Perfil-->>UI: Resumen de calificaciones
+        UI-->>Vendedor: Muestra promedio y opiniones
+    end
+
     opt Impulso visible
-        Usuario->>UI: Consulta catálogo
-        UI->>Axios: GET /impulsos/activos
+        Usuario->>Catalogo: Consulta catálogo con impulsos
+        Catalogo->>Axios: GET /impulsos/activos
+        Axios->>Impulso: Solicita impulsos vigentes
         Impulso->>DB: Lista impresiones y clics vigentes
-        Impulso->>DB: Registra impresión o clic
+        DB-->>Impulso: Impulsos activos
+        Impulso-->>Catalogo: Lista de impulsos
+        opt Impulso mostrado
+            Catalogo->>Axios: POST /impulsos/{id_impulso}/impresion
+            Axios->>Impulso: Registra impresión
+            Impulso->>DB: Incrementa contador
+        end
+        opt Usuario abre un libro impulsado
+            Catalogo->>Axios: POST /impulsos/{id_impulso}/clic
+            Axios->>Impulso: Registra clic
+            Impulso->>DB: Incrementa contador
+        end
     end
 ```
 
 ## 14. Consumo móvil compartido
 
 ```mermaid
-%%{init: {"theme":"base","themeVariables":{"background":"#0B1020","primaryColor":"#12344D","primaryTextColor":"#FFFFFF","primaryBorderColor":"#58A6FF","lineColor":"#58A6FF","textColor":"#FFFFFF","actorBkg":"#12344D","actorBorder":"#58A6FF","actorTextColor":"#FFFFFF","actorLineColor":"#58A6FF","signalColor":"#58A6FF","signalTextColor":"#FFFFFF","labelBoxBkgColor":"#12344D","labelBoxBorderColor":"#58A6FF","labelTextColor":"#FFFFFF","loopTextColor":"#FFFFFF","noteBkgColor":"#12344D","noteBorderColor":"#58A6FF","noteTextColor":"#FFFFFF","activationBkgColor":"#12344D","activationBorderColor":"#58A6FF","sequenceNumberColor":"#FFFFFF"}}}%%
+%%{init: {"theme":"base","themeVariables":{"background":"#000000","primaryColor":"#12344D","primaryTextColor":"#FFFFFF","primaryBorderColor":"#58A6FF","lineColor":"#58A6FF","textColor":"#FFFFFF","actorBkg":"#12344D","actorBorder":"#58A6FF","actorTextColor":"#FFFFFF","actorLineColor":"#58A6FF","signalColor":"#58A6FF","signalTextColor":"#FFFFFF","labelBoxBkgColor":"#12344D","labelBoxBorderColor":"#58A6FF","labelTextColor":"#FFFFFF","loopTextColor":"#FFFFFF","noteBkgColor":"#12344D","noteBorderColor":"#58A6FF","noteTextColor":"#FFFFFF","activationBkgColor":"#12344D","activationBorderColor":"#58A6FF","sequenceNumberColor":"#FFFFFF"}}}%%
 sequenceDiagram
     actor Usuario
     participant App as App móvil Expo
@@ -807,12 +851,17 @@ sequenceDiagram
         Axios-->>App: Solicita volver a iniciar sesión
     else Token válido
         Auth-->>API: sub y rol
-        API->>DB: Ejecuta consulta o actualización
-        opt Flujo de carrito u órdenes
-            API->>JSON: Usa cart_store.json u orders.json
+        alt Endpoint con persistencia SQL
+            API->>DB: Ejecuta consulta o actualización
+            DB-->>API: Resultado
+        else Flujo de carrito u órdenes
+            API->>JSON: Lee o actualiza cart_store.json / orders.json
+            JSON-->>API: Resultado
+            opt Consulta o sincronización SQL del flujo
+                API->>DB: Consulta o sincroniza datos de la orden
+                DB-->>API: Datos actuales o confirmación
+            end
         end
-        DB-->>API: Resultado
-        JSON-->>API: Resultado
         API-->>Axios: Respuesta JSON
         Axios-->>App: Actualiza pantalla y contexto
         App-->>Usuario: Presenta resultado
@@ -821,17 +870,82 @@ sequenceDiagram
 
 La app móvil no usa una API independiente ni una base de datos propia. Debe apuntar a la IP alcanzable del backend, mientras el despliegue web usa `VITE_API_BASE_URL`. Los flujos funcionales descritos en las secciones anteriores son compartidos por ambos clientes donde cada pantalla los consume.
 
-## 15. Límites conocidos y decisiones documentales
+## 15. Historial de compras y gestión de pedidos
+
+```mermaid
+%%{init: {"theme":"base","themeVariables":{"background":"#000000","primaryColor":"#12344D","primaryTextColor":"#FFFFFF","primaryBorderColor":"#58A6FF","lineColor":"#58A6FF","textColor":"#FFFFFF","actorBkg":"#12344D","actorBorder":"#58A6FF","actorTextColor":"#FFFFFF","actorLineColor":"#58A6FF","signalColor":"#58A6FF","signalTextColor":"#FFFFFF","labelBoxBkgColor":"#12344D","labelBoxBorderColor":"#58A6FF","labelTextColor":"#FFFFFF","loopTextColor":"#FFFFFF","noteBkgColor":"#12344D","noteBorderColor":"#58A6FF","noteTextColor":"#FFFFFF","activationBkgColor":"#12344D","activationBorderColor":"#58A6FF","sequenceNumberColor":"#FFFFFF"}}}%%
+sequenceDiagram
+    actor Comprador
+    participant UI as MisCompras web / pantalla de compras móvil
+    participant Axios as Cliente HTTP
+    participant API as Router payments
+    participant Modelo as Modelo payments
+    participant JSON as orders.json
+    participant DB as MySQL
+
+    Comprador->>UI: Consulta sus compras
+    UI->>Axios: GET /api/v1/orders
+    Axios->>API: Bearer JWT
+    API->>API: Obtiene id_usuario del token
+    API->>Modelo: obtener_ordenes_usuario(id_usuario)
+    Modelo->>JSON: Lee órdenes locales del usuario
+    JSON-->>Modelo: Órdenes disponibles
+    Modelo->>DB: Consulta órdenes del usuario y datos actuales
+    DB-->>Modelo: Estados, guías y órdenes persistidas
+    Modelo->>Modelo: Consolida datos JSON y SQL
+    Modelo-->>API: Órdenes del usuario
+    API-->>Axios: Lista de compras y estados
+    Axios-->>UI: Actualiza historial
+    UI-->>Comprador: Muestra compras ordenadas
+
+    opt Consultar detalle
+        Comprador->>UI: Selecciona una orden
+        UI->>Axios: GET /api/v1/orders/{id_orden}
+        Axios->>API: Bearer JWT + id_orden
+        API->>Modelo: obtener_orden(id_usuario, id_orden)
+        Modelo->>JSON: Busca la orden del usuario
+        Modelo->>DB: Sincroniza detalles actuales si existen
+        DB-->>Modelo: Estado, envío y artículos
+        Modelo-->>API: Detalle de la orden
+        API-->>UI: Respuesta autenticada
+        UI-->>Comprador: Muestra libros y estado actual
+    end
+
+    opt Solicitar cancelación
+        Comprador->>UI: Solicita cancelar una orden
+        UI->>Axios: DELETE /api/v1/orders/{id_orden}
+        Axios->>API: Bearer JWT + motivo opcional
+        API->>Modelo: cancelar_orden(id_usuario, id_orden, motivo)
+        Modelo->>DB: Actualiza la orden si existe en SQL
+        Modelo->>JSON: Actualiza la copia local si existe
+        Modelo-->>API: Resultado de cancelación
+        API-->>UI: Confirmación o error
+        UI-->>Comprador: Actualiza el estado visible
+    end
+```
+
+La lista usa `orders.json` y MySQL para completar o actualizar datos de las órdenes. El endpoint de cancelación no comprueba que la orden esté en un estado cancelable; esta limitación se registra abajo.
+
+## 16. Límites conocidos y decisiones documentales
 
 | Hallazgo confirmado | Impacto en los diagramas | Estado |
 |---|---|---|
-| El carrito usa `cart_store.json` y las órdenes usan `orders.json` como persistencia principal | Checkout y consulta muestran una fuente JSON y una sincronización SQL secundaria | Documentado como dualidad |
+| El carrito usa `cart_store.json` y las órdenes usan `orders.json` como persistencia principal, con consulta/sincronización SQL complementaria | Checkout e historial muestran ambas fuentes sin presentarlas como una base única | Documentado como dualidad |
 | Al agregar el mismo libro no existe actualización independiente de cantidad en la API actual | El flujo actual suma la cantidad enviada al ítem existente | Cumple parcialmente RF-034 |
 | El backend define `/ofertas`, pero RF-040 requiere mostrar la promoción activa en catálogo | El CRUD existe; la consulta activa existe, pero el catálogo no consume el descuento de forma visible | Parcial |
-| La comparación lado a lado no tiene implementación | No se crea un diagrama de secuencia como funcionalidad existente | RF-033 pendiente |
+| El pago acepta un monto menor que el total sin comprobar que exista un cupón válido que lo justifique | El diagrama muestra la validación real y no afirma que exista una pasarela externa | Requiere revisión |
+| La cancelación de pedidos no verifica el estado actual antes de marcar la orden como cancelada | La secuencia muestra la operación sin afirmar que solo se permita en estados pendientes | Requiere corrección funcional |
+| Las estadísticas de ventas incluyen totales y cantidades de órdenes; el panel de tienda consulta calificaciones por separado, pero no se encontró un indicador de visitas | HU-028 queda representada como cobertura parcial | Parcial |
+| No se encontraron recomendaciones personalizadas, sugerencias generales ni compartir publicaciones | No se dibujan como funcionalidades implementadas | HU-009, HU-026 y HU-027 pendientes |
+| El reporte directo de una publicación no se encontró; las quejas representadas en la sección 10 son de soporte/órdenes | No se equiparan dos flujos distintos | HU-008 parcial |
+| HU-018 y HU-036 tienen API de historial, pero el frontend no registra automáticamente eventos de navegación | La sección 6 solo representa consultar, registrar manualmente o eliminar interacciones | Parcial |
+| Para HU-040 se encontró consulta de categorías, pero no operaciones CRUD ni pantalla de administración | La sección 7 no se presenta como gestión completa de categorías | Pendiente |
+| HU-030 comparte cuenta y backend entre web y móvil, pero no se identificó un proceso explícito de sincronización | La sección 14 representa consumo del backend, no sincronización offline | Parcial |
+| El distintivo visual de reseña verificada no se encontró | La sección 9 solo muestra la validación de compra entregada en backend | Parcial |
+| La comparación lado a lado no tiene implementación | No se crea un diagrama de secuencia como funcionalidad existente | HU-033 pendiente |
 | El logout no revoca JWT en servidor | El diagrama describe limpieza local y token con expiración | Limitación conocida |
-| El calificador de tienda está implementado, pero su router no se incluye en `main.py` | Las rutas existen en el módulo pero no están registradas actualmente en FastAPI | Desactivado temporalmente |
-| El frontend web y la app móvil usan el mismo backend, pero sus secuencias no deben intercambiar participantes como si fueran idénticos | Este documento representa el flujo web; el backend es compartido | Alcance explícito |
+| El router alternativo `calificaciones_tiendas_router` no está incluido, pero las calificaciones visibles del vendedor usan la ruta activa `/perfil/calificaciones-tienda` | La sección 13 representa la ruta registrada del router de perfil | Aclaración de rutas |
+| El frontend web y la app móvil usan el mismo backend, pero sus pantallas no son idénticas | Los diagramas identifican explícitamente los clientes donde comparten una ruta | Alcance explícito |
 | Algunas respuestas y rutas del RF-001 usan una convención `/api/v1/auth/*` antigua | La implementación vigente usa `POST /register` y `GET /verify-email` | Prioridad a código vigente |
 
 ### Reglas de consistencia para futuras mejoras
@@ -840,5 +954,5 @@ La app móvil no usa una API independiente ni una base de datos propia. Debe apu
 2. Mantener separados los almacenes JSON y las tablas MySQL; no describirlos como una única base de datos.
 3. Si se agrega un endpoint PATCH/PUT para cantidad del carrito, actualizar la sección 5.
 4. Si Catalogo.jsx consume `/ofertas/libro/{id}/activa`, añadir el cálculo de precio promocional a la sección 8.
-5. Si se activa `calificaciones_tiendas_router`, actualizar el diagrama de comunidad y el registro en `main.py`.
+5. Si se registra `calificaciones_tiendas_router`, comprobar que no duplique o contradiga la ruta activa de calificaciones en `perfil.py`.
 6. Si cambia el método de almacenamiento de órdenes, sustituir `JSON` por el nuevo componente persistente.
