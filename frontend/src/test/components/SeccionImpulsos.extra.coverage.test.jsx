@@ -94,7 +94,7 @@ describe('SeccionImpulsos — loading and render', () => {
   it('shows discount percentage from subscription', async () => {
     await mockApi({ suscripcion: { activa: true, suscripcion: { impulsos_con_descuento: 10 } } })
     render(<SeccionImpulsos tiendaId={1} />)
-    await screen.findByText(/tu plan te da un 10%/i)
+    expect(await screen.findByText(/tu plan te da un 10%/i)).toBeInTheDocument()
   })
 
   it('renders Ver Planes button when onNavegar is provided', async () => {
@@ -112,7 +112,7 @@ describe('SeccionImpulsos — tab Contratar', () => {
     await screen.findByText('Impulso Home')
     fireEvent.click(screen.getByText('Impulso Home').closest('[role="button"]') || screen.getByText('Impulso Home'))
     // The configurar section should appear
-    await screen.findByText(/configurar impulso/i)
+    expect(await screen.findByText(/configurar impulso/i)).toBeInTheDocument()
   })
 
   it('shows libro selector for tipo home', async () => {
@@ -170,7 +170,7 @@ describe('SeccionImpulsos — tab Contratar', () => {
     await screen.findByText('Email Masivo')
     const card = screen.getByText('Email Masivo').closest('[role="button"]')
     if (card) fireEvent.keyDown(card, { key: 'Enter' })
-    await screen.findByText(/configurar impulso/i)
+    expect(await screen.findByText(/configurar impulso/i)).toBeInTheDocument()
   })
 })
 
@@ -250,6 +250,6 @@ describe('SeccionImpulsos — API error on load', () => {
     const api = (await import('../../services/api')).default
     api.get.mockRejectedValue(new Error('Network error'))
     render(<SeccionImpulsos tiendaId={1} />)
-    await screen.findByText(/no se pudieron cargar/i)
+    expect(await screen.findByText(/no se pudieron cargar/i)).toBeInTheDocument()
   })
 })

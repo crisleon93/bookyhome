@@ -131,7 +131,9 @@ describe('AdminDashboard — búsqueda y filtros', () => {
     const inputs = [...screen.queryAllByRole('textbox'), ...screen.queryAllByRole('searchbox')]
     if (inputs.length > 0) {
       await user.type(inputs[0], 'Juan')
+      await waitFor(() => expect(screen.queryByText('Ana')).not.toBeInTheDocument())
     }
+    expect(await screen.findByText(/Juan/i)).toBeInTheDocument()
   })
 
   it('filtra libros por texto en el buscador', async () => {
@@ -142,7 +144,9 @@ describe('AdminDashboard — búsqueda y filtros', () => {
     const inputs = [...screen.queryAllByRole('textbox'), ...screen.queryAllByRole('searchbox')]
     if (inputs.length > 0) {
       await user.type(inputs[0], 'Libro')
+      expect(inputs[0]).toHaveValue('Libro')
     }
+    expect(await screen.findByText(/Libro A/i)).toBeInTheDocument()
   })
 })
 
@@ -151,8 +155,10 @@ describe('AdminDashboard — acciones sobre usuarios', () => {
     const user = userEvent.setup()
     renderAdmin()
     await user.click(await screen.findByRole('button', { name: /^Usuarios$/i }))
-    const userRow = await screen.findByText(/Juan/i)
-    await user.click(userRow)
+    await screen.findByText(/Juan/i)
+    const detailButtons = await screen.findAllByTitle('Ver detalles del usuario')
+    await user.click(detailButtons[0])
+    expect(await screen.findByRole('dialog', { name: /Detalles del usuario Juan/i })).toBeInTheDocument()
   })
 })
 
