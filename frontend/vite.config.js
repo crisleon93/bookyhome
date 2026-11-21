@@ -31,8 +31,7 @@ export default defineConfig({
       exclude: ['src/assets/**', 'src/styles/**'],
       reporter: ['text', 'html', 'lcov'],
       thresholds: {
-        // Se activa en semana 7 cuando se alcance el 80%
-        // lines: 80,
+        lines: 80,
       },
     },
   },
