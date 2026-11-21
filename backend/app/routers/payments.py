@@ -13,6 +13,9 @@ from app.models.payments import (
     habilitar_pago_retiro,
     confirmar_entrega_retiro,
 )
+import logging
+
+logger = logging.getLogger(__name__)
 from app.email import enviar_email_confirmacion  
 from app.models.usuarios import obtener_email_usuario
 from app.utils.finance_hooks import registrar_ingreso_venta
@@ -310,7 +313,7 @@ def cancelar_mis_pendientes(user=Depends(get_current_user)):
             cursor.close()
             db.close()
     except Exception as e:
-        print(f"Error cancelando órdenes pendientes en BD: {e}")
+        logger.error("Error cancelando órdenes pendientes en BD: %s", e)
         raise HTTPException(status_code=500, detail="Error al cancelar órdenes pendientes")
 
     # Sincronizar el JSON store
@@ -327,7 +330,7 @@ def cancelar_mis_pendientes(user=Depends(get_current_user)):
         orders_data[str(id_usuario)] = user_orders
         _save_store(ORDER_FILE, orders_data)
     except Exception as e:
-        print(f"Error sincronizando JSON store tras cancelar pendientes: {e}")
+        logger.error("Error sincronizando JSON store tras cancelar pendientes: %s", e)
 
     return {"ok": True, "canceladas": canceladas}
 

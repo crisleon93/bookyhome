@@ -1,7 +1,10 @@
 import json
 import os
 import secrets
+import logging
 from datetime import datetime, timezone
+
+logger = logging.getLogger(__name__)
 
 STORAGE_DIR = os.path.join(os.path.dirname(__file__), '..', 'data')
 ORDER_FILE = os.path.join(STORAGE_DIR, 'orders.json')
@@ -166,7 +169,7 @@ def obtener_orden(id_usuario, id_orden):
         cursor.close()
         db.close()
     except Exception as e:
-        print("Error sincronizando orden individual desde BD:", e)
+        logger.error("Error sincronizando orden individual desde BD: %s", e)
 
     return _agregar_desglose_financiero(target) if target else target
 
@@ -378,7 +381,7 @@ def obtener_ordenes_usuario(id_usuario):
                 "envio": envio,
             })
     except Exception as e:
-        print("Error obteniendo nombres de tiendas en ordenes:", e)
+        logger.error("Error obteniendo nombres de tiendas en ordenes: %s", e)
     finally:
         if 'cursor' in locals(): cursor.close()
         if 'db' in locals(): db.close()
@@ -433,7 +436,7 @@ def registrar_pago(id_usuario, id_orden, amount, payment_method, coupon_code=Non
             cur_lookup.close()
             db_conn.close()
         except Exception as err:
-            print("Error buscando orden directa en MySQL:", err)
+            logger.error("Error buscando orden directa en MySQL: %s", err)
 
     if not target_order:
         return {'ok': False, 'error': 'Orden no encontrada'}
@@ -532,7 +535,7 @@ def registrar_pago(id_usuario, id_orden, amount, payment_method, coupon_code=Non
             cursor.close()
             db.close()
     except Exception as e:
-        print(f"⚠️ No se pudo sincronizar estado de pago en MySQL: {e}")
+        logger.warning("No se pudo sincronizar estado de pago en MySQL: %s", e)
 
     # Registrar el pago
     payments = _load_store(PAYMENT_FILE)
@@ -591,7 +594,7 @@ def cancelar_orden(id_usuario, id_orden, motivo="Cancelación solicitada por el 
             cursor.close()
             db.close()
     except Exception as e:
-        print(f"Error al actualizar orden en BD: {e}")
+        logger.error("Error al actualizar orden en BD: %s", e)
 
     # Si la encontramos en el JSON, actualizar su estado
     if target_order:
@@ -683,7 +686,7 @@ def reservar_retiro(id_usuario, id_orden, metodo_pago="Efectivo en Tienda"):
         cursor.close()
         db.close()
     except Exception as e:
-        print("Error actualizando reserva en BD:", e)
+        logger.error("Error actualizando reserva en BD: %s", e)
 
     return {
         "ok": True,
@@ -746,7 +749,7 @@ def notificar_llegada_tienda(id_usuario, id_orden):
         cursor.close()
         db.close()
     except Exception as e:
-        print("Error al registrar llegada del cliente:", e)
+        logger.error("Error al registrar llegada del cliente: %s", e)
 
     return {"ok": True, "estado_retiro": "en_tienda", "message": "Llegada notificada al vendedor"}
 
@@ -797,7 +800,7 @@ def habilitar_pago_retiro(id_usuario_vendedor, id_orden):
         cursor.close()
         db.close()
     except Exception as e:
-        print("Error al habilitar pago de retiro:", e)
+        logger.error("Error al habilitar pago de retiro: %s", e)
 
     return {"ok": True, "estado_retiro": "habilitado_pago", "message": "Pago habilitado para el comprador"}
 
@@ -858,6 +861,6 @@ def confirmar_entrega_retiro(id_usuario_vendedor, id_orden, es_efectivo=False):
         cursor.close()
         db.close()
     except Exception as e:
-        print("Error al confirmar entrega de retiro:", e)
+        logger.error("Error al confirmar entrega de retiro: %s", e)
 
     return {"ok": True, "estado_orden": "entregado", "estado_retiro": "entregado", "message": "Libro entregado exitosamente"}

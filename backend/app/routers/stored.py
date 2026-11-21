@@ -1,7 +1,9 @@
 from fastapi import APIRouter, HTTPException, Query
 from app.database import get_db
+import logging
 
 router = APIRouter(prefix="/api")
+logger = logging.getLogger(__name__)
 
 
 @router.get("/stored/libros")
@@ -48,7 +50,7 @@ def listar_libros_sp(limite: int = Query(12, ge=1, le=50)):
         return results
 
     except Exception as e:
-        print("Error:", e)
+        logger.error("Error al ejecutar stored procedure: %s", e)
         raise HTTPException(
             status_code=500,
             detail="Error al ejecutar stored procedure"
@@ -94,7 +96,7 @@ def obtener_libro(id_libro: int):
         raise
 
     except Exception as e:
-        print("Error:", e)
+        logger.error("Error al obtener libro: %s", e)
         raise HTTPException(
             status_code=500,
             detail="Error al obtener libro"
@@ -129,5 +131,5 @@ def mis_libros(id_usuario: int):
         return libros
 
     except Exception as e:
-        print("Error:", e)
+        logger.error("Error al listar mis libros: %s", e)
         return []

@@ -11,8 +11,10 @@ from app.auth import create_token, verify_token, require_role
 from app.email import enviar_email_confirmacion_registro, is_smtp_configured
 
 from pydantic import BaseModel
-
+import logging
 import secrets
+
+logger = logging.getLogger(__name__)
 
 
 
@@ -62,7 +64,7 @@ async def register(data: UsuarioRegistro):
 
 
 
-        print(f"❌ Error interno en modelo crear_usuario: {resultado.get('error')}", flush=True)
+        logger.error("Error interno en modelo crear_usuario: %s", resultado.get('error'))
 
         raise HTTPException(status_code=500, detail="Error interno al crear la cuenta en la base de datos")
 
@@ -72,15 +74,15 @@ async def register(data: UsuarioRegistro):
     if is_smtp_configured():
         try:
             await enviar_email_confirmacion_registro(data.email, token_verificacion)
-            print(f"✅ Correo de confirmación enviado a {data.email}", flush=True)
+            logger.info("Correo de confirmación enviado a %s", data.email)
         except Exception as exc:
-            print(f"❌ Error enviando correo de confirmación a {data.email}: {exc}", flush=True)
+            logger.error("Error enviando correo de confirmación a %s: %s", data.email, exc)
             return {
                 "mensaje": "Cuenta creada, pero no se pudo enviar el correo de verificación. Revisa la configuración SMTP del backend.",
                 "email_enviado": False,
             }
     else:
-        print(f"⚠️ SMTP no configurado para {data.email}; el correo de verificación no se pudo enviar.", flush=True)
+        logger.warning("SMTP no configurado para %s; el correo de verificación no se pudo enviar.", data.email)
 
     return {
         "mensaje": "Cuenta creada exitosamente. Por favor verifica tu correo electrónico para completar el registro.",

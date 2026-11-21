@@ -1,7 +1,10 @@
 from app.database import get_db
 from datetime import date, datetime
 import re
+import logging
 from typing import Optional
+
+logger = logging.getLogger(__name__)
 
 # ──────────────────────────────────────────────
 #  CREAR LIBRO
@@ -509,7 +512,7 @@ def ocultar_libro(id_libro: int, ocultar_estado: bool, id_tienda: int = None):
         return {"ok": True}
     except Exception as e:
         db.rollback()
-        print(f"❌ Error en SQL ocultar_libro: {e}", flush=True)
+        logger.error("Error en SQL ocultar_libro: %s", e)
         return {"ok": False, "error": str(e)}
     finally:
         cursor.close()

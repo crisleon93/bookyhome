@@ -7,6 +7,9 @@ from app.models.herramientas import (
     suscribir_plan,
     cancelar_suscripcion_herramientas,
 )
+import logging
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/herramientas", tags=["Herramientas del Vendedor"])
 
@@ -79,12 +82,12 @@ def suscribir(data: SuscripcionRequest, user: dict = Depends(get_current_user)):
         )
         
         if resultado_finanzas.get('ok'):
-            print(f"Ingreso de plan registrado exitosamente en BookyPago Finanzas: Plan #{data.id_plan}")
+            logger.info("Ingreso de plan registrado exitosamente en BookyPago Finanzas: Plan #%s", data.id_plan)
         else:
-            print(f"Error registrando ingreso de plan en BookyPago Finanzas: {resultado_finanzas.get('error')}")
+            logger.error("Error registrando ingreso de plan en BookyPago Finanzas: %s", resultado_finanzas.get('error'))
     except Exception as e:
         # No fallar la suscripción si falla el registro en finanzas, solo loggear
-        print(f"Error registrando ingreso de plan en BookyPago Finanzas: {e}")
+        logger.error("Error registrando ingreso de plan en BookyPago Finanzas: %s", e)
     
     return resultado["suscripcion"]
 
