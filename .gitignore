@@ -88,3 +88,8 @@ caddy.exe
 # ======================
 # Variables de entorno de producción — NUNCA subir al repo
 deploy/.env.prod
+
+# ======================
+# 📦 DATOS DE DESARROLLO (JSON generados en runtime)
+# ======================
+backend/app/data/*.json
