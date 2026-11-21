@@ -213,6 +213,77 @@ def busqueda_avanzada(
         cursor.close()
         db.close()
 
+@router.get("/comparar")
+def comparar_libros(ids: str):
+    """
+    RF-033: Obtiene los detalles de múltiples libros para comparación lado a lado.
+    Recibe IDs separados por coma, ej: ?ids=1,2,3
+    """
+    if not ids:
+        raise HTTPException(status_code=400, detail="Debe proporcionar al menos dos IDs de libros")
+    try:
+        id_list = [int(x.strip()) for x in ids.split(",") if x.strip()]
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Los IDs deben ser números enteros válidos")
+
+    if len(id_list) < 2:
+        raise HTTPException(status_code=400, detail="Debe comparar al menos dos libros")
+
+    if len(id_list) > 5:
+        id_list = id_list[:5]
+
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    try:
+        format_strings = ','.join(['%s'] * len(id_list))
+        cursor.execute(f"""
+            SELECT 
+                l.id_libro,
+                l.titulo,
+                l.autor_libro,
+                l.isbn,
+                l.descripcion_libro,
+                l.precio_libro,
+                l.stock,
+                l.estado_libro,
+                l.fecha_listado,
+                c.nombre_categoria,
+                t.nombre_tienda,
+                t.id_tienda,
+                COALESCE(tc.tarifa_envio, 0) AS costo_envio_tienda,
+                COALESCE(tc.tiempo_despacho_dias, 2) AS tiempo_despacho_dias,
+                (SELECT url_imagen FROM imagenes_libro WHERE id_libro = l.id_libro LIMIT 1) as imagen_url,
+                COALESCE(AVG(r.calificacion), 0) as promedio_calificacion,
+                COUNT(DISTINCT r.id_resena) as total_resenas
+            FROM libros l
+            LEFT JOIN categorias c ON l.id_categoria = c.id_categoria
+            LEFT JOIN tiendas t ON l.id_tienda = t.id_tienda
+            LEFT JOIN tienda_configuracion tc ON t.id_tienda = tc.id_tienda
+            LEFT JOIN resenas_libros r ON l.id_libro = r.id_libro
+            WHERE l.id_libro IN ({format_strings}) AND l.oculto = 0
+            GROUP BY l.id_libro, l.titulo, l.autor_libro, l.isbn, l.precio_libro, l.stock,
+                     l.descripcion_libro, l.fecha_listado, c.nombre_categoria, t.nombre_tienda,
+                     t.id_tienda, tc.tarifa_envio, tc.tiempo_despacho_dias
+        """, tuple(id_list))
+        libros = cursor.fetchall()
+        
+        # Enriquecer con ofertas activas si las tienen
+        from app.models.oferta import obtener_oferta_activa_libro
+        for libro in libros:
+            try:
+                oferta = obtener_oferta_activa_libro(libro["id_libro"])
+                libro["oferta"] = oferta
+            except Exception:
+                libro["oferta"] = None
+
+        return {"ok": True, "total": len(libros), "libros": libros}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        cursor.close()
+        db.close()
+
+
 @router.get("/libro/{id_libro}")
 def obtener_libro_catalogo(id_libro: int):
     """Obtiene un libro del catálogo por su ID (incluye datos de tienda, imágenes y calificaciones)"""

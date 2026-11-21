@@ -211,3 +211,51 @@ def test_buscar_por_isbn_maneja_invalido_no_encontrado_y_resultados():
         "mejor_precio": 12000,
         "libros": books,
     }
+
+
+def test_comparar_libros_validaciones_y_exito():
+    # 1. Vacío
+    with pytest.raises(HTTPException) as exc:
+        mod.comparar_libros("")
+    assert exc.value.status_code == 400
+
+    # 2. No enteros
+    with pytest.raises(HTTPException) as exc:
+        mod.comparar_libros("a,b")
+    assert exc.value.status_code == 400
+
+    # 3. Menos de dos libros
+    with pytest.raises(HTTPException) as exc:
+        mod.comparar_libros("1")
+    assert exc.value.status_code == 400
+
+    # 4. Éxito con oferta
+    db, cursor = _db_cursor()
+    libros_mock = [
+        {"id_libro": 1, "titulo": "Libro 1", "precio_libro": 50000},
+        {"id_libro": 2, "titulo": "Libro 2", "precio_libro": 30000},
+    ]
+    cursor.fetchall.return_value = libros_mock
+    oferta_mock = {"id_oferta": 10, "precio_descuento": 40000}
+
+    with patch.object(mod, "get_db", return_value=db), \
+         patch("app.models.oferta.obtener_oferta_activa_libro", return_value=oferta_mock):
+        resultado = mod.comparar_libros("1,2,3,4,5,6")  # prueba límite a 5
+        assert resultado["ok"] is True
+        assert resultado["total"] == 2
+        assert resultado["libros"][0]["oferta"] == oferta_mock
+
+    # 4b. Manejo cuando obtener_oferta_activa_libro falla
+    with patch.object(mod, "get_db", return_value=db), \
+         patch("app.models.oferta.obtener_oferta_activa_libro", side_effect=Exception("error")):
+        resultado_sin_oferta = mod.comparar_libros("1,2")
+        assert resultado_sin_oferta["ok"] is True
+        assert resultado_sin_oferta["libros"][0]["oferta"] is None
+
+    # 5. Error BD
+    cursor.execute.side_effect = RuntimeError("db down")
+    with patch.object(mod, "get_db", return_value=db):
+        with pytest.raises(HTTPException) as exc:
+            mod.comparar_libros("1,2")
+        assert exc.value.status_code == 500
+

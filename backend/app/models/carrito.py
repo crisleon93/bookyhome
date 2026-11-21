@@ -127,6 +127,31 @@ def agregar_al_carrito(id_usuario, item):
     return user_cart
 
 
+def actualizar_cantidad_carrito(id_usuario, id_libro, nueva_cantidad):
+    """
+    Actualiza la cantidad de un libro en el carrito.
+    Si nueva_cantidad <= 0, elimina el item del carrito.
+    """
+    store = _load_store(CART_FILE)
+    user_key = str(id_usuario)
+    user_cart = store.get(user_key, [])
+
+    if nueva_cantidad <= 0:
+        user_cart = [item for item in user_cart if item['id_libro'] != id_libro]
+        store[user_key] = user_cart
+        _save_store(CART_FILE, store)
+        return user_cart
+
+    existing = next((item for item in user_cart if item['id_libro'] == id_libro), None)
+    if not existing:
+        return user_cart
+
+    existing['cantidad'] = nueva_cantidad
+    store[user_key] = user_cart
+    _save_store(CART_FILE, store)
+    return user_cart
+
+
 def eliminar_item_carrito(id_usuario, id_libro):
     store = _load_store(CART_FILE)
     user_key = str(id_usuario)

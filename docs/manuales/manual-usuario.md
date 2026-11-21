@@ -2,7 +2,7 @@
 
 ## 1. Ingreso a la plataforma
 
-1. Abrir `http://localhost:5173`.
+1. Abrir la plataforma: en desarrollo local ingresar a `http://localhost:5173`, o en producción pública en la nube a `https://bookyhome-web.onrender.com`.
 2. Seleccionar **Registrarse** para crear una cuenta o **Iniciar sesion** si ya existe.
 3. Completar los datos solicitados.
 4. Verificar el correo cuando la plataforma lo solicite.

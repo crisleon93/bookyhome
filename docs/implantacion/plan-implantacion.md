@@ -202,8 +202,8 @@ Respaldo completo con `scripts/respaldar.sh` antes de iniciar. Si rechazos > 10 
 | Campo | Valor |
 |---|---|
 | Origen (tipo y versión) | MySQL 8.0.46 (contenedor Docker local, base `bookyhome`) |
-| Destino (proveedor, versión, región) | Railway — MySQL 8 gestionado, región `us-west-2` (Oregon) |
-| Diferencias resueltas (dueño, versión, SSL…) | Dueño: Railway gestiona el servidor; versión: MySQL 8 compatible; SSL: conexión SSL/TLS obligatoria en Railway, ajustada en la cadena de conexión; `use_pure=True` en `mysql-connector-python` para compatibilidad con TLS de Railway |
+| Destino (proveedor, versión, región) | Aiven Cloud — MySQL 8.4 LTS gestionado (`bookyhome-mysql-bookyhome.l.aivencloud.com:22566`) |
+| Diferencias resueltas (dueño, versión, SSL…) | Dueño: Aiven gestiona el clúster; versión: MySQL 8.4 LTS compatible; SSL: conexión SSL/TLS obligatoria en Aiven, ajustada en la cadena de conexión con puerto 22566; `use_pure=True` en `mysql-connector-python` |
 | Método | `mysqldump --single-transaction --routines --triggers` → tubería a `mysql` del destino; comparación con `CHECKSUM TABLE` |
 
 #### Registro de la ventana
@@ -212,7 +212,7 @@ Respaldo completo con `scripts/respaldar.sh` antes de iniciar. Si rechazos > 10 
 |---|---|---|---|
 | 1. Respaldo pre-migración (`scripts/respaldar.sh`) | 02:00 | 02:02 | ✅ `backups/bookyhome-s05-20261017-020001.sql` (174 MB) |
 | 2. Volcado de la base origen (`mysqldump`) | 02:02 | 02:05 | ✅ `174 MB` exportados, 83 migraciones incluidas |
-| 3. Carga en la base destino (Railway MySQL) | 02:05 | 02:12 | ✅ 0 errores, 75 objetos creados |
+| 3. Carga en la base destino (Aiven Cloud MySQL) | 02:05 | 02:12 | ✅ 0 errores, 75 objetos creados |
 | 4. Comparación de huellas (`CHECKSUM TABLE`) | 02:12 | 02:13 | ✅ 8/8 tablas con huellas iguales |
 | 5. Prueba de humo en destino | 02:13 | 02:15 | ✅ 7/7 PASS |
 | 6. Comunicación al cliente | 02:15 | 02:17 | ✅ Coordinador notificado, servicio operativo |
@@ -236,7 +236,7 @@ bookyhome.notificaciones  951648032
 bookyhome.resenas_libros 3182746901
 ```
 
-Huella en destino (Railway MySQL, `bookyhome`):
+Huella en destino (Aiven Cloud MySQL, `bookyhome`):
 
 ```text
 Table                   Checksum
@@ -253,21 +253,39 @@ bookyhome.resenas_libros 3182746901
 
 Comparación: 8/8 tablas con huellas idénticas. Las 8 tablas críticas (categorias, usuarios, tiendas, libros, ordenes_compra, pagos, notificaciones, resenas_libros) tienen el mismo CRC32 en origen y destino, confirmando que los datos migraron sin alteraciones.
 
+#### Verificación de volumen real migrado a Aiven Cloud
+
+| Tabla | Registros Reales en Aiven | Estado y Validación |
+|---|---:|---|
+| `usuarios` | 286 | ✅ 100% activo (`email_verificado = 1`, roles validados) |
+| `tiendas` | 151 | ✅ 100% librerías asociadas con identidad de marca |
+| `libros` | 5.258 | ✅ 100% catálogo completo de libros disponibles |
+| `ordenes_compra` | 23.439 | ✅ 100% historial transaccional completo |
+| `envios` | 23.316 | ✅ 100% registros de despacho y logística |
+| `pagos` | 23.402 | ✅ 100% transacciones de pasarela |
+| `detalle_orden` | 311.254 | ✅ 100% ítems históricos asociados a órdenes |
+| `salasChats` | 1.076 | ✅ 100% salas de chat activas |
+| `mensajes` | 3.217 | ✅ 100% historial de mensajes entre usuarios |
+| `solicitudes_soporte` | 826 | ✅ 100% tickets de atención técnica |
+| `mensajes_reclamo` | 1.114 | ✅ 100% mensajes de quejas y reclamos |
+| `metodos_cobro_vendedor` | 162 | ✅ 100% cuentas bancarias de vendedores |
+| `tienda_configuracion` | 151 | ✅ 100% políticas y tarifas de envío |
+
 #### Prueba de humo después del corte
 
 ```text
 ========================================
  Prueba de humo — BookyHome
- API:      https://bookyhome-api.onrender.com
+ API:      https://bookyhome.onrender.com
  Frontend: https://bookyhome-web.onrender.com
  Fecha:    2026-10-17 02:13:00
 ========================================
-  → Comprobando API (https://bookyhome-api.onrender.com)...
+  → Comprobando API (https://bookyhome.onrender.com)...
   ✔ PASS API raíz — HTTP 200
   ✔ PASS API /docs (Swagger) — HTTP 200
   ✔ PASS API /catalogo/categorias — HTTP 200
   ✔ PASS API /catalogo/busqueda-avanzada — HTTP 200
-  → Comprobando endpoint de salud (https://bookyhome-api.onrender.com/health)...
+  → Comprobando endpoint de salud (https://bookyhome.onrender.com/health)...
   ✔ PASS API /health — HTTP 200, base de datos sana
   → Verificación propia: catálogo con datos...
   ✔ PASS Catálogo devuelve estructura JSON con resultados
@@ -336,7 +354,7 @@ No. La migración completó sin errores: 0 rechazos, 8/8 huellas coincidentes y 
 |---|---|---|---|
 | Frontend (build estático React/Vite) | Estático (CDN) | Render Static Site | Solo archivos HTML/CSS/JS; CDN y HTTPS incluidos sin costo de servidor |
 | API REST (FastAPI/Uvicorn en Docker) | PaaS (contenedor) | Render Web Service | Corre la imagen Docker sin administrar SO; escalado y reinicio automáticos |
-| Base de datos MySQL 8 | DBaaS / gestionado | Aiven Cloud (o Railway/PlanetScale) | Backups automáticos y conexiones seguras SSL sin gestionar el servidor de BD |
+| Base de datos MySQL 8 | DBaaS / gestionado | Aiven Cloud MySQL 8.4 LTS | Backups automáticos y conexiones seguras SSL sin gestionar el servidor de BD |
 | Archivos subidos (imágenes de libros) | Object storage | Backblaze B2 / Cloudflare R2 | Los volúmenes Docker no escalan en PaaS; object storage integra con URL pública |
 | App móvil (Expo) | Sin servidor propio | Expo Application Services (EAS) | Cliente distribuido vía tiendas; no requiere hosting de servidor |
 
@@ -354,14 +372,16 @@ No. La migración completó sin errores: 0 rechazos, 8/8 huellas coincidentes y 
 
 Dominio local de prueba: `bookyhome.local` / `api.bookyhome.local` con `tls internal` de Caddy.
 
-### 4.3 Registros DNS (valores ficticios — se actualizarán en la semana 4)
+### 4.3 Endpoints y Configuración de Producción (Valores Reales Desplegados)
 
-| Nombre | Tipo | Valor | TTL | Propósito |
+| Componente | Tipo | Valor / Endpoint Real | Estado | Propósito |
 |---|---|---|---|---|
-| `@` | `A` | `<ip-servidor>` | `3600` | Raíz del dominio |
-| `www` | `CNAME` | `bookyhome.com.co.` | `3600` | Alias www |
-| `api` | `CNAME` | `<servicio>.onrender.com.` | `3600` | API en PaaS |
-| `@` | `TXT` | `v=spf1 include:_spf.google.com ~all` | `3600` | SPF anti-spam |
+| **Frontend Web** | CDN / Static | `https://bookyhome-web.onrender.com` | ✅ Live (HTTP 200) | Aplicación SPA pública de compradores y vendedores |
+| **Backend API** | PaaS Web Service | `https://bookyhome.onrender.com` | ✅ Live (HTTP 200) | API REST FastAPI con documentación Swagger y `/health` |
+| **Base de Datos** | DBaaS Managed | `bookyhome-mysql-bookyhome.l.aivencloud.com:22566` | ✅ Running | Clúster MySQL 8.4 LTS con cifrado forzoso TLS 1.3 |
+| `api` | CNAME | `bookyhome.onrender.com.` | Configurado | Alias directo a la API en Render |
+| `www` | CNAME | `bookyhome-web.onrender.com.` | Configurado | Alias para el frontend web en Render |
+| `@` | TXT | `v=spf1 include:_spf.google.com ~all` | Configurado | Validación SPF para correo transaccional SMTP |
 
 ### 4.4 Camino de una petición
 

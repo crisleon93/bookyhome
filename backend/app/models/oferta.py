@@ -188,14 +188,15 @@ def eliminar_oferta(id_oferta: int, id_tienda: int):
 # ──────────────────────────────────────────────
 def calcular_precio_con_descuento(precio: float, tipo: str,
                                   valor: float, cantidad: int = 1):
-    if tipo == "porcentaje":
+    tipo_norm = str(tipo or "").lower().strip()
+    if tipo_norm == "porcentaje":
         descuento = precio * (valor / 100)
         return round(precio - descuento, 2)
 
-    elif tipo == "fijo":
+    elif tipo_norm == "fijo":
         return round(max(0, precio - valor), 2)
 
-    elif tipo == "especial":
+    elif tipo_norm == "especial":
         # 2x1: por cada 2 unidades, pagas 1
         # Ej: 4 libros a $10.000 = pagas 2 → $20.000 total
         pagadas = (cantidad // 2) + (cantidad % 2)
@@ -212,6 +213,7 @@ def obtener_oferta_activa_libro(id_libro: int):
     db = get_db()
     cursor = db.cursor(dictionary=True)
     try:
+        # 1. Buscar si el libro está específicamente asignado a una oferta activa
         cursor.execute("""
             SELECT o.id_oferta, o.nombre_oferta,
                    o.tipo_descuento, o.valor_descuento,
@@ -226,13 +228,32 @@ def obtener_oferta_activa_libro(id_libro: int):
             LIMIT 1
         """, (id_libro,))
         oferta = cursor.fetchone()
+
+        # 2. Si no está en oferta_libros, verificar si su tienda tiene una oferta activa global
+        if not oferta:
+            cursor.execute("""
+                SELECT o.id_oferta, o.nombre_oferta,
+                       o.tipo_descuento, o.valor_descuento,
+                       o.fecha_fin,
+                       l.precio_libro
+                FROM ofertas o
+                JOIN libros l ON o.id_tienda = l.id_tienda
+                WHERE l.id_libro = %s
+                  AND NOW() BETWEEN o.fecha_inicio AND o.fecha_fin
+                ORDER BY o.fecha_fin ASC
+                LIMIT 1
+            """, (id_libro,))
+            oferta = cursor.fetchone()
+
         if not oferta:
             return None
 
+        tipo_desc = str(oferta["tipo_descuento"] or "porcentaje").lower().strip()
+        oferta["tipo_descuento"] = tipo_desc
         precio_original  = float(oferta["precio_libro"])
         precio_descuento = calcular_precio_con_descuento(
             precio_original,
-            oferta["tipo_descuento"],
+            tipo_desc,
             float(oferta["valor_descuento"])
         )
         oferta["precio_original"]  = precio_original

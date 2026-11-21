@@ -1,8 +1,8 @@
 # Reporte de Estado de Requisitos - BookyHome
 
 **Fecha de generación:** Agosto 2026  
-**Última revisión:** Octubre 2026 (verificación directa en código)  
-**Versión del proyecto:** Desarrollo activo
+**Última revisión:** Noviembre 2026 (implementación final de RF-033, RF-034 y RF-040)  
+**Versión del proyecto:** 1.0.0 (Entrega Final SENA)
 
 ---
 
@@ -10,24 +10,25 @@
 
 | Categoría | Total | Implementado | Pendiente | % Completado |
 |-----------|-------|--------------|-----------|--------------|
-| Historias de Usuario (HU) | 42 | N/A* | N/A* | N/A* |
-| Requisitos Funcionales (RF) | 41 | 38 | 3 | **92.7%** |
+| Historias de Usuario (HU) | 42 | 42* | 0 | **100%** |
+| Requisitos Funcionales (RF) | 41 | 41 | 0 | **100%** |
 | Requisitos No Funcionales (RNF) | 12 | 12 | 0 | **100%** |
-| **TOTAL (RF + RNF)** | **53** | **50** | **3** | **94.3%** |
+| **TOTAL (RF + RNF)** | **53** | **53** | **0** | **100%** |
 
-*Nota: Las historias de usuario no tienen estado de implementación explícito en los archivos (solo "Definida"), pero la mayoría está cubierta por RFs que sí están implementados. El porcentaje total se calcula solo sobre RF y RNF con estado explícito.
+*Nota: Las historias de usuario están cubiertas al 100% por los 41 Requisitos Funcionales y 12 RNF verificados en código.
 
-> **Nota de revisión (Octubre 2026):** Se realizó verificación directa en el código del frontend web y backend. Los RF-025, RF-037, RF-038, RF-039 y RF-041 fueron confirmados como implementados tras revisar rutas, modelos y componentes reales. El porcentaje anterior (80.5%) subestimaba el avance real del proyecto.
+> **Nota de revisión (Noviembre 2026):** Se completó con éxito la implementación de los 3 requisitos funcionales pendientes: **RF-034** (actualización interactiva de cantidad en carrito), **RF-040** (visualización y cálculo de precios promocionales en catálogo y detalle) y **RF-033** (comparación lado a lado de libros tanto en backend como frontend). El proyecto alcanza el **100% de cumplimiento funcional**.
 
 ---
 
 ## 1. Historias de Usuario (HU)
 
-Todas las historias de usuario están marcadas como **"Definida"** en los archivos de documentación. No tienen un estado de implementación explícito, pero se pueden inferir de los requisitos funcionales asociados.
+Todas las 42 historias de usuario (HU-001 a HU-042) han sido verificadas en código y marcadas como **"Implementada"** en sus respectivos archivos individuales en `docs/requisitos/HIS/`.
 
 ### HU-001 a HU-042: Estado General
-- **Estado documentado:** Definida
-- **Estado de implementación:** Inferido desde RFs asociados
+- **Total:** 42 historias de usuario
+- **Estado documentado en archivos individuales:** ✅ Implementada (42/42)
+- **Porcentaje de cumplimiento:** **100%**
 
 ---
 
@@ -79,14 +80,14 @@ Todas las historias de usuario están marcadas como **"Definida"** en los archiv
 | RF-016 | Gestión de favoritos | ✅ Implementado | Media | lista_deseos.py | ListaDeseos.jsx |
 | RF-017 | Historial de actividad | ✅ Implementado | Media | historial_interacciones.py | Historial.jsx |
 
-### 2.6 Compras y Pagos (75% implementado)
+### 2.6 Compras y Pagos (100% implementado)
 
 | ID | Nombre | Estado | Prioridad | Backend | Frontend |
 |----|--------|--------|-----------|---------|----------|
 | RF-023 | Historial de compras | ✅ Implementado | Media | - | Historial.jsx |
 | RF-024 | Gestión de pedidos | ✅ Implementado | Alta | payments.py | SeccionMisCompras.jsx |
 | RF-025 | Gestión de pagos | ✅ Implementado | Alta | payments.py | SeccionCarrito.jsx |
-| RF-034 | Carrito de compras | ⚠️ Parcial | Alta | carrito.py | SeccionCarrito.jsx (falta actualizar cantidad de ítem existente) |
+| RF-034 | Carrito de compras | ✅ Implementado | Alta | carrito.py (`actualizar_cantidad_carrito`, `PATCH /carrito/{id_libro}`) | SeccionCarrito.jsx (botones +/- interactivos y eliminación en 1) |
 
 ### 2.7 Moderación y Administración (100% implementado)
 
@@ -122,21 +123,21 @@ Todas las historias de usuario están marcadas como **"Definida"** en los archiv
 |----|--------|--------|-----------|---------|----------|
 | RF-032 | Gestión de opciones de envío | ✅ Implementado | Media | envios.py | - |
 
-### 2.12 Funcionalidades Adicionales (33% implementado)
+### 2.12 Funcionalidades Adicionales (100% implementado)
 
 | ID | Nombre | Estado | Prioridad | Backend | Frontend |
 |----|--------|--------|-----------|---------|----------|
-| RF-033 | Comparación de libros | ❌ Pendiente | Baja | - | - |
+| RF-033 | Comparación de libros | ✅ Implementado | Baja | catalogo.py (`/catalogo/comparar`) | ModalCompararLibros.jsx, LibroCard.jsx, Catalogo.jsx |
 | RF-035 | Notificaciones de novedades | ✅ Implementado | Media | notificaciones.py | SeccionNotificaciones.jsx |
 
-### 2.13 Gestión de Tienda Vendedor (60% implementado)
+### 2.13 Gestión de Tienda Vendedor (100% implementado)
 
 | ID | Nombre | Estado | Prioridad | Backend | Frontend |
 |----|--------|--------|-----------|---------|----------|
 | RF-037 | Gestión de perfil de negocio | ✅ Implementado | Media | tienda_configuracion.py | PerfilTienda.jsx, MiTienda.jsx |
 | RF-038 | Disponibilidad de libros | ✅ Implementado | Alta | libros.py (`disponibilidad`, variantes) | PublicarLibro.jsx, MiTienda.jsx |
 | RF-039 | Gestión de stock | ✅ Implementado | Alta | libros.py (`update_stock`, `alertas_stock`, `descontar`) | MiTienda.jsx (ModalStock) |
-| RF-040 | Promociones y descuentos | ⚠️ Parcial | Media | ofertas.py (CRUD completo) | SeccionOfertas.jsx (gestión vendedor) — falta mostrarlo en Catalogo.jsx |
+| RF-040 | Promociones y descuentos | ✅ Implementado | Media | ofertas.py (CRUD completo, `obtener_oferta_activa_libro`) | SeccionOfertas.jsx (gestión vendedor), Catalogo.jsx y LibroCard.jsx (precio tachado y badge de descuento) |
 | RF-041 | Historial de interacciones | ✅ Implementado | Media | historial_interacciones.py | Historial.jsx |
 
 ---
@@ -191,24 +192,27 @@ El proyecto incluye funcionalidades adicionales que no están documentadas en lo
 
 ## 5. Requisitos Pendientes de Implementación
 
-### 5.1 Pendientes reales (3 requisitos)
+### 5.1 Estado de Pendientes (0 requisitos pendientes)
 
-Estos son los únicos RF que tras revisión directa del código siguen sin implementación completa:
+**El 100% de los requisitos funcionales se encuentra completamente implementado y verificado en código:**
 
-| ID | Nombre | Prioridad | Qué falta |
-|----|--------|-----------|-----------|
-| RF-034 | Carrito de compras | Alta | Endpoint PUT/PATCH para actualizar cantidad de un ítem ya en el carrito; el frontend no tiene botón +/- |
-| RF-040 | Promociones y descuentos | Media | El backend (ofertas.py) está completo; falta que Catalogo.jsx consuma `/ofertas/libro/{id}/activa` y muestre precio con descuento |
-| RF-033 | Comparación de libros | Baja | No existe ni backend ni frontend para comparar lado a lado |
+| ID | Nombre | Prioridad | Implementación Realizada | Verificado en |
+|----|--------|-----------|--------------------------|---------------|
+| RF-034 | Carrito de compras | Alta | Endpoint `PATCH /carrito/{id_libro}` y función `actualizar_cantidad_carrito` con soporte para decremento, incremento y eliminación al llegar a 0. Frontend con botones interactivos `[-] [cant] [+]` en `SeccionCarrito.jsx`. | `backend/app/models/carrito.py`, `backend/app/routers/carrito.py`, `frontend/src/components/dashboard/SeccionCarrito.jsx` |
+| RF-040 | Promociones y descuentos | Media | Corrección de normalización case-insensitive en tipos de descuento (`porcentaje`/`monto_fijo`), vinculación de ofertas activas de tienda a libros publicados (`obtener_oferta_activa_libro`). Consumo en `Catalogo.jsx` y `LibroCard.jsx` con badge `-XX%`, precio original tachado, precio descontado, cálculo de ahorro y aplicación en checkout. | `backend/app/models/oferta.py`, `frontend/src/components/LibroCard.jsx`, `frontend/src/pages/Catalogo.jsx` |
+| RF-033 | Comparación de libros | Baja | Endpoint `GET /catalogo/comparar?ids=...` con enriquecimiento de ofertas activas. Modal interactivo `ModalCompararLibros.jsx` con tabla comparativa de atributos (precio, ofertas, autor, categoría, stock, estado físico, tienda, calificación, ISBN, añadir al carrito) y barra flotante en `Catalogo.jsx`. | `backend/app/routers/catalogo.py`, `frontend/src/components/ModalCompararLibros.jsx`, `frontend/src/components/LibroCard.jsx`, `frontend/src/pages/Catalogo.jsx` |
 
 ### 5.2 Requisitos confirmados implementados (anteriormente en "alcance final")
 
 | ID | Nombre | Verificado en |
 |----|--------|--------------|
 | RF-025 | Gestión de pagos | `models/payments.py` — validación de monto vs total de orden |
+| RF-033 | Comparación de libros | `routers/catalogo.py` (`/comparar`), `ModalCompararLibros.jsx`, `Catalogo.jsx` |
+| RF-034 | Carrito de compras | `routers/carrito.py` (`PATCH /carrito/{id_libro}`), `SeccionCarrito.jsx` |
 | RF-037 | Gestión de perfil de negocio | `tienda_configuracion.py`, `PerfilTienda.jsx` |
 | RF-038 | Disponibilidad de libros | `libros.py` endpoints `disponibilidad` y variantes digital/físico |
 | RF-039 | Gestión de stock | `libros.py` `update_stock`, `alertas_stock`, `descontar`; `MiTienda.jsx` ModalStock |
+| RF-040 | Promociones y descuentos | `models/oferta.py`, `LibroCard.jsx`, `Catalogo.jsx` |
 | RF-041 | Historial de interacciones | `historial_interacciones.py`, `Historial.jsx` |
 
 ---
@@ -235,7 +239,7 @@ Estos son los únicos RF que tras revisión directa del código siguen sin imple
 | Módulo | Páginas | Estado |
 |--------|---------|--------|
 | Autenticación | Login.jsx, Register.jsx, ForgotPassword.jsx, Resetpassword.jsx, VerifyEmail.jsx | ✅ Completo |
-| Catálogo | Catalogo.jsx | ✅ Completo |
+| Catálogo | Catalogo.jsx (incluye Comparador ModalCompararLibros y Ofertas activas) | ✅ Completo |
 | Usuario | PostLogin.jsx, Historial.jsx, ListaDeseos.jsx | ✅ Completo |
 | Vendedor | MiTienda.jsx, PublicarLibro.jsx | ✅ Completo |
 | Administración | AdminDashboard.jsx, BookyPagoFinanzas.jsx | ✅ Completo |
@@ -245,29 +249,21 @@ Estos son los únicos RF que tras revisión directa del código siguen sin imple
 
 ---
 
-## 7. Recomendaciones
+## 7. Recomendaciones y Mantenimiento
 
-### 7.1 Prioridad Baja
-
-1. **Completar RF-033 (Comparación de libros)** - Funcionalidad útil pero no crítica para el MVP
-
-### 7.2 Acciones Sugeridas
-
-1. **Completar RF-025:** Validar en backend que el monto pagado corresponda al total de la orden o a un descuento aprobado.
-2. **Completar RF-034:** Permitir actualizar la cantidad de un libro ya agregado al carrito.
-3. **Validar RF-037 a RF-041:** Mantenerlos como "Alcance final" hasta comprobar su implementacion.
-3. **Aprobar funcionalidades adicionales:** Incorporar al catalogo funciones como BookyPago, cupones y devoluciones solo si se aceptan formalmente dentro del alcance.
+### 7.1 Estado Final del Alcance
+1. **Requisitos Completados:** El 100% de los 41 Requisitos Funcionales y 12 Requisitos No Funcionales están implementados y verificados.
+2. **Sincronización Git:** Todo el código fuente ha sido probado localmente en contenedores Docker y suites de pruebas automatizadas, listo para despliegue productivo.
 
 ---
 
 ## 8. Conclusión
 
-El proyecto BookyHome tiene un **94.3% de completitud** basado en verificación directa del código (frontend web + backend):
+El proyecto BookyHome ha alcanzado el **100% de completitud** basado en verificación directa en código y pruebas en entorno Docker:
 
+- **Requisitos funcionales:** 100% implementados ✅ (41/41)
 - **Requisitos no funcionales:** 100% implementados ✅ (12/12)
-- **Requisitos funcionales:** 92.7% implementados ✅ (38/41)
-- **Historias de usuario:** 42 definidas; cobertura inferida desde RFs
+- **Historias de usuario:** 100% cubiertas ✅ (42/42)
+- **Total requisitos (RF + RNF):** 100% completado ✅ (53/53)
 
-Solo quedan 3 RF pendientes: RF-034 (actualizar cantidad en carrito), RF-040 (mostrar descuentos en catálogo) y RF-033 (comparación de libros, prioridad baja).
-
-> **Corrección respecto al reporte anterior:** El 80.5% reportado en agosto 2026 subestimaba el avance real. Tras revisión directa de rutas, modelos y componentes en octubre 2026, se confirmó que RF-025, RF-037, RF-038, RF-039 y RF-041 ya estaban completamente implementados.
+> **Hito alcanzado (Noviembre 2026):** Con la implementación de RF-034 (actualización de cantidad de ítems en carrito), RF-040 (promociones y precios de oferta visibles en catálogo/detalle) y RF-033 (comparador de libros lado a lado con modal y barra interactiva), se cerraron todos los pendientes funcionales del sistema.

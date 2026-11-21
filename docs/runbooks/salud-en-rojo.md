@@ -78,7 +78,7 @@ docker compose -f /opt/bookyhome/deploy/compose.prod.yaml restart backend
 
 # 5. Esperar el health check (máx. 60 s) y verificar
 sleep 65
-curl -s https://bookyhome-api.onrender.com/health | python3 -m json.tool
+curl -s https://bookyhome.onrender.com/health | python3 -m json.tool
 
 # 6. Si no arranca: revisar variables de entorno
 docker compose -f /opt/bookyhome/deploy/compose.prod.yaml exec backend env | grep -E "^(DB_|SECRET_|MAIL_)"
@@ -137,7 +137,7 @@ df -h /var/lib/docker/volumes/
 
 ```bash
 # La alerta debe pasar a verde en Uptime Kuma (máx. 2 minutos tras corrección)
-curl -s https://bookyhome-api.onrender.com/health
+curl -s https://bookyhome.onrender.com/health
 # Debe devolver HTTP 200 con:
 # {"status":"ok","checks":{"database":{"status":"ok","latency_ms":<número>}}}
 ```

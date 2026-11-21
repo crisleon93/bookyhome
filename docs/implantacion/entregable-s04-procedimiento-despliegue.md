@@ -59,16 +59,16 @@
 
 ### Variables de entorno
 
-| Variable | Propósito | Ejemplo (ficticio) |
+| Variable | Propósito | Formato / Valor de referencia |
 |---|---|---|
-| `APP_VERSION` | Versión desplegada | `1.0.0` |
-| `DB_PASSWORD` | Contraseña de MySQL | `S3cr3t0Fuerte!` |
+| `APP_VERSION` | Versión desplegada | `1.0.1` |
+| `DB_PASSWORD` | Contraseña de MySQL | `ContraseñaAlfanumericaSegura!` |
 | `DB_NAME` | Nombre de la base de datos | `bookyhome` |
-| `SECRET_KEY` | Clave JWT (64 hex aleatorios) | `a1b2c3...` |
-| `PUBLIC_API_URL` | URL pública de la API | `https://api.bookyhome.com.co` |
-| `FRONTEND_URL` | URL del frontend | `https://bookyhome.com.co` |
-| `VITE_API_BASE_URL` | URL de la API para el frontend | `https://api.bookyhome.com.co` |
-| `MAIL_USERNAME` | Correo para envíos transaccionales | `noreply@bookyhome.com.co` |
+| `SECRET_KEY` | Clave JWT (64 hex aleatorios) | `a1b2c3d4...` |
+| `PUBLIC_API_URL` | URL pública de la API | `https://bookyhome.onrender.com` |
+| `FRONTEND_URL` | URL del frontend | `https://bookyhome-web.onrender.com` |
+| `VITE_API_BASE_URL` | URL de la API para el frontend | `https://bookyhome.onrender.com` |
+| `MAIL_USERNAME` | Correo para envíos transaccionales | `noreply@bookyhome.com` |
 | `GEMINI_API_KEY` | Clave del asistente IA | `AIza...` |
 
 ### Instalación inicial
@@ -156,11 +156,11 @@ RESULTADO: OK — todas las pruebas pasaron
 | Frontend (build estático) | **Render** — Static Site (Free) | CDN global | Blueprint `deploy/render.yaml`; `pnpm run build` → `frontend/dist` (Node.js 22 LTS) |
 | Base de datos | **Aiven Cloud** — MySQL 8.4 LTS | AWS / GCP (Cloud) | Host `bookyhome-mysql-bookyhome.l.aivencloud.com:22566` con conexión SSL/TLS obligatoria |
 
-> **Nota sobre la base de datos:** BookyHome utiliza MySQL 8/8.4 tanto en desarrollo local (Docker) como en producción en la nube mediante **Aiven Cloud MySQL**, garantizando total compatibilidad de motores, funciones nativas (`NOW()`, `AUTO_INCREMENT`, triggers) y las 83 migraciones SQL sin necesidad de alterar los drivers de `mysql-connector-python`.
+> **Nota sobre la base de datos:** BookyHome utiliza MySQL 8/8.4 tanto en desarrollo local (Docker) como en producción en la nube mediante **Aiven Cloud MySQL**, garantizando total compatibilidad de motores, funciones nativas (`NOW()`, `AUTO_INCREMENT`, triggers) y las 86 migraciones SQL (000 a 085) sin necesidad de alterar los drivers de `mysql-connector-python`.
 
 **URL pública (Render):**
 - Frontend: `https://bookyhome-web.onrender.com`
-- API: `https://bookyhome.onrender.com` (alias: `https://bookyhome-api.onrender.com`)
+- API: `https://bookyhome.onrender.com`
 
 ### Procedimiento de despliegue en Render + Aiven
 
@@ -221,16 +221,16 @@ RESULTADO: OK — todas las pruebas pasaron
 
 ## 5.4 Estimación de costos
 
-| Concepto | Alternativa 1 — Render + Neon (PaaS gratuito) | Alternativa 2 — Render Starter + Railway MySQL (PaaS pago básico) |
+| Concepto | Alternativa 1 — Render + Aiven Cloud MySQL (Nube inicial) | Alternativa 2 — Render Starter + Aiven Business MySQL (Nube escalable) |
 |---|---|---|
 | Frontend | $0/mes (Static Site Free) | $0/mes (Static Site Free) |
 | API (backend) | $0/mes (Web Service Free — con suspensión) | $7/mes (Render Starter — sin suspensión, 512 MB RAM) |
-| Base de datos | $0/mes (Neon Free — 0.5 GB, suspensión) | $5/mes (Railway Hobby MySQL — 1 GB, sin suspensión) |
+| Base de datos | $0/mes (Aiven Cloud Free — MySQL 8.4 LTS, 5 GB) | $19/mes (Aiven Business MySQL — alta disponibilidad) |
 | Almacenamiento imágenes | $0 (volumen Docker en servidor) | $0–$5/mes (Cloudflare R2 Free: 10 GB/mes gratis) |
-| **Total mensual** | **$0/mes** | **~$12/mes** |
-| **Total anual** | **$0/año** | **~$144/año** |
-| Horas de administración al mes | ~1 h (monitoreo, renovación manual si hay incidentes) | ~0.5 h (alertas automáticas incluidas en plan pago) |
-| Fuente y fecha | [render.com/pricing](https://render.com/pricing), [neon.tech/pricing](https://neon.tech/pricing) — 2026-10-17 | [render.com/pricing](https://render.com/pricing), [railway.app/pricing](https://railway.app/pricing) — 2026-10-17 |
+| **Total mensual** | **$0/mes** | **~$26/mes** |
+| **Total anual** | **$0/año** | **~$312/año** |
+| Horas de administración al mes | ~1 h (monitoreo, verificación de estado) | ~0.5 h (alertas automáticas incluidas en plan pago) |
+| Fuente y fecha | [render.com/pricing](https://render.com/pricing), [aiven.io/pricing](https://aiven.io/pricing) — 2026-11-20 | [render.com/pricing](https://render.com/pricing), [aiven.io/pricing](https://aiven.io/pricing) — 2026-11-20 |
 
 ### Recomendación al cliente
 
@@ -248,7 +248,7 @@ RESULTADO: OK — todas las pruebas pasaron
 - [x] Procedimiento de actualización y rollback documentados con comandos (§5.2)
 - [x] Clasificación de migraciones con compatibilidad hacia atrás (§5.2)
 - [x] `scripts/smoke-test.sh` con endpoints reales, probado y con resultado 5/5 PASS (§5.2)
-- [x] Despliegue en la nube documentado (Render + Neon) con Blueprint `deploy/render.yaml` (§5.3)
+- [x] Despliegue en la nube documentado (Render + Aiven Cloud MySQL 8.4 LTS) con variables configuradas (§5.3)
 - [x] Límites del plan gratuito documentados con fuente y fecha (§5.3)
 - [x] Estimación de costos con dos alternativas y recomendación (§5.4)
 - [x] `deploy/` con `compose.prod.yaml`, `Caddyfile.prod`, `env.prod.example` y `render.yaml`

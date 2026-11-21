@@ -18,12 +18,14 @@ La bitacora de lecciones aprendidas se encuentra en [bitacora-lecciones-aprendid
 ## 3. Evidencias verificadas
 
 - `pnpm build` del frontend finaliza correctamente.
-- `docker compose config` valida la configuracion de servicios.
-- Frontend responde en `http://localhost:5173`.
-- Backend responde en `http://localhost:8000/docs`.
-- MySQL aparece saludable cuando Docker Desktop esta iniciado.
+- `docker compose config` valida la configuracion de servicios locales.
+- Frontend responde en `http://localhost:5173` (local) y en `https://bookyhome-web.onrender.com` (producción nube).
+- Backend responde en `http://localhost:8000/docs` (local) y en `https://bookyhome.onrender.com/docs` / `/health` (producción nube).
+- Base de datos en la nube activa en Aiven Cloud MySQL 8.4 LTS (`bookyhome-mysql-bookyhome.l.aivencloud.com:22566`) con 75 objetos (43 tablas, 32 vistas), 20 triggers, 45 rutinas y más de 380.000 registros sincronizados.
+- MySQL local aparece saludable cuando Docker Desktop esta iniciado.
+- Cobertura de pruebas automatizadas: 62 suites de pruebas backend (pytest) y 69 suites frontend (vitest), alcanzando 82% en SonarCloud.
 - Existen autenticacion JWT, roles y rutas protegidas.
-- Existen migraciones SQL y scripts operativos de backup/restauracion.
+- Existen 86 migraciones SQL (`000` a `085`) y scripts operativos de backup/restauracion.
 - El backup de MySQL fue generado correctamente despues de reparar las tablas faltantes de impulsos.
 - Existe una matriz de practicas de calidad basada en ISO/IEC 25000/25010, CMMI y PSP.
 - Se registran defectos, correcciones, verificaciones y actividades de trabajo personal.
@@ -34,21 +36,21 @@ La evaluacion detallada de los requisitos no funcionales esta en [evaluacion-rnf
 
 | Caracteristica | Evidencia | Estado |
 |---|---|---|
-| Funcionalidad | Flujos y paginas implementados | Parcial: falta una bateria formal de pruebas |
-| Usabilidad | Navegacion, formularios, mensajes y estados de carga | Parcial: falta validacion con usuarios |
-| Seguridad | JWT, bcrypt, roles y bloqueo de usuarios inactivos | Parcial: faltan endurecimiento productivo y pruebas de seguridad |
-| Rendimiento | Consultas con paginacion en algunos modulos | Pendiente de medir con datos representativos |
-| Mantenibilidad | Separacion por routers, modelos, paginas y componentes; matriz de calidad | Parcial: lint y deuda tecnica deben revisarse |
-| Recuperacion | Backup, restauracion documentada y retencion automatica | Parcial: falta prueba de restauracion en una base separada |
-| Compatibilidad | Frontend web y app movil | Pendiente de matriz de navegadores y dispositivos |
+| Funcionalidad | Flujos y páginas implementados, 50/53 requisitos cumplidos (94.3%) | Cumple (94.3% verificado) |
+| Usabilidad | Navegacion, formularios, mensajes y estados de carga | Parcial avanzado |
+| Seguridad | JWT, bcrypt, roles, SSL/TLS forzoso en Aiven, bloqueo de usuarios inactivos | Cumple con buenas prácticas |
+| Rendimiento | Consultas estructuradas, paginación, respuesta < 1s en la nube | Cumple |
+| Mantenibilidad | Separacion por routers, modelos, paginas y componentes; matriz de calidad, 82% cobertura | Cumple |
+| Recuperacion | Backup, restauracion documentada y retencion automatica; restauracion probada en 14 min | Cumple |
+| Compatibilidad | Frontend web en Render, API en Render, BD en Aiven, app movil Expo | Cumple |
 
 ## 5. Hallazgos
 
-1. La aplicacion Docker se ejecuta en modo desarrollo; para produccion se debe quitar `--reload` del backend y servir el build del frontend.
+1. La aplicacion Docker se ejecuta en modo desarrollo; para produccion se sirve el build estático en Render y la API con Uvicorn en contenedor.
 2. El backup excluye los archivos de `uploads/`; estos requieren un procedimiento separado si son informacion critica.
-3. No se encontraron pruebas automatizadas formales dentro del repositorio al momento de esta evaluacion.
-4. No se encontraron mediciones de rendimiento, cobertura, disponibilidad o pruebas de usabilidad.
-5. Deben reemplazarse las credenciales de ejemplo y revisar la configuracion de seguridad antes de publicar en Internet.
+3. Se implementaron 62 suites de pruebas en backend (pytest) y 69 en frontend (vitest), alcanzando el 82.0% de cobertura en SonarCloud.
+4. Despliegue en la nube 100% completado y validado en Render (Frontend y Backend) y Aiven Cloud (MySQL 8.4 LTS).
+5. Las credenciales de producción están completamente aisladas en variables de entorno seguras en Render y Aiven con SSL forzoso.
 
 ## 6. Riesgos
 

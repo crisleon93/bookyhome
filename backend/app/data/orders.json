@@ -524,6 +524,47 @@
       "metodo_pago": "Pago en Efecty",
       "id_direccion": 16,
       "fecha_entrega_confirmada": "2026-09-21T18:25:46.739453Z"
+    },
+    {
+      "id_orden": 16,
+      "codigo_compra": "BH-1B8406D58B",
+      "fecha": "2026-11-20T20:35:07.184750Z",
+      "items": [
+        {
+          "id_libro": 5331,
+          "titulo": "Seinlanguage",
+          "autor_libro": "Jerry Seinfeld",
+          "precio_libro": 48400.0,
+          "cantidad": 1,
+          "imagen": "https://images.unsplash.com/photo-1516321497487-e288fb19713f?w=400&q=80",
+          "id_variante": null,
+          "variante_label": null,
+          "id_tienda": 151,
+          "nombre_tienda": ""
+        },
+        {
+          "id_libro": 5335,
+          "titulo": "La regenta",
+          "autor_libro": "Leopoldo Alas",
+          "precio_libro": 59400.0,
+          "cantidad": 1,
+          "imagen": "https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?w=400&q=80",
+          "id_variante": null,
+          "variante_label": null,
+          "id_tienda": 151,
+          "nombre_tienda": ""
+        }
+      ],
+      "subtotal": 107800.0,
+      "costo_envio": 8000.0,
+      "total": 115800.0,
+      "estado": "cancelada",
+      "tipo_entrega": "domicilio",
+      "pin_retiro": null,
+      "estado_retiro": null,
+      "fecha_limite_retiro": null,
+      "id_orden_db": 36257,
+      "motivo_cancelacion": "Cancelación de orden pendiente"
     }
   ],
   "5": [],

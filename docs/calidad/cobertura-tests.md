@@ -74,9 +74,9 @@
 
 | Elemento | Descripción | Estado |
 |---|---|---|
-| 84 migraciones (`000` → `084`) | Scripts DDL/DML aplicados en orden | ✅ Aplicadas |
+| 86 migraciones (`000` → `085`) | Scripts DDL/DML aplicados en orden | ✅ Aplicadas (100% en local y Aiven Cloud) |
 | `bookyhome.sql` | Volcado completo de la BD | ✅ Existente |
-| Verificación de integridad | `CHECKSUM TABLE` 8/8 tablas | ✅ Verificado (semana 5) |
+| Verificación de integridad | `CHECKSUM TABLE` 8/8 tablas | ✅ Verificado (semana 5 y nube) |
 | Restauración probada | 4 min 12 s, 8/8 huellas idénticas | ✅ Probada (semana 6) |
 
 ---
