@@ -81,16 +81,75 @@ docker compose logs --tail 100 mysql
 
 ## 5. Verificacion realizada
 
-El 24 de agosto de 2026 se verifico el despliegue con Docker Desktop activo:
+### 5.1. Verificacion en ambiente local (Docker Desktop)
+
+Verificacion realizada sobre contenedores locales:
 
 | Verificacion | Resultado |
 |---|---|
-| MySQL saludable | Cumple |
+| MySQL saludable | Cumple (healthcheck activo) |
 | Backend iniciado en puerto 8000 | Cumple |
 | Frontend iniciado en puerto 5173 | Cumple |
 | Frontend responde HTTP | `200` |
 | Backend `/docs` responde HTTP | `200` |
 | Dependencia backend -> MySQL | Configurada mediante `depends_on` y healthcheck |
+
+### 5.2. Verificacion en ambiente de produccion en la nube (Evidencia en vivo: 21 de noviembre de 2026)
+
+Se ejecuto el script de prueba de humo automatizado `scripts/smoke-test.sh` contra los endpoints publicos desplegados en Render y Aiven Cloud:
+
+```powershell
+bash scripts/smoke-test.sh https://bookyhome.onrender.com https://bookyhome-web.onrender.com
+```
+
+**Salida real obtenida de la ejecucion:**
+
+```text
+========================================
+ Prueba de humo — BookyHome
+ API:      https://bookyhome.onrender.com
+ Frontend: https://bookyhome-web.onrender.com
+ Fecha:    2026-11-21 12:40:26
+========================================
+  → Comprobando API (https://bookyhome.onrender.com)...
+  ✔ PASS API raíz — HTTP 200
+  ✔ PASS API /docs (Swagger) — HTTP 200
+  ✔ PASS API /catalogo/categorias — HTTP 200
+  ✔ PASS API /catalogo/busqueda-avanzada — HTTP 200
+  → Comprobando endpoint de salud (https://bookyhome.onrender.com/health)...
+  ✔ PASS API /health — HTTP 200, base de datos sana
+  → Verificación propia: catálogo con datos...
+  ✔ PASS Catálogo devuelve estructura JSON con resultados
+  → Comprobando Frontend (https://bookyhome-web.onrender.com)...
+  ✔ PASS Frontend raíz — HTTP 200
+========================================
+ Pasaron: 7  |  Fallaron: 0
+========================================
+RESULTADO: OK — todas las pruebas pasaron
+```
+
+**Respuesta JSON del endpoint de salud (`https://bookyhome.onrender.com/health`):**
+
+```json
+{
+  "status": "ok",
+  "timestamp": "2026-11-21T17:39:52.364446+00:00",
+  "version": "1.0.0",
+  "checks": {
+    "database": {
+      "status": "ok",
+      "latency_ms": 1025.0
+    },
+    "mail": {
+      "status": "ok"
+    },
+    "ai_assistant": {
+      "status": "ok",
+      "provider": "gemini"
+    }
+  }
+}
+```
 
 ## 6. Politicas de seguridad aplicadas
 
