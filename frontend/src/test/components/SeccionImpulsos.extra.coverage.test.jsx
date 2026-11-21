@@ -57,6 +57,8 @@ const impulsoActivo = {
 }
 
 const libroSample = { id_libro: 1, titulo: 'Libro A' }
+const getContratarButton = () =>
+  screen.getByRole('button', { name: /contratar por/i })
 
 const mockApi = async (overrides = {}) => {
   const api = (await import('../../services/api')).default
@@ -122,14 +124,13 @@ describe('SeccionImpulsos — tab Contratar', () => {
     expect(screen.getByRole('combobox')).toBeInTheDocument()
   })
 
-  it('shows error when tipo home selected without libro', async () => {
+  it('keeps tipo home contract disabled until a libro is selected', async () => {
     render(<SeccionImpulsos tiendaId={1} />)
     await screen.findByText('Impulso Home')
     const card = screen.getByText('Impulso Home').closest('[role="button"]')
     if (card) fireEvent.click(card)
-    const btn = await screen.findByRole('button', { name: /contratar/i })
-    fireEvent.click(btn)
-    await screen.findByText(/seleccionar un libro/i)
+    const btn = getContratarButton()
+    expect(btn).toBeDisabled()
   })
 
   it('contracts email tipo without libro required', async () => {
@@ -137,7 +138,7 @@ describe('SeccionImpulsos — tab Contratar', () => {
     await screen.findByText('Email Masivo')
     const card = screen.getByText('Email Masivo').closest('[role="button"]')
     if (card) fireEvent.click(card)
-    const btn = await screen.findByRole('button', { name: /contratar/i })
+    const btn = getContratarButton()
     // email does not require libro, button should be enabled
     expect(btn).not.toBeDisabled()
   })
@@ -147,9 +148,9 @@ describe('SeccionImpulsos — tab Contratar', () => {
     await screen.findByText('Email Masivo')
     const card = screen.getByText('Email Masivo').closest('[role="button"]')
     if (card) fireEvent.click(card)
-    const btn = await screen.findByRole('button', { name: /contratar/i })
+    const btn = getContratarButton()
     fireEvent.click(btn)
-    await screen.findByText(/contratado con éxito/i)
+    await waitFor(() => expect(screen.getByText(/contratado con éxito/i)).toBeInTheDocument())
   })
 
   it('shows API error on contract failure', async () => {
@@ -159,9 +160,9 @@ describe('SeccionImpulsos — tab Contratar', () => {
     await screen.findByText('Email Masivo')
     const card = screen.getByText('Email Masivo').closest('[role="button"]')
     if (card) fireEvent.click(card)
-    const btn = await screen.findByRole('button', { name: /contratar/i })
+    const btn = getContratarButton()
     fireEvent.click(btn)
-    await screen.findByText(/saldo insuficiente/i)
+    await waitFor(() => expect(screen.getByText(/saldo insuficiente/i)).toBeInTheDocument())
   })
 
   it('handles Enter key on tipo card', async () => {
@@ -194,7 +195,7 @@ describe('SeccionImpulsos — tab Activos', () => {
     render(<SeccionImpulsos tiendaId={1} />)
     await screen.findByText('Impulso Home')
     fireEvent.click(screen.getByRole('button', { name: /mis impulsos activos/i }))
-    expect(await screen.findByText('Mi Libro')).toBeInTheDocument()
+    await waitFor(() => expect(screen.getByText(/Mi Libro/i)).toBeInTheDocument())
     expect(screen.getByText(/100/)).toBeInTheDocument() // impresiones
   })
 
@@ -204,7 +205,7 @@ describe('SeccionImpulsos — tab Activos', () => {
     render(<SeccionImpulsos tiendaId={1} />)
     await screen.findByText('Impulso Home')
     fireEvent.click(screen.getByRole('button', { name: /mis impulsos activos/i }))
-    await screen.findByText('Mi Libro')
+    await waitFor(() => expect(screen.getByText(/Mi Libro/i)).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }))
     await screen.findByText(/cancelado correctamente/i)
   })
@@ -215,7 +216,7 @@ describe('SeccionImpulsos — tab Activos', () => {
     render(<SeccionImpulsos tiendaId={1} />)
     await screen.findByText('Impulso Home')
     fireEvent.click(screen.getByRole('button', { name: /mis impulsos activos/i }))
-    await screen.findByText('Mi Libro')
+    await waitFor(() => expect(screen.getByText(/Mi Libro/i)).toBeInTheDocument())
     const api = (await import('../../services/api')).default
     fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }))
     expect(api.delete).not.toHaveBeenCalled()
@@ -224,12 +225,12 @@ describe('SeccionImpulsos — tab Activos', () => {
   it('shows API error on cancel failure', async () => {
     vi.spyOn(window, 'confirm').mockReturnValue(true)
     const api = (await import('../../services/api')).default
-    api.delete.mockRejectedValue({ response: { data: { detail: 'Error al cancelar' } } })
     await mockApi({ impulsos: [impulsoActivo] })
+    api.delete.mockRejectedValue({ response: { data: { detail: 'Error al cancelar' } } })
     render(<SeccionImpulsos tiendaId={1} />)
     await screen.findByText('Impulso Home')
     fireEvent.click(screen.getByRole('button', { name: /mis impulsos activos/i }))
-    await screen.findByText('Mi Libro')
+    await waitFor(() => expect(screen.getByText(/Mi Libro/i)).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }))
     await screen.findByText(/error al cancelar/i)
   })
@@ -239,7 +240,7 @@ describe('SeccionImpulsos — tab Activos', () => {
     render(<SeccionImpulsos tiendaId={1} />)
     await screen.findByText('Impulso Home')
     fireEvent.click(screen.getByRole('button', { name: /mis impulsos activos/i }))
-    await screen.findByText('Mi Libro')
+    await waitFor(() => expect(screen.getByText(/Mi Libro/i)).toBeInTheDocument())
     expect(screen.queryByRole('button', { name: 'Cancelar' })).toBeNull()
   })
 })

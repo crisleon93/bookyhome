@@ -5,6 +5,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import SeccionSeguimiento from '../../components/dashboard/SeccionSeguimiento'
+import { cancelOrder, confirmarEntrega, getOrdenes } from '../../services/api'
 
 vi.mock('../../components/Icons', () => ({ IconTruck: () => null }))
 vi.mock('../../services/api', () => ({
@@ -43,14 +44,12 @@ afterEach(() => { cleanup(); vi.unstubAllGlobals() })
 
 describe('SeccionSeguimiento — loading and tabs', () => {
   it('shows loading state initially', () => {
-    const { getOrdenes } = require('../../services/api')
     getOrdenes.mockReturnValue(new Promise(() => {}))
     render(<SeccionSeguimiento userId={1} />)
     expect(screen.getByText(/cargando seguimientos/i)).toBeInTheDocument()
   })
 
   it('renders esperando tab with count', async () => {
-    const { getOrdenes } = require('../../services/api')
     getOrdenes.mockResolvedValue({ data: [makeOrden()] })
     render(<SeccionSeguimiento userId={1} />)
     await screen.findByText(/esperando envío/i)
@@ -58,7 +57,6 @@ describe('SeccionSeguimiento — loading and tabs', () => {
   })
 
   it('renders camino and entregado tabs empty', async () => {
-    const { getOrdenes } = require('../../services/api')
     getOrdenes.mockResolvedValue({ data: [] })
     render(<SeccionSeguimiento userId={1} />)
     await waitFor(() => expect(screen.queryByText(/cargando seguimientos/i)).toBeNull())
@@ -66,7 +64,6 @@ describe('SeccionSeguimiento — loading and tabs', () => {
   })
 
   it('switches to camino tab', async () => {
-    const { getOrdenes } = require('../../services/api')
     getOrdenes.mockResolvedValue({ data: [ordenCamino] })
     render(<SeccionSeguimiento userId={1} />)
     await waitFor(() => expect(screen.queryByText(/cargando/i)).toBeNull())
@@ -75,7 +72,6 @@ describe('SeccionSeguimiento — loading and tabs', () => {
   })
 
   it('switches to entregado tab', async () => {
-    const { getOrdenes } = require('../../services/api')
     getOrdenes.mockResolvedValue({ data: [ordenEntregado] })
     render(<SeccionSeguimiento userId={1} />)
     await waitFor(() => expect(screen.queryByText(/cargando/i)).toBeNull())
@@ -84,8 +80,7 @@ describe('SeccionSeguimiento — loading and tabs', () => {
   })
 
   it('shows empty state when vista has no orders', async () => {
-    const { getOrdenes } = require('../../services/api')
-    gOrdenes.mockResolvedValue({ data: [makeOrden()] })
+    getOrdenes.mockResolvedValue({ data: [makeOrden()] })
     render(<SeccionSeguimiento userId={1} />)
     await waitFor(() => expect(screen.queryByText(/cargando/i)).toBeNull())
     fireEvent.click(screen.getByText(/en camino \(0\)/i))
@@ -93,7 +88,6 @@ describe('SeccionSeguimiento — loading and tabs', () => {
   })
 
   it('does not load when userId is falsy', () => {
-    const { getOrdenes } = require('../../services/api')
     render(<SeccionSeguimiento userId={null} />)
     expect(getOrdenes).not.toHaveBeenCalled()
   })
@@ -101,7 +95,6 @@ describe('SeccionSeguimiento — loading and tabs', () => {
 
 describe('SeccionSeguimiento — confirmar recepción', () => {
   it('opens confirmation dialog when clicking Confirmar', async () => {
-    const { getOrdenes } = require('../../services/api')
     getOrdenes.mockResolvedValue({ data: [ordenCamino] })
     render(<SeccionSeguimiento userId={1} />)
     await waitFor(() => expect(screen.queryByText(/cargando/i)).toBeNull())
@@ -112,7 +105,6 @@ describe('SeccionSeguimiento — confirmar recepción', () => {
   })
 
   it('cancels confirmation dialog', async () => {
-    const { getOrdenes } = require('../../services/api')
     getOrdenes.mockResolvedValue({ data: [ordenCamino] })
     render(<SeccionSeguimiento userId={1} />)
     await waitFor(() => expect(screen.queryByText(/cargando/i)).toBeNull())
@@ -125,7 +117,6 @@ describe('SeccionSeguimiento — confirmar recepción', () => {
   })
 
   it('confirms delivery successfully', async () => {
-    const { getOrdenes, confirmarEntrega } = require('../../services/api')
     getOrdenes.mockResolvedValue({ data: [ordenCamino] })
     confirmarEntrega.mockResolvedValue({ data: { ok: true } })
     render(<SeccionSeguimiento userId={1} />)
@@ -139,7 +130,6 @@ describe('SeccionSeguimiento — confirmar recepción', () => {
   })
 
   it('shows error when confirm fails', async () => {
-    const { getOrdenes, confirmarEntrega } = require('../../services/api')
     getOrdenes.mockResolvedValue({ data: [ordenCamino] })
     confirmarEntrega.mockRejectedValue({ response: { data: { detail: 'Error al confirmar' } } })
     render(<SeccionSeguimiento userId={1} />)
@@ -155,7 +145,6 @@ describe('SeccionSeguimiento — confirmar recepción', () => {
 
 describe('SeccionSeguimiento — cancelar pedido', () => {
   it('opens cancel dialog', async () => {
-    const { getOrdenes } = require('../../services/api')
     getOrdenes.mockResolvedValue({ data: [ordenCamino] })
     render(<SeccionSeguimiento userId={1} />)
     await waitFor(() => expect(screen.queryByText(/cargando/i)).toBeNull())
@@ -166,7 +155,6 @@ describe('SeccionSeguimiento — cancelar pedido', () => {
   })
 
   it('submit disabled when motivo < 5 chars', async () => {
-    const { getOrdenes } = require('../../services/api')
     getOrdenes.mockResolvedValue({ data: [ordenCamino] })
     render(<SeccionSeguimiento userId={1} />)
     await waitFor(() => expect(screen.queryByText(/cargando/i)).toBeNull())
@@ -178,7 +166,6 @@ describe('SeccionSeguimiento — cancelar pedido', () => {
   })
 
   it('cancels pedido with valid motivo', async () => {
-    const { getOrdenes, cancelOrder } = require('../../services/api')
     getOrdenes.mockResolvedValue({ data: [ordenCamino] })
     cancelOrder.mockResolvedValue({ data: { ok: true } })
     render(<SeccionSeguimiento userId={1} />)
@@ -193,7 +180,6 @@ describe('SeccionSeguimiento — cancelar pedido', () => {
   })
 
   it('closes cancel dialog with Volver', async () => {
-    const { getOrdenes } = require('../../services/api')
     getOrdenes.mockResolvedValue({ data: [ordenCamino] })
     render(<SeccionSeguimiento userId={1} />)
     await waitFor(() => expect(screen.queryByText(/cargando/i)).toBeNull())
@@ -208,7 +194,6 @@ describe('SeccionSeguimiento — cancelar pedido', () => {
 
 describe('SeccionSeguimiento — detalle envío', () => {
   it('opens and closes detalle for camino order', async () => {
-    const { getOrdenes } = require('../../services/api')
     getOrdenes.mockResolvedValue({ data: [ordenCamino] })
     render(<SeccionSeguimiento userId={1} />)
     await waitFor(() => expect(screen.queryByText(/cargando/i)).toBeNull())
@@ -217,14 +202,13 @@ describe('SeccionSeguimiento — detalle envío', () => {
     fireEvent.click(screen.getByText(/información del envío/i))
     expect(await screen.findByText(/detalle del envío/i)).toBeInTheDocument()
     // Close with × button in header
-    const closeBtn = screen.getByRole('button', { name: 'Cerrar' })
+    const closeBtn = document.querySelector('.seguimiento-detail-close')
     fireEvent.click(closeBtn)
     await waitFor(() => expect(screen.queryByText(/detalle del envío/i)).toBeNull())
   })
 
   it('opens detalle for entregado order and shows travel time', async () => {
-    const { getOrdenes } = require('../../services/api')
-    gOrdenes.mockResolvedValue({ data: [ordenEntregado] })
+    getOrdenes.mockResolvedValue({ data: [ordenEntregado] })
     render(<SeccionSeguimiento userId={1} />)
     await waitFor(() => expect(screen.queryByText(/cargando/i)).toBeNull())
     fireEvent.click(screen.getByText(/entregado \(1\)/i))
@@ -237,7 +221,6 @@ describe('SeccionSeguimiento — detalle envío', () => {
 
 describe('SeccionSeguimiento — pagination', () => {
   it('renders pagination when items exceed page size', async () => {
-    const { getOrdenes } = require('../../services/api')
     const muchasOrdenes = Array.from({ length: 10 }, (_, i) =>
       makeOrden({ id_orden: i + 10, id_orden_db: i + 10, estado: 'pagado' })
     )
@@ -249,7 +232,6 @@ describe('SeccionSeguimiento — pagination', () => {
   })
 
   it('changes items per page', async () => {
-    const { getOrdenes } = require('../../services/api')
     const muchasOrdenes = Array.from({ length: 15 }, (_, i) =>
       makeOrden({ id_orden: i + 20, id_orden_db: i + 20, estado: 'pagado' })
     )
@@ -264,7 +246,6 @@ describe('SeccionSeguimiento — pagination', () => {
 
 describe('SeccionSeguimiento — aviso dialog', () => {
   it('closes aviso with Entendido', async () => {
-    const { getOrdenes, confirmarEntrega } = require('../../services/api')
     getOrdenes.mockResolvedValue({ data: [ordenCamino] })
     confirmarEntrega.mockResolvedValue({ data: { ok: true } })
     render(<SeccionSeguimiento userId={1} />)

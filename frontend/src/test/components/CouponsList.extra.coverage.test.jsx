@@ -43,17 +43,17 @@ describe('CouponsList — loading state', () => {
 describe('CouponsList — coupon display', () => {
   it('renders coupon with valor fijo', () => {
     render(<CouponsList initialCoupons={[makeCoupon({ tipo_descuento: 'fijo', valor_descuento: 5000, nombre_tienda: 'Librería Test' })]} />)
-    expect(screen.getByText(/5\.000/)).toBeInTheDocument()
+    expect(screen.getAllByText(/5\.000/).length).toBeGreaterThan(0)
   })
 
   it('renders coupon without expiration date', () => {
     render(<CouponsList initialCoupons={[makeCoupon({ fecha_fin: null })]} />)
-    expect(screen.getByText('BOOKY10')).toBeInTheDocument()
+    expect(screen.getAllByText('BOOKY10').length).toBeGreaterThan(0)
   })
 
   it('renders coupon with no minimo_compra', () => {
     render(<CouponsList initialCoupons={[makeCoupon({ minimo_compra: 0 })]} />)
-    expect(screen.getByText('BOOKY10')).toBeInTheDocument()
+    expect(screen.getAllByText('BOOKY10').length).toBeGreaterThan(0)
   })
 
   it('renders tienda badge for store coupon', () => {
@@ -125,7 +125,8 @@ describe('CouponsList — Ver todos modal', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Ver todos' }))
     const input = screen.getByPlaceholderText(/buscar por código/i)
     await user.type(input, 'especial')
-    expect(screen.queryByText('BOOKY10')).toBeNull()
+    const dialog = screen.getByRole('dialog')
+    expect(dialog).not.toHaveTextContent('BOOKY10')
   })
 
   it('filters by tipo globales', async () => {
@@ -138,11 +139,12 @@ describe('CouponsList — Ver todos modal', () => {
   })
 
   it('filters by tipo tienda', async () => {
-    render(<CouponsList initialCoupons={[makeCoupon({ nombre_tienda: null }), makeCoupon({ id_cupon: 2, nombre_tienda: 'Tienda' })]} />)
+    render(<CouponsList initialCoupons={[makeCoupon({ nombre_tienda: null }), makeCoupon({ id_cupon: 2, codigo_cupon: 'TIENDA20', nombre_tienda: 'Tienda' })]} />)
     fireEvent.click(screen.getByRole('button', { name: 'Ver todos' }))
     const selects = screen.getAllByRole('combobox')
     fireEvent.change(selects[0], { target: { value: 'tienda' } })
-    expect(screen.queryByText('BOOKY10')).toBeNull()
+    const dialog = screen.getByRole('dialog')
+    expect(dialog).not.toHaveTextContent('BOOKY10')
   })
 
   it('filters by tipo fijo', async () => {

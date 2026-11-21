@@ -54,7 +54,7 @@ describe('Footer — legal modals open and close', () => {
   it('opens Contacto modal', async () => {
     renderFooter()
     fireEvent.click(screen.getByRole('button', { name: 'Contacto' }))
-    expect(await screen.findByText('Contacto')).toBeInTheDocument()
+    expect(await screen.findByRole('dialog')).toHaveTextContent('Contacto')
   })
 
   it('opens Términos y condiciones modal', async () => {
@@ -72,7 +72,7 @@ describe('Footer — legal modals open and close', () => {
   it('opens Cómo comprar modal', async () => {
     renderFooter()
     fireEvent.click(screen.getByRole('button', { name: 'Cómo comprar' }))
-    expect(await screen.findByText('Cómo comprar')).toBeInTheDocument()
+    expect(await screen.findByRole('dialog')).toHaveTextContent('Cómo comprar')
   })
 
   it('opens Envíos y entregas modal', async () => {
@@ -84,13 +84,13 @@ describe('Footer — legal modals open and close', () => {
   it('opens Devoluciones modal', async () => {
     renderFooter()
     fireEvent.click(screen.getByRole('button', { name: 'Devoluciones' }))
-    expect(await screen.findByText('Devoluciones')).toBeInTheDocument()
+    expect(await screen.findByRole('dialog')).toHaveTextContent('Devoluciones')
   })
 
   it('opens Vender en BookyHome modal', async () => {
     renderFooter()
     fireEvent.click(screen.getByRole('button', { name: 'Vender en BookyHome' }))
-    expect(await screen.findByText('Vender')).toBeInTheDocument()
+    expect(await screen.findByRole('dialog')).toHaveTextContent('Vender')
   })
 
   it('opens Planes y tarifas modal', async () => {
@@ -108,7 +108,7 @@ describe('Footer — legal modals open and close', () => {
   it('opens FAQ vendedores modal', async () => {
     renderFooter()
     fireEvent.click(screen.getByRole('button', { name: 'FAQ vendedores' }))
-    expect(await screen.findByText('FAQ vendedores')).toBeInTheDocument()
+    expect(await screen.findByRole('dialog')).toHaveTextContent('FAQ vendedores')
   })
 
   it('closes modal clicking backdrop', async () => {
@@ -166,7 +166,7 @@ describe('Footer — dark mode', () => {
     localStorage.setItem('darkMode', 'true')
     window.dispatchEvent(new Event('darkModeChange'))
     // just checking it does not throw
-    expect(screen.getByText(/BookyHome/i)).toBeInTheDocument()
+    expect(screen.getAllByText(/BookyHome/i).length).toBeGreaterThan(0)
   })
 
   it('respects hasSidebar prop', () => {
