@@ -1,10 +1,13 @@
 import os
 import time
 import sys
+import logging
 from pathlib import Path
 import mysql.connector
 from mysql.connector import Error, InterfaceError
 from dotenv import load_dotenv
+
+logger = logging.getLogger(__name__)
 
 
 load_dotenv(Path(__file__).resolve().parent.parent / ".env")
@@ -106,7 +109,7 @@ def ensure_quejas_schema():
     except Exception as exc:
         if db is not None:
             db.rollback()
-        print(f"[DATABASE] No se pudo asegurar el esquema de quejas: {exc}", file=sys.stderr, flush=True)
+        logger.error("[DATABASE] No se pudo asegurar el esquema de quejas: %s", exc)
     finally:
         if cursor is not None:
             cursor.close()
@@ -134,7 +137,7 @@ def ensure_banner_perfil_schema():
     except Exception as exc:
         if db is not None:
             db.rollback()
-        print(f"[DATABASE] No se pudo asegurar esquema de banner: {exc}", file=sys.stderr, flush=True)
+        logger.error("[DATABASE] No se pudo asegurar esquema de banner: %s", exc)
     finally:
         if cursor is not None:
             cursor.close()
@@ -171,7 +174,7 @@ def ensure_retiro_schema():
     except Exception as exc:
         if db is not None:
             db.rollback()
-        print(f"[DATABASE] No se pudo asegurar esquema de retiro en tienda: {exc}", file=sys.stderr, flush=True)
+        logger.error("[DATABASE] No se pudo asegurar esquema de retiro en tienda: %s", exc)
     finally:
         if cursor is not None:
             cursor.close()
@@ -197,7 +200,7 @@ def ensure_tarifa_envio_schema():
     except Exception as exc:
         if db is not None:
             db.rollback()
-        print(f"[DATABASE] No se pudo asegurar esquema de tarifa_envio: {exc}", file=sys.stderr, flush=True)
+        logger.error("[DATABASE] No se pudo asegurar esquema de tarifa_envio: %s", exc)
     finally:
         if cursor is not None:
             cursor.close()
@@ -226,7 +229,7 @@ def ensure_acceso_anticipado_libros_schema():
     except Exception as exc:
         if db is not None:
             db.rollback()
-        print(f"[DATABASE] No se pudo asegurar esquema de acceso anticipado: {exc}", file=sys.stderr, flush=True)
+        logger.error("[DATABASE] No se pudo asegurar esquema de acceso anticipado: %s", exc)
     finally:
         if cursor is not None:
             cursor.close()
@@ -307,11 +310,9 @@ def get_db(intentos_maximos=10, segundos_espera=3):
                 continue
 
         if last_error is not None:
-            print(
-                f"[DATABASE] Base de datos en preparación. Intento {intento}/{intentos_maximos}. "
-                f"Esperando {segundos_espera}s...", 
-                file=sys.stderr,
-                flush=True
+            logger.warning(
+                "[DATABASE] Base de datos en preparación. Intento %d/%d. Esperando %ds...",
+                intento, intentos_maximos, segundos_espera
             )
             time.sleep(segundos_espera)
 

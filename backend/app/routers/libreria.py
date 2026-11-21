@@ -13,10 +13,12 @@ from app.models.tiendas import (
 from app.auth import verify_token
 from app.email import enviar_email_confirmacion_registro, is_smtp_configured
 from app.database import get_db
+import logging
 import secrets
 
 router = APIRouter()
 security = HTTPBearer()
+logger = logging.getLogger(__name__)
 
 
 def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
@@ -48,9 +50,9 @@ async def registrar_libreria(data: LibreriaRegistro):
     if is_smtp_configured():
         try:
             await enviar_email_confirmacion_registro(data.email, token_verificacion)
-            print(f"✅ Correo de confirmación enviado a {data.email}", flush=True)
+            logger.info("Correo de confirmación enviado a %s", data.email)
         except Exception as exc:
-            print(f"❌ Error enviando correo de confirmación a {data.email}: {exc}", flush=True)
+            logger.error("Error enviando correo de confirmación a %s: %s", data.email, exc)
             return {
                 "mensaje": "Librería registrada, pero no se pudo enviar el correo de verificación.",
                 "email_enviado": False,

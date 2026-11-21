@@ -3,7 +3,10 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from typing import List, Optional
 from fastapi.responses import FileResponse
 import os, uuid
+import logging
 from datetime import datetime, timedelta, timezone
+
+logger = logging.getLogger(__name__)
 
 from app.auth import verify_token
 from app.utils.router_helpers import guardar_upload as _guardar_upload
@@ -513,8 +516,7 @@ def descargar_libro_digital(id_variante: int, token: str):
             if compra_json:
                 break
     except Exception as e:
-        print(f"⚠️ Error verificando compra en JSON: {e}")
-
+        logger.warning("Error verificando compra en JSON: %s", e)
     # ------------------------------------------------------------------
     # 2. Verificar en MySQL (insensible a mayúsculas para mayor robustez)
     # ------------------------------------------------------------------
@@ -535,7 +537,7 @@ def descargar_libro_digital(id_variante: int, token: str):
         if cursor.fetchone():
             compra_mysql = True
     except Exception as e:
-        print(f"⚠️ Error verificando compra en MySQL: {e}")
+        logger.warning("Error verificando compra en MySQL: %s", e)
     finally:
         if cursor: cursor.close()
         if db: db.close()

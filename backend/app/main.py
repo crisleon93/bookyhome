@@ -13,10 +13,11 @@ from dotenv import load_dotenv
 from fastapi.staticfiles import StaticFiles
 
 from contextlib import asynccontextmanager
-
 from apscheduler.schedulers.background import BackgroundScheduler
-
+import logging
 from app.routers import libros
+
+logger = logging.getLogger(__name__)
 
 
 
@@ -105,7 +106,7 @@ def init_all_schemas():
         conn.close()
     except Exception as exc:
         import sys
-        print(f"[DATABASE] Saltando inicialización de esquemas al arrancar (BD aún no disponible): {exc}", file=sys.stderr, flush=True)
+        logger.warning("[DATABASE] Saltando inicialización de esquemas al arrancar (BD aún no disponible): %s", exc)
         return
     ensure_quejas_schema()
     ensure_banner_perfil_schema()

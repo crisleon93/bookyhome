@@ -1,6 +1,8 @@
-import os
 from app.database import get_db
 from app.auth import hash_password, verify_password
+import logging
+
+logger = logging.getLogger(__name__)
 
 # ========================
 # Funciones de usuario
@@ -68,7 +70,7 @@ def obtener_usuario_por_email(email: str):
             user["email_verificado"] = True
         return user
     except Exception as e:
-        print(f"Error: {e}")
+        logger.error("Error al obtener usuario por email: %s", e)
         return None
     finally:
         cursor.close()
@@ -88,7 +90,7 @@ def obtener_usuario_por_id(id_usuario: int):
         cursor.execute(query, (id_usuario,))
         return cursor.fetchone()
     except Exception as e:
-        print(f"Error al obtener usuario por id: {e}")
+        logger.error("Error al obtener usuario por id: %s", e)
         return None
     finally:
         cursor.close()
@@ -216,7 +218,7 @@ def obtener_usuario_por_token(token: str):
         user = cursor.fetchone()
         return user
     except Exception as e:
-        print(f"Error: {e}")
+        logger.error("Error al obtener usuario por token: %s", e)
         return None
     finally:
         cursor.close()

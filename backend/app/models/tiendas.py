@@ -1,5 +1,8 @@
 from app.database import get_db
 from app.auth import hash_password
+import logging
+
+logger = logging.getLogger(__name__)
 
 def crear_libreria(nombre, nombre_libreria, direccion, telefono, email, password, token_verificacion=None):
     db = get_db()
@@ -161,7 +164,7 @@ def actualizar_estado_tienda(id_tienda: int, nuevo_estado: str, motivo: str = No
                 """, (id_vendedor, preview, id_sala))
                 db.commit()
             except Exception as notif_e:
-                print(f"Error insertando notificación de suspensión: {notif_e}", flush=True)
+                logger.error("Error insertando notificación de suspensión: %s", notif_e)
 
             # Notificación en tiempo real por WebSocket
             try:
@@ -185,14 +188,14 @@ def actualizar_estado_tienda(id_tienda: int, nuevo_estado: str, motivo: str = No
                 except RuntimeError:
                     pass
             except Exception as ws_e:
-                print(f"Error WS suspensión: {ws_e}", flush=True)
+                logger.error("Error WS suspensión: %s", ws_e)
 
             mensaje_enviado = True
 
         return {"ok": True, "mensaje_enviado": mensaje_enviado}
     except Exception as e:
         db.rollback()
-        print(f"❌ Error interno en SQL: {e}", flush=True)
+        logger.error("Error interno en SQL: %s", e)
         return {"ok": False, "error": str(e)}
     finally:
         cursor.close()
@@ -211,7 +214,7 @@ def obtener_tienda_por_usuario(id_usuario: int):
         cursor.execute(query, (id_usuario,))
         return cursor.fetchone() # Retorna el diccionario o None si no existe
     except Exception as e:
-        print(f"❌ Error al obtener tienda por usuario: {e}", flush=True)
+        logger.error("Error al obtener tienda por usuario: %s", e)
         return None
     finally:
         cursor.close()

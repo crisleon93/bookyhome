@@ -1,6 +1,6 @@
 import anyio
 import os
-
+import logging
 import uuid
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
@@ -8,6 +8,8 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 from pydantic import BaseModel, Field
+
+logger = logging.getLogger(__name__)
 
 
 
@@ -236,7 +238,7 @@ async def crear_queja(
                 except Exception:
                     pass
         except Exception as err:
-            print(f"Error generando notificaciones de queja: {err}")
+            logger.error("Error generando notificaciones de queja: %s", err)
 
         db.commit()
         return {"ok": True, "id_solicitud": id_solicitud}
@@ -245,7 +247,7 @@ async def crear_queja(
         raise
     except Exception as e:
         db.rollback()
-        print(f"Error creando queja: {e}")
+        logger.error("Error creando queja: %s", e)
         raise HTTPException(status_code=500, detail=f"Error al registrar reclamo: {str(e)}")
     finally:
         cursor.close(); db.close()

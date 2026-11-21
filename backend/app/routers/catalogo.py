@@ -2,8 +2,10 @@ from fastapi import APIRouter, HTTPException, Query
 from app.database import get_db
 from app.models.libro import buscar_libro_por_isbn, validar_y_normalizar_isbn
 from typing import Optional
+import logging
 
 router = APIRouter(prefix="/catalogo", tags=["Catálogo"])
+logger = logging.getLogger(__name__)
 
 # ============= ENDPOINTS =============
 
@@ -207,7 +209,7 @@ def busqueda_avanzada(
         }
         
     except Exception as e:
-        print(f"Error en búsqueda: {e}")
+        logger.error("Error en búsqueda: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
     finally:
         cursor.close()
@@ -458,7 +460,7 @@ def autocompletado(
         }
         
     except Exception as e:
-        print(f"Error en autocompletado: {e}")
+        logger.error("Error en autocompletado: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
     finally:
         cursor.close()

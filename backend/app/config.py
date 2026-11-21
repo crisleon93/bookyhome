@@ -8,9 +8,12 @@ un mensaje claro indicando qué variable falta y cómo corregirlo.
 
 import os
 import sys
+import logging
 from pathlib import Path
 
 from dotenv import load_dotenv
+
+logger = logging.getLogger(__name__)
 
 # Cargar .env desde backend/ (dos niveles arriba de app/)
 load_dotenv(Path(__file__).resolve().parent.parent / ".env")
@@ -145,11 +148,9 @@ def validate_config() -> dict:
 
     # ─── Advertencias por opcionales ─────────────────────────────────────────
     if warnings:
-        print(
+        logger.warning(
             "[CONFIG] Variables opcionales no configuradas (algunas "
-            f"funciones no estarán disponibles): {', '.join(warnings)}",
-            file=sys.stderr,
-            flush=True,
+            "funciones no estarán disponibles): %s", ', '.join(warnings)
         )
 
     return {
