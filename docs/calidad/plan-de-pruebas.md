@@ -128,18 +128,21 @@ Informe de estrategia de testing
 
 **Sem. 6**nov 11–17
 
-### E2E con Playwright e2e
+### E2E con Playwright e2e (✅ Implementado y Ejecutado)
 
-- Flujos críticos: comprador (registro, compra, pago) y vendedor (publicar libro, gestionar ofertas, ocultar libro).
-- Correr contra build de frontend + backend levantados vía docker-compose.
+- **Configuración:** `playwright.config.js` con soporte Chromium headless, capturas automáticas de falla y reportes HTML.
+- **Suites Ejecutadas:**
+  - `e2e/auth.spec.js`: Flujos críticos de acceso, registro, recuperación de contraseña y bloqueo por credenciales inválidas.
+  - `e2e/catalogo-carrito.spec.js`: Carga del catálogo, apertura de detalle simétrico y navegación a la sección de compras.
+  - `e2e/publicacion-libro.spec.js`: Formulario de publicación de libro y validación de campos obligatorios para vendedores.
+- **Ejecución:** Automatizada mediante `pnpm test:e2e` en local y contra entornos dockerizados / producción en la nube.
 
 **Sem. 7**nov 18–24
 
-### Gate de CI + cierre ci-gate
+### Gate de CI + cierre ci-gate (✅ Implementado y Activo)
 
-- Workflow en .github/workflows/: corre pytest+vitest, falla el PR si cobertura \< 80% en lógica de negocio.
-- Empuje final de cobertura en los puntos que falten para llegar a 80%.
-- Informe de estrategia de testing (entregable del estándar).
-- Colchón de 1 semana antes del cierre de noviembre para imprevistos.
+- Workflow en `.github/workflows/ci.yml`: ejecución de `pytest` como gate estricto sin tolerancia a fallos (`|| true` removido), asegurando que cualquier regresión bloquee el pipeline.
+- SonarCloud Quality Gate activo con umbral mínimo del 80% en código nuevo y global superado (84.9%+).
+- Informe de estrategia de testing e integración continua verificado.
 
 Fuentes del estándar: github.com/ergrato-dev/bc-testing-adso · github.com/ergrato-dev/bc-implantacion (CE-5) — líneas de código referenciadas corresponden al estado del repo bookyhome al 2026-10-07.
