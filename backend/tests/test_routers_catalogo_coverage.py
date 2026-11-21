@@ -245,6 +245,13 @@ def test_comparar_libros_validaciones_y_exito():
         assert resultado["total"] == 2
         assert resultado["libros"][0]["oferta"] == oferta_mock
 
+    # 4b. Manejo cuando obtener_oferta_activa_libro falla
+    with patch.object(mod, "get_db", return_value=db), \
+         patch("app.models.oferta.obtener_oferta_activa_libro", side_effect=Exception("error")):
+        resultado_sin_oferta = mod.comparar_libros("1,2")
+        assert resultado_sin_oferta["ok"] is True
+        assert resultado_sin_oferta["libros"][0]["oferta"] is None
+
     # 5. Error BD
     cursor.execute.side_effect = RuntimeError("db down")
     with patch.object(mod, "get_db", return_value=db):

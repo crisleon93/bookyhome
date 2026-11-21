@@ -157,4 +157,74 @@ describe('LibroCard — interacciones', () => {
     fireEvent.error(image)
     expect(container.querySelector('img')).toBeNull()
   })
+
+  describe('LibroCard — comparación y ofertas (RF-033, HU-020)', () => {
+    it('renderiza el botón Comparar y responde al clic cuando onToggleComparar está presente', () => {
+      const onToggle = vi.fn()
+      render(<LibroCard libro={libroBase} onToggleComparar={onToggle} isComparando={false} />)
+
+      const btn = screen.getByTitle('Agregar a la comparación')
+      expect(btn).toBeInTheDocument()
+      expect(btn).toHaveTextContent('Comparar')
+
+      fireEvent.click(btn)
+      expect(onToggle).toHaveBeenCalledWith(libroBase)
+    })
+
+    it('renderiza el estado Comparando cuando isComparando es true', () => {
+      const onToggle = vi.fn()
+      render(<LibroCard libro={libroBase} onToggleComparar={onToggle} isComparando={true} />)
+
+      const btn = screen.getByTitle('Quitar de la comparación')
+      expect(btn).toBeInTheDocument()
+      expect(btn).toHaveTextContent('Comparando')
+    })
+
+    it('muestra el precio de descuento con porcentaje cuando el libro tiene una oferta activa porcentual', () => {
+      const libroConOferta = {
+        ...libroBase,
+        precio_libro: 50000,
+        oferta: {
+          precio_descuento: 35000,
+          tipo_descuento: 'porcentaje',
+          valor_descuento: 30,
+        },
+      }
+      render(<LibroCard libro={libroConOferta} />)
+
+      expect(screen.getByText('$35.000')).toBeInTheDocument()
+      expect(screen.getByText('$50.000')).toBeInTheDocument()
+      expect(screen.getAllByText('-30%').length).toBeGreaterThan(0)
+    })
+
+    it('muestra el precio de descuento sin porcentaje cuando es monto fijo', () => {
+      const libroConOfertaFija = {
+        ...libroBase,
+        precio_libro: 50000,
+        oferta: {
+          precio_descuento: 40000,
+          tipo_descuento: 'monto_fijo',
+          valor_descuento: 10000,
+        },
+      }
+      render(<LibroCard libro={libroConOfertaFija} />)
+
+      expect(screen.getByText('$40.000')).toBeInTheDocument()
+      expect(screen.getByText('$50.000')).toBeInTheDocument()
+      expect(screen.queryByText(/-%/)).not.toBeInTheDocument()
+    })
+
+    it('consulta la oferta activa por API si el libro no incluye el campo oferta', async () => {
+      const { getOfertaActivaLibro } = await import('../../services/api')
+      getOfertaActivaLibro.mockResolvedValueOnce({
+        data: { precio_descuento: 29000, tipo_descuento: 'monto_fijo' },
+      })
+
+      render(<LibroCard libro={libroBase} />)
+
+      await waitFor(() => {
+        expect(getOfertaActivaLibro).toHaveBeenCalledWith(libroBase.id_libro)
+      })
+    })
+  })
 })

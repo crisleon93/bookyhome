@@ -174,4 +174,69 @@ describe('ModalCompararLibros', () => {
 
     expect(screen.getByText('Selecciona al menos dos libros para realizar una comparación.')).toBeInTheDocument();
   });
+
+  it('permite cerrar haciendo clic en el backdrop', async () => {
+    const handleClose = vi.fn();
+    render(
+      <ModalCompararLibros
+        librosIniciales={mockLibros}
+        onClose={handleClose}
+        onQuitarLibro={vi.fn()}
+        onAgregarAlCarrito={vi.fn()}
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Libro A')).toBeInTheDocument();
+    });
+
+    const backdrop = screen.getByRole('dialog');
+    fireEvent.click(backdrop);
+    expect(handleClose).toHaveBeenCalled();
+  });
+
+  it('renderiza fallback de imagen y mantiene modal abierto si quedan 2 o más libros al quitar uno', async () => {
+    const tresLibros = [
+      ...mockLibros,
+      {
+        id_libro: 3,
+        titulo: 'Libro C',
+        autor_libro: 'Autor C',
+        precio_libro: 70000,
+        stock: 3,
+        nombre_categoria: 'Terror',
+        nombre_tienda: 'Tienda Tres',
+        imagen_url: null,
+      },
+    ];
+    compararLibrosApi.mockResolvedValueOnce({
+      data: { libros: tresLibros },
+    });
+
+    const handleQuitar = vi.fn();
+    const handleClose = vi.fn();
+
+    render(
+      <ModalCompararLibros
+        librosIniciales={tresLibros}
+        onClose={handleClose}
+        onQuitarLibro={handleQuitar}
+        onAgregarAlCarrito={vi.fn()}
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Libro C')).toBeInTheDocument();
+    });
+
+    // Fallback de imagen con emoji
+    expect(screen.getByText('📖')).toBeInTheDocument();
+
+    // Quitar el primer libro de los 3
+    const quitarBtns = screen.getAllByTitle('Quitar de la comparación');
+    fireEvent.click(quitarBtns[0]);
+    expect(handleQuitar).toHaveBeenCalledWith(1);
+    // Como quedan 2 libros, no debe cerrar
+    expect(handleClose).not.toHaveBeenCalled();
+  });
 });
