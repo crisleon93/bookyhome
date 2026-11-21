@@ -88,9 +88,9 @@ jobs:
       - name: Pruebas unitarias del backend (pytest - Gate Estricto)
         run: |
           if [ -d backend/tests ] && [ -n "$(ls -A backend/tests 2>/dev/null)" ]; then
-            echo "Ejecutando pruebas de backend (Gate de regresión estricto)..."
+            echo "Sincronizando dependencias de desarrollo y ejecutando pruebas de backend..."
             docker compose -f docker-compose.ci.yml exec -T backend \
-              python -m pytest tests/ -v --tb=short
+              sh -c "uv sync --group dev && python -m pytest tests/ -v --tb=short"
           else
             echo "No hay pruebas unitarias en backend/tests/"
             exit 1
