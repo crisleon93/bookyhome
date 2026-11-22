@@ -552,7 +552,13 @@ export default function AdminSection({ route, navigation }) {
   }, [section, renderUsuario, renderLibro, renderTienda, renderOrden]);
 
   const keyExtractor = useCallback(
-    (item, idx) => String(item.id_usuario || item.id_libro || item.id_tienda || item.id_orden || idx),
+    (item, idx) => {
+      if (item.id_orden != null) {
+        if (item.id_orden_db != null) return `orden-db-${item.id_orden_db}`;
+        return `orden-${item.id_usuario_propietario ?? 'x'}-${item.id_orden}`;
+      }
+      return String(item.id_usuario || item.id_libro || item.id_tienda || idx);
+    },
     []
   );
 

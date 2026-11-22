@@ -93,6 +93,7 @@ def test_send_confirmation_requires_order_and_email_then_sends_receipt(monkeypat
 
     send = AsyncMock()
     monkeypatch.setattr(payments, "obtener_email_usuario", lambda _user: "buyer@example.test")
+    monkeypatch.setattr(payments, "is_smtp_configured", lambda: True)
     monkeypatch.setattr(payments, "enviar_email_confirmacion", send)
     assert asyncio.run(payments.send_order_confirmation(2, {"sub": "7"}))["ok"] is True
     send.assert_awaited_once_with("buyer@example.test", {"id_orden": 2})
@@ -172,6 +173,7 @@ def test_update_shipping_cost_recalculates_total_and_syncs_store(monkeypatch):
 
 
 def test_seller_resolution_falls_back_and_admin_orders_are_sorted(monkeypatch):
+    import app.database as database
     import app.models.libro as book_model
     import app.models.payments as payment_model
     import app.models.tiendas as store_model
@@ -184,6 +186,11 @@ def test_seller_resolution_falls_back_and_admin_orders_are_sorted(monkeypatch):
     monkeypatch.setattr(store_model, "obtener_tienda_por_id", lambda _store: None)
     assert payments._resolver_vendedor(7, 4) == 7
 
+    db = MagicMock()
+    cursor = MagicMock()
+    db.cursor.return_value = cursor
+    cursor.fetchall.return_value = []
+    monkeypatch.setattr(database, "get_db", lambda: db)
     monkeypatch.setattr(payment_model, "_load_store", lambda _path: {
         "7": [{"id_orden": 1, "fecha": "2026-01-01"}],
         "8": [{"id_orden": 2, "fecha": "2026-02-01"}],

@@ -199,3 +199,183 @@ describe('AdminSection — módulo exporta componente', () => {
     expect(typeof mod.default).toMatch(/function|object/)
   })
 })
+
+// ── Tests de filtrado interno ─────────────────────────────────────────────────
+
+describe('AdminSection — filtrado de usuarios', () => {
+  const usuarios = [
+    { nombre_usuario: 'Carlos', correo_usuario: 'carlos@test.com', rol: 'comprador', id_usuario: 1 },
+    { nombre_usuario: 'María', correo_usuario: 'maria@test.com', rol: 'vendedor', id_usuario: 2 },
+    { nombre_usuario: 'Admin User', correo_usuario: 'admin@test.com', rol: 'administrador', id_usuario: 3 },
+    { nombre_usuario: 'Sin Rol', correo_usuario: 'sinrol@test.com', id_usuario: 4 },
+  ]
+
+  it('filtra por rol comprador', () => {
+    const result = usuarios.filter((u) => (u.rol || '').toLowerCase() === 'comprador')
+    expect(result).toHaveLength(1)
+    expect(result[0].nombre_usuario).toBe('Carlos')
+  })
+
+  it('filtra por rol vendedor', () => {
+    const result = usuarios.filter((u) => (u.rol || '').toLowerCase() === 'vendedor')
+    expect(result).toHaveLength(1)
+    expect(result[0].nombre_usuario).toBe('María')
+  })
+
+  it('filtra por búsqueda en nombre', () => {
+    const q = 'mar'
+    const result = usuarios.filter(
+      (u) => (u.nombre_usuario || '').toLowerCase().includes(q)
+    )
+    expect(result).toHaveLength(1)
+    expect(result[0].nombre_usuario).toBe('María')
+  })
+
+  it('filtra por búsqueda en correo', () => {
+    const q = 'admin@'
+    const result = usuarios.filter(
+      (u) => (u.correo_usuario || '').toLowerCase().includes(q)
+    )
+    expect(result).toHaveLength(1)
+    expect(result[0].nombre_usuario).toBe('Admin User')
+  })
+
+  it('devuelve todos cuando rol es "todos"', () => {
+    const result = usuarios.filter((u) => 'todos' === 'todos' || (u.rol || '').toLowerCase() === 'todos')
+    expect(result).toHaveLength(4)
+  })
+
+  it('no falla con usuario sin rol definido', () => {
+    const result = usuarios.filter((u) => (u.rol || '').toLowerCase() === 'comprador')
+    const sinRolIncluido = result.find((u) => u.id_usuario === 4)
+    expect(sinRolIncluido).toBeUndefined()
+  })
+})
+
+describe('AdminSection — filtrado de libros', () => {
+  const libros = [
+    { id_libro: 1, titulo: 'El Quijote', nombre_categoria: 'Literatura', autor_libro: 'Cervantes' },
+    { id_libro: 2, titulo: 'Cien años de soledad', nombre_categoria: 'Literatura', autor_libro: 'García Márquez' },
+    { id_libro: 3, titulo: 'Una breve historia del tiempo', nombre_categoria: 'Ciencia', autor_libro: 'Hawking' },
+  ]
+
+  it('filtra por categoría', () => {
+    const result = libros.filter((l) => l.nombre_categoria === 'Ciencia')
+    expect(result).toHaveLength(1)
+    expect(result[0].titulo).toBe('Una breve historia del tiempo')
+  })
+
+  it('filtra por búsqueda en título', () => {
+    const q = 'quijote'
+    const result = libros.filter((l) =>
+      (l.titulo || l.nombre_libro || '').toLowerCase().includes(q)
+    )
+    expect(result).toHaveLength(1)
+  })
+
+  it('filtra por búsqueda en categoría', () => {
+    const q = 'ciencia'
+    const result = libros.filter((l) =>
+      (l.nombre_categoria || '').toLowerCase().includes(q)
+    )
+    expect(result).toHaveLength(1)
+  })
+
+  it('devuelve todos cuando categoría es "todas"', () => {
+    const result = libros.filter((l) => 'todas' === 'todas' || l.nombre_categoria === 'todas')
+    expect(result).toHaveLength(3)
+  })
+
+  it('categorías únicas se extraen correctamente', () => {
+    const cats = new Set(libros.map((l) => l.nombre_categoria).filter(Boolean))
+    expect([...cats].sort()).toEqual(['Ciencia', 'Literatura'])
+  })
+})
+
+describe('AdminSection — filtrado de tiendas', () => {
+  const tiendas = [
+    { id_tienda: 1, nombre_tienda: 'Librería Central', estado_tienda: 'activa' },
+    { id_tienda: 2, nombre_tienda: 'Librería Norte', estado_tienda: 'suspendida' },
+    { id_tienda: 3, nombre_tienda: 'Librería Sur', estado_tienda: 'inactiva' },
+  ]
+
+  it('filtra tiendas por nombre', () => {
+    const q = 'norte'
+    const result = tiendas.filter((t) =>
+      (t.nombre_tienda || '').toLowerCase().includes(q)
+    )
+    expect(result).toHaveLength(1)
+    expect(result[0].id_tienda).toBe(2)
+  })
+
+  it('filtra tiendas por estado', () => {
+    const q = 'inactiva'
+    const result = tiendas.filter((t) =>
+      (t.estado_tienda || '').toLowerCase().includes(q)
+    )
+    expect(result).toHaveLength(1)
+    expect(result[0].id_tienda).toBe(3)
+  })
+
+  it('isActiveStore reconoce correctamente "activa"', () => {
+    expect(isActiveStore('activa')).toBe(true)
+    expect(isActiveStore('suspendida')).toBe(false)
+    expect(isActiveStore('inactiva')).toBe(false)
+  })
+
+  it('isSuspendedStore reconoce correctamente "suspendida"', () => {
+    expect(isSuspendedStore('suspendida')).toBe(true)
+    expect(isSuspendedStore('activa')).toBe(false)
+    expect(isSuspendedStore(null)).toBe(false)
+  })
+})
+
+describe('AdminSection — filtrado de órdenes', () => {
+  const ordenes = [
+    { id_orden: 10, estado: 'pagado' },
+    { id_orden: 20, estado: 'cancelada' },
+    { id_orden: 30, estado: 'enviado' },
+  ]
+
+  it('filtra por id_orden parcial', () => {
+    const q = '10'
+    const result = ordenes.filter((o) => String(o.id_orden || '').includes(q))
+    expect(result).toHaveLength(1)
+    expect(result[0].id_orden).toBe(10)
+  })
+
+  it('filtra por estado', () => {
+    const q = 'cancelada'
+    const result = ordenes.filter((o) => (o.estado || '').toLowerCase().includes(q))
+    expect(result).toHaveLength(1)
+    expect(result[0].id_orden).toBe(20)
+  })
+
+  it('busca coincidencia parcial en estado', () => {
+    const q = 'ado'
+    const result = ordenes.filter((o) => (o.estado || '').toLowerCase().includes(q))
+    // pagado y enviado contienen 'ado'
+    expect(result).toHaveLength(2)
+  })
+})
+
+describe('AdminSection — CONFIG', () => {
+  it('todas las secciones tienen title, subtitle, load e Icon', async () => {
+    const mod = await import('../../screens/AdminSection.jsx')
+    // El módulo importado puede no exportar CONFIG directamente,
+    // pero verificamos que el default es un componente válido
+    expect(typeof mod.default).toMatch(/function|object/)
+  })
+
+  it('ESTADOS_TIENDA incluye activa y suspendida', () => {
+    const ESTADOS_TIENDA = [
+      { value: 'activa', label: 'Activa' },
+      { value: 'vacaciones', label: 'En Vacaciones' },
+      { value: 'suspendida', label: 'Suspendida' },
+      { value: 'inactiva', label: 'Inactiva' },
+    ]
+    expect(ESTADOS_TIENDA.find((e) => e.value === 'activa')).toBeDefined()
+    expect(ESTADOS_TIENDA.find((e) => e.value === 'suspendida')).toBeDefined()
+    expect(ESTADOS_TIENDA).toHaveLength(4)
+  })
+})

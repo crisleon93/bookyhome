@@ -15,26 +15,30 @@ def _db():
 
 def test_order_store_uses_json_order_and_falls_back_to_store(monkeypatch):
     db, cursor = _db()
-    cursor.fetchone.side_effect = [{"id_tienda": 6}, {"id_tienda": 6}]
+    cursor.fetchone.side_effect = [{"id_orden": 4}, {"id_tienda": 6}, {"id_tienda": 6}]
     order = {"id_orden": 4, "items": [{"id_libro": 8}]}
     with patch("app.models.payments.obtener_ordenes_usuario", return_value=[order]), \
          patch("app.models.payments.obtener_orden") as get_one:
-        assert mod._order_store(cursor, 4, 2) == {"id_tienda": 6}
+        result = mod._order_store(cursor, 4, 2)
     get_one.assert_not_called()
-    assert "id_libro IN (%s)" in cursor.execute.call_args_list[0].args[0]
+    assert result["id_tienda"] == 6
+    # La primera call es la validación del id_real; la segunda es la búsqueda de libros
+    assert "id_libro IN (%s)" in cursor.execute.call_args_list[1].args[0]
 
 
 def test_order_store_falls_back_to_database_order_and_shipping(monkeypatch):
     db, cursor = _db()
     cursor.fetchone.side_effect = [
         {"id_orden": 4, "estado_orden": "pagado"},
+        {"id_orden": 4},
         {"id_tienda": 7},
         {"id_tienda": 7},
     ]
     with patch("app.models.payments.obtener_ordenes_usuario", side_effect=RuntimeError()), \
          patch("app.models.payments.obtener_orden", side_effect=RuntimeError()):
-        assert mod._order_store(cursor, 4, 2) == {"id_tienda": 7}
-    assert cursor.execute.call_count == 3
+        result = mod._order_store(cursor, 4, 2)
+    assert result["id_tienda"] == 7
+    assert cursor.execute.call_count == 4
 
 
 def test_customer_complaints_enrich_order_items_and_default_on_failure(monkeypatch):
