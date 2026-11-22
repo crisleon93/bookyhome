@@ -509,17 +509,10 @@ def registrar_pago(id_usuario, id_orden, amount, payment_method, coupon_code=Non
 
             # Notificar al comprador de su compra exitosa
             try:
-                monto_comprador_str = "{:,}".format(int(amount_paid))
-                msg_comprador = (
-                    "Tu pedido #"
-                    + str(int(id_orden))
-                    + " por $" + monto_comprador_str
-                    + " ha sido confirmado exitosamente."
-                )
                 cursor.execute("""
                     INSERT INTO notificaciones (id_usuario, tipo, titulo, cuerpo, id_referencia, leida, fecha_creacion)
-                    VALUES (%s, 'pedido', '¡Compra realizada con éxito!', %s, %s, FALSE, NOW())
-                """, (id_usuario, msg_comprador, id_orden))
+                    VALUES (%s, 'pedido', '¡Compra realizada con éxito!', '¡Tu compra ha sido confirmada exitosamente! Revisa tu historial de pedidos.', %s, FALSE, NOW())
+                """, (id_usuario, id_orden))
             except Exception as notif_err:
                 logger.error("Error al notificar al comprador (orden %s): %s", id_orden, type(notif_err).__name__)
 
@@ -540,16 +533,10 @@ def registrar_pago(id_usuario, id_orden, amount, payment_method, coupon_code=Non
                     )
                     for v in vendedores:
                         if v.get("id_vendedor") and v["id_vendedor"] != id_usuario:
-                            monto_str = "{:,}".format(int(amount_paid))
-                            mensaje_notif = (
-                                "Has recibido el pago para la orden #"
-                                + str(int(id_orden))
-                                + " por $" + monto_str + "."
-                            )
                             cursor.execute("""
                                 INSERT INTO notificaciones (id_usuario, tipo, titulo, cuerpo, id_referencia, leida, fecha_creacion)
-                                VALUES (%s, 'venta', '¡Nueva venta pagada!', %s, %s, FALSE, NOW())
-                            """, (v["id_vendedor"], mensaje_notif, id_orden))
+                                VALUES (%s, 'venta', '¡Nueva venta pagada!', '¡Tienes un nuevo pago aprobado! Revisa tu panel de ventas.', %s, FALSE, NOW())
+                            """, (v["id_vendedor"], id_orden))
                             logger.info(
                                 "Notificacion de venta insertada para vendedor id=%s (orden %s)",
                                 v["id_vendedor"], id_orden,
