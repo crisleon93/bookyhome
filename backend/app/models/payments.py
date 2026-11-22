@@ -519,28 +519,31 @@ def registrar_pago(id_usuario, id_orden, amount, payment_method, coupon_code=Non
             # Notificar a los vendedores de los libros comprados
             if id_libros:
                 try:
-                    fmt3 = ','.join(['%s'] * len(id_libros))
-                    cursor.execute(f"""
-                        SELECT DISTINCT t.id_usuario AS id_vendedor, t.nombre_tienda
-                        FROM libros l
-                        JOIN tiendas t ON t.id_tienda = l.id_tienda
-                        WHERE l.id_libro IN ({fmt3})
-                    """, tuple(id_libros))
-                    vendedores = cursor.fetchall()
-                    logger.info(
-                        "Notificando venta a %d vendedor(es) para orden %s (libros: %s)",
-                        len(vendedores), id_orden, id_libros,
-                    )
-                    for v in vendedores:
-                        if v.get("id_vendedor") and v["id_vendedor"] != id_usuario:
-                            cursor.execute("""
-                                INSERT INTO notificaciones (id_usuario, tipo, titulo, cuerpo, id_referencia, leida, fecha_creacion)
-                                VALUES (%s, 'venta', '¡Nueva venta pagada!', '¡Tienes un nuevo pago aprobado! Revisa tu panel de ventas.', %s, FALSE, NOW())
-                            """, (v["id_vendedor"], id_orden))
-                            logger.info(
-                                "Notificacion de venta insertada para vendedor id=%s (orden %s)",
-                                v["id_vendedor"], id_orden,
-                            )
+                    # Validar que todos los id_libros sean enteros para cortar el taint
+                    libros_validados = [int(x) for x in id_libros if str(x).isdigit() or (isinstance(x, int) and x > 0)]
+                    if libros_validados:
+                        placeholders = ('%s,' * len(libros_validados)).rstrip(',')
+                        cursor.execute(
+                            "SELECT DISTINCT t.id_usuario AS id_vendedor, t.nombre_tienda"
+                            " FROM libros l JOIN tiendas t ON t.id_tienda = l.id_tienda"
+                            " WHERE l.id_libro IN (" + placeholders + ")",
+                            tuple(libros_validados),
+                        )
+                        vendedores = cursor.fetchall()
+                        logger.info(
+                            "Notificando venta a %d vendedor(es) para orden %s",
+                            len(vendedores), id_orden,
+                        )
+                        for v in vendedores:
+                            if v.get("id_vendedor") and v["id_vendedor"] != id_usuario:
+                                cursor.execute("""
+                                    INSERT INTO notificaciones (id_usuario, tipo, titulo, cuerpo, id_referencia, leida, fecha_creacion)
+                                    VALUES (%s, 'venta', '¡Nueva venta pagada!', '¡Tienes un nuevo pago aprobado! Revisa tu panel de ventas.', %s, FALSE, NOW())
+                                """, (v["id_vendedor"], id_orden))
+                                logger.info(
+                                    "Notificacion de venta insertada para vendedor id=%s (orden %s)",
+                                    v["id_vendedor"], id_orden,
+                                )
                 except Exception as notif_err:
                     logger.error(
                         "Error al notificar a vendedor(es) (orden %s): %s",
