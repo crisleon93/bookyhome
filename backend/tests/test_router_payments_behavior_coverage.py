@@ -93,6 +93,7 @@ def test_send_confirmation_requires_order_and_email_then_sends_receipt(monkeypat
 
     send = AsyncMock()
     monkeypatch.setattr(payments, "obtener_email_usuario", lambda _user: "buyer@example.test")
+    monkeypatch.setattr(payments, "is_smtp_configured", lambda: True)
     monkeypatch.setattr(payments, "enviar_email_confirmacion", send)
     assert asyncio.run(payments.send_order_confirmation(2, {"sub": "7"}))["ok"] is True
     send.assert_awaited_once_with("buyer@example.test", {"id_orden": 2})
