@@ -401,28 +401,6 @@ def obtener_ordenes_usuario(id_usuario):
 
 
 def registrar_pago(id_usuario, id_orden, amount, payment_method, coupon_code=None, tipo_entrega=None, id_direccion=None):
-    # Mapear payment_method a un valor literal conocido para cortar el taint
-    # que SonarCloud detecta como Log Injection (S5145).
-    # dict.get() devuelve siempre un valor de este dict, nunca la variable externa.
-    _METODO_SEGURO = {
-        "Tarjeta de Crédito": "Tarjeta de Credito",
-        "PayPal": "PayPal",
-        "PSE": "PSE",
-        "Nequi": "Nequi",
-        "Daviplata": "Daviplata",
-        "Efectivo en Tienda": "Efectivo en Tienda",
-        "Transferencia Bancaria": "Transferencia Bancaria",
-        "Pago en Efecty": "Pago en Efecty",
-        "tarjeta": "tarjeta",
-        "paypal": "paypal",
-        "pse": "pse",
-        "nequi": "nequi",
-        "daviplata": "daviplata",
-        "efectivo": "efectivo",
-        "transferencia": "transferencia",
-        "sucursal": "sucursal",
-    }
-    metodo_pago_seguro = _METODO_SEGURO.get(payment_method, "Otro")
     orders = _load_store(ORDER_FILE)
     user_orders = orders.get(str(id_usuario), [])
 
@@ -566,8 +544,7 @@ def registrar_pago(id_usuario, id_orden, amount, payment_method, coupon_code=Non
                             mensaje_notif = (
                                 "Has recibido el pago para la orden #"
                                 + str(int(id_orden))
-                                + " por $" + monto_str
-                                + " via " + metodo_pago_seguro + "."
+                                + " por $" + monto_str + "."
                             )
                             cursor.execute("""
                                 INSERT INTO notificaciones (id_usuario, tipo, titulo, cuerpo, id_referencia, leida, fecha_creacion)
