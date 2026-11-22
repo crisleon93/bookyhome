@@ -239,7 +239,7 @@ export default function BookyChat() {
 
   // ── Cargar sesiones al montar / cuando cambia el usuario ────────────────────
   useEffect(() => {
-    (async () => {
+    void (async () => {
       let stored = await loadSessions(uid);
       if (stored.length === 0) {
         const primera = newSession(nombre);

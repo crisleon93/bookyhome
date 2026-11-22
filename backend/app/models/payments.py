@@ -401,14 +401,28 @@ def obtener_ordenes_usuario(id_usuario):
 
 
 def registrar_pago(id_usuario, id_orden, amount, payment_method, coupon_code=None, tipo_entrega=None, id_direccion=None):
-    # Normalizar el método de pago a un valor conocido para evitar log injection
-    _METODOS_CONOCIDOS = {
-        "Tarjeta de Crédito", "PayPal", "PSE", "Nequi", "Daviplata",
-        "Efectivo en Tienda", "Transferencia Bancaria", "Pago en Efecty",
-        "tarjeta", "paypal", "pse", "nequi", "daviplata",
-        "efectivo", "transferencia", "sucursal",
+    # Mapear payment_method a un valor literal conocido para cortar el taint
+    # que SonarCloud detecta como Log Injection (S5145).
+    # dict.get() devuelve siempre un valor de este dict, nunca la variable externa.
+    _METODO_SEGURO = {
+        "Tarjeta de Crédito": "Tarjeta de Credito",
+        "PayPal": "PayPal",
+        "PSE": "PSE",
+        "Nequi": "Nequi",
+        "Daviplata": "Daviplata",
+        "Efectivo en Tienda": "Efectivo en Tienda",
+        "Transferencia Bancaria": "Transferencia Bancaria",
+        "Pago en Efecty": "Pago en Efecty",
+        "tarjeta": "tarjeta",
+        "paypal": "paypal",
+        "pse": "pse",
+        "nequi": "nequi",
+        "daviplata": "daviplata",
+        "efectivo": "efectivo",
+        "transferencia": "transferencia",
+        "sucursal": "sucursal",
     }
-    metodo_pago_seguro = payment_method if payment_method in _METODOS_CONOCIDOS else "Otro"
+    metodo_pago_seguro = _METODO_SEGURO.get(payment_method, "Otro")
     orders = _load_store(ORDER_FILE)
     user_orders = orders.get(str(id_usuario), [])
 
