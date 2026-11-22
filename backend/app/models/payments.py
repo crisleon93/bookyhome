@@ -401,6 +401,14 @@ def obtener_ordenes_usuario(id_usuario):
 
 
 def registrar_pago(id_usuario, id_orden, amount, payment_method, coupon_code=None, tipo_entrega=None, id_direccion=None):
+    # Normalizar el método de pago a un valor conocido para evitar log injection
+    _METODOS_CONOCIDOS = {
+        "Tarjeta de Crédito", "PayPal", "PSE", "Nequi", "Daviplata",
+        "Efectivo en Tienda", "Transferencia Bancaria", "Pago en Efecty",
+        "tarjeta", "paypal", "pse", "nequi", "daviplata",
+        "efectivo", "transferencia", "sucursal",
+    }
+    metodo_pago_seguro = payment_method if payment_method in _METODOS_CONOCIDOS else "Otro"
     orders = _load_store(ORDER_FILE)
     user_orders = orders.get(str(id_usuario), [])
 
@@ -509,12 +517,19 @@ def registrar_pago(id_usuario, id_orden, amount, payment_method, coupon_code=Non
 
             # Notificar al comprador de su compra exitosa
             try:
+                monto_comprador_str = "{:,}".format(int(amount_paid))
+                msg_comprador = (
+                    "Tu pedido #"
+                    + str(int(id_orden))
+                    + " por $" + monto_comprador_str
+                    + " ha sido confirmado exitosamente."
+                )
                 cursor.execute("""
                     INSERT INTO notificaciones (id_usuario, tipo, titulo, cuerpo, id_referencia, leida, fecha_creacion)
                     VALUES (%s, 'pedido', '¡Compra realizada con éxito!', %s, %s, FALSE, NOW())
-                """, (id_usuario, f"Tu pedido #{id_orden} por ${int(amount_paid):,} ha sido confirmado exitosamente.", id_orden))
+                """, (id_usuario, msg_comprador, id_orden))
             except Exception as notif_err:
-                logger.error("Error al notificar al comprador (orden %s): %s", id_orden, notif_err)
+                logger.error("Error al notificar al comprador (orden %s): %s", id_orden, type(notif_err).__name__)
 
             # Notificar a los vendedores de los libros comprados
             if id_libros:
@@ -533,10 +548,12 @@ def registrar_pago(id_usuario, id_orden, amount, payment_method, coupon_code=Non
                     )
                     for v in vendedores:
                         if v.get("id_vendedor") and v["id_vendedor"] != id_usuario:
-                            metodo_sanitizado = str(payment_method).replace('\n', ' ').replace('\r', ' ')
+                            monto_str = "{:,}".format(int(amount_paid))
                             mensaje_notif = (
-                                "Has recibido el pago para la orden #%s por $%s via %s."
-                                % (int(id_orden), f"{int(amount_paid):,}", metodo_sanitizado)
+                                "Has recibido el pago para la orden #"
+                                + str(int(id_orden))
+                                + " por $" + monto_str
+                                + " via " + metodo_pago_seguro + "."
                             )
                             cursor.execute("""
                                 INSERT INTO notificaciones (id_usuario, tipo, titulo, cuerpo, id_referencia, leida, fecha_creacion)
@@ -547,7 +564,10 @@ def registrar_pago(id_usuario, id_orden, amount, payment_method, coupon_code=Non
                                 v["id_vendedor"], id_orden,
                             )
                 except Exception as notif_err:
-                    logger.error("Error al notificar a vendedor(es) (orden %s, libros %s): %s", id_orden, id_libros, notif_err)
+                    logger.error(
+                        "Error al notificar a vendedor(es) (orden %s): %s",
+                        id_orden, type(notif_err).__name__,
+                    )
             else:
                 logger.warning("No se encontraron id_libros para la orden %s; la notificación al vendedor no se pudo enviar.", id_orden)
 

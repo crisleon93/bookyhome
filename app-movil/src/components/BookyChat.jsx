@@ -231,6 +231,11 @@ export default function BookyChat() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const flatRef = useRef(null);
+  const sessionsRef = useRef([]);
+
+  // Mantener sessionsRef sincronizado con sessions para poder leerlo
+  // fuera de callbacks síncronos de setSessions
+  useEffect(() => { sessionsRef.current = sessions; }, [sessions]);
 
   // ── Cargar sesiones al montar / cuando cambia el usuario ────────────────────
   useEffect(() => {
@@ -250,15 +255,13 @@ export default function BookyChat() {
   // ── Persistir mensajes cuando cambian ───────────────────────────────────────
   useEffect(() => {
     if (!activeId || sessions.length === 0) return;
-    setSessions((prev) => {
-      const next = prev.map((s) =>
-        s.id !== activeId
-          ? s
-          : { ...s, messages, title: getSessionTitle(messages), updatedAt: Date.now() },
-      );
-      void saveSessions(uid, next);
-      return next;
-    });
+    const updated = sessions.map((s) =>
+      s.id !== activeId
+        ? s
+        : { ...s, messages, title: getSessionTitle(messages), updatedAt: Date.now() },
+    );
+    setSessions(updated);
+    void saveSessions(uid, updated);
   }, [messages]);
 
   // ── Scroll al último mensaje ─────────────────────────────────────────────────
@@ -288,18 +291,16 @@ export default function BookyChat() {
   }, [sessions, nombre, uid]);
 
   const deleteSession = useCallback(async (id) => {
-    setSessions((prev) => {
-      let remaining = prev.filter((s) => s.id !== id);
-      if (remaining.length === 0) {
-        const fallback = newSession(nombre);
-        remaining = [fallback];
-      }
-      const top = remaining[0];
-      setActiveId(top.id);
-      setMessages(top.messages);
-      void saveSessions(uid, remaining);
-      return remaining;
-    });
+    let remaining = sessionsRef.current.filter((s) => s.id !== id);
+    if (remaining.length === 0) {
+      const fallback = newSession(nombre);
+      remaining = [fallback];
+    }
+    const top = remaining[0];
+    setSessions(remaining);
+    setActiveId(top.id);
+    setMessages(top.messages);
+    await saveSessions(uid, remaining);
   }, [nombre, uid]);
 
   // ── Enviar mensaje ───────────────────────────────────────────────────────────
