@@ -206,6 +206,34 @@ describe('Librerias — ordenar por mejor calificación', () => {
     const nombres = screen.getAllByText(/Librería Central|Libros Medellín|Papelería Sin Libros/)
     expect(nombres[0].textContent).toBe('Papelería Sin Libros')
   })
+
+  it('cubre los otros criterios de orden y desplaza la lista de ciudades', async () => {
+    const { default: api } = await import('../../services/api')
+    api.get.mockResolvedValue({ data: tiendasEjemplo })
+    const { container } = renderLibrerias()
+    await screen.findByText('Librería Central')
+
+    const select = screen.getByRole('combobox')
+    const expectedFirst = {
+      menos_libros: 'Papelería Sin Libros',
+      nombre_asc: 'Librería Central',
+      nombre_desc: 'Papelería Sin Libros',
+      mas_libros: 'Librería Central',
+    }
+    for (const [order, name] of Object.entries(expectedFirst)) {
+      fireEvent.change(select, { target: { value: order } })
+      const cards = Array.from(container.querySelectorAll('.lib-card__nombre'))
+      expect(cards[0].textContent).toBe(name)
+    }
+
+    const cityBar = Array.from(container.querySelectorAll('div')).find((element) => element.style.overflowX === 'auto')
+    const scrollBy = vi.fn()
+    cityBar.scrollBy = scrollBy
+    fireEvent.click(screen.getByRole('button', { name: 'Desplazar ciudades a la izquierda' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Desplazar ciudades a la derecha' }))
+    expect(scrollBy).toHaveBeenNthCalledWith(1, { left: -260, behavior: 'smooth' })
+    expect(scrollBy).toHaveBeenNthCalledWith(2, { left: 260, behavior: 'smooth' })
+  })
 })
 
 describe('Librerias — navegación al hacer click en tienda', () => {
@@ -374,6 +402,19 @@ describe('Librerias — getLogoUrl con URL relativa y absoluta', () => {
     })
     renderLibrerias()
     await waitFor(() => expect(screen.getByText('AB')).toBeInTheDocument())
+  })
+
+  it('muestra las iniciales si la imagen de la tienda no puede cargarse', async () => {
+    const { default: api } = await import('../../services/api')
+    api.get.mockResolvedValue({ data: [{
+      ...tiendasEjemplo[0],
+      nombre_tienda: 'Librería Norte',
+      logo_url: '/media/logo-roto.png',
+    }] })
+    renderLibrerias()
+    const logo = await screen.findByRole('img', { name: 'Librería Norte' })
+    fireEvent.error(logo)
+    expect(await screen.findByText('LN')).toBeInTheDocument()
   })
 })
 

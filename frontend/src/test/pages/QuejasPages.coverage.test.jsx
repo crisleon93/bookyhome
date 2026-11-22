@@ -162,6 +162,130 @@ describe('QuejasReclamos web', () => {
     fireEvent.click(screen.getByText('→'))
     await waitFor(() => expect(mocks.enviarMensajeReclamo).toHaveBeenCalledWith(101, 'Gracias por la ayuda'))
   })
+
+  it('valida motivos, muestra errores de servidor y permite cancelar y ver evidencia', async () => {
+    const active = {
+      ...buyerComplaints[0],
+      id_orden: 22,
+      evidencia_url: '/media/evidencia.jpg',
+      imagen_libro: '/media/libro.jpg',
+    }
+    mocks.getOrdenes.mockResolvedValue({ data: [order] })
+    mocks.getQuejas.mockResolvedValue({ data: [active, ...Array.from({ length: 5 }, (_, i) => ({
+      ...buyerComplaints[1],
+      id_solicitud: 110 + i,
+      estado: i === 4 ? 'Rechazado' : 'Abierto',
+      titulo_libro: `Libro ${i + 1}`,
+    }))] })
+    mocks.crearQueja.mockRejectedValueOnce({ response: { data: { detail: 'No se pudo enviar' } } })
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true)
+    const alert = vi.spyOn(window, 'alert').mockImplementation(() => {})
+    const { container } = render(<QuejasReclamos />)
+
+    const orderSelect = await screen.findByDisplayValue('Selecciona una compra...')
+    const form = orderSelect.closest('form')
+    fireEvent.change(orderSelect, { target: { value: '21' } })
+    const detailsButton = screen.getByRole('button', { name: 'Ver detalles' })
+    fireEvent.mouseEnter(detailsButton)
+    fireEvent.mouseLeave(detailsButton)
+    fireEvent.click(screen.getByRole('button', { name: 'Otro' }))
+    const damageReason = screen.getByRole('button', { name: 'Libro dañado o defectuoso' })
+    fireEvent.mouseEnter(damageReason)
+    fireEvent.mouseLeave(damageReason)
+    const otherReason = screen.getByRole('button', { name: 'Otro' })
+    fireEvent.mouseEnter(otherReason)
+    fireEvent.mouseLeave(otherReason)
+    fireEvent.submit(form)
+    expect(await screen.findByText('Por favor especifica el motivo del reclamo.')).toBeTruthy()
+    const otherInput = screen.getByPlaceholderText('Especifica el motivo...')
+    fireEvent.focus(otherInput)
+    fireEvent.change(otherInput, { target: { value: 'Empaque' } })
+    fireEvent.blur(otherInput)
+    const fileInput = container.querySelector('input[type="file"]')
+    fireEvent.mouseEnter(fileInput.parentElement)
+    fireEvent.mouseLeave(fileInput.parentElement)
+    fireEvent.change(fileInput, { target: { files: [] } })
+    const description = screen.getByPlaceholderText('Describe el problema...')
+    fireEvent.focus(description)
+    fireEvent.change(description, { target: { value: 'Caja dañada' } })
+    fireEvent.blur(description)
+    fireEvent.change(container.querySelector('input[type="file"]'), {
+      target: { files: [new File(['evidence'], 'evidence.png', { type: 'image/png' })] },
+    })
+    fireEvent.submit(form)
+    expect(await screen.findByText('No se pudo enviar')).toBeTruthy()
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Mis quejas y reclamos' }))
+    const openFilter = screen.getByRole('button', { name: /^Abierto/ })
+    fireEvent.mouseEnter(openFilter)
+    fireEvent.mouseLeave(openFilter)
+    fireEvent.click(screen.getByRole('button', { name: 'Ver evidencia' }))
+    const complaintCard = screen.getByText('Libro comprado').closest('article')
+    fireEvent.mouseEnter(complaintCard)
+    fireEvent.mouseLeave(complaintCard)
+    const evidenceButton = screen.getByRole('button', { name: 'Ver evidencia' })
+    fireEvent.mouseEnter(evidenceButton)
+    fireEvent.mouseLeave(evidenceButton)
+    expect(screen.getByRole('dialog', { name: 'Vista de evidencia' }).querySelector('img'))
+      .toHaveAttribute('src', 'https://api.example.test/media/evidencia.jpg')
+    fireEvent.click(screen.getByRole('button', { name: 'Cerrar vista de evidencia' }))
+
+    const firstComplaint = screen.getByText('Libro comprado').closest('article')
+    const header = firstComplaint.querySelector('[role="button"]')
+    fireEvent.keyDown(header, { key: ' ' })
+    expect(header).toHaveAttribute('aria-expanded', 'false')
+    fireEvent.keyDown(header, { key: 'Enter' })
+    expect(header).toHaveAttribute('aria-expanded', 'true')
+
+    const cancelButton = Array.from(firstComplaint.querySelectorAll('button'))
+      .find((button) => button.textContent.trim() === 'Cancelar')
+    fireEvent.mouseEnter(cancelButton)
+    fireEvent.mouseLeave(cancelButton)
+    fireEvent.click(cancelButton)
+    await waitFor(() => expect(mocks.cancelarQueja).toHaveBeenCalledWith(101))
+    expect(confirm).toHaveBeenCalled()
+    expect(alert).not.toHaveBeenCalled()
+    confirm.mockRestore()
+    alert.mockRestore()
+  })
+
+  it('cubre fallos del chat y cancelación, y permite volver a crear una queja', async () => {
+    const complaint = { ...buyerComplaints[0], id_orden: 22 }
+    mocks.getOrdenes.mockResolvedValue({ data: [] })
+    mocks.getQuejas.mockResolvedValue({ data: [complaint] })
+    mocks.getMensajesReclamo.mockRejectedValueOnce(new Error('chat offline'))
+    mocks.enviarMensajeReclamo.mockRejectedValueOnce(new Error('send offline'))
+    mocks.cancelarQueja.mockRejectedValueOnce({ response: { data: { detail: 'No se pudo cancelar' } } })
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true)
+    const alert = vi.spyOn(window, 'alert').mockImplementation(() => {})
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {})
+    render(<QuejasReclamos />)
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Mis quejas y reclamos' }))
+    const chatButton = screen.getByRole('button', { name: 'Chat' })
+    fireEvent.click(chatButton)
+    expect(await screen.findByText('Sin mensajes aún')).toBeInTheDocument()
+    const message = screen.getByPlaceholderText('Escribe...')
+    fireEvent.focus(message)
+    fireEvent.change(message, { target: { value: 'Necesito una actualización' } })
+    fireEvent.keyDown(message, { key: 'Enter', shiftKey: false })
+    await waitFor(() => expect(consoleError).toHaveBeenCalledWith(
+      'Error enviando mensaje del reclamo:',
+      expect.any(Error),
+    ))
+
+    const cancelButton = screen.getByRole('button', { name: 'Cancelar' })
+    fireEvent.click(cancelButton)
+    await waitFor(() => expect(alert).toHaveBeenCalledWith('No se pudo cancelar'))
+    expect(confirm).toHaveBeenCalledOnce()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Nueva queja o reclamo' }))
+    expect(screen.getByText('Reporta un problema de una compra pagada y adjunta evidencia si la tienes.')).toBeInTheDocument()
+    expect(consoleError).toHaveBeenCalled()
+    confirm.mockRestore()
+    alert.mockRestore()
+    consoleError.mockRestore()
+  })
 })
 
 describe('QuejasVendedor web', () => {

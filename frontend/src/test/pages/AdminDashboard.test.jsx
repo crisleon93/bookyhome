@@ -157,21 +157,60 @@ describe('AdminDashboard — navegación entre secciones', () => {
     })
   })
 
+  it('navega desde las tarjetas del resumen y contrae y expande el menú', async () => {
+    const user = userEvent.setup()
+    renderAdmin()
+    await screen.findByText('Usuarios Totales')
+
+    await user.click(screen.getByRole('button', { name: /Usuarios Totales/ }))
+    expect(await screen.findByPlaceholderText(/Buscar por nombre, correo/i)).toBeInTheDocument()
+    await user.click(screen.getByText(/^Dashboard$/i))
+
+    await user.click(screen.getByRole('button', { name: /Libros Publicados/ }))
+    expect(await screen.findByLabelText('Filtrar por Categoría:')).toBeInTheDocument()
+    await user.click(screen.getByText(/^Dashboard$/i))
+
+    await user.click(screen.getByRole('button', { name: /Librerías & Tiendas/ }))
+    expect(await screen.findByText('Gestión de Tiendas')).toBeInTheDocument()
+    await user.click(screen.getByText(/^Dashboard$/i))
+
+    await user.click(screen.getByRole('button', { name: /Órdenes Procesadas/ }))
+    expect(await screen.findByText(/Gestión de Órdenes/)).toBeInTheDocument()
+    await user.click(screen.getByTitle('Contraer menú'))
+    await user.click(screen.getByTitle('Expandir menú'))
+  })
+
   it('bloquea un usuario y actualiza su estado luego de confirmar', async () => {
     const user = userEvent.setup()
     const { default: api } = await import('../../services/api')
     const { notify } = await import('../../components/ToastProvider')
+    const clipboardWrite = vi.fn().mockResolvedValue(undefined)
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText: clipboardWrite },
+    })
     api.get.mockImplementation((url) => Promise.resolve({
       data: url === '/usuarios'
-        ? [{ id_usuario: 18, nombre_usuario: 'Ana Compradora', correo_usuario: 'ana@example.com', rol: 'comprador', estado_usuario: 'Activo' }]
+        ? [{ id_usuario: 18, nombre_usuario: 'Ana Compradora', correo_usuario: 'ana@example.com', foto_perfil: '/ana.jpg', rol: 'comprador', estado_usuario: 'Activo' }]
         : url === '/perfil/mi-perfil'
           ? { nombre_usuario: 'Admin Test', correo_usuario: 'admin@test.com' }
           : [],
     }))
+    api.patch.mockRejectedValueOnce(new Error('offline'))
 
     renderAdmin()
     await user.click(await screen.findByText(/^Usuarios$/i))
+    const search = screen.getByPlaceholderText(/Buscar por nombre, correo/i)
+    fireEvent.focus(search)
+    fireEvent.change(search, { target: { value: 'Ana' } })
+    fireEvent.blur(search)
+    fireEvent.click(screen.getByRole('button', { name: '✕' }))
+    fireEvent.error(screen.getByAltText('Ana Compradora'))
+    fireEvent.click(screen.getByTitle('Copiar correo'))
+    expect(clipboardWrite).toHaveBeenCalledWith('ana@example.com')
     await user.click(await screen.findByRole('button', { name: 'Bloquear' }))
+    await user.click(screen.getByRole('button', { name: 'Confirmar Bloqueo' }))
+    await waitFor(() => expect(notify).toHaveBeenCalledWith('Error al cambiar el estado del usuario', 'error'))
     await user.click(screen.getByRole('button', { name: 'Confirmar Bloqueo' }))
 
     await waitFor(() => {
@@ -182,6 +221,122 @@ describe('AdminDashboard — navegación entre secciones', () => {
       )
     })
     expect(await screen.findByText('Bloqueado')).toBeInTheDocument()
+  })
+
+  it('valida la suspensión de una tienda, maneja fallos y confirma cambios de estado', async () => {
+    const user = userEvent.setup()
+    const { default: api } = await import('../../services/api')
+    const { notify } = await import('../../components/ToastProvider')
+    api.get.mockImplementation((url) => Promise.resolve({
+      data: url === '/tiendas'
+        ? [{
+          id_tienda: 8,
+          nombre_tienda: 'Librería Central',
+          estado_tienda: 'activa',
+          correo_tienda: 'central@example.com',
+          direccion: 'Calle 1',
+          telefono: '3001234567',
+        }]
+        : url === '/perfil/mi-perfil'
+          ? { nombre_usuario: 'Admin Test', correo_usuario: 'admin@test.com' }
+          : [],
+    }))
+    api.patch.mockRejectedValueOnce({ response: { data: { detail: 'No se pudo suspender' } } })
+
+    renderAdmin()
+    await user.click(await screen.findByText(/^Tiendas$/i))
+    let storeActions = screen.getByText('Librería Central')
+    while (storeActions && storeActions.querySelectorAll('button').length === 0) {
+      storeActions = storeActions.parentElement
+    }
+    await user.click(within(storeActions).getByRole('button', { name: /^Activa/ }))
+    await user.click(within(storeActions).getByRole('button', { name: /^Suspendida/ }))
+    await user.click(screen.getByRole('button', { name: /Suspender y Notificar/ }))
+    expect(await screen.findByText('Debes ingresar o seleccionar un motivo para suspender la librería.')).toBeInTheDocument()
+    fireEvent.change(screen.getByLabelText('Explicación detallada del motivo *'), {
+      target: { value: 'Incumplimiento de las políticas de la tienda.' },
+    })
+    await user.click(screen.getByRole('button', { name: /Suspender y Notificar/ }))
+    await waitFor(() => expect(notify).toHaveBeenCalledWith('No se pudo suspender', 'error'))
+    await waitFor(() => expect(screen.getByRole('button', { name: /Suspender y Notificar/ })).toBeEnabled())
+    await user.click(screen.getByRole('button', { name: /Suspender y Notificar/ }))
+    await waitFor(() => expect(notify).toHaveBeenCalledWith(
+      'Librería suspendida y notificación enviada al chat del vendedor',
+      'success',
+    ))
+
+    storeActions = screen.getByText('Librería Central')
+    while (storeActions && storeActions.querySelectorAll('button').length === 0) {
+      storeActions = storeActions.parentElement
+    }
+    await user.click(within(storeActions).getByRole('button', { name: /^Suspendida/ }))
+    await user.click(within(storeActions).getByRole('button', { name: /^Inactiva/ }))
+    await user.click(screen.getByRole('button', { name: 'Confirmar' }))
+    await waitFor(() => expect(notify).toHaveBeenCalledWith(
+      'Librería actualizada a: Inactiva',
+      'success',
+    ))
+    expect(api.patch).toHaveBeenCalledWith(
+      '/tiendas/8/estado',
+      { estado: 'suspendida', motivo: 'Incumplimiento de las políticas de la tienda.' },
+      expect.any(Object),
+    )
+  })
+
+  it('cubre fallos del chat administrativo y las acciones del soporte técnico', async () => {
+    const user = userEvent.setup()
+    const { default: api } = await import('../../services/api')
+    const { notify } = await import('../../components/ToastProvider')
+    const reclamo = {
+      id_solicitud: 73,
+      id_orden: 19,
+      tipo_solicitud: 'reclamo',
+      estado: 'Abierto',
+      asunto: 'Libro dañado',
+      titulo_libro: 'Libro de prueba',
+      comprador: 'Ana Compradora',
+      nombre_tienda: 'Librería Central',
+      descripcion: 'Llegó con daños.',
+      imagen_libro: '/libro.jpg',
+      foto_comprador: '/ana.jpg',
+    }
+    const ticket = {
+      id_solicitud: 91,
+      tipo_solicitud: 'soporte',
+      estado: 'Abierto',
+      asunto: 'Problema con la cuenta',
+      descripcion: 'No puedo cambiar mi correo.',
+      comprador: 'Luis Usuario',
+      correo_comprador: 'luis@example.com',
+      rol_usuario: 'comprador',
+    }
+    api.get.mockImplementation((url) => {
+      if (url === '/quejas/admin/todas') return Promise.resolve({ data: [reclamo, ticket] })
+      if (url === '/perfil/mi-perfil') return Promise.resolve({ data: { nombre_usuario: 'Admin Test' } })
+      if (url === '/quejas/73/mensajes' || url === '/envios/orden/19') {
+        return Promise.reject(new Error('offline'))
+      }
+      return Promise.resolve({ data: [] })
+    })
+    api.post.mockRejectedValueOnce({ response: { data: { detail: 'No se pudo contactar a la tienda' } } })
+
+    renderAdmin()
+    await user.click(await screen.findByText(/^Quejas y reclamos$/i))
+    const complaintHeader = screen.getByRole('button', { name: /RECLAMO #73/i })
+    fireEvent.keyDown(complaintHeader, { key: 'Enter' })
+    await user.click(screen.getByRole('button', { name: /Contactar \/ Chat con la tienda/i }))
+    const chatInput = await screen.findByPlaceholderText(/Escribe un mensaje/i)
+    await user.type(chatInput, 'Necesito más información.')
+    await user.click(screen.getByRole('button', { name: 'Enviar' }))
+    await waitFor(() => expect(notify).toHaveBeenCalledWith('No se pudo contactar a la tienda', 'error'))
+    await user.click(screen.getByRole('button', { name: 'Cerrar chat con la tienda' }))
+
+    await user.click(await screen.findByText(/^Soporte técnico$/i))
+    await user.click(await screen.findByRole('button', { name: 'Marcar en revisión' }))
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: /Cerrar respuesta del reclamo/ }))
+    await user.click(screen.getByRole('button', { name: 'Rechazar ticket' }))
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
   })
 })
 
@@ -226,6 +381,7 @@ describe('AdminDashboard — gestión de reclamos', () => {
           ? { nombre_usuario: 'Admin Test', correo_usuario: 'admin@test.com' }
           : [],
     }))
+    api.patch.mockRejectedValueOnce({ response: { data: { detail: 'No se pudo resolver el reclamo' } } })
 
     renderAdmin()
     await user.click(await screen.findByText(/^Quejas y reclamos$/i))
@@ -247,6 +403,8 @@ describe('AdminDashboard — gestión de reclamos', () => {
     await user.type(responseField, 'Se gestionó el reembolso del pedido.')
     await user.click(screen.getByRole('button', { name: 'Resolver y notificar' }))
 
+    await waitFor(() => expect(notify).toHaveBeenCalledWith('No se pudo resolver el reclamo', 'error'))
+    await user.click(screen.getByRole('button', { name: 'Resolver y notificar' }))
     await waitFor(() => {
       expect(api.patch).toHaveBeenCalledWith('/quejas/admin/42', {
         estado: 'Resuelto',
@@ -357,21 +515,33 @@ describe('AdminDashboard — reportes consolidados', () => {
           ]
         : url === '/api/stored/libros'
           ? [
-              { id_libro: 1, nombre_categoria: 'Ficción', oculto: 0 },
-              { id_libro: 2, nombre_categoria: 'Ficción', oculto: 0 },
-              { id_libro: 3, nombre_categoria: 'Ciencia ficción', oculto: 1 },
+              ...[
+                'Ficción', 'Fantasía', 'Terror', 'Juvenil', 'Ciencia', 'Romance',
+                'Aventura', 'Historia', 'Tecnología', 'Infantil', 'Arte',
+                'Biografía', 'Educación', 'Poesía', 'Filosofía',
+                ...Array(8).fill('Ciencia ficción'),
+              ].map((nombre_categoria, index) => ({
+                id_libro: index + 1,
+                nombre_categoria,
+                oculto: index === 15 ? 1 : 0,
+              })),
             ]
           : url === '/api/v1/admin/orders'
             ? [
                 { estado: 'pagada', total: 25000 },
                 { estado: 'en camino', total: 12000 },
                 { estado: 'cancelada', total: 8000 },
+                { estado: 'entregada', total: 13000 },
+                { estado: 'procesando', total: 9000 },
+                { estado: 'pendiente de pago', total: 7000 },
               ]
             : url === '/tiendas'
               ? [
                   { estado_tienda: 'activa' },
                   { estado_tienda: 'en revisión' },
                   { estado_tienda: 'suspendida' },
+                  { estado_tienda: 'en vacaciones' },
+                  { estado_tienda: 'inactiva' },
                 ]
               : [],
     }))
@@ -382,9 +552,29 @@ describe('AdminDashboard — reportes consolidados', () => {
     expect(await screen.findByRole('heading', { name: 'Órdenes por Estado' })).toBeInTheDocument()
     expect(screen.getByText('Ranking de géneros en el catálogo')).toBeInTheDocument()
     expect(screen.getByText('Tasa de Operatividad')).toBeInTheDocument()
-    expect(screen.getByText('Ciencia ficción')).toBeInTheDocument()
-    expect(screen.getByText(/33% operativas/)).toBeInTheDocument()
-    expect(screen.getByText(/3 Órdenes/)).toBeInTheDocument()
+    expect(screen.getAllByText(/Ciencia ficción/).length).toBeGreaterThan(0)
+    expect(screen.getByText(/20% operativas/)).toBeInTheDocument()
+    expect(screen.getByText(/6 Órdenes/)).toBeInTheDocument()
+  })
+
+  it('representa las categorías restantes del catálogo en los reportes', async () => {
+    const user = userEvent.setup()
+    const { default: api } = await import('../../services/api')
+    const categories = ['Historia', 'Tecnología', 'Infantil', 'Arte', 'Biografía', 'Educación', 'Poesía', 'Filosofía']
+    api.get.mockImplementation((url) => Promise.resolve({
+      data: url === '/api/stored/libros'
+        ? categories.map((nombre_categoria, id_libro) => ({ id_libro, nombre_categoria, oculto: 0 }))
+        : url === '/perfil/mi-perfil'
+          ? { nombre_usuario: 'Admin Test', correo_usuario: 'admin@test.com' }
+          : [],
+    }))
+
+    renderAdmin()
+    await user.click(await screen.findByRole('button', { name: /^Reportes$/i }))
+
+    for (const category of categories) {
+      expect(await screen.findAllByText(new RegExp(category))).not.toHaveLength(0)
+    }
   })
 })
 
@@ -411,7 +601,7 @@ describe('AdminDashboard — moderación del catálogo', () => {
     await user.selectOptions(screen.getByLabelText('Filtrar por Categoría:'), 'Arte')
     expect(screen.getByText('Atlas')).toBeInTheDocument()
     expect(screen.queryByText('Novela')).toBeNull()
-    await user.click(screen.getByRole('button', { name: 'Ocultar' }))
+    await user.click(screen.getAllByRole('button', { name: 'Ocultar' })[0])
 
     await waitFor(() => {
       expect(api.patch).toHaveBeenCalledWith(
@@ -422,6 +612,95 @@ describe('AdminDashboard — moderación del catálogo', () => {
     })
     expect(screen.getByText('Oculto')).toBeInTheDocument()
     expect(notify).toHaveBeenCalledWith('Visibilidad del libro actualizada', 'success')
+  })
+
+  it('cubre los resultados, la búsqueda y la paginación de usuarios', async () => {
+    const user = userEvent.setup()
+    const { default: api } = await import('../../services/api')
+    api.get.mockImplementation((url) => Promise.resolve({
+      data: url === '/usuarios'
+        ? Array.from({ length: 12 }, (_, index) => ({
+            id_usuario: index + 1,
+            nombre_usuario: `Usuario ${index + 1}`,
+            correo_usuario: `usuario${index + 1}@example.com`,
+            telefono: index === 0 ? '3001234567' : '',
+            rol: ['comprador', 'vendedor', 'administrador'][index % 3],
+            estado_usuario: index % 2 ? 'Bloqueado' : 'Activo',
+            email_verificado: index === 0,
+          }))
+        : url === '/perfil/mi-perfil'
+          ? { nombre_usuario: 'Admin Test', correo_usuario: 'admin@test.com' }
+          : [],
+    }))
+
+    renderAdmin()
+    await user.click(await screen.findByRole('button', { name: /^Usuarios$/i }))
+    const search = await screen.findByPlaceholderText('Buscar por nombre, correo, teléfono o ID...')
+    await user.click(search)
+    await user.type(search, 'no existe')
+    expect(await screen.findByText('No se encontraron usuarios')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Restablecer Filtros' }))
+
+    await user.selectOptions(screen.getByLabelText('Estado:'), 'Activo')
+    expect(screen.getByText('Usuario 1')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: /Administradores/ }))
+    expect(screen.getByText('Usuario 3')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: /Compradores/ }))
+    await user.click(screen.getByRole('button', { name: '↺ Limpiar filtros' }))
+    await user.click(screen.getByRole('button', { name: '2', exact: true }))
+    expect(screen.getByText('Usuario 11')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: '← Anterior' }))
+    expect(screen.getByText('Usuario 1')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Siguiente →' }))
+    expect(screen.getByText('Usuario 11')).toBeInTheDocument()
+  })
+
+  it('maneja la cancelación, el ocultamiento y los errores al eliminar libros', async () => {
+    const user = userEvent.setup()
+    const { default: api } = await import('../../services/api')
+    const { notify } = await import('../../components/ToastProvider')
+    const confirm = vi.spyOn(window, 'confirm')
+    api.get.mockImplementation((url) => Promise.resolve({
+      data: url === '/api/stored/libros'
+        ? [1, 2, 3].map((id_libro) => ({
+            id_libro,
+            titulo: `Libro ${id_libro}`,
+            autor_libro: 'Autora',
+            precio_libro: 10000,
+            nombre_categoria: 'Arte',
+            oculto: 0,
+          }))
+        : url === '/perfil/mi-perfil'
+          ? { nombre_usuario: 'Admin Test', correo_usuario: 'admin@test.com' }
+          : [],
+    }))
+    api.delete
+      .mockResolvedValueOnce({ data: { modo: 'ocultado', mensaje: 'Se ocultó por tener compras' } })
+      .mockResolvedValueOnce({ data: {} })
+      .mockRejectedValueOnce({ response: { data: { detail: 'No se pudo eliminar' } } })
+    api.patch.mockRejectedValueOnce(new Error('offline'))
+
+    renderAdmin()
+    await user.click(await screen.findByRole('button', { name: /^Libros$/i }))
+    await screen.findByText('Libro 1')
+    await user.click(screen.getAllByRole('button', { name: 'Ocultar' })[0])
+    await waitFor(() => expect(notify).toHaveBeenCalledWith(
+      'Error al cambiar la visibilidad del libro',
+      'error',
+    ))
+
+    confirm.mockReturnValueOnce(false)
+    await user.click(screen.getAllByRole('button', { name: 'Eliminar' })[0])
+    expect(api.delete).not.toHaveBeenCalled()
+
+    confirm.mockReturnValue(true)
+    await user.click(screen.getAllByRole('button', { name: 'Eliminar' })[0])
+    await waitFor(() => expect(notify).toHaveBeenCalledWith('Se ocultó por tener compras', 'info'))
+    await user.click(screen.getAllByRole('button', { name: 'Eliminar' })[1])
+    await waitFor(() => expect(screen.queryByText('Libro 2')).not.toBeInTheDocument())
+    await user.click(screen.getAllByRole('button', { name: 'Eliminar' })[1])
+    await waitFor(() => expect(notify).toHaveBeenCalledWith('No se pudo eliminar', 'error'))
+    confirm.mockRestore()
   })
 })
 

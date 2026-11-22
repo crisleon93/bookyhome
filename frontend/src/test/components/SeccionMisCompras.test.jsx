@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import SeccionMisCompras from '../../components/dashboard/SeccionMisCompras';
 import * as api from '../../services/api';
 import * as ToastProvider from '../../components/ToastProvider';
@@ -274,4 +274,154 @@ describe('SeccionMisCompras', () => {
 
     expect(await screen.findByText(/Compra Exitosa/i)).toBeInTheDocument();
   });
+
+  it('cubre estados alternos, búsqueda por autor y cada ordenamiento', async () => {
+    api.getOrdenes.mockResolvedValue({ data: [
+      { id_orden: 20, estado: 'pagada', fecha: '2026-10-01', total: 500, items: [{ titulo: 'Historia', autor: 'Ana' }] },
+      { id_orden: 21, estado: 'en tránsito', fecha: '2026-10-02', total: 200, envio: { numero_guia: 'G-21' }, items: [] },
+      { id_orden: 22, estado: 'procesando', fecha: '2026-10-03', total: 900, items: [] },
+      { id_orden: 23, estado: 'estado no reconocido', fecha: '2026-10-04', total: 100, items: [] },
+      { id_orden: 24, estado: 'aprobado', fecha: '2026-10-05', total: 400, items: [] },
+    ] })
+    api.getDevoluciones.mockResolvedValue({ data: [
+      { id_orden: 24, estado_devolucion: 'reembolsada' },
+    ] })
+    const { container } = render(<SeccionMisCompras userId={1} />)
+
+    await screen.findByText(/#24/)
+    const search = screen.getByPlaceholderText(/Buscar por # orden/i)
+    fireEvent.change(search, { target: { value: 'ana' } })
+    expect(screen.getByText(/#20/)).toBeInTheDocument()
+    fireEvent.change(search, { target: { value: '' } })
+
+    const sort = screen.getByDisplayValue(/Más recientes/i)
+    for (const value of ['antiguas', 'mayor_precio', 'menor_precio', 'recientes']) {
+      fireEvent.change(sort, { target: { value } })
+      expect(sort).toHaveValue(value)
+    }
+
+    localStorage.setItem('darkMode', 'true')
+    window.dispatchEvent(new Event('darkModeChange'))
+    window.dispatchEvent(new Event('storage'))
+    expect(container.querySelector('.pl-card')).toBeTruthy()
+  })
+
+  it('maneja errores de carga, notificación, limpieza y comprobante', async () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {})
+    api.getOrdenes.mockRejectedValueOnce(new Error('offline'))
+    const first = render(<SeccionMisCompras userId={1} />)
+    expect(await screen.findByText('No se encontraron compras')).toBeInTheDocument()
+    first.unmount()
+
+    api.getOrdenes.mockResolvedValue({ data: [
+      { ...mockOrders[0], estado: 'pagado', estado_orden: 'pagado' },
+      mockOrders[1],
+    ] })
+    api.notificarLlegadaTienda.mockRejectedValueOnce({ response: { data: { detail: 'Vendedor no disponible' } } })
+    api.cancelarMisPendientes.mockResolvedValueOnce({ data: { canceladas: 0 } })
+    api.getOrden.mockRejectedValueOnce(new Error('order unavailable'))
+    api.sendConfirmationEmail.mockRejectedValueOnce(new Error('email unavailable'))
+    const { container } = render(<SeccionMisCompras userId={1} />)
+    await screen.findByText(/#102/)
+
+    fireEvent.click(screen.getAllByRole('button', { name: /Ver Detalles/i })[0])
+    await screen.findByRole('button', { name: /Notificar llegada/i })
+    fireEvent.click(screen.getByRole('button', { name: /Notificar llegada/i }))
+    await waitFor(() => expect(notifySpy).toHaveBeenCalledWith('Vendedor no disponible', 'error'))
+    fireEvent.click(screen.getByRole('button', { name: /Cerrar detalles de la orden/i }))
+    fireEvent.click(screen.getByRole('button', { name: /Limpiar.*pendiente/i }))
+    await waitFor(() => expect(notifySpy).toHaveBeenCalledWith('No había órdenes pendientes para limpiar.', 'info'))
+
+    api.getOrden.mockResolvedValueOnce({ data: {
+      ...mockOrders[0], estado: 'pagado', estado_orden: 'pagado',
+    } })
+    fireEvent.click(screen.getAllByRole('button', { name: /Ver Baucher/i })[0])
+    await screen.findByText(/Compra Exitosa/i)
+    fireEvent.click(screen.getByRole('button', { name: /Enviar por correo/i }))
+    await waitFor(() => expect(notifySpy).toHaveBeenCalledWith(
+      'No se pudo enviar el comprobante al correo',
+      'error',
+    ))
+    expect(consoleError).toHaveBeenCalled()
+    consoleError.mockRestore()
+  })
+
+  it('cubre paginación, estados de detalle, hover y errores al limpiar o abrir el comprobante', async () => {
+    localStorage.removeItem('darkMode')
+    const orders = Array.from({ length: 30 }, (_, index) => ({
+      id_orden: index + 1,
+      id_orden_db: 201 + index,
+      fecha: `2026-11-${String((index % 28) + 1).padStart(2, '0')}T12:00:00`,
+      total: 1000 + index,
+      estado: index === 1 ? 'enviado' : index === 2 ? 'cancelado' : index === 3 ? 'pendiente' : 'pagado',
+      estado_orden: index === 1 ? 'enviado' : index === 2 ? 'cancelado' : index === 3 ? 'pendiente' : 'pagado',
+      tipo_entrega: 'domicilio',
+      items: [{ id_libro: index + 1, titulo: `Libro ${index + 1}`, cantidad: 1, precio_libro: 1000 + index }],
+    }))
+    api.getOrdenes.mockResolvedValue({ data: orders })
+    api.getOrden.mockImplementation((id) => Promise.resolve({
+      data: orders.find((order) => order.id_orden_db === id) || orders[0],
+    }))
+    const print = vi.spyOn(window, 'print').mockImplementation(() => {})
+    const { container } = render(<SeccionMisCompras userId={1} />)
+
+    await screen.findByText(/#228/)
+    const search = screen.getByPlaceholderText(/Buscar por # orden/i)
+    fireEvent.focus(search)
+    fireEvent.change(search, { target: { value: 'Libro 2' } })
+    fireEvent.blur(search)
+    fireEvent.click(screen.getByRole('button', { name: '✕' }))
+    const sort = screen.getByDisplayValue(/Más recientes/i)
+    fireEvent.change(sort, { target: { value: 'mayor_precio' } })
+    fireEvent.change(sort, { target: { value: 'menor_precio' } })
+    await screen.findByText(/#201/)
+
+    const perPage = screen.getByLabelText('Ver:')
+    fireEvent.change(perPage, { target: { value: '5' } })
+    fireEvent.click(screen.getByRole('button', { name: '2' }))
+    fireEvent.click(screen.getByRole('button', { name: '3' }))
+    fireEvent.click(screen.getByRole('button', { name: '4' }))
+    expect(screen.getByText('…')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Siguiente ›' }))
+    fireEvent.click(screen.getByRole('button', { name: '‹ Anterior' }))
+    fireEvent.click(screen.getByRole('button', { name: '1' }))
+
+    const pendingRow = screen.getByText(/#204/).closest('tr')
+    const pendingDetails = within(pendingRow).getByRole('button', { name: /Ver Detalles/i })
+    fireEvent.mouseEnter(pendingRow)
+    fireEvent.mouseLeave(pendingRow)
+    fireEvent.mouseEnter(pendingDetails)
+    fireEvent.mouseLeave(pendingDetails)
+
+    for (const [id, label] of [[202, /En tránsito/], [203, /Cancelada/]]) {
+      const row = screen.getByText(new RegExp(`#${id}`)).closest('tr')
+      fireEvent.click(within(row).getByRole('button', { name: /Ver Detalles/i }))
+      const detailsDialog = await screen.findByRole('dialog')
+      expect(within(detailsDialog).getByText(label)).toBeInTheDocument()
+      fireEvent.click(screen.getByRole('button', { name: /Cerrar detalles de la orden/i }))
+    }
+
+    api.cancelarMisPendientes.mockRejectedValueOnce(new Error('cleanup failed'))
+    fireEvent.click(screen.getByRole('button', { name: /Limpiar/i }))
+    await waitFor(() => expect(notifySpy).toHaveBeenCalledWith(
+      'No se pudo completar la limpieza. Intenta de nuevo.',
+      'error',
+    ))
+
+    api.getOrden.mockRejectedValueOnce(new Error('receipt unavailable'))
+    const receiptButton = screen.getAllByRole('button', { name: /Ver Baucher/i })[0]
+    fireEvent.mouseEnter(receiptButton)
+    fireEvent.mouseLeave(receiptButton)
+    fireEvent.click(receiptButton)
+    await waitFor(() => expect(notifySpy).toHaveBeenCalledWith(
+      'No se pudo cargar los detalles de la orden',
+      'error',
+    ))
+
+    api.getOrden.mockResolvedValueOnce({ data: orders[0] })
+    fireEvent.click(screen.getAllByRole('button', { name: /Ver Baucher/i })[0])
+    await screen.findByText(/Compra Exitosa/i)
+    fireEvent.click(container.querySelector('.baucher-actions button:last-child'))
+    expect(print).toHaveBeenCalledOnce()
+  })
 });

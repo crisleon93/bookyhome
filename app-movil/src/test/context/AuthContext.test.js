@@ -3,15 +3,24 @@
  */
 
 import React, { useContext } from 'react'
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest'
+import { AppState, Platform } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import * as LocalAuthentication from 'expo-local-authentication'
 import api from '../../services/api'
 import { AuthContext, AuthProvider } from '../../context/AuthContext'
 
+const mocks = vi.hoisted(() => ({ appStateHandler: null }))
+
 vi.mock('react-native', () => ({
-  AppState: { currentState: 'active', addEventListener: vi.fn(() => ({ remove: vi.fn() })) },
+  AppState: {
+    currentState: 'active',
+    addEventListener: vi.fn((event, handler) => {
+      mocks.appStateHandler = handler
+      return { remove: vi.fn() }
+    }),
+  },
   Platform: { OS: 'web' },
 }))
 
@@ -140,6 +149,7 @@ function AuthProbe() {
 
 beforeEach(() => {
   vi.clearAllMocks()
+  Platform.OS = 'web'
   AsyncStorage.getItem.mockResolvedValue(null)
   AsyncStorage.setItem.mockResolvedValue(undefined)
   AsyncStorage.multiRemove.mockResolvedValue(undefined)
@@ -310,5 +320,54 @@ describe('AuthProvider — comportamiento de sesión', () => {
     await waitFor(() => expect(document.querySelector('[data-result]').textContent).toBe(
       JSON.stringify({ success: false, reason: 'failed', error: 'sensor unavailable' }),
     ))
+  })
+
+  it('restaura una sesión al volver a primer plano y cubre las opciones biométricas nativas', async () => {
+    const restoredToken = fakeJwt({ sub: '45', nombre: 'Sofía', exp: Math.floor(Date.now() / 1000) + 3600 })
+    AsyncStorage.getItem.mockImplementation(async (key) => key === 'token' ? restoredToken : 'true')
+    LocalAuthentication.hasHardwareAsync.mockResolvedValue(true)
+    LocalAuthentication.isEnrolledAsync.mockResolvedValue(true)
+    LocalAuthentication.authenticateAsync.mockResolvedValue({ success: false, error: 'system_cancel' })
+    Platform.OS = 'android'
+
+    render(React.createElement(AuthProvider, null, React.createElement(AuthProbe)))
+    await screen.findByText('locked')
+    await act(async () => { await mocks.appStateHandler('background') })
+    await act(async () => { await mocks.appStateHandler('active') })
+    expect(await screen.findByText('locked')).toBeTruthy()
+    fireEvent.click(screen.getByText('unlock'))
+    await waitFor(() => expect(LocalAuthentication.authenticateAsync).toHaveBeenCalledWith(
+      expect.objectContaining({
+        promptSubtitle: 'Usa tu rostro para desbloquear',
+        promptDescription: 'Face Unlock disponible en tu dispositivo',
+        biometricsSecurityLevel: 'weak',
+      }),
+    ))
+    await waitFor(() => expect(document.querySelector('[data-result]').textContent).toBe(
+      JSON.stringify({ success: false, reason: 'cancelled' }),
+    ))
+
+    Platform.OS = 'ios'
+    LocalAuthentication.authenticateAsync.mockResolvedValue({ success: true })
+    fireEvent.click(screen.getByText('unlock'))
+    await waitFor(() => expect(LocalAuthentication.authenticateAsync).toHaveBeenLastCalledWith(
+      expect.objectContaining({ fallbackLabel: '' }),
+    ))
+  })
+
+  it('maneja una sesión biométrica ausente, una restauración fallida y respuestas HTTP exitosas', async () => {
+    const log = vi.spyOn(console, 'log').mockImplementation(() => {})
+    AsyncStorage.getItem.mockRejectedValueOnce(new Error('storage unavailable'))
+    render(React.createElement(AuthProvider, null, React.createElement(AuthProbe)))
+    await screen.findByText('ready')
+    expect(log).toHaveBeenCalledWith('Error restoring token', expect.any(Error))
+    fireEvent.click(screen.getByText('unlock'))
+    await waitFor(() => expect(document.querySelector('[data-result]').textContent).toBe(
+      JSON.stringify({ success: false, reason: 'no_session' }),
+    ))
+    const [onFulfilled] = api.interceptors.response.use.mock.calls.at(-1)
+    const response = { status: 200 }
+    expect(onFulfilled(response)).toBe(response)
+    log.mockRestore()
   })
 })

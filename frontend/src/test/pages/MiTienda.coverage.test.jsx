@@ -1,6 +1,16 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
-import MiTienda from '../../pages/MiTienda'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import MiTienda, {
+  AlertaStock,
+  ModalCodigoLibro,
+  ModalEditarLibro,
+  ModalEliminar,
+  ModalRetiroTienda,
+  ModalStock,
+  ModalVentaFisica,
+  SeccionCalificacionesVendedor,
+} from '../../pages/MiTienda'
 
 const mocks = vi.hoisted(() => ({
   apiGet: vi.fn(),
@@ -49,6 +59,7 @@ vi.mock('../../components/VendedorSidebar', () => ({
         'Inicio', 'Mis Libros', 'Ventas', 'Pedidos', 'Notificaciones', 'Perfil',
         'Mensajes', 'Calificaciones', 'Quejas y reclamos', 'Soporte técnico',
         'Envíos', 'Clientes', 'Configuración', 'Promociones', 'Cupones',
+        'Métodos de cobro', 'Suscripciones', 'Impulsos',
       ].map((section) => (
         <button
           key={section}
@@ -171,7 +182,11 @@ describe('MiTienda', () => {
         })
       }
       if (path === '/tiendas/mi-tienda') {
-        return Promise.resolve({ data: { id_tienda: 9, nombre_tienda: 'Librería Central' } })
+        return Promise.resolve({ data: {
+          id_tienda: 9,
+          nombre_tienda: 'Librería Central',
+          foto_tienda: '/uploads/store.png',
+        } })
       }
       if (path === '/libros/stats') {
         return Promise.resolve({ data: { total_mes: 120000, total_hoy: 20000, ordenes_mes: 4, ordenes_hoy: 1 } })
@@ -225,7 +240,11 @@ describe('MiTienda', () => {
         ] })
       }
       if (path === '/libros/mis-libros') {
-        return Promise.resolve({ data: [books[0], { ...books[1], id_categoria: 4, nombre_categoria: 'Clásicos' }] })
+        return Promise.resolve({ data: [
+          books[0],
+          { ...books[1], id_categoria: 4, nombre_categoria: 'Clásicos' },
+          { ...books[1], id_libro: 7, titulo: 'Libro con pocas unidades', stock: 2 },
+        ] })
       }
       return defaultGet(path)
     })
@@ -242,6 +261,11 @@ describe('MiTienda', () => {
     expect(screen.getByText('La casa de los espíritus')).toBeInTheDocument()
     expect(screen.queryByText('Cien años de soledad')).toBeNull()
 
+    fireEvent.change(filters[1], { target: { value: 'bajo_stock' } })
+    expect(screen.getByText('Libro con pocas unidades')).toBeInTheDocument()
+    fireEvent.change(filters[1], { target: { value: 'disponibles' } })
+    expect(screen.queryByText('Libro con pocas unidades')).toBeNull()
+
     fireEvent.change(filters[1], { target: { value: 'todos' } })
     fireEvent.change(filters[2], { target: { value: 'nuevo' } })
     expect(screen.getByText('Cien años de soledad')).toBeInTheDocument()
@@ -250,7 +274,7 @@ describe('MiTienda', () => {
     fireEvent.change(filters[2], { target: { value: 'todos' } })
     fireEvent.change(filters[3], { target: { value: 'titulo_desc' } })
     const titles = Array.from(document.querySelectorAll('.libro-main-title')).map((el) => el.textContent.trim())
-    expect(titles[0]).toBe('La casa de los espíritus')
+    expect(titles[0]).toBe('Libro con pocas unidades')
     fireEvent.change(screen.getByPlaceholderText('Buscar por título, autor o categoría...'), {
       target: { value: 'título que no existe' },
     })
@@ -259,6 +283,30 @@ describe('MiTienda', () => {
     expect(screen.getByText('Cien años de soledad')).toBeInTheDocument()
     fireEvent.change(screen.getByLabelText('Ver:'), { target: { value: '10' } })
     expect(screen.getByText('La casa de los espíritus')).toBeInTheDocument()
+  })
+
+  it('navigates through inventory pagination and ellipses', async () => {
+    const manyBooks = Array.from({ length: 40 }, (_, index) => ({
+      ...books[0],
+      id_libro: 100 + index,
+      titulo: `Libro inventario ${index + 1}`,
+    }))
+    const defaultGet = mocks.apiGet.getMockImplementation()
+    mocks.apiGet.mockImplementation((path) => path === '/libros/mis-libros'
+      ? Promise.resolve({ data: manyBooks })
+      : defaultGet(path))
+    renderSeller()
+    expect(await screen.findByText('Libro inventario 40')).toBeInTheDocument()
+    expect(document.querySelector('.pagination-ellipsis')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: '2', exact: true }))
+    expect(screen.getByText('Libro inventario 32')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Siguiente ›' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Siguiente ›' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Siguiente ›' }))
+    expect(screen.getByText('Libro inventario 8')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: '‹ Anterior' }))
+    fireEvent.click(screen.getByRole('button', { name: '4', exact: true }))
+    expect(screen.getByText('Libro inventario 16')).toBeInTheDocument()
   })
 
   it('shows the empty inventory prompt when no books have been published', async () => {
@@ -275,10 +323,28 @@ describe('MiTienda', () => {
     renderSeller()
     await screen.findByRole('heading', { name: 'Mis Libros Publicados' })
     fireEvent.click(screen.getByRole('button', { name: 'Venta en mostrador' }))
-    fireEvent.click(screen.getByRole('option', { name: /Cien años de soledad/ }))
+    const saleDialog = within(screen.getByRole('dialog'))
+    const selector = document.getElementById('venta-presencial-libro')
+    fireEvent.click(selector)
+    fireEvent.click(selector)
+    const catalogSearch = saleDialog.getByPlaceholderText('Buscar por título, autor o categoría...')
+    fireEvent.change(catalogSearch, { target: { value: 'no existe' } })
+    expect(saleDialog.getByText('No se encontraron libros con ese término')).toBeInTheDocument()
+    fireEvent.click(saleDialog.getByRole('button', { name: '✕' }))
+    const firstOption = saleDialog.getByRole('option', { name: /Cien años de soledad/ })
+    fireEvent.mouseEnter(firstOption)
+    fireEvent.mouseLeave(firstOption)
+    fireEvent.keyDown(firstOption, { key: 'Enter' })
+    fireEvent.click(saleDialog.getByRole('button', { name: 'Cambiar libro' }))
+    fireEvent.click(document.getElementById('venta-presencial-libro'))
     fireEvent.change(screen.getByLabelText(/Nombre del comprador/), {
       target: { value: 'Juan Pérez' },
     })
+    fireEvent.change(screen.getByLabelText('Nota interna (opcional)'), {
+      target: { value: 'Pagó en efectivo' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: '+' }))
+    fireEvent.click(screen.getByRole('button', { name: '−' }))
     fireEvent.click(screen.getByRole('button', { name: 'Confirmar Venta' }))
 
     await waitFor(() => {
@@ -292,6 +358,18 @@ describe('MiTienda', () => {
     expect(screen.getByRole('dialog')).toHaveTextContent(
       'Se descontaron 1 unidad(es) de "Cien años de soledad"',
     )
+  })
+
+  it('muestra el error del servidor al registrar una venta presencial', async () => {
+    const sold = vi.fn()
+    mocks.apiPatch.mockRejectedValueOnce({ response: { data: { detail: 'No se pudo descontar el stock' } } })
+    render(<ModalVentaFisica libro={books[0]} libros={books} onClose={vi.fn()} onVendido={sold} />)
+    fireEvent.change(screen.getByLabelText(/Nombre del comprador/), {
+      target: { value: 'Juan Pérez' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar Venta' }))
+    expect(await screen.findByText('No se pudo descontar el stock')).toBeInTheDocument()
+    expect(sold).not.toHaveBeenCalled()
   })
 
   it('valida y guarda los cambios del libro desde el formulario de edición', async () => {
@@ -329,6 +407,18 @@ describe('MiTienda', () => {
     fireEvent.click(screen.getByRole('button', { name: /Libros en Catálogo/ }))
     expect(await screen.findByRole('heading', { name: 'Mis Libros Publicados' })).toBeTruthy()
     expect(mocks.apiGet).toHaveBeenCalledWith('/libros/mis-libros')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Inicio' }))
+    fireEvent.click(screen.getByRole('button', { name: /Ventas este Mes/ }))
+    expect(await screen.findByRole('heading', { name: 'Registro de Ventas' })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Inicio' }))
+    fireEvent.click(screen.getByRole('button', { name: /Órdenes este Mes/ }))
+    expect(await screen.findByRole('heading', { name: 'Pedidos Recibidos' })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Inicio' }))
+    const inventorySection = document.getElementById('inventory-health-section')
+    inventorySection.scrollIntoView = vi.fn()
+    fireEvent.click(screen.getByRole('button', { name: /Salud de Inventario/ }))
+    expect(inventorySection.scrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth' })
   })
 
   it('caches store branding and loads profile photo, banner and notification preferences', async () => {
@@ -491,6 +581,54 @@ describe('MiTienda', () => {
     expect(screen.queryByRole('dialog', { name: 'Detalle de la venta' })).toBeNull()
   })
 
+  it('pagina las ventas y cambia el tamaño de página', async () => {
+    const sales = Array.from({ length: 12 }, (_, index) => ({
+      id_orden: 200 + index,
+      fecha: `2026-03-${String(index + 1).padStart(2, '0')}T12:00:00`,
+      cliente: `Cliente ${index + 1}`,
+      estado: 'pagado',
+      titulo: `Libro ${index + 1}`,
+      cantidad: 1,
+      total: 12000 + index,
+      precio_libro: 12000 + index,
+    }))
+    const defaultGet = mocks.apiGet.getMockImplementation()
+    mocks.apiGet.mockImplementation((path) => path === '/libros/mis-ventas'
+      ? Promise.resolve({ data: sales })
+      : defaultGet(path))
+    renderSeller('?seccion=Ventas')
+    expect(await screen.findByText('#211')).toBeInTheDocument()
+    fireEvent.mouseEnter(document.querySelector('tbody tr'))
+    fireEvent.mouseLeave(document.querySelector('tbody tr'))
+    fireEvent.click(screen.getByRole('button', { name: /Siguiente ›/ }))
+    expect(screen.getByText('#203')).toBeInTheDocument()
+    fireEvent.change(screen.getByLabelText('Ver:'), { target: { value: '5' } })
+    fireEvent.click(screen.getByRole('button', { name: '3' }))
+    expect(screen.getByText('#201')).toBeInTheDocument()
+  })
+
+  it('pagina una lista larga de notificaciones', async () => {
+    const manyNotifications = Array.from({ length: 25 }, (_, index) => ({
+      id_notificacion: 100 + index,
+      tipo: 'mensaje',
+      titulo: `Aviso ${index + 1}`,
+      descripcion: `Mensaje ${index + 1}`,
+      fecha_creacion: '2026-03-20T12:00:00',
+      leida: true,
+    }))
+    mocks.notificaciones.obtener.mockResolvedValue({ notificaciones: manyNotifications })
+    renderSeller('?seccion=Notificaciones')
+    expect(await screen.findByText('Aviso 1')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: /Siguiente ›/ }))
+    expect(screen.getByText('Aviso 11')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: '3' }))
+    expect(screen.getByText('Aviso 21')).toBeInTheDocument()
+    fireEvent.change(screen.getByLabelText('Ver:'), { target: { value: '5' } })
+    expect(screen.getByText('Aviso 1')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: /Siguiente ›/ }))
+    expect(screen.getByText('Aviso 6')).toBeInTheDocument()
+  })
+
   it('filtra, marca como leída y elimina las notificaciones del vendedor', async () => {
     renderSeller('?seccion=Notificaciones')
     expect(await screen.findByText('Nuevo mensaje')).toBeTruthy()
@@ -520,6 +658,93 @@ describe('MiTienda', () => {
     await waitFor(() => expect(mocks.notificaciones.eliminar).toHaveBeenCalledWith(10))
     expect(screen.queryByText('Nuevo mensaje')).toBeNull()
     expect(screen.getByText('Nuevo pedido')).toBeInTheDocument()
+  })
+
+  it('maneja fallos al cargar notificaciones y al ejecutar sus acciones', async () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {})
+    mocks.notificaciones.obtener.mockResolvedValue({ notificaciones: notifications })
+    mocks.notificaciones.marcarLeida.mockRejectedValueOnce(new Error('read failed'))
+    mocks.notificaciones.marcarTodasLeidas.mockRejectedValueOnce(new Error('read all failed'))
+    mocks.notificaciones.eliminar.mockRejectedValueOnce(new Error('delete failed'))
+    mocks.notificaciones.eliminarVarias.mockRejectedValueOnce(new Error('delete all failed'))
+    renderSeller('?seccion=Notificaciones')
+    expect(await screen.findByText('Nuevo mensaje')).toBeInTheDocument()
+
+    fireEvent.click(document.querySelector('.notif-item .btn-marcar'))
+    await waitFor(() => expect(consoleError).toHaveBeenCalledWith(
+      'Error marcando notificación como leída:',
+      expect.any(Error),
+    ))
+    fireEvent.click(screen.getByRole('button', { name: /Marcar todas/ }))
+    await waitFor(() => expect(consoleError).toHaveBeenCalledWith(
+      'Error marcando todas las notificaciones como leídas:',
+      expect.any(Error),
+    ))
+    fireEvent.click(document.querySelector('.notif-item .btn-eliminar'))
+    await waitFor(() => expect(consoleError).toHaveBeenCalledWith(
+      'Error eliminando notificación:',
+      expect.any(Error),
+    ))
+    fireEvent.click(screen.getByRole('button', { name: /Eliminar mensajes/ }))
+    fireEvent.click(screen.getByText('Todas las notificaciones'))
+    fireEvent.click(screen.getByRole('button', { name: 'Eliminar', exact: true }))
+    await waitFor(() => expect(consoleError).toHaveBeenCalledWith(
+      'Error eliminando notificaciones:',
+      expect.any(Error),
+    ))
+    consoleError.mockRestore()
+  })
+
+  it('cubre fallos y respuestas inesperadas en los servicios de la tienda', async () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {})
+    mocks.apiGet.mockRejectedValue(new Error('offline'))
+    mocks.notificaciones.obtener.mockRejectedValue(new Error('notifications offline'))
+    renderSeller('?seccion=Inicio')
+    await screen.findByRole('navigation', { name: 'Secciones de tienda' })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Ventas' }))
+    await waitFor(() => expect(mocks.apiGet).toHaveBeenCalledWith('/libros/mis-ventas'))
+    fireEvent.click(screen.getByRole('button', { name: 'Pedidos' }))
+    await waitFor(() => expect(mocks.apiGet).toHaveBeenCalledWith('/libros/mis-pedidos'))
+    fireEvent.click(screen.getByRole('button', { name: 'Envíos' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Perfil' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Notificaciones' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Configuración' }))
+
+    await waitFor(() => expect(consoleError).toHaveBeenCalledWith(
+      'Error cargando perfil del vendedor:',
+      expect.any(Error),
+    ))
+    expect(consoleError).toHaveBeenCalledWith('Error cargando libros:', expect.any(Error))
+    expect(consoleError).toHaveBeenCalledWith('Error cargando pedidos:', expect.any(Error))
+    expect(consoleError).toHaveBeenCalledWith('Error cargando ventas:', expect.any(Error))
+    expect(consoleError).toHaveBeenCalledWith('Error cargando información de tienda:', expect.any(Error))
+    expect(consoleError).toHaveBeenCalledWith('Error cargando Configuración avanzada:', expect.any(Error))
+    consoleError.mockRestore()
+  })
+
+  it('descarta respuestas con formatos inesperados en las secciones de tienda', async () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {})
+    mocks.apiGet.mockResolvedValue({ data: { unexpected: true } })
+    renderSeller('?seccion=Inicio')
+    await screen.findByRole('navigation', { name: 'Secciones de tienda' })
+    await waitFor(() => {
+      expect(consoleError).toHaveBeenCalledWith('Respuesta inesperada de mis-libros:', { unexpected: true })
+      expect(consoleError).toHaveBeenCalledWith('Respuesta inesperada de categorías:', { unexpected: true })
+      expect(consoleError).toHaveBeenCalledWith('Respuesta inesperada de top-vendidos:', { unexpected: true })
+      expect(consoleError).toHaveBeenCalledWith('Respuesta inesperada de alertas-stock:', { unexpected: true })
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Ventas' }))
+    await waitFor(() => expect(consoleError).toHaveBeenCalledWith(
+      'Respuesta inesperada de mis-ventas:',
+      { unexpected: true },
+    ))
+    fireEvent.click(screen.getByRole('button', { name: 'Pedidos' }))
+    await waitFor(() => expect(consoleError).toHaveBeenCalledWith(
+      'Respuesta inesperada de mis-pedidos:',
+      { unexpected: true },
+    ))
+    consoleError.mockRestore()
   })
 
   it('routes notification clicks to messages, orders, promotions and complaints', async () => {
@@ -603,6 +828,9 @@ describe('MiTienda', () => {
     // Abrir y cerrar modal de stock
     fireEvent.click(screen.getAllByTitle('Ajustar unidades en stock')[0])
     expect(await screen.findByText('Gestionar stock')).toBeTruthy()
+    const stockDialog = within(screen.getByRole('dialog'))
+    fireEvent.click(stockDialog.getByRole('button', { name: '+' }))
+    fireEvent.click(stockDialog.getByRole('button', { name: '−' }))
     fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }))
     await waitFor(() => expect(screen.queryByText('Gestionar stock')).toBeNull())
   })
@@ -643,7 +871,10 @@ describe('MiTienda', () => {
       if (path === '/envios/empresas') return Promise.resolve({ data: empresas })
       return getDefault(path)
     })
-    mocks.habilitarPagoRetiro.mockResolvedValueOnce({ data: { ok: true } })
+    mocks.habilitarPagoRetiro
+      .mockResolvedValueOnce({ data: { ok: false, error: 'El pago no está disponible todavía' } })
+      .mockRejectedValueOnce({ response: { data: { detail: 'No se pudo habilitar el pago' } } })
+      .mockResolvedValueOnce({ data: { ok: true } })
     mocks.apiPut.mockResolvedValue({ data: {} })
 
     renderSeller('?seccion=Pedidos')
@@ -664,8 +895,13 @@ describe('MiTienda', () => {
     const dialogHabilitar = screen.getByRole('dialog', { name: 'Habilitar pagos en tienda' })
     const btnConfirmarHabilitar = dialogHabilitar.querySelector('button[style*="linear-gradient"]')
     fireEvent.click(btnConfirmarHabilitar)
+    expect(await screen.findByText('El pago no está disponible todavía')).toBeInTheDocument()
+    fireEvent.click(btnConfirmarHabilitar)
+    expect(await screen.findByText('No se pudo habilitar el pago')).toBeInTheDocument()
+    fireEvent.click(btnConfirmarHabilitar)
 
     await waitFor(() => {
+      expect(mocks.habilitarPagoRetiro).toHaveBeenCalledTimes(3)
       expect(mocks.habilitarPagoRetiro).toHaveBeenCalledWith(102)
     })
 
@@ -684,6 +920,58 @@ describe('MiTienda', () => {
         expect.objectContaining({ numero_guia: 'GUIA-101' })
       )
     })
+  })
+
+  it('filtra, pagina y abre los detalles y la foto de los pedidos', async () => {
+    const orders = [
+      {
+        id_orden: 501, codigo_compra: 'ORD-501', cliente: 'Laura Compradora',
+        correo_cliente: 'laura@example.test', telefono_cliente: '3001234567',
+        foto_perfil_cliente: '/laura.jpg', fecha: '2026-03-20T10:00:00',
+        estado: 'pagado', tipo_entrega: 'envio', total_orden: 40000,
+        direccion_entrega: { ciudad: 'Bogotá', direccion: 'Calle 10' },
+        items: [
+          { id_libro: 5, titulo: 'Libro A', autor_libro: 'Autora A', cantidad: 1, precio_libro: 20000 },
+          { id_libro: 6, titulo: 'Libro B', cantidad: 2, precio_libro: 10000 },
+        ],
+      },
+      { id_orden: 502, codigo_compra: 'ORD-502', cliente: 'Cliente pendiente', estado: 'pendiente', tipo_entrega: 'envio', items: [] },
+      { id_orden: 503, codigo_compra: 'ORD-503', cliente: 'Cliente enviado', estado: 'enviado', tipo_entrega: 'envio', envio: { numero_guia: 'GUIA-503' }, items: [] },
+      { id_orden: 504, codigo_compra: 'ORD-504', cliente: 'Cliente entregado', estado: 'entregada', tipo_entrega: 'envio', items: [] },
+      { id_orden: 505, codigo_compra: 'ORD-505', cliente: 'Cliente cancelado', estado: 'cancelada', tipo_entrega: 'envio', items: [] },
+      { id_orden: 506, codigo_compra: 'ORD-506', cliente: 'Cliente retiro', estado: 'pagado', tipo_entrega: 'retiro_tienda', estado_retiro: 'reservado', items: [] },
+    ]
+    const defaultGet = mocks.apiGet.getMockImplementation()
+    mocks.apiGet.mockImplementation((path) => path === '/libros/mis-pedidos'
+      ? Promise.resolve({ data: orders })
+      : defaultGet(path))
+    renderSeller('?seccion=Pedidos')
+    expect(await screen.findByText('Laura Compradora')).toBeInTheDocument()
+
+    for (const status of ['Pendientes', 'Pagadas', 'Enviadas', 'Entregadas', 'Canceladas', 'Retiros en Tienda', 'Todos']) {
+      fireEvent.click(screen.getByRole('button', { name: new RegExp(status) }))
+    }
+
+    const search = screen.getByPlaceholderText(/Buscar por #orden/)
+    fireEvent.change(search, { target: { value: 'no coincide' } })
+    expect(screen.getByText(/Tus pedidos actualmente:/)).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Limpiar búsqueda' }))
+
+    fireEvent.click(screen.getByTitle('Ver foto de perfil'))
+    expect(screen.getByRole('dialog', { name: 'Foto de perfil del cliente' })).toBeInTheDocument()
+    fireEvent.click(screen.getAllByRole('button', { name: 'Cerrar foto de perfil' })[0])
+
+    fireEvent.click(screen.getByRole('button', { name: 'Ver detalle (2)' }))
+    const detailDialog = screen.getByRole('dialog', { name: 'Detalle de la orden #501' })
+    expect(detailDialog).toBeInTheDocument()
+    expect(within(detailDialog).getByText('Libro A')).toBeInTheDocument()
+    expect(within(detailDialog).getByText('Libro B')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Cerrar detalle' }))
+
+    fireEvent.click(screen.getByRole('button', { name: /Siguiente ›/ }))
+    expect(screen.getByText('Cliente retiro')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: /‹ Anterior/ }))
+    fireEvent.change(screen.getByLabelText('Ver:'), { target: { value: '10' } })
   })
 
   it('confirma y finaliza la entrega de un pedido de retiro ya pagado', async () => {
@@ -714,20 +1002,52 @@ describe('MiTienda', () => {
     expect(await screen.findByText(/ha sido finalizada y entregada al cliente/)).toBeInTheDocument()
   })
 
+  it('muestra errores al entregar y permite cobrar efectivo en tienda', async () => {
+    mocks.apiGet.mockImplementation((path) => path === '/libros/mis-pedidos'
+      ? Promise.resolve({ data: [
+        {
+          id_orden: 601, codigo_compra: 'RET-601', cliente: 'Compradora pagada',
+          estado: 'pagado', tipo_entrega: 'retiro_tienda', estado_retiro: 'en_tienda',
+          metodo_pago: 'transferencia', pin_retiro: '1234',
+          items: [{ id_libro: 5, titulo: 'Libro pagado', cantidad: 1 }],
+        },
+        {
+          id_orden: 602, codigo_compra: 'RET-602', cliente: 'Comprador efectivo',
+          estado: 'pendiente', tipo_entrega: 'retiro_tienda', estado_retiro: 'en_tienda',
+          metodo_pago: 'efectivo', pin_retiro: '5678',
+          items: [{ id_libro: 6, titulo: 'Libro en caja', cantidad: 2 }],
+        },
+      ] })
+      : Promise.resolve({ data: [] }))
+    mocks.confirmarEntregaRetiro
+      .mockRejectedValueOnce({ response: { data: { detail: 'No se pudo confirmar la entrega' } } })
+      .mockResolvedValueOnce({ data: { ok: true } })
+
+    renderSeller('?seccion=Pedidos')
+    expect(await screen.findByText('Compradora pagada')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: /Entregar Libro/ }))
+    fireEvent.click(screen.getByRole('button', { name: /Entregar Libro Físico/ }))
+    expect(await screen.findByText('No se pudo confirmar la entrega')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }))
+
+    fireEvent.click(screen.getByRole('button', { name: /Cobrar Efectivo y Entregar/ }))
+    fireEvent.click(screen.getByRole('button', { name: /Cobrar y Entregar Libro/ }))
+    await waitFor(() => expect(mocks.confirmarEntregaRetiro).toHaveBeenCalledWith(602, true))
+    expect(await screen.findByText(/ha sido finalizada y entregada al cliente/)).toBeInTheDocument()
+  })
+
   it('gestiona la sección de Envíos y aplica filtros', async () => {
-    const orders = [
-      {
-        id_orden: 201,
-        codigo_compra: 'ENV-201',
-        cliente: 'Daniela Mejia',
-        correo_cliente: 'daniela@test.com',
-        fecha: new Date().toISOString(),
-        estado: 'pagado',
-        tipo_entrega: 'envio',
-        total: 50000,
-        envio: null,
-      },
-    ]
+    const orders = Array.from({ length: 10 }, (_, index) => ({
+      id_orden: 201 + index,
+      codigo_compra: `ENV-${201 + index}`,
+      cliente: index === 0 ? 'Daniela Mejia' : `Cliente ${index + 1}`,
+      correo_cliente: 'daniela@test.com',
+      fecha: new Date().toISOString(),
+      estado: 'pagado',
+      tipo_entrega: 'envio',
+      total: 50000,
+      envio: null,
+    }))
     const empresas = [{ id_empresa: 1, nombre_empresa: 'Servientrega' }]
 
     const getDefault = mocks.apiGet.getMockImplementation()
@@ -745,8 +1065,10 @@ describe('MiTienda', () => {
     const botonSinGuia = screen.getByRole('button', { name: /Sin guía/i })
     fireEvent.click(botonSinGuia)
 
-    const botonTodos = screen.getByRole('button', { name: /Todos/i })
-    fireEvent.click(botonTodos)
+    fireEvent.click(document.querySelector('.envios-stat--todos'))
+    fireEvent.click(screen.getByRole('button', { name: /Siguiente ›/ }))
+    expect(screen.getByText('Compra ENV-209')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: /‹ Anterior/ }))
 
     // Filtro por fecha
     const selectFecha = screen.getByLabelText(/Filtrar por fecha/i)
@@ -756,6 +1078,7 @@ describe('MiTienda', () => {
     const inputBusquedaEnvios = screen.getByPlaceholderText(/Buscar por compra/i)
     fireEvent.change(inputBusquedaEnvios, { target: { value: 'ENV-201' } })
     expect(screen.getByText(/Daniela Mejia/)).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Limpiar búsqueda' }))
   })
 
   it('renderiza secciones complementarias: Configuración, Promociones, Cupones, Reclamos, Soporte y Clientes', async () => {
@@ -856,6 +1179,11 @@ describe('MiTienda', () => {
     fireEvent.change(screen.getByLabelText('Política de envíos'), { target: { value: 'Envíos nacionales' } })
     fireEvent.change(screen.getByLabelText('Política de devoluciones'), { target: { value: 'Cambios en 30 días' } })
     fireEvent.change(document.querySelectorAll('input[type="number"]')[1], { target: { value: '8500' } })
+    document.querySelectorAll('#cfg-nombre-tienda, #cfg-telefono, #cfg-direccion, #cfg-ciudad, #cfg-email-publico, #cfg-horario, #tienda-descripcion, #cfg-dias-despacho, #cfg-politica-envios, #cfg-politica-devoluciones')
+      .forEach((input) => {
+        fireEvent.focus(input)
+        fireEvent.blur(input)
+      })
     const shippingFee = document.querySelectorAll('input[type="number"]')[1]
     fireEvent.focus(shippingFee)
     fireEvent.mouseEnter(screen.getByRole('button', { name: /Guardar cambios/ }))
@@ -906,7 +1234,9 @@ describe('MiTienda', () => {
 
     fireEvent.change(screen.getByLabelText('Nombre'), { target: { value: 'Ana María' } })
     fireEvent.change(screen.getByLabelText('Apellidos'), { target: { value: 'Gómez' } })
+    fireEvent.change(screen.getByLabelText('Telefono'), { target: { value: '3112223344' } })
     fireEvent.change(screen.getByLabelText('Ciudad'), { target: { value: 'Cali' } })
+    fireEvent.change(screen.getByLabelText('Direccion'), { target: { value: 'Carrera 10' } })
     fireEvent.click(screen.getAllByRole('button', { name: 'Activado' })[0])
     fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }))
 
@@ -947,28 +1277,133 @@ describe('MiTienda', () => {
       '/perfil/banner-color',
       { banner_color: '#1E3A7A' },
     ))
-    expect(profileBannerUpdated).toHaveBeenCalledTimes(2)
+    fireEvent.click(screen.getByRole('button', { name: '✏️ Editar banner' }))
+    fireEvent.change(document.querySelector('input[type="color"]'), { target: { value: '#123456' } })
+    await waitFor(() => expect(mocks.apiPatch).toHaveBeenCalledWith(
+      '/perfil/banner-color',
+      { banner_color: '#123456' },
+    ))
+    expect(profileBannerUpdated).toHaveBeenCalledTimes(3)
 
     unmount()
     window.removeEventListener('profile-photo-updated', profilePhotoUpdated)
     window.removeEventListener('profile-banner-updated', profileBannerUpdated)
   })
 
+  it('muestra errores al guardar el perfil y al personalizar imágenes y color', async () => {
+    mocks.apiPut.mockRejectedValueOnce(new Error('profile failed'))
+    mocks.apiPost
+      .mockRejectedValueOnce(new Error('photo failed'))
+      .mockRejectedValueOnce(new Error('banner failed'))
+    mocks.apiPatch.mockRejectedValueOnce(new Error('color failed'))
+    renderSeller('?seccion=Perfil')
+    await screen.findByRole('tab', { name: /Mi perfil/ })
+    await screen.findByDisplayValue('Ana')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }))
+    expect(await screen.findByText('Error al guardar el perfil')).toBeInTheDocument()
+
+    fireEvent.change(document.querySelector('input[type="file"][accept="image/*"]'), {
+      target: { files: [new File(['photo'], 'failed.png', { type: 'image/png' })] },
+    })
+    expect(await screen.findByText('Error al subir la foto')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: '✏️ Editar banner' }))
+    fireEvent.change(document.getElementById('perfil-banner-upload'), {
+      target: { files: [new File(['banner'], 'failed.png', { type: 'image/png' })] },
+    })
+    expect(await screen.findByText('Error al subir el banner')).toBeInTheDocument()
+
+    fireEvent.change(document.querySelector('input[type="color"]'), { target: { value: '#123456' } })
+    expect(await screen.findByText('Error al guardar el color')).toBeInTheDocument()
+  })
+
+  it('recorre secciones de envíos, clientes, configuración y promociones', async () => {
+    renderSeller('?seccion=Inicio')
+    await screen.findByRole('navigation', { name: 'Secciones de tienda' })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Envíos' }))
+    expect(screen.getByRole('navigation', { name: 'Secciones de tienda' })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Clientes' }))
+    expect(screen.getByRole('navigation', { name: 'Secciones de tienda' })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Configuración' }))
+    expect(screen.getByRole('navigation', { name: 'Secciones de tienda' })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Promociones' }))
+    expect(await screen.findByText('Ofertas mock')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Cupones' }))
+    expect(await screen.findByText('Cupones mock')).toBeInTheDocument()
+  })
+
+  it('renderiza las pestañas de suscripciones e impulsos desde Perfil', async () => {
+    renderSeller('?seccion=Perfil&tab=suscripciones')
+    await screen.findByRole('heading', { name: 'Mi Perfil' })
+    expect(screen.getByText('Suscripciones mock')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Impulsos' }))
+    expect(await screen.findByText('Impulsos mock')).toBeInTheDocument()
+  })
+
+  it('redirects legacy billing routes to the matching profile tab', async () => {
+    renderSeller()
+    fireEvent.click(await screen.findByRole('button', { name: 'Métodos de cobro' }))
+    expect(await screen.findByRole('tab', { name: 'Métodos de cobro' })).toHaveAttribute('aria-selected', 'true')
+    expect(window.location.search).toContain('seccion=Perfil&tab=cobro')
+  })
+
   it('permite cambiar a cobros y ver cuentas bancarias cargadas', async () => {
     mocks.apiGet.mockImplementation((path) => path.includes('cuentas-bancarias')
       ? Promise.resolve({ data: { cuentas: [{
-        id_cuenta: 3,
+        id_metodo: 3,
         banco: 'Banco Central',
         tipo_cuenta: 'Ahorros',
         numero_cuenta: '12345678',
         nombre_titular: 'Ana Vendedora',
         cedula_titular: '100200300',
         es_principal: true,
+      }, {
+        id_metodo: 4,
+        banco: 'Banco Secundario',
+        tipo_cuenta: 'Corriente',
+        numero_cuenta: '87654321',
+        nombre_titular: 'Ana Vendedora',
+        cedula_titular: '100200300',
+        es_principal: false,
       }] } })
       : Promise.resolve({ data: [] }))
     renderSeller('?seccion=Perfil&tab=cobro')
     expect(await screen.findByText('Banco Central')).toBeTruthy()
+    const alert = vi.spyOn(window, 'alert').mockImplementation(() => {})
+    fireEvent.click(screen.getByRole('button', { name: 'Hacer Principal' }))
+    await waitFor(() => expect(mocks.apiPut).toHaveBeenCalledWith(
+      '/api/v1/bookypago-finanzas/cuentas-bancarias/42/principal/4',
+    ))
+    expect(alert).toHaveBeenCalledWith('Cuenta principal actualizada')
+    fireEvent.click(screen.getAllByRole('button', { name: 'Eliminar' })[0])
     expect(screen.getByRole('tab', { name: 'Métodos de cobro' })).toHaveAttribute('aria-selected', 'true')
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Suscripciones' }))
+    expect(screen.getByText('Suscripciones mock')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('tab', { name: 'Impulsos' }))
+    expect(screen.getByText('Impulsos mock')).toBeInTheDocument()
+    alert.mockRestore()
+  })
+
+  it('muestra el error al guardar una cuenta bancaria', async () => {
+    const user = userEvent.setup()
+    const alert = vi.spyOn(window, 'alert').mockImplementation(() => {})
+    mocks.apiGet.mockImplementation((path) => path.includes('cuentas-bancarias')
+      ? Promise.resolve({ data: { cuentas: [] } })
+      : Promise.resolve({ data: [] }))
+    mocks.apiPost.mockRejectedValueOnce({ response: { data: { detail: 'Cuenta duplicada' } } })
+    renderSeller('?seccion=Perfil&tab=cobro')
+    await screen.findByRole('heading', { name: 'Cuentas Bancarias' })
+    await user.click(await screen.findByRole('button', { name: '+ Agregar Cuenta' }))
+    await screen.findByRole('heading', { name: 'Agregar Nueva Cuenta' })
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar' }))
+    await waitFor(() => expect(alert).toHaveBeenCalledWith(
+      'Error agregando cuenta bancaria: Cuenta duplicada',
+    ))
+    alert.mockRestore()
   })
 
   it('registra una cuenta bancaria con los datos del titular', async () => {
@@ -1014,5 +1449,148 @@ describe('MiTienda', () => {
     render(<MiTienda />)
     fireEvent.click(screen.getByRole('button', { name: 'Cerrar sesión' }))
     expect(mocks.navigate).toHaveBeenCalledWith('/')
+  })
+
+  it('valida el editor del libro, guarda acceso anticipado y muestra errores', async () => {
+    const libro = { ...books[0], fecha_lanzamiento_publico: null, acceso_anticipado: false }
+    const close = vi.fn()
+    const saved = vi.fn()
+    mocks.apiPut.mockRejectedValueOnce({ response: { data: { detail: 'No se pudo actualizar' } } })
+    const { rerender } = render(<ModalEditarLibro libro={libro} categorias={[{ id_categoria: 2, nombre_categoria: 'Ficción' }]} onClose={close} onGuardado={saved} />)
+
+    fireEvent.change(screen.getByLabelText('Título *'), { target: { value: '   ' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }))
+    expect(await screen.findByText('El título es obligatorio')).toBeInTheDocument()
+    fireEvent.change(screen.getByLabelText('Título *'), { target: { value: 'Título correcto' } })
+    fireEvent.change(screen.getByLabelText('Autor *'), { target: { value: '   ' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }))
+    expect(await screen.findByText('El autor es obligatorio')).toBeInTheDocument()
+    fireEvent.change(screen.getByLabelText('Autor *'), { target: { value: 'Autora' } })
+    fireEvent.change(screen.getByLabelText('Precio (COP) *'), { target: { value: '' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }))
+    expect(await screen.findByText('El precio debe ser mayor a 0')).toBeInTheDocument()
+
+    fireEvent.change(screen.getByLabelText('Precio (COP) *'), { target: { value: '25000' } })
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Preparar acceso anticipado para este libro' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }))
+    expect(await screen.findByText('Indica cuándo estará disponible el libro para todos')).toBeInTheDocument()
+    fireEvent.change(screen.getByLabelText('Disponible para todos desde (hora Colombia)'), {
+      target: { value: '2020-01-01T10:00' },
+    })
+    fireEvent.submit(screen.getByRole('dialog').querySelector('form'))
+    expect(await screen.findByText('La disponibilidad pública debe ser al menos 24 horas después')).toBeInTheDocument()
+
+    const tomorrow = new Date(Date.now() + 48 * 60 * 60 * 1000)
+    const dateValue = new Date(tomorrow.getTime() - tomorrow.getTimezoneOffset() * 60000).toISOString().slice(0, 16)
+    fireEvent.change(screen.getByLabelText('Disponible para todos desde (hora Colombia)'), {
+      target: { value: dateValue },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }))
+    expect(await screen.findByText('No se pudo actualizar')).toBeInTheDocument()
+    mocks.apiPut.mockResolvedValueOnce({ data: {} })
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }))
+    await waitFor(() => expect(saved).toHaveBeenCalledOnce())
+    expect(mocks.apiPut).toHaveBeenCalledTimes(2)
+    rerender(<ModalEditarLibro libro={libro} categorias={[]} onClose={close} onGuardado={saved} />)
+  })
+
+  it('maneja errores en eliminación y ajuste de stock, y oculta alertas vacías', async () => {
+    const close = vi.fn()
+    const deleted = vi.fn()
+    mocks.apiDelete.mockRejectedValueOnce({ response: { data: { detail: 'Libro en uso' } } })
+    render(<ModalEliminar libro={books[0]} onClose={close} onEliminado={deleted} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Sí, eliminar' }))
+    expect(await screen.findByText('Libro en uso')).toBeInTheDocument()
+    mocks.apiDelete.mockResolvedValueOnce({ data: {} })
+    fireEvent.click(screen.getByRole('button', { name: 'Sí, eliminar' }))
+    await waitFor(() => expect(deleted).toHaveBeenCalledOnce())
+
+    mocks.apiPatch.mockRejectedValueOnce({ response: { data: { detail: 'Stock bloqueado' } } })
+    const updated = vi.fn()
+    const { unmount } = render(<ModalStock libro={books[0]} onClose={close} onActualizado={updated} />)
+    fireEvent.change(screen.getByRole('spinbutton'), { target: { value: '-1' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar stock' }))
+    expect(await screen.findByText('El stock no puede ser negativo')).toBeInTheDocument()
+    fireEvent.change(screen.getByRole('spinbutton'), { target: { value: '7' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar stock' }))
+    expect(await screen.findByText('Stock bloqueado')).toBeInTheDocument()
+    mocks.apiPatch.mockResolvedValueOnce({ data: {} })
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar stock' }))
+    await waitFor(() => expect(updated).toHaveBeenCalledOnce())
+    unmount()
+
+    expect(render(<AlertaStock alertas={[]} umbral={3} />).container.firstChild).toBeNull()
+  })
+
+  it('valida ventas presenciales y muestra el estado vacío de alertas', async () => {
+    const onClose = vi.fn()
+    const sold = vi.fn()
+    render(<ModalVentaFisica libros={[]} onClose={onClose} onVendido={sold} />)
+    expect(screen.getByText(/selecciona un libro de la lista arriba para registrar la venta/)).toBeInTheDocument()
+    expect(sold).not.toHaveBeenCalled()
+    expect(render(<AlertaStock alertas={[{ titulo: 'Libro agotado', stock: 0 }]} umbral={1} />).getByText('1 libro con stock bajo')).toBeInTheDocument()
+  })
+
+  it('cubre el retiro en tienda, el código digital y las calificaciones del vendedor', async () => {
+    const close = vi.fn()
+    const confirmed = vi.fn()
+    const alert = vi.spyOn(window, 'alert').mockImplementation(() => {})
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const previousClipboard = Object.getOwnPropertyDescriptor(navigator, 'clipboard')
+    render(<ModalRetiroTienda libro={books[0]} onClose={close} onConfirmado={confirmed} />)
+
+    const deliver = screen.getByRole('button', { name: /Entregar y Cobrar/ })
+    expect(deliver).toBeDisabled()
+    fireEvent.change(screen.getByLabelText('Nombre del cliente que recoge *'), {
+      target: { value: 'María García' },
+    })
+    mocks.apiPatch.mockRejectedValueOnce({ response: { data: { detail: 'Reserva vencida' } } })
+    fireEvent.click(deliver)
+    expect(await screen.findByText('Reserva vencida')).toBeInTheDocument()
+    mocks.apiPatch.mockResolvedValueOnce({ data: {} })
+    fireEvent.click(deliver)
+    expect(await screen.findByText('¡Entrega confirmada!')).toBeInTheDocument()
+    expect(mocks.apiPatch).toHaveBeenCalledWith(
+      '/libros/5/stock',
+      expect.any(FormData),
+      { headers: { 'Content-Type': 'multipart/form-data' } },
+    )
+
+    Object.defineProperty(navigator, 'clipboard', { configurable: true, value: undefined })
+    const code = render(<ModalCodigoLibro libro={{ ...books[0], isbn: '9781234567890' }} onClose={close} />)
+    expect(screen.getByText('ISBN:')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Copiar Código Digital' }))
+    await waitFor(() => expect(alert).toHaveBeenCalledWith(
+      'No se pudo copiar el código. Puedes copiarlo manualmente: BKH-00005',
+    ))
+    const writeText = vi.fn().mockResolvedValue(undefined)
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Copiar Código Digital' }))
+    await waitFor(() => expect(writeText).toHaveBeenCalledWith('BKH-00005'))
+    code.unmount()
+
+    mocks.apiGet.mockResolvedValueOnce({ data: {
+      total: 3,
+      promedio: 4,
+      distribucion: { 5: 1, 4: 1, 3: 1, 2: 0, 1: 0 },
+      calificaciones: [
+        { id_calificacion: 1, nombre_usuario: 'Ana', calificacion: 5, fecha_calificacion: '2026-03-20', comentario: 'Excelente atención' },
+        { id_calificacion: 2, nombre_usuario: 'Luis', calificacion: 4, fecha_calificacion: '2026-03-19', comentario: '' },
+        { id_calificacion: 3, nombre_usuario: 'Eva', calificacion: 3, fecha_calificacion: '2026-03-18', comentario: 'Buen servicio' },
+      ],
+    } })
+    render(<SeccionCalificacionesVendedor tiendaId={9} darkMode />)
+    expect(await screen.findByText('Calificaciones de tu tienda')).toBeInTheDocument()
+    expect(await screen.findByText(/Excelente atención/)).toBeInTheDocument()
+    expect(screen.getByText(/Buen servicio/)).toBeInTheDocument()
+    expect(mocks.apiGet).toHaveBeenCalledWith('/perfil/calificaciones-tienda/9')
+
+    if (previousClipboard) Object.defineProperty(navigator, 'clipboard', previousClipboard)
+    else delete navigator.clipboard
+    alert.mockRestore()
+    consoleError.mockRestore()
   })
 })

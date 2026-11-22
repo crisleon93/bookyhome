@@ -205,4 +205,124 @@ describe('SeccionOfertas', () => {
     fireEvent.click(within(calendar).getByRole('button', { name: 'Aceptar ✓' }))
     expect(screen.queryByRole('dialog', { name: 'Seleccionar fecha y hora' })).toBeNull()
   })
+
+  it('crea una promoción especial, gestiona la búsqueda de libros y muestra errores del servidor', async () => {
+    api.post.mockRejectedValueOnce({ response: { data: { detail: 'Servicio no disponible' } } })
+    render(<SeccionOfertas />)
+    fireEvent.click(await screen.findByRole('button', { name: '+ Crear primera oferta' }))
+    fireEvent.change(screen.getByLabelText('Nombre de la oferta *'), {
+      target: { value: 'Día del lector' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: /2×1 Especial/ }))
+    expect(screen.queryByLabelText('Porcentaje de descuento (%) *')).toBeNull()
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Fecha y hora de inicio *' })[0])
+    fireEvent.click(screen.getByRole('button', { name: 'Mañana' }))
+    fireEvent.mouseDown(document.body)
+    fireEvent.click(screen.getByText('Seleccionar fin...').closest('button'))
+    fireEvent.click(screen.getByRole('button', { name: '+7d' }))
+
+    fireEvent.click(screen.getByRole('button', { name: 'Desplegar libros ▼' }))
+    fireEvent.change(screen.getByPlaceholderText('Buscar libro por título o autor...'), {
+      target: { value: 'sin coincidencias' },
+    })
+    expect(screen.getByText('No se encontraron libros')).toBeTruthy()
+    fireEvent.change(screen.getByPlaceholderText('Buscar libro por título o autor...'), {
+      target: { value: '' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Seleccionar todos' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Limpiar' }))
+    fireEvent.click(screen.getByRole('checkbox'))
+
+    fireEvent.click(screen.getByRole('button', { name: /Crear oferta/ }))
+    expect(await screen.findByText('Servicio no disponible')).toBeTruthy()
+    api.post.mockResolvedValueOnce({ data: { ok: true } })
+    fireEvent.click(screen.getByRole('button', { name: /Crear oferta/ }))
+    await waitFor(() => expect(api.post).toHaveBeenCalledTimes(2))
+    expect(api.post.mock.calls[1][1].get('valor_descuento')).toBe('0')
+    expect(await screen.findByRole('button', { name: '+ Crear primera oferta' })).toBeTruthy()
+  })
+
+  it('edita una promoción existente y cubre fechas, imágenes y acciones de tarjeta', async () => {
+    const now = new Date()
+    const asLocalDate = (offsetDays) => {
+      const date = new Date(now.getTime() + offsetDays * 24 * 60 * 60 * 1000)
+      return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16)
+    }
+    const editableBooks = [
+      { ...books[0], imagen_url: 'https://example.test/cover.png' },
+      { id_libro: 6, titulo: 'Portada relativa', autor_libro: 'Autor', precio_libro: 10000, stock: 1, imagen_principal: '/media/cover.png' },
+      { id_libro: 7, titulo: 'Imagen sin barra', autor_libro: 'Autor', precio_libro: 10000, stock: 1, imagen: 'cover.png' },
+      { id_libro: 8, titulo: 'Primera imagen', autor_libro: 'Autor', precio_libro: 10000, stock: 1, imagenes: ['/media/one.png', '/media/two.png'] },
+    ]
+    const offer = {
+      id_oferta: 29,
+      nombre_oferta: 'Oferta editable',
+      estado: 'vencida',
+      tipo_descuento: 'especial',
+      valor_descuento: 0,
+      fecha_inicio: `${asLocalDate(2)}:00`,
+      fecha_fin: `${asLocalDate(8)}:00`,
+      libros: [editableBooks[1]],
+      total_libros: 1,
+    }
+    api.get.mockImplementation((path) => Promise.resolve({
+      data: path === '/ofertas'
+        ? [offer, {
+            ...offer,
+            id_oferta: 30,
+            nombre_oferta: 'Descuento alternativo',
+            tipo_descuento: 'desconocido',
+            valor_descuento: 5,
+          }]
+        : path === '/ofertas/29'
+          ? offer
+          : editableBooks,
+    }))
+    api.put.mockResolvedValue({ data: {} })
+    const { container } = render(<SeccionOfertas />)
+
+    await screen.findByText('Oferta editable')
+    const card = screen.getByText('Oferta editable').closest('div[style*="border-radius: 14px"]')
+    fireEvent.mouseEnter(card)
+    fireEvent.mouseLeave(card)
+    const edit = screen.getAllByRole('button', { name: 'Editar' })[0]
+    fireEvent.mouseEnter(edit)
+    fireEvent.mouseLeave(edit)
+    fireEvent.click(edit)
+
+    expect(await screen.findByLabelText('Nombre de la oferta *')).toHaveValue('Oferta editable')
+    const startPicker = screen.getAllByRole('button', { name: 'Fecha y hora de inicio *' })[0]
+    fireEvent.click(startPicker)
+    const calendar = screen.getByRole('dialog', { name: 'Seleccionar fecha y hora' })
+    const tomorrowPreset = within(calendar).getByRole('button', { name: 'Mañana' })
+    fireEvent.mouseEnter(tomorrowPreset)
+    fireEvent.mouseLeave(tomorrowPreset)
+    fireEvent.click(within(calendar).getByRole('button', { name: '⟨' }))
+    fireEvent.click(within(calendar).getByRole('button', { name: '⟩' }))
+    const validDay = within(calendar).getAllByRole('button')
+      .find((button) => button.getAttribute('aria-label')?.includes(' de ') && !button.disabled)
+    fireEvent.mouseEnter(validDay)
+    fireEvent.mouseLeave(validDay)
+    fireEvent.click(validDay)
+    fireEvent.click(within(calendar).getByRole('button', { name: 'Aceptar ✓' }))
+
+    fireEvent.focus(screen.getByLabelText('Nombre de la oferta *'))
+    fireEvent.blur(screen.getByLabelText('Nombre de la oferta *'))
+    const bookDropdown = screen.getByRole('button', { name: /Desplegar libros/ })
+    fireEvent.click(bookDropdown)
+    const images = Array.from(container.querySelectorAll('img'))
+    expect(images.some((image) => image.getAttribute('src') === 'https://example.test/cover.png')).toBe(true)
+    fireEvent.error(images[0])
+    const selectedBook = screen.getByRole('checkbox', { name: /Portada relativa/ })
+    fireEvent.click(selectedBook)
+    fireEvent.click(selectedBook)
+    fireEvent.click(screen.getByRole('button', { name: /Guardar cambios/ }))
+
+    await waitFor(() => expect(api.put).toHaveBeenCalledWith(
+      '/ofertas/29',
+      expect.any(FormData),
+      expect.objectContaining({ headers: { 'Content-Type': 'multipart/form-data' } }),
+    ))
+  })
 })

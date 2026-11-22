@@ -1,5 +1,5 @@
 import React from 'react'
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import SeccionConfiguracion from '../../components/dashboard/SeccionConfiguracion'
 import SeccionFavoritos from '../../components/dashboard/SeccionFavoritos'
@@ -177,6 +177,59 @@ describe('secciones personales del comprador', () => {
     fireEvent.click(screen.getAllByRole('button', { name: 'Libro del carrusel A' })[0])
 
     expect(onSelect).toHaveBeenCalledWith('Catálogo')
+  })
+
+  it('actualiza el carrusel con el reloj, el redimensionamiento y los distintos estados de compra', async () => {
+    const callbacks = []
+    const onSelect = vi.fn()
+    getStoredLibros.mockResolvedValue({ data: [
+      { id_libro: 91, titulo: 'Libro A' },
+      { id_libro: 92, titulo: 'Libro B' },
+    ] })
+    getOrdenes.mockResolvedValue({ data: [
+      { id: 1, estado: 'desconocido', total: 0, items: 'sin libros' },
+      { id: 2, estado: 'pagado', total: 1200, items: [{ nombre_libro: 'Enviado', foto: 'https://example.test/book.png' }] },
+      { id: 3, estado: 'entregado', total: 2500, items: [{ nombre: 'Entregado' }, { titulo: 'Otro' }] },
+    ] })
+    getCuponesDisponibles.mockResolvedValue({ data: [] })
+    vi.stubGlobal('requestAnimationFrame', vi.fn((callback) => {
+      callbacks.push(callback)
+      return callbacks.length
+    }))
+    vi.stubGlobal('cancelAnimationFrame', vi.fn())
+    const { container, unmount } = render(<SeccionInicio userName="" onSelectSeccion={onSelect} />)
+
+    expect(await screen.findAllByText('Libro A')).toHaveLength(2)
+    expect(screen.getByText('lector 👋')).toBeTruthy()
+    expect(screen.getByText('pagado')).toBeTruthy()
+    expect(screen.getByText('Enviado')).toBeTruthy()
+    expect(screen.getByText('Entregado')).toBeTruthy()
+    expect(screen.getByText('Compra')).toBeTruthy()
+
+    const carouselButtons = container.querySelectorAll('section')[1].querySelectorAll('button')
+    fireEvent.click(carouselButtons[1])
+    fireEvent.click(screen.getByRole('button', { name: 'Ver todos' }))
+    const orderRow = screen.getByText('Enviado').closest('[role="button"]')
+    fireEvent.mouseEnter(orderRow)
+    fireEvent.mouseLeave(orderRow)
+    fireEvent.click(orderRow)
+    fireEvent.keyDown(orderRow, { key: 'Enter' })
+    fireEvent.error(screen.getByAltText('Enviado'))
+
+    const track = container.querySelector('[style*="will-change: transform"]')
+    Object.defineProperty(track, 'scrollWidth', { configurable: true, value: 800 })
+    act(() => callbacks[0](100))
+    act(() => callbacks[1](1100))
+    window.dispatchEvent(new Event('resize'))
+    expect(track.style.transform).toContain('translate3d')
+    fireEvent.click(screen.getAllByRole('button', { name: 'Libro A' })[0])
+    expect(onSelect).toHaveBeenCalledWith('Catálogo')
+
+    localStorage.setItem('darkMode', 'true')
+    window.dispatchEvent(new Event('storage'))
+    expect(container.querySelector('h2')).toBeTruthy()
+    unmount()
+    expect(cancelAnimationFrame).toHaveBeenCalled()
   })
 
   it('guarda una dirección validada y abre el selector de mapa', async () => {
