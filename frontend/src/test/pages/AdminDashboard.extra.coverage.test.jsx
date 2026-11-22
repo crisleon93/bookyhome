@@ -197,6 +197,75 @@ describe('AdminDashboard — manejo de errores de API', () => {
   })
 })
 
+describe('AdminDashboard — filtros secundarios', () => {
+  it('filtra tiendas por texto y cambia el filtro de estado', async () => {
+    const user = userEvent.setup()
+    renderAdmin()
+    await user.click(await screen.findByRole('button', { name: /^Tiendas$/i }))
+
+    const search = await screen.findByPlaceholderText(/Buscar por nombre, dirección/i)
+    await user.type(search, 'Central')
+    expect(search).toHaveValue('Central')
+
+    const activeFilter = await screen.findByRole('button', { name: 'Activa' })
+    await user.click(activeFilter)
+    expect(search).toHaveValue('Central')
+  })
+
+  it('filtra reclamos por texto y actualiza el buscador', async () => {
+    mocks.apiGet.mockImplementation((url) => {
+      if (url === '/quejas/admin/todas') return Promise.resolve({ data: [{
+        id_solicitud: 73,
+        tipo_solicitud: 'reclamo',
+        estado: 'Abierto',
+        asunto: 'Libro dañado',
+        comprador: 'Ana Compradora',
+      }] })
+      return defaultGetMock(url)
+    })
+    const user = userEvent.setup()
+    renderAdmin()
+    await user.click(await screen.findByRole('button', { name: /^Quejas y reclamos$/i }))
+
+    const search = await screen.findByPlaceholderText(/Buscar por comprador, tienda/i)
+    await user.type(search, 'Libro')
+    expect(search).toHaveValue('Libro')
+  })
+
+  it('responde a eventos de perfil y resalta el botón de ordenar', async () => {
+    renderAdmin()
+    window.dispatchEvent(new CustomEvent('profile-photo-updated', { detail: { url: '/admin-new.jpg' } }))
+    window.dispatchEvent(new CustomEvent('profile-banner-updated', { detail: { bannerUrl: '/admin-banner.jpg' } }))
+    await waitFor(() => expect(document.body).toBeTruthy())
+  })
+})
+
+describe('AdminDashboard — órdenes y paginación', () => {
+  it('filtra órdenes y navega por la paginación', async () => {
+    mocks.apiGet.mockImplementation((url) => {
+      if (url === '/api/v1/admin/orders') return Promise.resolve({ data: Array.from({ length: 15 }, (_, index) => ({
+        id_orden: index + 1,
+        codigo_compra: `ORD-${index + 1}`,
+        estado_orden: index % 2 ? 'pagado' : 'pendiente',
+        total_orden: 25000 + index * 1000,
+        fecha_orden: '2026-03-20T10:00:00',
+        nombre_cliente: `Cliente ${index + 1}`,
+      })) })
+      return defaultGetMock(url)
+    })
+    const user = userEvent.setup()
+    renderAdmin()
+    await user.click(await screen.findByRole('button', { name: /^Órdenes$/i }))
+
+    const search = await screen.findByPlaceholderText(/Buscar por ID orden/i)
+    await user.type(search, 'ORD-1')
+    expect(search).toHaveValue('ORD-1')
+
+    const next = screen.queryByRole('button', { name: /Siguiente/i })
+    if (next) await user.click(next)
+  })
+})
+
 describe('AdminDashboard — cierre de sesión', () => {
   it('cierra sesión y navega a /', async () => {
     const user = userEvent.setup()

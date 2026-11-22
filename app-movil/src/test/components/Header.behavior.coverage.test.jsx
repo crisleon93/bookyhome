@@ -18,6 +18,7 @@ vi.mock('react-native', async () => {
     value,
     placeholder,
     accessibilityLabel,
+    onStartShouldSetResponder,
     ...props
   }) {
     if (tag === 'button') {
@@ -39,12 +40,14 @@ vi.mock('react-native', async () => {
       })
     }
     if (tag === 'img') return ReactModule.createElement('img', { alt: 'BookyHome' })
-    return ReactModule.createElement(tag, null, children)
+    return ReactModule.createElement(tag, { onMouseDown: onStartShouldSetResponder }, children)
   }
   return {
     Image: element('img'),
-    Modal: ({ visible, children }) => visible
-      ? ReactModule.createElement('div', { role: 'dialog' }, children)
+    Modal: ({ visible, children, onRequestClose }) => visible
+      ? ReactModule.createElement(ReactModule.Fragment, null,
+        ReactModule.createElement('div', { role: 'dialog' }, children),
+        ReactModule.createElement('button', { type: 'button', onClick: onRequestClose }, 'Dismiss modal'))
       : null,
     StatusBar: () => null,
     StyleSheet: { create: (styles) => styles },
@@ -83,17 +86,21 @@ vi.mock('../../components/SidebarMenu', () => ({
     : null,
 }))
 vi.mock('../../components/BarcodeScanner', () => ({
-  default: ({ visible, onBarcodeDetected }) => visible
-    ? <button onClick={() => onBarcodeDetected('9781234567890')}>Detectar código</button>
+  default: ({ visible, onBarcodeDetected, onClose }) => visible
+    ? <>
+      <button onClick={() => onBarcodeDetected('9781234567890')}>Detectar código</button>
+      <button onClick={onClose}>Cerrar escáner</button>
+    </>
     : null,
 }))
 vi.mock('../../components/FiltrosBusqueda', () => ({
-  default: ({ visible, onApply }) => visible
+  default: ({ visible, onApply, onClose }) => visible
     ? (
       <div>
         <button onClick={() => onApply({ busqueda: '  fantasía ', categoria_id: 7, ordenar_por: 'precio_asc' }, 'libros')}>Aplicar filtros de libros</button>
         <button onClick={() => onApply({ nombre_tienda: 'Librería Sol', correo_vendedor: 'sol@example.test', ordenar_por: 'relevancia' }, 'librerias')}>Aplicar filtros de librerías</button>
         <button onClick={() => onApply({ busqueda: 'ciencia', categoria_nombre: 'Ciencia' }, 'libros')}>Enviar filtros a la pantalla</button>
+        <button onClick={onClose}>Cerrar filtros</button>
       </div>
     )
     : null,
@@ -112,6 +119,53 @@ const withAuth = (ui) => (
 )
 
 describe('Header', () => {
+  it('cubre enlaces públicos, limpieza de búsqueda y filtros de navegación predeterminados', () => {
+    const navigation = { navigate: mocks.navigate }
+    render(<Header navigation={navigation} filtrosActivos={1} />);
+
+    fireEvent.click(screen.getByText('Ingresa'));
+    expect(mocks.navigate).toHaveBeenCalledWith('Login');
+    fireEvent.click(screen.getByText('Crear cuenta'));
+    fireEvent.click(screen.getByText('Soy comprador'));
+    expect(mocks.navigate).toHaveBeenCalledWith('Register');
+
+    const search = screen.getByPlaceholderText('Buscar libros...');
+    fireEvent.change(search, { target: { value: 'novela' } });
+    fireEvent.click(search.parentElement.querySelector('button'));
+    expect(search.value).toBe('');
+
+    fireEvent.click(screen.getByText('Envíos a Colombia'));
+    fireEvent.click(screen.getByText('Cali'));
+    fireEvent.click(screen.getByText('Filtros'));
+    fireEvent.click(screen.getByText('Aplicar filtros de libros'));
+    expect(mocks.navigate).toHaveBeenLastCalledWith('CatalogoPublico', {
+      q: '  fantasía ',
+      categoryId: 7,
+      ordenar_por: 'precio_asc',
+    });
+
+    fireEvent.click(screen.getByText('Filtros'));
+    fireEvent.click(screen.getByText('Aplicar filtros de librerías'));
+    expect(mocks.navigate).toHaveBeenLastCalledWith('CatalogoPublico', {
+      nombre_tienda: 'Librería Sol',
+      correo_vendedor: 'sol@example.test',
+      ordenar_por: undefined,
+    });
+  });
+
+  it('navega desde las acciones del dashboard y cierra sus modales', () => {
+    const { container } = render(<Header variant="dashboard" navigation={mocks} />);
+    fireEvent.click(screen.getByRole('button', { name: 'BookyHome' }));
+    expect(mocks.navigate).toHaveBeenCalledWith('PostLogin');
+    fireEvent.click(container.querySelectorAll('button')[2]);
+    expect(mocks.navigate).toHaveBeenCalledWith('Cart');
+
+    fireEvent.click(screen.getByText('Cámara'));
+    fireEvent.click(screen.getByText('Detectar código'));
+    fireEvent.click(screen.getByText('Filtros'));
+    fireEvent.click(screen.getByText('Enviar filtros a la pantalla'));
+  });
+
   it('busca, abre el registro de librería y navega con ubicación seleccionada', () => {
     const onSearch = vi.fn()
     render(withAuth(<Header navigation={mocks} onSearch={onSearch} />))
@@ -160,5 +214,34 @@ describe('Header', () => {
       { nombre_tienda: 'Librería Sol', correo_vendedor: 'sol@example.test', ordenar_por: 'relevancia' },
       'librerias',
     )
+    fireEvent.click(screen.getByText('Filtros'))
+    fireEvent.click(screen.getByText('Cerrar filtros'))
+    fireEvent.click(screen.getByText('Cámara'))
+    fireEvent.click(screen.getByText('Cerrar escáner'))
+    expect(screen.queryByText('Cerrar escáner')).toBeNull()
+  })
+
+  it('cierra los modales de registro y ubicación por la acción del sistema', () => {
+    render(<Header navigation={mocks} />)
+    fireEvent.click(screen.getByText('Crear cuenta'))
+    fireEvent.click(screen.getByText('Dismiss modal'))
+    expect(screen.queryByText('¿Cómo quieres unirte a BookyHome?')).toBeNull()
+
+    fireEvent.click(screen.getByText('Envíos a Colombia'))
+    fireEvent.click(screen.getByText('Dismiss modal'))
+    expect(screen.queryByText('Elige tu ubicación')).toBeNull()
+  })
+
+  it('cierra los selectores de cuenta y ciudad con sus botones de cerrar', () => {
+    render(<Header navigation={mocks} />)
+    fireEvent.click(screen.getByText('Crear cuenta'))
+    fireEvent.click(screen.getByRole('dialog').querySelectorAll('button')[1])
+    expect(screen.queryByText('¿Cómo quieres unirte a BookyHome?')).toBeNull()
+
+    fireEvent.click(screen.getByText('Envíos a Colombia'))
+    const dialog = screen.getByRole('dialog')
+    dialog.querySelectorAll('div').forEach((element) => fireEvent.mouseDown(element))
+    fireEvent.click(dialog.querySelectorAll('button')[1])
+    expect(screen.queryByText('Elige tu ubicación')).toBeNull()
   })
 })

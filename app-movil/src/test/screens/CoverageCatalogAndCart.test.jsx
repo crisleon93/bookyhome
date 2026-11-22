@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import React from 'react';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import Cart from '../../screens/Cart';
 import Catalogo from '../../screens/Catalogo';
@@ -87,7 +87,7 @@ vi.mock('react-native', async () => {
         'data-testid': 'list-scroll',
         onClick: () => onScroll({
           nativeEvent: {
-            contentOffset: { y: 0 },
+            contentOffset: { y: 400 },
             layoutMeasurement: { height: 600 },
             contentSize: { height: 900 },
           },
@@ -173,6 +173,11 @@ vi.mock('../../components/Header', () => ({
         disponible: false,
         ordenar_por: 'precio_asc',
       }, 'librerias')}>Aplicar filtros del encabezado</button>
+      <button onClick={() => onFilterApply?.({
+        busqueda: 'ciencia',
+        categoria_id: 4,
+        categoria_nombre: 'Ciencia',
+      }, 'libros')}>Aplicar filtros de libros</button>
       <button onClick={() => onBarcodeScanned?.('9780306406157')}>Buscar ISBN</button>
     </div>
   ),
@@ -359,6 +364,51 @@ describe('Catalogo screen', () => {
     })));
   });
 
+  it('abre y aplica los filtros de catálogo desde el botón de filtros', async () => {
+    renderCatalogo();
+    await screen.findByText('Libro móvil');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir filtros' }));
+    fireEvent.change(screen.getByPlaceholderText('Título, autor...'), {
+      target: { value: 'Ciencia' },
+    });
+    fireEvent.change(screen.getByPlaceholderText('Ej: Librería XYZ'), {
+      target: { value: 'Librería Centro' },
+    });
+    fireEvent.change(screen.getByPlaceholderText('Mín'), { target: { value: '12000' } });
+    fireEvent.change(screen.getByPlaceholderText('Máx'), { target: { value: '45000' } });
+    fireEvent.click(screen.getByText('Todas las categorías'));
+    fireEvent.click(within(screen.getByTestId('modal')).getByText(/Ficción/));
+    fireEvent.click(screen.getByText('Relevancia'));
+    fireEvent.click(within(screen.getByTestId('modal')).getByText('Precio: menor a mayor'));
+    fireEvent.click(screen.getByText('4 ★'));
+    fireEvent.click(screen.getByText('SOLO LIBROS EN STOCK'));
+    fireEvent.click(screen.getByText('✓ Aplicar filtros'));
+
+    await waitFor(() => expect(mocks.getBusquedaAvanzada).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        q: 'Ciencia',
+        nombre_tienda: 'Librería Centro',
+        categoria_id: 4,
+        precio_min: 12000,
+        precio_max: 45000,
+        ordenar_por: 'precio_asc',
+        calificacion_min: 4,
+      }),
+    ));
+    fireEvent.click(screen.getByRole('button', { name: /Filtros/ }))
+    fireEvent.click(screen.getByText('Limpiar filtros'))
+    await waitFor(() => expect(mocks.getBusquedaAvanzada).toHaveBeenLastCalledWith(
+      expect.objectContaining({ ordenar_por: 'relevancia', pagina: 1 }),
+    ))
+
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir filtros' }))
+    fireEvent.click(screen.getByText('Todas las categorías'))
+    fireEvent.click(within(screen.getByTestId('modal')).getByText('Todas las categorías'))
+    fireEvent.click(screen.getByText('Relevancia'))
+    fireEvent.click(within(screen.getByTestId('modal')).getByText('Cancelar'))
+  });
+
   it('muestra la paginación al medir la lista y carga la página siguiente', async () => {
     renderCatalogo();
     await screen.findByText('Libro móvil');
@@ -366,11 +416,35 @@ describe('Catalogo screen', () => {
 
     fireEvent.click(screen.getByTestId('list-layout'));
     expect(await screen.findByText('Pág. 1 / 2')).toBeTruthy();
+    fireEvent.click(screen.getByTestId('list-scroll'));
     fireEvent.click(screen.getByText('Siguiente →'));
 
     await waitFor(() => expect(mocks.getBusquedaAvanzada).toHaveBeenCalledWith(
       expect.objectContaining({ pagina: 2 }),
     ));
+    fireEvent.click(screen.getByTestId('list-scroll'));
+    fireEvent.click(screen.getByText('← Anterior'))
+    await waitFor(() => expect(mocks.getBusquedaAvanzada).toHaveBeenLastCalledWith(
+      expect.objectContaining({ pagina: 1 }),
+    ))
+  });
+
+  it('recupera un catálogo después de fallos de carga y muestra errores de favoritos', async () => {
+    const log = vi.spyOn(console, 'log').mockImplementation(() => {});
+    mocks.getBusquedaAvanzada
+      .mockRejectedValueOnce(new Error('offline'))
+      .mockResolvedValue({ data: { libros: [book], total_paginas: 1, total: 1 } });
+    mocks.getFavoritos.mockRejectedValueOnce(new Error('favorites offline'));
+    mocks.addFavorito.mockRejectedValueOnce({ response: { data: { detail: 'No autorizado' } } });
+    renderCatalogo();
+    await screen.findByText('No se encontraron libros');
+    expect(log).toHaveBeenCalledWith('Error cargando catálogo', 'offline');
+
+    fireEvent.click(screen.getByText('Buscar desde encabezado'));
+    expect(await screen.findByText('Libro móvil')).toBeTruthy();
+    fireEvent.click(screen.getByLabelText('Agregar a favoritos'));
+    await waitFor(() => expect(mocks.alert).toHaveBeenCalledWith('Favoritos', 'No autorizado'));
+    log.mockRestore();
   });
 });
 
@@ -432,5 +506,58 @@ describe('CatalogoPublico screen', () => {
         pagina: 1,
       }),
     }));
+  });
+
+  it('limpia filtros recibidos por encabezado y recupera las portadas alternativas', async () => {
+    const isbnBook = {
+      ...book,
+      imagen_url: '',
+      imagen_principal: '',
+      imagen: '',
+      isbn: '9780306406157',
+      nombre_categoria: 'Ciencia',
+    };
+    mocks.apiGet.mockImplementation(async (url) => url === '/catalogo/filtros-disponibles'
+      ? { data: { precio_max: 90000 } }
+      : { data: { libros: [isbnBook], total_paginas: 1, total: 1 } });
+    const { container } = render(<CatalogoPublico navigation={navigation} route={{ params: {} }} />);
+    await screen.findByText('Libro móvil');
+
+    const cover = container.querySelector('img');
+    expect(cover.getAttribute('src')).toContain('ISBN9780306406157');
+    fireEvent.error(cover);
+    expect(container.querySelector('img').getAttribute('src')).toContain('photo-1462331940025-496dfbfc7564');
+
+    fireEvent.click(screen.getByText('Aplicar filtros de libros'));
+    await waitFor(() => expect(mocks.apiGet).toHaveBeenLastCalledWith('/catalogo/busqueda-avanzada', {
+      params: expect.objectContaining({ q: 'ciencia', categoria_id: 4, pagina: 1 }),
+    }));
+    fireEvent.click(screen.getByText('Limpiar'));
+    await waitFor(() => expect(mocks.apiGet).toHaveBeenLastCalledWith('/catalogo/busqueda-avanzada', {
+      params: expect.objectContaining({ pagina: 1, limite: 24 }),
+    }));
+  });
+
+  it('limpia los resultados después de un error y recupera la búsqueda por texto', async () => {
+    const warning = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    let failedSearch = false;
+    mocks.apiGet.mockImplementation(async (url) => {
+      if (url === '/catalogo/filtros-disponibles') return { data: { precio_max: 90000 } };
+      if (!failedSearch) {
+        failedSearch = true;
+        throw new Error('network unavailable');
+      }
+      return { data: { libros: [book], total_paginas: 1, total: 1 } };
+    });
+    render(<CatalogoPublico navigation={navigation} route={{ params: { categoria: 'Ficción', q: 'inicial' } }} />);
+
+    expect(await screen.findByText('No se encontraron libros')).toBeTruthy();
+    expect(warning).toHaveBeenCalledWith('[CatalogoPublico]', 'network unavailable');
+    fireEvent.click(screen.getByText('Buscar desde encabezado'));
+    expect(await screen.findByText('Libro móvil')).toBeTruthy();
+    expect(mocks.apiGet).toHaveBeenLastCalledWith('/catalogo/busqueda-avanzada', {
+      params: expect.objectContaining({ q: 'búsqueda de prueba', pagina: 1 }),
+    });
+    warning.mockRestore();
   });
 });

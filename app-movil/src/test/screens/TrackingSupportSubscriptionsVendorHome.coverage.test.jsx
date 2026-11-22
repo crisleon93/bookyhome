@@ -3,6 +3,7 @@
 import React from 'react'
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import Seguimiento from '../../screens/Seguimiento'
 import SoporteTecnico from '../../screens/SoporteTecnico'
 import SuscripcionesVendedor from '../../screens/SuscripcionesVendedor'
@@ -307,6 +308,58 @@ describe('seguimiento, soporte, suscripciones y panel de vendedor móvil', () =>
     expect(await screen.findByText('Pedido #1')).toBeTruthy()
   })
 
+  it('recupera seguimientos, pagina pedidos y muestra errores de acciones y rastreo', async () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    mocks.getOrdenes.mockRejectedValueOnce(new Error('offline'));
+    const waitingOrders = Array.from({ length: 10 }, (_, index) => ({
+      id_orden: index + 10,
+      estado: 'pagado',
+      fecha: `2026-11-${String(index + 1).padStart(2, '0')}`,
+    }));
+    mocks.getOrdenes.mockResolvedValue({ data: [
+      ...waitingOrders,
+      { id_orden: 30, estado: 'enviado', envio: { numero_guia: 'G-30', url_rastreo: 'https://carrier.example.test' } },
+    ] });
+    render(<Seguimiento />);
+
+    expect(await screen.findByText('No se pudieron cargar tus seguimientos. Inténtalo nuevamente.')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Reintentar carga' }));
+    expect(await screen.findByText('Esperando envío (10)')).toBeTruthy();
+    fireEvent.click(screen.getByText('Actualizar'));
+    await waitFor(() => expect(mocks.getOrdenes).toHaveBeenCalledTimes(3));
+    expect(screen.getByText('Pedido #19')).toBeTruthy();
+    fireEvent.click(screen.getByText('Siguiente'));
+    expect(await screen.findByText('Pedido #11')).toBeTruthy();
+    fireEvent.click(screen.getByText('Anterior'));
+    expect(await screen.findByText('Pedido #19')).toBeTruthy();
+
+    fireEvent.click(screen.getByText('En camino (1)'));
+    fireEvent.click(screen.getByText('Información del envío'));
+    const detail = screen.getByRole('dialog');
+    mocks.linkingOpenURL.mockRejectedValueOnce(new Error('blocked'));
+    fireEvent.click(within(detail).getByText('Ver rastreo'));
+    expect(await screen.findByText('No se pudo abrir el sitio de rastreo.')).toBeTruthy();
+    fireEvent.click(within(detail).getByRole('button', { name: 'Cerrar' }));
+
+    mocks.confirmarEntrega.mockRejectedValueOnce({
+      response: { data: { detail: 'No se pudo confirmar ahora' } },
+    });
+    fireEvent.click(screen.getByText('Confirmar que recibí el pedido'));
+    fireEvent.click(screen.getByText('Sí, confirmar entrega'));
+    expect(await screen.findByText('No se pudo confirmar ahora')).toBeTruthy();
+
+    fireEvent.click(within(screen.getByRole('dialog')).getByText('Cancelar'));
+    fireEvent.click(screen.getByText('Cancelar pedido'));
+    fireEvent.change(screen.getByPlaceholderText('Motivo de cancelación'), {
+      target: { value: 'Cambio de planes' },
+    });
+    mocks.cancelOrder.mockRejectedValueOnce({ response: { data: { detail: 'No se puede cancelar' } } });
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar cancelación' }));
+    await waitFor(() => expect(mocks.cancelOrder).toHaveBeenCalledOnce());
+    expect(await screen.findByText('No se puede cancelar')).toBeTruthy();
+    error.mockRestore();
+  });
+
   it('valida el ticket antes de crearlo y filtra el historial por estado', async () => {
     render(<SoporteTecnico />)
     await waitFor(() => expect(mocks.getSoporte).toHaveBeenCalledOnce())
@@ -382,5 +435,56 @@ describe('seguimiento, soporte, suscripciones y panel de vendedor móvil', () =>
     fireEvent.click(screen.getByText('Ver pedidos →'))
     expect(mocks.navigate).toHaveBeenCalledWith('PedidosVendedor')
     expect(mocks.recargarSalas).toHaveBeenCalled()
+    fireEvent.click(screen.getByText('Ver historial detallado →'))
+    expect(mocks.navigate).toHaveBeenCalledWith('VentasVendedor')
+    fireEvent.click(screen.getByText('Ver catálogo →'))
+    expect(mocks.navigate).toHaveBeenCalledWith('Libreria')
+    fireEvent.click(screen.getByRole('button', { name: 'Mes' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Barras' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Ver período anterior' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Ver período siguiente' }))
+  })
+
+  it('valida el umbral de inventario y muestra estados de error recuperables', async () => {
+    const warning = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    AsyncStorage.getItem.mockRejectedValueOnce(new Error('storage offline'))
+    mocks.getMisLibros.mockRejectedValueOnce(new Error('books offline'))
+    mocks.getStatsVendedor.mockRejectedValueOnce(new Error('stats offline'))
+    mocks.getTopVendidos.mockRejectedValueOnce(new Error('top offline'))
+    mocks.getAlertasStock.mockRejectedValueOnce(new Error('stock offline'));
+    mocks.getMisVentas.mockRejectedValueOnce(new Error('sales offline'))
+    mocks.getNotifications.mockRejectedValueOnce(new Error('notifications offline'))
+    mocks.getLibreria.mockRejectedValueOnce(new Error('store offline'))
+
+    render(
+      <AuthContext.Provider value={authValue}>
+        <VendedorHome navigation={{ navigate: mocks.navigate }} />
+      </AuthContext.Provider>,
+    )
+    expect(await screen.findByText('No tienes libros publicados')).toBeTruthy()
+    expect(warning).toHaveBeenCalledWith('[VENDEDOR_HOME] No se pudo leer el umbral:', 'storage offline')
+    expect(screen.getByText('No se pudo consultar el inventario')).toBeTruthy()
+
+    fireEvent.click(screen.getByText(/Umbral:/))
+    fireEvent.change(screen.getByPlaceholderText('3'), { target: { value: '101' } })
+    fireEvent.click(screen.getByText('Guardar'))
+    expect(mocks.alert).toHaveBeenCalledWith(
+      'Umbral no válido', 'Ingresa un número entero entre 0 y 100.',
+    )
+
+    mocks.getAlertasStock.mockRejectedValueOnce({
+      response: { data: { detail: 'No se pudo actualizar el inventario' } },
+    })
+    fireEvent.change(screen.getByPlaceholderText('3'), { target: { value: '4' } })
+    fireEvent.click(screen.getByText('Guardar'))
+    await waitFor(() => expect(mocks.alert).toHaveBeenCalledWith(
+      'No se pudo actualizar el umbral', 'No se pudo actualizar el inventario',
+    ))
+    fireEvent.click(screen.getByText('Cancelar'))
+
+    fireEvent.click(screen.getByText('Actualizar'))
+    await waitFor(() => expect(mocks.getMisLibros).toHaveBeenCalledTimes(2))
+    expect(screen.getByText('1 libro(s) con stock bajo')).toBeTruthy()
+    warning.mockRestore()
   })
 })

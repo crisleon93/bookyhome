@@ -296,6 +296,7 @@ describe('barras laterales y tema', () => {
       ['Cupones', 'CuponesVendedor'],
       ['Ventas', 'VentasVendedor'],
       ['Pedidos', 'PedidosVendedor'],
+      ['Envíos', 'EnviosVendedor'],
       ['Calificaciones', 'CalificacionesVendedor'],
       ['Quejas y reclamos', 'QuejasReclamos'],
       ['Notificaciones', 'Notifications'],
@@ -309,6 +310,60 @@ describe('barras laterales y tema', () => {
       expect(mocks.navigate).toHaveBeenLastCalledWith(route, undefined)
     }
     expect(mocks.getConfigLibreria).toHaveBeenCalledOnce()
+
+    fireEvent.click(screen.getByText('Cerrar sesión'))
+    expect(mocks.onClose).toHaveBeenCalled()
+    expect(mocks.onSignOut).toHaveBeenCalledOnce()
+  })
+
+  it('muestra colores de banner alternativos y omite datos de librería para compradores', async () => {
+    mocks.getConfigLibreria.mockResolvedValueOnce({ data: {} })
+    mocks.getProfile.mockResolvedValueOnce({
+      data: { banner_color: 'linear-gradient(90deg, #123456, #ABCDEF)' },
+    })
+    const { container, rerender } = render(
+      <SidebarVendedor
+        visible
+        user={{ rol: 'vendedor', id_tienda: 8, nombre: 'Vendedora' }}
+        navigation={{ navigate: mocks.navigate }}
+        onClose={mocks.onClose}
+      />,
+    )
+    expect(await screen.findByText('Vendedora')).toBeTruthy()
+    await waitFor(() => expect(mocks.resolveImageUrl).toHaveBeenCalled())
+    expect(container.textContent).toContain('Inicio')
+    expect(screen.getByText('V')).toBeTruthy()
+
+    rerender(
+      <SidebarVendedor
+        visible
+        user={{ rol: 'comprador', nombre: 'Ana' }}
+        navigation={{ navigate: mocks.navigate }}
+        onClose={mocks.onClose}
+      />,
+    )
+    expect(screen.getByText('Ana')).toBeTruthy()
+    expect(mocks.getConfigLibreria).toHaveBeenCalledOnce()
+    expect(mocks.getProfile).toHaveBeenCalledOnce()
+  })
+
+  it('mantiene el menú renderizable cuando falla la carga del banner', async () => {
+    const warning = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    mocks.getProfile.mockRejectedValueOnce(new Error('offline'))
+    render(
+      <SidebarVendedor
+        visible
+        user={{ rol: 'vendedor', id_tienda: 8 }}
+        navigation={{ navigate: mocks.navigate }}
+        onClose={mocks.onClose}
+      />,
+    )
+    expect(await screen.findByText('Mi Tienda')).toBeTruthy()
+    await waitFor(() => expect(warning).toHaveBeenCalledWith(
+      expect.stringContaining('No se pudo cargar el banner'),
+      expect.any(Error),
+    ))
+    warning.mockRestore()
   })
 
   it('persiste el tema oscuro, actualiza la paleta y transforma estilos', async () => {

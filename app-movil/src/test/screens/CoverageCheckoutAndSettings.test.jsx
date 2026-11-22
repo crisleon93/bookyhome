@@ -3,6 +3,7 @@
 import React from 'react';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { Linking } from 'react-native';
 import Checkout from '../../screens/Checkout';
 import ConfiguracionComprador from '../../screens/ConfiguracionComprador';
 import ConfiguracionTienda from '../../screens/ConfiguracionTienda';
@@ -594,6 +595,46 @@ describe('Checkout and buyer/store settings coverage', () => {
     expect(await screen.findByText(/Ingresa un correo electrónico registrado en PSE/)).toBeTruthy()
     expect(screen.getByText('1. Identificación PSE')).toBeTruthy()
   })
+
+  it('paga con billetera y usa el enlace alternativo cuando no abre la app', async () => {
+    renderCheckout();
+    await screen.findByText('Entrega y Pago');
+    fireEvent.click(screen.getByText('Nequi / Daviplata'));
+    Linking.openURL
+      .mockRejectedValueOnce(new Error('app unavailable'))
+      .mockResolvedValueOnce(undefined);
+
+    fireEvent.click(screen.getByText('Pagar con Nequi'));
+
+    expect(Linking.openURL).toHaveBeenNthCalledWith(1, expect.stringMatching(/^nequi:\/\/pagar/));
+    await waitFor(() => expect(Linking.openURL).toHaveBeenNthCalledWith(2, 'https://www.nequi.com.co'));
+    await waitFor(() => expect(mocks.processPayment).toHaveBeenCalledWith(
+      expect.objectContaining({ payment_method: 'Nequi', id_direccion: 1 }),
+    ), { timeout: 3000 });
+  });
+
+  it('maneja errores de carga y de reserva en tienda sin perder el contexto', async () => {
+    mocks.getOrderDetails.mockRejectedValueOnce(new Error('order offline'));
+    renderCheckout();
+    await waitFor(() => {
+      expect(mocks.alert).toHaveBeenCalledWith('Error', 'No pudimos obtener la información de tu compra.');
+      expect(navigation.goBack).toHaveBeenCalled();
+    });
+    expect(await screen.findByText('No pudimos cargar los detalles de tu compra.')).toBeTruthy();
+
+    cleanup();
+    mocks.getOrderDetails.mockResolvedValue({ data: initialOrder });
+    mocks.reservarRetiroEnTienda.mockResolvedValueOnce({
+      data: { ok: false, error: 'La tienda no puede reservar el pedido' },
+    });
+    renderCheckout();
+    await screen.findByText('Entrega y Pago');
+    fireEvent.click(screen.getByRole('button', { name: /Retiro en Tienda/ }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Confirmar Reserva' }));
+    await waitFor(() => expect(mocks.alert).toHaveBeenCalledWith(
+      'Reserva', 'La tienda no puede reservar el pedido',
+    ));
+  });
 
   it('guarda las preferencias de notificación y valida que las contraseñas coincidan', async () => {
     renderBuyerSettings();

@@ -411,6 +411,14 @@ export default function Catalogo({ navigation, route }) {
         <View style={styles.catalogTitleRow}>
           <IconBooks size={24} color={PRIMARY} />
           <Text style={styles.catalogTitle}>Catálogo de libros</Text>
+          <TouchableOpacity
+            style={styles.filterButton}
+            onPress={() => setShowFilterPanel(true)}
+            accessibilityRole="button"
+            accessibilityLabel={filtrosActivos ? `Filtros, ${filtrosActivos} activos` : 'Abrir filtros'}
+          >
+            <Text style={styles.filterButtonText}>{filtrosActivos ? `Filtros (${filtrosActivos})` : 'Filtros'}</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Panel heredado: los filtros se abren desde el Header compartido. */}

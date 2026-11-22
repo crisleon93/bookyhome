@@ -34,9 +34,18 @@ vi.mock('react-native', async () => {
       }, children);
     }
     return tag === 'div' && props.refreshControl
-      ? ReactModule.createElement(tag, { 'data-testid': props.testID }, children, props.refreshControl)
-      : ReactModule.createElement(tag, { 'data-testid': props.testID }, children);
+      ? ReactModule.createElement(tag, { 'data-testid': props.testID, onClick: onPress }, children, props.refreshControl)
+      : ReactModule.createElement(tag, { 'data-testid': props.testID, onClick: onPress }, children);
   };
+  const FooterView = ReactModule.forwardRef(({ children, onLayout, testID }, ref) => {
+    ReactModule.useEffect(() => {
+      if (ref && typeof ref === 'object') {
+        ref.current = { measureInWindow: (callback) => callback(24) };
+      }
+      onLayout?.({ nativeEvent: { layout: { x: 24 } } });
+    }, [onLayout, ref]);
+    return ReactModule.createElement('div', { 'data-testid': testID }, children);
+  });
   return {
     ActivityIndicator: element('span'),
     RefreshControl: ({ onRefresh }) => ReactModule.createElement('button', {
@@ -47,10 +56,12 @@ vi.mock('react-native', async () => {
     StyleSheet: { create: (styles) => styles, flatten: (style) => style },
     Text: element('span'),
     TouchableOpacity: element('button'),
-    View: element('div'),
+    View: FooterView,
     Pressable: element('div'),
-    Modal: ({ visible, children }) => visible
-      ? ReactModule.createElement('div', { 'data-testid': 'modal' }, children)
+    Modal: ({ visible, children, onRequestClose }) => visible
+      ? ReactModule.createElement(ReactModule.Fragment, null,
+        ReactModule.createElement('div', { 'data-testid': 'modal', onClick: onRequestClose }, children),
+        ReactModule.createElement('button', { type: 'button', onClick: onRequestClose }, 'Cerrar modal'))
       : null,
     useWindowDimensions: () => ({ width: 390, height: 844 }),
   };
@@ -231,5 +242,75 @@ describe('FinanzasAdmin and mobile Footer', () => {
     renderFooter({ user: { rol: 'vendedor' }, token: 'seller-token' });
     fireEvent.click(screen.getByRole('button', { name: 'Mis compras' }));
     expect(screen.getByText('El historial de compras está disponible para cuentas de comprador.')).toBeTruthy();
+  });
+
+  it('renderiza los artículos legales y permite cerrar los diálogos por sus acciones', () => {
+    renderFooter();
+    const infoLinks = [
+      'Acerca de nosotros', 'Contacto', 'Términos y condiciones', 'Política de privacidad',
+      'Cómo comprar', 'Envíos y entregas', 'Devoluciones', 'Vender en BookyHome',
+      'Planes y tarifas', 'Centro de vendedores', 'FAQ vendedores',
+    ];
+
+    for (const link of infoLinks) {
+      fireEvent.click(screen.getAllByText(link)[0]);
+      expect(screen.getByTestId('modal')).toBeTruthy();
+      fireEvent.click(screen.getByRole('button', { name: 'Cerrar' }));
+      expect(screen.queryByTestId('modal')).toBeNull();
+    }
+
+    fireEvent.click(screen.getByRole('button', { name: 'Iniciar sesión / Registro' }));
+    fireEvent.click(screen.getByText('Ya tengo cuenta'));
+    expect(mocks.navigate.navigate).toHaveBeenCalledWith('Login');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Iniciar sesión / Registro' }));
+    fireEvent.click(screen.getByText('Soy nuevo'));
+    fireEvent.click(screen.getByRole('button', { name: 'Atrás' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Cerrar' }));
+    expect(screen.queryByTestId('modal')).toBeNull();
+  });
+
+  it('muestra información cuando una ruta no está disponible en navegación', () => {
+    mocks.navigate.getState.mockReturnValueOnce({ routeNames: [] });
+    renderFooter({ user: { rol: 'usuario' }, token: 'buyer-token' });
+    fireEvent.click(screen.getByRole('button', { name: 'Explorar catálogo' }));
+    expect(screen.getByText('Esta opción no está disponible en esta sección de la aplicación.')).toBeTruthy();
+  });
+
+  it('cubre enlaces de cuenta para compradores y restricciones de vendedores', () => {
+    renderFooter({ user: { rol: 'comprador' }, token: 'buyer-token' });
+    fireEvent.click(screen.getByRole('button', { name: 'Iniciar sesión / Registro' }));
+    expect(mocks.navigate.navigate).toHaveBeenCalledWith('Profile');
+
+    cleanup();
+    renderFooter({ user: { rol: 'vendedor' }, token: 'seller-token' });
+    fireEvent.click(screen.getByRole('button', { name: 'Lista de deseos' }));
+    expect(screen.getByText('La lista de deseos está disponible para cuentas de comprador.')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Ayuda y Soporte' }));
+    expect(screen.getByText('Para recibir ayuda, escribe a soporte@bookyhome.com.')).toBeTruthy();
+  });
+
+  it('cierra los modales mediante su cierre nativo y registra el alta de comprador', () => {
+    renderFooter();
+    fireEvent.click(screen.getByRole('button', { name: 'Acerca de nosotros' }));
+    fireEvent.click(screen.getAllByText('Acerca de nosotros')[1]);
+    expect(screen.getByTestId('modal')).toBeTruthy();
+    fireEvent.click(screen.getByText('Cerrar modal'));
+    expect(screen.queryByTestId('modal')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Acerca de nosotros' }));
+    fireEvent.click(screen.getByTestId('modal').firstChild);
+    expect(screen.queryByTestId('modal')).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Iniciar sesión / Registro' }));
+    fireEvent.click(screen.getByText('Cerrar modal'));
+    expect(screen.queryByTestId('modal')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Iniciar sesión / Registro' }));
+    fireEvent.click(screen.getByTestId('modal').firstChild);
+    expect(screen.queryByTestId('modal')).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Iniciar sesión / Registro' }));
+    fireEvent.click(screen.getByText('Soy nuevo'));
+    fireEvent.click(screen.getByRole('button', { name: /Soy comprador/ }));
+    expect(mocks.navigate.navigate).toHaveBeenCalledWith('Register');
   });
 });

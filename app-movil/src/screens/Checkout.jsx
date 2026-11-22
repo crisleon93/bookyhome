@@ -498,6 +498,17 @@ export default function Checkout({ route, navigation }) {
     );
   }
 
+  if (!order) {
+    return (
+      <View style={styles.center}>
+        <Text style={styles.loadingText}>No pudimos cargar los detalles de tu compra.</Text>
+        <TouchableOpacity style={styles.backToCart} onPress={() => navigation.goBack()}>
+          <Text style={styles.backToCartText}>Volver</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
   if (!paymentSuccess && isPickup && order?.estado_retiro && !pickupPaymentMode) {
     const pickupEnabled = order.estado_retiro === 'habilitado_pago';
     const pickupArrived = order.estado_retiro === 'en_tienda';

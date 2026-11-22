@@ -244,6 +244,68 @@ describe('seguimiento, suscripciones y soporte web', () => {
     expect(screen.queryByText('La pantalla de pago no carga.')).toBeNull()
   })
 
+  it('filtra, pagina y expande tickets, y conserva el formulario ante errores', async () => {
+    const tickets = [
+      ...supportTickets,
+      ...Array.from({ length: 5 }, (_, index) => ({
+        id_solicitud: 110 + index,
+        asunto: `Ticket ${index + 3}`,
+        descripcion: `Descripción ${index + 3}`,
+        categoria: 'Otro problema técnico',
+        estado: index === 4 ? 'Rechazado' : 'Abierto',
+        fecha_creacion: index === 0 ? null : '2026-11-11T10:00:00',
+      })),
+    ]
+    getSoporte.mockResolvedValue({ data: tickets })
+    crearSoporte.mockRejectedValueOnce({ response: { data: { detail: 'No se pudo guardar' } } })
+    const { container } = render(<Soporte />)
+
+    fireEvent.focus(screen.getByLabelText('Asunto'))
+    fireEvent.blur(screen.getByLabelText('Asunto'))
+    const category = screen.getByRole('button', { name: 'Otro problema técnico' })
+    fireEvent.mouseEnter(category)
+    fireEvent.mouseLeave(category)
+    fireEvent.click(category)
+    fireEvent.focus(screen.getByLabelText('Descripción'))
+    fireEvent.blur(screen.getByLabelText('Descripción'))
+    fireEvent.change(screen.getByLabelText('Asunto'), { target: { value: 'Consulta' } })
+    fireEvent.change(screen.getByLabelText('Descripción'), { target: { value: 'Hay un problema' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Enviar' }))
+    expect(await screen.findByText('No se pudo guardar')).toBeTruthy()
+    expect(screen.getByLabelText('Asunto')).toHaveValue('Consulta')
+
+    fireEvent.click(screen.getByText('Mis tickets'))
+    expect(await screen.findByText('Error al pagar')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Nuevo ticket' }))
+    fireEvent.click(screen.getByText('Mis tickets'))
+    fireEvent.click(screen.getByRole('button', { name: /Rechazado/ }))
+    expect(screen.getByText('Ticket 7')).toBeTruthy()
+    expect(screen.queryByText('Error al pagar')).toBeNull()
+    const openFilter = screen.getByRole('button', { name: /Abierto/ })
+    fireEvent.mouseEnter(openFilter)
+    fireEvent.mouseLeave(openFilter)
+    fireEvent.click(openFilter)
+    fireEvent.click(screen.getByRole('button', { name: /Todos/ }))
+    const next = screen.getByRole('button', { name: '›' })
+    fireEvent.click(next)
+    expect(screen.getByText('Ticket 6')).toBeTruthy()
+    const previous = screen.getByRole('button', { name: '‹' })
+    fireEvent.click(previous)
+    fireEvent.click(screen.getByRole('button', { name: '2', exact: true }))
+    fireEvent.click(next)
+    const ticketHeader = screen.getByRole('button', { name: /Ticket 6/ })
+    fireEvent.keyDown(ticketHeader, { key: 'Enter' })
+    expect(ticketHeader).toHaveAttribute('aria-expanded', 'false')
+    fireEvent.click(ticketHeader)
+    expect(ticketHeader).toHaveAttribute('aria-expanded', 'true')
+    fireEvent.mouseEnter(ticketHeader.closest('article'))
+    fireEvent.mouseLeave(ticketHeader.closest('article'))
+
+    localStorage.setItem('darkMode', 'true')
+    window.dispatchEvent(new Event('darkModeChange'))
+    expect(container.querySelector('.pl-card')).toBeTruthy()
+  })
+
   it('mantiene los enlaces del menú comprador con sus etiquetas', () => {
     expect(SIDE_LINKS.map(({ name }) => name)).toEqual([
       'Inicio',

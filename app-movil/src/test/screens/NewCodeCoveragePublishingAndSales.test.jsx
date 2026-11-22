@@ -3,6 +3,7 @@
 import React from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { Linking } from 'react-native'
 import PublicarLibro from '../../screens/PublicarLibro'
 import Checkout from '../../screens/Checkout'
 import Libreria from '../../screens/Libreria'
@@ -14,6 +15,7 @@ import { CartContext } from '../../context/CartContext'
 
 const mocks = vi.hoisted(() => ({
   alert: vi.fn(),
+  aplicarCupon: vi.fn(),
   navigate: vi.fn(),
   goBack: vi.fn(),
   signOut: vi.fn(),
@@ -118,7 +120,11 @@ vi.mock('react-native', async () => {
 vi.mock('react-native-safe-area-context', () => ({ SafeAreaView: ({ children }) => <div>{children}</div> }))
 vi.mock('react-native-svg', () => {
   const Shape = () => null
-  return { default: Shape, Circle: Shape, Defs: Shape, Line: Shape, Path: Shape, Rect: Shape, Stop: Shape, Text: Shape, LinearGradient: Shape }
+  const Svg = ({ children }) => <svg>{children}</svg>
+  const InteractiveShape = ({ onPress }) => onPress
+    ? <button type="button" aria-label="Punto gráfico" onClick={onPress} />
+    : null
+  return { default: Svg, Circle: InteractiveShape, Defs: Shape, Line: Shape, Path: Shape, Rect: InteractiveShape, Stop: Shape, Text: Shape, LinearGradient: Shape }
 })
 vi.mock('expo-linear-gradient', () => ({ LinearGradient: ({ children }) => <div>{children}</div> }))
 vi.mock('@react-native-async-storage/async-storage', () => ({
@@ -150,7 +156,11 @@ vi.mock('../../context/ThemeContext', () => ({
   useThemedStyles: (styles) => styles,
 }))
 vi.mock('../../components/Footer', () => ({ default: () => null }))
-vi.mock('../../components/SidebarVendedor', () => ({ default: () => null }))
+vi.mock('../../components/SidebarVendedor', () => ({
+  default: ({ visible, onClose }) => visible
+    ? <button type="button" onClick={onClose}>Cerrar menú vendedor</button>
+    : null,
+}))
 vi.mock('../../components/BarcodeScanner', () => ({ default: () => null }))
 vi.mock('../../components/Icons', () => {
   const Icon = () => null
@@ -170,6 +180,7 @@ vi.mock('../../components/Icons', () => {
   }
 })
 vi.mock('../../services/api', () => ({
+  aplicarCupon: mocks.aplicarCupon,
   getCategorias: mocks.getCategorias,
   publicarLibro: mocks.publicarLibro,
   updateLibro: mocks.updateLibro,
@@ -252,6 +263,7 @@ beforeEach(() => {
   mocks.actualizarCostoEnvio.mockResolvedValue({ data: { ok: true, costo_envio: 5000, total: 35000 } })
   mocks.getDirecciones.mockResolvedValue({ data: [{ id_direccion: 4, alias_direccion: 'Casa', direccion: 'Calle 1', ciudad: 'Bogotá', es_principal: true }] })
   mocks.validarCupon.mockResolvedValue({ data: { valido: true, descuento: 5000, mensaje: 'Cupón aplicado.' } })
+  mocks.aplicarCupon.mockResolvedValue({})
   mocks.processPayment.mockResolvedValue({ data: { ok: true } })
   mocks.sendConfirmationEmail.mockResolvedValue({})
   mocks.getMisLibros.mockResolvedValue({ data: [book] })
@@ -382,12 +394,29 @@ describe('mobile publishing, checkout and seller screens', () => {
     fireEvent.change(screen.getByPlaceholderText('Código de cupón'), { target: { value: 'SAVE' } })
     fireEvent.click(screen.getByText('Aplicar'))
     expect(await screen.findByText('Cupón aplicado.')).toBeTruthy()
+    mocks.validarCupon.mockResolvedValueOnce({
+      data: { valido: false, mensaje: 'No aplica en esta orden.' },
+    })
+    fireEvent.change(screen.getByPlaceholderText('Código de cupón'), { target: { value: 'INVALID' } })
+    fireEvent.click(screen.getByText('Aplicar'))
+    expect(await screen.findByText('No aplica en esta orden.')).toBeTruthy()
+    mocks.validarCupon.mockRejectedValueOnce({
+      response: { data: { detail: 'Cupón vencido' } },
+    })
+    fireEvent.change(screen.getByPlaceholderText('Código de cupón'), { target: { value: 'EXPIRED' } })
+    fireEvent.click(screen.getByText('Aplicar'))
+    expect(await screen.findByText('Cupón vencido')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Seleccionar dirección de entrega' }))
     fireEvent.click(screen.getAllByText('Casa').pop())
     fireEvent.click(screen.getByText(/^Pagar /))
     expect(mocks.alert).toHaveBeenCalledWith('Error', 'Ingresa el nombre del titular')
+    mocks.actualizarCostoEnvio.mockRejectedValueOnce({
+      response: { data: { detail: 'No se pudo recalcular el envío' } },
+    })
     fireEvent.click(screen.getByText('Retiro en Tienda'))
-    await waitFor(() => expect(mocks.actualizarCostoEnvio).toHaveBeenCalled())
+    await waitFor(() => expect(mocks.alert).toHaveBeenCalledWith(
+      'Envío', 'No se pudo recalcular el envío',
+    ))
   })
 
   it('completes PayPal checkout after rejecting empty sandbox credentials', async () => {
@@ -402,6 +431,10 @@ describe('mobile publishing, checkout and seller screens', () => {
     fireEvent.change(screen.getByPlaceholderText('usuario@sandbox.paypal.com'), { target: { value: 'buyer@example.test' } })
     fireEvent.change(screen.getByPlaceholderText('••••••••'), { target: { value: 'demo-password' } })
     vi.useFakeTimers()
+    mocks.processPayment.mockRejectedValueOnce(new Error('PayPal unavailable'))
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar Pago' }))
+    await act(async () => { await vi.advanceTimersByTimeAsync(2000) })
+    expect(mocks.alert).toHaveBeenCalledWith('Error', 'Error al conectar con PayPal.')
     fireEvent.click(screen.getByRole('button', { name: 'Confirmar Pago' }))
     await act(async () => { await vi.advanceTimersByTimeAsync(2000) })
     expect(mocks.processPayment).toHaveBeenCalledWith(expect.objectContaining({ payment_method: 'PayPal' }))
@@ -429,6 +462,265 @@ describe('mobile publishing, checkout and seller screens', () => {
     fireEvent.click(screen.getByRole('button', { name: /Aprobar Débito Bancario/ }))
     expect(screen.getByText(/Ingresa la clave dinámica de seguridad/)).toBeTruthy()
     fireEvent.click(screen.getAllByText('×').pop())
+  })
+
+  it('completes a simulated PSE payment with a valid token', async () => {
+    renderWithContext(<Checkout route={{ params: { orderId: 32 } }} navigation={navigation} />)
+    await screen.findByText('Entrega y Pago')
+    fireEvent.click(screen.getByRole('button', { name: /PSE/ }))
+    fireEvent.click(await screen.findByRole('button', { name: /Abrir Simulador PSE/ }))
+    const pseDialog = screen.getByText('ACH Colombia · PSE').closest('[role="dialog"]')
+    fireEvent.click(within(pseDialog).getByText('⚡ Autocompletar'))
+    fireEvent.click(within(pseDialog).getByRole('button', { name: /Ir a la Banca Virtual/ }))
+    vi.useFakeTimers()
+    await act(async () => {
+      fireEvent.click(within(pseDialog).getByRole('button', { name: /Aprobar Débito Bancario/ }))
+      await vi.advanceTimersByTimeAsync(2400)
+    })
+    vi.useRealTimers()
+    await waitFor(() => expect(mocks.processPayment).toHaveBeenCalledWith(
+      expect.objectContaining({ payment_method: 'PSE' }),
+    ))
+    expect(await screen.findByText('¡Pago Exitoso!')).toBeTruthy()
+  })
+
+  it('formats and submits a valid card payment', async () => {
+    renderWithContext(<Checkout route={{ params: { orderId: 32 } }} navigation={navigation} />)
+    await screen.findByText('Entrega y Pago')
+    fireEvent.change(screen.getByPlaceholderText('0000 0000 0000 0000'), {
+      target: { value: '4111 1111 1111 1111' },
+    })
+    fireEvent.change(screen.getByPlaceholderText('MM/AA'), { target: { value: '12/30' } })
+    fireEvent.change(screen.getByPlaceholderText('123'), { target: { value: '123' } })
+    fireEvent.change(screen.getByPlaceholderText('Juan Pérez'), { target: { value: 'Ana Compradora' } })
+
+    vi.useFakeTimers()
+    await act(async () => {
+      fireEvent.click(screen.getByText(/^Pagar /))
+      await vi.advanceTimersByTimeAsync(2000)
+    })
+    vi.useRealTimers()
+    await waitFor(() => expect(mocks.processPayment).toHaveBeenCalledWith(
+      expect.objectContaining({ payment_method: 'Tarjeta de Crédito' }),
+    ))
+    expect(await screen.findByText('¡Pago Exitoso!')).toBeTruthy()
+  })
+
+  it('generates and resets an Efecty reference code', async () => {
+    renderWithContext(<Checkout route={{ params: { orderId: 32 } }} navigation={navigation} />)
+    await screen.findByText('Entrega y Pago')
+    fireEvent.click(screen.getByText('Punto Efecty'))
+    fireEvent.click(screen.getByText('Generar Código de Pago Efecty'))
+    expect(screen.getByText('CUPÓN DE PAGO OFICIAL')).toBeTruthy()
+    fireEvent.click(screen.getByText('Generar otro código o Cambiar método'))
+    expect(screen.getByText('Generar Código de Pago Efecty')).toBeTruthy()
+  })
+
+  it('shows a card address requirement when no delivery address is available', async () => {
+    mocks.getDirecciones.mockResolvedValueOnce({ data: [] })
+    renderWithContext(<Checkout route={{ params: { orderId: 32 } }} navigation={navigation} />)
+    await screen.findByText('Entrega y Pago')
+    fireEvent.change(screen.getByPlaceholderText('0000 0000 0000 0000'), {
+      target: { value: '4111111111111111' },
+    })
+    fireEvent.change(screen.getByPlaceholderText('MM/AA'), { target: { value: '12/30' } })
+    fireEvent.change(screen.getByPlaceholderText('123'), { target: { value: '123' } })
+    fireEvent.change(screen.getByPlaceholderText('Juan Pérez'), { target: { value: 'Ana Compradora' } })
+    fireEvent.click(screen.getByText(/^Pagar /))
+    expect(mocks.alert).toHaveBeenCalledWith(
+      'Dirección requerida', 'Selecciona una dirección para el envío a domicilio.',
+    )
+  })
+
+  it('reports a declined Efecty payment and keeps the receipt visible', async () => {
+    mocks.processPayment.mockResolvedValueOnce({ data: { ok: false } })
+    renderWithContext(<Checkout route={{ params: { orderId: 32 } }} navigation={navigation} />)
+    await screen.findByText('Entrega y Pago')
+    fireEvent.click(screen.getByText('Punto Efecty'))
+    fireEvent.click(screen.getByText('Generar Código de Pago Efecty'))
+
+    vi.useFakeTimers()
+    await act(async () => {
+      fireEvent.click(screen.getByText('Ya realicé el pago en el punto'))
+      await vi.advanceTimersByTimeAsync(1200)
+    })
+    vi.useRealTimers()
+    await waitFor(() => expect(mocks.alert).toHaveBeenCalledWith(
+      'Error', 'El pago no fue aprobado.',
+    ))
+    expect(screen.getByText('CUPÓN DE PAGO OFICIAL')).toBeTruthy()
+  })
+
+  it('confirms an order even when email and coupon registration fail', async () => {
+    const warning = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    mocks.sendConfirmationEmail.mockRejectedValueOnce(new Error('mail unavailable'))
+    mocks.aplicarCupon.mockRejectedValueOnce(new Error('coupon service unavailable'))
+    renderWithContext(<Checkout route={{ params: { orderId: 32 } }} navigation={navigation} />)
+    await screen.findByText('Entrega y Pago')
+    fireEvent.change(screen.getByPlaceholderText('Código de cupón'), {
+      target: { value: 'SAVE' },
+    })
+    fireEvent.click(screen.getByText('Aplicar'))
+    await screen.findByText('Cupón aplicado.')
+    fireEvent.change(screen.getByPlaceholderText('0000 0000 0000 0000'), {
+      target: { value: '4111111111111111' },
+    })
+    fireEvent.change(screen.getByPlaceholderText('MM/AA'), { target: { value: '12/30' } })
+    fireEvent.change(screen.getByPlaceholderText('123'), { target: { value: '123' } })
+    fireEvent.change(screen.getByPlaceholderText('Juan Pérez'), { target: { value: 'Ana Compradora' } })
+
+    vi.useFakeTimers()
+    await act(async () => {
+      fireEvent.click(screen.getByText(/^Pagar /))
+      await vi.advanceTimersByTimeAsync(2000)
+    })
+    vi.useRealTimers()
+    expect(await screen.findByText(/No pudimos enviar el correo de confirmación/)).toBeTruthy()
+    await waitFor(() => expect(warning).toHaveBeenCalledWith(
+      'El pago fue aprobado, pero no se pudo registrar el cupón:', 'coupon service unavailable',
+    ))
+    warning.mockRestore()
+  })
+
+  it('notifies arrival for a pickup order and displays the seller confirmation state', async () => {
+    const pickupOrder = {
+      id_orden: 32,
+      estado: 'pendiente',
+      estado_retiro: 'reservado',
+      tipo_entrega: 'retiro_tienda',
+      pin_retiro: '1234',
+      items: [{ id_libro: 17, titulo: book.titulo, cantidad: 1 }],
+    }
+    mocks.getOrderDetails
+      .mockResolvedValueOnce({ data: pickupOrder })
+      .mockResolvedValueOnce({ data: { ...pickupOrder, estado_retiro: 'en_tienda' } })
+    mocks.notificarLlegadaTienda.mockRejectedValueOnce({
+      response: { data: { detail: 'No se pudo registrar la llegada' } },
+    })
+    renderWithContext(<Checkout route={{ params: { orderId: 32 } }} navigation={navigation} />)
+
+    expect(await screen.findByText('Reserva confirmada')).toBeTruthy()
+    fireEvent.click(screen.getByText('Ya llegué a la librería'))
+    await waitFor(() => expect(mocks.alert).toHaveBeenCalledWith(
+      'Retiro en tienda', 'No se pudo registrar la llegada',
+    ))
+    fireEvent.click(screen.getByText('Ya llegué a la librería'))
+    expect(await screen.findByText('Llegada notificada')).toBeTruthy()
+    expect(mocks.notificarLlegadaTienda).toHaveBeenCalledWith(32)
+    fireEvent.click(screen.getByText('Ir a mis compras'))
+    expect(navigation.navigate).toHaveBeenCalledWith('History')
+  })
+
+  it('enters and leaves the enabled pickup payment form', async () => {
+    const pickupOrder = {
+      id_orden: 32,
+      estado: 'pendiente',
+      estado_retiro: 'habilitado_pago',
+      tipo_entrega: 'retiro_tienda',
+      pin_retiro: '1234',
+      items: [{ id_libro: 17, titulo: book.titulo, cantidad: 1 }],
+    }
+    mocks.getOrderDetails.mockResolvedValueOnce({ data: pickupOrder })
+    renderWithContext(<Checkout route={{ params: { orderId: 32 } }} navigation={navigation} />)
+
+    fireEvent.click(await screen.findByText(/Completar pago/))
+    expect(await screen.findByText('Entrega y Pago')).toBeTruthy()
+    fireEvent.click(screen.getByText('‹ Volver a detalles del retiro'))
+    expect(await screen.findByText('Pago habilitado')).toBeTruthy()
+  })
+
+  it('reports order, shipping and address loading failures', async () => {
+    const warning = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    mocks.actualizarCostoEnvio.mockRejectedValueOnce(new Error('shipping offline'))
+    mocks.getDirecciones.mockRejectedValueOnce(new Error('addresses offline'))
+    renderWithContext(<Checkout route={{ params: { orderId: 32 } }} navigation={navigation} />)
+
+    expect(await screen.findByText('Entrega y Pago')).toBeTruthy()
+    expect(warning).toHaveBeenCalledWith(
+      'No se pudo actualizar el envío de la orden:', 'shipping offline',
+    )
+    expect(warning).toHaveBeenCalledWith(
+      'No se pudieron cargar las direcciones de entrega:', 'addresses offline',
+    )
+    mocks.actualizarCostoEnvio.mockRejectedValueOnce({
+      response: { data: { detail: 'No se pudo recalcular' } },
+    })
+    fireEvent.click(screen.getByText('Envío a Domicilio').closest('button'))
+    await waitFor(() => expect(mocks.alert).toHaveBeenCalledWith(
+      'Envío', 'No se pudo recalcular',
+    ))
+    warning.mockRestore()
+  })
+
+  it('validates PSE identity and switches banks from the payment modal', async () => {
+    renderWithContext(<Checkout route={{ params: { orderId: 32 } }} navigation={navigation} />)
+    await screen.findByText('Entrega y Pago')
+    fireEvent.click(screen.getByText('PSE'))
+    fireEvent.click(screen.getByText('Davivienda'))
+    fireEvent.click(screen.getByRole('button', { name: /Banco seleccionado:/ }))
+    fireEvent.click(within(screen.getByRole('dialog')).getByText('BBVA Colombia'))
+    fireEvent.click(screen.getByRole('button', { name: /Abrir Simulador PSE/ }))
+
+    let pseDialog = screen.getByText('ACH Colombia · PSE').closest('[role="dialog"]')
+    fireEvent.change(within(pseDialog).getByPlaceholderText('ejemplo@correo.com'), {
+      target: { value: '' },
+    })
+    fireEvent.click(within(pseDialog).getByRole('button', { name: /Ir a la Banca Virtual/ }))
+    expect(within(pseDialog).getByText(/Ingresa un correo electrónico registrado/)).toBeTruthy()
+    fireEvent.change(within(pseDialog).getByPlaceholderText('ejemplo@correo.com'), {
+      target: { value: 'buyer@example.test' },
+    })
+    fireEvent.change(within(pseDialog).getByPlaceholderText('1020304050'), {
+      target: { value: '' },
+    })
+    fireEvent.click(within(pseDialog).getByRole('button', { name: /Ir a la Banca Virtual/ }))
+    expect(within(pseDialog).getByText(/Ingresa el número de documento/)).toBeTruthy()
+    fireEvent.click(within(pseDialog).getByText('×'))
+  })
+
+  it('opens digital purchase downloads and reports a failed link', async () => {
+    mocks.getOrderDetails.mockResolvedValueOnce({ data: {
+      id_orden: 32,
+      estado: 'pagado',
+      total: 12000,
+      fecha: '2026-01-01',
+      items: [{
+        id_libro: 17,
+        id_variante: 9,
+        titulo: 'Ebook de prueba',
+        variante_label: 'Digital',
+        cantidad: 1,
+      }],
+    } })
+    Linking.openURL.mockRejectedValueOnce(new Error('cannot open'))
+    renderWithContext(<Checkout route={{ params: { orderId: 32 } }} navigation={navigation} />)
+
+    fireEvent.click(await screen.findByText('📥 Descargar Ebook de prueba'))
+    await waitFor(() => expect(mocks.alert).toHaveBeenCalledWith(
+      'Error', 'No se pudo abrir la descarga del libro digital.',
+    ))
+  })
+
+  it('loads transfer details for a payment order', async () => {
+    mocks.getDatosTransferenciaVendedor.mockResolvedValueOnce({ data: {
+      vendedores: [{
+        id_tienda: 8,
+        nombre_tienda: 'Librería Centro',
+        cuenta: {
+          banco: 'Bancolombia',
+          tipo_cuenta: 'Ahorros',
+          numero_cuenta: '123456',
+          nombre_titular: 'Librería Centro',
+          cedula_titular: '12345',
+        },
+      }],
+    } })
+    renderWithContext(<Checkout route={{ params: { orderId: 32 } }} navigation={navigation} />)
+    await screen.findByText('Entrega y Pago')
+    fireEvent.click(screen.getByText('Transferencia'))
+    expect(await screen.findByText('Bancolombia')).toBeTruthy()
+    fireEvent.click(screen.getByText(/Volver al carrito/))
+    expect(navigation.navigate).toHaveBeenCalledWith('Cart')
   })
 
   it('filters inventory and records a point-of-sale stock change', async () => {
@@ -503,7 +795,109 @@ describe('mobile publishing, checkout and seller screens', () => {
     fireEvent.change(thresholdDialog.querySelector('input'), { target: { value: '101' } })
     fireEvent.click(within(thresholdDialog).getByText('Guardar'))
     expect(mocks.alert).toHaveBeenCalledWith('Umbral inválido', 'Ingresa un número entero entre 0 y 100.')
-    fireEvent.click(within(thresholdDialog).getByText('Cancelar'))
+    fireEvent.change(thresholdDialog.querySelector('input'), { target: { value: '5' } })
+    fireEvent.click(within(thresholdDialog).getByText('Guardar'))
+    await waitFor(() => expect(mocks.storageSet).toHaveBeenCalled())
+  })
+
+  it('restores a saved library threshold and recovers from catalog load errors', async () => {
+    const warning = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    mocks.storageGet.mockResolvedValueOnce('6')
+    mocks.getMisLibros.mockRejectedValue(new Error('catalog offline'))
+    mocks.getAlertasStock.mockRejectedValueOnce(new Error('alerts offline'))
+    mocks.getCategorias.mockRejectedValueOnce(new Error('categories offline'))
+    renderWithContext(<Libreria navigation={navigation} />)
+    expect(await screen.findByText('No se pudo cargar el catálogo')).toBeTruthy()
+    expect(warning).toHaveBeenCalledWith('[LIBRERIA] No se pudieron cargar las categorías:', 'categories offline')
+
+    mocks.getMisLibros.mockResolvedValueOnce({ data: [book] })
+    fireEvent.click(screen.getByText('Reintentar'))
+    expect(await screen.findByText(book.titulo)).toBeTruthy()
+    fireEvent.click(screen.getByText('Umbral: 6 ⚙'))
+    const dialog = screen.getByText('Umbral de stock bajo').closest('[role="dialog"]')
+    fireEvent.change(dialog.querySelector('input'), { target: { value: '7' } })
+    fireEvent.click(within(dialog).getByText('Guardar'))
+    await waitFor(() => expect(mocks.storageSet).toHaveBeenCalledWith(expect.any(String), '7'))
+    warning.mockRestore()
+  })
+
+  it('covers library filters, paging, sales, saved-setting errors and copy failures', async () => {
+    const warning = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const inventory = Array.from({ length: 9 }, (_, index) => ({
+      ...book,
+      id_libro: 17 + index,
+      titulo: `Título ${index + 1}`,
+      stock: index === 1 ? 0 : 5,
+      id_categoria: index === 1 ? 2 : 1,
+      nombre_categoria: index === 1 ? 'Historia' : 'Ficción',
+      estado_libro: index === 1 ? 'nuevo' : 'visible',
+    }))
+    mocks.getMisLibros.mockResolvedValue({ data: inventory })
+    mocks.getCategorias.mockResolvedValue({ data: [
+      { id_categoria: 1, nombre_categoria: 'Ficción' },
+      { id_categoria: 2, nombre_categoria: 'Historia' },
+    ] })
+    mocks.storageGet.mockRejectedValueOnce(new Error('storage offline'))
+    renderWithContext(<Libreria navigation={navigation} />)
+
+    expect(await screen.findByText('Título 9')).toBeTruthy()
+    fireEvent.click(screen.getByText('Siguiente ›'))
+    expect(await screen.findByText('Título 1')).toBeTruthy()
+    fireEvent.click(screen.getByText('‹ Anterior'))
+    fireEvent.click(screen.getAllByRole('button', { name: 'Editar' })[0])
+    expect(mocks.navigate).toHaveBeenCalledWith('PublicarLibro', {
+      libro: inventory[8],
+      modo: 'editar',
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir filtros' }))
+    const filters = screen.getByRole('dialog')
+    fireEvent.click(within(filters).getByText('Historia'))
+    fireEvent.click(within(filters).getByText('Agotados (1)'))
+    fireEvent.click(within(filters).getByText('Nuevo'))
+    fireEvent.click(within(filters).getByText('Precio menor'))
+    fireEvent.click(within(filters).getByText(/Ver .* resultados/))
+    expect(screen.getByText('Título 2')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: /Filtros/ }))
+    fireEvent.click(screen.getByRole('button', { name: 'Cerrar filtros' }))
+
+    fireEvent.click(screen.getByText('▣ Venta en mostrador'))
+    const sale = screen.getByRole('dialog')
+    fireEvent.click(within(sale).getByText('Título 3'))
+    fireEvent.click(within(sale).getByText('Cambiar libro'))
+    fireEvent.click(within(sale).getByText('Título 3'))
+    fireEvent.click(within(sale).getByText('+'))
+    fireEvent.click(within(sale).getByText('−'))
+    fireEvent.click(within(sale).getByText('Registrar venta'))
+    expect(await screen.findByText('¡Venta registrada!')).toBeTruthy()
+    fireEvent.click(within(screen.getByRole('dialog')).getByText('Listo'))
+
+    fireEvent.click(screen.getByText('Umbral: 3 ⚙'))
+    const threshold = screen.getByRole('dialog')
+    mocks.storageSet.mockRejectedValueOnce(new Error('storage read-only'))
+    fireEvent.change(within(threshold).getByPlaceholderText('3'), { target: { value: '4' } })
+    fireEvent.click(within(threshold).getByText('Guardar'))
+    await waitFor(() => expect(mocks.alert).toHaveBeenCalledWith(
+      'No se pudo guardar', 'storage read-only',
+    ))
+    fireEvent.click(within(threshold).getByText('Cancelar'))
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'ID' })[0])
+    const code = screen.getByRole('dialog')
+    mocks.clipboard.mockRejectedValueOnce(new Error('clipboard offline'))
+    fireEvent.click(within(code).getByText('Copiar ID'))
+    await waitFor(() => expect(mocks.alert).toHaveBeenCalledWith(
+      'No se pudo copiar', 'clipboard offline',
+    ))
+    fireEvent.click(within(code).getByText('Cerrar'))
+
+    mocks.deleteLibro.mockRejectedValueOnce({ response: { data: { detail: 'No se pudo eliminar' } } })
+    fireEvent.click(screen.getAllByRole('button', { name: 'Eliminar' })[0])
+    fireEvent.click(screen.getByText('Sí, eliminar'))
+    await waitFor(() => expect(mocks.alert).toHaveBeenCalledWith(
+      'No se pudo eliminar', 'No se pudo eliminar',
+    ))
+    warning.mockRestore()
   })
 
   it('loads the seller dashboard, changes chart modes and saves the stock threshold', async () => {
@@ -539,6 +933,33 @@ describe('mobile publishing, checkout and seller screens', () => {
     fireEvent.change(within(dialog).getByPlaceholderText('3'), { target: { value: '0' } })
     fireEvent.click(within(dialog).getByText('Guardar'))
     await waitFor(() => expect(mocks.getAlertasStock).toHaveBeenCalledWith(0))
+  })
+
+  it('restores a valid saved stock threshold and displays the sales point detail', async () => {
+    mocks.storageGet.mockResolvedValueOnce('8')
+    mocks.getMisVentas.mockResolvedValue({ data: [
+      { id_orden: 1, fecha: new Date().toISOString(), total: 24000 },
+    ] })
+    const { container } = renderWithContext(<VendedorHome navigation={navigation} />)
+    expect(await screen.findByText(/Umbral: 8 uds/)).toBeTruthy()
+    fireEvent.click(screen.getAllByText('Ventas este mes')[0].closest('button'))
+    fireEvent.click(screen.getByText('Salud de inventario').closest('button'))
+    fireEvent.click(screen.getByText(/Ver todos \(1\)/))
+    fireEvent.click(screen.getByText('Libros en catálogo').closest('button'))
+    const alertList = within(screen.getByText('Libros por reabastecer:').parentElement)
+    fireEvent.click(alertList.getByText('Cuentos móviles').closest('button'))
+    const point = await waitFor(() => {
+      const chartPoint = Array.from(container.querySelectorAll('button[aria-label]'))
+        .find((button) => /\d+ órdenes/.test(button.getAttribute('aria-label')))
+      expect(chartPoint).toBeTruthy()
+      return chartPoint
+    })
+    fireEvent.click(point)
+    expect(screen.getAllByText(/orden\(es\)|Sin ventas|Hoy \(en curso\)/).length).toBeGreaterThan(0)
+    fireEvent.click(screen.getByText('Barras'))
+    fireEvent.click(screen.getAllByRole('button', { name: 'Punto gráfico' })[0])
+    fireEvent.click(screen.getByText('☰'))
+    fireEvent.click(screen.getByText('Cerrar menú vendedor'))
   })
 
   it('updates order status and registers a shipment guide', async () => {

@@ -140,7 +140,20 @@ vi.mock('../../components/Icons', () => {
 
 vi.mock('../../components/Header', () => ({ default: () => null }));
 vi.mock('../../components/Footer', () => ({ default: () => null }));
-vi.mock('../../components/CarruselAnimado', () => ({ default: () => null }));
+vi.mock('../../components/CarruselAnimado', async () => {
+  const ReactModule = await vi.importActual('react');
+  return {
+    default: ({ libros = [], onVerLibro }) => ReactModule.createElement(
+      'div',
+      null,
+      libros.map((libro) => ReactModule.createElement(
+        'button',
+        { key: libro.id_libro, onClick: () => onVerLibro(libro) },
+        libro.titulo,
+      )),
+    ),
+  };
+});
 
 vi.mock('../../context/AuthContext', async () => {
   const ReactModule = await vi.importActual('react');
@@ -473,6 +486,93 @@ describe('BookDetailPublico', () => {
 
     expect(mocks.alert).toHaveBeenCalledWith('Contacto', 'No se pudo identificar la librería de este libro.');
     expect(mocks.crearSalaChat).not.toHaveBeenCalled();
+  });
+
+  it('cubre galerías alternativas, variantes agotadas, reseñas paginadas y fallos de acciones', async () => {
+    mocks.getVariantes.mockResolvedValueOnce({ data: [] });
+    const reviews = Array.from({ length: 6 }, (_, index) => ({
+      id_resena: index + 10,
+      calificacion: 4,
+      fecha_resena: '2026-03-01',
+      comentario: index === 0 ? '' : `Comentario ${index}`,
+    }));
+    mocks.get.mockImplementation((url) => {
+      if (url.startsWith('/resenas/libro/')) {
+        return Promise.resolve({ data: { promedio: 0, resenas: reviews } });
+      }
+      if (url === '/catalogo/busqueda-avanzada') {
+        return Promise.resolve({ data: { libros: [{ id_libro: 21, titulo: 'El mismo libro' }, { id_libro: 99, titulo: 'Otro libro' }] } });
+      }
+      return Promise.resolve({ data: {} });
+    });
+    const detailedBook = {
+      ...book,
+      titulo: '',
+      imagen_url: '',
+      imagen_principal: '/cover,otra.jpg',
+      imagenes: '/uno.jpg, https://cdn.example.test/dos.jpg',
+      isbn: '9780306406157',
+      stock: 0,
+      nombre_categoria: '',
+      nombre_tienda: '',
+      precio_libro: 0,
+      descripcion_libro: '',
+      descripcion: '',
+      autor_libro: '',
+      autor: '',
+      es_impulsado: true,
+    };
+    const { container } = renderPublicBookDetail({ id_usuario: 3 }, detailedBook);
+
+    expect(await screen.findByText('Comentario 1')).toBeTruthy();
+    expect(screen.getByText('Sin título')).toBeTruthy();
+    expect(screen.getByText('Autor no disponible')).toBeTruthy();
+    expect(screen.getAllByText('Sin stock').length).toBeGreaterThan(0);
+    expect(container.querySelector('img').getAttribute('src')).toContain('cover');
+
+    fireEvent.click(screen.getAllByRole('button')[1]);
+    fireEvent.click(screen.getByText('Siguiente'));
+    expect(screen.getByText(/Página 2 de 2/)).toBeTruthy();
+    fireEvent.click(screen.getByText('1 ★'));
+    expect(screen.getByText('No hay reseñas con ese filtro.')).toBeTruthy();
+
+    mocks.addToCart.mockRejectedValueOnce({ response: { data: { detail: 'Sin disponibilidad' } } });
+    expect(screen.getAllByText('Sin stock').length).toBeGreaterThan(0);
+    expect(mocks.addToCart).not.toHaveBeenCalled();
+
+    mocks.crearSalaChat.mockRejectedValueOnce(new Error('offline'));
+    const availableBook = { ...detailedBook, stock: 2, id_tienda: 8 };
+    cleanup();
+    renderPublicBookDetail({ id_usuario: 3 }, availableBook);
+    fireEvent.click(await screen.findByText('Contactar librería'));
+    await waitFor(() => expect(mocks.alert).toHaveBeenCalledWith(
+      'Contacto', 'No se pudo abrir el chat con la librería.',
+    ));
+  });
+
+  it('maneja errores de carrito, elimina artículos añadidos y abre libros relacionados', async () => {
+    mocks.getVariantes.mockResolvedValueOnce({ data: [] });
+    const relatedBook = { ...book, stock: 3, imagen_url: '/relacionado.jpg' };
+    mocks.get.mockImplementation((url) => url === '/catalogo/busqueda-avanzada'
+      ? Promise.resolve({ data: { libros: [{ ...relatedBook, id_libro: 77, titulo: 'Libro relacionado' }] } })
+      : Promise.resolve({ data: { promedio: 4, resenas: [] } }));
+    mocks.addToCart.mockRejectedValueOnce({ response: { data: { detail: 'Carrito no disponible' } } });
+    renderPublicBookDetail({ id_usuario: 3 }, { ...book, nombre_categoria: 'Ficción', stock: 3 });
+    await screen.findByText('Libro relacionado');
+
+    fireEvent.click(screen.getByText('Agregar al carrito'));
+    await waitFor(() => expect(mocks.alert).toHaveBeenCalledWith('Carrito', 'Carrito no disponible'));
+
+    mocks.addToCart.mockResolvedValueOnce(undefined);
+    fireEvent.click(screen.getByText('Agregar al carrito'));
+    await waitFor(() => expect(screen.getByText('Eliminar del carrito')).toBeTruthy());
+    fireEvent.click(screen.getByText('Eliminar del carrito'));
+    await waitFor(() => expect(mocks.removeFromCart).toHaveBeenCalledWith(21));
+
+    fireEvent.click(screen.getByText('Libro relacionado'));
+    expect(mocks.push).toHaveBeenCalledWith('BookDetailPublico', {
+      book: expect.objectContaining({ id_libro: 77 }),
+    });
   });
 });
 

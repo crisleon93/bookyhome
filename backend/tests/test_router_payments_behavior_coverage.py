@@ -194,3 +194,125 @@ def test_seller_resolution_falls_back_and_admin_orders_are_sorted(monkeypatch):
     with pytest.raises(HTTPException) as forbidden:
         payments.get_all_orders_admin({"rol": "vendedor"})
     assert forbidden.value.status_code == 403
+
+
+def test_current_user_rejects_invalid_token_and_resolver_handles_exceptions(monkeypatch):
+    credentials = MagicMock(credentials="bad-token")
+    monkeypatch.setattr(payments, "verify_token", lambda _token: None)
+    with pytest.raises(HTTPException) as rejected:
+        payments.get_current_user(credentials)
+    assert rejected.value.status_code == 401
+
+    monkeypatch.setattr(payments, "obtener_orden", lambda *_args: (_ for _ in ()).throw(RuntimeError("db down")))
+    assert payments._resolver_vendedor(7, 4) == 7
+
+
+def test_order_details_and_transfer_lookup_cover_success(monkeypatch):
+    monkeypatch.setattr(payments, "obtener_orden", lambda *_args: {
+        "id_orden": 4,
+        "items": [{"id_libro": 2}],
+    })
+    assert payments.get_order_details(4, {"sub": "7"})["id_orden"] == 4
+
+    import app.database as database
+    db = MagicMock()
+    cursor = MagicMock()
+    db.cursor.return_value = cursor
+    cursor.fetchall.side_effect = [
+        [{"id_tienda": 8, "nombre_tienda": None, "id_vendedor": 12, "nombre_usuario": None}],
+        [{"id_metodo": 1, "es_principal": True, "banco": "Banco"}],
+    ]
+    monkeypatch.setattr(database, "get_db", lambda: db)
+
+    result = payments.get_order_seller_transfer_details(4, {"sub": "7"})
+    assert result["ok"] is True
+    assert result["vendedores"][0]["tiene_cuenta"] is True
+    assert result["vendedores"][0]["nombre_tienda"] == "Librería Aliada"
+    cursor.close.assert_called_once()
+    db.close.assert_called_once()
+
+
+def test_transfer_lookup_covers_database_cart_fallback_and_errors(monkeypatch):
+    monkeypatch.setattr(payments, "obtener_orden", lambda *_args: {"items": []})
+    import app.database as database
+    import app.models.carrito as cart_model
+
+    db = MagicMock()
+    cursor = MagicMock()
+    db.cursor.return_value = cursor
+    cursor.fetchall.side_effect = [
+        [{"id_libro": 3}],
+        [{"id_tienda": 8, "nombre_tienda": "Central", "id_vendedor": 12, "nombre_usuario": "Vendedor"}],
+        [],
+    ]
+    monkeypatch.setattr(database, "get_db", lambda: db)
+    monkeypatch.setattr(cart_model, "obtener_carrito", lambda _uid: [{"id_libro": 9}])
+
+    result = payments.get_order_seller_transfer_details(4, {"sub": "7"})
+    assert result["ok"] is True
+    assert len(result["vendedores"]) == 1
+
+    cursor.fetchall.side_effect = RuntimeError("seller query failed")
+    result = payments.get_order_seller_transfer_details(4, {"sub": "7"})
+    assert result["ok"] is False
+    assert "seller query failed" in result["error"]
+
+    monkeypatch.setattr(database, "get_db", lambda: (_ for _ in ()).throw(RuntimeError("database unavailable")))
+    monkeypatch.setattr(cart_model, "obtener_carrito", lambda _uid: (_ for _ in ()).throw(RuntimeError("cart unavailable")))
+    result = payments.get_order_seller_transfer_details(4, {"sub": "7"})
+    assert result == {"ok": True, "vendedores": []}
+
+
+def test_cancel_pending_database_and_store_errors_are_handled(monkeypatch):
+    import app.database as database
+    import app.models.payments as payment_model
+
+    monkeypatch.setattr(database, "get_db", lambda: (_ for _ in ()).throw(RuntimeError("database unavailable")))
+    with pytest.raises(HTTPException) as database_error:
+        payments.cancelar_mis_pendientes({"sub": "7"})
+    assert database_error.value.status_code == 500
+
+    db = MagicMock()
+    cursor = MagicMock()
+    db.cursor.return_value = cursor
+    cursor.fetchall.return_value = []
+    monkeypatch.setattr(database, "get_db", lambda: db)
+    monkeypatch.setattr(payment_model, "_load_store", lambda _path: (_ for _ in ()).throw(RuntimeError("bad store")))
+    result = payments.cancelar_mis_pendientes({"sub": "7"})
+    assert result["ok"] is True
+    assert result["canceladas"] == 0
+
+
+def test_shipping_lookup_missing_order_row_and_domestic_cost(monkeypatch):
+    import app.database as database
+    import app.models.payments as payment_model
+
+    db = MagicMock()
+    cursor = MagicMock()
+    db.cursor.return_value = cursor
+    cursor.fetchall.return_value = []
+    monkeypatch.setattr(database, "get_db", lambda: db)
+    result = payments.actualizar_costo_envio(5, {"tipo_entrega": "domicilio"}, {"sub": "7"})
+    assert result == {"ok": False, "error": "Orden no encontrada"}
+
+    cursor.fetchall.return_value = [{"id_tienda": 4, "nombre_tienda": "Central", "tarifa_envio": "10"}]
+    cursor.fetchone.return_value = None
+    result = payments.actualizar_costo_envio(5, {"tipo_entrega": "domicilio"}, {"sub": "7"})
+    assert result == {"ok": False, "error": "Orden no encontrada"}
+
+    cursor.fetchone.return_value = {"total": 110, "costo_envio": 10}
+    store = {"7": [{"id_orden": 5, "total": 110}]}
+    monkeypatch.setattr(payment_model, "_load_store", lambda _path: store)
+    monkeypatch.setattr(payment_model, "_save_store", lambda _path, value: store.update(value))
+    result = payments.actualizar_costo_envio(5, {"tipo_entrega": "domicilio"}, {"sub": "7"})
+    assert result["costo_envio"] == 10
+    assert result["total"] == 110
+
+
+def test_shipping_database_exception_is_translated(monkeypatch):
+    import app.database as database
+    monkeypatch.setattr(database, "get_db", lambda: (_ for _ in ()).throw(RuntimeError("shipping db down")))
+    with pytest.raises(HTTPException) as failed:
+        payments.actualizar_costo_envio(5, None, {"sub": "7"})
+    assert failed.value.status_code == 500
+    assert "shipping db down" in failed.value.detail

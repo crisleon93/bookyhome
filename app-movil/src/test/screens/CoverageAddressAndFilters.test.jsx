@@ -8,6 +8,8 @@ import FiltrosBusqueda from '../../components/FiltrosBusqueda';
 
 const mocks = vi.hoisted(() => ({
   alert: vi.fn(),
+  mapWindow: null,
+  platformOS: 'ios',
   getDirecciones: vi.fn(),
   createDireccion: vi.fn(),
   deleteDireccion: vi.fn(),
@@ -81,7 +83,7 @@ vi.mock('react-native', async () => {
     Modal: ({ visible, children }) => visible
       ? ReactModule.createElement('div', { 'data-testid': 'modal' }, children)
       : null,
-    Platform: { OS: 'ios', select: (values) => values.ios || values.default },
+    Platform: { get OS() { return mocks.platformOS }, select: (values) => values[mocks.platformOS] || values.default },
     ScrollView: element('div'),
     StyleSheet: { create: (styles) => styles, flatten: (style) => style },
     Switch: ({ value, onValueChange, disabled }) => ReactModule.createElement('button', {
@@ -121,15 +123,25 @@ vi.mock('../../components/Icons', () => ({ IconLocation: () => null }));
 vi.mock('../../components/AddressMapFrame.web.jsx', async () => {
   const ReactModule = await vi.importActual('react');
   const AddressMapFrame = ReactModule.forwardRef(({ html, onMessage, onError }, ref) => {
+    const contentWindow = { setMapLocation: mocks.setMapLocation };
     ReactModule.useImperativeHandle(ref, () => ({
-      contentWindow: { setMapLocation: mocks.setMapLocation },
+      contentWindow,
       injectJavaScript: mocks.injectJavaScript,
     }));
+    mocks.mapWindow = contentWindow;
     return ReactModule.createElement('div', { 'data-testid': 'map-frame', 'data-html': html },
       ReactModule.createElement('button', {
         type: 'button',
         onClick: () => onMessage({ data: JSON.stringify({ lat: 4.711, lng: -74.0721 }) }),
       }, 'Seleccionar punto en mapa'),
+      ReactModule.createElement('button', {
+        type: 'button',
+        onClick: () => onMessage({ data: 'no es json' }),
+      }, 'Punto sin formato'),
+      ReactModule.createElement('button', {
+        type: 'button',
+        onClick: () => onMessage({ data: JSON.stringify({ lat: 'inválida', lng: 1 }) }),
+      }, 'Punto sin coordenadas'),
       ReactModule.createElement('button', { type: 'button', onClick: onError }, 'Error del mapa'),
     );
   });
@@ -202,6 +214,7 @@ function renderAddresses() {
 describe('Direcciones y FiltrosBusqueda', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.platformOS = 'ios';
     mocks.getDirecciones.mockResolvedValue({ data: savedAddresses });
     mocks.createDireccion.mockResolvedValue({ data: { id_direccion: 3 } });
     mocks.deleteDireccion.mockResolvedValue({ data: { ok: true } });
@@ -300,6 +313,127 @@ describe('Direcciones y FiltrosBusqueda', () => {
     await waitFor(() => expect(mocks.fetch).toHaveBeenCalledWith(expect.stringContaining('/reverse?')));
     fireEvent.click(screen.getByRole('button', { name: 'Error del mapa' }));
     expect(await screen.findByText('No se pudo cargar el mapa. Comprueba tu conexión e inténtalo de nuevo.')).toBeTruthy();
+  });
+
+  it('busca ubicaciones actuales y muestra resultados vacíos del geocodificador', async () => {
+    renderAddresses();
+    await screen.findByText('Casa');
+    fireEvent.click(screen.getByRole('button', { name: '+ Agregar dirección' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Elegir en mapa' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Buscar' }));
+    expect(await screen.findByText('Escribe una dirección para buscarla en el mapa.')).toBeTruthy();
+
+    mocks.fetch.mockImplementationOnce(async () => ({ ok: true, json: async () => [] }));
+    fireEvent.change(screen.getByPlaceholderText('Ej. Carrera 7 # 45-67, Bogotá'), {
+      target: { value: 'Calle inexistente' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Buscar' }));
+    expect(await screen.findByText('No se encontró la dirección. Prueba con una referencia más específica.')).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Usar mi ubicación actual' }));
+    await waitFor(() => expect(mocks.getCurrentPositionAsync).toHaveBeenCalledWith({ accuracy: 6 }));
+    await waitFor(() => expect(mocks.fetch).toHaveBeenCalledWith(expect.stringContaining('/reverse?')));
+    fireEvent.click(screen.getByRole('button', { name: 'Usar esta dirección' }));
+    expect(screen.getByPlaceholderText('Calle, número, barrio...').value).toContain('Carrera 7');
+  });
+
+  it('valida puntos del mapa web, búsquedas sin coordenadas y eventos de otra ventana', async () => {
+    mocks.platformOS = 'web';
+    renderAddresses();
+    await screen.findByText('Casa');
+    fireEvent.click(screen.getByRole('button', { name: '+ Agregar dirección' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Elegir en mapa' }));
+    fireEvent.change(screen.getByPlaceholderText('Ej. Carrera 7 # 45-67, Bogotá'), {
+      target: { value: 'Calle 5' },
+    });
+
+    mocks.fetch.mockResolvedValueOnce({ ok: true, json: async () => [{ lat: 'invalid', lon: 'invalid', address: {} }] });
+    fireEvent.click(screen.getByRole('button', { name: 'Buscar' }));
+    expect(await screen.findByText('La ubicación no tiene coordenadas válidas.')).toBeTruthy();
+
+    mocks.fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => [{ ...reverseAddress, lat: '4.711', lon: '-74.0721' }],
+    });
+    fireEvent.change(screen.getByPlaceholderText('Ej. Carrera 7 # 45-67, Bogotá'), {
+      target: { value: 'Carrera 7' },
+    });
+    fireEvent.change(screen.getByPlaceholderText('Ciudad'), { target: { value: 'Bogotá' } });
+    fireEvent.change(screen.getByPlaceholderText('Departamento'), { target: { value: 'Cundinamarca' } });
+    fireEvent.change(screen.getByPlaceholderText('Código postal'), { target: { value: '110111' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Buscar' }));
+    await waitFor(() => expect(mocks.setMapLocation).toHaveBeenCalledWith(4.711, -74.0721));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Punto sin formato' }));
+    expect(await screen.findByText('No se pudo leer el punto seleccionado en el mapa.')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Punto sin coordenadas' }));
+    expect(await screen.findByText('El punto seleccionado no tiene coordenadas válidas.')).toBeTruthy();
+
+    const externalMessage = new Event('message');
+    Object.assign(externalMessage, {
+      origin: 'https://untrusted.example',
+      source: mocks.mapWindow,
+      data: JSON.stringify({ lat: 1, lng: 1 }),
+    });
+    window.dispatchEvent(externalMessage);
+    const wrongSourceMessage = new Event('message');
+    Object.assign(wrongSourceMessage, {
+      origin: 'null',
+      source: {},
+      data: JSON.stringify({ lat: 1, lng: 1 }),
+    });
+    window.dispatchEvent(wrongSourceMessage);
+    expect(mocks.fetch).toHaveBeenCalledTimes(2);
+
+    const validMessage = new Event('message');
+    Object.assign(validMessage, {
+      origin: 'null',
+      source: mocks.mapWindow,
+      data: JSON.stringify({ lat: 4.712, lng: -74.073 }),
+    });
+    window.dispatchEvent(validMessage);
+    await waitFor(() => expect(mocks.fetch).toHaveBeenCalledWith(expect.stringContaining('lat=4.712&lon=-74.073')));
+    fireEvent.click(screen.getAllByRole('button', { name: 'Cancelar' })[1]);
+    expect(screen.queryByText('Elegir dirección')).toBeNull();
+  });
+
+  it('muestra errores al cargar, guardar, actualizar, marcar y eliminar direcciones', async () => {
+    mocks.getDirecciones.mockRejectedValueOnce({
+      response: { data: { detail: 'Lista no disponible' } },
+    });
+    renderAddresses();
+    expect(await screen.findByText('Mis direcciones de envío')).toBeTruthy();
+    await waitFor(() => expect(mocks.alert).toHaveBeenCalledWith('Direcciones', 'Lista no disponible'));
+    fireEvent.click(await screen.findByText('Actualizar lista'));
+    await screen.findByText('Casa');
+
+    mocks.createDireccion.mockRejectedValueOnce(new Error('offline'));
+    fireEvent.click(screen.getByRole('button', { name: '+ Agregar dirección' }));
+    fireEvent.change(screen.getByPlaceholderText('Calle, número, barrio...'), {
+      target: { value: 'Calle 1' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar dirección' }));
+    await waitFor(() => expect(mocks.alert).toHaveBeenCalledWith('No se pudo guardar', 'Inténtalo nuevamente.'));
+
+    mocks.updateDireccion.mockRejectedValueOnce({
+      response: { data: { detail: 'No se pudo editar' } },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
+    fireEvent.click(screen.getAllByRole('button', { name: 'Editar' })[0]);
+    fireEvent.click(screen.getByRole('button', { name: 'Actualizar dirección' }));
+    await waitFor(() => expect(mocks.alert).toHaveBeenCalledWith('No se pudo guardar', 'No se pudo editar'));
+
+    mocks.setPrincipalDireccion.mockRejectedValueOnce(new Error('offline'));
+    fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Hacer principal' }));
+    await waitFor(() => expect(mocks.alert).toHaveBeenCalledWith('No se pudo actualizar', 'Inténtalo nuevamente.'));
+
+    mocks.deleteDireccion.mockRejectedValueOnce(new Error('offline'));
+    fireEvent.click(screen.getAllByRole('button', { name: 'Eliminar' })[0]);
+    const deleteAction = mocks.alert.mock.calls.at(-1)[2]
+      .find((button) => button.text === 'Eliminar');
+    await act(async () => deleteAction.onPress());
+    await waitFor(() => expect(mocks.alert).toHaveBeenCalledWith('No se pudo eliminar', 'Inténtalo nuevamente.'));
   });
 
   it('filtra libros por categoría, precio y atributos, y aplica la selección', async () => {
