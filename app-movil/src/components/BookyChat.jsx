@@ -256,7 +256,7 @@ export default function BookyChat() {
           ? s
           : { ...s, messages, title: getSessionTitle(messages), updatedAt: Date.now() },
       );
-      saveSessions(uid, next);
+      void saveSessions(uid, next);
       return next;
     });
   }, [messages]);
@@ -297,7 +297,7 @@ export default function BookyChat() {
       const top = remaining[0];
       setActiveId(top.id);
       setMessages(top.messages);
-      saveSessions(uid, remaining);
+      void saveSessions(uid, remaining);
       return remaining;
     });
   }, [nombre, uid]);

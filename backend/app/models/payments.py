@@ -527,14 +527,25 @@ def registrar_pago(id_usuario, id_orden, amount, payment_method, coupon_code=Non
                         WHERE l.id_libro IN ({fmt3})
                     """, tuple(id_libros))
                     vendedores = cursor.fetchall()
-                    logger.info("Notificando venta a %d vendedor(es) para orden %s (libros: %s)", len(vendedores), id_orden, id_libros)
+                    logger.info(
+                        "Notificando venta a %d vendedor(es) para orden %s (libros: %s)",
+                        len(vendedores), id_orden, id_libros,
+                    )
                     for v in vendedores:
                         if v.get("id_vendedor") and v["id_vendedor"] != id_usuario:
+                            metodo_sanitizado = str(payment_method).replace('\n', ' ').replace('\r', ' ')
+                            mensaje_notif = (
+                                "Has recibido el pago para la orden #%s por $%s via %s."
+                                % (int(id_orden), f"{int(amount_paid):,}", metodo_sanitizado)
+                            )
                             cursor.execute("""
                                 INSERT INTO notificaciones (id_usuario, tipo, titulo, cuerpo, id_referencia, leida, fecha_creacion)
                                 VALUES (%s, 'venta', '¡Nueva venta pagada!', %s, %s, FALSE, NOW())
-                            """, (v["id_vendedor"], f"Has recibido el pago para la orden #{id_orden} por ${int(amount_paid):,} vía {payment_method}.", id_orden))
-                            logger.info("Notificación de venta insertada para vendedor id=%s (orden %s)", v["id_vendedor"], id_orden)
+                            """, (v["id_vendedor"], mensaje_notif, id_orden))
+                            logger.info(
+                                "Notificacion de venta insertada para vendedor id=%s (orden %s)",
+                                v["id_vendedor"], id_orden,
+                            )
                 except Exception as notif_err:
                     logger.error("Error al notificar a vendedor(es) (orden %s, libros %s): %s", id_orden, id_libros, notif_err)
             else:
