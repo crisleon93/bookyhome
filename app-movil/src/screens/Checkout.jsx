@@ -348,6 +348,20 @@ export default function Checkout({ route, navigation }) {
     }
   };
 
+  const METODO_PAGO_MAP = {
+    'Tarjeta de Crédito': 'tarjeta',
+    'Nequi': 'nequi',
+    'Daviplata': 'daviplata',
+    'PayPal': 'paypal',
+    'PSE': 'pse',
+    'efectivo_tienda': 'efectivo',
+    'Efectivo en Tienda': 'efectivo',
+    'sucursal': 'sucursal',
+    'Pago en Efecty': 'sucursal',
+    'transferencia': 'transferencia',
+    'Transferencia Bancaria': 'transferencia',
+  };
+
   const enviarPago = async (metodo) => {
     let freshTotal = orderTotal;
     const shippingResponse = await actualizarCostoEnvio(orderId, deliveryMethod);
@@ -356,10 +370,11 @@ export default function Checkout({ route, navigation }) {
       setOrder((current) => ({ ...current, total: freshTotal, costo_envio: Number(shippingResponse.data.costo_envio || 0), desglose_envio: shippingResponse.data.desglose_envio || [] }));
       setShippingBreakdown(shippingResponse.data.desglose_envio || []);
     }
+    const metodoPago = METODO_PAGO_MAP[metodo] ?? metodo.toLowerCase();
     return finalizarPago({
       order_id: Number(orderId),
       amount: Math.max(0, freshTotal - discountAmount),
-      payment_method: metodo,
+      payment_method: metodoPago,
       tipo_entrega: deliveryMethod,
       ...(deliveryMethod === 'domicilio' && selectedAddressId ? { id_direccion: Number(selectedAddressId) } : {}),
       ...(discountAmount > 0 ? { coupon_code: couponCode.trim() } : {}),

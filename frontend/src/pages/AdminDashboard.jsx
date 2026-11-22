@@ -853,12 +853,19 @@ export default function AdminDashboard() {
       void cargarSolicitudes();
     };
     window.addEventListener('bookyhome-complaint-updated', refrescar);
-    const intervalId = window.setInterval(refrescar, 30000);
+    const intervalId = window.setInterval(refrescar, 10000);
     return () => {
       window.removeEventListener('bookyhome-complaint-updated', refrescar);
       window.clearInterval(intervalId);
     };
   }, [cargarSolicitudes]);
+
+  // Recargar solicitudes inmediatamente al entrar a reclamos o soporte
+  useEffect(() => {
+    if (activeSection === 'reclamos' || activeSection === 'soporte') {
+      void cargarSolicitudes();
+    }
+  }, [activeSection, cargarSolicitudes]);
 
   const abrirModal = (reclamo, estado) => {
     if (!reclamo) return;
@@ -904,7 +911,7 @@ export default function AdminDashboard() {
       try {
         const [usuariosRes, librosRes, ordenesRes, tiendasRes, quejasRes] = await Promise.all([
           api.get('/usuarios'),
-          api.get('/api/stored/libros'),
+          api.get('/api/stored/libros', { params: { admin: true } }),
           api.get('/api/v1/admin/orders'),
           api.get('/tiendas'),
           api.get('/quejas/admin/todas'),

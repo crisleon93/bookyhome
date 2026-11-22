@@ -1445,11 +1445,14 @@ export default function AdminHome() {
 
       results.forEach((result, index) => {
         if (result.status === 'fulfilled') {
+          const payload = Array.isArray(result.value.data) ? result.value.data : [];
+          console.log(`[ADMIN LOAD] ${keys[index]}: ${payload.length} items`);
           setData((current) => ({
             ...current,
-            [keys[index]]: Array.isArray(result.value.data) ? result.value.data : [],
+            [keys[index]]: payload,
           }));
         } else {
+          console.warn(`[ADMIN LOAD ERROR] ${keys[index]}:`, result.reason?.response?.data || result.reason?.message);
           failures.push(result.reason);
         }
       });
@@ -1465,7 +1468,7 @@ export default function AdminHome() {
   }, []);
 
   const loadSolicitudes = useCallback((force = false) => {
-    if (solicitudesRequest.current) return solicitudesRequest.current;
+    if (solicitudesRequest.current && !force) return solicitudesRequest.current;
     if (solicitudesLoaded.current && !force) return Promise.resolve();
 
     setSolicitudesLoading(true);
@@ -1497,7 +1500,10 @@ export default function AdminHome() {
   useEffect(() => { load(); }, [load]);
 
   useEffect(() => {
-    if (['reclamos', 'soporte', 'perfil'].includes(activeSection)) {
+    if (['reclamos', 'soporte'].includes(activeSection)) {
+      // Forzar recarga siempre para mostrar solicitudes nuevas
+      loadSolicitudes(true);
+    } else if (activeSection === 'perfil') {
       loadSolicitudes();
     }
   }, [activeSection, loadSolicitudes]);
@@ -1982,7 +1988,7 @@ export default function AdminHome() {
               {items.length > 1 ? <Text style={s.requestStyleOrderAdditional}> +{items.length - 1} más</Text> : null}
             </Text>
             <Text style={s.requestStyleOrderBuyer} numberOfLines={1}>
-              Comprador: <Text style={s.requestStyleOrderBuyerStrong}>{comprador?.nombre_usuario || (o.id_usuario_propietario ? `#${o.id_usuario_propietario}` : 'No disponible')}</Text>
+              Comprador: <Text style={s.requestStyleOrderBuyerStrong}>{comprador?.nombre_usuario || o.correo_comprador || (o.id_usuario_propietario ? `#${o.id_usuario_propietario}` : 'No disponible')}</Text>
             </Text>
             <View style={s.requestStyleOrderMeta}>
               <Text style={s.requestStyleOrderDateText}>
@@ -2001,7 +2007,7 @@ export default function AdminHome() {
           <View style={s.orderBuyerRow}>
             <Text style={s.orderInfoLabel}>COMPRADOR</Text>
             <Text style={s.orderInfoValue} numberOfLines={1}>
-              {comprador?.nombre_usuario || (o.id_usuario_propietario ? `#${o.id_usuario_propietario}` : 'No disponible')}
+              {comprador?.nombre_usuario || o.correo_comprador || (o.id_usuario_propietario ? `#${o.id_usuario_propietario}` : 'No disponible')}
             </Text>
           </View>
           <View style={s.orderItemsSection}>
@@ -2040,8 +2046,16 @@ export default function AdminHome() {
     return renderOrden(args);
   }, [activeSection, renderUsuario, renderLibro, renderTienda, renderOrden]);
 
-  const keyExtractor = useCallback((item, idx) =>
-    String(item.id_usuario || item.id_libro || item.id_tienda || item.id_orden || idx), []);
+  const keyExtractor = useCallback((item, idx) => {
+    // Para órdenes: id_orden es secuencial por usuario, así que puede repetirse
+    // entre usuarios distintos. Usamos id_orden_db (ID MySQL, único global) si
+    // existe, si no combinamos id_usuario_propietario + id_orden.
+    if (item.id_orden != null) {
+      if (item.id_orden_db != null) return `orden-db-${item.id_orden_db}`;
+      return `orden-${item.id_usuario_propietario ?? 'x'}-${item.id_orden}`;
+    }
+    return String(item.id_usuario || item.id_libro || item.id_tienda || idx);
+  }, []);
 
   // ─────────────────────────────────────────────────────────────────────────
   //  HEADER DE SECCIÓN (filtros + búsqueda)

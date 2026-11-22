@@ -16,7 +16,7 @@ from app.models.payments import (
 import logging
 
 logger = logging.getLogger(__name__)
-from app.email import enviar_email_confirmacion  
+from app.email import enviar_email_confirmacion, is_smtp_configured
 from app.models.usuarios import obtener_email_usuario
 from app.utils.finance_hooks import registrar_ingreso_venta
 
@@ -203,16 +203,83 @@ def get_user_orders(user=Depends(get_current_user)):
 # ── Endpoint admin: todas las órdenes de todos los usuarios ──
 @router.get("/api/v1/admin/orders")
 def get_all_orders_admin(user=Depends(get_current_user)):
+    from app.database import get_db
     from app.models.payments import _load_store, ORDER_FILE
     rol = user.get("rol", "")
     if rol not in ("admin", "administrador"):
         raise HTTPException(status_code=403, detail="Acceso restringido a administradores")
-    orders_data = _load_store(ORDER_FILE)
-    todas = []
-    for uid, user_orders in orders_data.items():
-        for orden in user_orders:
-            todas.append({**orden, "id_usuario_propietario": int(uid)})
-    return sorted(todas, key=lambda o: o.get("fecha", ""), reverse=True)
+
+    try:
+        # ── 1. Leer el JSON (fuente rápida) ──────────────────────────────────
+        orders_data = _load_store(ORDER_FILE)
+        json_map = {}  # id_orden_db -> orden enriquecida
+        for uid, user_orders in orders_data.items():
+            for orden in user_orders:
+                entry = {**orden, "id_usuario_propietario": int(uid)}
+                # Clave: usar id_orden_db si existe (ID MySQL único), si no id_orden
+                key = entry.get("id_orden_db") or entry.get("id_orden")
+                if key is not None:
+                    json_map[int(key)] = entry
+
+        # ── 2. Leer MySQL: solo id, estado, fecha, total, usuario ─────────────
+        # Query liviana — sin JOINs pesados
+        db = get_db()
+        cursor = db.cursor(dictionary=True)
+        cursor.execute("""
+            SELECT oc.id_orden, oc.id_usuario, oc.estado_orden,
+                   oc.total, oc.fecha_orden, oc.tipo_entrega,
+                   oc.metodo_pago, u.correo_usuario
+            FROM ordenes_compra oc
+            JOIN usuarios u ON u.id_usuario = oc.id_usuario
+            ORDER BY oc.fecha_orden DESC
+        """)
+        db_rows = cursor.fetchall()
+        cursor.close()
+        db.close()
+
+        # ── 3. Combinar: MySQL manda en estado/fecha, JSON aporta items ───────
+        result_map = {}  # id_orden (MySQL) -> dict final
+
+        # Primero poblar desde MySQL
+        for row in db_rows:
+            oid = row["id_orden"]
+            fecha = row["fecha_orden"]
+            result_map[oid] = {
+                "id_orden": oid,
+                "id_orden_db": oid,
+                "id_usuario_propietario": row["id_usuario"],
+                "correo_comprador": row["correo_usuario"],
+                "estado": row["estado_orden"] or "pendiente",
+                "total": float(row["total"] or 0),
+                "fecha": fecha.isoformat() if hasattr(fecha, "isoformat") else (fecha or ""),
+                "tipo_entrega": row["tipo_entrega"] or "domicilio",
+                "metodo_pago": row["metodo_pago"],
+                "items": [],
+            }
+
+        # Enriquecer con items del JSON donde coincida id_orden_db
+        for db_id, orden_final in result_map.items():
+            json_entry = json_map.get(db_id)
+            if json_entry:
+                orden_final["items"] = json_entry.get("items") or []
+                # Preservar campos extra del JSON si MySQL no los tiene
+                for field in ("estado_retiro", "pin_retiro", "envio", "codigo_compra"):
+                    if json_entry.get(field) is not None:
+                        orden_final[field] = json_entry[field]
+
+        # Órdenes que solo están en el JSON (no vinculadas a MySQL aún)
+        db_ids = set(result_map.keys())
+        for json_id, entry in json_map.items():
+            if json_id not in db_ids:
+                result_map[json_id] = entry
+
+        # Ordenar por fecha desc
+        todas = sorted(result_map.values(), key=lambda o: o.get("fecha") or "", reverse=True)
+        return todas
+
+    except Exception as e:
+        logger.error("Error obteniendo órdenes admin: %s", e)
+        raise HTTPException(status_code=500, detail=f"Error al obtener las órdenes: {str(e)}")
 
 # ── Nuevo endpoint de confirmación por correo ──
 @router.post("/api/v1/orders/{id_orden}/send-confirmation")
@@ -223,11 +290,19 @@ async def send_order_confirmation(id_orden: int, user=Depends(get_current_user))
     if not orden:
         raise HTTPException(status_code=404, detail="Orden no encontrada")
 
+    if not is_smtp_configured():
+        raise HTTPException(status_code=503, detail="El servicio de correo no está configurado en el servidor")
+
     email = obtener_email_usuario(id_usuario)
     if not email:
         raise HTTPException(status_code=404, detail="Email del usuario no encontrado")
 
-    await enviar_email_confirmacion(email, orden)
+    try:
+        await enviar_email_confirmacion(email, orden)
+    except Exception as exc:
+        logger.warning("No se pudo enviar el correo de confirmación a %s: %s", email, exc)
+        raise HTTPException(status_code=503, detail="No se pudo enviar el correo de confirmación")
+
     return {"ok": True, "message": "Comprobante de compra enviado al correo"}
 
 

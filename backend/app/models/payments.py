@@ -508,27 +508,37 @@ def registrar_pago(id_usuario, id_orden, amount, payment_method, coupon_code=Non
                 id_libros = [r['id_libro'] for r in cursor.fetchall() if r.get('id_libro')]
 
             # Notificar al comprador de su compra exitosa
-            cursor.execute("""
-                INSERT INTO notificaciones (id_usuario, tipo, titulo, cuerpo, id_referencia, leida, fecha_creacion)
-                VALUES (%s, 'pedido', '¡Compra realizada con éxito!', %s, %s, FALSE, NOW())
-            """, (id_usuario, f"Tu pedido #{id_orden} por ${int(amount_paid):,} ha sido confirmado exitosamente.", id_orden))
+            try:
+                cursor.execute("""
+                    INSERT INTO notificaciones (id_usuario, tipo, titulo, cuerpo, id_referencia, leida, fecha_creacion)
+                    VALUES (%s, 'pedido', '¡Compra realizada con éxito!', %s, %s, FALSE, NOW())
+                """, (id_usuario, f"Tu pedido #{id_orden} por ${int(amount_paid):,} ha sido confirmado exitosamente.", id_orden))
+            except Exception as notif_err:
+                logger.error("Error al notificar al comprador (orden %s): %s", id_orden, notif_err)
 
             # Notificar a los vendedores de los libros comprados
             if id_libros:
-                fmt3 = ','.join(['%s'] * len(id_libros))
-                cursor.execute(f"""
-                    SELECT DISTINCT t.id_usuario AS id_vendedor, t.nombre_tienda
-                    FROM libros l
-                    JOIN tiendas t ON t.id_tienda = l.id_tienda
-                    WHERE l.id_libro IN ({fmt3})
-                """, tuple(id_libros))
-                vendedores = cursor.fetchall()
-                for v in vendedores:
-                    if v.get("id_vendedor") and v["id_vendedor"] != id_usuario:
-                        cursor.execute("""
-                            INSERT INTO notificaciones (id_usuario, tipo, titulo, cuerpo, id_referencia, leida, fecha_creacion)
-                            VALUES (%s, 'pedido', '¡Nueva venta pagada!', %s, %s, FALSE, NOW())
-                        """, (v["id_vendedor"], f"Has recibido el pago para la orden #{id_orden} por ${int(amount_paid):,} vía {payment_method}.", id_orden))
+                try:
+                    fmt3 = ','.join(['%s'] * len(id_libros))
+                    cursor.execute(f"""
+                        SELECT DISTINCT t.id_usuario AS id_vendedor, t.nombre_tienda
+                        FROM libros l
+                        JOIN tiendas t ON t.id_tienda = l.id_tienda
+                        WHERE l.id_libro IN ({fmt3})
+                    """, tuple(id_libros))
+                    vendedores = cursor.fetchall()
+                    logger.info("Notificando venta a %d vendedor(es) para orden %s (libros: %s)", len(vendedores), id_orden, id_libros)
+                    for v in vendedores:
+                        if v.get("id_vendedor") and v["id_vendedor"] != id_usuario:
+                            cursor.execute("""
+                                INSERT INTO notificaciones (id_usuario, tipo, titulo, cuerpo, id_referencia, leida, fecha_creacion)
+                                VALUES (%s, 'venta', '¡Nueva venta pagada!', %s, %s, FALSE, NOW())
+                            """, (v["id_vendedor"], f"Has recibido el pago para la orden #{id_orden} por ${int(amount_paid):,} vía {payment_method}.", id_orden))
+                            logger.info("Notificación de venta insertada para vendedor id=%s (orden %s)", v["id_vendedor"], id_orden)
+                except Exception as notif_err:
+                    logger.error("Error al notificar a vendedor(es) (orden %s, libros %s): %s", id_orden, id_libros, notif_err)
+            else:
+                logger.warning("No se encontraron id_libros para la orden %s; la notificación al vendedor no se pudo enviar.", id_orden)
 
             db.commit()
         finally:
