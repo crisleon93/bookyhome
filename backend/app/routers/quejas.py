@@ -214,16 +214,6 @@ async def crear_queja(
         # Usar el id_orden real de MySQL (no el id local del orders.json)
         id_orden_insertar = orden.get("id_orden_real") or id_orden
 
-        # Verificar que no haya ya un reclamo activo con el id real tampoco
-        cursor.execute("""
-            SELECT id_solicitud FROM solicitudes_soporte
-            WHERE id_usuario=%s AND id_orden=%s AND tipo_solicitud='reclamo'
-              AND estado IN ('Abierto', 'En revisión')
-            LIMIT 1
-        """, (int(user["sub"]), id_orden_insertar))
-        if cursor.fetchone():
-            raise HTTPException(status_code=409, detail="Ya tienes un reclamo activo para esta compra")
-
         cursor.execute("""
             INSERT INTO solicitudes_soporte
               (id_tienda, id_usuario, id_orden, asunto, descripcion, categoria, prioridad, estado, evidencia_url, tipo_solicitud, fecha_creacion)

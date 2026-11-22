@@ -290,12 +290,12 @@ async def send_order_confirmation(id_orden: int, user=Depends(get_current_user))
     if not orden:
         raise HTTPException(status_code=404, detail="Orden no encontrada")
 
-    if not is_smtp_configured():
-        raise HTTPException(status_code=503, detail="El servicio de correo no está configurado en el servidor")
-
     email = obtener_email_usuario(id_usuario)
     if not email:
         raise HTTPException(status_code=404, detail="Email del usuario no encontrado")
+
+    if not is_smtp_configured():
+        raise HTTPException(status_code=503, detail="El servicio de correo no está configurado en el servidor")
 
     try:
         await enviar_email_confirmacion(email, orden)

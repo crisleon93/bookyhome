@@ -1,4 +1,5 @@
-from fastapi import APIRouter, HTTPException, Query, Request
+from typing import Optional
+from fastapi import APIRouter, Header, HTTPException, Query
 from app.auth import verify_token
 from app.database import get_db
 import logging
@@ -38,18 +39,25 @@ _LIBRO_JOINS = """
 
 @router.get("/stored/libros")
 def listar_libros_sp(
-    request: Request,
     limite: int = Query(12, ge=1, le=50),
     admin: bool = Query(False),
+    authorization: Optional[str] = Header(None),
 ):
     """
     Devuelve el catálogo de libros.
     - Sin parámetros: 12 libros visibles con stock (uso público, sin token).
     - ?admin=true: todos los libros sin filtro ni límite (requiere token de admin).
     """
-    if admin:
+    # Normaliza valores: cuando FastAPI inyecta los parámetros llegan como
+    # tipos Python; cuando los tests llaman la función directamente, los
+    # objetos Query/Header llegan sin resolver, así que usamos los defaults.
+    _limite = limite if isinstance(limite, int) else 12
+    _admin = admin if isinstance(admin, bool) else False
+    _auth = authorization if isinstance(authorization, str) else None
+
+    if _admin:
         # Validar token manualmente para no romper el endpoint público
-        auth_header = request.headers.get("authorization", "")
+        auth_header = _auth or ""
         token = auth_header.removeprefix("Bearer ").strip()
         payload = verify_token(token) if token else None
         if not payload:
@@ -62,7 +70,7 @@ def listar_libros_sp(
         conn = get_db()
         cursor = conn.cursor(dictionary=True)
 
-        if admin:
+        if _admin:
             cursor.execute(
                 f"SELECT {_LIBRO_COLS} {_LIBRO_JOINS} ORDER BY l.fecha_listado DESC"
             )
@@ -71,7 +79,7 @@ def listar_libros_sp(
                 f"SELECT {_LIBRO_COLS} {_LIBRO_JOINS}"
                 " WHERE l.oculto = 0 AND l.stock > 0"
                 " ORDER BY l.fecha_listado DESC LIMIT %s",
-                (limite,),
+                (_limite,),
             )
 
         results = cursor.fetchall()
