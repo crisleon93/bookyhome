@@ -69,3 +69,37 @@ def test_my_books_returns_rows_or_empty_on_error(monkeypatch):
 
     cursor.execute.side_effect = RuntimeError("offline")
     assert mod.mis_libros(12) == []
+
+
+def test_list_books_admin_requires_valid_token(monkeypatch):
+    from unittest.mock import MagicMock
+    db, cursor = _db()
+    monkeypatch.setattr(mod, "get_db", lambda: db)
+
+    # Sin token → 401
+    with pytest.raises(HTTPException) as exc:
+        mod.listar_libros_sp(admin=True, authorization=None)
+    assert exc.value.status_code == 401
+
+    # Token con rol no-admin → 403
+    monkeypatch.setattr(mod, "verify_token", lambda _t: {"rol": "comprador"})
+    with pytest.raises(HTTPException) as exc:
+        mod.listar_libros_sp(admin=True, authorization="Bearer fake-token")
+    assert exc.value.status_code == 403
+
+
+def test_list_books_admin_returns_all_books(monkeypatch):
+    db, cursor = _db()
+    cursor.fetchall.return_value = [{"id_libro": 1}, {"id_libro": 2}]
+    monkeypatch.setattr(mod, "get_db", lambda: db)
+    monkeypatch.setattr(mod, "verify_token", lambda _t: {"rol": "admin"})
+
+    result = mod.listar_libros_sp(admin=True, authorization="Bearer admin-token")
+    assert len(result) == 2
+    # La query admin no filtra por oculto ni por stock (no pasa el tuple de limite)
+    call_args = cursor.execute.call_args
+    # La query admin no tiene parámetros adicionales (sin límite)
+    assert call_args.args[0].strip().endswith("DESC")
+    assert len(call_args.args) == 1  # solo el SQL, sin parámetros tuple
+    cursor.close.assert_called_once()
+    db.close.assert_called_once()

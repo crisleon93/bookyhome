@@ -98,6 +98,10 @@ vi.mock('react-native', async () => {
   }
 })
 vi.mock('react-native-safe-area-context', () => ({ SafeAreaView: ({ children }) => <div>{children}</div> }))
+vi.mock('../../context/ThemeContext', () => ({
+  useThemedStyles: (styles) => styles,
+  useAppTheme: () => ({ darkMode: false, colors: {} }),
+}))
 vi.mock('../../services/api', () => ({
   bloquearUsuario: mocks.bloquear,
   cambiarEstadoTienda: mocks.cambiarEstadoTienda,
