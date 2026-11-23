@@ -208,78 +208,190 @@ def get_all_orders_admin(user=Depends(get_current_user)):
     rol = user.get("rol", "")
     if rol not in ("admin", "administrador"):
         raise HTTPException(status_code=403, detail="Acceso restringido a administradores")
+    todas = []
+    seen_ids = set()
 
+    # 1. Consultar base de datos MySQL (ordenes_compra)
     try:
-        # ── 1. Leer el JSON (fuente rápida) ──────────────────────────────────
+        from app.database import get_db
+        db = get_db(intentos_maximos=1, segundos_espera=0)
+        if db:
+            cursor = db.cursor(dictionary=True)
+            cursor.execute("""
+                SELECT 
+                    oc.id_orden,
+                    oc.id_usuario,
+                    oc.id_direccion_envio,
+                    oc.fecha_orden,
+                    oc.total,
+                    oc.estado_orden,
+                    oc.tipo_entrega,
+                    oc.estado_retiro,
+                    oc.pin_retiro,
+                    oc.fecha_limite_retiro,
+                    oc.metodo_pago,
+                    oc.costo_envio,
+                    u.nombre_usuario AS comprador,
+                    u.correo_usuario AS email_comprador,
+                    u.telefono AS telefono_comprador,
+                    u.foto_perfil AS foto_comprador,
+                    COALESCE(GROUP_CONCAT(DISTINCT t.nombre_tienda SEPARATOR ', '), 'Librería BookyHome') AS vendedor_tienda,
+                    MAX(uv.foto_perfil) AS foto_vendedor,
+                    MAX(t.telefono) AS telefono_tienda,
+                    MAX(e.numero_guia) AS numero_guia,
+                    MAX(e.empresa_mensajeria) AS empresa_mensajeria,
+                    MAX(e.estado_envio) AS estado_envio,
+                    MAX(e.fecha_despacho) AS fecha_despacho,
+                    MAX(e.fecha_estimada_entrega) AS fecha_estimada_entrega,
+                    MAX(dir.direccion_completa) AS direccion_completa,
+                    MAX(dir.ciudad) AS ciudad_destino,
+                    MAX(dir.departamento) AS departamento_destino,
+                    COUNT(DISTINCT do.id_detalle) AS total_items
+                FROM ordenes_compra oc
+                LEFT JOIN usuarios u ON u.id_usuario = oc.id_usuario
+                LEFT JOIN detalle_orden do ON do.id_orden = oc.id_orden
+                LEFT JOIN libros l ON l.id_libro = do.id_libro
+                LEFT JOIN tiendas t ON t.id_tienda = l.id_tienda
+                LEFT JOIN usuarios uv ON uv.id_usuario = t.id_usuario
+                LEFT JOIN envios e ON e.id_orden = oc.id_orden
+                LEFT JOIN direcciones_envio dir ON dir.id_direccion = oc.id_direccion_envio
+                GROUP BY oc.id_orden
+                ORDER BY oc.fecha_orden DESC, oc.id_orden DESC
+            """)
+            rows = cursor.fetchall() or []
+            for r in rows:
+                oid = r.get("id_orden")
+                seen_ids.add(oid)
+                fecha_str = ""
+                if r.get("fecha_orden"):
+                    fecha_str = r["fecha_orden"].isoformat() if hasattr(r["fecha_orden"], "isoformat") else str(r["fecha_orden"])
+                estado_raw = (r.get("estado_orden") or "pendiente").strip().lower()
+                if estado_raw in ("pagado", "pagada"):
+                    estado_val = "pagada"
+                elif estado_raw in ("enviado", "enviada"):
+                    estado_val = "enviada"
+                elif estado_raw in ("entregado", "entregada"):
+                    estado_val = "entregada"
+                elif estado_raw in ("cancelado", "cancelada"):
+                    estado_val = "cancelada"
+                else:
+                    estado_val = estado_raw
+                nombre_comp = (r.get("comprador") or "").strip() or f"Usuario #{r.get('id_usuario')}"
+                email_comp = r.get("email_comprador") or ""
+                tienda_vend = r.get("vendedor_tienda") or "Librería BookyHome"
+
+                fecha_despacho_str = ""
+                if r.get("fecha_despacho"):
+                    fecha_despacho_str = str(r["fecha_despacho"])
+                fecha_entrega_str = ""
+                if r.get("fecha_estimada_entrega"):
+                    fecha_entrega_str = str(r["fecha_estimada_entrega"])
+
+                todas.append({
+                    "id_orden": oid,
+                    "id_usuario": r.get("id_usuario"),
+                    "id_usuario_propietario": r.get("id_usuario"),
+                    "total": float(r["total"]) if r.get("total") is not None else 0.0,
+                    "estado": estado_val,
+                    "estado_orden": estado_val,
+                    "fecha": fecha_str,
+                    "fecha_orden": fecha_str,
+                    "tipo_entrega": r.get("tipo_entrega") or "domicilio",
+                    "pin_retiro": r.get("pin_retiro") or "",
+                    "estado_retiro": r.get("estado_retiro") or "",
+                    "metodo_pago": r.get("metodo_pago") or "Transferencia",
+                    "costo_envio": float(r["costo_envio"]) if r.get("costo_envio") is not None else 0.0,
+                    "nombre_usuario": nombre_comp,
+                    "comprador": nombre_comp,
+                    "email_usuario": email_comp,
+                    "email_comprador": email_comp,
+                    "telefono_comprador": r.get("telefono_comprador") or "",
+                    "foto_comprador": r.get("foto_comprador") or "",
+                    "vendedor_tienda": tienda_vend,
+                    "tienda": tienda_vend,
+                    "vendedor": tienda_vend,
+                    "foto_vendedor": r.get("foto_vendedor") or "",
+                    "telefono_tienda": r.get("telefono_tienda") or "",
+                    "numero_guia": r.get("numero_guia") or "",
+                    "empresa_mensajeria": r.get("empresa_mensajeria") or ("BookyHome Envíos" if (r.get("tipo_entrega") or "") == "domicilio" else "Retiro en Tienda"),
+                    "estado_envio": r.get("estado_envio") or estado_val,
+                    "fecha_despacho": fecha_despacho_str,
+                    "fecha_estimada_entrega": fecha_entrega_str,
+                    "direccion_completa": r.get("direccion_completa") or "",
+                    "ciudad_destino": r.get("ciudad_destino") or "",
+                    "departamento_destino": r.get("departamento_destino") or "",
+                    "total_items": int(r.get("total_items") or 1),
+                })
+            cursor.close()
+            db.close()
+    except Exception as exc:
+        logger.warning("[ADMIN_ORDERS] No se pudo cargar órdenes de MySQL: %s", exc)
+
+    # 2. Respaldo / compatibilidad con almacén JSON mock
+    try:
         orders_data = _load_store(ORDER_FILE)
-        json_map = {}  # id_orden_db -> orden enriquecida
         for uid, user_orders in orders_data.items():
             for orden in user_orders:
-                entry = {**orden, "id_usuario_propietario": int(uid)}
-                # Clave: usar id_orden_db si existe (ID MySQL único), si no id_orden
-                key = entry.get("id_orden_db") or entry.get("id_orden")
-                if key is not None:
-                    json_map[int(key)] = entry
+                oid = orden.get("id_orden")
+                if oid not in seen_ids:
+                    seen_ids.add(oid)
+                    todas.append({**orden, "id_usuario_propietario": int(uid)})
+    except Exception:
+        pass
 
-        # ── 2. Leer MySQL: solo id, estado, fecha, total, usuario ─────────────
-        # Query liviana — sin JOINs pesados
-        db = get_db()
-        cursor = db.cursor(dictionary=True)
-        cursor.execute("""
-            SELECT oc.id_orden, oc.id_usuario, oc.estado_orden,
-                   oc.total, oc.fecha_orden, oc.tipo_entrega,
-                   oc.metodo_pago, u.correo_usuario
-            FROM ordenes_compra oc
-            JOIN usuarios u ON u.id_usuario = oc.id_usuario
-            ORDER BY oc.fecha_orden DESC
-        """)
-        db_rows = cursor.fetchall()
-        cursor.close()
-        db.close()
+    return sorted(todas, key=lambda o: str(o.get("fecha") or o.get("fecha_orden") or ""), reverse=True)
 
-        # ── 3. Combinar: MySQL manda en estado/fecha, JSON aporta items ───────
-        result_map = {}  # id_orden (MySQL) -> dict final
 
-        # Primero poblar desde MySQL
-        for row in db_rows:
-            oid = row["id_orden"]
-            fecha = row["fecha_orden"]
-            result_map[oid] = {
-                "id_orden": oid,
-                "id_orden_db": oid,
-                "id_usuario_propietario": row["id_usuario"],
-                "correo_comprador": row["correo_usuario"],
-                "estado": row["estado_orden"] or "pendiente",
-                "total": float(row["total"] or 0),
-                "fecha": fecha.isoformat() if hasattr(fecha, "isoformat") else (fecha or ""),
-                "tipo_entrega": row["tipo_entrega"] or "domicilio",
-                "metodo_pago": row["metodo_pago"],
-                "items": [],
-            }
-
-        # Enriquecer con items del JSON donde coincida id_orden_db
-        for db_id, orden_final in result_map.items():
-            json_entry = json_map.get(db_id)
-            if json_entry:
-                orden_final["items"] = json_entry.get("items") or []
-                # Preservar campos extra del JSON si MySQL no los tiene
-                for field in ("estado_retiro", "pin_retiro", "envio", "codigo_compra"):
-                    if json_entry.get(field) is not None:
-                        orden_final[field] = json_entry[field]
-
-        # Órdenes que solo están en el JSON (no vinculadas a MySQL aún)
-        db_ids = set(result_map.keys())
-        for json_id, entry in json_map.items():
-            if json_id not in db_ids:
-                result_map[json_id] = entry
-
-        # Ordenar por fecha desc
-        todas = sorted(result_map.values(), key=lambda o: o.get("fecha") or "", reverse=True)
-        return todas
-
-    except Exception as e:
-        logger.error("Error obteniendo órdenes admin: %s", e)
-        raise HTTPException(status_code=500, detail=f"Error al obtener las órdenes: {str(e)}")
+# ── Endpoint admin: obtener items de una orden específica ──
+@router.get("/api/v1/admin/orders/{id_orden}/items")
+def get_admin_order_items(id_orden: int, user=Depends(get_current_user)):
+    rol = user.get("rol", "")
+    if rol not in ("admin", "administrador"):
+        raise HTTPException(status_code=403, detail="Acceso restringido a administradores")
+    items = []
+    try:
+        from app.database import get_db
+        db = get_db(intentos_maximos=1, segundos_espera=0)
+        if db:
+            cursor = db.cursor(dictionary=True)
+            cursor.execute("""
+                SELECT 
+                    do.id_detalle,
+                    do.id_orden,
+                    do.id_libro,
+                    do.cantidad,
+                    do.precio_unitario,
+                    do.precio_final,
+                    l.titulo,
+                    l.autor_libro,
+                    l.isbn,
+                    t.nombre_tienda,
+                    (SELECT url_imagen FROM imagenes_libro WHERE id_libro = l.id_libro AND es_principal = 1 LIMIT 1) AS imagen_portada
+                FROM detalle_orden do
+                LEFT JOIN libros l ON l.id_libro = do.id_libro
+                LEFT JOIN tiendas t ON t.id_tienda = l.id_tienda
+                WHERE do.id_orden = %s
+            """, (id_orden,))
+            rows = cursor.fetchall() or []
+            for r in rows:
+                items.append({
+                    "id_detalle": r["id_detalle"],
+                    "id_orden": r["id_orden"],
+                    "id_libro": r["id_libro"],
+                    "cantidad": int(r["cantidad"]),
+                    "precio_unitario": float(r["precio_unitario"]),
+                    "precio_final": float(r["precio_final"]) if r.get("precio_final") is not None else float(r["precio_unitario"]),
+                    "titulo": r.get("titulo") or f"Libro #{r['id_libro']}",
+                    "autor_libro": r.get("autor_libro") or "",
+                    "isbn": r.get("isbn") or "",
+                    "nombre_tienda": r.get("nombre_tienda") or "Librería BookyHome",
+                    "imagen_portada": r.get("imagen_portada") or "",
+                })
+            cursor.close()
+            db.close()
+    except Exception as exc:
+        logger.warning("[ADMIN_ORDER_ITEMS] Error obteniendo items de la orden %s: %s", id_orden, exc)
+    return items
 
 # ── Nuevo endpoint de confirmación por correo ──
 @router.post("/api/v1/orders/{id_orden}/send-confirmation")

@@ -1044,10 +1044,21 @@ function Header({ variant, hasSidebar }) {
       const decoded = jwtDecode(token);
       notify('Inicio de sesión correcto', 'success');
       setLoginOpen(false);
-      // Restaurar modo oscuro si estaba activo
-      const savedDarkMode = localStorage.getItem('darkMode') === 'true';
+      // Restaurar modo oscuro según el rol del usuario
+      const roleKey = (decoded.rol === 'admin' || decoded.rol === 'administrador')
+        ? 'darkMode_admin'
+        : decoded.rol === 'vendedor'
+          ? 'darkMode_vendedor'
+          : 'darkMode_comprador';
+      let savedDarkMode = localStorage.getItem(roleKey) === 'true';
+      if (roleKey === 'darkMode_comprador' && localStorage.getItem(roleKey) === null) {
+        savedDarkMode = localStorage.getItem('darkMode') === 'true';
+      }
+      localStorage.setItem('darkMode', String(savedDarkMode));
       if (savedDarkMode) {
         document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
       }
       // Disparar evento para que App.jsx detecte el cambio
       window.dispatchEvent(new CustomEvent('auth-change', { detail: { authenticated: true } }));

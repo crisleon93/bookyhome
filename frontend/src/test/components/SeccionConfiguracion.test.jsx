@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import SeccionConfiguracion from '../../components/dashboard/SeccionConfiguracion';
 import * as ToastProvider from '../../components/ToastProvider';
+import * as apiService from '../../services/api';
 
 const mockPreferencias = {
   notificaciones_mensajes: { email: true, web: true },
@@ -21,6 +22,7 @@ describe('SeccionConfiguracion', () => {
     localStorage.clear();
     localStorage.setItem('token', 'fake-jwt-token');
     notifySpy = vi.spyOn(ToastProvider, 'notify').mockImplementation(() => {});
+    vi.spyOn(apiService, 'getApiBaseUrl').mockReturnValue('http://localhost:8000');
   });
 
   afterEach(() => {
@@ -84,10 +86,8 @@ describe('SeccionConfiguracion', () => {
     render(<SeccionConfiguracion userId={10} />);
     await screen.findByText('Configuración de Cuenta');
 
-    // Find the dark mode toggle
-    const darkModeText = screen.getByText('Modo Oscuro');
-    const darkModeCard = darkModeText.closest('div');
-    const switchInput = darkModeCard.parentElement.querySelector('input[type="checkbox"]');
+    // Find the dark mode toggle — now it's inside a <label>
+    const switchInput = screen.getByLabelText('Activar modo oscuro');
     expect(switchInput).not.toBeNull();
 
     fireEvent.click(switchInput);
@@ -179,10 +179,13 @@ describe('SeccionConfiguracion', () => {
   });
 
   it('permite alternar visibilidad de las tres contraseñas, hover en botón y cancelar el formulario', async () => {
-    global.fetch = vi.fn().mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ preferencias: mockPreferencias }),
-    });
+    global.fetch = vi.fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ preferencias: mockPreferencias }),
+      })
+      // Auto-save calls from toggleCanal
+      .mockResolvedValue({ ok: true });
 
     render(<SeccionConfiguracion userId={10} />);
     await screen.findByText('Configuración de Cuenta');
@@ -192,7 +195,7 @@ describe('SeccionConfiguracion', () => {
     fireEvent.mouseEnter(guardarBtn);
     fireEvent.mouseLeave(guardarBtn);
 
-    // Toggle notification checkbox
+    // Toggle notification checkbox — now triggers auto-save
     const checkboxes = screen.getAllByRole('checkbox');
     if (checkboxes.length > 0) {
       fireEvent.click(checkboxes[0]);
@@ -256,5 +259,64 @@ describe('SeccionConfiguracion', () => {
     });
 
     consoleError.mockRestore();
+  });
+
+  it('auto-guarda preferencias al alternar un toggle de notificación', async () => {
+    global.fetch = vi.fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ preferencias: mockPreferencias }),
+      })
+      // Auto-save call
+      .mockResolvedValueOnce({ ok: true });
+
+    render(<SeccionConfiguracion userId={10} />);
+    await screen.findByText('Configuración de Cuenta');
+
+    // Find first notification toggle and click it
+    const checkboxes = screen.getAllByRole('checkbox');
+    // The first checkbox should be a notification toggle (not dark mode)
+    fireEvent.click(checkboxes[0]);
+
+    // Should auto-save — second fetch call with PUT
+    await waitFor(() => {
+      const putCalls = global.fetch.mock.calls.filter(
+        call => call[1] && call[1].method === 'PUT'
+      );
+      expect(putCalls.length).toBeGreaterThanOrEqual(1);
+    });
+
+    await waitFor(() => {
+      expect(notifySpy).toHaveBeenCalledWith('Preferencias guardadas', 'success');
+    });
+  });
+
+  it('el toggle de modo oscuro funciona al hacer clic en el label', async () => {
+    global.fetch = vi.fn().mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ preferencias: mockPreferencias }),
+    });
+
+    render(<SeccionConfiguracion userId={10} />);
+    await screen.findByText('Configuración de Cuenta');
+
+    // Should initially be off
+    const toggle = screen.getByLabelText('Activar modo oscuro');
+    expect(toggle.checked).toBe(false);
+    expect(document.documentElement.classList.contains('dark')).toBe(false);
+
+    // Click to enable
+    fireEvent.click(toggle);
+    expect(toggle.checked).toBe(true);
+    expect(localStorage.getItem('darkMode')).toBe('true');
+    expect(document.documentElement.classList.contains('dark')).toBe(true);
+    expect(notifySpy).toHaveBeenCalledWith('Modo oscuro activado', 'success');
+
+    // Click to disable
+    fireEvent.click(toggle);
+    expect(toggle.checked).toBe(false);
+    expect(localStorage.getItem('darkMode')).toBe('false');
+    expect(document.documentElement.classList.contains('dark')).toBe(false);
+    expect(notifySpy).toHaveBeenCalledWith('Modo claro activado', 'success');
   });
 });

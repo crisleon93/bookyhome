@@ -133,9 +133,11 @@ describe('secciones de compras y notificaciones', () => {
   })
 
   it('elimina un libro del carrito y vuelve a cargar sus datos', async () => {
-    getCarrito.mockResolvedValue({ data: [{
-      id_libro: 33, titulo: 'Libro del carrito', autor_libro: 'Autora', precio_libro: 14000, cantidad: 1,
-    }] })
+    getCarrito.mockResolvedValue({
+      data: [{
+        id_libro: 33, titulo: 'Libro del carrito', autor_libro: 'Autora', precio_libro: 14000, cantidad: 1,
+      }]
+    })
     render(<SeccionCarrito userId={7} />)
     expect((await screen.findAllByText('Libro del carrito')).length).toBeGreaterThan(0)
     fireEvent.click(screen.getAllByTitle('Eliminar del carrito')[0])
@@ -145,9 +147,11 @@ describe('secciones de compras y notificaciones', () => {
   })
 
   it('incrementa y decrementa cantidad en el carrito con los botones dedicados', async () => {
-    getCarrito.mockResolvedValue({ data: [{
-      id_libro: 33, titulo: 'Libro cantidad', autor_libro: 'Autora', precio_libro: 14000, cantidad: 2, stock: 10,
-    }] })
+    getCarrito.mockResolvedValue({
+      data: [{
+        id_libro: 33, titulo: 'Libro cantidad', autor_libro: 'Autora', precio_libro: 14000, cantidad: 2, stock: 10,
+      }]
+    })
     updateCartQuantity.mockResolvedValue({ data: { ok: true } })
     render(<SeccionCarrito userId={7} />)
     expect((await screen.findAllByText('Libro cantidad')).length).toBeGreaterThan(0)
@@ -161,9 +165,11 @@ describe('secciones de compras y notificaciones', () => {
   })
 
   it('crea una orden antes de pasar al paso de entrega y pago', async () => {
-    getCarrito.mockResolvedValue({ data: [{
-      id_libro: 33, titulo: 'Libro para pagar', precio_libro: 14000, cantidad: 1,
-    }] })
+    getCarrito.mockResolvedValue({
+      data: [{
+        id_libro: 33, titulo: 'Libro para pagar', precio_libro: 14000, cantidad: 1,
+      }]
+    })
     checkoutCarrito.mockResolvedValue({
       data: {
         ok: true,
@@ -187,9 +193,11 @@ describe('secciones de compras y notificaciones', () => {
   })
 
   it('valida campos de tarjeta antes de intentar cobrar y muestra errores de cupón', async () => {
-    getCarrito.mockResolvedValue({ data: [{
-      id_libro: 33, titulo: 'Libro con pago seguro', precio_libro: 14000, cantidad: 1,
-    }] })
+    getCarrito.mockResolvedValue({
+      data: [{
+        id_libro: 33, titulo: 'Libro con pago seguro', precio_libro: 14000, cantidad: 1,
+      }]
+    })
     checkoutCarrito.mockResolvedValue({
       data: { ok: true, order: { id_orden: 79, estado: 'pendiente', total: 14000 } },
     })
@@ -222,9 +230,11 @@ describe('secciones de compras y notificaciones', () => {
   })
 
   it('valida las credenciales de PayPal y crea el recibo de Efecty', async () => {
-    getCarrito.mockResolvedValue({ data: [{
-      id_libro: 33, titulo: 'Libro para pagos alternativos', precio_libro: 14000, cantidad: 1,
-    }] })
+    getCarrito.mockResolvedValue({
+      data: [{
+        id_libro: 33, titulo: 'Libro para pagos alternativos', precio_libro: 14000, cantidad: 1,
+      }]
+    })
     checkoutCarrito.mockResolvedValue({
       data: { ok: true, order: { id_orden: 80, estado: 'pendiente', total: 14000 } },
     })
@@ -285,10 +295,12 @@ describe('secciones de compras y notificaciones', () => {
   })
 
   it('reserva el retiro en tienda, muestra el PIN y notifica la llegada', async () => {
-    getCarrito.mockResolvedValue({ data: [{
-      id_libro: 33, id_tienda: 8, nombre_tienda: 'Librería Central',
-      titulo: 'Libro para recoger', precio_libro: 14000, cantidad: 1,
-    }] })
+    getCarrito.mockResolvedValue({
+      data: [{
+        id_libro: 33, id_tienda: 8, nombre_tienda: 'Librería Central',
+        titulo: 'Libro para recoger', precio_libro: 14000, cantidad: 1,
+      }]
+    })
     checkoutCarrito.mockResolvedValue({
       data: { ok: true, order: { id_orden: 81, estado: 'pendiente', total: 14000, items: [] } },
     })
@@ -321,9 +333,11 @@ describe('secciones de compras y notificaciones', () => {
   })
 
   it('muestra el error de la API cuando no se puede iniciar el checkout', async () => {
-    getCarrito.mockResolvedValue({ data: [{
-      id_libro: 33, titulo: 'Libro temporal', precio_libro: 14000, cantidad: 1,
-    }] })
+    getCarrito.mockResolvedValue({
+      data: [{
+        id_libro: 33, titulo: 'Libro temporal', precio_libro: 14000, cantidad: 1,
+      }]
+    })
     checkoutCarrito.mockRejectedValue({
       response: { data: { detail: 'No se pudo reservar el inventario' } },
     })
@@ -337,9 +351,11 @@ describe('secciones de compras y notificaciones', () => {
   })
 
   it('muestra el mensaje alternativo si el checkout responde sin crear la orden', async () => {
-    getCarrito.mockResolvedValue({ data: [{
-      id_libro: 33, titulo: 'Libro sin reserva', precio_libro: 14000, cantidad: 1,
-    }] })
+    getCarrito.mockResolvedValue({
+      data: [{
+        id_libro: 33, titulo: 'Libro sin reserva', precio_libro: 14000, cantidad: 1,
+      }]
+    })
     checkoutCarrito.mockResolvedValue({ data: { ok: false } })
     render(<SeccionCarrito userId={7} />)
 
@@ -351,15 +367,17 @@ describe('secciones de compras y notificaciones', () => {
   })
 
   it('abre detalles de una orden pendiente, recupera una portada rota y permite continuar al pago', async () => {
-    getOrdenes.mockResolvedValue({ data: [{
-      id_orden: 83,
-      estado: 'pendiente',
-      total: 25000,
-      items: [
-        { id_libro: 1, titulo: 'Portada rota', autor_libro: 'Autora', imagen: '/broken.jpg', cantidad: 1, precio_libro: 12000 },
-        { id_libro: 2, titulo: 'Portada alternativa', cantidad: 1, precio_libro: 13000 },
-      ],
-    }] })
+    getOrdenes.mockResolvedValue({
+      data: [{
+        id_orden: 83,
+        estado: 'pendiente',
+        total: 25000,
+        items: [
+          { id_libro: 1, titulo: 'Portada rota', autor_libro: 'Autora', imagen: '/broken.jpg', cantidad: 1, precio_libro: 12000 },
+          { id_libro: 2, titulo: 'Portada alternativa', cantidad: 1, precio_libro: 13000 },
+        ],
+      }]
+    })
 
     render(<SeccionCarrito userId={7} />)
     fireEvent.click(await screen.findByRole('button', { name: /Ver detalles/ }))
@@ -463,9 +481,11 @@ describe('secciones de compras y notificaciones', () => {
   })
 
   it('carga y muestra los datos bancarios del vendedor al elegir transferencia', async () => {
-    getCarrito.mockResolvedValue({ data: [{
-      id_libro: 35, titulo: 'Libro para transferir', precio_libro: 14000, cantidad: 1,
-    }] })
+    getCarrito.mockResolvedValue({
+      data: [{
+        id_libro: 35, titulo: 'Libro para transferir', precio_libro: 14000, cantidad: 1,
+      }]
+    })
     checkoutCarrito.mockResolvedValue({
       data: { ok: true, order: { id_orden: 85, estado: 'pendiente', total: 14000 } },
     })
@@ -513,9 +533,11 @@ describe('secciones de compras y notificaciones', () => {
   })
 
   it('ofrece la cuenta oficial cuando la tienda no devuelve datos bancarios', async () => {
-    getCarrito.mockResolvedValue({ data: [{
-      id_libro: 44, titulo: 'Libro para transferencia alternativa', precio_libro: 14000, cantidad: 1,
-    }] })
+    getCarrito.mockResolvedValue({
+      data: [{
+        id_libro: 44, titulo: 'Libro para transferencia alternativa', precio_libro: 14000, cantidad: 1,
+      }]
+    })
     checkoutCarrito.mockResolvedValue({
       data: { ok: true, order: { id_orden: 93, estado: 'pendiente', total: 14000 } },
     })
@@ -564,9 +586,11 @@ describe('secciones de compras y notificaciones', () => {
   })
 
   it('muestra las dos billeteras de retiro y conserva el flujo si la reserva falla', async () => {
-    getCarrito.mockResolvedValue({ data: [{
-      id_libro: 43, titulo: 'Libro para billetera', precio_libro: 14000, cantidad: 1,
-    }] })
+    getCarrito.mockResolvedValue({
+      data: [{
+        id_libro: 43, titulo: 'Libro para billetera', precio_libro: 14000, cantidad: 1,
+      }]
+    })
     checkoutCarrito.mockResolvedValue({
       data: { ok: true, order: { id_orden: 92, estado: 'pendiente', total: 14000 } },
     })
@@ -595,9 +619,11 @@ describe('secciones de compras y notificaciones', () => {
   })
 
   it('aplica un cupón válido al pagar con tarjeta y envía el descuento a la orden', async () => {
-    getCarrito.mockResolvedValue({ data: [{
-      id_libro: 37, titulo: 'Libro con descuento', precio_libro: 14000, cantidad: 1,
-    }] })
+    getCarrito.mockResolvedValue({
+      data: [{
+        id_libro: 37, titulo: 'Libro con descuento', precio_libro: 14000, cantidad: 1,
+      }]
+    })
     checkoutCarrito.mockResolvedValue({
       data: { ok: true, order: { id_orden: 87, estado: 'pendiente', total: 14000 } },
     })
@@ -639,9 +665,11 @@ describe('secciones de compras y notificaciones', () => {
   })
 
   it('completa el pago sandbox con PayPal después de validar las credenciales', async () => {
-    getCarrito.mockResolvedValue({ data: [{
-      id_libro: 38, titulo: 'Libro para PayPal', precio_libro: 14000, cantidad: 1,
-    }] })
+    getCarrito.mockResolvedValue({
+      data: [{
+        id_libro: 38, titulo: 'Libro para PayPal', precio_libro: 14000, cantidad: 1,
+      }]
+    })
     checkoutCarrito.mockResolvedValue({
       data: { ok: true, order: { id_orden: 88, estado: 'pendiente', total: 14000 } },
     })
@@ -677,9 +705,11 @@ describe('secciones de compras y notificaciones', () => {
   })
 
   it('muestra el rechazo de la pasarela y permite reintentar sin bloquear el formulario', async () => {
-    getCarrito.mockResolvedValue({ data: [{
-      id_libro: 41, titulo: 'Libro para reintentar', precio_libro: 14000, cantidad: 1,
-    }] })
+    getCarrito.mockResolvedValue({
+      data: [{
+        id_libro: 41, titulo: 'Libro para reintentar', precio_libro: 14000, cantidad: 1,
+      }]
+    })
     checkoutCarrito.mockResolvedValue({
       data: { ok: true, order: { id_orden: 91, estado: 'pendiente', total: 14000 } },
     })
@@ -689,7 +719,7 @@ describe('secciones de compras y notificaciones', () => {
       .mockResolvedValueOnce({ data: { ok: true } })
     actualizarCostoEnvio.mockRejectedValueOnce(new Error('shipping unavailable'))
     sendConfirmationEmail.mockRejectedValueOnce(new Error('email unavailable'))
-    const consoleWarn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const consoleWarn = vi.spyOn(console, 'warn').mockImplementation(() => { })
 
     render(<SeccionCarrito userId={7} />)
     await screen.findAllByText('Libro para reintentar')
@@ -721,10 +751,12 @@ describe('secciones de compras y notificaciones', () => {
   })
 
   it('impide retirar desde varias librerías y evita cobrar una orden ya entregada', async () => {
-    getCarrito.mockResolvedValue({ data: [
-      { id_libro: 39, id_tienda: 1, titulo: 'Libro de tienda uno', precio_libro: 9000, cantidad: 1 },
-      { id_libro: 40, id_tienda: 2, titulo: 'Libro de tienda dos', precio_libro: 11000, cantidad: 1 },
-    ] })
+    getCarrito.mockResolvedValue({
+      data: [
+        { id_libro: 39, id_tienda: 1, titulo: 'Libro de tienda uno', precio_libro: 9000, cantidad: 1 },
+        { id_libro: 40, id_tienda: 2, titulo: 'Libro de tienda dos', precio_libro: 11000, cantidad: 1 },
+      ]
+    })
     checkoutCarrito.mockResolvedValue({
       data: { ok: true, order: { id_orden: 89, estado: 'pendiente', total: 20000 } },
     })
@@ -760,9 +792,11 @@ describe('secciones de compras y notificaciones', () => {
   })
 
   it('valida el correo antes de continuar con el simulador PSE', async () => {
-    getCarrito.mockResolvedValue({ data: [{
-      id_libro: 33, titulo: 'Libro PSE', precio_libro: 14000, cantidad: 1,
-    }] })
+    getCarrito.mockResolvedValue({
+      data: [{
+        id_libro: 33, titulo: 'Libro PSE', precio_libro: 14000, cantidad: 1,
+      }]
+    })
     checkoutCarrito.mockResolvedValue({
       data: { ok: true, order: { id_orden: 77, estado: 'pendiente', total: 14000 } },
     })
@@ -785,9 +819,11 @@ describe('secciones de compras y notificaciones', () => {
   })
 
   it('completa un pago PSE y confirma la orden', async () => {
-    getCarrito.mockResolvedValue({ data: [{
-      id_libro: 33, titulo: 'Libro PSE aprobado', precio_libro: 14000, cantidad: 1,
-    }] })
+    getCarrito.mockResolvedValue({
+      data: [{
+        id_libro: 33, titulo: 'Libro PSE aprobado', precio_libro: 14000, cantidad: 1,
+      }]
+    })
     checkoutCarrito.mockResolvedValue({
       data: { ok: true, order: { id_orden: 78, estado: 'pendiente', total: 14000 } },
     })
@@ -829,18 +865,22 @@ describe('secciones de compras y notificaciones', () => {
   })
 
   it('cobra la tarjeta con la dirección guardada y presenta el comprobante de compra', async () => {
-    getCarrito.mockResolvedValue({ data: [{
-      id_libro: 33, titulo: 'Libro con dirección guardada', precio_libro: 14000, cantidad: 1,
-    }] })
-    getDirecciones.mockResolvedValue({ data: [{
-      id_direccion: 12,
-      alias_direccion: 'Casa',
-      direccion_completa: 'Calle 20 # 10-15',
-      ciudad: 'Bogotá',
-      departamento: 'Cundinamarca',
-      telefono_contacto: '3001234567',
-      es_principal: true,
-    }] })
+    getCarrito.mockResolvedValue({
+      data: [{
+        id_libro: 33, titulo: 'Libro con dirección guardada', precio_libro: 14000, cantidad: 1,
+      }]
+    })
+    getDirecciones.mockResolvedValue({
+      data: [{
+        id_direccion: 12,
+        alias_direccion: 'Casa',
+        direccion_completa: 'Calle 20 # 10-15',
+        ciudad: 'Bogotá',
+        departamento: 'Cundinamarca',
+        telefono_contacto: '3001234567',
+        es_principal: true,
+      }]
+    })
     checkoutCarrito.mockResolvedValue({
       data: { ok: true, order: { id_orden: 82, estado: 'pendiente', total: 14000 } },
     })
