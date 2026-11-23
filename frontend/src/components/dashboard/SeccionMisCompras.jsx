@@ -15,7 +15,7 @@ const estiloEstadoOrden = (estado) => {
     return { etiqueta: '🚚 En tránsito', fondo: '#EFF6FF', color: '#1D4ED8', borde: '#BFDBFE' };
   }
   if (estadoNormalizado.includes('pagad') || estadoNormalizado.includes('aprob')) {
-    return { etiqueta: '✓ Pagado', fondo: '#DCFCE7', color: '#166534', borde: '#86EFAC' };
+    return { etiqueta: '✓ Pagada', fondo: '#DCFCE7', color: '#166534', borde: '#86EFAC' };
   }
   if (estadoNormalizado.includes('cancel')) {
     return { etiqueta: '✕ Cancelada', fondo: '#FEF2F2', color: '#B91C1C', borde: '#FECACA' };

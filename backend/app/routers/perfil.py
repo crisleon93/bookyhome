@@ -293,19 +293,34 @@ def obtener_perfil(user_id: int = Depends(get_current_user)):
             raise HTTPException(status_code=404, detail="Usuario no encontrado")
         
         # Parse preferencias si existen
+        default_preferencias = {
+            'notificaciones_mensajes': {'email': True, 'web': True},
+            'notificaciones_resenas': {'email': True, 'web': True},
+            'notificaciones_ofertas': {'email': True, 'web': False},
+            'notificaciones_pedidos': {'email': True, 'web': True},
+            'notificaciones_entregas': {'email': True, 'web': True},
+            'notificaciones_pagos': {'email': True, 'web': True},
+            'notificaciones_sistema': {'email': True, 'web': True}
+        }
         if usuario.get('preferencias'):
             import json
-            usuario['preferencias'] = json.loads(usuario['preferencias'])
+            try:
+                raw_prefs = usuario['preferencias']
+                parsed_prefs = json.loads(raw_prefs) if isinstance(raw_prefs, str) else raw_prefs
+                if isinstance(parsed_prefs, dict):
+                    merged = dict(default_preferencias)
+                    for k, v in parsed_prefs.items():
+                        if k in merged and isinstance(v, dict):
+                            merged[k] = {**merged[k], **v}
+                        else:
+                            merged[k] = v
+                    usuario['preferencias'] = merged
+                else:
+                    usuario['preferencias'] = default_preferencias
+            except Exception:
+                usuario['preferencias'] = default_preferencias
         else:
-            usuario['preferencias'] = {
-                'notificaciones_mensajes': {'email': True, 'web': True},
-                'notificaciones_resenas': {'email': True, 'web': True},
-                'notificaciones_ofertas': {'email': True, 'web': False},
-                'notificaciones_pedidos': {'email': True, 'web': True},
-                'notificaciones_entregas': {'email': True, 'web': True},
-                'notificaciones_pagos': {'email': True, 'web': True},
-                'notificaciones_sistema': {'email': True, 'web': True}
-            }
+            usuario['preferencias'] = default_preferencias
         
         return usuario
     finally:

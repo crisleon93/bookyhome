@@ -206,10 +206,10 @@ export default function VendedorSidebar({ userName = 'Vendedor', profileImage = 
               transition: 'background 0.15s ease',
             }}
           >
-            <span style={{ display: 'flex', flexShrink: 0 }}>
+            <span style={{ display: 'flex', flexShrink: 0, color: WHITE }}>
               {ICONS[item.name]}
             </span>
-            {sidebarOpen && <span>{item.name}</span>}
+            {sidebarOpen && <span style={{ color: WHITE }}>{item.name}</span>}
           </button>
         );
       })}
@@ -230,7 +230,7 @@ export default function VendedorSidebar({ userName = 'Vendedor', profileImage = 
         }}
       >
         <SidebarIcon Icon={IconLogOut} size={18} />
-        {sidebarOpen && <span>Cerrar sesión</span>}
+        {sidebarOpen && <span style={{ color: WHITE }}>Cerrar sesión</span>}
       </button>
     </aside>
   );

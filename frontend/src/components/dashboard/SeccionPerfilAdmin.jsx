@@ -2,7 +2,6 @@ import { createElement, useState, useEffect, useEffectEvent } from "react";
 import api from "../../services/api";
 import { notify } from "../ToastProvider";
 import useProfileMedia from "../../hooks/useProfileMedia";
-import useSyncedDarkMode from "../../hooks/useSyncedDarkMode";
 import {
   IconUser, IconUsers, IconBook, IconPackage, IconStore,
   IconAlertTriangle, IconTool, IconCheck, IconSettings
@@ -30,7 +29,39 @@ export default function SeccionPerfilAdmin({ stats, gestionProp }) {
   } = useProfileMedia();
   const [gestionLocal, setGestionLocal] = useState({ reclamos: 0, soporte: 0, resueltos: 0, pendientes: 0 });
   const gestion = gestionProp ?? gestionLocal;
-  const [darkMode, setDarkMode] = useSyncedDarkMode();
+  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('darkMode_admin') === 'true');
+
+  useEffect(() => {
+    if (localStorage.getItem('darkMode_admin') === 'true') {
+      document.documentElement.classList.add('dark');
+    }
+
+    const handleDarkModeChange = (e) => {
+      if (e?.detail?.role && e.detail.role !== 'admin') return;
+      const mode = localStorage.getItem('darkMode_admin') === 'true';
+      setDarkMode(mode);
+    };
+    window.addEventListener('darkModeChange', handleDarkModeChange);
+    window.addEventListener('storage', handleDarkModeChange);
+    return () => {
+      window.removeEventListener('darkModeChange', handleDarkModeChange);
+      window.removeEventListener('storage', handleDarkModeChange);
+    };
+  }, []);
+
+  const toggleDarkMode = () => {
+    const newMode = !darkMode;
+    setDarkMode(newMode);
+    localStorage.setItem('darkMode_admin', String(newMode));
+    localStorage.setItem('darkMode', String(newMode));
+    if (newMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+    window.dispatchEvent(new CustomEvent('darkModeChange', { detail: { darkMode: newMode, role: 'admin' } }));
+    notify(newMode ? "Modo oscuro activado" : "Modo claro activado", "success");
+  };
 
   const cargarGestion = useEffectEvent(async () => {
     if (gestionProp) return;
@@ -104,17 +135,17 @@ export default function SeccionPerfilAdmin({ stats, gestionProp }) {
   ];
 
   const gestionStats = [
-    { label: 'Reclamos recibidos', valor: gestion.reclamos, Icon: IconAlertTriangle, color: '#ea580c' },
+    { label: 'Reclamos recibidos', valor: gestion.reclamos, Icon: IconAlertTriangle, color: darkMode ? '#fb923c' : '#ea580c' },
     { label: 'Tickets de soporte', valor: gestion.soporte, Icon: IconTool, color: '#3b82f6' },
     { label: 'Resueltos', valor: gestion.resueltos, Icon: IconCheck, color: '#16a34a' },
-    { label: 'Pendientes', valor: gestion.pendientes, Icon: IconSettings, color: '#7A1E3A' },
+    { label: 'Pendientes', valor: gestion.pendientes, Icon: IconSettings, color: darkMode ? '#e05a7a' : '#7A1E3A' },
   ];
 
   return (
     <>
       <div className="pl-card" style={{ padding: "2.5rem 2rem", marginBottom: 24 }}>
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          <IconUser width={28} height={28} strokeWidth={2} style={{ color: '#7A1E3A' }} />
+          <IconUser width={28} height={28} strokeWidth={2} style={{ color: darkMode ? '#e05a7a' : '#7A1E3A' }} />
           <h2 style={{ margin: 0 }}>Mi Perfil</h2>
         </div>
       </div>
@@ -122,22 +153,22 @@ export default function SeccionPerfilAdmin({ stats, gestionProp }) {
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", marginBottom: 20 }}>
         {/* Información Personal */}
         <div className="pl-card" style={{ padding: "2rem" }}>
-          <h3 style={{ margin: "0 0 1rem 0", color: "var(--vinotinto)", fontSize: "1.2rem" }}>Información Personal</h3>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '2rem', marginBottom: '2rem', paddingBottom: '2rem', borderBottom: '1px solid #e0dbd4' }}>
+          <h3 style={{ margin: "0 0 1rem 0", color: darkMode ? "#e05a7a" : "var(--vinotinto)", fontSize: "1.2rem" }}>Información Personal</h3>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '2rem', marginBottom: '2rem', paddingBottom: '2rem', borderBottom: darkMode ? '1px solid #3a3a3a' : '1px solid #e0dbd4' }}>
             <div style={{ flexShrink: 0 }}>
               {profilePhotoUrl ? (
                 <img src={profilePhotoUrl} alt="Foto de perfil" style={{
                   width: '100px', height: '100px', borderRadius: '50%', objectFit: 'cover', border: '3px solid #7A1E3A'
                 }} />
               ) : (
-                <div style={{ width: '100px', height: '100px', borderRadius: '50%', background: '#e0dbd4', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem', color: '#7A1E3A', fontWeight: 'bold', border: '3px solid #7A1E3A' }}>
+                <div style={{ width: '100px', height: '100px', borderRadius: '50%', background: darkMode ? '#333333' : '#e0dbd4', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem', color: darkMode ? '#e05a7a' : '#7A1E3A', fontWeight: 'bold', border: '3px solid #7A1E3A' }}>
                   {userName?.charAt(0).toUpperCase() || 'A'}
                 </div>
               )}
             </div>
             <div>
               <h3 style={{ margin: '0 0 0.5rem 0' }}>Foto de Perfil</h3>
-              <p style={{ margin: '0 0 1rem 0', color: '#666', fontSize: '0.9rem' }}>
+              <p style={{ margin: '0 0 1rem 0', color: darkMode ? '#c8c8c8' : '#666', fontSize: '0.9rem' }}>
                 Sube una foto para personalizar tu perfil
               </p>
               <input type="file" id="foto-perfil-admin-input" accept="image/*" style={{ display: 'none' }} onChange={onProfilePhotoChange} />
@@ -151,12 +182,12 @@ export default function SeccionPerfilAdmin({ stats, gestionProp }) {
           </div>
 
           {/* Banner de Perfil */}
-          <div style={{ marginBottom: '2rem', paddingBottom: '2rem', borderBottom: '1px solid #e0dbd4' }}>
+          <div style={{ marginBottom: '2rem', paddingBottom: '2rem', borderBottom: darkMode ? '1px solid #3a3a3a' : '1px solid #e0dbd4' }}>
             <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '1rem', fontWeight: 700 }}>Banner de Perfil</h3>
             <div style={{
               width: '100%', height: '80px', borderRadius: '10px', marginBottom: '12px',
               background: bannerUrl ? `url(${bannerUrl}) center/cover no-repeat` : (bannerColor || '#7A1E3A'),
-              border: '2px solid #e0dbd4', position: 'relative', overflow: 'hidden',
+              border: darkMode ? '2px solid #3a3a3a' : '2px solid #e0dbd4', position: 'relative', overflow: 'hidden',
             }}>
               <button
                 onClick={() => setShowBannerEditor(v => !v)}
@@ -172,9 +203,9 @@ export default function SeccionPerfilAdmin({ stats, gestionProp }) {
             </div>
 
             {showBannerEditor && (
-              <div style={{ background: '#f9f7f4', borderRadius: '10px', padding: '1rem', border: '1px solid #e0dbd4' }}>
+              <div style={{ background: darkMode ? '#252525' : '#f9f7f4', borderRadius: '10px', padding: '1rem', border: darkMode ? '1px solid #3a3a3a' : '1px solid #e0dbd4' }}>
                 <div style={{ marginBottom: '1rem' }}>
-                  <p style={{ margin: '0 0 8px 0', fontWeight: 600, fontSize: '0.9rem', color: '#444' }}>Subir imagen</p>
+                  <p style={{ margin: '0 0 8px 0', fontWeight: 600, fontSize: '0.9rem', color: darkMode ? '#c8c8c8' : '#444' }}>Subir imagen</p>
                   <input type="file" id="banner-img-admin-input" accept="image/*" style={{ display: 'none' }} onChange={onBannerImageChange} />
                   <label htmlFor="banner-img-admin-input" style={{
                     background: 'var(--vinotinto)', color: 'white', padding: '8px 16px',
@@ -185,7 +216,7 @@ export default function SeccionPerfilAdmin({ stats, gestionProp }) {
                 </div>
 
                 <div style={{ marginBottom: '0.75rem' }}>
-                  <p style={{ margin: '0 0 8px 0', fontWeight: 600, fontSize: '0.9rem', color: '#444' }}>Colores sólidos</p>
+                  <p style={{ margin: '0 0 8px 0', fontWeight: 600, fontSize: '0.9rem', color: darkMode ? '#c8c8c8' : '#444' }}>Colores sólidos</p>
                   <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                     {['#7A1E3A','#1E3A7A','#1E7A3A','#7A6A1E','#3A1E7A','#1E6A7A','#2A2A2A','#8B4513'].map(c => (
                       <button key={c} onClick={() => onBannerColorSelect(c)}
@@ -197,7 +228,7 @@ export default function SeccionPerfilAdmin({ stats, gestionProp }) {
                 </div>
 
                 <div style={{ marginBottom: '0.75rem' }}>
-                  <p style={{ margin: '0 0 8px 0', fontWeight: 600, fontSize: '0.9rem', color: '#444' }}>Gradientes</p>
+                  <p style={{ margin: '0 0 8px 0', fontWeight: 600, fontSize: '0.9rem', color: darkMode ? '#c8c8c8' : '#444' }}>Gradientes</p>
                   <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                     {[
                       'linear-gradient(135deg, #7A1E3A, #3A1E7A)',
@@ -218,7 +249,7 @@ export default function SeccionPerfilAdmin({ stats, gestionProp }) {
                 </div>
 
                 <div>
-                  <p style={{ margin: '0 0 8px 0', fontWeight: 600, fontSize: '0.9rem', color: '#444' }}>Color personalizado</p>
+                  <p style={{ margin: '0 0 8px 0', fontWeight: 600, fontSize: '0.9rem', color: darkMode ? '#c8c8c8' : '#444' }}>Color personalizado</p>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <input type="color" defaultValue="#7A1E3A"
                       onChange={e => setBannerColor(e.target.value)}
@@ -238,21 +269,21 @@ export default function SeccionPerfilAdmin({ stats, gestionProp }) {
           <div style={{ display: "flex", flexDirection: "column", gap: "16px", maxWidth: "500px" }}>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
               <div>
-                <label htmlFor="admin-profile-first-name" style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>Nombres</label>
-                <input id="admin-profile-first-name" type="text" value={userName} onChange={onUserNameChange} style={{ width: "100%", padding: "10px 14px", borderRadius: "8px", border: "1px solid #ddd", fontSize: "0.95rem" }} />
+                <label htmlFor="admin-profile-first-name" style={{ fontWeight: 600, color: darkMode ? '#c8c8c8' : "#444", display: "block", marginBottom: "6px" }}>Nombres</label>
+                <input id="admin-profile-first-name" type="text" value={userName} onChange={onUserNameChange} style={{ width: "100%", padding: "10px 14px", borderRadius: "8px", border: darkMode ? '1px solid #3a3a3a' : "1px solid #ddd", fontSize: "0.95rem" }} />
               </div>
               <div>
-                <label htmlFor="admin-profile-last-name" style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>Apellidos</label>
-                <input id="admin-profile-last-name" type="text" value={userSurname} onChange={onUserSurnameChange} style={{ width: "100%", padding: "10px 14px", borderRadius: "8px", border: "1px solid #ddd", fontSize: "0.95rem" }} />
+                <label htmlFor="admin-profile-last-name" style={{ fontWeight: 600, color: darkMode ? '#c8c8c8' : "#444", display: "block", marginBottom: "6px" }}>Apellidos</label>
+                <input id="admin-profile-last-name" type="text" value={userSurname} onChange={onUserSurnameChange} style={{ width: "100%", padding: "10px 14px", borderRadius: "8px", border: darkMode ? '1px solid #3a3a3a' : "1px solid #ddd", fontSize: "0.95rem" }} />
               </div>
             </div>
             <div>
-              <label htmlFor="admin-profile-email" style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>Correo electrónico</label>
-              <input id="admin-profile-email" type="email" value={userEmail} readOnly style={{ width: "100%", padding: "10px 14px", borderRadius: "8px", border: "1px solid #ddd", fontSize: "0.95rem", background: "#f5f5f5", color: "#888" }} />
+              <label htmlFor="admin-profile-email" style={{ fontWeight: 600, color: darkMode ? '#c8c8c8' : "#444", display: "block", marginBottom: "6px" }}>Correo electrónico</label>
+              <input id="admin-profile-email" type="email" value={userEmail} readOnly style={{ width: "100%", padding: "10px 14px", borderRadius: "8px", border: darkMode ? '1px solid #3a3a3a' : "1px solid #ddd", fontSize: "0.95rem", background: darkMode ? '#252525' : "#f5f5f5", color: darkMode ? '#b8b8b8' : "#888" }} />
             </div>
             <div>
-              <label htmlFor="admin-profile-phone" style={{ fontWeight: 600, color: "#444", display: "block", marginBottom: "6px" }}>Celular</label>
-              <input id="admin-profile-phone" type="tel" value={userPhone} onChange={onUserPhoneChange} style={{ width: "100%", padding: "10px 14px", borderRadius: "8px", border: "1px solid #ddd", fontSize: "0.95rem" }} />
+              <label htmlFor="admin-profile-phone" style={{ fontWeight: 600, color: darkMode ? '#c8c8c8' : "#444", display: "block", marginBottom: "6px" }}>Celular</label>
+              <input id="admin-profile-phone" type="tel" value={userPhone} onChange={onUserPhoneChange} style={{ width: "100%", padding: "10px 14px", borderRadius: "8px", border: darkMode ? '1px solid #3a3a3a' : "1px solid #ddd", fontSize: "0.95rem" }} />
             </div>
             <button onClick={onActualizarPerfil} style={{ background: "var(--vinotinto)", color: "white", border: "none", padding: "12px 24px", borderRadius: "8px", fontWeight: 700, fontSize: "0.95rem", cursor: "pointer", marginTop: "8px" }}>
               Guardar cambios
@@ -261,19 +292,19 @@ export default function SeccionPerfilAdmin({ stats, gestionProp }) {
         </div>
         {/* Cuenta de Administrador */}
         <div className="pl-card" style={{ padding: "2rem", display: 'flex', flexDirection: 'column' }}>
-          <h3 style={{ margin: "0 0 1rem 0", color: "var(--vinotinto)", fontSize: "1.2rem", display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <IconSettings width={24} height={24} strokeWidth={2} style={{ color: '#7A1E3A' }} />
+          <h3 style={{ margin: "0 0 1rem 0", color: darkMode ? "#e05a7a" : "var(--vinotinto)", fontSize: "1.2rem", display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <IconSettings width={24} height={24} strokeWidth={2} style={{ color: darkMode ? '#e05a7a' : '#7A1E3A' }} />
             Cuenta de Administrador
           </h3>
           <div style={{
             flex: 1,
-            background: 'linear-gradient(135deg, #fdf2f6 0%, #fbe8ef 100%)',
+            background: darkMode ? '#1e1e1e' : 'linear-gradient(135deg, #fdf2f6 0%, #fbe8ef 100%)',
             padding: "2rem",
             borderRadius: "16px",
-            border: "3px solid #7A1E3A",
+            border: darkMode ? "1px solid #3a3a3a" : "3px solid #7A1E3A",
             textAlign: "center",
             position: "relative",
-            boxShadow: "0 8px 24px rgba(122,30,58,0.12)",
+            boxShadow: darkMode ? "0 8px 24px rgba(0,0,0,0.4)" : "0 8px 24px rgba(122,30,58,0.12)",
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
@@ -297,25 +328,25 @@ export default function SeccionPerfilAdmin({ stats, gestionProp }) {
                 </span>
               )}
             </div>
-            <div style={{ fontSize: "2rem", fontWeight: 800, color: '#7A1E3A', marginBottom: "0.5rem", textTransform: "uppercase", letterSpacing: "2px" }}>
+            <div style={{ fontSize: "2rem", fontWeight: 800, color: darkMode ? '#e05a7a' : '#7A1E3A', marginBottom: "0.5rem", textTransform: "uppercase", letterSpacing: "2px" }}>
               Administrador
             </div>
-            <div style={{ color: "#555", fontSize: "1rem", marginBottom: "0.5rem", fontWeight: 600 }}>
+            <div style={{ color: darkMode ? '#c8c8c8' : "#555", fontSize: "1rem", marginBottom: "0.5rem", fontWeight: 600 }}>
               {userName} {userSurname}
             </div>
-            <div style={{ color: "#888", fontSize: "0.85rem", marginBottom: "0.25rem" }}>
+            <div style={{ color: darkMode ? '#b8b8b8' : "#888", fontSize: "0.85rem", marginBottom: "0.25rem" }}>
               Administrador BookyHome
             </div>
             {fechaRegistro && (
-              <div style={{ color: "#aaa", fontSize: "0.82rem" }}>
+              <div style={{ color: darkMode ? '#b8b8b8' : "#aaa", fontSize: "0.82rem" }}>
                 Miembro desde {formatearFecha(fechaRegistro)}
               </div>
             )}
-            <div style={{ marginTop: "1.5rem", paddingTop: "1rem", borderTop: "1px solid rgba(0,0,0,0.08)" }}>
+            <div style={{ marginTop: "1.5rem", paddingTop: "1rem", borderTop: darkMode ? '1px solid rgba(255,255,255,0.12)' : "1px solid rgba(0,0,0,0.08)" }}>
               <span style={{
                 display: 'inline-flex', alignItems: 'center', gap: 8,
-                background: '#fff', border: '1px solid #ecdce3', borderRadius: 999,
-                padding: '6px 16px', fontSize: '0.85rem', fontWeight: 700, color: '#7A1E3A',
+                background: darkMode ? '#1e1e1e' : '#fff', border: darkMode ? '1px solid #3a3a3a' : '1px solid #ecdce3', borderRadius: 999,
+                padding: '6px 16px', fontSize: '0.85rem', fontWeight: 700, color: darkMode ? '#e05a7a' : '#7A1E3A',
               }}>
                 Acceso total a la plataforma
               </span>
@@ -325,18 +356,18 @@ export default function SeccionPerfilAdmin({ stats, gestionProp }) {
       </div>
       {/* Estadísticas de la Plataforma */}
       <div className="pl-card" style={{ padding: "2rem", marginBottom: 20 }}>
-        <h3 style={{ margin: "0 0 1rem 0", color: "var(--vinotinto)", fontSize: "1.2rem" }}>
+        <h3 style={{ margin: "0 0 1rem 0", color: darkMode ? "#e05a7a" : "var(--vinotinto)", fontSize: "1.2rem" }}>
           Estadísticas de la Plataforma
         </h3>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px" }}>
           {plataformasStats.map(({ label, valor, Icon: IconComponent }) => (
-            <div key={label} style={{ background: "#faf8f6", padding: "1.5rem", borderRadius: "8px", border: "1px solid #e0dbd4", display: 'flex', alignItems: 'center', gap: 14 }}>
-              <div style={{ width: 46, height: 46, borderRadius: 12, background: '#fdf2f6', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
-                {createElement(IconComponent, { width: 22, height: 22, strokeWidth: 2, style: { color: '#7A1E3A' } })}
+            <div key={label} style={{ background: darkMode ? '#252525' : "#faf8f6", padding: "1.5rem", borderRadius: "8px", border: darkMode ? '1px solid #3a3a3a' : "1px solid #e0dbd4", display: 'flex', alignItems: 'center', gap: 14 }}>
+              <div style={{ width: 46, height: 46, borderRadius: 12, background: darkMode ? 'rgba(224,90,122,0.15)' : '#fdf2f6', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+                {createElement(IconComponent, { width: 22, height: 22, strokeWidth: 2, style: { color: darkMode ? '#e05a7a' : '#7A1E3A' } })}
               </div>
               <div>
-                <p style={{ margin: 0, color: "#666", fontSize: "0.85rem" }}>{label}</p>
-                <p style={{ margin: "4px 0 0 0", fontSize: "1.5rem", fontWeight: 700, color: "var(--vinotinto)" }}>
+                <p style={{ margin: 0, color: darkMode ? '#c8c8c8' : "#666", fontSize: "0.85rem" }}>{label}</p>
+                <p style={{ margin: "4px 0 0 0", fontSize: "1.5rem", fontWeight: 700, color: darkMode ? "#e05a7a" : "var(--vinotinto)" }}>
                   {(valor || 0).toLocaleString('es-CO')}
                 </p>
               </div>
@@ -347,20 +378,20 @@ export default function SeccionPerfilAdmin({ stats, gestionProp }) {
 
       {/* Gestión de Solicitudes */}
       <div className="pl-card" style={{ padding: "2rem", marginBottom: 20 }}>
-        <h3 style={{ margin: "0 0 0.5rem 0", color: "var(--vinotinto)", fontSize: "1.2rem" }}>
+        <h3 style={{ margin: "0 0 0.5rem 0", color: darkMode ? "#e05a7a" : "var(--vinotinto)", fontSize: "1.2rem" }}>
           Gestión de Solicitudes
         </h3>
-        <p style={{ color: "#666", fontSize: "0.9rem", marginBottom: "1rem" }}>
+        <p style={{ color: darkMode ? '#c8c8c8' : "#666", fontSize: "0.9rem", marginBottom: "1rem" }}>
           Resumen de quejas, reclamos y tickets de soporte de la comunidad
         </p>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px" }}>
           {gestionStats.map(({ label, valor, Icon: IconComponent, color }) => (
-            <div key={label} style={{ background: "#faf8f6", padding: "1.5rem", borderRadius: "8px", border: "1px solid #e0dbd4", display: 'flex', alignItems: 'center', gap: 14 }}>
-              <div style={{ width: 46, height: 46, borderRadius: 12, background: `${color}14`, display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+            <div key={label} style={{ background: darkMode ? '#252525' : "#faf8f6", padding: "1.5rem", borderRadius: "8px", border: darkMode ? '1px solid #3a3a3a' : "1px solid #e0dbd4", display: 'flex', alignItems: 'center', gap: 14 }}>
+              <div style={{ width: 46, height: 46, borderRadius: 12, background: darkMode ? 'rgba(255,255,255,0.07)' : `${color}14`, display: 'grid', placeItems: 'center', flexShrink: 0 }}>
                 {createElement(IconComponent, { width: 22, height: 22, strokeWidth: 2, style: { color } })}
               </div>
               <div>
-                <p style={{ margin: 0, color: "#666", fontSize: "0.85rem" }}>{label}</p>
+                <p style={{ margin: 0, color: darkMode ? '#c8c8c8' : "#666", fontSize: "0.85rem" }}>{label}</p>
                 <p style={{ margin: "4px 0 0 0", fontSize: "1.5rem", fontWeight: 700, color }}>
                   {(valor || 0).toLocaleString('es-CO')}
                 </p>
@@ -372,7 +403,7 @@ export default function SeccionPerfilAdmin({ stats, gestionProp }) {
 
       {/* Preferencias Visuales */}
       <div className="pl-card" style={{ padding: "2rem", marginBottom: 20 }}>
-        <h3 style={{ margin: "0 0 1rem 0", color: "var(--vinotinto)", fontSize: "1.2rem" }}>
+        <h3 style={{ margin: "0 0 1rem 0", color: darkMode ? "#e05a7a" : "var(--vinotinto)", fontSize: "1.2rem" }}>
           Preferencias Visuales
         </h3>
         <div style={{ 
@@ -380,45 +411,53 @@ export default function SeccionPerfilAdmin({ stats, gestionProp }) {
           justifyContent: "space-between", 
           alignItems: "center", 
           padding: "1.2rem", 
-          background: "#faf8f6", 
+          background: darkMode ? "#2a2a2a" : "#faf8f6", 
           borderRadius: "8px", 
-          borderLeft: "4px solid var(--vinotinto)" 
+          borderLeft: darkMode ? "4px solid #e05a7a" : "4px solid var(--vinotinto)" 
         }}>
           <div>
-            <h4 style={{ margin: "0 0 0.3rem 0", color: "#2a2a2a", fontSize: "1rem" }}>Modo Oscuro</h4>
-            <p style={{ margin: 0, color: "#666", fontSize: "0.85rem" }}>Cambia el tema de la aplicación a modo oscuro</p>
+            <h4 style={{ margin: "0 0 0.3rem 0", color: darkMode ? "#ececec" : "#2a2a2a", fontSize: "1rem" }}>Modo Oscuro</h4>
+            <p style={{ margin: 0, color: darkMode ? "#c8c8c8" : "#666", fontSize: "0.85rem" }}>Cambia el tema de la aplicación a modo oscuro</p>
           </div>
-          <div style={{ position: 'relative', display: 'inline-block', width: '48px', height: '26px', cursor: 'pointer' }}>
+          <label 
+            htmlFor="admin-dark-mode-toggle"
+            style={{ position: 'relative', display: 'inline-block', width: '48px', height: '26px', cursor: 'pointer', flexShrink: 0 }}
+          >
             <input 
+              id="admin-dark-mode-toggle"
               type="checkbox" 
               aria-label="Activar modo oscuro"
-              checked={darkMode}
-              onChange={() => {
-                const newMode = !darkMode;
-                setDarkMode(newMode);
-                localStorage.setItem('darkMode', newMode);
-                if (newMode) {
-                  document.documentElement.classList.add('dark');
-                } else {
-                  document.documentElement.classList.remove('dark');
-                }
-                window.dispatchEvent(new CustomEvent('darkModeChange', { detail: { darkMode: newMode } }));
-              }}
-              style={{ opacity: 0, width: 0, height: 0 }} 
+              checked={Boolean(darkMode)}
+              onChange={toggleDarkMode}
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100%',
+                margin: 0,
+                opacity: 0,
+                cursor: 'pointer',
+                zIndex: 2,
+              }} 
             />
             <span style={{ 
-              position: 'absolute', cursor: 'pointer', 
+              position: 'absolute', 
               top: 0, left: 0, right: 0, bottom: 0, 
               backgroundColor: darkMode ? 'var(--vinotinto)' : '#ccc', 
-              transition: '0.3s', borderRadius: '26px' 
+              transition: '0.3s', borderRadius: '26px',
+              pointerEvents: 'none',
+              zIndex: 1,
             }}></span>
             <span style={{ 
               position: 'absolute', content: '', height: '20px', width: '20px', 
               left: '3px', bottom: '3px', backgroundColor: 'white', 
               transition: '0.3s', borderRadius: '50%', 
-              transform: darkMode ? 'translateX(22px)' : 'translateX(0)' 
+              transform: darkMode ? 'translateX(22px)' : 'translateX(0)',
+              pointerEvents: 'none',
+              zIndex: 1,
             }}></span>
-          </div>
+          </label>
         </div>
       </div>
     </>

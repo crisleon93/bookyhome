@@ -64,13 +64,15 @@ const RED            = '#c62828';
 
 // ─── Colores de estados de órdenes ───────────────────────────────────────────
 const ORDEN_ESTADOS = {
-  // Pagado — verde azulado
+  // Pagado / Pagada — verde azulado
   pagado:      { bg: '#eafaf1', color: '#145c2e', border: '#1e8a45',  dot: '#1e8a45',  label: 'Pagado'      },
-  // Enviado — azul
-  enviado:     { bg: '#eaf3ff', color: '#1a4f8a', border: '#2979c7',  dot: '#2979c7',  label: 'Enviado'     },
-  // Entregado — naranja cálido (no rojo, es un estado positivo)
-  entregado:   { bg: '#FFF7ED', color: '#9A3412', border: '#FDBA74',  dot: '#EA580C',  label: 'Entregado'   },
-  entregada:   { bg: '#FFF7ED', color: '#9A3412', border: '#FDBA74',  dot: '#EA580C',  label: 'Entregada'   },
+  pagada:      { bg: '#eafaf1', color: '#145c2e', border: '#1e8a45',  dot: '#1e8a45',  label: 'Pagada'      },
+  // Enviado / Enviada — azul
+  enviado:     { bg: '#eaf3ff', color: '#1a4f8a', border: '#2979c7',  dot: '#2979c7',  label: 'Enviada'     },
+  enviada:     { bg: '#eaf3ff', color: '#1a4f8a', border: '#2979c7',  dot: '#2979c7',  label: 'Enviada'     },
+  // Entregado / Entregada
+  entregado:   { bg: '#EFF6FF', color: '#1D4ED8', border: '#BFDBFE',  dot: '#2563EB',  label: 'Entregada'   },
+  entregada:   { bg: '#EFF6FF', color: '#1D4ED8', border: '#BFDBFE',  dot: '#2563EB',  label: 'Entregada'   },
   // Completada / Finalizada — verde oscuro
   completada:  { bg: '#ECFDF5', color: '#047857', border: '#A7F3D0',  dot: '#10B981',  label: 'Completada'  },
   finalizada:  { bg: '#ECFDF5', color: '#047857', border: '#A7F3D0',  dot: '#10B981',  label: 'Finalizada'  },

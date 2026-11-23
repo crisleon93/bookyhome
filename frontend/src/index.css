@@ -1049,13 +1049,27 @@
   --sombra-suave: 0 4px 20px rgba(0,0,0,0.4);
 }
 
+/* Tarjetas .pl-card (perfil del admin, entre otras) en modo oscuro */
+.dark .pl-card {
+  background: #1e1e1e;
+  border-color: #333333;
+}
+
+.dark .pl-card-title {
+  color: #e0e0e0;
+}
+
 /* Proteger específicamente el sidebar del dashboard */
-.dark .dashboard-sidebar {
+.dark .dashboard-sidebar,
+.dark .admin-sidebar,
+.dark .admin-dashboard-container aside {
   background: var(--vinotinto) !important;
   color: white !important;
 }
 
-.dark .dashboard-sidebar.collapsed {
+.dark .dashboard-sidebar.collapsed,
+.dark .admin-sidebar.collapsed,
+.dark .admin-dashboard-container aside.collapsed {
   background: var(--vinotinto) !important;
 }
 
@@ -1064,53 +1078,72 @@
   border-right-color: #e5e5e5 !important;
 }
 
-/* Proteger específicamente el sidebar del comprador */
-.dark .dashboard-sidebar[style*="background: #7A1E3A"] {
+/* Proteger específicamente el sidebar del comprador y admin */
+.dark .dashboard-sidebar[style*="background: #7A1E3A"],
+.dark .admin-sidebar[style*="background: #7A1E3A"] {
   background: #7A1E3A !important;
   color: #FFFFFF !important;
 }
 
-.dark .dashboard-sidebar[style*="background: #7A1E3A"] button {
+.dark .dashboard-sidebar[style*="background: #7A1E3A"] button,
+.dark .admin-sidebar[style*="background: #7A1E3A"] button {
   color: #FFFFFF !important;
 }
 
-.dark .dashboard-sidebar[style*="background: #7A1E3A"] button:hover {
+.dark .dashboard-sidebar[style*="background: #7A1E3A"] button:hover,
+.dark .admin-sidebar[style*="background: #7A1E3A"] button:hover {
   background: rgba(255,255,255,0.12) !important;
 }
 
-/* Proteger todos los elementos internos del sidebar */
-.dark .dashboard-sidebar button {
+/* Proteger todos los elementos internos de los sidebars (Admin, Vendedor, Comprador) */
+.dark .dashboard-sidebar button,
+.dark .admin-sidebar button,
+.dark .admin-dashboard-container aside button {
   color: #FFFFFF !important;
 }
 
-.dark .dashboard-sidebar button:hover {
+.dark .dashboard-sidebar button:hover,
+.dark .admin-sidebar button:hover,
+.dark .admin-dashboard-container aside button:hover {
   background: rgba(255,255,255,0.12) !important;
 }
 
-.dark .dashboard-sidebar .sidebar-item {
+.dark .dashboard-sidebar .sidebar-item,
+.dark .admin-sidebar .sidebar-item,
+.dark .admin-dashboard-container aside .sidebar-item {
   color: #FFFFFF !important;
 }
 
-.dark .dashboard-sidebar .sidebar-item:hover {
+.dark .dashboard-sidebar .sidebar-item:hover,
+.dark .admin-sidebar .sidebar-item:hover,
+.dark .admin-dashboard-container aside .sidebar-item:hover {
   background: rgba(255,255,255,0.08) !important;
 }
 
-.dark .dashboard-sidebar .sidebar-item.active {
+.dark .dashboard-sidebar .sidebar-item.active,
+.dark .admin-sidebar .sidebar-item.active,
+.dark .admin-dashboard-container aside .sidebar-item.active {
   background: rgba(255,255,255,0.18) !important;
 }
 
-.dark .dashboard-sidebar .sidebar-logout {
+.dark .dashboard-sidebar .sidebar-logout,
+.dark .admin-sidebar .sidebar-logout,
+.dark .admin-dashboard-container aside .sidebar-logout {
   color: #FFFFFF !important;
   border-color: rgba(255,255,255,0.35) !important;
 }
 
-.dark .dashboard-sidebar .sidebar-logout:hover {
+.dark .dashboard-sidebar .sidebar-logout:hover,
+.dark .admin-sidebar .sidebar-logout:hover,
+.dark .admin-dashboard-container aside .sidebar-logout:hover {
   background: rgba(255,255,255,0.12) !important;
 }
 
 /* Proteger sidebar en media queries móviles */
 @media (max-width: 768px) {
-  .dark .dashboard-sidebar {
+  .dark .dashboard-sidebar,
+  .dark .admin-sidebar,
+  .dark .admin-dashboard-container aside {
     background: var(--vinotinto) !important;
   }
 }
@@ -1171,23 +1204,66 @@
   color: #ffffff !important;
 }
 
-/* ── Excluir Sidebar del comprador del modo oscuro ── */
-/* El sidebar ya usa inline styles vinotinto/blanco; estas reglas evitan
-   que las reglas globales de .dark sobreescriban colores de texto/inputs */
+/* ── Excluir Sidebars (Admin, Vendedor, Comprador) del modo oscuro ── */
+/* Los sidebars usan vinotinto y blanco; estas reglas evitan
+   que las reglas globales de .dark sobreescriban colores de texto/iconos/fondos */
+.dark .dashboard-sidebar,
+.dark .admin-sidebar,
+.dark .admin-dashboard-container aside,
+.dark aside.dashboard-sidebar,
+.dark aside.admin-sidebar {
+  background: var(--vinotinto, #7A1E3A) !important;
+  color: #ffffff !important;
+}
+
 .dark .dashboard-sidebar h1,
 .dark .dashboard-sidebar h2,
 .dark .dashboard-sidebar h3,
-.dark .dashboard-sidebar h4 {
-  color: #ffffff !important;
-}
+.dark .dashboard-sidebar h4,
 .dark .dashboard-sidebar p,
 .dark .dashboard-sidebar span,
-.dark .dashboard-sidebar label {
+.dark .dashboard-sidebar label,
+.dark .dashboard-sidebar button,
+.dark .dashboard-sidebar div,
+.dark .dashboard-sidebar a,
+.dark .admin-sidebar h1,
+.dark .admin-sidebar h2,
+.dark .admin-sidebar h3,
+.dark .admin-sidebar h4,
+.dark .admin-sidebar p,
+.dark .admin-sidebar span,
+.dark .admin-sidebar label,
+.dark .admin-sidebar button,
+.dark .admin-sidebar div,
+.dark .admin-sidebar a,
+.dark .admin-dashboard-container aside h1,
+.dark .admin-dashboard-container aside h2,
+.dark .admin-dashboard-container aside h3,
+.dark .admin-dashboard-container aside h4,
+.dark .admin-dashboard-container aside p,
+.dark .admin-dashboard-container aside span,
+.dark .admin-dashboard-container aside label,
+.dark .admin-dashboard-container aside button,
+.dark .admin-dashboard-container aside div,
+.dark .admin-dashboard-container aside a {
   color: #ffffff !important;
 }
+
+.dark .dashboard-sidebar svg,
+.dark .admin-sidebar svg,
+.dark .admin-dashboard-container aside svg {
+  color: #ffffff !important;
+}
+
 .dark .dashboard-sidebar input,
 .dark .dashboard-sidebar textarea,
-.dark .dashboard-sidebar select {
+.dark .dashboard-sidebar select,
+.dark .admin-sidebar input,
+.dark .admin-sidebar textarea,
+.dark .admin-sidebar select,
+.dark .admin-dashboard-container aside input,
+.dark .admin-dashboard-container aside textarea,
+.dark .admin-dashboard-container aside select {
   background-color: revert !important;
   border-color: revert !important;
   color: revert !important;
@@ -2052,6 +2128,215 @@
 
 .dark [style*="color: #666"] {
   color: #c8c8c8 !important;
+}
+
+/* ── Modo Oscuro — Admin Dashboard ── */
+.dark .admin-dashboard-container {
+  background: #121212 !important;
+  color: #e0e0e0;
+}
+
+.dark .admin-dashboard-container main {
+  background: #121212 !important;
+}
+
+/* Sidebar en Admin Dashboard: completamente inmune al modo oscuro */
+.dark .admin-dashboard-container aside {
+  background: var(--vinotinto, #7A1E3A) !important;
+  color: #ffffff !important;
+}
+
+.dark .admin-dashboard-container aside span,
+.dark .admin-dashboard-container aside button,
+.dark .admin-dashboard-container aside div,
+.dark .admin-dashboard-container aside p,
+.dark .admin-dashboard-container aside a,
+.dark .admin-dashboard-container aside svg {
+  color: #ffffff !important;
+}
+
+/* Tarjetas y paneles principales en Admin */
+.dark .admin-dashboard-container main [style*="background: #FFFFFF"],
+.dark .admin-dashboard-container main [style*="background: #ffffff"],
+.dark .admin-dashboard-container main [style*="background: white"],
+.dark .admin-dashboard-container main [style*="background: rgb(255, 255, 255)"],
+.dark .admin-dashboard-container main .admin-kpi-card {
+  background: #1e1e1e !important;
+  border-color: #333333 !important;
+}
+
+/* Sub-paneles y fondos suaves */
+.dark .admin-dashboard-container main [style*="background: #faf8f6"],
+.dark .admin-dashboard-container main [style*="background: #f8f6f4"],
+.dark .admin-dashboard-container main [style*="background: #f9f7f4"],
+.dark .admin-dashboard-container main [style*="background: #F4EDE2"],
+.dark .admin-dashboard-container main [style*="background: #FAF8F5"],
+.dark .admin-dashboard-container main [style*="background: #F9F6F0"],
+.dark .admin-dashboard-container main [style*="background: #FAF5EE"],
+.dark .admin-dashboard-container main [style*="background: rgb(250, 248, 245)"],
+.dark .admin-dashboard-container main [style*="background: rgb(249, 246, 240)"],
+.dark .admin-dashboard-container main [style*="background: rgb(250, 245, 238)"] {
+  background: #252525 !important;
+  border-color: #3a3a3a !important;
+}
+
+/* Alertas de atención y badges en Admin */
+.dark .admin-dashboard-container main [style*="background: #FFFBEB"],
+.dark .admin-dashboard-container main [style*="background: rgb(255, 251, 235)"] {
+  background: rgba(245, 158, 11, 0.15) !important;
+  border-color: rgba(245, 158, 11, 0.3) !important;
+}
+
+.dark .admin-dashboard-container main [style*="background: #ECFDF5"],
+.dark .admin-dashboard-container main [style*="background: rgb(236, 253, 245)"] {
+  background: rgba(16, 185, 129, 0.15) !important;
+  border-color: rgba(16, 185, 129, 0.3) !important;
+}
+
+.dark .admin-dashboard-container main [style*="background: #EFF6FF"],
+.dark .admin-dashboard-container main [style*="background: rgb(239, 246, 255)"] {
+  background: rgba(59, 130, 246, 0.15) !important;
+  border-color: rgba(59, 130, 246, 0.3) !important;
+}
+
+.dark .admin-dashboard-container main [style*="background: #FDF2F4"],
+.dark .admin-dashboard-container main [style*="background: rgb(253, 242, 244)"] {
+  background: rgba(224, 90, 122, 0.15) !important;
+  border-color: rgba(224, 90, 122, 0.3) !important;
+}
+
+.dark .admin-dashboard-container main [style*="background: #F3E8FF"],
+.dark .admin-dashboard-container main [style*="background: #FAF5FF"],
+.dark .admin-dashboard-container main [style*="background: #F5F3FF"],
+.dark .admin-dashboard-container main [style*="background: rgb(243, 232, 255)"],
+.dark .admin-dashboard-container main [style*="background: rgb(250, 245, 255)"] {
+  background: rgba(168, 85, 247, 0.15) !important;
+  border-color: rgba(168, 85, 247, 0.3) !important;
+}
+
+.dark .admin-dashboard-container main [style*="background: #FEF2F2"],
+.dark .admin-dashboard-container main [style*="background: rgb(254, 242, 242)"] {
+  background: rgba(239, 68, 68, 0.15) !important;
+  border-color: rgba(239, 68, 68, 0.3) !important;
+}
+
+.dark .admin-dashboard-container main [style*="background: #FFF7ED"],
+.dark .admin-dashboard-container main [style*="background: rgb(255, 247, 237)"] {
+  background: rgba(249, 115, 22, 0.15) !important;
+  border-color: rgba(249, 115, 22, 0.3) !important;
+}
+
+/* Textos oscuros pasan a claros */
+.dark .admin-dashboard-container main [style*="color: #2A2A2A"],
+.dark .admin-dashboard-container main [style*="color: #2a2a2a"],
+.dark .admin-dashboard-container main [style*="color: rgb(42, 42, 42)"],
+.dark .admin-dashboard-container main [style*="color: #333"],
+.dark .admin-dashboard-container main [style*="color: rgb(51, 51, 51)"],
+.dark .admin-dashboard-container main [style*="color: #444"],
+.dark .admin-dashboard-container main [style*="color: rgb(68, 68, 68)"],
+.dark .admin-dashboard-container main [style*="color: #1f2937"],
+.dark .admin-dashboard-container main [style*="color: rgb(31, 41, 55)"] {
+  color: #f3f4f6 !important;
+}
+
+.dark .admin-dashboard-container main [style*="color: #666"],
+.dark .admin-dashboard-container main [style*="color: rgb(102, 102, 102)"],
+.dark .admin-dashboard-container main [style*="color: #777"],
+.dark .admin-dashboard-container main [style*="color: #555"],
+.dark .admin-dashboard-container main [style*="color: rgb(85, 85, 85)"],
+.dark .admin-dashboard-container main [style*="color: #6b7280"] {
+  color: #c8c8c8 !important;
+}
+
+/* Colores de acento con mejor contraste en dark mode */
+.dark .admin-dashboard-container main [style*="color: #7A1E3A"],
+.dark .admin-dashboard-container main [style*="color: rgb(122, 30, 58)"] {
+  color: #fb7185 !important;
+}
+
+.dark .admin-dashboard-container main [style*="color: #064E3B"],
+.dark .admin-dashboard-container main [style*="color: rgb(6, 78, 59)"],
+.dark .admin-dashboard-container main [style*="color: #047857"],
+.dark .admin-dashboard-container main [style*="color: rgb(4, 120, 87)"] {
+  color: #34d399 !important;
+}
+
+.dark .admin-dashboard-container main [style*="color: #581C87"],
+.dark .admin-dashboard-container main [style*="color: rgb(88, 28, 135)"],
+.dark .admin-dashboard-container main [style*="color: #7E22CE"],
+.dark .admin-dashboard-container main [style*="color: rgb(126, 34, 206)"] {
+  color: #c084fc !important;
+}
+
+.dark .admin-dashboard-container main [style*="color: #1E3A8A"],
+.dark .admin-dashboard-container main [style*="color: rgb(30, 58, 138)"],
+.dark .admin-dashboard-container main [style*="color: #1D4ED8"],
+.dark .admin-dashboard-container main [style*="color: rgb(29, 78, 216)"] {
+  color: #60a5fa !important;
+}
+
+.dark .admin-dashboard-container main [style*="color: #92400E"],
+.dark .admin-dashboard-container main [style*="color: rgb(146, 64, 14)"] {
+  color: #fbbf24 !important;
+}
+
+.dark .admin-dashboard-container main [style*="color: #B45309"],
+.dark .admin-dashboard-container main [style*="color: rgb(180, 83, 9)"] {
+  color: #fcd34d !important;
+}
+
+/* Bordes en admin */
+.dark .admin-dashboard-container main [style*="border: 1px solid #E0DBD4"],
+.dark .admin-dashboard-container main [style*="border: 1.5px solid #E0DBD4"],
+.dark .admin-dashboard-container main [style*="border: 1px solid #e0dbd4"],
+.dark .admin-dashboard-container main [style*="border-color: #E0DBD4"],
+.dark .admin-dashboard-container main [style*="border-color: #e0dbd4"],
+.dark .admin-dashboard-container main [style*="border: 1px solid #EAE4D9"],
+.dark .admin-dashboard-container main [style*="border-top: 1px solid #F4EDE2"],
+.dark .admin-dashboard-container main [style*="border-bottom: 2px solid #F4EDE2"],
+.dark .admin-dashboard-container main [style*="border-bottom: 1px solid #FAF7F2"] {
+  border-color: #333333 !important;
+}
+
+/* Tablas */
+.dark .admin-dashboard-container table {
+  background: #1e1e1e !important;
+  color: #e0e0e0 !important;
+}
+
+.dark .admin-dashboard-container th {
+  background: #282828 !important;
+  color: #f3f4f6 !important;
+  border-color: #3a3a3a !important;
+}
+
+.dark .admin-dashboard-container td {
+  border-color: #333333 !important;
+  color: #e0e0e0 !important;
+}
+
+.dark .admin-dashboard-container tr:hover td {
+  background: #252525 !important;
+}
+
+/* Inputs, selects y textareas */
+.dark .admin-dashboard-container input:not([type="checkbox"]):not([type="radio"]),
+.dark .admin-dashboard-container select,
+.dark .admin-dashboard-container textarea {
+  background-color: #2a2a2a !important;
+  color: #f3f4f6 !important;
+  border-color: #444444 !important;
+}
+
+.dark .admin-dashboard-container input::placeholder,
+.dark .admin-dashboard-container textarea::placeholder {
+  color: #888888 !important;
+}
+
+/* Modales y popups en admin */
+.dark .admin-dashboard-container .modal-card,
+.dark .admin-dashboard-container [style*="position: fixed"] > div {
+  border-color: #3a3a3a !important;
 }
 
 /* Scrollbar en modo oscuro */
