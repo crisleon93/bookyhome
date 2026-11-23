@@ -65,7 +65,7 @@ const RED            = '#c62828';
 // ─── Colores de estados de órdenes ───────────────────────────────────────────
 const ORDEN_ESTADOS = {
   // Pagado / Pagada — verde azulado
-  pagado:      { bg: '#eafaf1', color: '#145c2e', border: '#1e8a45',  dot: '#1e8a45',  label: 'Pagada'      },
+  pagado:      { bg: '#eafaf1', color: '#145c2e', border: '#1e8a45',  dot: '#1e8a45',  label: 'Pagado'      },
   pagada:      { bg: '#eafaf1', color: '#145c2e', border: '#1e8a45',  dot: '#1e8a45',  label: 'Pagada'      },
   // Enviado / Enviada — azul
   enviado:     { bg: '#eaf3ff', color: '#1a4f8a', border: '#2979c7',  dot: '#2979c7',  label: 'Enviada'     },
