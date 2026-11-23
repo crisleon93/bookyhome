@@ -4838,11 +4838,15 @@ export default function AdminDashboard() {
                           </span>
                           <button
                             type="button"
-                            onClick={() => {
-                              navigator.clipboard.writeText(ord.numero_guia);
-                              setCopiadoId(`guia_${ord.numero_guia}`);
-                              notify('Número de guía copiado', 'info');
-                              setTimeout(() => setCopiadoId(null), 2000);
+                            onClick={async () => {
+                              try {
+                                await navigator.clipboard.writeText(ord.numero_guia);
+                                setCopiadoId(`guia_${ord.numero_guia}`);
+                                notify('Número de guía copiado', 'info');
+                                setTimeout(() => setCopiadoId(null), 2000);
+                              } catch {
+                                notify('No se pudo copiar el número de guía', 'error');
+                              }
                             }}
                             style={{
                               background: darkMode ? '#333' : '#fff',
