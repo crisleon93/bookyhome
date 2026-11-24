@@ -35,6 +35,17 @@ def test_list_books_translates_database_error(monkeypatch):
     assert error.value.status_code == 500
     assert error.value.detail == "Error al ejecutar stored procedure"
 
+def test_list_books_preserves_http_exceptions(monkeypatch):
+    db, cursor = _db()
+    cursor.execute.side_effect = HTTPException(status_code=418, detail="database rejected request")
+    monkeypatch.setattr(mod, "get_db", lambda: db)
+
+    with pytest.raises(HTTPException) as error:
+        mod.listar_libros_sp()
+
+    assert error.value.status_code == 418
+    assert error.value.detail == "database rejected request"
+
 
 def test_get_book_returns_record_and_not_found(monkeypatch):
     db, cursor = _db()

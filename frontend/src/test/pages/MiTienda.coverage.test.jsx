@@ -1209,6 +1209,28 @@ describe('MiTienda', () => {
     window.removeEventListener('darkModeChange', darkModeChanged)
   })
 
+  it('loads the seller dark theme and ignores theme events for other roles', async () => {
+    localStorage.setItem('darkMode_vendedor', 'true')
+    const defaultGet = mocks.apiGet.getMockImplementation()
+    mocks.apiGet.mockImplementation((path) => path === '/configuracion'
+      ? Promise.resolve({ data: {} })
+      : path === '/tiendas/mi-tienda'
+        ? Promise.resolve({ data: { id_tienda: 9, nombre_tienda: 'Librería Central' } })
+        : defaultGet(path))
+
+    renderSeller('?seccion=Configuración')
+    await screen.findByRole('heading', { name: 'Configuración de tienda' })
+    expect(document.documentElement.classList.contains('dark')).toBe(true)
+
+    localStorage.setItem('darkMode_vendedor', 'false')
+    window.dispatchEvent(new CustomEvent('darkModeChange', { detail: { role: 'comprador' } }))
+    expect(document.documentElement.classList.contains('dark')).toBe(true)
+    window.dispatchEvent(new CustomEvent('darkModeChange', { detail: { role: 'vendedor' } }))
+
+    localStorage.removeItem('darkMode_vendedor')
+    document.documentElement.classList.remove('dark')
+  })
+
   it('shows the backend error when store configuration cannot be saved', async () => {
     mocks.apiPut.mockRejectedValueOnce({ response: { data: { detail: 'Tienda no disponible' } } })
     renderSeller('?seccion=Configuración')

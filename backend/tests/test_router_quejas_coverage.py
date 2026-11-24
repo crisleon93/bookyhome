@@ -41,6 +41,31 @@ def test_order_store_falls_back_to_database_order_and_shipping(monkeypatch):
     assert cursor.execute.call_count == 4
 
 
+def test_order_store_uses_original_id_when_order_lookup_raises():
+    _, cursor = _db()
+    cursor.fetchone.return_value = None
+    cursor.execute.side_effect = [RuntimeError("lookup failed"), None, None]
+    with patch("app.models.payments.obtener_ordenes_usuario", return_value=[
+        {"id_orden": 4, "id_orden_db": 4, "items": []},
+    ]):
+        result = mod._order_store(cursor, 4, 2)
+
+    assert result == {"id_tienda": None, "id_orden_real": 4}
+    assert cursor.execute.call_count == 3
+
+
+def test_order_store_falls_back_when_mysql_does_not_have_the_order():
+    _, cursor = _db()
+    cursor.fetchone.return_value = None
+    with patch("app.models.payments.obtener_ordenes_usuario", return_value=[
+        {"id_orden": 4, "id_orden_db": 4, "items": []},
+    ]):
+        result = mod._order_store(cursor, 4, 2)
+
+    assert result == {"id_tienda": None, "id_orden_real": 4}
+    assert cursor.execute.call_count == 3
+
+
 def test_customer_complaints_enrich_order_items_and_default_on_failure(monkeypatch):
     db, cursor = _db()
     cursor.fetchall.return_value = [{"id_orden": 1}, {"id_orden": 2}]

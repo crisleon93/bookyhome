@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { act, render, screen, fireEvent, waitFor } from '@testing-library/react';
 import SeccionConfiguracion from '../../components/dashboard/SeccionConfiguracion';
 import * as ToastProvider from '../../components/ToastProvider';
 import * as apiService from '../../services/api';
@@ -30,7 +30,7 @@ describe('SeccionConfiguracion', () => {
   });
 
   it('carga preferencias del usuario desde el backend y modo oscuro inicial', async () => {
-    global.fetch = vi.fn().mockResolvedValueOnce({
+    globalThis.fetch = vi.fn().mockResolvedValueOnce({
       ok: true,
       json: async () => ({
         preferencias: mockPreferencias,
@@ -46,7 +46,7 @@ describe('SeccionConfiguracion', () => {
   });
 
   it('guarda preferencias correctamente y maneja error del servidor', async () => {
-    global.fetch = vi.fn()
+    globalThis.fetch = vi.fn()
       .mockResolvedValueOnce({
         ok: true,
         json: async () => ({ preferencias: mockPreferencias }),
@@ -77,7 +77,7 @@ describe('SeccionConfiguracion', () => {
   });
 
   it('permite alternar el modo oscuro y emite el evento correspondiente', async () => {
-    global.fetch = vi.fn().mockResolvedValueOnce({
+    globalThis.fetch = vi.fn().mockResolvedValueOnce({
       ok: true,
       json: async () => ({ preferencias: mockPreferencias }),
     });
@@ -102,7 +102,7 @@ describe('SeccionConfiguracion', () => {
   });
 
   it('valida formulario de contraseña y actualiza la contraseña exitosamente', async () => {
-    global.fetch = vi.fn()
+    globalThis.fetch = vi.fn()
       .mockResolvedValueOnce({
         ok: true,
         json: async () => ({ preferencias: mockPreferencias }),
@@ -148,7 +148,7 @@ describe('SeccionConfiguracion', () => {
   });
 
   it('maneja rechazo del servidor al cambiar contraseña', async () => {
-    global.fetch = vi.fn()
+    globalThis.fetch = vi.fn()
       .mockResolvedValueOnce({
         ok: true,
         json: async () => ({ preferencias: mockPreferencias }),
@@ -179,7 +179,7 @@ describe('SeccionConfiguracion', () => {
   });
 
   it('permite alternar visibilidad de las tres contraseñas, hover en botón y cancelar el formulario', async () => {
-    global.fetch = vi.fn()
+    globalThis.fetch = vi.fn()
       .mockResolvedValueOnce({
         ok: true,
         json: async () => ({ preferencias: mockPreferencias }),
@@ -239,7 +239,7 @@ describe('SeccionConfiguracion', () => {
   it('maneja excepción de red al cambiar contraseña y al cargar preferencias', async () => {
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-    global.fetch = vi.fn()
+    globalThis.fetch = vi.fn()
       .mockRejectedValueOnce(new Error('Fetch network error'))
       .mockRejectedValueOnce(new Error('Password network error'));
 
@@ -262,7 +262,7 @@ describe('SeccionConfiguracion', () => {
   });
 
   it('auto-guarda preferencias al alternar un toggle de notificación', async () => {
-    global.fetch = vi.fn()
+    globalThis.fetch = vi.fn()
       .mockResolvedValueOnce({
         ok: true,
         json: async () => ({ preferencias: mockPreferencias }),
@@ -280,7 +280,7 @@ describe('SeccionConfiguracion', () => {
 
     // Should auto-save — second fetch call with PUT
     await waitFor(() => {
-      const putCalls = global.fetch.mock.calls.filter(
+      const putCalls = globalThis.fetch.mock.calls.filter(
         call => call[1] && call[1].method === 'PUT'
       );
       expect(putCalls.length).toBeGreaterThanOrEqual(1);
@@ -292,7 +292,7 @@ describe('SeccionConfiguracion', () => {
   });
 
   it('el toggle de modo oscuro funciona al hacer clic en el label', async () => {
-    global.fetch = vi.fn().mockResolvedValueOnce({
+    globalThis.fetch = vi.fn().mockResolvedValueOnce({
       ok: true,
       json: async () => ({ preferencias: mockPreferencias }),
     });
@@ -318,5 +318,82 @@ describe('SeccionConfiguracion', () => {
     expect(localStorage.getItem('darkMode')).toBe('false');
     expect(document.documentElement.classList.contains('dark')).toBe(false);
     expect(notifySpy).toHaveBeenCalledWith('Modo claro activado', 'success');
+  });
+
+  it('combina preferencias cacheadas y permite alternar cada canal de notificación', async () => {
+    localStorage.setItem('preferencias_notificaciones', JSON.stringify({
+      notificaciones_mensajes: { email: false, web: false },
+    }));
+    globalThis.fetch = vi.fn().mockImplementation((url) => Promise.resolve(
+      url.endsWith('/perfil/mi-perfil')
+        ? { ok: true, json: async () => ({}) }
+        : { ok: true },
+    ));
+
+    render(<SeccionConfiguracion userId={10} />);
+    await screen.findByText('Configuración de Cuenta');
+    await waitFor(() => expect(screen.getAllByRole('checkbox')[0]).toBeEnabled());
+    expect(screen.getByLabelText('Notificación por email de mensajes')).not.toBeChecked();
+
+    for (let index = 0; index < 14; index += 1) {
+      fireEvent.click(screen.getAllByRole('checkbox')[index]);
+    }
+
+    await waitFor(() => {
+      expect(globalThis.fetch.mock.calls.filter(([, options]) => options?.method === 'PUT')).toHaveLength(14);
+    });
+    expect(screen.getByLabelText('Notificación por email de mensajes')).toBeChecked();
+  });
+
+  it('usa la preferencia visual guardada si el evento no especifica el tema', async () => {
+    localStorage.removeItem('token');
+    localStorage.setItem('preferencias_notificaciones', 'null');
+    localStorage.setItem('darkMode_comprador', 'true');
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({}),
+    });
+
+    render(<SeccionConfiguracion userId={10} />);
+    await screen.findByText('Configuración de Cuenta');
+    expect(globalThis.fetch).toHaveBeenCalledWith(
+      'http://localhost:8000/perfil/mi-perfil',
+      { headers: {} },
+    );
+
+    const darkModeToggle = screen.getByLabelText('Activar modo oscuro');
+    expect(darkModeToggle).toBeChecked();
+    act(() => window.dispatchEvent(new CustomEvent('darkModeChange', {
+      detail: { role: 'vendedor', darkMode: false },
+    })));
+    expect(darkModeToggle).toBeChecked();
+
+    act(() => window.dispatchEvent(new CustomEvent('darkModeChange', {
+      detail: { role: 'comprador' },
+    })));
+    expect(darkModeToggle).toBeChecked();
+    localStorage.setItem('darkMode_comprador', 'false');
+    act(() => window.dispatchEvent(new CustomEvent('darkModeChange', {
+      detail: { role: 'comprador' },
+    })));
+    expect(darkModeToggle).not.toBeChecked();
+  });
+
+  it('no actualiza preferencias después de desmontarse durante la carga', async () => {
+    let resolvePreferences;
+    globalThis.fetch = vi.fn(() => new Promise((resolve) => {
+      resolvePreferences = resolve;
+    }));
+
+    const { unmount } = render(<SeccionConfiguracion userId={10} />);
+    await waitFor(() => expect(resolvePreferences).toBeTypeOf('function'));
+    unmount();
+
+    await act(async () => {
+      resolvePreferences({
+        ok: true,
+        json: async () => ({ preferencias: mockPreferencias }),
+      });
+    });
   });
 });

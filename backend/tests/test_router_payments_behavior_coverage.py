@@ -1,4 +1,5 @@
 import asyncio
+from datetime import datetime
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -323,3 +324,206 @@ def test_shipping_database_exception_is_translated(monkeypatch):
         payments.actualizar_costo_envio(5, None, {"sub": "7"})
     assert failed.value.status_code == 500
     assert "shipping db down" in failed.value.detail
+
+
+def test_admin_orders_normalize_database_rows_and_merge_store_fallback(monkeypatch):
+    import app.database as database
+    import app.models.payments as payment_model
+
+    db = MagicMock()
+    cursor = MagicMock()
+    db.cursor.return_value = cursor
+
+    def row(order_id, state, **overrides):
+        data = {
+            "id_orden": order_id,
+            "id_usuario": 7,
+            "fecha_orden": datetime(2026, 1, order_id),
+            "total": 100,
+            "estado_orden": state,
+            "tipo_entrega": "domicilio",
+            "estado_retiro": "reservado",
+            "pin_retiro": "1234",
+            "fecha_limite_retiro": datetime(2026, 2, order_id),
+            "metodo_pago": "Tarjeta",
+            "costo_envio": 5,
+            "comprador": " Ana ",
+            "email_comprador": "ana@example.test",
+            "telefono_comprador": "300",
+            "foto_comprador": "/ana.jpg",
+            "vendedor_tienda": "Librería",
+            "foto_vendedor": "/tienda.jpg",
+            "telefono_tienda": "301",
+            "numero_guia": "G-1",
+            "empresa_mensajeria": "Correo",
+            "estado_envio": "En camino",
+            "fecha_despacho": datetime(2026, 1, order_id),
+            "fecha_estimada_entrega": datetime(2026, 2, order_id),
+            "direccion_completa": "Calle 1",
+            "ciudad_destino": "Bogotá",
+            "departamento_destino": "Cundinamarca",
+            "total_items": 2,
+        }
+        data.update(overrides)
+        return data
+
+    cursor.fetchall.return_value = [
+        row(1, "pagado"),
+        row(2, "enviada"),
+        row(3, "entregado"),
+        row(4, "cancelada"),
+        row(5, "en revisión"),
+        row(
+            6,
+            None,
+            fecha_orden=None,
+            total=None,
+            tipo_entrega=None,
+            estado_retiro=None,
+            pin_retiro=None,
+            fecha_limite_retiro=None,
+            metodo_pago=None,
+            costo_envio=None,
+            comprador=None,
+            id_usuario=None,
+            email_comprador=None,
+            telefono_comprador=None,
+            foto_comprador=None,
+            vendedor_tienda=None,
+            foto_vendedor=None,
+            telefono_tienda=None,
+            numero_guia=None,
+            empresa_mensajeria=None,
+            estado_envio=None,
+            fecha_despacho=None,
+            fecha_estimada_entrega=None,
+            direccion_completa=None,
+            ciudad_destino=None,
+            departamento_destino=None,
+            total_items=0,
+        ),
+    ]
+    monkeypatch.setattr(database, "get_db", lambda **_kwargs: db)
+    monkeypatch.setattr(payment_model, "_load_store", lambda _path: {
+        "7": [{"id_orden": 1, "fecha": "duplicada"}, {"id_orden": 10, "fecha": "2026-03-01"}],
+    })
+
+    result = payments.get_all_orders_admin({"rol": "admin"})
+    by_id = {order["id_orden"]: order for order in result}
+
+    assert by_id[1]["estado"] == "pagada"
+    assert by_id[2]["estado"] == "enviada"
+    assert by_id[3]["estado"] == "entregada"
+    assert by_id[4]["estado"] == "cancelada"
+    assert by_id[5]["estado"] == "en revisión"
+    assert by_id[6]["nombre_usuario"] == "Usuario #None"
+    assert by_id[6]["estado_envio"] == "pendiente"
+    assert by_id[6]["empresa_mensajeria"] == "Retiro en Tienda"
+    assert by_id[6]["total_items"] == 1
+    assert by_id[10]["id_usuario_propietario"] == 7
+    assert len(result) == 7
+    cursor.close.assert_called_once()
+    db.close.assert_called_once()
+
+
+def test_admin_orders_and_items_handle_access_and_database_failures(monkeypatch):
+    import app.database as database
+
+    with pytest.raises(HTTPException) as forbidden:
+        payments.get_all_orders_admin({"rol": "comprador"})
+    assert forbidden.value.status_code == 403
+    with pytest.raises(HTTPException) as items_forbidden:
+        payments.get_admin_order_items(3, {"rol": "comprador"})
+    assert items_forbidden.value.status_code == 403
+
+    monkeypatch.setattr(
+        database,
+        "get_db",
+        lambda **_kwargs: (_ for _ in ()).throw(RuntimeError("admin database unavailable")),
+    )
+    assert payments.get_admin_order_items(3, {"rol": "admin"}) == []
+
+
+def test_admin_orders_still_returns_database_rows_when_json_store_fails(monkeypatch):
+    import app.database as database
+    import app.models.payments as payment_model
+
+    db = MagicMock()
+    cursor = MagicMock()
+    cursor.fetchall.return_value = []
+    db.cursor.return_value = cursor
+    monkeypatch.setattr(database, "get_db", lambda **_kwargs: db)
+    monkeypatch.setattr(
+        payment_model,
+        "_load_store",
+        lambda _path: (_ for _ in ()).throw(RuntimeError("store unavailable")),
+    )
+
+    assert payments.get_all_orders_admin({"rol": "administrador"}) == []
+    cursor.close.assert_called_once()
+    db.close.assert_called_once()
+
+
+def test_admin_order_items_formats_defaults_and_sends_confirmation_errors(monkeypatch):
+    import app.database as database
+
+    db = MagicMock()
+    cursor = MagicMock()
+    db.cursor.return_value = cursor
+    cursor.fetchall.return_value = [
+        {
+            "id_detalle": 1,
+            "id_orden": 8,
+            "id_libro": 4,
+            "cantidad": "2",
+            "precio_unitario": "15000",
+            "precio_final": "25000",
+            "titulo": "Libro",
+            "autor_libro": "Autora",
+            "isbn": "ISBN-4",
+            "nombre_tienda": "Librería",
+            "imagen_portada": "/portada.jpg",
+        },
+        {
+            "id_detalle": 2,
+            "id_orden": 8,
+            "id_libro": 5,
+            "cantidad": 1,
+            "precio_unitario": "9000",
+            "precio_final": None,
+            "titulo": None,
+            "autor_libro": None,
+            "isbn": None,
+            "nombre_tienda": None,
+            "imagen_portada": None,
+        },
+    ]
+    monkeypatch.setattr(database, "get_db", lambda **_kwargs: db)
+
+    items = payments.get_admin_order_items(8, {"rol": "administrador"})
+    assert items[0]["precio_final"] == 25000
+    assert items[1] == {
+        "id_detalle": 2,
+        "id_orden": 8,
+        "id_libro": 5,
+        "cantidad": 1,
+        "precio_unitario": 9000.0,
+        "precio_final": 9000.0,
+        "titulo": "Libro #5",
+        "autor_libro": "",
+        "isbn": "",
+        "nombre_tienda": "Librería BookyHome",
+        "imagen_portada": "",
+    }
+    cursor.close.assert_called_once()
+    db.close.assert_called_once()
+
+    monkeypatch.setattr(payments, "obtener_orden", lambda *_args: {"id_orden": 8})
+    monkeypatch.setattr(payments, "obtener_email_usuario", lambda _user: "buyer@example.test")
+    monkeypatch.setattr(payments, "is_smtp_configured", lambda: True)
+    send = AsyncMock(side_effect=RuntimeError("SMTP unavailable"))
+    monkeypatch.setattr(payments, "enviar_email_confirmacion", send)
+    with pytest.raises(HTTPException) as mail_error:
+        asyncio.run(payments.send_order_confirmation(8, {"sub": "7"}))
+    assert mail_error.value.status_code == 503
+    send.assert_awaited_once()

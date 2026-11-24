@@ -166,4 +166,25 @@ describe('SeccionPerfilAdmin', () => {
     await screen.findByDisplayValue('Admin')
     expect(screen.getByAltText('Foto de perfil')).toBeTruthy()
   })
+
+  it('aplica el tema guardado para el perfil administrador', async () => {
+    localStorage.setItem('darkMode_admin', 'true')
+    render(<SeccionPerfilAdmin stats={{}} />)
+
+    await screen.findByDisplayValue('Admin')
+    expect(document.documentElement.classList.contains('dark')).toBe(true)
+    window.dispatchEvent(new CustomEvent('darkModeChange', {
+      detail: { role: 'comprador', darkMode: false },
+    }))
+    expect(document.documentElement.classList.contains('dark')).toBe(true)
+    fireEvent.click(screen.getByText('Editar'))
+    expect(screen.getByText('Colores sólidos')).toBeInTheDocument()
+
+    localStorage.setItem('darkMode_admin', 'false')
+    window.dispatchEvent(new CustomEvent('darkModeChange', {
+      detail: { role: 'admin' },
+    }))
+    localStorage.removeItem('darkMode_admin')
+    document.documentElement.classList.remove('dark')
+  })
 })

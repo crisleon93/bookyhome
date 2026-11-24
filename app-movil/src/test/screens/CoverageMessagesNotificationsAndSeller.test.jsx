@@ -496,6 +496,28 @@ describe('Notifications', () => {
     expect(screen.getByText('Cerrar menú vendedor')).toBeTruthy()
     fireEvent.click(screen.getByText('Cerrar menú vendedor'))
   })
+
+  it('abre los pedidos del vendedor desde una notificación de venta', async () => {
+    mocks.api.getNotifications.mockResolvedValue({
+      data: {
+        notificaciones: [{
+          ...notification,
+          tipo: 'venta',
+          titulo: 'Nueva venta',
+          referencia_id: 51,
+          leida: true,
+        }],
+      },
+    })
+    render(
+      <NotificationContext.Provider value={notificationContext}>
+        {withAuth(<Notifications navigation={navigation} />, vendor)}
+      </NotificationContext.Provider>,
+    )
+
+    fireEvent.click(await screen.findByText('Nueva venta'))
+    await waitFor(() => expect(navigation.navigate).toHaveBeenCalledWith('PedidosVendedor'))
+  })
 });
 
 describe('PedidosVendedor', () => {

@@ -107,7 +107,7 @@ describe('servicio móvil de API', () => {
     const response = { status: 200 };
     const error = Object.assign(new Error('falló'), {
       config: { url: '/libros' },
-      response: { status: 500 },
+      response: { status: 500, data: { detail: 'servicio no disponible' } },
     });
     const log = vi.spyOn(console, 'log').mockImplementation(() => {});
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
@@ -117,7 +117,11 @@ describe('servicio móvil de API', () => {
     expect(responseHandler(response)).toBe(response);
     await expect(responseErrorHandler(error)).rejects.toBe(error);
     expect(log).toHaveBeenCalledOnce();
-    expect(warn).toHaveBeenCalledOnce();
+    expect(warn).toHaveBeenCalledTimes(2);
+    expect(warn).toHaveBeenLastCalledWith(
+      '[API ERROR DETAIL]',
+      JSON.stringify({ detail: 'servicio no disponible' }),
+    );
   });
 
   it('envía credenciales y parámetros de verificación a sus endpoints', async () => {
