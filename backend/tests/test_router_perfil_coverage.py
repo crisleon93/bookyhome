@@ -81,6 +81,24 @@ def test_profile_endpoint_parses_saved_preferences_and_supplies_defaults(monkeyp
     assert default["preferencias"]["notificaciones_pedidos"]["email"] is True
 
 
+def test_profile_preferences_handle_unknown_keys_non_dict_and_invalid_json(monkeypatch):
+    db, cursor = _db()
+    cursor.fetchone.side_effect = [
+        {"id_usuario": 1, "preferencias": '{"custom_setting":"enabled"}'},
+        {"id_usuario": 1, "preferencias": "[]"},
+        {"id_usuario": 1, "preferencias": "{invalid"},
+    ]
+    monkeypatch.setattr(mod, "get_db", lambda: db)
+
+    merged = mod.obtener_perfil(1)["preferencias"]
+    non_dict = mod.obtener_perfil(1)["preferencias"]
+    invalid_json = mod.obtener_perfil(1)["preferencias"]
+
+    assert merged["custom_setting"] == "enabled"
+    assert "notificaciones_mensajes" in non_dict
+    assert "notificaciones_mensajes" in invalid_json
+
+
 def test_update_profile_requires_fields_and_persists_supported_values(monkeypatch):
     db, cursor = _db()
     monkeypatch.setattr(mod, "get_db", lambda: db)

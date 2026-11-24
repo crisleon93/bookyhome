@@ -348,6 +348,7 @@ export default function Checkout({ route, navigation }) {
     }
   };
 
+
   const enviarPago = async (metodo) => {
     let freshTotal = orderTotal;
     const shippingResponse = await actualizarCostoEnvio(orderId, deliveryMethod);

@@ -64,13 +64,13 @@ vi.mock('react-native', async () => {
   return {
     ActivityIndicator: () => ReactModule.createElement('span', null, 'Cargando'),
     Alert: { alert: mocks.alert },
-    FlatList: ({ data = [], renderItem, ListHeaderComponent, ListFooterComponent, ListEmptyComponent, refreshControl }) => (
+    FlatList: ({ data = [], renderItem, keyExtractor, ListHeaderComponent, ListFooterComponent, ListEmptyComponent, refreshControl }) => (
       ReactModule.createElement('div', null,
         renderPart(ListHeaderComponent),
         data.length
           ? data.map((item, index) => ReactModule.createElement(
-            ReactModule.Fragment,
-            { key: index },
+            'div',
+            { key: index, 'data-item-key': keyExtractor?.(item, index) },
             renderItem({ item, index }),
           ))
           : renderPart(ListEmptyComponent),
@@ -98,6 +98,10 @@ vi.mock('react-native', async () => {
   }
 })
 vi.mock('react-native-safe-area-context', () => ({ SafeAreaView: ({ children }) => <div>{children}</div> }))
+vi.mock('../../context/ThemeContext', () => ({
+  useThemedStyles: (styles) => styles,
+  useAppTheme: () => ({ darkMode: false, colors: {} }),
+}))
 vi.mock('../../services/api', () => ({
   bloquearUsuario: mocks.bloquear,
   cambiarEstadoTienda: mocks.cambiarEstadoTienda,
@@ -197,7 +201,7 @@ describe('AdminSection', () => {
       ],
     })
     const navigation = { goBack: vi.fn() }
-    const { rerender } = render(
+    const { rerender, container } = render(
       <AdminSection route={{ params: { section: 'tiendas' } }} navigation={navigation} />,
     )
 
@@ -210,13 +214,15 @@ describe('AdminSection', () => {
 
     mocks.ordenes.mockResolvedValueOnce({
       data: [
-        { id_orden: 120, estado: 'pagado', total: 24000, fecha: '2026-01-01' },
-        { id_orden: 121, estado: 'pendiente', total: 0 },
+        { id_orden: 120, id_orden_db: 900, estado: 'pagado', total: 24000, fecha: '2026-01-01' },
+        { id_orden: 121, id_usuario_propietario: 8, estado: 'pendiente', total: 0 },
       ],
     })
     rerender(<AdminSection route={{ params: { section: 'ordenes' } }} navigation={navigation} />)
 
     expect(await screen.findByText('Orden #120')).toBeTruthy()
+    expect(container.querySelector('[data-item-key="orden-db-900"]')).toBeTruthy()
+    expect(container.querySelector('[data-item-key="orden-8-121"]')).toBeTruthy()
     fireEvent.change(screen.getByPlaceholderText('Buscar por ID o estado…'), {
       target: { value: 'pendiente' },
     })

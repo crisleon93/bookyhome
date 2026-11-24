@@ -32,6 +32,9 @@ api.interceptors.response.use(
   response => response,
   error => {
     console.warn(`[API ERROR] ${error?.config?.url}:`, error?.message, error?.response?.status);
+    if (error?.response?.data) {
+      console.warn('[API ERROR DETAIL]', JSON.stringify(error.response.data));
+    }
     return Promise.reject(error);
   }
 );
@@ -282,8 +285,8 @@ export const crearSoporte = (payload) => api.post('/quejas/soporte', payload);
 // ===== Administración =====
 // El panel conserva las mismas fuentes de datos que el dashboard web.
 export const getAdminUsuarios = () => api.get('/usuarios');
-export const getAdminLibros = () => api.get('/api/stored/libros');
-export const getAdminOrdenes = () => api.get('/api/v1/admin/orders');
+export const getAdminLibros = () => api.get('/api/stored/libros', { params: { admin: true } });
+export const getAdminOrdenes = () => api.get('/api/v1/admin/orders', { timeout: 60000 });
 export const getAdminTiendas = () => api.get('/tiendas');
 export const getAdminSolicitudes = () =>
   api.get('/quejas/admin/todas', { timeout: 60000 });
@@ -322,3 +325,6 @@ export const procesarNominaVendedor = (idVendedor, idMetodo) =>
   api.post(`/api/v1/bookypago-finanzas/nomina/procesar/${idVendedor}`, { id_metodo: idMetodo });
 
 export default api;
+
+// ===== Asistente IA (Booky) =====
+export const chatAsistente = (payload) => api.post('/asistente/chat', payload);

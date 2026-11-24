@@ -14,20 +14,38 @@ import {
 } from '../components/Icons';
 
 const ESTADO_CONFIG_ADMIN = {
-  'Resuelto':      { bg: '#dcfce7', color: '#166534', border: '#86efac', dot: '#16a34a' },
-  'En revision':   { bg: '#fff7ed', color: '#9a3412', border: '#fdba74', dot: '#ea580c' },
-  'En revisión':   { bg: '#fff7ed', color: '#9a3412', border: '#fdba74', dot: '#ea580c' },
-  'Abierto':       { bg: '#eff6ff', color: '#1e40af', border: '#93c5fd', dot: '#3b82f6' },
-  'Cerrado':       { bg: '#f3f4f6', color: '#374151', border: '#d1d5db', dot: '#6b7280' },
-  'Rechazado':     { bg: '#fef2f2', color: '#991b1b', border: '#fca5a5', dot: '#ef4444' },
+  'Resuelto': {
+    bg: '#dcfce7', color: '#166534', border: '#86efac', dot: '#16a34a',
+    darkBg: 'rgba(22,163,74,0.14)', darkColor: '#86efac', darkBorder: 'rgba(22,163,74,0.45)',
+  },
+  'En revision': {
+    bg: '#fff7ed', color: '#9a3412', border: '#fdba74', dot: '#ea580c',
+    darkBg: 'rgba(234,88,12,0.14)', darkColor: '#fdba74', darkBorder: 'rgba(234,88,12,0.45)',
+  },
+  'En revisión': {
+    bg: '#fff7ed', color: '#9a3412', border: '#fdba74', dot: '#ea580c',
+    darkBg: 'rgba(234,88,12,0.14)', darkColor: '#fdba74', darkBorder: 'rgba(234,88,12,0.45)',
+  },
+  'Abierto': {
+    bg: '#eff6ff', color: '#1e40af', border: '#93c5fd', dot: '#3b82f6',
+    darkBg: 'rgba(59,130,246,0.14)', darkColor: '#bfdbfe', darkBorder: 'rgba(59,130,246,0.45)',
+  },
+  'Cerrado': {
+    bg: '#f3f4f6', color: '#374151', border: '#d1d5db', dot: '#6b7280',
+    darkBg: 'rgba(107,114,128,0.16)', darkColor: '#e5e7eb', darkBorder: 'rgba(107,114,128,0.45)',
+  },
+  'Rechazado': {
+    bg: '#fef2f2', color: '#991b1b', border: '#fca5a5', dot: '#ef4444',
+    darkBg: 'rgba(239,68,68,0.14)', darkColor: '#fecaca', darkBorder: 'rgba(239,68,68,0.45)',
+  },
 };
 
 const MOTIVO_ICON_MAP_ADMIN = {
   'Libro danado o defectuoso': <IconBook width={14} height={14} />,
-  'Producto incorrecto':       <IconPackage width={14} height={14} />,
+  'Producto incorrecto': <IconPackage width={14} height={14} />,
   'No coincide con la descripcion': <IconInfo width={14} height={14} />,
-  'Problema con la entrega':   <IconTruck width={14} height={14} />,
-  'Otro':                      <IconMessage width={14} height={14} />,
+  'Problema con la entrega': <IconTruck width={14} height={14} />,
+  'Otro': <IconMessage width={14} height={14} />,
 };
 
 const VINOTINTO = '#7A1E3A';
@@ -43,15 +61,15 @@ const RED = '#c62828';
 
 const NAV_ITEMS = [
   { id: 'dashboard', label: 'Dashboard', Icon: IconLayoutDashboard },
-  { id: 'reportes',  label: 'Reportes',  Icon: IconTrendingUp },
-  { id: 'usuarios',  label: 'Usuarios',  Icon: IconUser },
-  { id: 'libros',    label: 'Libros',    Icon: IconBook },
-  { id: 'tiendas',   label: 'Tiendas',   Icon: IconStore },
-  { id: 'ordenes',   label: 'Órdenes',   Icon: IconPackage },
-  { id: 'finanzas',  label: 'Finanzas',  Icon: IconWallet },
-  { id: 'reclamos',  label: 'Quejas y reclamos', Icon: IconAlertTriangle },
-  { id: 'soporte',   label: 'Soporte técnico', Icon: IconTool },
-  { id: 'perfil',    label: 'Mi Perfil', Icon: IconSettings },
+  { id: 'reportes', label: 'Reportes', Icon: IconTrendingUp },
+  { id: 'usuarios', label: 'Usuarios', Icon: IconUser },
+  { id: 'libros', label: 'Libros', Icon: IconBook },
+  { id: 'tiendas', label: 'Tiendas', Icon: IconStore },
+  { id: 'ordenes', label: 'Órdenes', Icon: IconPackage },
+  { id: 'finanzas', label: 'Finanzas', Icon: IconWallet },
+  { id: 'reclamos', label: 'Quejas y reclamos', Icon: IconAlertTriangle },
+  { id: 'soporte', label: 'Soporte técnico', Icon: IconTool },
+  { id: 'perfil', label: 'Mi Perfil', Icon: IconSettings },
 ];
 
 // Ícono de sidebar: tamaño y color fijos, ignora className/defaults de cada ícono
@@ -134,7 +152,7 @@ const AvatarUsuario = React.memo(function AvatarUsuario({ usuario, size = 38, fo
   );
 });
 
-const CardReclamoAdmin = React.memo(function CardReclamoAdmin({ reclamo, onAbrirChat, onAbrirModal, onVerEvidencia }) {
+const CardReclamoAdmin = React.memo(function CardReclamoAdmin({ reclamo, onAbrirChat, onAbrirModal, onVerEvidencia, darkMode = false }) {
   const [expandido, setExpandido] = useState(false);
   const cfg = ESTADO_CONFIG_ADMIN[reclamo.estado] || ESTADO_CONFIG_ADMIN['Cerrado'];
   const motivoIcon = MOTIVO_ICON_MAP_ADMIN[reclamo.asunto] || MOTIVO_ICON_MAP_ADMIN['Otro'];
@@ -149,8 +167,8 @@ const CardReclamoAdmin = React.memo(function CardReclamoAdmin({ reclamo, onAbrir
   return (
     <article
       style={{
-        background: WHITE,
-        border: `1.5px solid ${BORDER}`,
+        background: darkMode ? '#1e1e1e' : WHITE,
+        border: `1.5px solid ${darkMode ? '#3a3a3a' : BORDER}`,
         borderRadius: 16,
         overflow: 'hidden',
         boxShadow: '0 3px 14px rgba(0,0,0,0.04)',
@@ -170,9 +188,9 @@ const CardReclamoAdmin = React.memo(function CardReclamoAdmin({ reclamo, onAbrir
           }
         }}
         style={{
-          background: 'linear-gradient(135deg, #fdf8f9 0%, #f9f0f3 100%)',
+          background: darkMode ? '#1e1e1e' : 'linear-gradient(135deg, #fdf8f9 0%, #f9f0f3 100%)',
           padding: '16px 20px',
-          borderBottom: expandido ? `1.5px solid ${BORDER}` : 'none',
+          borderBottom: expandido ? `1.5px solid ${darkMode ? '#3a3a3a' : BORDER}` : 'none',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
@@ -188,7 +206,7 @@ const CardReclamoAdmin = React.memo(function CardReclamoAdmin({ reclamo, onAbrir
             <img
               src={imgSrc}
               alt="Libro"
-              style={{ width: 50, height: 50, borderRadius: 10, objectFit: 'cover', flexShrink: 0, border: '1px solid #f0dde4', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}
+              style={{ width: 50, height: 50, borderRadius: 10, objectFit: 'cover', flexShrink: 0, border: darkMode ? '1px solid #3a3a3a' : '1px solid #f0dde4', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}
             />
           ) : (
             <div style={{
@@ -204,24 +222,24 @@ const CardReclamoAdmin = React.memo(function CardReclamoAdmin({ reclamo, onAbrir
 
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 2 }}>
-              <span style={{ fontSize: '0.78rem', color: '#888', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              <span style={{ fontSize: '0.78rem', color: darkMode ? '#b8b8b8' : '#888', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                 Reclamo #{reclamo.numero || reclamo.id_solicitud}
               </span>
               {reclamo.id_orden && (
-                <span style={{ background: '#f7e9ee', color: VINOTINTO, padding: '2px 8px', borderRadius: 8, fontSize: '0.76rem', fontWeight: 700 }}>
+                <span style={{ background: darkMode ? 'rgba(224,90,122,0.2)' : '#f7e9ee', color: darkMode ? '#e05a7a' : VINOTINTO, padding: '2px 8px', borderRadius: 8, fontSize: '0.76rem', fontWeight: 700 }}>
                   Orden #{reclamo.id_orden}
                 </span>
               )}
             </div>
-            <strong style={{ fontSize: '1rem', color: CARBON, display: 'block' }}>
+            <strong style={{ fontSize: '1rem', color: darkMode ? '#f3f4f6' : CARBON, display: 'block' }}>
               {reclamo.titulo_libro || `Orden #${reclamo.id_orden || reclamo.id_solicitud}`}
               {reclamo.total_items > 1 && (
-                <span style={{ fontWeight: 500, color: GRAY, fontSize: '0.85rem' }}> +{reclamo.total_items - 1} más</span>
+                <span style={{ fontWeight: 500, color: darkMode ? '#c8c8c8' : GRAY, fontSize: '0.85rem' }}> +{reclamo.total_items - 1} más</span>
               )}
             </strong>
-            <p style={{ margin: '2px 0 0', fontSize: '0.84rem', color: GRAY }}>
-              Comprador: <strong style={{ color: CARBON }}>{reclamo.comprador}</strong>
-              {reclamo.correo_comprador ? ` (${reclamo.correo_comprador})` : ''} · Tienda: <strong style={{ color: VINOTINTO }}>{reclamo.nombre_tienda || 'BookyHome'}</strong>
+            <p style={{ margin: '2px 0 0', fontSize: '0.84rem', color: darkMode ? '#c8c8c8' : GRAY }}>
+              Comprador: <strong style={{ color: darkMode ? '#f3f4f6' : CARBON }}>{reclamo.comprador}</strong>
+              {reclamo.correo_comprador ? ` (${reclamo.correo_comprador})` : ''} · Tienda: <strong style={{ color: darkMode ? '#e05a7a' : VINOTINTO }}>{reclamo.nombre_tienda || 'BookyHome'}</strong>
             </p>
           </div>
         </div>
@@ -230,8 +248,9 @@ const CardReclamoAdmin = React.memo(function CardReclamoAdmin({ reclamo, onAbrir
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div style={{
             display: 'inline-flex', alignItems: 'center', gap: 6,
-            background: cfg.bg, color: cfg.color,
-            border: `1px solid ${cfg.border}`,
+            background: darkMode ? cfg.darkBg : cfg.bg,
+            color: darkMode ? cfg.darkColor : cfg.color,
+            border: `1px solid ${darkMode ? cfg.darkBorder : cfg.border}`,
             padding: '6px 14px', borderRadius: 20,
             fontSize: '0.82rem', fontWeight: 800,
             whiteSpace: 'nowrap',
@@ -243,9 +262,11 @@ const CardReclamoAdmin = React.memo(function CardReclamoAdmin({ reclamo, onAbrir
           <span
             aria-hidden="true"
             style={{
-              background: expandido ? '#fdf2f4' : WHITE,
-              border: `1.5px solid ${expandido ? VINOTINTO : BORDER}`,
-              color: expandido ? VINOTINTO : CARBON,
+              background: expandido
+                ? (darkMode ? 'rgba(224,90,122,0.15)' : '#fdf2f4')
+                : (darkMode ? '#1e1e1e' : WHITE),
+              border: `1.5px solid ${expandido ? (darkMode ? '#e05a7a' : VINOTINTO) : (darkMode ? '#3a3a3a' : BORDER)}`,
+              color: expandido ? (darkMode ? '#e05a7a' : VINOTINTO) : (darkMode ? '#f3f4f6' : CARBON),
               borderRadius: 20,
               padding: '6px 14px',
               fontSize: '0.82rem',
@@ -273,158 +294,138 @@ const CardReclamoAdmin = React.memo(function CardReclamoAdmin({ reclamo, onAbrir
 
       {/* BODY CONTENT - SOLO VISIBLE SI ESTÁ DESPLEGADO */}
       {expandido && (
-      <div style={{ padding: '20px', display: 'grid', gap: 16 }}>
-        {/* Metadata Tags Row */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
-            {/* Motivo Chip */}
-            <div style={{
-              display: 'inline-flex', alignItems: 'center', gap: 6,
-              background: '#fdf2f4', border: '1px solid #f0dde4',
-              borderRadius: 20, padding: '5px 12px',
-              color: VINOTINTO, fontSize: '0.82rem', fontWeight: 700,
-            }}>
-              {motivoIcon}
-              {reclamo.asunto}
-            </div>
-
-            {/* Tienda Chip */}
-            <div style={{
-              display: 'inline-flex', alignItems: 'center', gap: 6,
-              background: '#f0f9ff', border: '1px solid #bae6fd',
-              borderRadius: 20, padding: '5px 12px',
-              color: '#0369a1', fontSize: '0.82rem', fontWeight: 700,
-            }}>
-              <IconStoreAlt width={14} height={14} strokeWidth={1.5} />
-              {reclamo.nombre_tienda || 'BookyHome'}
-            </div>
-
-            {/* Total Orden */}
-            {reclamo.total_orden && (
+        <div style={{ padding: '20px', display: 'grid', gap: 16 }}>
+          {/* Metadata Tags Row */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
+              {/* Motivo Chip */}
               <div style={{
-                display: 'inline-flex', alignItems: 'center', gap: 5,
-                background: '#f0fdf4', border: '1px solid #bbf7d0',
-                borderRadius: 20, padding: '5px 12px',
-                color: '#166534', fontSize: '0.82rem', fontWeight: 700,
-              }}>
-                <IconDollar width={13} height={13} strokeWidth={2} />
-                ${Number(reclamo.total_orden).toLocaleString('es-CO')}
-              </div>
-            )}
-
-            {/* Fecha */}
-            {fechaStr && (
-              <div style={{
-                display: 'inline-flex', alignItems: 'center', gap: 5,
-                background: '#fafafa', border: `1px solid ${BORDER}`,
-                borderRadius: 20, padding: '5px 12px',
-                color: GRAY, fontSize: '0.8rem', fontWeight: 600,
-              }}>
-                📅 {fechaStr}
-              </div>
-            )}
-          </div>
-
-          {tiempoStr && (
-            <span style={{ fontSize: '0.78rem', color: '#999', fontWeight: 600 }}>
-              {tiempoStr}
-            </span>
-          )}
-        </div>
-
-        {/* Customer Description */}
-        {reclamo.descripcion && (
-          <div style={{ background: '#fafafa', border: `1px solid ${BORDER}`, borderRadius: 12, padding: '14px 16px' }}>
-            <p style={{ margin: '0 0 4px', fontSize: '0.78rem', fontWeight: 700, color: GRAY, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Detalle del reclamo por el cliente:
-            </p>
-            <p style={{ margin: 0, color: CARBON, fontSize: '0.94rem', lineHeight: 1.6 }}>
-              {reclamo.descripcion}
-            </p>
-          </div>
-        )}
-
-        {/* Evidencia Adjunta */}
-        {reclamo.evidencia_url && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14, background: '#fdf8f9', border: '1px solid #f0dde4', borderRadius: 12, padding: '12px 16px' }}>
-            <img
-              src={`${getApiBaseUrl()}${reclamo.evidencia_url}`}
-              alt="Evidencia thumbnail"
-              onClick={() => onVerEvidencia(`${getApiBaseUrl()}${reclamo.evidencia_url}`)}
-              style={{ width: 56, height: 56, borderRadius: 8, objectFit: 'cover', cursor: 'pointer', border: '1px solid #f0dde4', boxShadow: '0 2px 6px rgba(0,0,0,0.08)' }}
-            />
-            <div style={{ flex: 1 }}>
-              <strong style={{ fontSize: '0.88rem', color: VINOTINTO, display: 'block' }}>Evidencia gráfica adjunta</strong>
-              <span style={{ fontSize: '0.8rem', color: GRAY }}>Haz clic para ampliar la imagen adjunta por el usuario.</span>
-            </div>
-            <button
-              onClick={() => onVerEvidencia(`${getApiBaseUrl()}${reclamo.evidencia_url}`)}
-              className="btn-reclamo-evidencia"
-              style={{
                 display: 'inline-flex', alignItems: 'center', gap: 6,
-                padding: '7px 14px', borderRadius: 8,
-                fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer',
-              }}
-            >
-              <IconEye width={15} height={15} /> Ver evidencia
-            </button>
-          </div>
-        )}
+                background: darkMode ? 'rgba(224,90,122,0.15)' : '#fdf2f4', border: darkMode ? '1px solid #3a3a3a' : '1px solid #f0dde4',
+                borderRadius: 20, padding: '5px 12px',
+                color: darkMode ? '#e05a7a' : VINOTINTO, fontSize: '0.82rem', fontWeight: 700,
+              }}>
+                {motivoIcon}
+                {reclamo.asunto}
+              </div>
 
-        {/* Admin Previous Response */}
-        {reclamo.respuesta && (
+              {/* Tienda Chip */}
+              <div style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                background: darkMode ? 'rgba(59,130,246,0.15)' : '#f0f9ff', border: darkMode ? '1px solid #3a3a3a' : '1px solid #bae6fd',
+                borderRadius: 20, padding: '5px 12px',
+                color: '#0369a1', fontSize: '0.82rem', fontWeight: 700,
+              }}>
+                <IconStoreAlt width={14} height={14} strokeWidth={1.5} />
+                {reclamo.nombre_tienda || 'BookyHome'}
+              </div>
+
+              {/* Total Orden */}
+              {reclamo.total_orden && (
+                <div style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 5,
+                  background: darkMode ? 'rgba(16,185,129,0.15)' : '#f0fdf4', border: darkMode ? '1px solid #3a3a3a' : '1px solid #bbf7d0',
+                  borderRadius: 20, padding: '5px 12px',
+                  color: darkMode ? '#34d399' : '#166534', fontSize: '0.82rem', fontWeight: 700,
+                }}>
+                  <IconDollar width={13} height={13} strokeWidth={2} />
+                  ${Number(reclamo.total_orden).toLocaleString('es-CO')}
+                </div>
+              )}
+
+              {/* Fecha */}
+              {fechaStr && (
+                <div style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 5,
+                  background: darkMode ? '#252525' : '#fafafa', border: `1px solid ${darkMode ? '#3a3a3a' : BORDER}`,
+                  borderRadius: 20, padding: '5px 12px',
+                  color: darkMode ? '#c8c8c8' : GRAY, fontSize: '0.8rem', fontWeight: 600,
+                }}>
+                  📅 {fechaStr}
+                </div>
+              )}
+            </div>
+
+            {tiempoStr && (
+              <span style={{ fontSize: '0.78rem', color: darkMode ? '#b8b8b8' : '#999', fontWeight: 600 }}>
+                {tiempoStr}
+              </span>
+            )}
+          </div>
+
+          {/* Customer Description */}
+          {reclamo.descripcion && (
+            <div style={{ background: darkMode ? '#252525' : '#fafafa', border: `1px solid ${darkMode ? '#3a3a3a' : BORDER}`, borderRadius: 12, padding: '14px 16px' }}>
+              <p style={{ margin: '0 0 4px', fontSize: '0.78rem', fontWeight: 700, color: darkMode ? '#c8c8c8' : GRAY, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Detalle del reclamo por el cliente:
+              </p>
+              <p style={{ margin: 0, color: darkMode ? '#f3f4f6' : CARBON, fontSize: '0.94rem', lineHeight: 1.6 }}>
+                {reclamo.descripcion}
+              </p>
+            </div>
+          )}
+
+          {/* Evidencia Adjunta */}
+          {reclamo.evidencia_url && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14, background: darkMode ? 'rgba(224,90,122,0.15)' : '#fdf8f9', border: darkMode ? '1px solid #3a3a3a' : '1px solid #f0dde4', borderRadius: 12, padding: '12px 16px' }}>
+              <img
+                src={`${getApiBaseUrl()}${reclamo.evidencia_url}`}
+                alt="Evidencia thumbnail"
+                onClick={() => onVerEvidencia(`${getApiBaseUrl()}${reclamo.evidencia_url}`)}
+                style={{ width: 56, height: 56, borderRadius: 8, objectFit: 'cover', cursor: 'pointer', border: darkMode ? '1px solid #3a3a3a' : '1px solid #f0dde4', boxShadow: '0 2px 6px rgba(0,0,0,0.08)' }}
+              />
+              <div style={{ flex: 1 }}>
+                <strong style={{ fontSize: '0.88rem', color: darkMode ? '#e05a7a' : VINOTINTO, display: 'block' }}>Evidencia gráfica adjunta</strong>
+                <span style={{ fontSize: '0.8rem', color: darkMode ? '#c8c8c8' : GRAY }}>Haz clic para ampliar la imagen adjunta por el usuario.</span>
+              </div>
+              <button
+                onClick={() => onVerEvidencia(`${getApiBaseUrl()}${reclamo.evidencia_url}`)}
+                className="btn-reclamo-evidencia"
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                  padding: '7px 14px', borderRadius: 8,
+                  fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer',
+                }}
+              >
+                <IconEye width={15} height={15} /> Ver evidencia
+              </button>
+            </div>
+          )}
+
+          {/* Admin Previous Response */}
+          {reclamo.respuesta && (
+            <div style={{
+              padding: '14px 18px',
+              background: darkMode ? '#252525' : 'linear-gradient(135deg, #fdf8f9 0%, #f9f0f3 100%)',
+              borderRadius: 12,
+              borderLeft: `4px solid ${VINOTINTO}`,
+              borderTop: darkMode ? '1px solid #3a3a3a' : '1px solid #f0dde4',
+              borderRight: darkMode ? '1px solid #3a3a3a' : '1px solid #f0dde4',
+              borderBottom: darkMode ? '1px solid #3a3a3a' : '1px solid #f0dde4',
+            }}>
+              <strong style={{ color: darkMode ? '#e05a7a' : VINOTINTO, display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.82rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>
+                <IconMessage width={15} height={15} /> Respuesta actual del administrador:
+              </strong>
+              <p style={{ margin: 0, color: darkMode ? '#c8c8c8' : '#444', lineHeight: 1.6, fontSize: '0.92rem' }}>
+                {reclamo.respuesta}
+              </p>
+            </div>
+          )}
+
+          {/* ACTION FOOTER BUTTONS */}
           <div style={{
-            padding: '14px 18px',
-            background: 'linear-gradient(135deg, #fdf8f9 0%, #f9f0f3 100%)',
-            borderRadius: 12,
-            borderLeft: `4px solid ${VINOTINTO}`,
-            borderTop: '1px solid #f0dde4',
-            borderRight: '1px solid #f0dde4',
-            borderBottom: '1px solid #f0dde4',
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: 10,
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            paddingTop: 16,
+            borderTop: `1px solid ${darkMode ? '#3a3a3a' : BORDER}`,
           }}>
-            <strong style={{ color: VINOTINTO, display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.82rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>
-              <IconMessage width={15} height={15} /> Respuesta actual del administrador:
-            </strong>
-            <p style={{ margin: 0, color: '#444', lineHeight: 1.6, fontSize: '0.92rem' }}>
-              {reclamo.respuesta}
-            </p>
-          </div>
-        )}
-
-        {/* ACTION FOOTER BUTTONS */}
-        <div style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          gap: 10,
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          paddingTop: 16,
-          borderTop: `1px solid ${BORDER}`,
-        }}>
-          {/* Botón de Contacto / Chat con la tienda */}
-          <button
-            onClick={() => onAbrirChat(reclamo)}
-            className="btn-reclamo-chat"
-            style={{
-              borderRadius: 10,
-              padding: '10px 18px',
-              cursor: 'pointer',
-              fontWeight: 700,
-              fontSize: '0.88rem',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 8,
-              boxShadow: '0 2px 8px rgba(122,30,58,0.06)',
-            }}
-          >
-            <IconStoreAlt width={17} height={17} strokeWidth={1.8} />
-            Contactar / Chat con la tienda
-          </button>
-
-          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            {/* Botón de Contacto / Chat con la tienda */}
             <button
-              onClick={() => onAbrirModal(reclamo, 'En revisión')}
-              className="btn-reclamo-revision"
+              onClick={() => onAbrirChat(reclamo)}
+              className="btn-reclamo-chat"
               style={{
                 borderRadius: 10,
                 padding: '10px 18px',
@@ -433,58 +434,78 @@ const CardReclamoAdmin = React.memo(function CardReclamoAdmin({ reclamo, onAbrir
                 fontSize: '0.88rem',
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: 6,
+                gap: 8,
+                boxShadow: '0 2px 8px rgba(122,30,58,0.06)',
               }}
             >
-              <IconTool width={16} height={16} />
-              Marcar En revisión
+              <IconStoreAlt width={17} height={17} strokeWidth={1.8} />
+              Contactar / Chat con la tienda
             </button>
 
-            <button
-              onClick={() => onAbrirModal(reclamo, 'Rechazado')}
-              className="btn-reclamo-rechazar"
-              style={{
-                borderRadius: 10,
-                padding: '10px 18px',
-                cursor: 'pointer',
-                fontWeight: 700,
-                fontSize: '0.88rem',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 6,
-              }}
-            >
-              <IconBan width={16} height={16} />
-              Rechazar reclamo
-            </button>
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+              <button
+                onClick={() => onAbrirModal(reclamo, 'En revisión')}
+                className="btn-reclamo-revision"
+                style={{
+                  borderRadius: 10,
+                  padding: '10px 18px',
+                  cursor: 'pointer',
+                  fontWeight: 700,
+                  fontSize: '0.88rem',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                }}
+              >
+                <IconTool width={16} height={16} />
+                Marcar En revisión
+              </button>
 
-            <button
-              onClick={() => onAbrirModal(reclamo, 'Resuelto')}
-              className="btn-reclamo-resolver"
-              style={{
-                borderRadius: 10,
-                padding: '10px 18px',
-                cursor: 'pointer',
-                fontWeight: 700,
-                fontSize: '0.88rem',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 6,
-                boxShadow: '0 4px 14px rgba(122,30,58,0.2)',
-              }}
-            >
-              <IconCheck width={16} height={16} strokeWidth={2.5} />
-              Resolver reclamo
-            </button>
+              <button
+                onClick={() => onAbrirModal(reclamo, 'Rechazado')}
+                className="btn-reclamo-rechazar"
+                style={{
+                  borderRadius: 10,
+                  padding: '10px 18px',
+                  cursor: 'pointer',
+                  fontWeight: 700,
+                  fontSize: '0.88rem',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                }}
+              >
+                <IconBan width={16} height={16} />
+                Rechazar reclamo
+              </button>
+
+              <button
+                onClick={() => onAbrirModal(reclamo, 'Resuelto')}
+                className="btn-reclamo-resolver"
+                style={{
+                  borderRadius: 10,
+                  padding: '10px 18px',
+                  cursor: 'pointer',
+                  fontWeight: 700,
+                  fontSize: '0.88rem',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  boxShadow: '0 4px 14px rgba(122,30,58,0.2)',
+                }}
+              >
+                <IconCheck width={16} height={16} strokeWidth={2.5} />
+                Resolver reclamo
+              </button>
+            </div>
           </div>
         </div>
-      </div>
       )}
     </article>
   );
 });
 
-const CardSoporteAdmin = React.memo(function CardSoporteAdmin({ ticket, onAbrirModal }) {
+const CardSoporteAdmin = React.memo(function CardSoporteAdmin({ ticket, onAbrirModal, darkMode = false }) {
   const estadoCfg = ESTADO_CONFIG_ADMIN[ticket.estado] || ESTADO_CONFIG_ADMIN['Cerrado'];
   const fechaStr = ticket.fecha_creacion
     ? new Date(ticket.fecha_creacion).toLocaleDateString('es-CO', { day: '2-digit', month: 'long', year: 'numeric' })
@@ -498,10 +519,10 @@ const CardSoporteAdmin = React.memo(function CardSoporteAdmin({ ticket, onAbrirM
       className="admin-soporte-card"
       style={{
         borderRadius: 16,
-        border: '1.5px solid #eee3e9',
+        border: darkMode ? '1.5px solid #3a3a3a' : '1.5px solid #eee3e9',
         borderLeft: `6px solid ${estadoCfg.dot}`,
         overflow: 'hidden',
-        background: WHITE,
+        background: darkMode ? '#1e1e1e' : WHITE,
         boxShadow: '0 3px 14px rgba(122,30,58,0.09)',
         transition: 'box-shadow 0.2s ease, transform 0.2s ease',
       }}
@@ -509,9 +530,9 @@ const CardSoporteAdmin = React.memo(function CardSoporteAdmin({ ticket, onAbrirM
       {/* Header de la card */}
       <div
         style={{
-          background: 'linear-gradient(135deg, #fdf8f9 0%, #f9f0f3 100%)',
+          background: darkMode ? '#1e1e1e' : 'linear-gradient(135deg, #fdf8f9 0%, #f9f0f3 100%)',
           padding: '16px 20px',
-          borderBottom: '1.5px solid #f0e8ec',
+          borderBottom: darkMode ? '1.5px solid #3a3a3a' : '1.5px solid #f0e8ec',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
@@ -552,7 +573,7 @@ const CardSoporteAdmin = React.memo(function CardSoporteAdmin({ ticket, onAbrirM
               </span>
               <span style={{
                 display: 'inline-flex', alignItems: 'center', gap: 5,
-                background: WHITE, border: '1.5px solid #ecdce3', color: VINOTINTO,
+                background: darkMode ? '#1e1e1e' : WHITE, border: darkMode ? '1.5px solid #3a3a3a' : '1.5px solid #ecdce3', color: darkMode ? '#e05a7a' : VINOTINTO,
                 borderRadius: 7, padding: '2px 10px',
                 fontSize: '0.73rem', fontWeight: 700,
                 whiteSpace: 'nowrap',
@@ -561,7 +582,7 @@ const CardSoporteAdmin = React.memo(function CardSoporteAdmin({ ticket, onAbrirM
                 {(ticket.rol_usuario || '').toLowerCase() === 'vendedor' ? 'Vendedor' : 'Comprador'}
               </span>
             </div>
-            <strong style={{ fontSize: '1rem', color: CARBON, fontWeight: 800, display: 'block', lineHeight: 1.35 }}>
+            <strong style={{ fontSize: '1rem', color: darkMode ? '#f3f4f6' : CARBON, fontWeight: 800, display: 'block', lineHeight: 1.35 }}>
               {ticket.comprador}
             </strong>
           </div>
@@ -571,8 +592,9 @@ const CardSoporteAdmin = React.memo(function CardSoporteAdmin({ ticket, onAbrirM
         <div>
           <span style={{
             display: 'inline-flex', alignItems: 'center', gap: 6,
-            background: estadoCfg.bg, color: estadoCfg.color,
-            border: `1px solid ${estadoCfg.border}`,
+            background: darkMode ? estadoCfg.darkBg : estadoCfg.bg,
+            color: darkMode ? estadoCfg.darkColor : estadoCfg.color,
+            border: `1px solid ${darkMode ? estadoCfg.darkBorder : estadoCfg.border}`,
             padding: '5px 12px', borderRadius: 20,
             fontSize: '0.78rem', fontWeight: 700, whiteSpace: 'nowrap',
           }}>
@@ -588,9 +610,9 @@ const CardSoporteAdmin = React.memo(function CardSoporteAdmin({ ticket, onAbrirM
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
           <div style={{
             display: 'inline-flex', alignItems: 'center', gap: 6,
-            background: '#fdf2f4', border: '1px solid #f0dde4',
+            background: darkMode ? 'rgba(224,90,122,0.15)' : '#fdf2f4', border: darkMode ? '1px solid #3a3a3a' : '1px solid #f0dde4',
             borderRadius: 20, padding: '5px 12px',
-            color: VINOTINTO, fontSize: '0.8rem', fontWeight: 700,
+            color: darkMode ? '#e05a7a' : VINOTINTO, fontSize: '0.8rem', fontWeight: 700,
           }}>
             <IconTool width={13} height={13} />
             {ticket.categoria || 'Soporte'}
@@ -598,7 +620,7 @@ const CardSoporteAdmin = React.memo(function CardSoporteAdmin({ ticket, onAbrirM
           {ticket.correo_comprador && (
             <div style={{
               display: 'inline-flex', alignItems: 'center', gap: 5,
-              background: '#f0f9ff', border: '1px solid #bae6fd',
+              background: darkMode ? 'rgba(59,130,246,0.15)' : '#f0f9ff', border: darkMode ? '1px solid #3a3a3a' : '1px solid #bae6fd',
               borderRadius: 20, padding: '5px 12px',
               color: '#0369a1', fontSize: '0.78rem', fontWeight: 600,
             }}>
@@ -609,7 +631,7 @@ const CardSoporteAdmin = React.memo(function CardSoporteAdmin({ ticket, onAbrirM
           {fechaStr && (
             <div style={{
               display: 'inline-flex', alignItems: 'center', gap: 5,
-              background: '#f9fafb', border: '1px solid #e5e7eb',
+              background: darkMode ? '#252525' : '#f9fafb', border: darkMode ? '1px solid #3a3a3a' : '1px solid #e5e7eb',
               borderRadius: 20, padding: '5px 12px',
               color: '#6b7280', fontSize: '0.78rem', fontWeight: 600,
             }}>
@@ -619,9 +641,9 @@ const CardSoporteAdmin = React.memo(function CardSoporteAdmin({ ticket, onAbrirM
         </div>
 
         {/* Asunto y descripción */}
-        <div style={{ padding: '12px 14px', background: '#fafafa', borderRadius: 10, border: '1px solid #f0f0f0' }}>
-          <p style={{ margin: 0, color: '#555', lineHeight: 1.65, fontSize: '0.92rem' }}>
-            <span style={{ fontWeight: 700, color: CARBON, display: 'block', marginBottom: 4, fontSize: '0.82rem' }}>
+        <div style={{ padding: '12px 14px', background: darkMode ? '#252525' : '#fafafa', borderRadius: 10, border: darkMode ? '1px solid #3a3a3a' : '1px solid #f0f0f0' }}>
+          <p style={{ margin: 0, color: darkMode ? '#c8c8c8' : '#555', lineHeight: 1.65, fontSize: '0.92rem' }}>
+            <span style={{ fontWeight: 700, color: darkMode ? '#f3f4f6' : CARBON, display: 'block', marginBottom: 4, fontSize: '0.82rem' }}>
               {ticket.asunto}
             </span>
             {ticket.descripcion}
@@ -632,14 +654,14 @@ const CardSoporteAdmin = React.memo(function CardSoporteAdmin({ ticket, onAbrirM
         {ticket.respuesta && (
           <div style={{
             padding: '14px 16px',
-            background: 'linear-gradient(135deg, #fdf8f9 0%, #f9f0f3 100%)',
+            background: darkMode ? '#252525' : 'linear-gradient(135deg, #fdf8f9 0%, #f9f0f3 100%)',
             borderRadius: 12, borderLeft: '4px solid #7A1E3A',
           }}>
-            <p style={{ margin: '0 0 6px', color: VINOTINTO, display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.78rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            <p style={{ margin: '0 0 6px', color: darkMode ? '#e05a7a' : VINOTINTO, display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.78rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               <IconMessage width={14} height={14} />
               Respuesta del administrador
             </p>
-            <p style={{ margin: 0, color: '#444', lineHeight: 1.65, fontSize: '0.92rem' }}>{ticket.respuesta}</p>
+            <p style={{ margin: 0, color: darkMode ? '#c8c8c8' : '#444', lineHeight: 1.65, fontSize: '0.92rem' }}>{ticket.respuesta}</p>
           </div>
         )}
 
@@ -650,7 +672,7 @@ const CardSoporteAdmin = React.memo(function CardSoporteAdmin({ ticket, onAbrirM
             className="btn-soporte-revision"
             style={{
               display: 'inline-flex', alignItems: 'center', gap: 6,
-              border: '1.5px solid #fdba74', background: WHITE, color: '#c2410c',
+              border: darkMode ? '1.5px solid #3a3a3a' : '1.5px solid #fdba74', background: darkMode ? '#1e1e1e' : WHITE, color: darkMode ? '#fb923c' : '#c2410c',
               borderRadius: 8, padding: '10px 18px', cursor: 'pointer',
               fontWeight: 700, fontSize: '0.88rem',
             }}
@@ -663,7 +685,7 @@ const CardSoporteAdmin = React.memo(function CardSoporteAdmin({ ticket, onAbrirM
             className="btn-soporte-rechazar"
             style={{
               display: 'inline-flex', alignItems: 'center', gap: 6,
-              border: '1.5px solid #fca5a5', background: '#fef2f2', color: '#dc2626',
+              border: darkMode ? '1.5px solid #3a3a3a' : '1.5px solid #fca5a5', background: darkMode ? 'rgba(220,38,38,0.15)' : '#fef2f2', color: darkMode ? '#fca5a5' : '#dc2626',
               borderRadius: 8, padding: '10px 18px', cursor: 'pointer',
               fontWeight: 700, fontSize: '0.88rem',
             }}
@@ -694,6 +716,35 @@ const CardSoporteAdmin = React.memo(function CardSoporteAdmin({ ticket, onAbrirM
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
+  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('darkMode_admin') === 'true');
+
+  useEffect(() => {
+    const isDark = localStorage.getItem('darkMode_admin') === 'true';
+    setDarkMode(isDark);
+    if (isDark) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+
+    const handleDarkChange = (e) => {
+      if (e?.detail?.role && e.detail.role !== 'admin') return;
+      const mode = localStorage.getItem('darkMode_admin') === 'true';
+      setDarkMode(mode);
+      if (mode) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+    };
+    window.addEventListener('darkModeChange', handleDarkChange);
+    window.addEventListener('storage', handleDarkChange);
+    return () => {
+      window.removeEventListener('darkModeChange', handleDarkChange);
+      window.removeEventListener('storage', handleDarkChange);
+    };
+  }, []);
+
   const [stats, setStats] = useState({ usuarios: 0, libros: 0, ordenes: 0, tiendas: 0 });
   const [activeSection, setActiveSection] = useState('dashboard');
   const [usuarios, setUsuarios] = useState([]);
@@ -736,6 +787,23 @@ export default function AdminDashboard() {
   const [modalDetalleUsuario, setModalDetalleUsuario] = useState(null);
   const [bloqueandoUsuario, setBloqueandoUsuario] = useState(false);
   const [copiadoId, setCopiadoId] = useState(null);
+  const [modalDetalleOrden, setModalDetalleOrden] = useState(null);
+  const [itemsDetalleOrden, setItemsDetalleOrden] = useState([]);
+  const [cargandoItemsOrden, setCargandoItemsOrden] = useState(false);
+
+  const abrirDetalleOrden = async (orden) => {
+    setModalDetalleOrden(orden);
+    setCargandoItemsOrden(true);
+    try {
+      const res = await api.get(`/api/v1/admin/orders/${orden.id_orden}/items`);
+      setItemsDetalleOrden(res.data || []);
+    } catch (err) {
+      console.error('Error cargando items de la orden:', err);
+      setItemsDetalleOrden([]);
+    } finally {
+      setCargandoItemsOrden(false);
+    }
+  };
 
   // Cerrar dropdown al hacer clic fuera
   useEffect(() => {
@@ -853,12 +921,19 @@ export default function AdminDashboard() {
       void cargarSolicitudes();
     };
     window.addEventListener('bookyhome-complaint-updated', refrescar);
-    const intervalId = window.setInterval(refrescar, 30000);
+    const intervalId = window.setInterval(refrescar, 10000);
     return () => {
       window.removeEventListener('bookyhome-complaint-updated', refrescar);
       window.clearInterval(intervalId);
     };
   }, [cargarSolicitudes]);
+
+  // Recargar solicitudes inmediatamente al entrar a reclamos o soporte
+  useEffect(() => {
+    if (activeSection === 'reclamos' || activeSection === 'soporte') {
+      void cargarSolicitudes();
+    }
+  }, [activeSection, cargarSolicitudes]);
 
   const abrirModal = (reclamo, estado) => {
     if (!reclamo) return;
@@ -904,7 +979,7 @@ export default function AdminDashboard() {
       try {
         const [usuariosRes, librosRes, ordenesRes, tiendasRes, quejasRes] = await Promise.all([
           api.get('/usuarios'),
-          api.get('/api/stored/libros'),
+          api.get('/api/stored/libros', { params: { admin: true } }),
           api.get('/api/v1/admin/orders'),
           api.get('/tiendas'),
           api.get('/quejas/admin/todas'),
@@ -996,11 +1071,11 @@ export default function AdminDashboard() {
   ];
 
   const ESTADOS_TIENDA = [
-    { value: 'activa',      label: 'Activa',          color: '#047857', bg: '#ECFDF5', border: '#A7F3D0' },
-    { value: 'pendiente',   label: 'Pendiente',        color: '#B45309', bg: '#FFFBEB', border: '#FDE68A' },
-    { value: 'vacaciones',  label: 'En Vacaciones',    color: '#C2410C', bg: '#FFF7ED', border: '#FDBA74' },
-    { value: 'suspendida',  label: 'Suspendida',       color: '#B91C1C', bg: '#FEF2F2', border: '#FECACA' },
-    { value: 'inactiva',    label: 'Inactiva',         color: '#7A1E3A', bg: '#FDF2F4', border: '#F8D2DA' },
+    { value: 'activa',     label: 'Activa',         color: '#047857', bg: '#ECFDF5', border: '#A7F3D0' },
+    { value: 'pendiente',  label: 'Pendiente',       color: '#B45309', bg: '#FFFBEB', border: '#FDE68A' },
+    { value: 'vacaciones', label: 'En Vacaciones',   color: '#1D4ED8', bg: '#EFF6FF', border: '#BFDBFE' },
+    { value: 'suspendida', label: 'Suspendida',       color: '#B91C1C', bg: '#FEF2F2', border: '#FECACA' },
+    { value: 'inactiva',   label: 'Inactiva',         color: '#6D28D9', bg: '#F5F3FF', border: '#DDD6FE' },
   ];
 
   const manejarEstadoTienda = (idTienda, nuevoEstado, nombreTienda) => {
@@ -1152,7 +1227,7 @@ export default function AdminDashboard() {
   }, [reclamos]);
 
   const ordenesCompletadas = useMemo(() => {
-    return ordenes.filter(o => ['completada', 'entregado', 'finalizada'].includes((o.estado || '').toLowerCase())).length;
+    return ordenes.filter(o => ['completada', 'entregado', 'entregada', 'finalizada'].includes((o.estado || o.estado_orden || '').toLowerCase())).length;
   }, [ordenes]);
 
   const getIniciales = (nombre) => {
@@ -1368,25 +1443,44 @@ export default function AdminDashboard() {
 
   // ÓRDENES MEMOIZADAS (con búsqueda y filtro)
   const ESTADOS_ORDEN = useMemo(() => [
-    { value: 'pagado',      label: 'Pagado',      color: '#047857', bg: '#ecfdf5', border: '#a7f3d0' },
-    { value: 'entregada',   label: 'Entregada',   color: '#D97706', bg: '#fffbeb', border: '#fde68a' },
-    { value: 'enviado',     label: 'Enviado',     color: '#ea580c', bg: '#fff7ed', border: '#fdba74' },
-    { value: 'cancelada',   label: 'Cancelada',   color: '#B91C1C', bg: '#fef2f2', border: '#fecaca' },
-    { value: 'completada',  label: 'Completada',  color: '#1d4ed8', bg: '#eff6ff', border: '#93c5fd' },
-    { value: 'finalizada',  label: 'Finalizada',  color: '#6d28d9', bg: '#f5f3ff', border: '#c4b5fd' },
+    { value: 'pagada', label: 'Pagada', color: '#047857', bg: '#ecfdf5', border: '#a7f3d0', darkColor: '#6ee7b7' },
+    { value: 'entregada', label: 'Entregada', color: '#2563EB', bg: '#eff6ff', border: '#bfdbfe', darkColor: '#93c5fd' },
+    { value: 'enviada', label: 'Enviada', color: '#ea580c', bg: '#fff7ed', border: '#fdba74', darkColor: '#fdba74' },
+    { value: 'cancelada', label: 'Cancelada', color: '#B91C1C', bg: '#fef2f2', border: '#fecaca', darkColor: '#fca5a5' },
   ], []);
+
+  // Devuelve la configuración de color de un estado de orden aceptando sus
+  // variantes (pagado/pagada, enviado/enviada, entregado/entregada, etc.).
+  const configEstadoOrden = (raw) => {
+    const norm = String(raw || '').toLowerCase().trim();
+    const alias = norm.includes('pagad') ? 'pagada'
+      : norm.includes('entreg') || norm.includes('complet') || norm.includes('finaliz') ? 'entregada'
+        : norm.includes('enviad') ? 'enviada'
+          : norm.includes('cancel') ? 'cancelada'
+            : null;
+    return ESTADOS_ORDEN.find(e => e.value === alias)
+      || { color: '#6b7280', bg: darkMode ? '#262626' : '#f9fafb', border: darkMode ? '#3a3a3a' : '#e5e7eb', darkColor: '#e5e7eb' };
+  };
 
   const ordenesFiltradas = useMemo(() => {
     const q = (busquedaOrdenes || '').toLowerCase().trim();
     return ordenes.filter((o) => {
-      const estadoNorm = (o.estado || '').toLowerCase();
-      const cumpleEstado = filtroEstadoOrden === 'todos' || estadoNorm === filtroEstadoOrden;
+      const estadoNorm = (o.estado || o.estado_orden || '').toLowerCase().trim();
+      const cumpleEstado = filtroEstadoOrden === 'todos' || estadoNorm === filtroEstadoOrden
+        || ((filtroEstadoOrden === 'enviada' || filtroEstadoOrden === 'enviado') && (estadoNorm === 'enviado' || estadoNorm === 'enviada'))
+        || ((filtroEstadoOrden === 'entregada' || filtroEstadoOrden === 'entregado') && (estadoNorm === 'entregada' || estadoNorm === 'entregado'))
+        || ((filtroEstadoOrden === 'pagada' || filtroEstadoOrden === 'pagado') && (estadoNorm === 'pagado' || estadoNorm === 'pagada'))
+        || ((filtroEstadoOrden === 'cancelada' || filtroEstadoOrden === 'cancelado') && (estadoNorm === 'cancelada' || estadoNorm === 'cancelado'))
+        || (filtroEstadoOrden === 'completada' && (estadoNorm === 'completada' || estadoNorm === 'finalizada'));
       if (!q) return cumpleEstado;
       const matchTexto =
         String(o.id_orden || '').includes(q) ||
         estadoNorm.includes(q) ||
         String(o.total || '').includes(q) ||
-        (o.comprador || o.nombre_usuario || '').toLowerCase().includes(q);
+        (o.comprador || o.nombre_usuario || '').toLowerCase().includes(q) ||
+        (o.email_comprador || o.email_usuario || '').toLowerCase().includes(q) ||
+        (o.vendedor_tienda || o.tienda || o.vendedor || '').toLowerCase().includes(q) ||
+        (o.metodo_pago || '').toLowerCase().includes(q);
       return cumpleEstado && matchTexto;
     });
   }, [ordenes, busquedaOrdenes, filtroEstadoOrden]);
@@ -1409,17 +1503,27 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', fontFamily: "'Montserrat', sans-serif", background: BEIGE }}>
+    <div
+      className="admin-dashboard-container"
+      style={{
+        display: 'flex',
+        minHeight: '100vh',
+        fontFamily: "'Montserrat', sans-serif",
+        background: darkMode ? '#121212' : BEIGE
+      }}
+    >
 
       {/* Sidebar */}
-      <aside style={{
-        width: sidebarOpen ? '250px' : '76px',
-        background: VINOTINTO, color: WHITE,
-        padding: '24px 14px', display: 'flex', flexDirection: 'column', gap: '6px',
-        boxSizing: 'border-box',
-        transition: 'width 0.25s ease', flexShrink: 0,
-        position: 'sticky', top: 0, height: '100vh', overflow: 'hidden',
-      }}>
+      <aside
+        className={`dashboard-sidebar admin-sidebar ${sidebarOpen ? '' : 'collapsed'}`}
+        style={{
+          width: sidebarOpen ? '250px' : '76px',
+          background: VINOTINTO, color: WHITE,
+          padding: '24px 14px', display: 'flex', flexDirection: 'column', gap: '6px',
+          boxSizing: 'border-box',
+          transition: 'width 0.25s ease', flexShrink: 0,
+          position: 'sticky', top: 0, height: '100vh', overflow: 'hidden',
+        }}>
         {sidebarOpen ? (
           /* ── Sidebar ABIERTO: banner como fondo, avatar + info encima ── */
           <div style={{
@@ -1526,10 +1630,10 @@ export default function AdminDashboard() {
                   transition: 'background 0.15s ease',
                 }}
               >
-                <span style={{ display: 'flex', flexShrink: 0 }}>
+                <span style={{ display: 'flex', flexShrink: 0, color: '#FFFFFF' }}>
                   <SidebarIcon Icon={item.Icon} size={20} />
                 </span>
-                {sidebarOpen && <span>{item.label}</span>}
+                {sidebarOpen && <span style={{ color: '#FFFFFF' }}>{item.label}</span>}
               </button>
             );
           })}
@@ -1538,8 +1642,9 @@ export default function AdminDashboard() {
         <button
           onClick={() => {
             localStorage.removeItem('token');
-            localStorage.removeItem('darkMode');
             document.documentElement.classList.remove('dark');
+            localStorage.setItem('darkMode', 'false');
+            window.dispatchEvent(new CustomEvent('auth-change', { detail: { authenticated: false } }));
             void navigate('/');
           }}
           title={!sidebarOpen ? 'Cerrar sesión' : undefined}
@@ -1554,24 +1659,24 @@ export default function AdminDashboard() {
           }}
         >
           <SidebarIcon Icon={IconLogOut} size={18} />
-          {sidebarOpen && <span>Cerrar sesión</span>}
+          {sidebarOpen && <span style={{ color: '#FFFFFF' }}>Cerrar sesión</span>}
         </button>
       </aside>
 
       {/* Main content */}
-      <main style={{ flex: 1, padding: '40px', background: BEIGE, overflowX: 'auto' }}>
+      <main style={{ flex: 1, padding: '40px', background: darkMode ? '#121212' : BEIGE, overflowX: 'auto' }}>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '30px' }}>
           {ActiveIcon && (
             <div style={{
               width: '46px', height: '46px', borderRadius: '12px',
-              background: '#F5EAED', color: VINOTINTO,
+              background: darkMode ? '#2a141e' : '#F5EAED', color: darkMode ? '#e05a7a' : VINOTINTO,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
-              <ActiveIcon className="" width={24} height={24} style={{ color: VINOTINTO }} />
+              <ActiveIcon className="" width={24} height={24} style={{ color: darkMode ? '#e05a7a' : VINOTINTO }} />
             </div>
           )}
-          <h1 style={{ margin: 0, color: VINOTINTO, fontSize: '1.7rem', fontWeight: 800 }}>
+          <h1 style={{ margin: 0, color: darkMode ? '#e05a7a' : VINOTINTO, fontSize: '1.7rem', fontWeight: 800 }}>
             {sectionTitles[activeSection]}
           </h1>
         </div>
@@ -1583,8 +1688,8 @@ export default function AdminDashboard() {
             {/* ALERTA DE ATENCIÓN PRIORITARIA */}
             {(reclamosPendientesCount > 0 || soportePendientesCountDash > 0) && (
               <div style={{
-                background: '#FFFBEB',
-                border: '1.5px solid #FCD34D',
+                background: darkMode ? '#2d1a08' : '#FFFBEB',
+                border: darkMode ? '1.5px solid #78350f' : '1.5px solid #FCD34D',
                 borderRadius: '16px',
                 padding: '16px 20px',
                 display: 'flex',
@@ -1592,21 +1697,21 @@ export default function AdminDashboard() {
                 justifyContent: 'space-between',
                 flexWrap: 'wrap',
                 gap: '14px',
-                boxShadow: '0 4px 14px rgba(245, 158, 11, 0.08)',
+                boxShadow: darkMode ? '0 4px 14px rgba(0, 0, 0, 0.4)' : '0 4px 14px rgba(245, 158, 11, 0.08)',
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
                   <div style={{
                     width: '42px', height: '42px', borderRadius: '12px',
-                    background: '#FEF3C7', color: '#D97706',
+                    background: darkMode ? '#451a03' : '#FEF3C7', color: darkMode ? '#fbbf24' : '#D97706',
                     display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
                   }}>
-                    <IconAlertTriangle width={22} height={22} style={{ color: '#D97706' }} />
+                    <IconAlertTriangle width={22} height={22} style={{ color: darkMode ? '#fbbf24' : '#D97706' }} />
                   </div>
                   <div>
-                    <div style={{ fontWeight: 800, color: '#92400E', fontSize: '0.96rem' }}>
+                    <div style={{ fontWeight: 800, color: darkMode ? '#fef3c7' : '#92400E', fontSize: '0.96rem' }}>
                       Atención requerida del Administrador
                     </div>
-                    <div style={{ color: '#B45309', fontSize: '0.86rem', marginTop: '2px' }}>
+                    <div style={{ color: darkMode ? '#fde68a' : '#B45309', fontSize: '0.86rem', marginTop: '2px' }}>
                       {reclamosPendientesCount > 0 && `Tienes ${reclamosPendientesCount} queja(s) o reclamo(s) abierta(s) para responder. `}
                       {soportePendientesCountDash > 0 && `Hay ${soportePendientesCountDash} ticket(s) de soporte técnico sin resolver. `}
                     </div>
@@ -1650,11 +1755,11 @@ export default function AdminDashboard() {
                 onClick={() => setActiveSection('usuarios')}
                 className="admin-kpi-card"
                 style={{
-                  background: WHITE,
+                  background: darkMode ? '#1e1e1e' : WHITE,
                   borderRadius: '16px',
                   padding: '24px',
-                  boxShadow: '0 4px 20px rgba(0,0,0,0.04)',
-                  border: `1px solid ${BORDER}`,
+                  boxShadow: darkMode ? '0 4px 20px rgba(0,0,0,0.3)' : '0 4px 20px rgba(0,0,0,0.04)',
+                  border: `1px solid ${darkMode ? '#333333' : BORDER}`,
                   cursor: 'pointer',
                   display: 'flex',
                   flexDirection: 'column',
@@ -1667,33 +1772,33 @@ export default function AdminDashboard() {
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '14px' }}>
                   <div style={{
                     width: '48px', height: '48px', borderRadius: '14px',
-                    background: '#FDF2F4', color: VINOTINTO,
+                    background: darkMode ? 'rgba(224, 90, 122, 0.15)' : '#FDF2F4', color: darkMode ? '#fb7185' : VINOTINTO,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     boxShadow: '0 4px 12px rgba(122, 30, 58, 0.1)'
                   }}>
-                    <IconUsers width={24} height={24} style={{ color: VINOTINTO }} />
+                    <IconUsers width={24} height={24} style={{ color: darkMode ? '#fb7185' : VINOTINTO }} />
                   </div>
                   <span style={{
-                    background: '#FDF2F4', color: VINOTINTO,
+                    background: darkMode ? 'rgba(224, 90, 122, 0.15)' : '#FDF2F4', color: darkMode ? '#fb7185' : VINOTINTO,
                     padding: '3px 10px', borderRadius: '20px',
-                    fontSize: '0.75rem', fontWeight: 700, border: '1px solid #F8D2DA'
+                    fontSize: '0.75rem', fontWeight: 700, border: `1px solid ${darkMode ? 'rgba(224, 90, 122, 0.3)' : '#F8D2DA'}`
                   }}>
                     Ecosistema
                   </span>
                 </div>
                 <div>
-                  <div style={{ fontSize: '2.4rem', fontWeight: 900, color: VINOTINTO, lineHeight: 1 }}>
+                  <div style={{ fontSize: '2.4rem', fontWeight: 900, color: darkMode ? '#fb7185' : VINOTINTO, lineHeight: 1 }}>
                     {stats.usuarios}
                   </div>
-                  <div style={{ color: CARBON, fontWeight: 700, fontSize: '0.95rem', marginTop: '6px' }}>
+                  <div style={{ color: darkMode ? '#f3f4f6' : CARBON, fontWeight: 700, fontSize: '0.95rem', marginTop: '6px' }}>
                     Usuarios Totales
                   </div>
                 </div>
-                <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid #F4EDE2', display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                  <span style={{ background: '#ECFDF5', color: '#047857', padding: '2px 8px', borderRadius: '10px', fontSize: '0.75rem', fontWeight: 600 }}>
+                <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: `1px solid ${darkMode ? '#333333' : '#F4EDE2'}`, display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                  <span style={{ background: darkMode ? 'rgba(16, 185, 129, 0.15)' : '#ECFDF5', color: darkMode ? '#34d399' : '#047857', padding: '2px 8px', borderRadius: '10px', fontSize: '0.75rem', fontWeight: 600 }}>
                     {compradoresCount} compradores
                   </span>
-                  <span style={{ background: '#FFFBEB', color: '#B45309', padding: '2px 8px', borderRadius: '10px', fontSize: '0.75rem', fontWeight: 600 }}>
+                  <span style={{ background: darkMode ? 'rgba(245, 158, 11, 0.15)' : '#FFFBEB', color: darkMode ? '#fbbf24' : '#B45309', padding: '2px 8px', borderRadius: '10px', fontSize: '0.75rem', fontWeight: 600 }}>
                     {vendedoresCount} vendedores
                   </span>
                 </div>
@@ -1705,11 +1810,11 @@ export default function AdminDashboard() {
                 onClick={() => setActiveSection('libros')}
                 className="admin-kpi-card"
                 style={{
-                  background: WHITE,
+                  background: darkMode ? '#1e1e1e' : WHITE,
                   borderRadius: '16px',
                   padding: '24px',
-                  boxShadow: '0 4px 20px rgba(0,0,0,0.04)',
-                  border: `1px solid ${BORDER}`,
+                  boxShadow: darkMode ? '0 4px 20px rgba(0,0,0,0.3)' : '0 4px 20px rgba(0,0,0,0.04)',
+                  border: `1px solid ${darkMode ? '#333333' : BORDER}`,
                   cursor: 'pointer',
                   display: 'flex',
                   flexDirection: 'column',
@@ -1722,33 +1827,33 @@ export default function AdminDashboard() {
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '14px' }}>
                   <div style={{
                     width: '48px', height: '48px', borderRadius: '14px',
-                    background: '#F3E8FF', color: '#7E22CE',
+                    background: darkMode ? 'rgba(168, 85, 247, 0.15)' : '#F3E8FF', color: darkMode ? '#c084fc' : '#7E22CE',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     boxShadow: '0 4px 12px rgba(126, 34, 206, 0.1)'
                   }}>
-                    <IconBook width={24} height={24} style={{ color: '#7E22CE' }} />
+                    <IconBook width={24} height={24} style={{ color: darkMode ? '#c084fc' : '#7E22CE' }} />
                   </div>
                   <span style={{
-                    background: '#F3E8FF', color: '#7E22CE',
+                    background: darkMode ? 'rgba(168, 85, 247, 0.15)' : '#F3E8FF', color: darkMode ? '#c084fc' : '#7E22CE',
                     padding: '3px 10px', borderRadius: '20px',
-                    fontSize: '0.75rem', fontWeight: 700, border: '1px solid #E9D5FF'
+                    fontSize: '0.75rem', fontWeight: 700, border: `1px solid ${darkMode ? 'rgba(168, 85, 247, 0.3)' : '#E9D5FF'}`
                   }}>
                     Catálogo
                   </span>
                 </div>
                 <div>
-                  <div style={{ fontSize: '2.4rem', fontWeight: 900, color: '#581C87', lineHeight: 1 }}>
+                  <div style={{ fontSize: '2.4rem', fontWeight: 900, color: darkMode ? '#c084fc' : '#581C87', lineHeight: 1 }}>
                     {stats.libros}
                   </div>
-                  <div style={{ color: CARBON, fontWeight: 700, fontSize: '0.95rem', marginTop: '6px' }}>
+                  <div style={{ color: darkMode ? '#f3f4f6' : CARBON, fontWeight: 700, fontSize: '0.95rem', marginTop: '6px' }}>
                     Libros Publicados
                   </div>
                 </div>
-                <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid #F4EDE2', display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                  <span style={{ background: '#FAF5FF', color: '#6B21A8', padding: '2px 8px', borderRadius: '10px', fontSize: '0.75rem', fontWeight: 600 }}>
+                <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: `1px solid ${darkMode ? '#333333' : '#F4EDE2'}`, display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                  <span style={{ background: darkMode ? 'rgba(168, 85, 247, 0.15)' : '#FAF5FF', color: darkMode ? '#d8b4fe' : '#6B21A8', padding: '2px 8px', borderRadius: '10px', fontSize: '0.75rem', fontWeight: 600 }}>
                     {librosActivosCount} disponibles
                   </span>
-                  <span style={{ background: '#F3F4F6', color: '#4B5563', padding: '2px 8px', borderRadius: '10px', fontSize: '0.75rem', fontWeight: 600 }}>
+                  <span style={{ background: darkMode ? 'rgba(156, 163, 175, 0.15)' : '#F3F4F6', color: darkMode ? '#9ca3af' : '#4B5563', padding: '2px 8px', borderRadius: '10px', fontSize: '0.75rem', fontWeight: 600 }}>
                     {totalCategorias} categorías
                   </span>
                 </div>
@@ -1760,11 +1865,11 @@ export default function AdminDashboard() {
                 onClick={() => setActiveSection('tiendas')}
                 className="admin-kpi-card"
                 style={{
-                  background: WHITE,
+                  background: darkMode ? '#1e1e1e' : WHITE,
                   borderRadius: '16px',
                   padding: '24px',
-                  boxShadow: '0 4px 20px rgba(0,0,0,0.04)',
-                  border: `1px solid ${BORDER}`,
+                  boxShadow: darkMode ? '0 4px 20px rgba(0,0,0,0.3)' : '0 4px 20px rgba(0,0,0,0.04)',
+                  border: `1px solid ${darkMode ? '#333333' : BORDER}`,
                   cursor: 'pointer',
                   display: 'flex',
                   flexDirection: 'column',
@@ -1777,38 +1882,38 @@ export default function AdminDashboard() {
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '14px' }}>
                   <div style={{
                     width: '48px', height: '48px', borderRadius: '14px',
-                    background: '#ECFDF5', color: '#047857',
+                    background: darkMode ? 'rgba(16, 185, 129, 0.15)' : '#ECFDF5', color: darkMode ? '#34d399' : '#047857',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     boxShadow: '0 4px 12px rgba(4, 120, 87, 0.1)'
                   }}>
-                    <IconStore width={24} height={24} style={{ color: '#047857' }} />
+                    <IconStore width={24} height={24} style={{ color: darkMode ? '#34d399' : '#047857' }} />
                   </div>
                   <span style={{
-                    background: '#ECFDF5', color: '#047857',
+                    background: darkMode ? 'rgba(16, 185, 129, 0.15)' : '#ECFDF5', color: darkMode ? '#34d399' : '#047857',
                     padding: '3px 10px', borderRadius: '20px',
-                    fontSize: '0.75rem', fontWeight: 700, border: '1px solid #A7F3D0'
+                    fontSize: '0.75rem', fontWeight: 700, border: `1px solid ${darkMode ? 'rgba(16, 185, 129, 0.3)' : '#A7F3D0'}`
                   }}>
                     {tiendasActivasCount} Activas
                   </span>
                 </div>
                 <div>
-                  <div style={{ fontSize: '2.4rem', fontWeight: 900, color: '#064E3B', lineHeight: 1 }}>
+                  <div style={{ fontSize: '2.4rem', fontWeight: 900, color: darkMode ? '#34d399' : '#064E3B', lineHeight: 1 }}>
                     {stats.tiendas}
                   </div>
-                  <div style={{ color: CARBON, fontWeight: 700, fontSize: '0.95rem', marginTop: '6px' }}>
+                  <div style={{ color: darkMode ? '#f3f4f6' : CARBON, fontWeight: 700, fontSize: '0.95rem', marginTop: '6px' }}>
                     Librerías & Tiendas
                   </div>
                 </div>
-                <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid #F4EDE2', display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                  <span style={{ background: '#ECFDF5', color: '#047857', padding: '2px 8px', borderRadius: '10px', fontSize: '0.75rem', fontWeight: 600 }}>
+                <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: `1px solid ${darkMode ? '#333333' : '#F4EDE2'}`, display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                  <span style={{ background: darkMode ? 'rgba(16, 185, 129, 0.15)' : '#ECFDF5', color: darkMode ? '#34d399' : '#047857', padding: '2px 8px', borderRadius: '10px', fontSize: '0.75rem', fontWeight: 600 }}>
                     {tiendasActivasCount} verificadas
                   </span>
                   {tiendasPendientesCount > 0 ? (
-                    <span style={{ background: '#FEF3C7', color: '#B45309', padding: '2px 8px', borderRadius: '10px', fontSize: '0.75rem', fontWeight: 700 }}>
+                    <span style={{ background: darkMode ? 'rgba(245, 158, 11, 0.15)' : '#FEF3C7', color: darkMode ? '#fbbf24' : '#B45309', padding: '2px 8px', borderRadius: '10px', fontSize: '0.75rem', fontWeight: 700 }}>
                       {tiendasPendientesCount} pendientes
                     </span>
                   ) : (
-                    <span style={{ background: '#F3F4F6', color: '#4B5563', padding: '2px 8px', borderRadius: '10px', fontSize: '0.75rem', fontWeight: 600 }}>
+                    <span style={{ background: darkMode ? 'rgba(156, 163, 175, 0.15)' : '#F3F4F6', color: darkMode ? '#9ca3af' : '#4B5563', padding: '2px 8px', borderRadius: '10px', fontSize: '0.75rem', fontWeight: 600 }}>
                       Al día
                     </span>
                   )}
@@ -1821,11 +1926,11 @@ export default function AdminDashboard() {
                 onClick={() => setActiveSection('ordenes')}
                 className="admin-kpi-card"
                 style={{
-                  background: WHITE,
+                  background: darkMode ? '#1e1e1e' : WHITE,
                   borderRadius: '16px',
                   padding: '24px',
-                  boxShadow: '0 4px 20px rgba(0,0,0,0.04)',
-                  border: `1px solid ${BORDER}`,
+                  boxShadow: darkMode ? '0 4px 20px rgba(0,0,0,0.3)' : '0 4px 20px rgba(0,0,0,0.04)',
+                  border: `1px solid ${darkMode ? '#333333' : BORDER}`,
                   cursor: 'pointer',
                   display: 'flex',
                   flexDirection: 'column',
@@ -1838,33 +1943,33 @@ export default function AdminDashboard() {
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '14px' }}>
                   <div style={{
                     width: '48px', height: '48px', borderRadius: '14px',
-                    background: '#EFF6FF', color: '#1D4ED8',
+                    background: darkMode ? 'rgba(59, 130, 246, 0.15)' : '#EFF6FF', color: darkMode ? '#60a5fa' : '#1D4ED8',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     boxShadow: '0 4px 12px rgba(29, 78, 216, 0.1)'
                   }}>
-                    <IconPackage width={24} height={24} style={{ color: '#1D4ED8' }} />
+                    <IconPackage width={24} height={24} style={{ color: darkMode ? '#60a5fa' : '#1D4ED8' }} />
                   </div>
                   <span style={{
-                    background: '#EFF6FF', color: '#1D4ED8',
+                    background: darkMode ? 'rgba(59, 130, 246, 0.15)' : '#EFF6FF', color: darkMode ? '#60a5fa' : '#1D4ED8',
                     padding: '3px 10px', borderRadius: '20px',
-                    fontSize: '0.75rem', fontWeight: 700, border: '1px solid #BFDBFE'
+                    fontSize: '0.75rem', fontWeight: 700, border: `1px solid ${darkMode ? 'rgba(59, 130, 246, 0.3)' : '#BFDBFE'}`
                   }}>
                     Transacciones
                   </span>
                 </div>
                 <div>
-                  <div style={{ fontSize: '2.4rem', fontWeight: 900, color: '#1E3A8A', lineHeight: 1 }}>
+                  <div style={{ fontSize: '2.4rem', fontWeight: 900, color: darkMode ? '#60a5fa' : '#1E3A8A', lineHeight: 1 }}>
                     {stats.ordenes}
                   </div>
-                  <div style={{ color: CARBON, fontWeight: 700, fontSize: '0.95rem', marginTop: '6px' }}>
+                  <div style={{ color: darkMode ? '#f3f4f6' : CARBON, fontWeight: 700, fontSize: '0.95rem', marginTop: '6px' }}>
                     Órdenes Procesadas
                   </div>
                 </div>
-                <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid #F4EDE2', display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                  <span style={{ background: '#EFF6FF', color: '#1D4ED8', padding: '2px 8px', borderRadius: '10px', fontSize: '0.75rem', fontWeight: 600 }}>
+                <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: `1px solid ${darkMode ? '#333333' : '#F4EDE2'}`, display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                  <span style={{ background: darkMode ? 'rgba(59, 130, 246, 0.15)' : '#EFF6FF', color: darkMode ? '#60a5fa' : '#1D4ED8', padding: '2px 8px', borderRadius: '10px', fontSize: '0.75rem', fontWeight: 600 }}>
                     {ordenesHoy} creadas hoy
                   </span>
-                  <span style={{ background: '#ECFDF5', color: '#047857', padding: '2px 8px', borderRadius: '10px', fontSize: '0.75rem', fontWeight: 600 }}>
+                  <span style={{ background: darkMode ? 'rgba(16, 185, 129, 0.15)' : '#ECFDF5', color: darkMode ? '#34d399' : '#047857', padding: '2px 8px', borderRadius: '10px', fontSize: '0.75rem', fontWeight: 600 }}>
                     {ordenesCompletadas} entregadas
                   </span>
                 </div>
@@ -1877,27 +1982,27 @@ export default function AdminDashboard() {
 
               {/* Distribución de la Comunidad */}
               <div style={{
-                background: WHITE,
+                background: darkMode ? '#1e1e1e' : WHITE,
                 borderRadius: '16px',
                 padding: '24px',
-                boxShadow: '0 4px 20px rgba(0,0,0,0.04)',
-                border: `1px solid ${BORDER}`,
+                boxShadow: darkMode ? '0 4px 20px rgba(0,0,0,0.3)' : '0 4px 20px rgba(0,0,0,0.04)',
+                border: `1px solid ${darkMode ? '#333333' : BORDER}`,
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
-                  <h3 style={{ margin: 0, color: VINOTINTO, display: 'flex', alignItems: 'center', gap: '10px', fontSize: '1.05rem', fontWeight: 800 }}>
-                    <IconUsers width={20} height={20} style={{ color: VINOTINTO }} />
+                  <h3 style={{ margin: 0, color: darkMode ? '#e05a7a' : VINOTINTO, display: 'flex', alignItems: 'center', gap: '10px', fontSize: '1.05rem', fontWeight: 800 }}>
+                    <IconUsers width={20} height={20} style={{ color: darkMode ? '#e05a7a' : VINOTINTO }} />
                     Distribución de la Comunidad
                   </h3>
-                  <span style={{ fontSize: '0.8rem', color: GRAY, fontWeight: 600 }}>
+                  <span style={{ fontSize: '0.8rem', color: darkMode ? '#9ca3af' : GRAY, fontWeight: 600 }}>
                     {stats.usuarios} miembros en total
                   </span>
                 </div>
 
                 {/* Roles Progress and percentages */}
                 {[
-                  { label: 'Compradores', count: compradoresCount, color: '#10B981', bg: '#ECFDF5', border: '#A7F3D0' },
-                  { label: 'Vendedores / Librerías', count: vendedoresCount, color: '#F59E0B', bg: '#FFFBEB', border: '#FDE68A' },
-                  { label: 'Administradores', count: adminsCount, color: VINOTINTO, bg: '#FDF2F4', border: '#F8D2DA' },
+                  { label: 'Compradores', count: compradoresCount, color: '#10B981', bg: darkMode ? 'rgba(16, 185, 129, 0.15)' : '#ECFDF5', border: darkMode ? 'rgba(16, 185, 129, 0.3)' : '#A7F3D0' },
+                  { label: 'Vendedores / Librerías', count: vendedoresCount, color: '#F59E0B', bg: darkMode ? 'rgba(245, 158, 11, 0.15)' : '#FFFBEB', border: darkMode ? 'rgba(245, 158, 11, 0.3)' : '#FDE68A' },
+                  { label: 'Administradores', count: adminsCount, color: darkMode ? '#fb7185' : VINOTINTO, bg: darkMode ? 'rgba(224, 90, 122, 0.15)' : '#FDF2F4', border: darkMode ? 'rgba(224, 90, 122, 0.3)' : '#F8D2DA' },
                 ].map((item) => {
                   const pct = stats.usuarios > 0 ? Math.round((item.count / stats.usuarios) * 100) : 0;
                   return (
@@ -1905,16 +2010,16 @@ export default function AdminDashboard() {
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                           <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: item.color }} />
-                          <span style={{ fontWeight: 700, fontSize: '0.88rem', color: CARBON }}>{item.label}</span>
+                          <span style={{ fontWeight: 700, fontSize: '0.88rem', color: darkMode ? '#f3f4f6' : CARBON }}>{item.label}</span>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span style={{ fontSize: '0.82rem', color: GRAY, fontWeight: 600 }}>{item.count} usuarios</span>
+                          <span style={{ fontSize: '0.82rem', color: darkMode ? '#9ca3af' : GRAY, fontWeight: 600 }}>{item.count} usuarios</span>
                           <span style={{ background: item.bg, color: item.color, border: `1px solid ${item.border}`, padding: '2px 8px', borderRadius: '8px', fontSize: '0.78rem', fontWeight: 800 }}>
                             {pct}%
                           </span>
                         </div>
                       </div>
-                      <div style={{ background: '#F3F4F6', borderRadius: '10px', height: '8px', overflow: 'hidden' }}>
+                      <div style={{ background: darkMode ? '#2d2d2d' : '#F3F4F6', borderRadius: '10px', height: '8px', overflow: 'hidden' }}>
                         <div style={{
                           background: item.color,
                           height: '100%',
@@ -1930,24 +2035,24 @@ export default function AdminDashboard() {
 
               {/* Categorías Principales y Salud Operativa */}
               <div style={{
-                background: WHITE,
+                background: darkMode ? '#1e1e1e' : WHITE,
                 borderRadius: '16px',
                 padding: '24px',
-                boxShadow: '0 4px 20px rgba(0,0,0,0.04)',
-                border: `1px solid ${BORDER}`,
+                boxShadow: darkMode ? '0 4px 20px rgba(0,0,0,0.3)' : '0 4px 20px rgba(0,0,0,0.04)',
+                border: `1px solid ${darkMode ? '#333333' : BORDER}`,
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'space-between'
               }}>
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-                    <h3 style={{ margin: 0, color: VINOTINTO, display: 'flex', alignItems: 'center', gap: '10px', fontSize: '1.05rem', fontWeight: 800 }}>
-                      <IconBook width={20} height={20} style={{ color: VINOTINTO }} />
+                    <h3 style={{ margin: 0, color: darkMode ? '#e05a7a' : VINOTINTO, display: 'flex', alignItems: 'center', gap: '10px', fontSize: '1.05rem', fontWeight: 800 }}>
+                      <IconBook width={20} height={20} style={{ color: darkMode ? '#e05a7a' : VINOTINTO }} />
                       Categorías más Populares
                     </h3>
                     <button
                       onClick={() => setActiveSection('libros')}
-                      style={{ background: 'none', border: 'none', color: VINOTINTO, fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer' }}
+                      style={{ background: 'none', border: 'none', color: darkMode ? '#fb7185' : VINOTINTO, fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer' }}
                     >
                       Explorar catálogo →
                     </button>
@@ -1958,8 +2063,8 @@ export default function AdminDashboard() {
                       <div
                         key={cat}
                         style={{
-                          background: '#F9F6F0',
-                          border: '1px solid #EAE4D9',
+                          background: darkMode ? '#282828' : '#F9F6F0',
+                          border: `1px solid ${darkMode ? '#3a3a3a' : '#EAE4D9'}`,
                           padding: '6px 12px',
                           borderRadius: '12px',
                           display: 'flex',
@@ -1968,34 +2073,34 @@ export default function AdminDashboard() {
                           fontSize: '0.82rem',
                         }}
                       >
-                        <span style={{ fontWeight: 700, color: CARBON }}>{cat}</span>
-                        <span style={{ background: VINOTINTO, color: WHITE, padding: '1px 6px', borderRadius: '10px', fontSize: '0.72rem', fontWeight: 800 }}>
+                        <span style={{ fontWeight: 700, color: darkMode ? '#f3f4f6' : CARBON }}>{cat}</span>
+                        <span style={{ background: darkMode ? '#e05a7a' : VINOTINTO, color: WHITE, padding: '1px 6px', borderRadius: '10px', fontSize: '0.72rem', fontWeight: 800 }}>
                           {count}
                         </span>
                       </div>
                     ))}
                     {Object.keys(categoriaCount).length === 0 && (
-                      <div style={{ color: GRAY, fontSize: '0.85rem' }}>No hay libros categorizados aún.</div>
+                      <div style={{ color: darkMode ? '#9ca3af' : GRAY, fontSize: '0.85rem' }}>No hay libros categorizados aún.</div>
                     )}
                   </div>
                 </div>
 
                 {/* Estado Operativo de Tiendas */}
-                <div style={{ background: '#FAF8F5', borderRadius: '12px', padding: '14px 18px', border: `1px solid ${BORDER}` }}>
-                  <div style={{ fontSize: '0.84rem', fontWeight: 700, color: CARBON, marginBottom: '10px', display: 'flex', justifyContent: 'space-between' }}>
+                <div style={{ background: darkMode ? '#252525' : '#FAF8F5', borderRadius: '12px', padding: '14px 18px', border: `1px solid ${darkMode ? '#3a3a3a' : BORDER}` }}>
+                  <div style={{ fontSize: '0.84rem', fontWeight: 700, color: darkMode ? '#f3f4f6' : CARBON, marginBottom: '10px', display: 'flex', justifyContent: 'space-between' }}>
                     <span>Estado Operativo de Librerías</span>
-                    <span style={{ color: GREEN, fontWeight: 800 }}>{tiendasActivasCount} de {stats.tiendas} operando</span>
+                    <span style={{ color: darkMode ? '#34d399' : GREEN, fontWeight: 800 }}>{tiendasActivasCount} de {stats.tiendas} operando</span>
                   </div>
                   <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem', color: '#166534', fontWeight: 700 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem', color: darkMode ? '#34d399' : '#166534', fontWeight: 700 }}>
                       <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#16a34a' }} />
                       {tiendasActivasCount} Activas
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem', color: '#9a3412', fontWeight: 700 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem', color: darkMode ? '#fbbf24' : '#9a3412', fontWeight: 700 }}>
                       <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#ea580c' }} />
                       {tiendasPendientesCount} Pendientes
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem', color: '#991b1b', fontWeight: 700 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem', color: darkMode ? '#f87171' : '#991b1b', fontWeight: 700 }}>
                       <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#ef4444' }} />
                       {tiendasSuspendidasCount} Suspendidas
                     </div>
@@ -2010,32 +2115,32 @@ export default function AdminDashboard() {
 
               {/* Card Tabla: Últimos Usuarios */}
               <div style={{
-                background: WHITE,
+                background: darkMode ? '#1e1e1e' : WHITE,
                 borderRadius: '16px',
                 padding: '24px',
-                boxShadow: '0 4px 20px rgba(0,0,0,0.04)',
-                border: `1px solid ${BORDER}`,
+                boxShadow: darkMode ? '0 4px 20px rgba(0,0,0,0.3)' : '0 4px 20px rgba(0,0,0,0.04)',
+                border: `1px solid ${darkMode ? '#333333' : BORDER}`,
                 display: 'flex',
                 flexDirection: 'column',
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '18px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#FDF2F4', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <IconUser width={18} height={18} style={{ color: VINOTINTO }} />
+                    <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: darkMode ? 'rgba(224, 90, 122, 0.15)' : '#FDF2F4', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <IconUser width={18} height={18} style={{ color: darkMode ? '#fb7185' : VINOTINTO }} />
                     </div>
                     <div>
-                      <h3 style={{ margin: 0, color: VINOTINTO, fontSize: '1.05rem', fontWeight: 800 }}>
+                      <h3 style={{ margin: 0, color: darkMode ? '#e05a7a' : VINOTINTO, fontSize: '1.05rem', fontWeight: 800 }}>
                         Últimos Usuarios Registrados
                       </h3>
-                      <span style={{ fontSize: '0.78rem', color: GRAY, fontWeight: 500 }}>Nuevos registros en la plataforma</span>
+                      <span style={{ fontSize: '0.78rem', color: darkMode ? '#9ca3af' : GRAY, fontWeight: 500 }}>Nuevos registros en la plataforma</span>
                     </div>
                   </div>
                   <button
                     onClick={() => setActiveSection('usuarios')}
                     style={{
-                      background: '#FAF5EE',
-                      border: `1px solid ${BORDER}`,
-                      color: VINOTINTO,
+                      background: darkMode ? '#282828' : '#FAF5EE',
+                      border: `1px solid ${darkMode ? '#3a3a3a' : BORDER}`,
+                      color: darkMode ? '#fb7185' : VINOTINTO,
                       padding: '6px 12px',
                       borderRadius: '8px',
                       fontSize: '0.8rem',
@@ -2054,7 +2159,7 @@ export default function AdminDashboard() {
                 <div style={{ overflowX: 'auto' }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.86rem' }}>
                     <thead>
-                      <tr style={{ borderBottom: `2px solid #F4EDE2`, color: GRAY, textAlign: 'left', fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                      <tr style={{ borderBottom: `2px solid ${darkMode ? '#333333' : '#F4EDE2'}`, color: darkMode ? '#9ca3af' : GRAY, textAlign: 'left', fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                         <th style={{ padding: '10px 8px' }}>Usuario</th>
                         <th style={{ padding: '10px 8px' }}>Correo</th>
                         <th style={{ padding: '10px 8px' }}>Rol</th>
@@ -2066,7 +2171,7 @@ export default function AdminDashboard() {
                         const rolProps = getRolBadgeProps(u.rol);
                         const isBloqueado = u.estado_usuario === 'Bloqueado';
                         return (
-                          <tr key={u.id_usuario} className="admin-table-row" style={{ borderBottom: '1px solid #FAF7F2' }}>
+                          <tr key={u.id_usuario} className="admin-table-row" style={{ borderBottom: `1px solid ${darkMode ? '#282828' : '#FAF7F2'}` }}>
                             <td style={{ padding: '12px 8px' }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                                 <div style={{
@@ -2079,19 +2184,19 @@ export default function AdminDashboard() {
                                 }}>
                                   {getIniciales(u.nombre_usuario)}
                                 </div>
-                                <span style={{ fontWeight: 700, color: CARBON }}>
+                                <span style={{ fontWeight: 700, color: darkMode ? '#f3f4f6' : CARBON }}>
                                   {u.nombre_usuario}
                                 </span>
                               </div>
                             </td>
-                            <td style={{ padding: '12px 8px', color: '#555', fontSize: '0.82rem' }}>
+                            <td style={{ padding: '12px 8px', color: darkMode ? '#9ca3af' : '#555', fontSize: '0.82rem' }}>
                               {u.correo_usuario}
                             </td>
                             <td style={{ padding: '12px 8px' }}>
                               <span style={{
-                                background: rolProps.bg,
-                                color: rolProps.color,
-                                border: `1px solid ${rolProps.border}`,
+                                background: darkMode ? 'rgba(255,255,255,0.08)' : rolProps.bg,
+                                color: darkMode ? '#f3f4f6' : rolProps.color,
+                                border: `1px solid ${darkMode ? 'rgba(255,255,255,0.15)' : rolProps.border}`,
                                 padding: '3px 10px',
                                 borderRadius: '12px',
                                 fontSize: '0.75rem',
@@ -2108,13 +2213,17 @@ export default function AdminDashboard() {
                                 gap: '4px',
                                 fontSize: '0.75rem',
                                 fontWeight: 700,
-                                color: isBloqueado ? RED : GREEN,
-                                background: isBloqueado ? '#FEF2F2' : '#ECFDF5',
+                                color: isBloqueado ? (darkMode ? '#f87171' : RED) : (darkMode ? '#34d399' : GREEN),
+                                background: isBloqueado
+                                  ? (darkMode ? 'rgba(239, 68, 68, 0.15)' : '#FEF2F2')
+                                  : (darkMode ? 'rgba(16, 185, 129, 0.15)' : '#ECFDF5'),
                                 padding: '2px 8px',
                                 borderRadius: '10px',
-                                border: `1px solid ${isBloqueado ? '#FECACA' : '#A7F3D0'}`
+                                border: `1px solid ${isBloqueado
+                                  ? (darkMode ? 'rgba(239, 68, 68, 0.3)' : '#FECACA')
+                                  : (darkMode ? 'rgba(16, 185, 129, 0.3)' : '#A7F3D0')}`
                               }}>
-                                <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: isBloqueado ? RED : GREEN }} />
+                                <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: isBloqueado ? (darkMode ? '#f87171' : RED) : (darkMode ? '#34d399' : GREEN) }} />
                                 {isBloqueado ? 'Bloqueado' : 'Activo'}
                               </span>
                             </td>
@@ -2123,7 +2232,7 @@ export default function AdminDashboard() {
                       })}
                       {usuarios.length === 0 && (
                         <tr>
-                          <td colSpan={4} style={{ padding: '24px', textAlign: 'center', color: GRAY }}>No hay usuarios registrados aún.</td>
+                          <td colSpan={4} style={{ padding: '24px', textAlign: 'center', color: darkMode ? '#9ca3af' : GRAY }}>No hay usuarios registrados aún.</td>
                         </tr>
                       )}
                     </tbody>
@@ -2133,32 +2242,32 @@ export default function AdminDashboard() {
 
               {/* Card Tabla: Últimas Tiendas */}
               <div style={{
-                background: WHITE,
+                background: darkMode ? '#1e1e1e' : WHITE,
                 borderRadius: '16px',
                 padding: '24px',
-                boxShadow: '0 4px 20px rgba(0,0,0,0.04)',
-                border: `1px solid ${BORDER}`,
+                boxShadow: darkMode ? '0 4px 20px rgba(0,0,0,0.3)' : '0 4px 20px rgba(0,0,0,0.04)',
+                border: `1px solid ${darkMode ? '#333333' : BORDER}`,
                 display: 'flex',
                 flexDirection: 'column',
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '18px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#ECFDF5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <IconStore width={18} height={18} style={{ color: '#047857' }} />
+                    <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: darkMode ? 'rgba(16, 185, 129, 0.15)' : '#ECFDF5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <IconStore width={18} height={18} style={{ color: darkMode ? '#34d399' : '#047857' }} />
                     </div>
                     <div>
-                      <h3 style={{ margin: 0, color: VINOTINTO, fontSize: '1.05rem', fontWeight: 800 }}>
+                      <h3 style={{ margin: 0, color: darkMode ? '#e05a7a' : VINOTINTO, fontSize: '1.05rem', fontWeight: 800 }}>
                         Últimas Tiendas Creadas
                       </h3>
-                      <span style={{ fontSize: '0.78rem', color: GRAY, fontWeight: 500 }}>Librerías y vendedores asociados</span>
+                      <span style={{ fontSize: '0.78rem', color: darkMode ? '#9ca3af' : GRAY, fontWeight: 500 }}>Librerías y vendedores asociados</span>
                     </div>
                   </div>
                   <button
                     onClick={() => setActiveSection('tiendas')}
                     style={{
-                      background: '#FAF5EE',
-                      border: `1px solid ${BORDER}`,
-                      color: VINOTINTO,
+                      background: darkMode ? '#282828' : '#FAF5EE',
+                      border: `1px solid ${darkMode ? '#3a3a3a' : BORDER}`,
+                      color: darkMode ? '#fb7185' : VINOTINTO,
                       padding: '6px 12px',
                       borderRadius: '8px',
                       fontSize: '0.8rem',
@@ -2177,7 +2286,7 @@ export default function AdminDashboard() {
                 <div style={{ overflowX: 'auto' }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.86rem' }}>
                     <thead>
-                      <tr style={{ borderBottom: `2px solid #F4EDE2`, color: GRAY, textAlign: 'left', fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                      <tr style={{ borderBottom: `2px solid ${darkMode ? '#333333' : '#F4EDE2'}`, color: darkMode ? '#9ca3af' : GRAY, textAlign: 'left', fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                         <th style={{ padding: '10px 8px' }}>Librería</th>
                         <th style={{ padding: '10px 8px' }}>Teléfono</th>
                         <th style={{ padding: '10px 8px' }}>Registro</th>
@@ -2188,44 +2297,44 @@ export default function AdminDashboard() {
                       {[...tiendas].reverse().slice(0, 5).map((t) => {
                         const badgeProps = getEstadoTiendaBadgeProps(t.estado_tienda);
                         return (
-                          <tr key={t.id_tienda} className="admin-table-row" style={{ borderBottom: '1px solid #FAF7F2' }}>
+                          <tr key={t.id_tienda} className="admin-table-row" style={{ borderBottom: `1px solid ${darkMode ? '#282828' : '#FAF7F2'}` }}>
                             <td style={{ padding: '12px 8px' }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                                 <div style={{
                                   width: '32px', height: '32px', borderRadius: '8px',
-                                  background: '#FDF2F4', color: VINOTINTO,
+                                  background: darkMode ? 'rgba(224, 90, 122, 0.15)' : '#FDF2F4', color: darkMode ? '#fb7185' : VINOTINTO,
                                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                                   fontWeight: 800, fontSize: '0.8rem', flexShrink: 0
                                 }}>
-                                  <IconStore width={16} height={16} style={{ color: VINOTINTO }} />
+                                  <IconStore width={16} height={16} style={{ color: darkMode ? '#fb7185' : VINOTINTO }} />
                                 </div>
-                                <span style={{ fontWeight: 700, color: VINOTINTO }}>
+                                <span style={{ fontWeight: 700, color: darkMode ? '#f3f4f6' : VINOTINTO }}>
                                   {t.nombre_tienda}
                                 </span>
                               </div>
                             </td>
-                            <td style={{ padding: '12px 8px', color: '#555', fontSize: '0.82rem' }}>
+                            <td style={{ padding: '12px 8px', color: darkMode ? '#9ca3af' : '#555', fontSize: '0.82rem' }}>
                               {t.telefono ? (
                                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                                  <IconPhone width={13} height={13} style={{ color: GRAY }} />
+                                  <IconPhone width={13} height={13} style={{ color: darkMode ? '#9ca3af' : GRAY }} />
                                   {t.telefono}
                                 </span>
                               ) : '-'}
                             </td>
-                            <td style={{ padding: '12px 8px', color: GRAY, fontSize: '0.82rem' }}>
+                            <td style={{ padding: '12px 8px', color: darkMode ? '#9ca3af' : GRAY, fontSize: '0.82rem' }}>
                               {t.fecha_creacion
                                 ? new Date(t.fecha_creacion).toLocaleDateString('es-ES', {
-                                    day: '2-digit',
-                                    month: 'short',
-                                    year: 'numeric'
-                                  })
+                                  day: '2-digit',
+                                  month: 'short',
+                                  year: 'numeric'
+                                })
                                 : '-'}
                             </td>
                             <td style={{ padding: '12px 8px', textAlign: 'right' }}>
                               <span style={{
-                                background: badgeProps.bg,
-                                color: badgeProps.color,
-                                border: `1px solid ${badgeProps.border}`,
+                                background: darkMode ? 'rgba(16, 185, 129, 0.15)' : badgeProps.bg,
+                                color: darkMode ? '#34d399' : badgeProps.color,
+                                border: `1px solid ${darkMode ? 'rgba(16, 185, 129, 0.3)' : badgeProps.border}`,
                                 padding: '3px 10px',
                                 borderRadius: '12px',
                                 fontSize: '0.75rem',
@@ -2234,7 +2343,7 @@ export default function AdminDashboard() {
                                 alignItems: 'center',
                                 gap: '5px'
                               }}>
-                                <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: badgeProps.dot }} />
+                                <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: darkMode ? '#34d399' : badgeProps.dot }} />
                                 {badgeProps.label}
                               </span>
                             </td>
@@ -2243,7 +2352,7 @@ export default function AdminDashboard() {
                       })}
                       {tiendas.length === 0 && (
                         <tr>
-                          <td colSpan={4} style={{ padding: '24px', textAlign: 'center', color: GRAY }}>No hay tiendas registradas aún.</td>
+                          <td colSpan={4} style={{ padding: '24px', textAlign: 'center', color: darkMode ? '#9ca3af' : GRAY }}>No hay tiendas registradas aún.</td>
                         </tr>
                       )}
                     </tbody>
@@ -2262,22 +2371,22 @@ export default function AdminDashboard() {
           // ── Helper Categorías ──
           const getCategoriaTheme = (catName) => {
             const texto = (catName || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-            if (texto.includes('ficcion') && !texto.includes('cientifica')) return { color: '#B91C1C', bg: '#FEF2F2', border: '#FECACA', icon: '📖' };
-            if (texto.includes('fantasia')) return { color: '#4338CA', bg: '#EEF2FF', border: '#C7D2FE', icon: '🧙' };
-            if (texto.includes('terror')) return { color: '#6B21A8', bg: '#FAF5FF', border: '#E9D5FF', icon: '👻' };
-            if (texto.includes('juvenil')) return { color: '#D97706', bg: '#FFFBEB', border: '#FDE68A', icon: '🎒' };
-            if (texto.includes('ciencia') || texto.includes('cientifica')) return { color: '#047857', bg: '#ECFDF5', border: '#A7F3D0', icon: '🔬' };
-            if (texto.includes('romance')) return { color: '#DB2777', bg: '#FDF2F8', border: '#FBCFE8', icon: '💖' };
-            if (texto.includes('aventura')) return { color: '#EA580C', bg: '#FFF7ED', border: '#FFEDD5', icon: '🗺️' };
-            if (texto.includes('historia')) return { color: '#92400E', bg: '#FEF3C7', border: '#FDE68A', icon: '🏛️' };
-            if (texto.includes('tecnologia')) return { color: '#0E7490', bg: '#ECFEFF', border: '#A5F3FC', icon: '💻' };
-            if (texto.includes('infantil')) return { color: '#0284C7', bg: '#F0F9FF', border: '#BAE6FD', icon: '🧸' };
-            if (texto.includes('arte')) return { color: '#9333EA', bg: '#FAF5FF', border: '#F3E8FF', icon: '🎨' };
-            if (texto.includes('biografia')) return { color: '#1E40AF', bg: '#EFF6FF', border: '#BFDBFE', icon: '👤' };
-            if (texto.includes('educacion')) return { color: '#15803D', bg: '#F0FDF4', border: '#BBF7D0', icon: '🎓' };
-            if (texto.includes('poesia')) return { color: '#BE185D', bg: '#FDF2F8', border: '#FCE7F3', icon: '✍️' };
-            if (texto.includes('filosofia')) return { color: '#475569', bg: '#F8FAFC', border: '#E2E8F0', icon: '🧠' };
-            return { color: '#7A1E3A', bg: '#FDF2F4', border: '#F8D2DA', icon: '📚' };
+            if (texto.includes('ficcion') && !texto.includes('cientifica')) return { color: '#B91C1C', darkColor: '#f87171', bg: '#FEF2F2', border: '#FECACA', icon: '📖' };
+            if (texto.includes('fantasia')) return { color: '#4338CA', darkColor: '#818cf8', bg: '#EEF2FF', border: '#C7D2FE', icon: '🧙' };
+            if (texto.includes('terror')) return { color: '#6B21A8', darkColor: '#c084fc', bg: '#FAF5FF', border: '#E9D5FF', icon: '👻' };
+            if (texto.includes('juvenil')) return { color: '#D97706', darkColor: '#fbbf24', bg: '#FFFBEB', border: '#FDE68A', icon: '🎒' };
+            if (texto.includes('ciencia') || texto.includes('cientifica')) return { color: '#047857', darkColor: '#34d399', bg: '#ECFDF5', border: '#A7F3D0', icon: '🔬' };
+            if (texto.includes('romance')) return { color: '#DB2777', darkColor: '#f472b6', bg: '#FDF2F8', border: '#FBCFE8', icon: '💖' };
+            if (texto.includes('aventura')) return { color: '#EA580C', darkColor: '#fb923c', bg: '#FFF7ED', border: '#FFEDD5', icon: '🗺️' };
+            if (texto.includes('historia')) return { color: '#92400E', darkColor: '#fbbf24', bg: '#FEF3C7', border: '#FDE68A', icon: '🏛️' };
+            if (texto.includes('tecnologia')) return { color: '#0E7490', darkColor: '#22d3ee', bg: '#ECFEFF', border: '#A5F3FC', icon: '💻' };
+            if (texto.includes('infantil')) return { color: '#0284C7', darkColor: '#38bdf8', bg: '#F0F9FF', border: '#BAE6FD', icon: '🧸' };
+            if (texto.includes('arte')) return { color: '#9333EA', darkColor: '#c084fc', bg: '#FAF5FF', border: '#F3E8FF', icon: '🎨' };
+            if (texto.includes('biografia')) return { color: '#1E40AF', darkColor: '#60a5fa', bg: '#EFF6FF', border: '#BFDBFE', icon: '👤' };
+            if (texto.includes('educacion')) return { color: '#15803D', darkColor: '#4ade80', bg: '#F0FDF4', border: '#BBF7D0', icon: '🎓' };
+            if (texto.includes('poesia')) return { color: '#BE185D', darkColor: '#f472b6', bg: '#FDF2F8', border: '#FCE7F3', icon: '✍️' };
+            if (texto.includes('filosofia')) return { color: '#475569', darkColor: '#94a3b8', bg: '#F8FAFC', border: '#E2E8F0', icon: '🧠' };
+            return { color: '#7A1E3A', darkColor: '#fb7185', bg: '#FDF2F4', border: '#F8D2DA', icon: '📚' };
           };
 
           // ── Normalización de Órdenes ──
@@ -2296,12 +2405,12 @@ export default function AdminDashboard() {
           }, {});
 
           const ordenesConfig = [
-            { key: 'pagada',     label: 'Pagadas / Preparación', color: '#D97706', bg: '#FFFBEB', border: '#FDE68A', icon: '💳', desc: 'Pago confirmado por BookyPago' },
-            { key: 'entregada',  label: 'Entregadas con éxito',  color: '#047857', bg: '#ECFDF5', border: '#A7F3D0', icon: '✅', desc: 'Recibidas por el comprador' },
-            { key: 'enviada',    label: 'En Camino / Enviadas',  color: '#1E40AF', bg: '#EFF6FF', border: '#BFDBFE', icon: '🚚', desc: 'Con número de guía activo' },
-            { key: 'procesando', label: 'En Proceso',            color: '#7C3AED', bg: '#F5F3FF', border: '#DDD6FE', icon: '⚙️', desc: 'En alistamiento por la tienda' },
-            { key: 'pendiente',  label: 'Pendientes de Pago',    color: '#EA580C', bg: '#FFF7ED', border: '#FED7AA', icon: '⏳', desc: 'Esperando confirmación' },
-            { key: 'cancelada',  label: 'Canceladas',            color: '#DC2626', bg: '#FEF2F2', border: '#FECACA', icon: '❌', desc: 'Canceladas o no concretadas' },
+            { key: 'pagada', label: 'Pagadas / Preparación', color: '#D97706', bg: '#FFFBEB', border: '#FDE68A', icon: '💳', desc: 'Pago confirmado por BookyPago' },
+            { key: 'entregada', label: 'Entregadas con éxito', color: '#047857', bg: '#ECFDF5', border: '#A7F3D0', icon: '✅', desc: 'Recibidas por el comprador' },
+            { key: 'enviada', label: 'En Camino / Enviadas', color: '#1E40AF', bg: '#EFF6FF', border: '#BFDBFE', icon: '🚚', desc: 'Con número de guía activo' },
+            { key: 'procesando', label: 'En Proceso', color: '#7C3AED', bg: '#F5F3FF', border: '#DDD6FE', icon: '⚙️', desc: 'En alistamiento por la tienda' },
+            { key: 'pendiente', label: 'Pendientes de Pago', color: '#EA580C', bg: '#FFF7ED', border: '#FED7AA', icon: '⏳', desc: 'Esperando confirmación' },
+            { key: 'cancelada', label: 'Canceladas', color: '#DC2626', bg: '#FEF2F2', border: '#FECACA', icon: '❌', desc: 'Canceladas o no concretadas' },
           ];
 
           // ── Normalización de Tiendas ──
@@ -2319,18 +2428,18 @@ export default function AdminDashboard() {
           }, {});
 
           const tiendasConfig = [
-            { key: 'activa',     label: 'Activas / Operativas', color: '#047857', bg: '#ECFDF5', border: '#A7F3D0', icon: '🟢', desc: 'Visibles en el catálogo y vendiendo' },
-            { key: 'vacaciones', label: 'En Vacaciones',         color: '#EA580C', bg: '#FFF7ED', border: '#FFEDD5', icon: '🏖️', desc: 'En pausa temporal programada' },
-            { key: 'pendiente',  label: 'Pendientes de Revisión',color: '#D97706', bg: '#FFFBEB', border: '#FDE68A', icon: '🕐', desc: 'Esperando validación de admin' },
-            { key: 'suspendida', label: 'Suspendidas',          color: '#DC2626', bg: '#FEF2F2', border: '#FECACA', icon: '🚫', desc: 'Sancionadas por incumplimiento' },
-            { key: 'inactiva',   label: 'Inactivas',             color: '#7A1E3A', bg: '#FDF2F4', border: '#F8D2DA', icon: '⭕', desc: 'Deshabilitadas del sistema' },
+            { key: 'activa', label: 'Activas / Operativas', color: '#047857', bg: '#ECFDF5', border: '#A7F3D0', icon: '🟢', desc: 'Visibles en el catálogo y vendiendo' },
+            { key: 'vacaciones', label: 'En Vacaciones', color: '#EA580C', bg: '#FFF7ED', border: '#FFEDD5', icon: '🏖️', desc: 'En pausa temporal programada' },
+            { key: 'pendiente', label: 'Pendientes de Revisión', color: '#D97706', bg: '#FFFBEB', border: '#FDE68A', icon: '🕐', desc: 'Esperando validación de admin' },
+            { key: 'suspendida', label: 'Suspendidas', color: '#DC2626', bg: '#FEF2F2', border: '#FECACA', icon: '🚫', desc: 'Sancionadas por incumplimiento' },
+            { key: 'inactiva', label: 'Inactivas', color: '#7A1E3A', bg: '#FDF2F4', border: '#F8D2DA', icon: '⭕', desc: 'Deshabilitadas del sistema' },
           ];
 
           // ── Roles ──
           const rolesConfig = [
-            { key: 'comprador',     label: 'Compradores',      color: '#047857', bg: '#ECFDF5', border: '#A7F3D0', icon: '🛒', desc: 'Usuarios lectores y clientes' },
-            { key: 'vendedor',      label: 'Vendedores',       color: '#D97706', bg: '#FFFBEB', border: '#FDE68A', icon: '🏪', desc: 'Librerías y tiendas asociadas' },
-            { key: 'administrador', label: 'Administradores',  color: '#7A1E3A', bg: '#FDF2F4', border: '#F8D2DA', icon: '🛡️', desc: 'Gestión total de la plataforma' },
+            { key: 'comprador', label: 'Compradores', color: '#047857', bg: '#ECFDF5', border: '#A7F3D0', icon: '🛒', desc: 'Usuarios lectores y clientes' },
+            { key: 'vendedor', label: 'Vendedores', color: '#D97706', bg: '#FFFBEB', border: '#FDE68A', icon: '🏪', desc: 'Librerías y tiendas asociadas' },
+            { key: 'administrador', label: 'Administradores', color: '#7A1E3A', bg: '#FDF2F4', border: '#F8D2DA', icon: '🛡️', desc: 'Gestión total de la plataforma' },
           ];
 
           const rolesNormalizados = usuarios.reduce((acc, u) => {
@@ -2394,11 +2503,11 @@ export default function AdminDashboard() {
                   <div
                     key={idx}
                     style={{
-                      background: WHITE,
+                      background: darkMode ? '#1e1e1e' : WHITE,
                       borderRadius: '16px',
                       padding: '20px 22px',
-                      border: `1px solid ${s.border}`,
-                      boxShadow: '0 4px 16px rgba(0,0,0,0.04)',
+                      border: `1px solid ${darkMode ? '#333333' : s.border}`,
+                      boxShadow: darkMode ? '0 4px 16px rgba(0,0,0,0.3)' : '0 4px 16px rgba(0,0,0,0.04)',
                       display: 'flex',
                       flexDirection: 'column',
                       justifyContent: 'space-between',
@@ -2409,16 +2518,16 @@ export default function AdminDashboard() {
                   >
                     <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 4, background: s.color }} />
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                      <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                      <span style={{ fontSize: '0.8rem', fontWeight: 700, color: darkMode ? '#9ca3af' : '#6B7280', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                         {s.title}
                       </span>
-                      <div style={{ width: 38, height: 38, borderRadius: 10, background: s.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <div style={{ width: 38, height: 38, borderRadius: 10, background: darkMode ? `${s.color}22` : s.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <s.Icon width={18} height={18} style={{ color: s.color }} />
                       </div>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 6 }}>
-                      <span style={{ fontSize: '2.1rem', fontWeight: 900, color: CARBON, lineHeight: 1 }}>{s.value}</span>
-                      <span style={{ fontSize: '0.75rem', fontWeight: 700, color: s.color, background: s.bg, border: `1px solid ${s.border}`, padding: '2px 8px', borderRadius: 12 }}>
+                      <span style={{ fontSize: '2.1rem', fontWeight: 900, color: darkMode ? '#f3f4f6' : CARBON, lineHeight: 1 }}>{s.value}</span>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 700, color: s.color, background: darkMode ? `${s.color}22` : s.bg, border: `1px solid ${darkMode ? `${s.color}44` : s.border}`, padding: '2px 8px', borderRadius: 12 }}>
                         {s.badge}
                       </span>
                     </div>
@@ -2429,21 +2538,21 @@ export default function AdminDashboard() {
 
               {/* ── GRID PRINCIPAL 2x2 DE REPORTES ── */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
-                
+
                 {/* 1. USUARIOS POR ROL */}
-                <div style={{ background: WHITE, borderRadius: '18px', padding: '26px', boxShadow: '0 4px 20px rgba(0,0,0,0.06)', border: `1px solid ${BORDER}`, display: 'flex', flexDirection: 'column' }}>
+                <div style={{ background: darkMode ? '#1e1e1e' : WHITE, borderRadius: '18px', padding: '26px', boxShadow: darkMode ? '0 4px 20px rgba(0,0,0,0.3)' : '0 4px 20px rgba(0,0,0,0.06)', border: `1px solid ${darkMode ? '#333333' : BORDER}`, display: 'flex', flexDirection: 'column' }}>
                   {/* Header */}
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, paddingBottom: 16, borderBottom: `1px solid ${BORDER}` }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, paddingBottom: 16, borderBottom: `1px solid ${darkMode ? '#333333' : BORDER}` }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      <div style={{ width: 42, height: 42, borderRadius: 12, background: '#FDF2F4', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <IconUsers width={20} height={20} style={{ color: VINOTINTO }} />
+                      <div style={{ width: 42, height: 42, borderRadius: 12, background: darkMode ? '#7a1e3a33' : '#FDF2F4', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <IconUsers width={20} height={20} style={{ color: darkMode ? '#fb7185' : VINOTINTO }} />
                       </div>
                       <div>
-                        <h3 style={{ margin: 0, color: VINOTINTO, fontSize: '1.05rem', fontWeight: 800 }}>Usuarios por Rol</h3>
+                        <h3 style={{ margin: 0, color: darkMode ? '#fb7185' : VINOTINTO, fontSize: '1.05rem', fontWeight: 800 }}>Usuarios por Rol</h3>
                         <span style={{ fontSize: '0.78rem', color: '#9CA3AF', fontWeight: 500 }}>Composición de la comunidad BookyHome</span>
                       </div>
                     </div>
-                    <span style={{ background: '#FDF2F4', color: VINOTINTO, fontSize: '0.8rem', fontWeight: 800, padding: '5px 12px', borderRadius: 20, border: '1px solid #F8D2DA' }}>
+                    <span style={{ background: darkMode ? '#7a1e3a33' : '#FDF2F4', color: darkMode ? '#fb7185' : VINOTINTO, fontSize: '0.8rem', fontWeight: 800, padding: '5px 12px', borderRadius: 20, border: `1px solid ${darkMode ? '#7a1e3a55' : '#F8D2DA'}` }}>
                       {stats.usuarios} Total
                     </span>
                   </div>
@@ -2454,18 +2563,18 @@ export default function AdminDashboard() {
                       const count = rolesNormalizados[r.key] || 0;
                       const pct = stats.usuarios > 0 ? Math.round((count / stats.usuarios) * 100) : 0;
                       return (
-                        <div key={r.key} style={{ background: r.bg, border: `1.5px solid ${r.border}`, borderRadius: 12, padding: '12px 14px', textAlign: 'center' }}>
+                        <div key={r.key} style={{ background: darkMode ? `${r.color}22` : r.bg, border: `1.5px solid ${darkMode ? `${r.color}44` : r.border}`, borderRadius: 12, padding: '12px 14px', textAlign: 'center' }}>
                           <div style={{ fontSize: '1.2rem', marginBottom: 2 }}>{r.icon}</div>
                           <div style={{ fontSize: '1.35rem', fontWeight: 900, color: r.color, lineHeight: 1.1 }}>{count}</div>
                           <div style={{ fontSize: '0.74rem', fontWeight: 700, color: r.color, marginTop: 4 }}>{r.label}</div>
-                          <div style={{ fontSize: '0.7rem', color: '#6B7280', fontWeight: 600 }}>{pct}% del total</div>
+                          <div style={{ fontSize: '0.7rem', color: darkMode ? '#9ca3af' : '#6B7280', fontWeight: 600 }}>{pct}% del total</div>
                         </div>
                       );
                     })}
                   </div>
 
                   {/* Barra compuesta continua */}
-                  <div style={{ height: 10, borderRadius: 20, overflow: 'hidden', display: 'flex', marginBottom: 22, background: '#F3F4F6' }}>
+                  <div style={{ height: 10, borderRadius: 20, overflow: 'hidden', display: 'flex', marginBottom: 22, background: darkMode ? '#2d2d2d' : '#F3F4F6' }}>
                     {rolesConfig.map((r) => {
                       const count = rolesNormalizados[r.key] || 0;
                       const pct = stats.usuarios > 0 ? (count / stats.usuarios) * 100 : 0;
@@ -2489,21 +2598,21 @@ export default function AdminDashboard() {
                       const count = rolesNormalizados[r.key] || 0;
                       const pct = stats.usuarios > 0 ? Math.round((count / stats.usuarios) * 100) : 0;
                       return (
-                        <div key={r.key} style={{ background: '#FAFAF9', borderRadius: 12, padding: '12px 16px', border: '1px solid #F0ECE6' }}>
+                        <div key={r.key} style={{ background: darkMode ? '#252525' : '#FAFAF9', borderRadius: 12, padding: '12px 16px', border: `1px solid ${darkMode ? '#333333' : '#F0ECE6'}` }}>
                           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                               <span style={{ fontSize: '1.05rem' }}>{r.icon}</span>
                               <div>
-                                <span style={{ fontWeight: 800, fontSize: '0.9rem', color: CARBON }}>{r.label}</span>
+                                <span style={{ fontWeight: 800, fontSize: '0.9rem', color: darkMode ? '#f3f4f6' : CARBON }}>{r.label}</span>
                                 <p style={{ margin: 0, fontSize: '0.72rem', color: '#9CA3AF' }}>{r.desc}</p>
                               </div>
                             </div>
                             <div style={{ textAlign: 'right' }}>
                               <span style={{ fontSize: '1.05rem', fontWeight: 900, color: r.color }}>{count}</span>
-                              <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#6B7280', marginLeft: 6 }}>({pct}%)</span>
+                              <span style={{ fontSize: '0.75rem', fontWeight: 700, color: darkMode ? '#9ca3af' : '#6B7280', marginLeft: 6 }}>({pct}%)</span>
                             </div>
                           </div>
-                          <div style={{ background: '#E5E7EB', borderRadius: 10, height: 8, overflow: 'hidden' }}>
+                          <div style={{ background: darkMode ? '#2d2d2d' : '#E5E7EB', borderRadius: 10, height: 8, overflow: 'hidden' }}>
                             <div
                               style={{
                                 background: `linear-gradient(90deg, ${r.color}, ${r.color}cc)`,
@@ -2521,19 +2630,19 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* 2. LIBROS POR CATEGORÍA */}
-                <div style={{ background: WHITE, borderRadius: '18px', padding: '26px', boxShadow: '0 4px 20px rgba(0,0,0,0.06)', border: `1px solid ${BORDER}`, display: 'flex', flexDirection: 'column' }}>
+                <div style={{ background: darkMode ? '#1e1e1e' : WHITE, borderRadius: '18px', padding: '26px', boxShadow: darkMode ? '0 4px 20px rgba(0,0,0,0.3)' : '0 4px 20px rgba(0,0,0,0.06)', border: `1px solid ${darkMode ? '#333333' : BORDER}`, display: 'flex', flexDirection: 'column' }}>
                   {/* Header */}
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, paddingBottom: 16, borderBottom: `1px solid ${BORDER}` }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, paddingBottom: 16, borderBottom: `1px solid ${darkMode ? '#333333' : BORDER}` }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      <div style={{ width: 42, height: 42, borderRadius: 12, background: '#F5F3FF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <IconBook width={20} height={20} style={{ color: '#6D28D9' }} />
+                      <div style={{ width: 42, height: 42, borderRadius: 12, background: darkMode ? '#6D28D933' : '#F5F3FF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <IconBook width={20} height={20} style={{ color: darkMode ? '#c084fc' : '#6D28D9' }} />
                       </div>
                       <div>
-                        <h3 style={{ margin: 0, color: '#6D28D9', fontSize: '1.05rem', fontWeight: 800 }}>Libros por Categoría</h3>
+                        <h3 style={{ margin: 0, color: darkMode ? '#c084fc' : '#6D28D9', fontSize: '1.05rem', fontWeight: 800 }}>Libros por Categoría</h3>
                         <span style={{ fontSize: '0.78rem', color: '#9CA3AF', fontWeight: 500 }}>Ranking de géneros en el catálogo</span>
                       </div>
                     </div>
-                    <span style={{ background: '#F5F3FF', color: '#6D28D9', fontSize: '0.8rem', fontWeight: 800, padding: '5px 12px', borderRadius: 20, border: '1px solid #DDD6FE' }}>
+                    <span style={{ background: darkMode ? '#6D28D933' : '#F5F3FF', color: darkMode ? '#c084fc' : '#6D28D9', fontSize: '0.8rem', fontWeight: 800, padding: '5px 12px', borderRadius: 20, border: `1px solid ${darkMode ? '#6D28D955' : '#DDD6FE'}` }}>
                       {stats.libros} Libros
                     </span>
                   </div>
@@ -2544,17 +2653,18 @@ export default function AdminDashboard() {
                       {topCategorias.slice(0, 3).map(([cat, count], idx) => {
                         const medals = ['🥇 1º', '🥈 2º', '🥉 3º'];
                         const theme = getCategoriaTheme(cat);
+                        const color = darkMode ? theme.darkColor : theme.color;
                         const pct = stats.libros > 0 ? Math.round((count / stats.libros) * 100) : 0;
                         return (
-                          <div key={idx} style={{ background: theme.bg, border: `1.5px solid ${theme.border}`, borderRadius: 12, padding: '10px 12px', textAlign: 'center' }}>
-                            <div style={{ fontSize: '0.72rem', fontWeight: 800, color: theme.color, textTransform: 'uppercase', marginBottom: 2 }}>
+                          <div key={idx} style={{ background: darkMode ? `${color}22` : theme.bg, border: `1.5px solid ${darkMode ? `${color}44` : theme.border}`, borderRadius: 12, padding: '10px 12px', textAlign: 'center' }}>
+                            <div style={{ fontSize: '0.72rem', fontWeight: 800, color: color, textTransform: 'uppercase', marginBottom: 2 }}>
                               {medals[idx]}
                             </div>
-                            <div style={{ fontSize: '1.25rem', fontWeight: 900, color: theme.color, lineHeight: 1.1 }}>{count}</div>
-                            <div style={{ fontSize: '0.76rem', fontWeight: 700, color: CARBON, marginTop: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            <div style={{ fontSize: '1.25rem', fontWeight: 900, color: color, lineHeight: 1.1 }}>{count}</div>
+                            <div style={{ fontSize: '0.76rem', fontWeight: 700, color: darkMode ? '#f3f4f6' : CARBON, marginTop: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                               {theme.icon} {cat}
                             </div>
-                            <div style={{ fontSize: '0.7rem', color: theme.color, fontWeight: 600 }}>{pct}% catálogo</div>
+                            <div style={{ fontSize: '0.7rem', color: color, fontWeight: 600 }}>{pct}% catálogo</div>
                           </div>
                         );
                       })}
@@ -2565,6 +2675,7 @@ export default function AdminDashboard() {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: 1 }}>
                     {topCategorias.map(([cat, count], idx) => {
                       const theme = getCategoriaTheme(cat);
+                      const color = darkMode ? theme.darkColor : theme.color;
                       const pct = stats.libros > 0 ? Math.round((count / stats.libros) * 100) : 0;
                       return (
                         <div key={`cat-${cat}-${idx}`} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -2574,9 +2685,9 @@ export default function AdminDashboard() {
                                 #{idx + 1}
                               </span>
                               <span style={{
-                                background: theme.bg,
-                                color: theme.color,
-                                border: `1px solid ${theme.border}`,
+                                background: darkMode ? `${color}22` : theme.bg,
+                                color: color,
+                                border: `1px solid ${darkMode ? `${color}44` : theme.border}`,
                                 padding: '3px 10px',
                                 borderRadius: 16,
                                 fontSize: '0.78rem',
@@ -2591,15 +2702,15 @@ export default function AdminDashboard() {
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                               <span style={{ fontSize: '0.75rem', color: '#9CA3AF', fontWeight: 600 }}>{pct}%</span>
-                              <span style={{ fontWeight: 900, color: theme.color, fontSize: '0.92rem', minWidth: 26, textAlign: 'right' }}>
+                              <span style={{ fontWeight: 900, color: color, fontSize: '0.92rem', minWidth: 26, textAlign: 'right' }}>
                                 {count}
                               </span>
                             </div>
                           </div>
-                          <div style={{ background: '#F3F4F6', borderRadius: 20, height: 7, overflow: 'hidden' }}>
+                          <div style={{ background: darkMode ? '#2d2d2d' : '#F3F4F6', borderRadius: 20, height: 7, overflow: 'hidden' }}>
                             <div
                               style={{
-                                background: `linear-gradient(90deg, ${theme.color}, ${theme.color}bb)`,
+                                background: `linear-gradient(90deg, ${color}, ${color}bb)`,
                                 borderRadius: 20,
                                 height: 7,
                                 width: `${pct}%`,
@@ -2612,34 +2723,34 @@ export default function AdminDashboard() {
                     })}
                   </div>
 
-                  <div style={{ marginTop: 14, paddingTop: 10, borderTop: `1px dashed ${BORDER}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ marginTop: 14, paddingTop: 10, borderTop: `1px dashed ${darkMode ? '#333333' : BORDER}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{ fontSize: '0.75rem', color: '#9CA3AF' }}>✨ Total de {totalCategorias} categorías en plataforma</span>
-                    <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#6D28D9' }}>{stats.libros} ejemplares</span>
+                    <span style={{ fontSize: '0.75rem', fontWeight: 700, color: darkMode ? '#c084fc' : '#6D28D9' }}>{stats.libros} ejemplares</span>
                   </div>
                 </div>
 
                 {/* 3. TIENDAS POR ESTADO */}
-                <div style={{ background: WHITE, borderRadius: '18px', padding: '26px', boxShadow: '0 4px 20px rgba(0,0,0,0.06)', border: `1px solid ${BORDER}`, display: 'flex', flexDirection: 'column' }}>
+                <div style={{ background: darkMode ? '#1e1e1e' : WHITE, borderRadius: '18px', padding: '26px', boxShadow: darkMode ? '0 4px 20px rgba(0,0,0,0.3)' : '0 4px 20px rgba(0,0,0,0.06)', border: `1px solid ${darkMode ? '#333333' : BORDER}`, display: 'flex', flexDirection: 'column' }}>
                   {/* Header */}
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, paddingBottom: 16, borderBottom: `1px solid ${BORDER}` }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, paddingBottom: 16, borderBottom: `1px solid ${darkMode ? '#333333' : BORDER}` }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      <div style={{ width: 42, height: 42, borderRadius: 12, background: '#ECFDF5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <IconStore width={20} height={20} style={{ color: '#047857' }} />
+                      <div style={{ width: 42, height: 42, borderRadius: 12, background: darkMode ? '#04785733' : '#ECFDF5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <IconStore width={20} height={20} style={{ color: darkMode ? '#34d399' : '#047857' }} />
                       </div>
                       <div>
-                        <h3 style={{ margin: 0, color: '#047857', fontSize: '1.05rem', fontWeight: 800 }}>Tiendas por Estado</h3>
+                        <h3 style={{ margin: 0, color: darkMode ? '#34d399' : '#047857', fontSize: '1.05rem', fontWeight: 800 }}>Tiendas por Estado</h3>
                         <span style={{ fontSize: '0.78rem', color: '#9CA3AF', fontWeight: 500 }}>Salud y disponibilidad de librerías</span>
                       </div>
                     </div>
-                    <span style={{ background: '#ECFDF5', color: '#047857', fontSize: '0.8rem', fontWeight: 800, padding: '5px 12px', borderRadius: 20, border: '1px solid #A7F3D0' }}>
+                    <span style={{ background: darkMode ? '#04785733' : '#ECFDF5', color: darkMode ? '#34d399' : '#047857', fontSize: '0.8rem', fontWeight: 800, padding: '5px 12px', borderRadius: 20, border: `1px solid ${darkMode ? '#04785755' : '#A7F3D0'}` }}>
                       {stats.tiendas} Librerías
                     </span>
                   </div>
 
                   {/* Banner de Operatividad */}
                   <div style={{
-                    background: '#F0FDF4',
-                    border: '1.5px solid #BBF7D0',
+                    background: darkMode ? '#04785722' : '#F0FDF4',
+                    border: `1.5px solid ${darkMode ? '#04785744' : '#BBF7D0'}`,
                     borderRadius: 14,
                     padding: '14px 16px',
                     marginBottom: 18,
@@ -2652,21 +2763,21 @@ export default function AdminDashboard() {
                         ✓
                       </div>
                       <div>
-                        <p style={{ margin: 0, fontSize: '0.74rem', color: '#047857', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Tasa de Operatividad</p>
-                        <p style={{ margin: 0, fontSize: '0.86rem', color: '#166534', fontWeight: 600 }}>
+                        <p style={{ margin: 0, fontSize: '0.74rem', color: darkMode ? '#34d399' : '#047857', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Tasa de Operatividad</p>
+                        <p style={{ margin: 0, fontSize: '0.86rem', color: darkMode ? '#a7f3d0' : '#166534', fontWeight: 600 }}>
                           <strong>{tiendasActivasCount} de {stats.tiendas}</strong> librerías activas vendiendo
                         </p>
                       </div>
                     </div>
                     <div style={{ textAlign: 'right' }}>
-                      <span style={{ fontSize: '1.5rem', fontWeight: 900, color: '#047857' }}>
+                      <span style={{ fontSize: '1.5rem', fontWeight: 900, color: darkMode ? '#34d399' : '#047857' }}>
                         {Math.round((tiendasActivasCount / (stats.tiendas || 1)) * 100)}%
                       </span>
                     </div>
                   </div>
 
                   {/* Barra compuesta continua */}
-                  <div style={{ height: 10, borderRadius: 20, overflow: 'hidden', display: 'flex', marginBottom: 20, background: '#F3F4F6' }}>
+                  <div style={{ height: 10, borderRadius: 20, overflow: 'hidden', display: 'flex', marginBottom: 20, background: darkMode ? '#2d2d2d' : '#F3F4F6' }}>
                     {tiendasConfig.map((t) => {
                       const count = tiendasNormalizadas[t.key] || 0;
                       const pct = stats.tiendas > 0 ? (count / stats.tiendas) * 100 : 0;
@@ -2691,21 +2802,21 @@ export default function AdminDashboard() {
                       const count = tiendasNormalizadas[t.key] || 0;
                       const pct = stats.tiendas > 0 ? Math.round((count / stats.tiendas) * 100) : 0;
                       return (
-                        <div key={t.key} style={{ background: '#FAFAF9', borderRadius: 12, padding: '10px 14px', border: '1px solid #F0ECE6' }}>
+                        <div key={t.key} style={{ background: darkMode ? '#252525' : '#FAFAF9', borderRadius: 12, padding: '10px 14px', border: `1px solid ${darkMode ? '#333333' : '#F0ECE6'}` }}>
                           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                               <span style={{ fontSize: '1rem' }}>{t.icon}</span>
                               <div>
-                                <span style={{ fontWeight: 800, fontSize: '0.86rem', color: CARBON }}>{t.label}</span>
+                                <span style={{ fontWeight: 800, fontSize: '0.86rem', color: darkMode ? '#f3f4f6' : CARBON }}>{t.label}</span>
                                 <p style={{ margin: 0, fontSize: '0.72rem', color: '#9CA3AF' }}>{t.desc}</p>
                               </div>
                             </div>
                             <div style={{ textAlign: 'right' }}>
                               <span style={{ fontSize: '1rem', fontWeight: 900, color: t.color }}>{count}</span>
-                              <span style={{ fontSize: '0.73rem', fontWeight: 700, color: '#6B7280', marginLeft: 6 }}>({pct}%)</span>
+                              <span style={{ fontSize: '0.73rem', fontWeight: 700, color: darkMode ? '#9ca3af' : '#6B7280', marginLeft: 6 }}>({pct}%)</span>
                             </div>
                           </div>
-                          <div style={{ background: '#E5E7EB', borderRadius: 10, height: 7, overflow: 'hidden' }}>
+                          <div style={{ background: darkMode ? '#2d2d2d' : '#E5E7EB', borderRadius: 10, height: 7, overflow: 'hidden' }}>
                             <div
                               style={{
                                 background: `linear-gradient(90deg, ${t.color}, ${t.color}cc)`,
@@ -2723,27 +2834,27 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* 4. ÓRDENES POR ESTADO (NORMALIZADO) */}
-                <div style={{ background: WHITE, borderRadius: '18px', padding: '26px', boxShadow: '0 4px 20px rgba(0,0,0,0.06)', border: `1px solid ${BORDER}`, display: 'flex', flexDirection: 'column' }}>
+                <div style={{ background: darkMode ? '#1e1e1e' : WHITE, borderRadius: '18px', padding: '26px', boxShadow: darkMode ? '0 4px 20px rgba(0,0,0,0.3)' : '0 4px 20px rgba(0,0,0,0.06)', border: `1px solid ${darkMode ? '#333333' : BORDER}`, display: 'flex', flexDirection: 'column' }}>
                   {/* Header */}
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, paddingBottom: 16, borderBottom: `1px solid ${BORDER}` }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, paddingBottom: 16, borderBottom: `1px solid ${darkMode ? '#333333' : BORDER}` }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      <div style={{ width: 42, height: 42, borderRadius: 12, background: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <IconPackage width={20} height={20} style={{ color: '#1E40AF' }} />
+                      <div style={{ width: 42, height: 42, borderRadius: 12, background: darkMode ? '#1E40AF33' : '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <IconPackage width={20} height={20} style={{ color: darkMode ? '#60a5fa' : '#1E40AF' }} />
                       </div>
                       <div>
-                        <h3 style={{ margin: 0, color: '#1E40AF', fontSize: '1.05rem', fontWeight: 800 }}>Órdenes por Estado</h3>
+                        <h3 style={{ margin: 0, color: darkMode ? '#60a5fa' : '#1E40AF', fontSize: '1.05rem', fontWeight: 800 }}>Órdenes por Estado</h3>
                         <span style={{ fontSize: '0.78rem', color: '#9CA3AF', fontWeight: 500 }}>Pipeline y ciclo de vida de pedidos</span>
                       </div>
                     </div>
-                    <span style={{ background: '#EFF6FF', color: '#1E40AF', fontSize: '0.8rem', fontWeight: 800, padding: '5px 12px', borderRadius: 20, border: '1px solid #BFDBFE' }}>
+                    <span style={{ background: darkMode ? '#1E40AF33' : '#EFF6FF', color: darkMode ? '#60a5fa' : '#1E40AF', fontSize: '0.8rem', fontWeight: 800, padding: '5px 12px', borderRadius: 20, border: `1px solid ${darkMode ? '#1E40AF55' : '#BFDBFE'}` }}>
                       {stats.ordenes} Órdenes
                     </span>
                   </div>
 
                   {/* Resumen del Pipeline */}
                   <div style={{
-                    background: '#F8FAFC',
-                    border: '1.5px solid #E2E8F0',
+                    background: darkMode ? '#1E40AF22' : '#F8FAFC',
+                    border: `1.5px solid ${darkMode ? '#1E40AF44' : '#E2E8F0'}`,
                     borderRadius: 14,
                     padding: '12px 16px',
                     marginBottom: 18,
@@ -2752,22 +2863,22 @@ export default function AdminDashboard() {
                     justifyContent: 'space-between'
                   }}>
                     <div>
-                      <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                      <span style={{ fontSize: '0.72rem', fontWeight: 800, color: darkMode ? '#93c5fd' : '#475569', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                         Tasa de Efectividad
                       </span>
-                      <p style={{ margin: 0, fontSize: '0.84rem', color: '#334155', fontWeight: 600 }}>
+                      <p style={{ margin: 0, fontSize: '0.84rem', color: darkMode ? '#d1d5db' : '#334155', fontWeight: 600 }}>
                         {((ordenesNormalizadas['entregada'] || 0) + (ordenesNormalizadas['pagada'] || 0) + (ordenesNormalizadas['enviada'] || 0))} órdenes procesadas con éxito
                       </p>
                     </div>
                     <div style={{ textAlign: 'right' }}>
-                      <span style={{ fontSize: '1.4rem', fontWeight: 900, color: '#1E40AF' }}>
+                      <span style={{ fontSize: '1.4rem', fontWeight: 900, color: darkMode ? '#60a5fa' : '#1E40AF' }}>
                         {Math.round((((ordenesNormalizadas['entregada'] || 0) + (ordenesNormalizadas['pagada'] || 0) + (ordenesNormalizadas['enviada'] || 0)) / (stats.ordenes || 1)) * 100)}%
                       </span>
                     </div>
                   </div>
 
                   {/* Barra compuesta continua del pipeline */}
-                  <div style={{ height: 10, borderRadius: 20, overflow: 'hidden', display: 'flex', marginBottom: 20, background: '#F3F4F6' }}>
+                  <div style={{ height: 10, borderRadius: 20, overflow: 'hidden', display: 'flex', marginBottom: 20, background: darkMode ? '#2d2d2d' : '#F3F4F6' }}>
                     {ordenesConfig.map((o) => {
                       const count = ordenesNormalizadas[o.key] || 0;
                       const pct = stats.ordenes > 0 ? (count / stats.ordenes) * 100 : 0;
@@ -2792,21 +2903,21 @@ export default function AdminDashboard() {
                       const count = ordenesNormalizadas[o.key] || 0;
                       const pct = stats.ordenes > 0 ? Math.round((count / stats.ordenes) * 100) : 0;
                       return (
-                        <div key={o.key} style={{ background: '#FAFAF9', borderRadius: 12, padding: '10px 14px', border: '1px solid #F0ECE6' }}>
+                        <div key={o.key} style={{ background: darkMode ? '#252525' : '#FAFAF9', borderRadius: 12, padding: '10px 14px', border: `1px solid ${darkMode ? '#333333' : '#F0ECE6'}` }}>
                           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                               <span style={{ fontSize: '1rem' }}>{o.icon}</span>
                               <div>
-                                <span style={{ fontWeight: 800, fontSize: '0.86rem', color: CARBON }}>{o.label}</span>
+                                <span style={{ fontWeight: 800, fontSize: '0.86rem', color: darkMode ? '#f3f4f6' : CARBON }}>{o.label}</span>
                                 <p style={{ margin: 0, fontSize: '0.72rem', color: '#9CA3AF' }}>{o.desc}</p>
                               </div>
                             </div>
                             <div style={{ textAlign: 'right' }}>
                               <span style={{ fontSize: '1rem', fontWeight: 900, color: o.color }}>{count}</span>
-                              <span style={{ fontSize: '0.73rem', fontWeight: 700, color: '#6B7280', marginLeft: 6 }}>({pct}%)</span>
+                              <span style={{ fontSize: '0.73rem', fontWeight: 700, color: darkMode ? '#9ca3af' : '#6B7280', marginLeft: 6 }}>({pct}%)</span>
                             </div>
                           </div>
-                          <div style={{ background: '#E5E7EB', borderRadius: 10, height: 7, overflow: 'hidden' }}>
+                          <div style={{ background: darkMode ? '#2d2d2d' : '#E5E7EB', borderRadius: 10, height: 7, overflow: 'hidden' }}>
                             <div
                               style={{
                                 background: `linear-gradient(90deg, ${o.color}, ${o.color}cc)`,
@@ -2838,15 +2949,15 @@ export default function AdminDashboard() {
           const bloqueadosList = usuarios.filter((u) => (u.estado_usuario || '').toLowerCase() === 'bloqueado');
 
           const roleThemes = {
-            comprador:     { color: '#047857', bg: '#ECFDF5', border: '#A7F3D0', icon: '🛒', label: 'Comprador' },
-            vendedor:      { color: '#D97706', bg: '#FFFBEB', border: '#FDE68A', icon: '🏪', label: 'Vendedor' },
-            admin:         { color: '#7A1E3A', bg: '#FDF2F4', border: '#F8D2DA', icon: '🛡️', label: 'Administrador' },
+            comprador: { color: '#047857', bg: '#ECFDF5', border: '#A7F3D0', icon: '🛒', label: 'Comprador' },
+            vendedor: { color: '#D97706', bg: '#FFFBEB', border: '#FDE68A', icon: '🏪', label: 'Vendedor' },
+            admin: { color: '#7A1E3A', bg: '#FDF2F4', border: '#F8D2DA', icon: '🛡️', label: 'Administrador' },
             administrador: { color: '#7A1E3A', bg: '#FDF2F4', border: '#F8D2DA', icon: '🛡️', label: 'Administrador' },
           };
 
           return (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
-              
+
               {/* ── 4 KPI CARDS DE USUARIOS ── */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '18px' }}>
                 {[
@@ -2894,11 +3005,11 @@ export default function AdminDashboard() {
                   <div
                     key={idx}
                     style={{
-                      background: WHITE,
+                      background: darkMode ? '#1e1e1e' : WHITE,
                       borderRadius: '16px',
                       padding: '20px 22px',
-                      border: `1px solid ${k.border}`,
-                      boxShadow: '0 4px 16px rgba(0,0,0,0.04)',
+                      border: `1px solid ${darkMode ? '#333333' : k.border}`,
+                      boxShadow: darkMode ? '0 4px 16px rgba(0,0,0,0.3)' : '0 4px 16px rgba(0,0,0,0.04)',
                       display: 'flex',
                       flexDirection: 'column',
                       justifyContent: 'space-between',
@@ -2908,16 +3019,16 @@ export default function AdminDashboard() {
                   >
                     <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 4, background: k.color }} />
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                      <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                      <span style={{ fontSize: '0.8rem', fontWeight: 700, color: darkMode ? '#9ca3af' : '#6B7280', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                         {k.title}
                       </span>
-                      <div style={{ width: 38, height: 38, borderRadius: 10, background: k.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <div style={{ width: 38, height: 38, borderRadius: 10, background: darkMode ? `${k.color}22` : k.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <k.Icon width={18} height={18} style={{ color: k.color }} />
                       </div>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 6 }}>
-                      <span style={{ fontSize: '2.1rem', fontWeight: 900, color: CARBON, lineHeight: 1 }}>{k.value}</span>
-                      <span style={{ fontSize: '0.75rem', fontWeight: 700, color: k.color, background: k.bg, border: `1px solid ${k.border}`, padding: '2px 8px', borderRadius: 12 }}>
+                      <span style={{ fontSize: '2.1rem', fontWeight: 900, color: darkMode ? '#f3f4f6' : CARBON, lineHeight: 1 }}>{k.value}</span>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 700, color: k.color, background: darkMode ? `${k.color}22` : k.bg, border: `1px solid ${darkMode ? `${k.color}44` : k.border}`, padding: '2px 8px', borderRadius: 12 }}>
                         {k.badge}
                       </span>
                     </div>
@@ -2928,17 +3039,17 @@ export default function AdminDashboard() {
 
               {/* ── BARRA DE CONTROLES, BÚSQUEDA Y FILTROS ── */}
               <div style={{
-                background: WHITE,
+                background: darkMode ? '#1e1e1e' : WHITE,
                 borderRadius: '18px',
                 padding: '20px 24px',
-                border: `1px solid ${BORDER}`,
-                boxShadow: '0 4px 18px rgba(0,0,0,0.04)',
+                border: `1px solid ${darkMode ? '#333333' : BORDER}`,
+                boxShadow: darkMode ? '0 4px 18px rgba(0,0,0,0.3)' : '0 4px 18px rgba(0,0,0,0.04)',
                 display: 'flex',
                 flexDirection: 'column',
                 gap: 16
               }}>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 14, alignItems: 'center', justifyContent: 'space-between' }}>
-                  
+
                   {/* Buscador en vivo */}
                   <div style={{ position: 'relative', flex: 1, minWidth: 280, maxWidth: 440 }}>
                     <div style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF', display: 'flex', alignItems: 'center' }}>
@@ -2956,16 +3067,17 @@ export default function AdminDashboard() {
                         width: '100%',
                         padding: '11px 40px 11px 42px',
                         borderRadius: 12,
-                        border: `1.5px solid ${BORDER}`,
+                        border: `1.5px solid ${darkMode ? '#444' : BORDER}`,
                         fontSize: '0.88rem',
                         fontFamily: 'inherit',
                         outline: 'none',
-                        background: '#FAFAF9',
+                        background: darkMode ? '#2a2a2a' : '#FAFAF9',
+                        color: darkMode ? '#f3f4f6' : CARBON,
                         boxSizing: 'border-box',
                         transition: 'border-color 0.2s, background 0.2s',
                       }}
-                      onFocus={(e) => { e.target.style.borderColor = VINOTINTO; e.target.style.background = WHITE; }}
-                      onBlur={(e) => { e.target.style.borderColor = BORDER; e.target.style.background = '#FAFAF9'; }}
+                      onFocus={(e) => { e.target.style.borderColor = darkMode ? '#fb7185' : VINOTINTO; e.target.style.background = darkMode ? '#333' : WHITE; }}
+                      onBlur={(e) => { e.target.style.borderColor = darkMode ? '#444' : BORDER; e.target.style.background = darkMode ? '#2a2a2a' : '#FAFAF9'; }}
                     />
                     {busquedaUsuarios && (
                       <button
@@ -2991,7 +3103,7 @@ export default function AdminDashboard() {
 
                   {/* Filtro por Estado */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <label htmlFor="admin-user-status-filter" style={{ fontSize: '0.82rem', fontWeight: 700, color: '#4B5563' }}>Estado:</label>
+                    <label htmlFor="admin-user-status-filter" style={{ fontSize: '0.82rem', fontWeight: 700, color: darkMode ? '#d1d5db' : '#4B5563' }}>Estado:</label>
                     <select
                       id="admin-user-status-filter"
                       value={filtroEstadoUsuario}
@@ -3002,11 +3114,11 @@ export default function AdminDashboard() {
                       style={{
                         padding: '9px 14px',
                         borderRadius: 10,
-                        border: `1.5px solid ${BORDER}`,
-                        background: WHITE,
+                        border: `1.5px solid ${darkMode ? '#444' : BORDER}`,
+                        background: darkMode ? '#2a2a2a' : WHITE,
                         fontSize: '0.84rem',
                         fontWeight: 700,
-                        color: CARBON,
+                        color: darkMode ? '#f3f4f6' : CARBON,
                         cursor: 'pointer',
                         outline: 'none',
                         fontFamily: 'inherit'
@@ -3026,8 +3138,8 @@ export default function AdminDashboard() {
                           setPaginaUsuarios(1);
                         }}
                         style={{
-                          background: '#F3F4F6',
-                          color: '#4B5563',
+                          background: darkMode ? '#333' : '#F3F4F6',
+                          color: darkMode ? '#d1d5db' : '#4B5563',
                           border: 'none',
                           padding: '9px 14px',
                           borderRadius: 10,
@@ -3045,12 +3157,12 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* Tabs de Filtro por Rol */}
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, paddingTop: 6, borderTop: `1px solid ${BORDER}` }}>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, paddingTop: 6, borderTop: `1px solid ${darkMode ? '#333333' : BORDER}` }}>
                   {[
-                    { key: 'todos',     label: 'Todos',          count: usuarios.length,       icon: '👥' },
-                    { key: 'comprador', label: 'Compradores',    count: compradoresList.length, icon: '🛒' },
-                    { key: 'vendedor',  label: 'Vendedores',     count: vendedoresList.length,  icon: '🏪' },
-                    { key: 'admin',     label: 'Administradores',count: adminsList.length,      icon: '🛡️' },
+                    { key: 'todos', label: 'Todos', count: usuarios.length, icon: '👥' },
+                    { key: 'comprador', label: 'Compradores', count: compradoresList.length, icon: '🛒' },
+                    { key: 'vendedor', label: 'Vendedores', count: vendedoresList.length, icon: '🏪' },
+                    { key: 'admin', label: 'Administradores', count: adminsList.length, icon: '🛡️' },
                   ].map((tab) => {
                     const activo = filtroRol === tab.key;
                     return (
@@ -3063,9 +3175,9 @@ export default function AdminDashboard() {
                         style={{
                           padding: '8px 16px',
                           borderRadius: 20,
-                          border: activo ? `1.5px solid ${VINOTINTO}` : `1.5px solid ${BORDER}`,
-                          background: activo ? VINOTINTO : '#FAFAF9',
-                          color: activo ? WHITE : '#4B5563',
+                          border: activo ? `1.5px solid ${VINOTINTO}` : `1.5px solid ${darkMode ? '#444' : BORDER}`,
+                          background: activo ? VINOTINTO : darkMode ? '#2a2a2a' : '#FAFAF9',
+                          color: activo ? WHITE : darkMode ? '#d1d5db' : '#4B5563',
                           fontSize: '0.82rem',
                           fontWeight: activo ? 800 : 600,
                           cursor: 'pointer',
@@ -3080,8 +3192,8 @@ export default function AdminDashboard() {
                         <span>{tab.icon}</span>
                         <span>{tab.label}</span>
                         <span style={{
-                          background: activo ? 'rgba(255,255,255,0.25)' : '#E5E7EB',
-                          color: activo ? WHITE : '#374151',
+                          background: activo ? 'rgba(255,255,255,0.25)' : darkMode ? '#444' : '#E5E7EB',
+                          color: activo ? WHITE : darkMode ? '#d1d5db' : '#374151',
                           padding: '1px 7px',
                           borderRadius: 10,
                           fontSize: '0.72rem',
@@ -3098,11 +3210,11 @@ export default function AdminDashboard() {
 
               {/* ── TABLA DE USUARIOS ── */}
               <div style={{
-                background: WHITE,
+                background: darkMode ? '#1e1e1e' : WHITE,
                 borderRadius: '18px',
                 overflow: 'hidden',
-                boxShadow: '0 4px 20px rgba(0,0,0,0.06)',
-                border: `1px solid ${BORDER}`,
+                boxShadow: darkMode ? '0 4px 20px rgba(0,0,0,0.3)' : '0 4px 20px rgba(0,0,0,0.06)',
+                border: `1px solid ${darkMode ? '#333333' : BORDER}`,
                 display: 'flex',
                 flexDirection: 'column'
               }}>
@@ -3123,7 +3235,7 @@ export default function AdminDashboard() {
                         <tr>
                           <td colSpan={6} style={{ padding: '60px 20px', textAlign: 'center', color: '#6B7280' }}>
                             <div style={{ fontSize: '2.5rem', marginBottom: 10 }}>🔍</div>
-                            <h4 style={{ margin: '0 0 6px', color: CARBON, fontSize: '1.05rem', fontWeight: 800 }}>No se encontraron usuarios</h4>
+                            <h4 style={{ margin: '0 0 6px', color: darkMode ? '#f3f4f6' : CARBON, fontSize: '1.05rem', fontWeight: 800 }}>No se encontraron usuarios</h4>
                             <p style={{ margin: '0 0 16px', fontSize: '0.86rem', color: '#9CA3AF' }}>Intenta ajustar el término de búsqueda o cambiar los filtros seleccionados.</p>
                             <button
                               onClick={() => { setBusquedaUsuarios(''); setFiltroRol('todos'); setFiltroEstadoUsuario('todos'); }}
@@ -3153,22 +3265,22 @@ export default function AdminDashboard() {
                             <tr
                               key={u.id_usuario}
                               style={{
-                                background: esBloqueado ? '#FEF2F2' : i % 2 === 0 ? '#FAFAF9' : WHITE,
-                                borderBottom: `1px solid ${BORDER}`,
+                                background: esBloqueado ? (darkMode ? '#7f1d1d33' : '#FEF2F2') : i % 2 === 0 ? (darkMode ? '#252525' : '#FAFAF9') : (darkMode ? '#1e1e1e' : WHITE),
+                                borderBottom: `1px solid ${darkMode ? '#333333' : BORDER}`,
                                 transition: 'background 0.15s ease',
                               }}
                             >
                               {/* ID */}
                               <td style={{ padding: '14px 20px' }}>
                                 <span style={{
-                                  background: '#F3F4F6',
-                                  color: '#4B5563',
+                                  background: darkMode ? '#333' : '#F3F4F6',
+                                  color: darkMode ? '#d1d5db' : '#4B5563',
                                   fontFamily: 'monospace',
                                   fontWeight: 800,
                                   fontSize: '0.78rem',
                                   padding: '3px 8px',
                                   borderRadius: 8,
-                                  border: '1px solid #E5E7EB'
+                                  border: `1px solid ${darkMode ? '#444' : '#E5E7EB'}`
                                 }}>
                                   #{u.id_usuario}
                                 </span>
@@ -3179,7 +3291,7 @@ export default function AdminDashboard() {
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                                   <AvatarUsuario usuario={u} size={40} fontSize="0.95rem" />
                                   <div>
-                                    <div style={{ fontWeight: 800, fontSize: '0.92rem', color: CARBON, display: 'flex', alignItems: 'center', gap: 6 }}>
+                                    <div style={{ fontWeight: 800, fontSize: '0.92rem', color: darkMode ? '#f3f4f6' : CARBON, display: 'flex', alignItems: 'center', gap: 6 }}>
                                       <span>{u.nombre_usuario}</span>
                                       {u.email_verificado ? (
                                         <span title="Correo verificado" style={{ color: '#047857', fontSize: '0.8rem' }}>✓</span>
@@ -3197,7 +3309,7 @@ export default function AdminDashboard() {
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                                     <IconMail width={14} height={14} style={{ color: '#9CA3AF', flexShrink: 0 }} />
-                                    <span style={{ fontSize: '0.85rem', color: '#374151', fontWeight: 600 }}>{u.correo_usuario}</span>
+                                    <span style={{ fontSize: '0.85rem', color: darkMode ? '#d1d5db' : '#374151', fontWeight: 600 }}>{u.correo_usuario}</span>
                                     <button
                                       onClick={() => copiarTexto(u.correo_usuario, u.id_usuario)}
                                       title="Copiar correo"
@@ -3283,15 +3395,15 @@ export default function AdminDashboard() {
                               {/* Acciones */}
                               <td style={{ padding: '14px 20px', textAlign: 'right' }}>
                                 <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                                  
+
                                   {/* Botón Ver Ficha / Detalle */}
                                   <button
                                     onClick={() => setModalDetalleUsuario(u)}
                                     title="Ver detalles del usuario"
                                     style={{
-                                      background: '#F3F4F6',
-                                      color: '#374151',
-                                      border: '1px solid #E5E7EB',
+                                      background: darkMode ? '#333' : '#F3F4F6',
+                                      color: darkMode ? '#d1d5db' : '#374151',
+                                      border: `1px solid ${darkMode ? '#444' : '#E5E7EB'}`,
                                       padding: '7px 12px',
                                       borderRadius: 8,
                                       cursor: 'pointer',
@@ -3353,15 +3465,15 @@ export default function AdminDashboard() {
                 {/* ── FOOTER Y PAGINACIÓN ── */}
                 <div style={{
                   padding: '16px 24px',
-                  background: '#FAFAF9',
-                  borderTop: `1px solid ${BORDER}`,
+                  background: darkMode ? '#252525' : '#FAFAF9',
+                  borderTop: `1px solid ${darkMode ? '#333333' : BORDER}`,
                   display: 'flex',
                   flexWrap: 'wrap',
                   alignItems: 'center',
                   justifyContent: 'space-between',
                   gap: 12
                 }}>
-                  <span style={{ fontSize: '0.82rem', color: '#6B7280', fontWeight: 600 }}>
+                  <span style={{ fontSize: '0.82rem', color: darkMode ? '#9ca3af' : '#6B7280', fontWeight: 600 }}>
                     Mostrando{' '}
                     <strong>
                       {usuariosFiltrados.length === 0 ? 0 : (paginaUsuarios - 1) * registrosPorPagina + 1}
@@ -3379,9 +3491,9 @@ export default function AdminDashboard() {
                         style={{
                           padding: '7px 12px',
                           borderRadius: 8,
-                          border: `1.5px solid ${BORDER}`,
-                          background: paginaUsuarios === 1 ? '#F3F4F6' : WHITE,
-                          color: paginaUsuarios === 1 ? '#9CA3AF' : CARBON,
+                          border: `1.5px solid ${darkMode ? '#444' : BORDER}`,
+                          background: paginaUsuarios === 1 ? (darkMode ? '#333' : '#F3F4F6') : (darkMode ? '#2a2a2a' : WHITE),
+                          color: paginaUsuarios === 1 ? '#9CA3AF' : (darkMode ? '#f3f4f6' : CARBON),
                           fontSize: '0.8rem',
                           fontWeight: 700,
                           cursor: paginaUsuarios === 1 ? 'not-allowed' : 'pointer',
@@ -3401,9 +3513,9 @@ export default function AdminDashboard() {
                               width: 32,
                               height: 32,
                               borderRadius: 8,
-                              border: esActual ? 'none' : `1px solid ${BORDER}`,
-                              background: esActual ? VINOTINTO : WHITE,
-                              color: esActual ? WHITE : CARBON,
+                              border: esActual ? 'none' : `1px solid ${darkMode ? '#444' : BORDER}`,
+                              background: esActual ? VINOTINTO : (darkMode ? '#2a2a2a' : WHITE),
+                              color: esActual ? WHITE : (darkMode ? '#f3f4f6' : CARBON),
                               fontSize: '0.82rem',
                               fontWeight: esActual ? 800 : 600,
                               cursor: 'pointer',
@@ -3424,9 +3536,9 @@ export default function AdminDashboard() {
                         style={{
                           padding: '7px 12px',
                           borderRadius: 8,
-                          border: `1.5px solid ${BORDER}`,
-                          background: paginaUsuarios === totalPaginasUsuarios ? '#F3F4F6' : WHITE,
-                          color: paginaUsuarios === totalPaginasUsuarios ? '#9CA3AF' : CARBON,
+                          border: `1.5px solid ${darkMode ? '#444' : BORDER}`,
+                          background: paginaUsuarios === totalPaginasUsuarios ? (darkMode ? '#333' : '#F3F4F6') : (darkMode ? '#2a2a2a' : WHITE),
+                          color: paginaUsuarios === totalPaginasUsuarios ? '#9CA3AF' : (darkMode ? '#f3f4f6' : CARBON),
                           fontSize: '0.8rem',
                           fontWeight: 700,
                           cursor: paginaUsuarios === totalPaginasUsuarios ? 'not-allowed' : 'pointer',
@@ -3445,10 +3557,10 @@ export default function AdminDashboard() {
 
         {/* LIBROS */}
         {activeSection === 'libros' && (
-          <div style={{ background: WHITE, borderRadius: '14px', overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.06)', border: `1px solid ${BORDER}`, padding: '16px' }}>
+          <div style={{ background: darkMode ? '#1e1e1e' : WHITE, borderRadius: '14px', overflow: 'hidden', boxShadow: darkMode ? '0 4px 20px rgba(0,0,0,0.3)' : '0 4px 20px rgba(0,0,0,0.06)', border: `1px solid ${darkMode ? '#333333' : BORDER}`, padding: '16px' }}>
 
             <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '10px' }}>
-              <label htmlFor="admin-book-category-filter" style={{ fontWeight: 600, fontSize: '0.9rem', color: '#555' }}>Filtrar por Categoría:</label>
+              <label htmlFor="admin-book-category-filter" style={{ fontWeight: 600, fontSize: '0.9rem', color: darkMode ? '#d1d5db' : '#555' }}>Filtrar por Categoría:</label>
               <select
                 id="admin-book-category-filter"
                 value={filtroCategoria}
@@ -3456,7 +3568,7 @@ export default function AdminDashboard() {
                   setFiltroCategoria(e.target.value);
                   setPaginaLibros(1);
                 }}
-                style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid #FAF8F5', background: WHITE, fontWeight: 600, cursor: 'pointer', outline: 'none' }}
+                style={{ padding: '8px 12px', borderRadius: '8px', border: `1px solid ${darkMode ? '#444' : '#FAF8F5'}`, background: darkMode ? '#2a2a2a' : WHITE, color: darkMode ? '#f3f4f6' : CARBON, fontWeight: 600, cursor: 'pointer', outline: 'none' }}
               >
                 <option value="todas">Todas las Categorías</option>
                 {[
@@ -3484,16 +3596,16 @@ export default function AdminDashboard() {
               <tbody>
                 {librosPaginados.map((l, i) => (
                   <tr key={l.id_libro} style={{
-                    background: l.oculto ? '#fff3f3' : i % 2 === 0 ? '#fafafa' : WHITE,
+                    background: l.oculto ? (darkMode ? '#7f1d1d33' : '#fff3f3') : i % 2 === 0 ? (darkMode ? '#252525' : '#fafafa') : (darkMode ? '#1e1e1e' : WHITE),
                     opacity: l.oculto ? 0.7 : 1,
-                    borderBottom: '1px solid #FAF8F5'
+                    borderBottom: `1px solid ${darkMode ? '#333333' : '#FAF8F5'}`
                   }}>
-                    <td style={{ padding: '12px 16px', fontWeight: 600 }}>{l.titulo}</td>
-                    <td style={{ padding: '12px 16px', color: '#555' }}>{l.autor_libro}</td>
-                    <td style={{ padding: '12px 16px', color: '#7A1E3A', fontWeight: 600 }}>{l.nombre_tienda || '—'}</td>
-                    <td style={{ padding: '12px 16px', fontWeight: 600 }}>${Number(l.precio_libro).toLocaleString('es-CO')}</td>
+                    <td style={{ padding: '12px 16px', fontWeight: 600, color: darkMode ? '#f3f4f6' : CARBON }}>{l.titulo}</td>
+                    <td style={{ padding: '12px 16px', color: darkMode ? '#9ca3af' : '#555' }}>{l.autor_libro}</td>
+                    <td style={{ padding: '12px 16px', color: darkMode ? '#fb7185' : '#7A1E3A', fontWeight: 600 }}>{l.nombre_tienda || '—'}</td>
+                    <td style={{ padding: '12px 16px', fontWeight: 600, color: darkMode ? '#f3f4f6' : CARBON }}>${Number(l.precio_libro).toLocaleString('es-CO')}</td>
 
-                    <td style={{ padding: '12px 16px', color: '#666', fontSize: '0.85rem', fontWeight: 500 }}>
+                    <td style={{ padding: '12px 16px', color: darkMode ? '#9ca3af' : '#666', fontSize: '0.85rem', fontWeight: 500 }}>
                       {l.nombre_categoria || 'Sin categoría'}
                     </td>
 
@@ -3562,7 +3674,7 @@ export default function AdminDashboard() {
                       padding: '8px 12px',
                       borderRadius: '6px',
                       border: 'none',
-                      background: paginaLibros === 1 ? '#ccc' : VINOTINTO,
+                      background: paginaLibros === 1 ? (darkMode ? '#333' : '#ccc') : VINOTINTO,
                       color: WHITE,
                       cursor: 'pointer'
                     }}
@@ -3570,7 +3682,7 @@ export default function AdminDashboard() {
                     Anterior
                   </button>
 
-                  <span style={{ padding: '8px 12px', fontWeight: 600 }}>
+                  <span style={{ padding: '8px 12px', fontWeight: 600, color: darkMode ? '#f3f4f6' : CARBON }}>
                     {paginaLibros} / {totalPaginasLibros}
                   </span>
 
@@ -3583,7 +3695,7 @@ export default function AdminDashboard() {
                       border: 'none',
                       background:
                         paginaLibros === totalPaginasLibros
-                          ? '#ccc'
+                          ? (darkMode ? '#333' : '#ccc')
                           : VINOTINTO,
                       color: WHITE,
                       cursor: 'pointer'
@@ -3604,26 +3716,26 @@ export default function AdminDashboard() {
             {/* KPI Cards de tiendas */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 14 }}>
               {[
-                { label: 'Total', value: tiendas.length, color: VINOTINTO, bg: '#fdf2f4', border: '#f0dde4', icon: <IconStore width={22} height={22} /> },
+                { label: 'Total', value: tiendas.length, color: darkMode ? '#fb7185' : VINOTINTO, bg: darkMode ? 'rgba(251, 113, 133, 0.15)' : '#fdf2f4', border: darkMode ? 'rgba(251, 113, 133, 0.3)' : '#f0dde4', icon: <IconStore width={22} height={22} /> },
                 { label: 'Activas', value: tiendas.filter(t => (t.estado_tienda || '').toLowerCase() === 'activa').length, color: '#047857', bg: '#ecfdf5', border: '#a7f3d0', icon: <IconCheck width={22} height={22} strokeWidth={2.5} /> },
                 { label: 'Pendientes', value: tiendas.filter(t => (t.estado_tienda || '').toLowerCase() === 'pendiente').length, color: '#B45309', bg: '#fffbeb', border: '#fde68a', icon: <IconAlertTriangle width={22} height={22} strokeWidth={2} /> },
                 { label: 'Suspendidas', value: tiendas.filter(t => (t.estado_tienda || '').toLowerCase() === 'suspendida').length, color: '#B91C1C', bg: '#fef2f2', border: '#fecaca', icon: <IconBan width={22} height={22} /> },
               ].map((kpi) => (
                 <div key={kpi.label} style={{
-                  background: WHITE, borderRadius: 14, padding: '16px 18px',
-                  border: `1px solid ${BORDER}`, boxShadow: '0 2px 10px rgba(0,0,0,0.03)',
+                  background: darkMode ? '#1e1e1e' : WHITE, borderRadius: 14, padding: '16px 18px',
+                  border: `1px solid ${darkMode ? '#333333' : BORDER}`, boxShadow: darkMode ? '0 2px 10px rgba(0,0,0,0.3)' : '0 2px 10px rgba(0,0,0,0.03)',
                   display: 'flex', alignItems: 'center', gap: 14,
                 }}>
                   <div style={{
                     width: 44, height: 44, borderRadius: 12,
-                    background: kpi.bg, color: kpi.color,
+                    background: darkMode ? `${kpi.color}22` : kpi.bg, color: kpi.color,
                     display: 'grid', placeItems: 'center', flexShrink: 0,
-                    border: `1px solid ${kpi.border}`,
+                    border: `1px solid ${darkMode ? `${kpi.color}44` : kpi.border}`,
                   }}>
                     {kpi.icon}
                   </div>
                   <div>
-                    <p style={{ margin: 0, fontSize: '0.76rem', color: GRAY, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{kpi.label}</p>
+                    <p style={{ margin: 0, fontSize: '0.76rem', color: darkMode ? '#9ca3af' : GRAY, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{kpi.label}</p>
                     <h3 style={{ margin: '2px 0 0', fontSize: '1.6rem', fontWeight: 800, color: kpi.color }}>{kpi.value}</h3>
                   </div>
                 </div>
@@ -3632,26 +3744,26 @@ export default function AdminDashboard() {
 
             {/* Barra de búsqueda y filtros */}
             <div style={{
-              background: WHITE, borderRadius: 14, padding: '14px 18px',
-              border: `1px solid ${BORDER}`, boxShadow: '0 2px 10px rgba(0,0,0,0.03)',
+              background: darkMode ? '#1e1e1e' : WHITE, borderRadius: 14, padding: '14px 18px',
+              border: `1px solid ${darkMode ? '#333333' : BORDER}`, boxShadow: darkMode ? '0 2px 10px rgba(0,0,0,0.3)' : '0 2px 10px rgba(0,0,0,0.03)',
               display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'center',
             }}>
               {/* Búsqueda */}
               <div style={{
                 display: 'flex', alignItems: 'center', gap: 10, flex: 1,
-                minWidth: 240, background: '#fafafa',
-                border: `1px solid ${BORDER}`, borderRadius: 10, padding: '8px 14px',
+                minWidth: 240, background: darkMode ? '#2a2a2a' : '#fafafa',
+                border: `1px solid ${darkMode ? '#444' : BORDER}`, borderRadius: 10, padding: '8px 14px',
               }}>
-                <IconSearch width={17} height={17} style={{ color: GRAY }} />
+                <IconSearch width={17} height={17} style={{ color: darkMode ? '#9ca3af' : GRAY }} />
                 <input
                   type="text"
                   value={busquedaTiendas}
                   onChange={(e) => { setBusquedaTiendas(e.target.value); setPaginaTiendas(1); }}
                   placeholder="Buscar por nombre, dirección, teléfono o ID..."
-                  style={{ border: 'none', background: 'transparent', outline: 'none', width: '100%', fontSize: '0.88rem', fontFamily: 'inherit', color: CARBON }}
+                  style={{ border: 'none', background: 'transparent', outline: 'none', width: '100%', fontSize: '0.88rem', fontFamily: 'inherit', color: darkMode ? '#f3f4f6' : CARBON }}
                 />
                 {busquedaTiendas && (
-                  <button onClick={() => { setBusquedaTiendas(''); setPaginaTiendas(1); }} style={{ border: 0, background: 'none', cursor: 'pointer', color: GRAY, padding: 0 }}>
+                  <button onClick={() => { setBusquedaTiendas(''); setPaginaTiendas(1); }} style={{ border: 0, background: 'none', cursor: 'pointer', color: darkMode ? '#9ca3af' : GRAY, padding: 0 }}>
                     <IconClose width={15} height={15} />
                   </button>
                 )}
@@ -3660,27 +3772,30 @@ export default function AdminDashboard() {
               {/* Filtros de estado */}
               <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap', alignItems: 'center' }}>
                 {[
-                  { value: 'todos', label: 'Todas' },
+                  { value: 'todos', label: 'Todas', color: darkMode ? '#fb7185' : VINOTINTO, bg: darkMode ? 'rgba(251, 113, 133, 0.15)' : '#fdf2f4', border: darkMode ? 'rgba(251, 113, 133, 0.3)' : '#f0dde4' },
                   ...ESTADOS_TIENDA,
                 ].map((est) => {
                   const activo = filtroEstadoTienda === est.value;
+                  const itemColor = darkMode && est.color === VINOTINTO ? '#fb7185' : est.color;
+                  const activeBg = darkMode ? `${itemColor}25` : (est.bg || '#fdf2f4');
                   return (
                     <button
                       key={est.value}
                       onClick={() => { setFiltroEstadoTienda(est.value); setPaginaTiendas(1); }}
                       style={{
-                        padding: '6px 14px', borderRadius: 20, cursor: 'pointer',
+                        padding: '6px 0', borderRadius: 20, cursor: 'pointer',
                         fontWeight: 700, fontSize: '0.8rem', fontFamily: 'inherit',
-                        display: 'inline-flex', alignItems: 'center', gap: 6,
-                        border: activo ? `1.5px solid ${est.color || VINOTINTO}` : `1px solid ${BORDER}`,
-                        background: activo ? (est.bg || '#fdf2f4') : WHITE,
-                        color: activo ? (est.color || VINOTINTO) : GRAY,
+                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                        width: 118,
+                        border: activo ? `1.5px solid ${itemColor}` : `1px solid ${darkMode ? '#444' : BORDER}`,
+                        background: activo ? activeBg : (darkMode ? '#2a2a2a' : WHITE),
+                        color: est.value === 'todos' ? (activo ? itemColor : (darkMode ? '#d1d5db' : GRAY)) : itemColor,
                         boxShadow: activo ? '0 2px 8px rgba(0,0,0,0.08)' : 'none',
                         transition: 'all 0.15s',
                       }}
                     >
                       {est.value !== 'todos' && (
-                        <span style={{ width: 7, height: 7, borderRadius: '50%', background: est.color || VINOTINTO, display: 'inline-block' }} />
+                        <span style={{ width: 7, height: 7, borderRadius: '50%', background: itemColor, display: 'inline-block', flexShrink: 0 }} />
                       )}
                       {est.label}
                     </button>
@@ -3691,8 +3806,8 @@ export default function AdminDashboard() {
 
             {/* Tabla rediseñada */}
             <div style={{
-              background: WHITE, borderRadius: 16, overflow: 'hidden',
-              boxShadow: '0 4px 20px rgba(0,0,0,0.05)', border: `1px solid ${BORDER}`,
+              background: darkMode ? '#1e1e1e' : WHITE, borderRadius: 16, overflow: 'hidden',
+              boxShadow: darkMode ? '0 4px 20px rgba(0,0,0,0.3)' : '0 4px 20px rgba(0,0,0,0.05)', border: `1px solid ${darkMode ? '#333333' : BORDER}`,
             }}>
               {/* Cabecera */}
               <div style={{
@@ -3716,10 +3831,10 @@ export default function AdminDashboard() {
 
               {/* Filas */}
               {tiendasFiltradas.length === 0 ? (
-                <div style={{ padding: '48px 24px', textAlign: 'center', color: GRAY }}>
+                <div style={{ padding: '48px 24px', textAlign: 'center', color: darkMode ? '#9ca3af' : GRAY }}>
                   <div style={{ fontSize: '2.2rem', marginBottom: 10 }}>🏪</div>
-                  <p style={{ margin: 0, fontWeight: 600, color: CARBON, fontSize: '1rem' }}>No se encontraron tiendas</p>
-                  <p style={{ margin: '4px 0 0', fontSize: '0.86rem' }}>Prueba cambiando el filtro o el término de búsqueda.</p>
+                  <p style={{ margin: 0, fontWeight: 600, color: darkMode ? '#f3f4f6' : CARBON, fontSize: '1rem' }}>No se encontraron tiendas</p>
+                  <p style={{ margin: '4px 0 0', fontSize: '0.86rem', color: darkMode ? '#9ca3af' : GRAY }}>Prueba cambiando el filtro o el término de búsqueda.</p>
                 </div>
               ) : (
                 tiendasPaginadas.map((t, i) => {
@@ -3738,18 +3853,18 @@ export default function AdminDashboard() {
                         display: 'grid',
                         gridTemplateColumns: '56px 1fr 1.4fr 140px 130px 140px 160px',
                         padding: '0 8px',
-                        borderBottom: i < tiendasPaginadas.length - 1 ? `1px solid ${BORDER}` : 'none',
-                        background: i % 2 === 0 ? WHITE : '#fdfcfc',
+                        borderBottom: i < tiendasPaginadas.length - 1 ? `1px solid ${darkMode ? '#333333' : BORDER}` : 'none',
+                        background: i % 2 === 0 ? (darkMode ? '#1e1e1e' : WHITE) : (darkMode ? '#252525' : '#fdfcfc'),
                         transition: 'background 0.15s',
                       }}
-                      onMouseEnter={e => e.currentTarget.style.background = '#fdf8f9'}
-                      onMouseLeave={e => e.currentTarget.style.background = i % 2 === 0 ? WHITE : '#fdfcfc'}
+                      onMouseEnter={e => e.currentTarget.style.background = darkMode ? '#2a2a2a' : '#fdf8f9'}
+                      onMouseLeave={e => e.currentTarget.style.background = i % 2 === 0 ? (darkMode ? '#1e1e1e' : WHITE) : (darkMode ? '#252525' : '#fdfcfc')}
                     >
                       {/* ID */}
                       <div style={{ padding: '14px 12px', display: 'flex', alignItems: 'center' }}>
                         <span style={{
-                          fontSize: '0.78rem', fontWeight: 700, color: GRAY,
-                          background: '#f5f5f5', borderRadius: 6, padding: '3px 7px',
+                          fontSize: '0.78rem', fontWeight: 700, color: darkMode ? '#9ca3af' : GRAY,
+                          background: darkMode ? '#333' : '#f5f5f5', borderRadius: 6, padding: '3px 7px',
                         }}>
                           #{t.id_tienda}
                         </span>
@@ -3766,11 +3881,11 @@ export default function AdminDashboard() {
                           {inicial}
                         </div>
                         <div style={{ minWidth: 0 }}>
-                          <p style={{ margin: 0, fontWeight: 700, color: CARBON, fontSize: '0.9rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          <p style={{ margin: 0, fontWeight: 700, color: darkMode ? '#f3f4f6' : CARBON, fontSize: '0.9rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                             {t.nombre_tienda || '—'}
                           </p>
                           {t.correo_tienda && (
-                            <p style={{ margin: '1px 0 0', fontSize: '0.76rem', color: GRAY, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            <p style={{ margin: '1px 0 0', fontSize: '0.76rem', color: darkMode ? '#9ca3af' : GRAY, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                               {t.correo_tienda}
                             </p>
                           )}
@@ -3779,21 +3894,21 @@ export default function AdminDashboard() {
 
                       {/* Dirección */}
                       <div style={{ padding: '14px 12px', display: 'flex', alignItems: 'center' }}>
-                        <span style={{ fontSize: '0.84rem', color: '#555', lineHeight: 1.4 }}>
+                        <span style={{ fontSize: '0.84rem', color: darkMode ? '#d1d5db' : '#555', lineHeight: 1.4 }}>
                           {t.direccion || '—'}
                         </span>
                       </div>
 
                       {/* Teléfono */}
                       <div style={{ padding: '14px 12px', display: 'flex', alignItems: 'center' }}>
-                        <span style={{ fontSize: '0.84rem', color: '#555', fontFamily: 'monospace' }}>
+                        <span style={{ fontSize: '0.84rem', color: darkMode ? '#d1d5db' : '#555', fontFamily: 'monospace' }}>
                           {t.telefono || '—'}
                         </span>
                       </div>
 
                       {/* Fecha registro */}
                       <div style={{ padding: '14px 12px', display: 'flex', alignItems: 'center' }}>
-                        <span style={{ fontSize: '0.8rem', color: GRAY, fontWeight: 600 }}>
+                        <span style={{ fontSize: '0.8rem', color: darkMode ? '#9ca3af' : GRAY, fontWeight: 600 }}>
                           {fechaFormateada}
                         </span>
                       </div>
@@ -3801,7 +3916,7 @@ export default function AdminDashboard() {
                       {/* Estado (badge) */}
                       <div style={{ padding: '14px 12px', display: 'flex', alignItems: 'center' }}>
                         <span style={{
-                          background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}`,
+                          background: darkMode ? `${cfg.color}22` : cfg.bg, color: cfg.color, border: `1px solid ${darkMode ? `${cfg.color}44` : cfg.border}`,
                           padding: '5px 12px', borderRadius: 20, fontSize: '0.78rem', fontWeight: 700,
                           display: 'inline-flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap',
                         }}>
@@ -3817,8 +3932,8 @@ export default function AdminDashboard() {
                             onClick={(e) => { e.stopPropagation(); setDropdownTiendaAbierto(abierto ? null : t.id_tienda); }}
                             style={{
                               display: 'inline-flex', alignItems: 'center', gap: 7,
-                              background: cfg.bg, color: cfg.color,
-                              border: `1.5px solid ${cfg.border}`,
+                              background: darkMode ? `${cfg.color}22` : cfg.bg, color: cfg.color,
+                              border: `1.5px solid ${darkMode ? `${cfg.color}44` : cfg.border}`,
                               padding: '7px 13px', borderRadius: 20,
                               fontSize: '0.8rem', fontWeight: 700,
                               cursor: 'pointer', fontFamily: 'inherit',
@@ -3834,12 +3949,12 @@ export default function AdminDashboard() {
                           {abierto && (
                             <div style={{
                               position: 'absolute', top: 'calc(100% + 6px)', right: 0,
-                              background: WHITE, border: `1px solid ${BORDER}`,
-                              borderRadius: 14, boxShadow: '0 12px 32px rgba(0,0,0,0.14)',
+                              background: darkMode ? '#252525' : WHITE, border: `1px solid ${darkMode ? '#444' : BORDER}`,
+                              borderRadius: 14, boxShadow: darkMode ? '0 12px 32px rgba(0,0,0,0.5)' : '0 12px 32px rgba(0,0,0,0.14)',
                               zIndex: 1000, minWidth: 170, overflow: 'hidden',
                             }}>
-                              <div style={{ padding: '8px 14px 6px', borderBottom: `1px solid ${BORDER}`, marginBottom: 4 }}>
-                                <span style={{ fontSize: '0.72rem', fontWeight: 700, color: GRAY, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                              <div style={{ padding: '8px 14px 6px', borderBottom: `1px solid ${darkMode ? '#333' : BORDER}`, marginBottom: 4 }}>
+                                <span style={{ fontSize: '0.72rem', fontWeight: 700, color: darkMode ? '#9ca3af' : GRAY, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                                   Cambiar estado
                                 </span>
                               </div>
@@ -3853,14 +3968,14 @@ export default function AdminDashboard() {
                                   style={{
                                     display: 'flex', alignItems: 'center', gap: 10,
                                     width: '100%', padding: '9px 14px',
-                                    background: est.value === estadoActual ? est.bg : 'transparent',
+                                    background: est.value === estadoActual ? (darkMode ? `${est.color}22` : est.bg) : 'transparent',
                                     border: 'none', cursor: est.value === estadoActual ? 'default' : 'pointer',
                                     fontFamily: 'inherit', fontSize: '0.84rem',
                                     fontWeight: est.value === estadoActual ? 700 : 500,
-                                    color: est.value === estadoActual ? est.color : CARBON,
+                                    color: est.value === estadoActual ? est.color : (darkMode ? '#f3f4f6' : CARBON),
                                     textAlign: 'left', transition: 'background 0.15s',
                                   }}
-                                  onMouseEnter={e => { if (est.value !== estadoActual) e.currentTarget.style.background = est.bg; }}
+                                  onMouseEnter={e => { if (est.value !== estadoActual) e.currentTarget.style.background = darkMode ? '#333' : est.bg; }}
                                   onMouseLeave={e => { if (est.value !== estadoActual) e.currentTarget.style.background = 'transparent'; }}
                                 >
                                   <span style={{ width: 10, height: 10, borderRadius: '50%', background: est.color, flexShrink: 0 }} />
@@ -3882,11 +3997,11 @@ export default function AdminDashboard() {
             {tiendasFiltradas.length > registrosPorPagina && (
               <div style={{
                 display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                background: WHITE, borderRadius: 14, padding: '12px 20px',
-                border: `1px solid ${BORDER}`, boxShadow: '0 2px 10px rgba(0,0,0,0.03)',
+                background: darkMode ? '#252525' : WHITE, borderRadius: 14, padding: '12px 20px',
+                border: `1px solid ${darkMode ? '#333333' : BORDER}`, boxShadow: darkMode ? '0 2px 10px rgba(0,0,0,0.3)' : '0 2px 10px rgba(0,0,0,0.03)',
                 flexWrap: 'wrap', gap: 10,
               }}>
-                <span style={{ fontSize: '0.84rem', color: GRAY, fontWeight: 600 }}>
+                <span style={{ fontSize: '0.84rem', color: darkMode ? '#9ca3af' : GRAY, fontWeight: 600 }}>
                   Mostrando {(paginaTiendas - 1) * registrosPorPagina + 1}–{Math.min(paginaTiendas * registrosPorPagina, tiendasFiltradas.length)} de {tiendasFiltradas.length} tiendas
                 </span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -3895,8 +4010,8 @@ export default function AdminDashboard() {
                     disabled={paginaTiendas === 1}
                     style={{
                       padding: '7px 16px', borderRadius: 8, fontWeight: 700, fontSize: '0.82rem', cursor: paginaTiendas === 1 ? 'not-allowed' : 'pointer',
-                      border: `1.5px solid ${BORDER}`, background: paginaTiendas === 1 ? '#F3F4F6' : WHITE,
-                      color: paginaTiendas === 1 ? '#9CA3AF' : CARBON, fontFamily: 'inherit',
+                      border: `1.5px solid ${darkMode ? '#444' : BORDER}`, background: paginaTiendas === 1 ? (darkMode ? '#333' : '#F3F4F6') : (darkMode ? '#2a2a2a' : WHITE),
+                      color: paginaTiendas === 1 ? '#9CA3AF' : (darkMode ? '#f3f4f6' : CARBON), fontFamily: 'inherit',
                     }}
                   >
                     ← Anterior
@@ -3912,8 +4027,8 @@ export default function AdminDashboard() {
                     disabled={paginaTiendas === totalPaginasTiendas}
                     style={{
                       padding: '7px 16px', borderRadius: 8, fontWeight: 700, fontSize: '0.82rem', cursor: paginaTiendas === totalPaginasTiendas ? 'not-allowed' : 'pointer',
-                      border: `1.5px solid ${BORDER}`, background: paginaTiendas === totalPaginasTiendas ? '#F3F4F6' : WHITE,
-                      color: paginaTiendas === totalPaginasTiendas ? '#9CA3AF' : CARBON, fontFamily: 'inherit',
+                      border: `1.5px solid ${darkMode ? '#444' : BORDER}`, background: paginaTiendas === totalPaginasTiendas ? (darkMode ? '#333' : '#F3F4F6') : (darkMode ? '#2a2a2a' : WHITE),
+                      color: paginaTiendas === totalPaginasTiendas ? '#9CA3AF' : (darkMode ? '#f3f4f6' : CARBON), fontFamily: 'inherit',
                     }}
                   >
                     Siguiente →
@@ -3929,52 +4044,52 @@ export default function AdminDashboard() {
           <div style={{ display: 'grid', gap: '20px' }}>
             {/* STATS HEADER CARDS */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
-              <div style={{ background: WHITE, borderRadius: 16, padding: '20px', border: `1px solid ${BORDER}`, boxShadow: '0 2px 10px rgba(0,0,0,0.03)', display: 'flex', alignItems: 'center', gap: 16 }}>
-                <div style={{ width: 48, height: 48, borderRadius: 12, background: '#fdf2f4', display: 'grid', placeItems: 'center', color: VINOTINTO }}>
+              <div style={{ background: darkMode ? '#1e1e1e' : WHITE, borderRadius: 16, padding: '20px', border: darkMode ? '1.5px solid rgba(224,90,122,0.38)' : '1.5px solid #F8D2DA', boxShadow: '0 2px 10px rgba(0,0,0,0.03)', display: 'flex', alignItems: 'center', gap: 16 }}>
+                <div style={{ width: 48, height: 48, borderRadius: 12, background: darkMode ? 'rgba(224,90,122,0.15)' : '#fdf2f4', display: 'grid', placeItems: 'center', color: darkMode ? '#e05a7a' : VINOTINTO }}>
                   <IconAlertTriangle width={24} height={24} strokeWidth={2} />
                 </div>
                 <div>
-                  <p style={{ margin: 0, fontSize: '0.8rem', color: GRAY, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Reclamos</p>
-                  <h3 style={{ margin: '4px 0 0', fontSize: '1.6rem', fontWeight: 800, color: CARBON }}>{conteoReclamosPorEstado.Todos}</h3>
+                  <p style={{ margin: 0, fontSize: '0.8rem', color: darkMode ? '#c8c8c8' : GRAY, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Reclamos</p>
+                  <h3 style={{ margin: '4px 0 0', fontSize: '1.6rem', fontWeight: 800, color: darkMode ? '#f3f4f6' : CARBON }}>{conteoReclamosPorEstado.Todos}</h3>
                 </div>
               </div>
 
-              <div style={{ background: WHITE, borderRadius: 16, padding: '20px', border: conteoReclamosPorEstado.Abierto > 0 ? '1.5px solid #93c5fd' : `1px solid ${BORDER}`, boxShadow: '0 2px 10px rgba(0,0,0,0.03)', display: 'flex', alignItems: 'center', gap: 16 }}>
-                <div style={{ width: 48, height: 48, borderRadius: 12, background: '#eff6ff', display: 'grid', placeItems: 'center', color: '#1e40af' }}>
+              <div style={{ background: darkMode ? '#1e1e1e' : WHITE, borderRadius: 16, padding: '20px', border: darkMode ? '1.5px solid rgba(147,197,253,0.35)' : '1.5px solid #93c5fd', boxShadow: '0 2px 10px rgba(0,0,0,0.03)', display: 'flex', alignItems: 'center', gap: 16 }}>
+                <div style={{ width: 48, height: 48, borderRadius: 12, background: darkMode ? 'rgba(59,130,246,0.15)' : '#eff6ff', display: 'grid', placeItems: 'center', color: darkMode ? '#93c5fd' : '#1e40af' }}>
                   <span style={{ fontSize: '1.2rem', fontWeight: 900 }}>!</span>
                 </div>
                 <div>
-                  <p style={{ margin: 0, fontSize: '0.8rem', color: '#1e40af', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Abiertos (Pendientes)</p>
-                  <h3 style={{ margin: '4px 0 0', fontSize: '1.6rem', fontWeight: 800, color: '#1e40af' }}>{conteoReclamosPorEstado.Abierto}</h3>
+                  <p style={{ margin: 0, fontSize: '0.8rem', color: darkMode ? '#93c5fd' : '#1e40af', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Abiertos</p>
+                  <h3 style={{ margin: '4px 0 0', fontSize: '1.6rem', fontWeight: 800, color: darkMode ? '#93c5fd' : '#1e40af' }}>{conteoReclamosPorEstado.Abierto}</h3>
                 </div>
               </div>
 
-              <div style={{ background: WHITE, borderRadius: 16, padding: '20px', border: `1px solid ${BORDER}`, boxShadow: '0 2px 10px rgba(0,0,0,0.03)', display: 'flex', alignItems: 'center', gap: 16 }}>
-                <div style={{ width: 48, height: 48, borderRadius: 12, background: '#fff7ed', display: 'grid', placeItems: 'center', color: '#ea580c' }}>
+              <div style={{ background: darkMode ? '#1e1e1e' : WHITE, borderRadius: 16, padding: '20px', border: darkMode ? '1.5px solid rgba(251,146,60,0.38)' : '1.5px solid #fdba74', boxShadow: '0 2px 10px rgba(0,0,0,0.03)', display: 'flex', alignItems: 'center', gap: 16 }}>
+                <div style={{ width: 48, height: 48, borderRadius: 12, background: darkMode ? 'rgba(234,88,12,0.15)' : '#fff7ed', display: 'grid', placeItems: 'center', color: darkMode ? '#fb923c' : '#ea580c' }}>
                   <IconTool width={24} height={24} strokeWidth={2} />
                 </div>
                 <div>
-                  <p style={{ margin: 0, fontSize: '0.8rem', color: '#ea580c', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>En Revisión</p>
-                  <h3 style={{ margin: '4px 0 0', fontSize: '1.6rem', fontWeight: 800, color: '#ea580c' }}>{conteoReclamosPorEstado['En revisión']}</h3>
+                  <p style={{ margin: 0, fontSize: '0.8rem', color: darkMode ? '#fb923c' : '#ea580c', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>En Revisión</p>
+                  <h3 style={{ margin: '4px 0 0', fontSize: '1.6rem', fontWeight: 800, color: darkMode ? '#fb923c' : '#ea580c' }}>{conteoReclamosPorEstado['En revisión']}</h3>
                 </div>
               </div>
 
-              <div style={{ background: WHITE, borderRadius: 16, padding: '20px', border: `1px solid ${BORDER}`, boxShadow: '0 2px 10px rgba(0,0,0,0.03)', display: 'flex', alignItems: 'center', gap: 16 }}>
-                <div style={{ width: 48, height: 48, borderRadius: 12, background: '#dcfce7', display: 'grid', placeItems: 'center', color: '#16a34a' }}>
+              <div style={{ background: darkMode ? '#1e1e1e' : WHITE, borderRadius: 16, padding: '20px', border: darkMode ? '1.5px solid rgba(52,211,153,0.38)' : '1.5px solid #a7f3d0', boxShadow: '0 2px 10px rgba(0,0,0,0.03)', display: 'flex', alignItems: 'center', gap: 16 }}>
+                <div style={{ width: 48, height: 48, borderRadius: 12, background: darkMode ? 'rgba(16,185,129,0.15)' : '#dcfce7', display: 'grid', placeItems: 'center', color: '#16a34a' }}>
                   <IconCheck width={24} height={24} strokeWidth={2.5} />
                 </div>
                 <div>
-                  <p style={{ margin: 0, fontSize: '0.8rem', color: '#166534', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Resueltos</p>
-                  <h3 style={{ margin: '4px 0 0', fontSize: '1.6rem', fontWeight: 800, color: '#166534' }}>{conteoReclamosPorEstado.Resuelto}</h3>
+                  <p style={{ margin: 0, fontSize: '0.8rem', color: darkMode ? '#34d399' : '#166534', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Resueltos</p>
+                  <h3 style={{ margin: '4px 0 0', fontSize: '1.6rem', fontWeight: 800, color: darkMode ? '#34d399' : '#166534' }}>{conteoReclamosPorEstado.Resuelto}</h3>
                 </div>
               </div>
             </div>
 
             {/* SEARCH & FILTERS BAR */}
-            <div style={{ background: WHITE, borderRadius: 16, padding: '16px 20px', border: `1px solid ${BORDER}`, display: 'flex', flexWrap: 'wrap', gap: 14, alignItems: 'center', justifyContent: 'space-between', boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
+            <div style={{ background: darkMode ? '#1e1e1e' : WHITE, borderRadius: 16, padding: '16px 20px', border: `1px solid ${darkMode ? '#3a3a3a' : BORDER}`, display: 'flex', flexWrap: 'wrap', gap: 14, alignItems: 'center', justifyContent: 'space-between', boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
               {/* Search */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 260, background: '#fafafa', border: `1px solid ${BORDER}`, borderRadius: 10, padding: '8px 14px' }}>
-                <IconSearch width={18} height={18} style={{ color: GRAY }} />
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 260, background: darkMode ? '#252525' : '#fafafa', border: `1px solid ${darkMode ? '#3a3a3a' : BORDER}`, borderRadius: 10, padding: '8px 14px' }}>
+                <IconSearch width={18} height={18} style={{ color: darkMode ? '#c8c8c8' : GRAY }} />
                 <input
                   type="text"
                   value={busquedaReclamos}
@@ -3983,10 +4098,10 @@ export default function AdminDashboard() {
                     setPaginaReclamos(1);
                   }}
                   placeholder="Buscar por comprador, tienda, orden o ID..."
-                  style={{ border: 'none', background: 'transparent', outline: 'none', width: '100%', fontSize: '0.9rem', fontFamily: 'inherit', color: CARBON }}
+                  style={{ border: 'none', background: 'transparent', outline: 'none', width: '100%', fontSize: '0.9rem', fontFamily: 'inherit', color: darkMode ? '#f3f4f6' : CARBON }}
                 />
                 {busquedaReclamos && (
-                  <button onClick={() => { setBusquedaReclamos(''); setPaginaReclamos(1); }} style={{ border: 0, background: 'none', cursor: 'pointer', color: GRAY, padding: 0 }}>
+                  <button onClick={() => { setBusquedaReclamos(''); setPaginaReclamos(1); }} style={{ border: 0, background: 'none', cursor: 'pointer', color: darkMode ? '#c8c8c8' : GRAY, padding: 0 }}>
                     <IconClose width={16} height={16} />
                   </button>
                 )}
@@ -4013,9 +4128,13 @@ export default function AdminDashboard() {
                       style={{
                         padding: '7px 14px',
                         borderRadius: 20,
-                        border: `1.5px solid ${activo ? p.activeBorder : p.inactiveBorder}`,
-                        background: activo ? p.activeBg : p.inactiveBg,
-                        color: activo ? WHITE : p.inactiveColor,
+                        border: `1.5px solid ${activo
+                          ? (darkMode ? 'rgba(255,255,255,0.45)' : p.activeBorder)
+                          : (darkMode ? 'rgba(255,255,255,0.14)' : p.inactiveBorder)}`,
+                        background: activo
+                          ? (darkMode ? 'rgba(255,255,255,0.16)' : p.activeBg)
+                          : (darkMode ? 'rgba(255,255,255,0.04)' : p.inactiveBg),
+                        color: activo ? WHITE : (darkMode ? '#d4d4d8' : p.inactiveColor),
                         fontWeight: 700,
                         fontSize: '0.83rem',
                         cursor: 'pointer',
@@ -4031,7 +4150,7 @@ export default function AdminDashboard() {
                         width: 7,
                         height: 7,
                         borderRadius: '50%',
-                        background: activo ? WHITE : p.dot,
+                        background: activo ? (darkMode ? p.dot : WHITE) : p.dot,
                         display: 'inline-block',
                       }} />
                       {p.label}
@@ -4040,8 +4159,10 @@ export default function AdminDashboard() {
                         borderRadius: 10,
                         fontSize: '0.72rem',
                         fontWeight: 800,
-                        background: activo ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.06)',
-                        color: activo ? WHITE : p.inactiveColor,
+                        background: activo
+                          ? (darkMode ? 'rgba(255,255,255,0.22)' : 'rgba(255,255,255,0.25)')
+                          : (darkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'),
+                        color: activo ? WHITE : (darkMode ? '#d4d4d8' : p.inactiveColor),
                       }}>
                         {count}
                       </span>
@@ -4053,10 +4174,10 @@ export default function AdminDashboard() {
 
             {/* LIST OF COMPLAINTS */}
             {reclamosFiltrados.length === 0 ? (
-              <div style={{ background: WHITE, borderRadius: 16, padding: '48px 24px', textAlign: 'center', color: GRAY, border: `1px solid ${BORDER}`, boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
+              <div style={{ background: darkMode ? '#1e1e1e' : WHITE, borderRadius: 16, padding: '48px 24px', textAlign: 'center', color: darkMode ? '#c8c8c8' : GRAY, border: `1px solid ${darkMode ? '#3a3a3a' : BORDER}`, boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
                 <div style={{ fontSize: '2.5rem', marginBottom: 12 }}>📋</div>
-                <p style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600, color: CARBON }}>No hay quejas ni reclamos que coincidan con la búsqueda.</p>
-                <p style={{ margin: '6px 0 0', fontSize: '0.9rem', color: GRAY }}>Prueba cambiando el filtro o término de búsqueda.</p>
+                <p style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600, color: darkMode ? '#f3f4f6' : CARBON }}>No hay quejas ni reclamos que coincidan con la búsqueda.</p>
+                <p style={{ margin: '6px 0 0', fontSize: '0.9rem', color: darkMode ? '#c8c8c8' : GRAY }}>Prueba cambiando el filtro o término de búsqueda.</p>
               </div>
             ) : (
               <>
@@ -4068,6 +4189,7 @@ export default function AdminDashboard() {
                       onAbrirChat={handleAbrirChat}
                       onAbrirModal={handleAbrirModal}
                       onVerEvidencia={handleVerEvidencia}
+                      darkMode={darkMode}
                     />
                   ))}
                 </div>
@@ -4078,15 +4200,15 @@ export default function AdminDashboard() {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    background: WHITE,
+                    background: darkMode ? '#1e1e1e' : WHITE,
                     borderRadius: 14,
                     padding: '12px 20px',
-                    border: `1px solid ${BORDER}`,
+                    border: `1px solid ${darkMode ? '#3a3a3a' : BORDER}`,
                     boxShadow: '0 2px 10px rgba(0,0,0,0.03)',
                     flexWrap: 'wrap',
                     gap: 10,
                   }}>
-                    <span style={{ fontSize: '0.84rem', color: GRAY, fontWeight: 600 }}>
+                    <span style={{ fontSize: '0.84rem', color: darkMode ? '#c8c8c8' : GRAY, fontWeight: 600 }}>
                       Mostrando {((paginaReclamos - 1) * registrosPorPagina) + 1}–{Math.min(paginaReclamos * registrosPorPagina, reclamosFiltrados.length)} de {reclamosFiltrados.length} reclamos
                     </span>
 
@@ -4097,9 +4219,9 @@ export default function AdminDashboard() {
                         style={{
                           padding: '7px 16px',
                           borderRadius: 8,
-                          border: `1.5px solid ${BORDER}`,
-                          background: paginaReclamos === 1 ? '#F3F4F6' : WHITE,
-                          color: paginaReclamos === 1 ? '#9CA3AF' : CARBON,
+                          border: `1.5px solid ${darkMode ? '#3a3a3a' : BORDER}`,
+                          background: paginaReclamos === 1 ? (darkMode ? '#2d2d2d' : '#F3F4F6') : (darkMode ? '#1e1e1e' : WHITE),
+                          color: paginaReclamos === 1 ? (darkMode ? '#6b7280' : '#9CA3AF') : (darkMode ? '#f3f4f6' : CARBON),
                           fontSize: '0.82rem',
                           fontWeight: 700,
                           cursor: paginaReclamos === 1 ? 'not-allowed' : 'pointer',
@@ -4126,9 +4248,9 @@ export default function AdminDashboard() {
                         style={{
                           padding: '7px 16px',
                           borderRadius: 8,
-                          border: `1.5px solid ${BORDER}`,
-                          background: paginaReclamos === totalPaginasReclamos ? '#F3F4F6' : WHITE,
-                          color: paginaReclamos === totalPaginasReclamos ? '#9CA3AF' : CARBON,
+                          border: `1.5px solid ${darkMode ? '#3a3a3a' : BORDER}`,
+                          background: paginaReclamos === totalPaginasReclamos ? (darkMode ? '#2d2d2d' : '#F3F4F6') : (darkMode ? '#1e1e1e' : WHITE),
+                          color: paginaReclamos === totalPaginasReclamos ? (darkMode ? '#6b7280' : '#9CA3AF') : (darkMode ? '#f3f4f6' : CARBON),
                           fontSize: '0.82rem',
                           fontWeight: 700,
                           cursor: paginaReclamos === totalPaginasReclamos ? 'not-allowed' : 'pointer',
@@ -4163,9 +4285,9 @@ export default function AdminDashboard() {
                     }}
                     style={{
                       display: 'inline-flex', alignItems: 'center', gap: 8,
-                      border: activo ? `2px solid ${VINOTINTO}` : `1.5px solid ${BORDER}`,
-                      background: activo ? `linear-gradient(135deg, ${VINOTINTO} 0%, #9b2c4e 100%)` : WHITE,
-                      color: activo ? WHITE : VINOTINTO,
+                      border: activo ? `2px solid ${VINOTINTO}` : `1.5px solid ${darkMode ? '#3a3a3a' : BORDER}`,
+                      background: activo ? `linear-gradient(135deg, ${VINOTINTO} 0%, #9b2c4e 100%)` : (darkMode ? '#1e1e1e' : WHITE),
+                      color: activo ? WHITE : (darkMode ? '#e05a7a' : VINOTINTO),
                       borderRadius: 999, padding: '10px 20px', cursor: 'pointer',
                       fontWeight: 700, fontSize: '0.9rem', transition: 'all 0.2s',
                       boxShadow: activo ? '0 4px 14px rgba(122,30,58,0.25)' : 'none',
@@ -4173,7 +4295,11 @@ export default function AdminDashboard() {
                   >
                     <IconTool width={16} height={16} strokeWidth={2} />
                     {v.label}
-                    <span style={{ background: activo ? 'rgba(255,255,255,0.25)' : '#f7e9ee', borderRadius: 999, padding: '1px 9px', fontSize: '0.78rem', fontWeight: 800 }}>
+                    <span style={{
+                      background: activo ? 'rgba(255,255,255,0.25)' : (darkMode ? 'rgba(224,90,122,0.2)' : '#f7e9ee'),
+                      color: activo ? WHITE : (darkMode ? '#f0a8bd' : VINOTINTO),
+                      borderRadius: 999, padding: '1px 9px', fontSize: '0.78rem', fontWeight: 800,
+                    }}>
                       {v.count}
                     </span>
                   </button>
@@ -4182,12 +4308,12 @@ export default function AdminDashboard() {
             </div>
 
             {soporteMostrado.length === 0 ? (
-              <div style={{ background: WHITE, borderRadius: 16, padding: '48px 24px', textAlign: 'center', border: '1.5px dashed #eee3e9' }}>
-                <div style={{ width: 56, height: 56, margin: '0 auto 14px', borderRadius: '50%', background: '#fdf2f4', display: 'grid', placeItems: 'center' }}>
-                  <IconTool width={26} height={26} style={{ color: VINOTINTO }} />
+              <div style={{ background: darkMode ? '#1e1e1e' : WHITE, borderRadius: 16, padding: '48px 24px', textAlign: 'center', border: '1.5px dashed #eee3e9' }}>
+                <div style={{ width: 56, height: 56, margin: '0 auto 14px', borderRadius: '50%', background: darkMode ? 'rgba(224,90,122,0.15)' : '#fdf2f4', display: 'grid', placeItems: 'center' }}>
+                  <IconTool width={26} height={26} style={{ color: darkMode ? '#e05a7a' : VINOTINTO }} />
                 </div>
-                <p style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: CARBON }}>No hay tickets de soporte</p>
-                <p style={{ margin: '6px 0 0', fontSize: '0.88rem', color: GRAY }}>
+                <p style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: darkMode ? '#f3f4f6' : CARBON }}>No hay tickets de soporte</p>
+                <p style={{ margin: '6px 0 0', fontSize: '0.88rem', color: darkMode ? '#c8c8c8' : GRAY }}>
                   No hay tickets pendientes para {vistaSoporte === 'compradores' ? 'compradores' : 'vendedores'}.
                 </p>
               </div>
@@ -4207,6 +4333,7 @@ export default function AdminDashboard() {
                       key={ticket.id_solicitud}
                       ticket={ticket}
                       onAbrirModal={handleAbrirModal}
+                      darkMode={darkMode}
                     />
                   ))}
                 </div>
@@ -4217,15 +4344,15 @@ export default function AdminDashboard() {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    background: WHITE,
+                    background: darkMode ? '#1e1e1e' : WHITE,
                     borderRadius: 14,
                     padding: '12px 20px',
-                    border: `1px solid ${BORDER}`,
+                    border: `1px solid ${darkMode ? '#3a3a3a' : BORDER}`,
                     boxShadow: '0 2px 10px rgba(0,0,0,0.03)',
                     flexWrap: 'wrap',
                     gap: 10,
                   }}>
-                    <span style={{ fontSize: '0.84rem', color: GRAY, fontWeight: 600 }}>
+                    <span style={{ fontSize: '0.84rem', color: darkMode ? '#c8c8c8' : GRAY, fontWeight: 600 }}>
                       Mostrando {((paginaSoporte - 1) * registrosPorPagina) + 1}–{Math.min(paginaSoporte * registrosPorPagina, soporteMostrado.length)} de {soporteMostrado.length} tickets
                     </span>
 
@@ -4236,9 +4363,9 @@ export default function AdminDashboard() {
                         style={{
                           padding: '7px 16px',
                           borderRadius: 8,
-                          border: `1.5px solid ${BORDER}`,
-                          background: paginaSoporte === 1 ? '#F3F4F6' : WHITE,
-                          color: paginaSoporte === 1 ? '#9CA3AF' : CARBON,
+                          border: `1.5px solid ${darkMode ? '#3a3a3a' : BORDER}`,
+                          background: paginaSoporte === 1 ? (darkMode ? '#2d2d2d' : '#F3F4F6') : (darkMode ? '#1e1e1e' : WHITE),
+                          color: paginaSoporte === 1 ? (darkMode ? '#6b7280' : '#9CA3AF') : (darkMode ? '#f3f4f6' : CARBON),
                           fontSize: '0.82rem',
                           fontWeight: 700,
                           cursor: paginaSoporte === 1 ? 'not-allowed' : 'pointer',
@@ -4265,9 +4392,9 @@ export default function AdminDashboard() {
                         style={{
                           padding: '7px 16px',
                           borderRadius: 8,
-                          border: `1.5px solid ${BORDER}`,
-                          background: paginaSoporte === totalPaginasSoporte ? '#F3F4F6' : WHITE,
-                          color: paginaSoporte === totalPaginasSoporte ? '#9CA3AF' : CARBON,
+                          border: `1.5px solid ${darkMode ? '#3a3a3a' : BORDER}`,
+                          background: paginaSoporte === totalPaginasSoporte ? (darkMode ? '#2d2d2d' : '#F3F4F6') : (darkMode ? '#1e1e1e' : WHITE),
+                          color: paginaSoporte === totalPaginasSoporte ? (darkMode ? '#6b7280' : '#9CA3AF') : (darkMode ? '#f3f4f6' : CARBON),
                           fontSize: '0.82rem',
                           fontWeight: 700,
                           cursor: paginaSoporte === totalPaginasSoporte ? 'not-allowed' : 'pointer',
@@ -4291,23 +4418,23 @@ export default function AdminDashboard() {
             {/* KPI Cards */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(155px, 1fr))', gap: 14 }}>
               {[
-                { label: 'Total órdenes', value: ordenes.length,                                                                                   color: VINOTINTO, bg: '#fdf2f4', border: '#f0dde4', icon: <IconPackage width={22} height={22} /> },
-                { label: 'Pagadas',       value: ordenes.filter(o => (o.estado||'').toLowerCase() === 'pagado').length,                            color: '#047857',  bg: '#ecfdf5', border: '#a7f3d0', icon: <IconDollar width={22} height={22} /> },
-                { label: 'Entregadas',    value: ordenes.filter(o => ['entregada','entregado'].includes((o.estado||'').toLowerCase())).length,     color: '#D97706',  bg: '#fffbeb', border: '#fde68a', icon: <IconCheck width={22} height={22} strokeWidth={2.5} /> },
-                { label: 'Enviadas',      value: ordenes.filter(o => (o.estado||'').toLowerCase() === 'enviado').length,                           color: '#ea580c',  bg: '#fff7ed', border: '#fdba74', icon: <IconTruck width={22} height={22} /> },
-                { label: 'Canceladas',    value: ordenes.filter(o => (o.estado||'').toLowerCase() === 'cancelada').length,                         color: '#B91C1C',  bg: '#fef2f2', border: '#fecaca', icon: <IconBan width={22} height={22} /> },
+                { label: 'Total órdenes', value: ordenes.length, color: darkMode ? '#fb7185' : VINOTINTO, bg: darkMode ? 'rgba(251, 113, 133, 0.15)' : '#fdf2f4', border: darkMode ? 'rgba(251, 113, 133, 0.3)' : '#f0dde4', icon: <IconPackage width={22} height={22} /> },
+                { label: 'Pagadas', value: ordenes.filter(o => ['pagado', 'pagada'].includes((o.estado || o.estado_orden || '').toLowerCase())).length, color: darkMode ? '#34d399' : '#047857', bg: darkMode ? 'rgba(52, 211, 153, 0.15)' : '#ecfdf5', border: darkMode ? 'rgba(52, 211, 153, 0.3)' : '#a7f3d0', icon: <IconDollar width={22} height={22} /> },
+                { label: 'Entregadas', value: ordenes.filter(o => ['entregada', 'entregado', 'completada', 'finalizada'].includes((o.estado || o.estado_orden || '').toLowerCase())).length, color: darkMode ? '#60a5fa' : '#2563EB', bg: darkMode ? 'rgba(96, 165, 250, 0.15)' : '#eff6ff', border: darkMode ? 'rgba(96, 165, 250, 0.3)' : '#bfdbfe', icon: <IconCheck width={22} height={22} strokeWidth={2.5} /> },
+                { label: 'Enviadas', value: ordenes.filter(o => ['enviada', 'enviado'].includes((o.estado || o.estado_orden || '').toLowerCase())).length, color: darkMode ? '#fb923c' : '#ea580c', bg: darkMode ? 'rgba(251, 146, 60, 0.15)' : '#fff7ed', border: darkMode ? 'rgba(251, 146, 60, 0.3)' : '#fdba74', icon: <IconTruck width={22} height={22} /> },
+                { label: 'Canceladas', value: ordenes.filter(o => ['cancelada', 'cancelado'].includes((o.estado || o.estado_orden || '').toLowerCase())).length, color: darkMode ? '#f87171' : '#B91C1C', bg: darkMode ? 'rgba(248, 113, 113, 0.15)' : '#fef2f2', border: darkMode ? 'rgba(248, 113, 113, 0.3)' : '#fecaca', icon: <IconBan width={22} height={22} /> },
               ].map((kpi) => (
                 <div key={kpi.label} style={{
-                  background: WHITE, borderRadius: 14, padding: '16px 18px',
-                  border: `1px solid ${BORDER}`, boxShadow: '0 2px 10px rgba(0,0,0,0.03)',
+                  background: darkMode ? '#1e1e1e' : WHITE, borderRadius: 14, padding: '16px 18px',
+                  border: `1px solid ${kpi.border}`, boxShadow: darkMode ? '0 4px 14px rgba(0,0,0,0.25)' : '0 2px 10px rgba(0,0,0,0.03)',
                   display: 'flex', alignItems: 'center', gap: 14,
                 }}>
                   <div style={{ width: 44, height: 44, borderRadius: 12, background: kpi.bg, color: kpi.color, display: 'grid', placeItems: 'center', flexShrink: 0, border: `1px solid ${kpi.border}` }}>
                     {kpi.icon}
                   </div>
                   <div>
-                    <p style={{ margin: 0, fontSize: '0.73rem', color: GRAY, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{kpi.label}</p>
-                    <h3 style={{ margin: '2px 0 0', fontSize: '1.5rem', fontWeight: 800, color: kpi.color }}>{kpi.value}</h3>
+                    <p style={{ margin: 0, fontSize: '0.73rem', color: darkMode ? '#9ca3af' : GRAY, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{kpi.label}</p>
+                    <h3 style={{ margin: '2px 0 0', fontSize: '1.5rem', fontWeight: 800, color: kpi.color }}>{kpi.value.toLocaleString('es-CO')}</h3>
                   </div>
                 </div>
               ))}
@@ -4315,40 +4442,49 @@ export default function AdminDashboard() {
 
             {/* Barra de búsqueda y filtros */}
             <div style={{
-              background: WHITE, borderRadius: 14, padding: '14px 18px',
-              border: `1px solid ${BORDER}`, boxShadow: '0 2px 10px rgba(0,0,0,0.03)',
+              background: darkMode ? '#1e1e1e' : WHITE, borderRadius: 14, padding: '14px 18px',
+              border: `1px solid ${darkMode ? '#333333' : BORDER}`, boxShadow: darkMode ? '0 4px 14px rgba(0,0,0,0.25)' : '0 2px 10px rgba(0,0,0,0.03)',
               display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'center',
             }}>
               <div style={{
                 display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 240,
-                background: '#fafafa', border: `1px solid ${BORDER}`, borderRadius: 10, padding: '8px 14px',
+                background: darkMode ? '#262626' : '#fafafa', border: `1px solid ${darkMode ? '#3a3a3a' : BORDER}`, borderRadius: 10, padding: '8px 14px',
               }}>
-                <IconSearch width={17} height={17} style={{ color: GRAY }} />
+                <IconSearch width={17} height={17} style={{ color: darkMode ? '#9ca3af' : GRAY }} />
                 <input
                   type="text"
                   value={busquedaOrdenes}
                   onChange={(e) => { setBusquedaOrdenes(e.target.value); setPaginaOrdenes(1); }}
                   placeholder="Buscar por ID orden o estado..."
-                  style={{ border: 'none', background: 'transparent', outline: 'none', width: '100%', fontSize: '0.88rem', fontFamily: 'inherit', color: CARBON }}
+                  style={{ border: 'none', background: 'transparent', outline: 'none', width: '100%', fontSize: '0.88rem', fontFamily: 'inherit', color: darkMode ? '#f3f4f6' : CARBON }}
                 />
                 {busquedaOrdenes && (
-                  <button onClick={() => { setBusquedaOrdenes(''); setPaginaOrdenes(1); }} style={{ border: 0, background: 'none', cursor: 'pointer', color: GRAY, padding: 0 }}>
+                  <button onClick={() => { setBusquedaOrdenes(''); setPaginaOrdenes(1); }} style={{ border: 0, background: 'none', cursor: 'pointer', color: darkMode ? '#9ca3af' : GRAY, padding: 0 }}>
                     <IconClose width={15} height={15} />
                   </button>
                 )}
               </div>
               <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap', alignItems: 'center' }}>
-                {[{ value: 'todos', label: 'Todas', color: VINOTINTO, bg: '#fdf2f4', border: '#f0dde4' }, ...ESTADOS_ORDEN].map((est) => {
+                {[{ value: 'todos', label: 'Todas', color: darkMode ? '#fb7185' : VINOTINTO, bg: darkMode ? 'rgba(251, 113, 133, 0.15)' : '#fdf2f4', border: darkMode ? 'rgba(251, 113, 133, 0.3)' : '#f0dde4' }, ...ESTADOS_ORDEN].map((est) => {
                   const activo = filtroEstadoOrden === est.value;
+                  const itemColor = darkMode && est.color === VINOTINTO ? '#fb7185' : (darkMode && est.color === '#2563EB' ? '#60a5fa' : est.color);
+                  const activeBg = darkMode ? `${itemColor}25` : est.bg;
                   return (
                     <button key={est.value} onClick={() => { setFiltroEstadoOrden(est.value); setPaginaOrdenes(1); }} style={{
                       padding: '6px 14px', borderRadius: 20, cursor: 'pointer', fontWeight: 700, fontSize: '0.79rem', fontFamily: 'inherit',
                       display: 'inline-flex', alignItems: 'center', gap: 6,
-                      border: activo ? `1.5px solid ${est.color}` : `1px solid ${BORDER}`,
-                      background: activo ? est.bg : WHITE, color: activo ? est.color : GRAY,
-                      boxShadow: activo ? '0 2px 8px rgba(0,0,0,0.08)' : 'none', transition: 'all 0.15s',
+                      border: activo
+                        ? (darkMode ? '1.5px solid rgba(255,255,255,0.45)' : `1.5px solid ${itemColor}`)
+                        : `1px solid ${darkMode ? 'rgba(255,255,255,0.14)' : BORDER}`,
+                      background: activo
+                        ? (darkMode ? 'rgba(255,255,255,0.16)' : activeBg)
+                        : (darkMode ? 'rgba(255,255,255,0.04)' : WHITE),
+                      color: darkMode
+                        ? (activo ? '#ffffff' : '#d4d4d8')
+                        : (est.value === 'todos' ? (activo ? itemColor : GRAY) : itemColor),
+                      boxShadow: activo ? '0 2px 8px rgba(0,0,0,0.12)' : 'none', transition: 'all 0.15s',
                     }}>
-                      {est.value !== 'todos' && <span style={{ width: 7, height: 7, borderRadius: '50%', background: est.color, display: 'inline-block' }} />}
+                      {est.value !== 'todos' && <span style={{ width: 7, height: 7, borderRadius: '50%', background: itemColor, display: 'inline-block' }} />}
                       {est.label}
                     </button>
                   );
@@ -4357,70 +4493,169 @@ export default function AdminDashboard() {
             </div>
 
             {/* Tabla con columnas reales */}
-            <div style={{ background: WHITE, borderRadius: 16, overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', border: `1px solid ${BORDER}` }}>
+            <div style={{ background: darkMode ? '#1e1e1e' : WHITE, borderRadius: 16, overflow: 'hidden', boxShadow: darkMode ? '0 4px 20px rgba(0,0,0,0.3)' : '0 4px 20px rgba(0,0,0,0.05)', border: `1px solid ${darkMode ? '#333333' : BORDER}` }}>
               {ordenesFiltradas.length === 0 ? (
-                <div style={{ padding: '48px 24px', textAlign: 'center', color: GRAY }}>
+                <div style={{ padding: '48px 24px', textAlign: 'center', color: darkMode ? '#9ca3af' : GRAY }}>
                   <div style={{ fontSize: '2.2rem', marginBottom: 10 }}>📦</div>
-                  <p style={{ margin: 0, fontWeight: 600, color: CARBON, fontSize: '1rem' }}>No se encontraron órdenes</p>
-                  <p style={{ margin: '4px 0 0', fontSize: '0.86rem' }}>Prueba cambiando el filtro o el término de búsqueda.</p>
+                  <p style={{ margin: 0, fontWeight: 600, color: darkMode ? '#f3f4f6' : CARBON, fontSize: '1rem' }}>No se encontraron órdenes</p>
+                  <p style={{ margin: '4px 0 0', fontSize: '0.86rem', color: darkMode ? '#9ca3af' : GRAY }}>Prueba cambiando el filtro o el término de búsqueda.</p>
                 </div>
               ) : (
                 <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
                   <thead>
                     <tr style={{ background: `linear-gradient(135deg, ${VINOTINTO} 0%, #9b2c4e 100%)` }}>
-                      <th style={{ padding: '15px 24px', textAlign: 'left', color: 'rgba(255,255,255,0.95)', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', width: '25%' }}>ID Orden</th>
-                      <th style={{ padding: '15px 16px', textAlign: 'center', color: 'rgba(255,255,255,0.95)', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', width: '25%' }}>Estado</th>
-                      <th style={{ padding: '15px 16px', textAlign: 'center', color: 'rgba(255,255,255,0.95)', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', width: '25%' }}>Total</th>
-                      <th style={{ padding: '15px 16px', textAlign: 'center', color: 'rgba(255,255,255,0.95)', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', width: '25%' }}>Fecha</th>
+                      <th style={{ padding: '15px 14px', textAlign: 'left', color: 'rgba(255,255,255,0.95)', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', width: '10%' }}>ID Orden</th>
+                      <th style={{ padding: '15px 14px', textAlign: 'left', color: 'rgba(255,255,255,0.95)', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', width: '24%' }}>Comprador</th>
+                      <th style={{ padding: '15px 14px', textAlign: 'left', color: 'rgba(255,255,255,0.95)', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', width: '22%' }}>Librería / Vendedor</th>
+                      <th style={{ padding: '15px 12px', textAlign: 'center', color: 'rgba(255,255,255,0.95)', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', width: '13%' }}>Estado</th>
+                      <th style={{ padding: '15px 14px', textAlign: 'right', color: 'rgba(255,255,255,0.95)', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', width: '12%' }}>Total</th>
+                      <th style={{ padding: '15px 12px', textAlign: 'center', color: 'rgba(255,255,255,0.95)', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', width: '10%' }}>Fecha</th>
+                      <th style={{ padding: '15px 12px', textAlign: 'center', color: 'rgba(255,255,255,0.95)', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', width: '9%' }}>Detalles</th>
                     </tr>
                   </thead>
                   <tbody>
                     {ordenesPaginadas.map((o, i) => {
-                      const estadoNorm = (o.estado || '').toLowerCase();
-                      const cfgEstado = ESTADOS_ORDEN.find(e => e.value === estadoNorm)
-                        || (estadoNorm.includes('entr') ? ESTADOS_ORDEN[1]
-                        : estadoNorm.includes('comp') || estadoNorm.includes('final') ? ESTADOS_ORDEN[4]
-                        : { color: GRAY, bg: '#f9fafb', border: '#e5e7eb' });
-                      const fechaStr = o.fecha
-                        ? new Date(o.fecha).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' })
+                      const estadoNorm = (o.estado || o.estado_orden || '').toLowerCase();
+                      const cfgEstado = configEstadoOrden(o.estado || o.estado_orden);
+                      const fechaStr = o.fecha || o.fecha_orden
+                        ? new Date(o.fecha || o.fecha_orden).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' })
                         : '—';
+                      const rowBg = i % 2 === 0 ? (darkMode ? '#1e1e1e' : WHITE) : (darkMode ? '#252525' : '#fdfcfc');
+                      const rowHoverBg = darkMode ? '#2d2d2d' : '#fdf8f9';
+                      const nombreComp = o.comprador || o.nombre_usuario || `Usuario #${o.id_usuario}`;
+                      const emailComp = o.email_comprador || o.email_usuario || '';
+                      const nombreTienda = o.vendedor_tienda || o.tienda || o.vendedor || 'Librería BookyHome';
                       return (
                         <tr
                           key={`${o.id_orden}-${i}`}
-                          style={{ background: i % 2 === 0 ? WHITE : '#fdfcfc', borderBottom: `1px solid ${BORDER}`, transition: 'background 0.15s' }}
-                          onMouseEnter={e => e.currentTarget.style.background = '#fdf8f9'}
-                          onMouseLeave={e => e.currentTarget.style.background = i % 2 === 0 ? WHITE : '#fdfcfc'}
+                          style={{ background: rowBg, borderBottom: `1px solid ${darkMode ? '#333333' : BORDER}`, transition: 'background 0.15s' }}
+                          onMouseEnter={e => e.currentTarget.style.background = rowHoverBg}
+                          onMouseLeave={e => e.currentTarget.style.background = rowBg}
                         >
-                          <td style={{ padding: '15px 24px', verticalAlign: 'middle', textAlign: 'left' }}>
+                          <td style={{ padding: '14px 14px', verticalAlign: 'middle', textAlign: 'left' }}>
                             <span style={{
-                              fontSize: '0.84rem', fontWeight: 800, color: VINOTINTO,
-                              background: '#fdf2f4', borderRadius: 8, padding: '5px 12px',
-                              border: '1px solid #f0dde4', display: 'inline-block',
+                              fontSize: '0.84rem', fontWeight: 800,
+                              color: darkMode ? '#fca5a5' : VINOTINTO,
+                              background: darkMode ? 'rgba(122, 30, 58, 0.35)' : '#fdf2f4',
+                              borderRadius: 8, padding: '5px 10px',
+                              border: `1px solid ${darkMode ? 'rgba(122, 30, 58, 0.6)' : '#f0dde4'}`,
+                              display: 'inline-block',
                             }}>
                               #{o.id_orden}
                             </span>
                           </td>
-                          <td style={{ padding: '15px 16px', verticalAlign: 'middle', textAlign: 'center' }}>
+                          <td style={{ padding: '14px 14px', verticalAlign: 'middle', textAlign: 'left' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                              <AvatarUsuario
+                                usuario={{ nombre_usuario: nombreComp, foto_perfil: o.foto_comprador, rol: 'comprador' }}
+                                size={34}
+                                fontSize="0.82rem"
+                              />
+                              <div style={{ minWidth: 0, overflow: 'hidden' }}>
+                                <div style={{ fontWeight: 700, fontSize: '0.86rem', color: darkMode ? '#f3f4f6' : CARBON, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                  {nombreComp}
+                                </div>
+                                {emailComp && (
+                                  <div style={{ fontSize: '0.74rem', color: darkMode ? '#9ca3af' : GRAY, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                    {emailComp}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </td>
+                          <td style={{ padding: '14px 14px', verticalAlign: 'middle', textAlign: 'left' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                              {o.foto_vendedor ? (
+                                <AvatarUsuario
+                                  usuario={{ nombre_usuario: nombreTienda, foto_perfil: o.foto_vendedor, rol: 'vendedor' }}
+                                  size={34}
+                                  fontSize="0.82rem"
+                                />
+                              ) : (
+                                <div style={{
+                                  width: 34, height: 34, minWidth: 34, borderRadius: '50%',
+                                  background: darkMode ? 'rgba(56, 189, 248, 0.15)' : '#e0f2fe',
+                                  color: darkMode ? '#38bdf8' : '#0284c7',
+                                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                  fontSize: '0.95rem', fontWeight: 800, flexShrink: 0,
+                                  border: `1px solid ${darkMode ? 'rgba(56, 189, 248, 0.3)' : '#bae6fd'}`,
+                                }}>
+                                  🏪
+                                </div>
+                              )}
+                              <div style={{ minWidth: 0, overflow: 'hidden' }}>
+                                <div style={{ fontWeight: 700, fontSize: '0.86rem', color: darkMode ? '#38bdf8' : '#0369a1', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                  {nombreTienda}
+                                </div>
+                                {o.telefono_tienda && (
+                                  <div style={{ fontSize: '0.72rem', color: darkMode ? '#9ca3af' : GRAY, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                    📞 {o.telefono_tienda}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </td>
+                          <td style={{ padding: '14px 12px', verticalAlign: 'middle', textAlign: 'center' }}>
                             <span style={{
-                              background: cfgEstado.bg, color: cfgEstado.color,
-                              border: `1px solid ${cfgEstado.border}`,
-                              padding: '5px 14px', borderRadius: 20,
-                              fontSize: '0.8rem', fontWeight: 700,
+                              background: darkMode ? `${cfgEstado.color}20` : cfgEstado.bg,
+                              color: darkMode ? (cfgEstado.darkColor || '#e5e7eb') : cfgEstado.color,
+                              border: `1px solid ${darkMode ? `${cfgEstado.color}55` : cfgEstado.border}`,
+                              padding: '5px 12px', borderRadius: 20,
+                              fontSize: '0.78rem', fontWeight: 700,
                               display: 'inline-flex', alignItems: 'center', gap: 6,
                             }}>
                               <span style={{ width: 7, height: 7, borderRadius: '50%', background: cfgEstado.color, flexShrink: 0 }} />
-                              {o.estado}
+                              {cfgEstado.label || o.estado || o.estado_orden}
                             </span>
                           </td>
-                          <td style={{ padding: '15px 16px', verticalAlign: 'middle', textAlign: 'center' }}>
-                            <span style={{ fontSize: '0.92rem', fontWeight: 800, color: CARBON }}>
+                          <td style={{ padding: '14px 14px', verticalAlign: 'middle', textAlign: 'right' }}>
+                            <span style={{ fontSize: '0.92rem', fontWeight: 800, color: darkMode ? '#f3f4f6' : CARBON }}>
                               ${Number(o.total || 0).toLocaleString('es-CO')}
                             </span>
+                            {o.metodo_pago && (
+                              <div style={{ fontSize: '0.72rem', color: darkMode ? '#9ca3af' : GRAY, fontWeight: 500 }}>
+                                {o.metodo_pago}
+                              </div>
+                            )}
                           </td>
-                          <td style={{ padding: '15px 16px', verticalAlign: 'middle', textAlign: 'center' }}>
-                            <span style={{ fontSize: '0.84rem', color: GRAY, fontWeight: 600 }}>
+                          <td style={{ padding: '14px 12px', verticalAlign: 'middle', textAlign: 'center' }}>
+                            <span style={{ fontSize: '0.82rem', color: darkMode ? '#9ca3af' : GRAY, fontWeight: 600 }}>
                               {fechaStr}
                             </span>
+                          </td>
+                          <td style={{ padding: '14px 12px', verticalAlign: 'middle', textAlign: 'center' }}>
+                            <button
+                              type="button"
+                              onClick={() => abrirDetalleOrden(o)}
+                              title="Ver detalles de la orden y seguimiento"
+                              style={{
+                                background: darkMode ? 'rgba(251, 113, 133, 0.12)' : '#fdf2f4',
+                                border: `1px solid ${darkMode ? 'rgba(251, 113, 133, 0.35)' : '#f8d2da'}`,
+                                color: darkMode ? '#fb7185' : VINOTINTO,
+                                padding: '6px 11px',
+                                borderRadius: 8,
+                                cursor: 'pointer',
+                                fontWeight: 700,
+                                fontSize: '0.78rem',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 5,
+                                transition: 'all 0.15s ease',
+                                whiteSpace: 'nowrap',
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.background = darkMode ? 'rgba(251, 113, 133, 0.25)' : '#fae3e8';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.background = darkMode ? 'rgba(251, 113, 133, 0.12)' : '#fdf2f4';
+                              }}
+                            >
+                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                                <circle cx="12" cy="12" r="3" />
+                              </svg>
+                              Detalles
+                            </button>
                           </td>
                         </tr>
                       );
@@ -4434,23 +4669,37 @@ export default function AdminDashboard() {
             {ordenesFiltradas.length > registrosPorPagina && (
               <div style={{
                 display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                background: WHITE, borderRadius: 14, padding: '12px 20px',
-                border: `1px solid ${BORDER}`, boxShadow: '0 2px 10px rgba(0,0,0,0.03)',
+                background: darkMode ? '#1e1e1e' : WHITE, borderRadius: 14, padding: '12px 20px',
+                border: `1px solid ${darkMode ? '#333333' : BORDER}`, boxShadow: darkMode ? '0 4px 14px rgba(0,0,0,0.25)' : '0 2px 10px rgba(0,0,0,0.03)',
                 flexWrap: 'wrap', gap: 10,
               }}>
-                <span style={{ fontSize: '0.84rem', color: GRAY, fontWeight: 600 }}>
+                <span style={{ fontSize: '0.84rem', color: darkMode ? '#9ca3af' : GRAY, fontWeight: 600 }}>
                   Mostrando {(paginaOrdenes - 1) * registrosPorPagina + 1}–{Math.min(paginaOrdenes * registrosPorPagina, ordenesFiltradas.length)} de {ordenesFiltradas.length} órdenes
                 </span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <button onClick={() => setPaginaOrdenes(prev => Math.max(prev - 1, 1))} disabled={paginaOrdenes === 1}
-                    style={{ padding: '7px 16px', borderRadius: 8, fontWeight: 700, fontSize: '0.82rem', cursor: paginaOrdenes === 1 ? 'not-allowed' : 'pointer', border: `1.5px solid ${BORDER}`, background: paginaOrdenes === 1 ? '#F3F4F6' : WHITE, color: paginaOrdenes === 1 ? '#9CA3AF' : CARBON, fontFamily: 'inherit' }}>
+                    style={{
+                      padding: '7px 16px', borderRadius: 8, fontWeight: 700, fontSize: '0.82rem',
+                      cursor: paginaOrdenes === 1 ? 'not-allowed' : 'pointer',
+                      border: `1.5px solid ${darkMode ? '#3a3a3a' : BORDER}`,
+                      background: paginaOrdenes === 1 ? (darkMode ? '#2d2d2d' : '#F3F4F6') : (darkMode ? '#262626' : WHITE),
+                      color: paginaOrdenes === 1 ? (darkMode ? '#52525b' : '#9CA3AF') : (darkMode ? '#f3f4f6' : CARBON),
+                      fontFamily: 'inherit',
+                    }}>
                     ← Anterior
                   </button>
                   <span style={{ padding: '7px 16px', borderRadius: 8, fontWeight: 800, fontSize: '0.82rem', background: VINOTINTO, color: WHITE }}>
                     {paginaOrdenes} / {totalPaginasOrdenes}
                   </span>
                   <button onClick={() => setPaginaOrdenes(prev => Math.min(prev + 1, totalPaginasOrdenes))} disabled={paginaOrdenes === totalPaginasOrdenes}
-                    style={{ padding: '7px 16px', borderRadius: 8, fontWeight: 700, fontSize: '0.82rem', cursor: paginaOrdenes === totalPaginasOrdenes ? 'not-allowed' : 'pointer', border: `1.5px solid ${BORDER}`, background: paginaOrdenes === totalPaginasOrdenes ? '#F3F4F6' : WHITE, color: paginaOrdenes === totalPaginasOrdenes ? '#9CA3AF' : CARBON, fontFamily: 'inherit' }}>
+                    style={{
+                      padding: '7px 16px', borderRadius: 8, fontWeight: 700, fontSize: '0.82rem',
+                      cursor: paginaOrdenes === totalPaginasOrdenes ? 'not-allowed' : 'pointer',
+                      border: `1.5px solid ${darkMode ? '#3a3a3a' : BORDER}`,
+                      background: paginaOrdenes === totalPaginasOrdenes ? (darkMode ? '#2d2d2d' : '#F3F4F6') : (darkMode ? '#262626' : WHITE),
+                      color: paginaOrdenes === totalPaginasOrdenes ? (darkMode ? '#52525b' : '#9CA3AF') : (darkMode ? '#f3f4f6' : CARBON),
+                      fontFamily: 'inherit',
+                    }}>
                     Siguiente →
                   </button>
                 </div>
@@ -4459,10 +4708,453 @@ export default function AdminDashboard() {
           </div>
         )}
 
+        {/* Modal de Detalle y Seguimiento de la Orden */}
+        {modalDetalleOrden && (() => {
+          const ord = modalDetalleOrden;
+          const fechaStr = ord.fecha || ord.fecha_orden
+            ? new Date(ord.fecha || ord.fecha_orden).toLocaleDateString('es-CO', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+            : '—';
+          const esRetiro = (ord.tipo_entrega || '').toLowerCase() === 'retiro_tienda';
+          const cfgEstadoModal = configEstadoOrden(ord.estado || ord.estado_orden);
+
+          return (
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-label={`Detalles de la Orden #${ord.id_orden}`}
+              style={{
+                position: 'fixed',
+                inset: 0,
+                background: 'rgba(0,0,0,0.65)',
+                zIndex: 4500,
+                display: 'grid',
+                placeItems: 'center',
+                padding: 20,
+                overflowY: 'auto',
+              }}
+            >
+              <button
+                type="button"
+                aria-label="Cerrar detalles de la orden"
+                onClick={() => setModalDetalleOrden(null)}
+                style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', padding: 0, border: 0, background: 'transparent', cursor: 'default' }}
+              />
+              <div
+                style={{
+                  background: darkMode ? '#1e1e1e' : WHITE,
+                  borderRadius: 20,
+                  width: '100%',
+                  maxWidth: 780,
+                  maxHeight: '90vh',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  overflow: 'hidden',
+                  boxShadow: '0 24px 64px rgba(0,0,0,0.35)',
+                  border: `1px solid ${darkMode ? '#333333' : BORDER}`,
+                  position: 'relative',
+                  zIndex: 1,
+                }}
+              >
+                {/* Header */}
+                <div style={{
+                  background: 'linear-gradient(135deg, #7A1E3A 0%, #5E1629 100%)',
+                  padding: '20px 24px',
+                  color: WHITE,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  flexShrink: 0,
+                }}>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, color: WHITE }}>
+                        Orden #{ord.id_orden}
+                      </h3>
+                      <span style={{
+                        background: 'rgba(255,255,255,0.2)',
+                        color: WHITE,
+                        padding: '3px 10px',
+                        borderRadius: 20,
+                        fontSize: '0.78rem',
+                        fontWeight: 700,
+                        border: '1px solid rgba(255,255,255,0.3)'
+                      }}>
+                        {ord.estado || ord.estado_orden}
+                      </span>
+                    </div>
+                    <p style={{ margin: '4px 0 0', fontSize: '0.8rem', color: 'rgba(255,255,255,0.85)' }}>
+                      Registrada el {fechaStr} · Método de pago: {ord.metodo_pago || 'Transferencia'}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setModalDetalleOrden(null)}
+                    style={{
+                      background: 'rgba(255,255,255,0.2)',
+                      border: 'none',
+                      color: WHITE,
+                      width: 34,
+                      height: 34,
+                      borderRadius: '50%',
+                      cursor: 'pointer',
+                      display: 'grid',
+                      placeItems: 'center',
+                      fontWeight: 800,
+                      fontSize: '1rem',
+                    }}
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                {/* Scrollable Body */}
+                <div style={{ padding: '20px 24px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 18 }}>
+
+                  {/* Tarjeta de Envío / Guía de Seguimiento */}
+                  <div style={{
+                    background: darkMode ? '#262626' : '#f9fafb',
+                    border: `1.5px solid ${darkMode ? '#3a3a3a' : '#e5e7eb'}`,
+                    borderRadius: 14,
+                    padding: '16px 18px',
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ fontSize: '1.2rem' }}>📦</span>
+                        <span style={{ fontWeight: 800, fontSize: '0.92rem', color: darkMode ? '#f3f4f6' : CARBON }}>
+                          {esRetiro ? 'Retiro en Tienda / Punto Físico' : 'Información de Envío y Guía de Transporte'}
+                        </span>
+                      </div>
+                      {ord.numero_guia && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <span style={{
+                            fontSize: '0.75rem',
+                            fontWeight: 700,
+                            color: darkMode ? '#fb7185' : VINOTINTO,
+                            background: darkMode ? 'rgba(251, 113, 133, 0.15)' : '#fdf2f4',
+                            padding: '3px 8px',
+                            borderRadius: 6,
+                            fontFamily: 'monospace',
+                          }}>
+                            Guía: {ord.numero_guia}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              try {
+                                await navigator.clipboard.writeText(ord.numero_guia);
+                                setCopiadoId(`guia_${ord.numero_guia}`);
+                                notify('Número de guía copiado', 'info');
+                                setTimeout(() => setCopiadoId(null), 2000);
+                              } catch {
+                                notify('No se pudo copiar el número de guía', 'error');
+                              }
+                            }}
+                            style={{
+                              background: darkMode ? '#333' : '#fff',
+                              border: `1px solid ${darkMode ? '#444' : BORDER}`,
+                              padding: '4px 8px',
+                              borderRadius: 6,
+                              fontSize: '0.72rem',
+                              fontWeight: 700,
+                              cursor: 'pointer',
+                              color: darkMode ? '#e5e7eb' : CARBON,
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: 4
+                            }}
+                          >
+                            {copiadoId === `guia_${ord.numero_guia}` ? '✓ Copiado' : 'Copiar'}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
+                      <div>
+                        <span style={{ fontSize: '0.74rem', color: darkMode ? '#9ca3af' : GRAY, fontWeight: 600, display: 'block', textTransform: 'uppercase' }}>
+                          Empresa / Operador
+                        </span>
+                        <span style={{ fontSize: '0.86rem', fontWeight: 700, color: darkMode ? '#f3f4f6' : CARBON }}>
+                          🚚 {ord.empresa_mensajeria || (esRetiro ? 'Retiro directo' : 'BookyHome Envíos')}
+                        </span>
+                      </div>
+
+                      <div>
+                        <span style={{ fontSize: '0.74rem', color: darkMode ? '#9ca3af' : GRAY, fontWeight: 600, display: 'block', textTransform: 'uppercase' }}>
+                          Estado del Pedido
+                        </span>
+                        <span style={{
+                          fontSize: '0.84rem',
+                          fontWeight: 700,
+                          color: darkMode ? cfgEstadoModal.darkColor : cfgEstadoModal.color,
+                        }}>
+                          ● {ord.estado || ord.estado_orden || 'En proceso'}
+                        </span>
+                        {ord.estado_envio && (
+                          <span style={{ display: 'block', marginTop: 2, fontSize: '0.74rem', color: darkMode ? '#9ca3af' : GRAY }}>
+                            Envío: {ord.estado_envio}
+                          </span>
+                        )}
+                      </div>
+
+                      {ord.fecha_despacho && (
+                        <div>
+                          <span style={{ fontSize: '0.74rem', color: darkMode ? '#9ca3af' : GRAY, fontWeight: 600, display: 'block', textTransform: 'uppercase' }}>
+                            Fecha de Despacho
+                          </span>
+                          <span style={{ fontSize: '0.84rem', fontWeight: 600, color: darkMode ? '#e5e7eb' : CARBON }}>
+                            {ord.fecha_despacho}
+                          </span>
+                        </div>
+                      )}
+
+                      {ord.fecha_estimada_entrega && (
+                        <div>
+                          <span style={{ fontSize: '0.74rem', color: darkMode ? '#9ca3af' : GRAY, fontWeight: 600, display: 'block', textTransform: 'uppercase' }}>
+                            Entrega Estimada
+                          </span>
+                          <span style={{ fontSize: '0.84rem', fontWeight: 600, color: darkMode ? '#e5e7eb' : CARBON }}>
+                            {ord.fecha_estimada_entrega}
+                          </span>
+                        </div>
+                      )}
+
+                      <div style={{ gridColumn: '1 / -1' }}>
+                        <span style={{ fontSize: '0.74rem', color: darkMode ? '#9ca3af' : GRAY, fontWeight: 600, display: 'block', textTransform: 'uppercase' }}>
+                          Destino / Dirección de Entrega
+                        </span>
+                        <span style={{ fontSize: '0.86rem', fontWeight: 600, color: darkMode ? '#f3f4f6' : CARBON }}>
+                          📍 {ord.direccion_completa ? `${ord.direccion_completa}${ord.ciudad_destino ? `, ${ord.ciudad_destino}` : ''}${ord.departamento_destino ? ` (${ord.departamento_destino})` : ''}` : (esRetiro ? 'Retiro en punto de venta de la librería' : 'Dirección estándar registrada')}
+                        </span>
+                        {esRetiro && ord.pin_retiro && (
+                          <div style={{ marginTop: 6, fontSize: '0.82rem', color: darkMode ? '#38bdf8' : '#0284c7', fontWeight: 700 }}>
+                            🔑 PIN de Retiro: {ord.pin_retiro} {ord.estado_retiro ? `(${ord.estado_retiro})` : ''}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Comprador y Vendedor en dos columnas */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 14 }}>
+                    {/* Comprador */}
+                    <div style={{
+                      background: darkMode ? '#262626' : '#f9fafb',
+                      border: `1.5px solid ${darkMode ? '#3a3a3a' : '#e5e7eb'}`,
+                      borderRadius: 14,
+                      padding: '14px 16px',
+                    }}>
+                      <span style={{ fontSize: '0.74rem', color: darkMode ? '#9ca3af' : GRAY, fontWeight: 700, textTransform: 'uppercase', display: 'block', marginBottom: 10 }}>
+                        👤 Comprador
+                      </span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <AvatarUsuario
+                          usuario={{ nombre_usuario: ord.comprador || ord.nombre_usuario, foto_perfil: ord.foto_comprador, rol: 'comprador' }}
+                          size={44}
+                          fontSize="1.1rem"
+                        />
+                        <div style={{ minWidth: 0, flex: 1 }}>
+                          <div style={{ fontWeight: 800, fontSize: '0.92rem', color: darkMode ? '#f3f4f6' : CARBON, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {ord.comprador || ord.nombre_usuario || `Usuario #${ord.id_usuario}`}
+                          </div>
+                          <div style={{ fontSize: '0.78rem', color: darkMode ? '#9ca3af' : GRAY, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            ✉️ {ord.email_comprador || ord.email_usuario || 'Sin correo registrado'}
+                          </div>
+                          {ord.telefono_comprador && (
+                            <div style={{ fontSize: '0.78rem', color: darkMode ? '#9ca3af' : GRAY }}>
+                              📞 {ord.telefono_comprador}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Vendedor / Tienda */}
+                    <div style={{
+                      background: darkMode ? '#262626' : '#f9fafb',
+                      border: `1.5px solid ${darkMode ? '#3a3a3a' : '#e5e7eb'}`,
+                      borderRadius: 14,
+                      padding: '14px 16px',
+                    }}>
+                      <span style={{ fontSize: '0.74rem', color: darkMode ? '#9ca3af' : GRAY, fontWeight: 700, textTransform: 'uppercase', display: 'block', marginBottom: 10 }}>
+                        🏪 Librería / Vendedor
+                      </span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        {ord.foto_vendedor ? (
+                          <AvatarUsuario
+                            usuario={{ nombre_usuario: ord.vendedor_tienda || ord.tienda, foto_perfil: ord.foto_vendedor, rol: 'vendedor' }}
+                            size={44}
+                            fontSize="1.1rem"
+                          />
+                        ) : (
+                          <div style={{
+                            width: 44, height: 44, minWidth: 44, borderRadius: '50%',
+                            background: darkMode ? 'rgba(56, 189, 248, 0.15)' : '#e0f2fe',
+                            color: darkMode ? '#38bdf8' : '#0284c7',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            fontSize: '1.25rem', fontWeight: 800, flexShrink: 0,
+                            border: `1px solid ${darkMode ? 'rgba(56, 189, 248, 0.3)' : '#bae6fd'}`,
+                          }}>
+                            🏪
+                          </div>
+                        )}
+                        <div style={{ minWidth: 0, flex: 1 }}>
+                          <div style={{ fontWeight: 800, fontSize: '0.92rem', color: darkMode ? '#38bdf8' : '#0369a1', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {ord.vendedor_tienda || ord.tienda || ord.vendedor || 'Librería BookyHome'}
+                          </div>
+                          {ord.telefono_tienda && (
+                            <div style={{ fontSize: '0.78rem', color: darkMode ? '#9ca3af' : GRAY }}>
+                              📞 {ord.telefono_tienda}
+                            </div>
+                          )}
+                          <div style={{ fontSize: '0.74rem', color: darkMode ? '#9ca3af' : GRAY }}>
+                            Vendedor oficial de la plataforma
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Libros / Items de la Orden */}
+                  <div style={{
+                    background: darkMode ? '#262626' : '#f9fafb',
+                    border: `1.5px solid ${darkMode ? '#3a3a3a' : '#e5e7eb'}`,
+                    borderRadius: 14,
+                    padding: '16px 18px',
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                      <span style={{ fontWeight: 800, fontSize: '0.9rem', color: darkMode ? '#f3f4f6' : CARBON }}>
+                        📚 Libros en esta Orden ({itemsDetalleOrden.length || ord.total_items || 1})
+                      </span>
+                    </div>
+
+                    {cargandoItemsOrden ? (
+                      <div style={{ textAlign: 'center', padding: '24px 0', color: darkMode ? '#9ca3af' : GRAY, fontSize: '0.86rem' }}>
+                        <div style={{ display: 'inline-block', width: 22, height: 22, border: `2.5px solid ${darkMode ? '#444' : '#e5e7eb'}`, borderTopColor: VINOTINTO, borderRadius: '50%', animation: 'spin 0.8s linear infinite', marginBottom: 8 }} />
+                        <div>Cargando detalle de libros...</div>
+                      </div>
+                    ) : itemsDetalleOrden.length > 0 ? (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                        {itemsDetalleOrden.map((it, idx) => (
+                          <div
+                            key={it.id_detalle || idx}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 12,
+                              padding: '10px 12px',
+                              background: darkMode ? '#1e1e1e' : WHITE,
+                              borderRadius: 10,
+                              border: `1px solid ${darkMode ? '#3a3a3a' : BORDER}`,
+                            }}
+                          >
+                            {it.imagen_portada ? (
+                              <img
+                                src={it.imagen_portada}
+                                alt={it.titulo}
+                                style={{ width: 38, height: 52, objectFit: 'cover', borderRadius: 4, flexShrink: 0 }}
+                              />
+                            ) : (
+                              <div style={{ width: 38, height: 52, borderRadius: 4, background: darkMode ? '#333' : '#eee', display: 'grid', placeItems: 'center', fontSize: '1.2rem', flexShrink: 0 }}>
+                                📖
+                              </div>
+                            )}
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ fontWeight: 700, fontSize: '0.88rem', color: darkMode ? '#f3f4f6' : CARBON, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {it.titulo || `Libro #${it.id_libro}`}
+                              </div>
+                              <div style={{ fontSize: '0.76rem', color: darkMode ? '#9ca3af' : GRAY }}>
+                                {it.autor_libro || 'Autor no especificado'} {it.isbn ? `· ISBN: ${it.isbn}` : ''}
+                              </div>
+                              {it.nombre_tienda && (
+                                <div style={{ fontSize: '0.72rem', color: darkMode ? '#38bdf8' : '#0369a1', fontWeight: 600 }}>
+                                  Vendido por: {it.nombre_tienda}
+                                </div>
+                              )}
+                            </div>
+                            <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                              <div style={{ fontSize: '0.78rem', color: darkMode ? '#9ca3af' : GRAY }}>
+                                {it.cantidad} {it.cantidad === 1 ? 'unidad' : 'unidades'} × ${Number(it.precio_unitario || 0).toLocaleString('es-CO')}
+                              </div>
+                              <div style={{ fontWeight: 800, fontSize: '0.92rem', color: darkMode ? '#f3f4f6' : CARBON }}>
+                                ${Number(it.precio_final || (it.cantidad * it.precio_unitario) || 0).toLocaleString('es-CO')}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div style={{ textAlign: 'center', padding: '16px 0', color: darkMode ? '#9ca3af' : GRAY, fontSize: '0.84rem' }}>
+                        Orden estándar de 1 o más ejemplares.
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Resumen Financiero */}
+                  <div style={{
+                    background: darkMode ? '#262626' : '#f9fafb',
+                    border: `1.5px solid ${darkMode ? '#3a3a3a' : '#e5e7eb'}`,
+                    borderRadius: 14,
+                    padding: '14px 18px',
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                      <span style={{ fontSize: '0.82rem', color: darkMode ? '#9ca3af' : GRAY }}>Costo de envío:</span>
+                      <span style={{ fontSize: '0.84rem', fontWeight: 700, color: darkMode ? '#e5e7eb' : CARBON }}>
+                        ${Number(ord.costo_envio || 0).toLocaleString('es-CO')}
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                      <span style={{ fontSize: '0.82rem', color: darkMode ? '#9ca3af' : GRAY }}>Método de pago:</span>
+                      <span style={{ fontSize: '0.84rem', fontWeight: 700, color: darkMode ? '#e5e7eb' : CARBON }}>
+                        💳 {ord.metodo_pago || 'Transferencia'}
+                      </span>
+                    </div>
+                    <div style={{ height: 1, background: darkMode ? '#3a3a3a' : BORDER, margin: '8px 0' }} />
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '1rem', fontWeight: 800, color: darkMode ? '#f3f4f6' : CARBON }}>Total de la Orden:</span>
+                      <span style={{ fontSize: '1.25rem', fontWeight: 800, color: darkMode ? '#fb7185' : VINOTINTO }}>
+                        ${Number(ord.total || 0).toLocaleString('es-CO')} COP
+                      </span>
+                    </div>
+                  </div>
+
+                </div>
+
+                {/* Footer */}
+                <div style={{
+                  padding: '14px 24px',
+                  background: darkMode ? '#262626' : '#fafafa',
+                  borderTop: `1px solid ${darkMode ? '#333333' : BORDER}`,
+                  display: 'flex',
+                  justifyContent: 'flex-end',
+                  gap: 10,
+                  flexShrink: 0,
+                }}>
+                  <button
+                    type="button"
+                    onClick={() => setModalDetalleOrden(null)}
+                    style={{
+                      padding: '9px 20px',
+                      borderRadius: 10,
+                      border: `1.5px solid ${darkMode ? '#444' : BORDER}`,
+                      background: darkMode ? '#1e1e1e' : WHITE,
+                      color: darkMode ? '#e5e7eb' : CARBON,
+                      fontWeight: 700,
+                      fontSize: '0.85rem',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Cerrar
+                  </button>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
         {evidenciaPreview && (
           <div role="dialog" aria-modal="true" aria-label="Evidencia del reclamo" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.7)', zIndex: 3000, display: 'grid', placeItems: 'center', padding: 24 }}>
             <button type="button" aria-label="Cerrar evidencia del reclamo" onClick={() => setEvidenciaPreview(null)} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', padding: 0, border: 0, background: 'transparent', cursor: 'default' }} />
-            <img src={evidenciaPreview} alt="Evidencia del reclamo" style={{ position: 'relative', zIndex: 1, maxWidth: '90vw', maxHeight: '85vh', borderRadius: 10, background: WHITE }} />
+            <img src={evidenciaPreview} alt="Evidencia del reclamo" style={{ position: 'relative', zIndex: 1, maxWidth: '90vw', maxHeight: '85vh', borderRadius: 10, background: darkMode ? '#1e1e1e' : WHITE }} />
           </div>
         )}
 
@@ -4470,31 +5162,31 @@ export default function AdminDashboard() {
         {modalOpen && modalReclamo && (
           <div role="dialog" aria-modal="true" aria-labelledby="complaint-response-title" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 4000, display: 'grid', placeItems: 'center', padding: 24 }}>
             <button type="button" aria-label="Cerrar respuesta del reclamo" onClick={() => { setModalOpen(false); setModalReclamo(null); }} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', padding: 0, border: 0, background: 'transparent', cursor: 'default' }} />
-            <div style={{ position: 'relative', zIndex: 1, background: WHITE, borderRadius: 20, padding: 32, maxWidth: 520, width: '100%', boxShadow: '0 20px 60px rgba(0,0,0,0.25)' }}>
+            <div style={{ position: 'relative', zIndex: 1, background: darkMode ? '#1e1e1e' : WHITE, borderRadius: 20, padding: 32, maxWidth: 520, width: '100%', boxShadow: '0 20px 60px rgba(0,0,0,0.25)' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
                 <h2 id="complaint-response-title" style={{ margin: 0, color: modalReclamo?.estado === 'Rechazado' ? '#dc2626' : modalReclamo?.estado === 'En revisión' ? '#ea580c' : VINOTINTO, fontSize: '1.35rem', fontWeight: 800 }}>
                   {modalReclamo?.estado === 'En revisión'
                     ? 'Marcar como En revisión'
                     : modalReclamo?.estado === 'Rechazado'
-                    ? 'Rechazar solicitud'
-                    : 'Resolver y notificar al usuario'}
+                      ? 'Rechazar solicitud'
+                      : 'Resolver y notificar al usuario'}
                 </h2>
-                <button onClick={() => { setModalOpen(false); setModalReclamo(null); }} style={{ border: 0, background: '#f5f5f5', borderRadius: '50%', width: 32, height: 32, cursor: 'pointer', color: GRAY, display: 'grid', placeItems: 'center' }}>
+                <button onClick={() => { setModalOpen(false); setModalReclamo(null); }} style={{ border: 0, background: darkMode ? '#2d2d2d' : '#f5f5f5', borderRadius: '50%', width: 32, height: 32, cursor: 'pointer', color: darkMode ? '#c8c8c8' : GRAY, display: 'grid', placeItems: 'center' }}>
                   <IconClose width={16} height={16} />
                 </button>
               </div>
 
-              <div style={{ background: '#fafafa', border: `1px solid ${BORDER}`, borderRadius: 10, padding: '10px 14px', marginBottom: 16 }}>
-                <p style={{ margin: 0, color: CARBON, fontSize: '0.88rem', fontWeight: 600 }}>
+              <div style={{ background: darkMode ? '#252525' : '#fafafa', border: `1px solid ${darkMode ? '#3a3a3a' : BORDER}`, borderRadius: 10, padding: '10px 14px', marginBottom: 16 }}>
+                <p style={{ margin: 0, color: darkMode ? '#f3f4f6' : CARBON, fontSize: '0.88rem', fontWeight: 600 }}>
                   {modalReclamo?.tipo_solicitud === 'soporte' ? 'Ticket de Soporte' : 'Reclamo'} #{modalReclamo?.numero || modalReclamo?.id_solicitud}
                   {modalReclamo?.id_orden ? ` · Orden #${modalReclamo.id_orden}` : ''}
                 </p>
-                <p style={{ margin: '2px 0 0', color: GRAY, fontSize: '0.82rem' }}>
-                  Usuario: <strong style={{ color: CARBON }}>{modalReclamo?.comprador}</strong>
+                <p style={{ margin: '2px 0 0', color: darkMode ? '#c8c8c8' : GRAY, fontSize: '0.82rem' }}>
+                  Usuario: <strong style={{ color: darkMode ? '#f3f4f6' : CARBON }}>{modalReclamo?.comprador}</strong>
                 </p>
               </div>
 
-              <label htmlFor="complaint-response" style={{ display: 'block', marginBottom: 8, fontWeight: 700, color: CARBON, fontSize: '0.9rem' }}>
+              <label htmlFor="complaint-response" style={{ display: 'block', marginBottom: 8, fontWeight: 700, color: darkMode ? '#f3f4f6' : CARBON, fontSize: '0.9rem' }}>
                 Respuesta o resolución para el usuario:
               </label>
               <textarea
@@ -4507,7 +5199,7 @@ export default function AdminDashboard() {
                   width: '100%',
                   padding: 14,
                   borderRadius: 10,
-                  border: `1.5px solid ${BORDER}`,
+                  border: `1.5px solid ${darkMode ? '#3a3a3a' : BORDER}`,
                   fontSize: '0.95rem',
                   fontFamily: "'Montserrat', sans-serif",
                   resize: 'vertical',
@@ -4515,9 +5207,11 @@ export default function AdminDashboard() {
                   outline: 'none',
                   boxSizing: 'border-box',
                   transition: 'border-color 0.2s',
+                  background: darkMode ? '#252525' : WHITE,
+                  color: darkMode ? '#f3f4f6' : CARBON,
                 }}
                 onFocus={e => e.target.style.borderColor = VINOTINTO}
-                onBlur={e => e.target.style.borderColor = BORDER}
+                onBlur={e => e.target.style.borderColor = darkMode ? '#3a3a3a' : BORDER}
               />
               <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
                 <button
@@ -4525,9 +5219,9 @@ export default function AdminDashboard() {
                   style={{
                     padding: '11px 22px',
                     borderRadius: 10,
-                    border: `1px solid ${BORDER}`,
-                    background: WHITE,
-                    color: GRAY,
+                    border: `1px solid ${darkMode ? '#3a3a3a' : BORDER}`,
+                    background: darkMode ? '#1e1e1e' : WHITE,
+                    color: darkMode ? '#c8c8c8' : GRAY,
                     cursor: 'pointer',
                     fontWeight: 600,
                     fontSize: '0.92rem',
@@ -4554,8 +5248,8 @@ export default function AdminDashboard() {
                   {modalReclamo?.estado === 'En revisión'
                     ? 'Confirmar En revisión'
                     : modalReclamo?.estado === 'Rechazado'
-                    ? 'Confirmar Rechazo'
-                    : 'Resolver y notificar'}
+                      ? 'Confirmar Rechazo'
+                      : 'Resolver y notificar'}
                 </button>
               </div>
             </div>
@@ -4564,7 +5258,7 @@ export default function AdminDashboard() {
 
         {/* FINANZAS - BOOKYPAGO */}
         {activeSection === 'finanzas' && (
-          <BookyPagoFinanzas />
+          <BookyPagoFinanzas darkMode={darkMode} />
         )}
 
         {activeSection === 'perfil' && (
@@ -4584,11 +5278,11 @@ export default function AdminDashboard() {
           const cfg = ESTADOS_TIENDA.find(e => e.value === modalConfirmEstado.nuevoEstado) || ESTADOS_TIENDA[4];
           const esSuspension = modalConfirmEstado.nuevoEstado === 'suspendida';
           const mensajes = {
-            activa:     { icon: '✅', desc: 'La librería quedará activa y visible para los compradores.' },
-            pendiente:  { icon: '🕐', desc: 'La librería quedará en revisión y no podrá operar hasta ser aprobada.' },
+            activa: { icon: '✅', desc: 'La librería quedará activa y visible para los compradores.' },
+            pendiente: { icon: '🕐', desc: 'La librería quedará en revisión y no podrá operar hasta ser aprobada.' },
             vacaciones: { icon: '🏖️', desc: 'La librería entrará en modo vacaciones y sus productos no estarán disponibles temporalmente.' },
             suspendida: { icon: '🚫', desc: 'La librería será suspendida por incumplimiento. No podrá vender ni recibir pedidos en la plataforma.' },
-            inactiva:   { icon: '⭕', desc: 'La librería quedará marcada como inactiva.' },
+            inactiva: { icon: '⭕', desc: 'La librería quedará marcada como inactiva.' },
           };
           const info = mensajes[modalConfirmEstado.nuevoEstado] || { icon: '🔄', desc: `Cambiar estado a ${cfg.label}.` };
 
@@ -4608,7 +5302,7 @@ export default function AdminDashboard() {
               />
               <div
                 style={{
-                  background: WHITE,
+                  background: darkMode ? '#1e1e1e' : WHITE,
                   borderRadius: 20,
                   width: '100%',
                   maxWidth: esSuspension ? 540 : 430,
@@ -4616,7 +5310,7 @@ export default function AdminDashboard() {
                   display: 'flex',
                   flexDirection: 'column',
                   overflow: 'hidden',
-                  boxShadow: '0 24px 64px rgba(0,0,0,0.28)',
+                  boxShadow: darkMode ? '0 24px 64px rgba(0,0,0,0.6)' : '0 24px 64px rgba(0,0,0,0.28)',
                   animation: 'fadeIn 0.2s ease',
                   position: 'relative',
                   zIndex: 1,
@@ -4661,8 +5355,8 @@ export default function AdminDashboard() {
                 <div style={{ padding: '22px 24px', overflowY: 'auto' }}>
                   {/* Tienda afectada */}
                   <div style={{
-                    background: cfg.bg,
-                    border: `1.5px solid ${cfg.border}`,
+                    background: darkMode ? `${cfg.color}22` : cfg.bg,
+                    border: `1.5px solid ${darkMode ? `${cfg.color}44` : cfg.border}`,
                     borderRadius: 14,
                     padding: '12px 16px',
                     marginBottom: 16,
@@ -4691,7 +5385,7 @@ export default function AdminDashboard() {
                   </div>
 
                   {/* Descripción general */}
-                  <p style={{ margin: '0 0 16px', color: '#4B5563', fontSize: '0.88rem', lineHeight: 1.55 }}>
+                  <p style={{ margin: '0 0 16px', color: darkMode ? '#d1d5db' : '#4B5563', fontSize: '0.88rem', lineHeight: 1.55 }}>
                     {info.desc}
                   </p>
 
@@ -4700,13 +5394,13 @@ export default function AdminDashboard() {
                     <div style={{ marginBottom: 16 }}>
                       {/* Alerta explicativa */}
                       <div style={{
-                        background: '#FFFBEB',
-                        border: '1px solid #FDE68A',
+                        background: darkMode ? '#78350f33' : '#FFFBEB',
+                        border: `1px solid ${darkMode ? '#b4530944' : '#FDE68A'}`,
                         borderRadius: 10,
                         padding: '10px 14px',
                         marginBottom: 14,
                         fontSize: '0.82rem',
-                        color: '#92400E',
+                        color: darkMode ? '#fde68a' : '#92400E',
                         display: 'flex',
                         gap: 8,
                         lineHeight: 1.45
@@ -4718,7 +5412,7 @@ export default function AdminDashboard() {
                       </div>
 
                       {/* Motivos frecuentes / Chips */}
-                      <p style={{ margin: '0 0 8px', fontSize: '0.78rem', fontWeight: 700, color: '#374151', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                      <p style={{ margin: '0 0 8px', fontSize: '0.78rem', fontWeight: 700, color: darkMode ? '#d1d5db' : '#374151', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                         Motivos frecuentes (haz clic para seleccionar):
                       </p>
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
@@ -4733,9 +5427,9 @@ export default function AdminDashboard() {
                                 setErrorMotivoSuspension('');
                               }}
                               style={{
-                                background: seleccionado ? '#B91C1C' : '#F3F4F6',
-                                color: seleccionado ? WHITE : '#374151',
-                                border: seleccionado ? '1px solid #B91C1C' : '1px solid #E5E7EB',
+                                background: seleccionado ? '#B91C1C' : (darkMode ? '#2a2a2a' : '#F3F4F6'),
+                                color: seleccionado ? WHITE : (darkMode ? '#d1d5db' : '#374151'),
+                                border: seleccionado ? '1px solid #B91C1C' : `1px solid ${darkMode ? '#444' : '#E5E7EB'}`,
                                 borderRadius: 8,
                                 padding: '5px 10px',
                                 fontSize: '0.75rem',
@@ -4754,7 +5448,7 @@ export default function AdminDashboard() {
 
                       {/* Campo de texto para el motivo */}
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                        <label htmlFor="store-suspension-reason" style={{ fontSize: '0.8rem', fontWeight: 700, color: '#1F2937' }}>
+                        <label htmlFor="store-suspension-reason" style={{ fontSize: '0.8rem', fontWeight: 700, color: darkMode ? '#f3f4f6' : '#1F2937' }}>
                           Explicación detallada del motivo *
                         </label>
                         <span style={{ fontSize: '0.72rem', color: motivoSuspension.length > 400 ? '#DC2626' : '#9CA3AF', fontWeight: 600 }}>
@@ -4776,13 +5470,14 @@ export default function AdminDashboard() {
                           width: '100%',
                           padding: '10px 14px',
                           borderRadius: 10,
-                          border: errorMotivoSuspension ? '1.5px solid #EF4444' : '1.5px solid #D1D5DB',
+                          border: errorMotivoSuspension ? '1.5px solid #EF4444' : `1.5px solid ${darkMode ? '#444' : '#D1D5DB'}`,
                           fontSize: '0.86rem',
                           fontFamily: 'inherit',
                           lineHeight: 1.45,
                           outline: 'none',
                           boxSizing: 'border-box',
-                          background: '#FAFAFA',
+                          background: darkMode ? '#2a2a2a' : '#FAFAFA',
+                          color: darkMode ? '#f3f4f6' : CARBON,
                           resize: 'vertical',
                           minHeight: 85
                         }}
@@ -4806,9 +5501,9 @@ export default function AdminDashboard() {
                         flex: 1,
                         padding: '11px 0',
                         borderRadius: 10,
-                        border: `1.5px solid ${BORDER}`,
-                        background: WHITE,
-                        color: '#4B5563',
+                        border: `1.5px solid ${darkMode ? '#444' : BORDER}`,
+                        background: darkMode ? '#2a2a2a' : WHITE,
+                        color: darkMode ? '#d1d5db' : '#4B5563',
                         fontWeight: 700,
                         fontSize: '0.9rem',
                         cursor: guardandoEstadoTienda ? 'not-allowed' : 'pointer',
@@ -4843,8 +5538,8 @@ export default function AdminDashboard() {
                       {guardandoEstadoTienda
                         ? 'Procesando...'
                         : esSuspension
-                        ? '🚫 Suspender y Notificar'
-                        : 'Confirmar'}
+                          ? '🚫 Suspender y Notificar'
+                          : 'Confirmar'}
                     </button>
                   </div>
                 </div>
@@ -5137,7 +5832,7 @@ export default function AdminDashboard() {
 
                 {/* Content */}
                 <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: 18 }}>
-                  
+
                   {/* Grid de Estado y Rol */}
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                     <div style={{ background: '#FAFAF9', padding: '12px 14px', borderRadius: 12, border: '1px solid #E5E7EB' }}>

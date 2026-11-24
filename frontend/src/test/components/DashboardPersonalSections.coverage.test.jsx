@@ -20,6 +20,7 @@ const mocks = vi.hoisted(() => ({ navigate: vi.fn() }))
 vi.mock('react-router-dom', () => ({ useNavigate: () => mocks.navigate }))
 vi.mock('../../services/api', () => ({
   default: { get: vi.fn(), post: vi.fn(), put: vi.fn(), delete: vi.fn() },
+  getApiBaseUrl: () => 'http://localhost:8000',
   getCuponesDisponibles: vi.fn(),
   getEstadisticasUsuario: vi.fn(),
   getOrdenes: vi.fn(),
@@ -115,7 +116,6 @@ describe('secciones personales del comprador', () => {
     const checkboxes = await screen.findAllByRole('checkbox')
     expect(checkboxes[0].checked).toBe(true)
     fireEvent.click(checkboxes[0])
-    fireEvent.click(screen.getByText('Guardar cambios'))
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2))
     expect(JSON.parse(fetchMock.mock.calls[1][1].body).notificaciones_mensajes.email).toBe(false)

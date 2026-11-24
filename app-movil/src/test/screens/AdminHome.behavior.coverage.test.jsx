@@ -72,14 +72,14 @@ vi.mock('react-native', async () => {
     : part
   return {
     ActivityIndicator: element('span'),
-    FlatList: ({ data = [], renderItem, refreshControl, ListHeaderComponent, ListFooterComponent, ListEmptyComponent }) => (
+    FlatList: ({ data = [], renderItem, keyExtractor, refreshControl, ListHeaderComponent, ListFooterComponent, ListEmptyComponent }) => (
       ReactModule.createElement('div', null,
         renderListPart(refreshControl),
         renderListPart(ListHeaderComponent),
         data.length
           ? data.map((item, index) => ReactModule.createElement(
-            ReactModule.Fragment,
-            { key: index },
+            'div',
+            { key: index, 'data-item-key': keyExtractor?.(item, index) },
             renderItem({ item, index }),
           ))
           : renderListPart(ListEmptyComponent),
@@ -627,5 +627,20 @@ describe('AdminHome: flujos de administración', () => {
     fireEvent.error(remoteLogo)
     expect(screen.getByText('LU')).toBeTruthy()
     expect(screen.queryByAltText('Logo de Librería Uno')).toBeNull()
+  })
+
+  it('mantiene claves de orden únicas entre usuarios y al usar el ID global', async () => {
+    getAdminOrdenes.mockResolvedValueOnce({
+      data: [
+        { ...fixtures.ordenes[0], id_orden: 7, id_orden_db: 700 },
+        { ...fixtures.ordenes[1], id_orden: 7, id_usuario_propietario: 9 },
+      ],
+    })
+    const { container } = render(<AdminHome />)
+    fireEvent.click(await screen.findByText('Órdenes Procesadas'))
+
+    expect(await screen.findAllByText('Orden #7')).toHaveLength(2)
+    expect(container.querySelector('[data-item-key="orden-db-700"]')).toBeTruthy()
+    expect(container.querySelector('[data-item-key="orden-9-7"]')).toBeTruthy()
   })
 })

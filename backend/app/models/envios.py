@@ -80,7 +80,7 @@ def registrar_envio(id_comprador, id_orden, id_tienda, id_empresa, numero_guia):
 
         if not orden:
             return None, "Orden no encontrada"
-        if str(orden["estado_orden"]).lower() not in ("pagado", "enviado"):
+        if str(orden["estado_orden"]).lower() not in ("pagado", "pagada", "enviado", "enviada"):
             return None, "La guía solo puede registrarse cuando el pedido esté pagado"
 
         # Insertar o actualizar el envío en la tabla envios
@@ -96,7 +96,7 @@ def registrar_envio(id_comprador, id_orden, id_tienda, id_empresa, numero_guia):
         """, (id_orden, id_tienda, id_empresa, empresa["nombre_empresa"], numero_guia))
         # Una guía registrada significa que el pedido ya fue despachado.
         cursor.execute(
-            "UPDATE ordenes_compra SET estado_orden = 'enviado' WHERE id_orden = %s AND estado_orden = 'pagado'",
+            "UPDATE ordenes_compra SET estado_orden = 'enviada' WHERE id_orden = %s AND LOWER(estado_orden) IN ('pagado', 'pagada')",
             (id_orden,),
         )
 

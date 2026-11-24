@@ -365,8 +365,9 @@ export default function Notifications({ navigation }) {
   const handleOpen = async (item) => {
     if (!item.leida) await handleMarkRead(item.id_notificacion);
     const referenceId = item.referencia_id || item.id_referencia;
-    if (item.es_automatica || ['pedido', 'pago', 'entrega'].includes(item.tipo)) {
-      navigation.navigate('History');
+    if (item.es_automatica || ['pedido', 'pago', 'entrega', 'venta'].includes(item.tipo)) {
+      // El vendedor no tiene pantalla 'History'; sus ventas están en PedidosVendedor
+      navigation.navigate(isBuyer ? 'History' : 'PedidosVendedor');
     } else if (item.tipo === 'mensaje') {
       if (referenceId) {
         const storeName = (item.titulo || '').replace(/^Nuevo mensaje de\s+/i, '').trim() || 'Chat';

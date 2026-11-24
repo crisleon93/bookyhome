@@ -232,7 +232,7 @@ describe('BookyPagoFinanzas — Cobertura ampliada', () => {
 
     render(
       <MemoryRouter>
-        <BookyPagoFinanzas />
+        <BookyPagoFinanzas darkMode />
       </MemoryRouter>
     );
 

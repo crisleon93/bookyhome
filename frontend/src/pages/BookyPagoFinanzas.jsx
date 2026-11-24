@@ -33,7 +33,7 @@ function fmt(v) {
   }).format(v || 0);
 }
 
-function Badge({ tipo }) {
+function Badge({ tipo, darkMode }) {
   const cfg = {
     venta:   { label: 'Venta',   bg: GREEN_BG,   color: GREEN,  border: GREEN_BORDER,  icon: <IconPackage width={12} height={12} strokeWidth={2.5} /> },
     plan:    { label: 'Plan',    bg: BLUE_BG,    color: BLUE,   border: BLUE_BORDER,   icon: <IconStore   width={12} height={12} strokeWidth={2.5} /> },
@@ -42,7 +42,7 @@ function Badge({ tipo }) {
   return (
     <span style={{
       display: 'inline-flex', alignItems: 'center', gap: 5,
-      background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}`,
+      background: darkMode ? `${cfg.color}22` : cfg.bg, color: cfg.color, border: `1px solid ${darkMode ? `${cfg.color}44` : cfg.border}`,
       borderRadius: 20, padding: '3px 10px', fontSize: '0.74rem', fontWeight: 700,
       whiteSpace: 'nowrap',
     }}>
@@ -51,41 +51,41 @@ function Badge({ tipo }) {
   );
 }
 
-function KpiCard({ label, value, color, colorBg, colorBorder, icon, sub }) {
+function KpiCard({ label, value, color, colorBg, colorBorder, icon, sub, darkMode }) {
   return (
     <div style={{
-      background: WHITE, borderRadius: 16,
-      border: `1.5px solid ${colorBorder || BORDER}`,
-      boxShadow: '0 3px 14px rgba(122,30,58,0.07)',
+      background: darkMode ? '#1e1e1e' : WHITE, borderRadius: 16,
+      border: `1.5px solid ${darkMode ? '#333333' : (colorBorder || BORDER)}`,
+      boxShadow: darkMode ? '0 3px 14px rgba(0,0,0,0.3)' : '0 3px 14px rgba(122,30,58,0.07)',
       padding: '20px 22px',
       display: 'flex', flexDirection: 'column', gap: 10,
       borderTop: `4px solid ${color}`,
       transition: 'transform 0.15s, box-shadow 0.15s',
     }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <span style={{ fontSize: '0.82rem', fontWeight: 600, color: GRAY, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+        <span style={{ fontSize: '0.82rem', fontWeight: 600, color: darkMode ? '#9ca3af' : GRAY, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
           {label}
         </span>
         <div style={{
           width: 38, height: 38, borderRadius: '50%',
-          background: colorBg, display: 'grid', placeItems: 'center',
+          background: darkMode ? `${color}22` : colorBg, display: 'grid', placeItems: 'center',
           color: color, flexShrink: 0,
         }}>
           {icon}
         </div>
       </div>
-      <div style={{ fontSize: '1.6rem', fontWeight: 900, color: CARBON, lineHeight: 1 }}>
+      <div style={{ fontSize: '1.6rem', fontWeight: 900, color: darkMode ? '#f3f4f6' : CARBON, lineHeight: 1 }}>
         {value}
       </div>
       {sub && (
-        <div style={{ fontSize: '0.78rem', color: GRAY, fontWeight: 500 }}>{sub}</div>
+        <div style={{ fontSize: '0.78rem', color: darkMode ? '#9ca3af' : GRAY, fontWeight: 500 }}>{sub}</div>
       )}
     </div>
   );
 }
 
 /* ─── EstadisticasTab ───────────────────────────────────────── */
-function EstadisticasTab({ estadisticas, historial, balance }) {
+function EstadisticasTab({ estadisticas, historial, balance, darkMode }) {
   // Opciones seleccionables: todo | venta | plan | impulso
   const [filtro, setFiltro] = React.useState('todo');
   const [hoveredIdx, setHoveredIdx] = React.useState(null);
@@ -183,10 +183,10 @@ function EstadisticasTab({ estadisticas, historial, balance }) {
 
   return (
     <div>
-      <h3 style={{ margin: '0 0 6px', color: CARBON, fontSize: '1.05rem', fontWeight: 800 }}>
+      <h3 style={{ margin: '0 0 6px', color: darkMode ? '#f3f4f6' : CARBON, fontSize: '1.05rem', fontWeight: 800 }}>
         Estadísticas Financieras
       </h3>
-      <p style={{ margin: '0 0 20px', color: GRAY, fontSize: '0.83rem' }}>
+      <p style={{ margin: '0 0 20px', color: darkMode ? '#9ca3af' : GRAY, fontSize: '0.83rem' }}>
         Selecciona una categoría para ver su evolución en los últimos 30 días
       </p>
 
@@ -199,26 +199,26 @@ function EstadisticasTab({ estadisticas, historial, balance }) {
               key={opt.id}
               onClick={() => { setFiltro(opt.id); setHoveredIdx(null); }}
               style={{
-                background: active ? opt.colorBg : WHITE,
-                border: `${active ? 2 : 1.5}px solid ${active ? opt.color : BORDER}`,
+                background: active ? (darkMode ? `${opt.color}22` : opt.colorBg) : (darkMode ? '#252525' : WHITE),
+                border: `${active ? 2 : 1.5}px solid ${active ? opt.color : (darkMode ? '#333333' : BORDER)}`,
                 borderRadius: 14,
                 padding: '14px 16px',
                 cursor: 'pointer',
                 textAlign: 'left',
                 transition: 'all 0.18s',
-                boxShadow: active ? `0 4px 16px ${opt.color}22` : '0 1px 4px rgba(0,0,0,0.04)',
+                boxShadow: active ? `0 4px 16px ${opt.color}22` : (darkMode ? '0 1px 4px rgba(0,0,0,0.3)' : '0 1px 4px rgba(0,0,0,0.04)'),
                 outline: 'none',
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
                 <span style={{
-                  fontSize: '0.73rem', fontWeight: 700, color: active ? opt.color : GRAY,
+                  fontSize: '0.73rem', fontWeight: 700, color: active ? opt.color : (darkMode ? '#9ca3af' : GRAY),
                   textTransform: 'uppercase', letterSpacing: '0.06em',
                 }}>{opt.label}</span>
                 <div style={{ color: opt.color, opacity: active ? 1 : 0.5 }}>{opt.icon}</div>
               </div>
-              <div style={{ fontSize: '1.1rem', fontWeight: 900, color: CARBON, lineHeight: 1 }}>{opt.value}</div>
-              <div style={{ fontSize: '0.73rem', color: GRAY, marginTop: 4 }}>{opt.sub}</div>
+              <div style={{ fontSize: '1.1rem', fontWeight: 900, color: darkMode ? '#f3f4f6' : CARBON, lineHeight: 1 }}>{opt.value}</div>
+              <div style={{ fontSize: '0.73rem', color: darkMode ? '#9ca3af' : GRAY, marginTop: 4 }}>{opt.sub}</div>
             </button>
           );
         })}
@@ -226,8 +226,8 @@ function EstadisticasTab({ estadisticas, historial, balance }) {
 
       {/* ── Gráfica SVG ── */}
       <div style={{
-        background: WHITE, border: `1.5px solid ${BORDER}`, borderRadius: 16,
-        padding: '20px 20px 12px', boxShadow: '0 2px 12px rgba(0,0,0,0.05)',
+        background: darkMode ? '#1e1e1e' : WHITE, border: `1.5px solid ${darkMode ? '#333333' : BORDER}`, borderRadius: 16,
+        padding: '20px 20px 12px', boxShadow: darkMode ? '0 2px 12px rgba(0,0,0,0.3)' : '0 2px 12px rgba(0,0,0,0.05)',
         position: 'relative',
       }}>
         {/* Header de la gráfica */}
@@ -235,8 +235,8 @@ function EstadisticasTab({ estadisticas, historial, balance }) {
           <div>
             <span style={{
               display: 'inline-flex', alignItems: 'center', gap: 7,
-              background: activeCfg.colorBg, color: activeCfg.color,
-              border: `1px solid ${activeCfg.colorBorder}`,
+              background: darkMode ? `${activeCfg.color}22` : activeCfg.colorBg, color: activeCfg.color,
+              border: `1px solid ${darkMode ? `${activeCfg.color}44` : activeCfg.colorBorder}`,
               borderRadius: 20, padding: '5px 14px', fontSize: '0.8rem', fontWeight: 800,
             }}>
               {activeCfg.icon} {activeCfg.label} · últimos 30 días
@@ -244,12 +244,12 @@ function EstadisticasTab({ estadisticas, historial, balance }) {
           </div>
           <div style={{ display: 'flex', gap: 20 }}>
             <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: '0.72rem', color: GRAY, fontWeight: 600, textTransform: 'uppercase' }}>Período total</div>
+              <div style={{ fontSize: '0.72rem', color: darkMode ? '#9ca3af' : GRAY, fontWeight: 600, textTransform: 'uppercase' }}>Período total</div>
               <div style={{ fontSize: '1.15rem', fontWeight: 900, color: activeCfg.color }}>{fmt(totalFiltro)}</div>
             </div>
             <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: '0.72rem', color: GRAY, fontWeight: 600, textTransform: 'uppercase' }}>Registros</div>
-              <div style={{ fontSize: '1.15rem', fontWeight: 900, color: CARBON }}>{countFiltro}</div>
+              <div style={{ fontSize: '0.72rem', color: darkMode ? '#9ca3af' : GRAY, fontWeight: 600, textTransform: 'uppercase' }}>Registros</div>
+              <div style={{ fontSize: '1.15rem', fontWeight: 900, color: darkMode ? '#f3f4f6' : CARBON }}>{countFiltro}</div>
             </div>
           </div>
         </div>
@@ -260,15 +260,15 @@ function EstadisticasTab({ estadisticas, historial, balance }) {
             position: 'absolute', top: 68,
             left: Math.min(Math.max(hItem.x / svgW * 100, 10), 80) + '%',
             transform: 'translateX(-50%)',
-            background: WHITE, border: `1.5px solid ${activeCfg.color}44`,
+            background: darkMode ? '#252525' : WHITE, border: `1.5px solid ${activeCfg.color}44`,
             borderRadius: 10, padding: '8px 14px',
-            boxShadow: '0 6px 20px rgba(0,0,0,0.12)',
+            boxShadow: darkMode ? '0 6px 20px rgba(0,0,0,0.5)' : '0 6px 20px rgba(0,0,0,0.12)',
             pointerEvents: 'none', zIndex: 10,
             minWidth: 130,
           }}>
-            <div style={{ fontSize: '0.72rem', color: GRAY, fontWeight: 600, marginBottom: 3 }}>{hItem.label}</div>
+            <div style={{ fontSize: '0.72rem', color: darkMode ? '#9ca3af' : GRAY, fontWeight: 600, marginBottom: 3 }}>{hItem.label}</div>
             <div style={{ fontSize: '1rem', fontWeight: 900, color: activeCfg.color }}>{fmt(hItem.valor)}</div>
-            <div style={{ fontSize: '0.72rem', color: GRAY }}>{hItem.count} registro{hItem.count !== 1 ? 's' : ''}</div>
+            <div style={{ fontSize: '0.72rem', color: darkMode ? '#9ca3af' : GRAY }}>{hItem.count} registro{hItem.count !== 1 ? 's' : ''}</div>
           </div>
         )}
 
@@ -296,10 +296,10 @@ function EstadisticasTab({ estadisticas, historial, balance }) {
             return (
               <g key={i}>
                 <line x1={padLeft} y1={yPos} x2={svgW - padRight} y2={yPos}
-                  stroke="#ede8e3" strokeDasharray={r === 0 ? 'none' : '4 4'}
+                  stroke={darkMode ? '#333333' : '#ede8e3'} strokeDasharray={r === 0 ? 'none' : '4 4'}
                   strokeWidth={r === 0 ? 1.2 : 1} />
                 <text x={padLeft - 6} y={yPos + 4} textAnchor="end"
-                  fontSize="11" fill="#a8a29e" fontWeight="700" fontFamily="Montserrat,sans-serif">
+                  fontSize="11" fill={darkMode ? '#6b7280' : '#a8a29e'} fontWeight="700" fontFamily="Montserrat,sans-serif">
                   ${val}{suf}
                 </text>
               </g>
@@ -342,7 +342,7 @@ function EstadisticasTab({ estadisticas, historial, balance }) {
                     <circle cx={p.x} cy={p.y}
                       r={isH ? 5.5 : 3.5}
                       fill={activeCfg.color}
-                      stroke={WHITE} strokeWidth={isH ? 2 : 1.5}
+                      stroke={darkMode ? '#1e1e1e' : WHITE} strokeWidth={isH ? 2 : 1.5}
                       style={{ transition: 'all 0.15s' }} />
                   </>
                 )}
@@ -352,7 +352,7 @@ function EstadisticasTab({ estadisticas, historial, balance }) {
                   <text x={p.x} y={padTop + plotH + 18} textAnchor="middle"
                     fontSize={isH ? 11 : 9.5}
                     fontWeight={isH ? 800 : 600}
-                    fill={isH ? activeCfg.color : '#a8a29e'}
+                    fill={isH ? activeCfg.color : (darkMode ? '#6b7280' : '#a8a29e')}
                     fontFamily="Montserrat,sans-serif">
                     {p.label}
                   </text>
@@ -362,25 +362,26 @@ function EstadisticasTab({ estadisticas, historial, balance }) {
           })}
         </svg>
 
-        <p style={{ margin: '8px 0 0', textAlign: 'center', fontSize: '0.75rem', color: GRAY }}>
+        <p style={{ margin: '8px 0 0', textAlign: 'center', fontSize: '0.75rem', color: darkMode ? '#9ca3af' : GRAY }}>
           * Pasa el cursor sobre un punto para ver el detalle del día
         </p>
       </div>
 
       {/* ── KPIs adicionales debajo ── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 14, marginTop: 20 }}>
-        <KpiCard label="Ingresos 30 días"     value={fmt(estadisticas.ingresos_30_dias)}    color={GREEN}   colorBg={GREEN_BG}   colorBorder={GREEN_BORDER}   icon={<IconTrendingUp width={18} height={18} strokeWidth={2.2} />} />
-        <KpiCard label="Promedio diario"      value={fmt(estadisticas.promedio_diario)}     color={VINOTINTO} colorBg='#fdf2f4' colorBorder='#f5c6d2'        icon={<IconChartBar   width={18} height={18} strokeWidth={2.2} />} />
-        <KpiCard label="Ventas procesadas"    value={estadisticas.ventas_totales    ?? 0}  color={GREEN}   colorBg={GREEN_BG}   colorBorder={GREEN_BORDER}   icon={<IconPackage    width={18} height={18} strokeWidth={2.2} />} sub="En el período" />
-        <KpiCard label="Planes contratados"   value={estadisticas.planes_activos    ?? 0}  color={BLUE}    colorBg={BLUE_BG}    colorBorder={BLUE_BORDER}    icon={<IconStore      width={18} height={18} strokeWidth={2.2} />} sub="En el período" />
-        <KpiCard label="Impulsos contratados" value={estadisticas.impulsos_comprados ?? 0} color={PURPLE}  colorBg={PURPLE_BG}  colorBorder={PURPLE_BORDER}  icon={<IconBolt       width={18} height={18} strokeWidth={2.2} />} sub="En el período" />
+        <KpiCard label="Ingresos 30 días"     value={fmt(estadisticas.ingresos_30_dias)}    color={GREEN}   colorBg={GREEN_BG}   colorBorder={GREEN_BORDER}   icon={<IconTrendingUp width={18} height={18} strokeWidth={2.2} />} darkMode={darkMode} />
+        <KpiCard label="Promedio diario"      value={fmt(estadisticas.promedio_diario)}     color={VINOTINTO} colorBg='#fdf2f4' colorBorder='#f5c6d2'        icon={<IconChartBar   width={18} height={18} strokeWidth={2.2} />} darkMode={darkMode} />
+        <KpiCard label="Ventas procesadas"    value={estadisticas.ventas_totales    ?? 0}  color={GREEN}   colorBg={GREEN_BG}   colorBorder={GREEN_BORDER}   icon={<IconPackage    width={18} height={18} strokeWidth={2.2} />} sub="En el período" darkMode={darkMode} />
+        <KpiCard label="Planes contratados"   value={estadisticas.planes_activos    ?? 0}  color={BLUE}    colorBg={BLUE_BG}    colorBorder={BLUE_BORDER}    icon={<IconStore      width={18} height={18} strokeWidth={2.2} />} sub="En el período" darkMode={darkMode} />
+        <KpiCard label="Impulsos contratados" value={estadisticas.impulsos_comprados ?? 0} color={PURPLE}  colorBg={PURPLE_BG}  colorBorder={PURPLE_BORDER}  icon={<IconBolt       width={18} height={18} strokeWidth={2.2} />} sub="En el período" darkMode={darkMode} />
       </div>
     </div>
   );
 }
 
 /* ─── main component ────────────────────────────────────────── */
-export default function BookyPagoFinanzas({ defaultTab = 'balance' }) {
+export default function BookyPagoFinanzas({ defaultTab = 'balance', darkMode: propDarkMode }) {
+  const darkMode = propDarkMode ?? (typeof localStorage !== 'undefined' && localStorage.getItem('darkMode_admin') === 'true');
   const [activeTab,      setActiveTab]      = useState(defaultTab);
   const [balance,        setBalance]        = useState({});
   const [estadisticas,   setEstadisticas]   = useState({});
@@ -448,7 +449,7 @@ export default function BookyPagoFinanzas({ defaultTab = 'balance' }) {
   const pctImpulso = totalIngresos ? Math.round(((balance.ingresos_por_tipo?.impulso || 0) / totalIngresos) * 100) : 0;
 
   return (
-    <div style={{ padding: '28px 24px', background: BEIGE, minHeight: '100vh', fontFamily: 'inherit' }}>
+    <div style={{ padding: '28px 24px', background: darkMode ? '#121212' : BEIGE, minHeight: '100vh', fontFamily: 'inherit' }}>
       <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 24 }}>
 
         {/* ── HERO BANNER ──────────────────────────────────────── */}
@@ -457,7 +458,7 @@ export default function BookyPagoFinanzas({ defaultTab = 'balance' }) {
           borderRadius: 20,
           padding: '32px 36px',
           color: WHITE,
-          boxShadow: '0 8px 32px rgba(122,30,58,0.3)',
+          boxShadow: darkMode ? '0 8px 32px rgba(0,0,0,0.5)' : '0 8px 32px rgba(122,30,58,0.3)',
           position: 'relative',
           overflow: 'hidden',
         }}>
@@ -524,10 +525,10 @@ export default function BookyPagoFinanzas({ defaultTab = 'balance' }) {
 
         {/* ── TABS ─────────────────────────────────────────────── */}
         <div style={{
-          background: WHITE, borderRadius: 14,
-          padding: '6px', boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
+          background: darkMode ? '#1e1e1e' : WHITE, borderRadius: 14,
+          padding: '6px', boxShadow: darkMode ? '0 2px 12px rgba(0,0,0,0.3)' : '0 2px 12px rgba(0,0,0,0.06)',
           display: 'flex', gap: 4,
-          border: `1px solid ${BORDER}`,
+          border: `1px solid ${darkMode ? '#333333' : BORDER}`,
         }}>
           {TABS.map(tab => {
             const active = activeTab === tab.id;
@@ -539,7 +540,7 @@ export default function BookyPagoFinanzas({ defaultTab = 'balance' }) {
                   flex: 1, padding: '11px 12px', border: 'none',
                   borderRadius: 10,
                   background: active ? `linear-gradient(135deg, ${VINOTINTO} 0%, ${VINOTINTO_DARK} 100%)` : 'transparent',
-                  color: active ? WHITE : GRAY,
+                  color: active ? WHITE : (darkMode ? '#9ca3af' : GRAY),
                   cursor: 'pointer',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
                   fontSize: '0.85rem', fontWeight: active ? 800 : 600,
@@ -556,16 +557,16 @@ export default function BookyPagoFinanzas({ defaultTab = 'balance' }) {
 
         {/* ── TAB CONTENT ──────────────────────────────────────── */}
         <div style={{
-          background: WHITE, borderRadius: 20,
-          boxShadow: '0 3px 18px rgba(0,0,0,0.07)',
-          border: `1px solid ${BORDER}`,
+          background: darkMode ? '#1e1e1e' : WHITE, borderRadius: 20,
+          boxShadow: darkMode ? '0 3px 18px rgba(0,0,0,0.3)' : '0 3px 18px rgba(0,0,0,0.07)',
+          border: `1px solid ${darkMode ? '#333333' : BORDER}`,
           padding: '28px 30px',
         }}>
 
           {/* ── Balance ─── */}
           {activeTab === 'balance' && (
             <div>
-              <h3 style={{ margin:'0 0 20px', color:CARBON, fontSize:'1.05rem', fontWeight:800 }}>
+              <h3 style={{ margin:'0 0 20px', color: darkMode ? '#f3f4f6' : CARBON, fontSize:'1.05rem', fontWeight:800 }}>
                 Desglose de Ingresos
               </h3>
               <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(220px, 1fr))', gap:16 }}>
@@ -575,6 +576,7 @@ export default function BookyPagoFinanzas({ defaultTab = 'balance' }) {
                   color={GREEN} colorBg={GREEN_BG} colorBorder={GREEN_BORDER}
                   icon={<IconPackage width={18} height={18} strokeWidth={2.2} />}
                   sub="15% por orden con envío a domicilio"
+                  darkMode={darkMode}
                 />
                 <KpiCard
                   label="Cobros por Planes"
@@ -582,6 +584,7 @@ export default function BookyPagoFinanzas({ defaultTab = 'balance' }) {
                   color={BLUE} colorBg={BLUE_BG} colorBorder={BLUE_BORDER}
                   icon={<IconStore width={18} height={18} strokeWidth={2.2} />}
                   sub="Suscripciones de herramientas"
+                  darkMode={darkMode}
                 />
                 <KpiCard
                   label="Cobros por Impulsos"
@@ -589,13 +592,14 @@ export default function BookyPagoFinanzas({ defaultTab = 'balance' }) {
                   color={PURPLE} colorBg={PURPLE_BG} colorBorder={PURPLE_BORDER}
                   icon={<IconBolt width={18} height={18} strokeWidth={2.2} />}
                   sub="Destacados y visibilidad pagada"
+                  darkMode={darkMode}
                 />
               </div>
 
               {/* Barra de distribución */}
               {totalIngresos > 0 && (
-                <div style={{ marginTop:28, padding:'20px 22px', background: BEIGE, borderRadius:14, border:`1px solid ${BORDER}` }}>
-                  <p style={{ margin:'0 0 14px', fontWeight:700, fontSize:'0.88rem', color:CARBON }}>Distribución de ingresos</p>
+                <div style={{ marginTop:28, padding:'20px 22px', background: darkMode ? '#252525' : BEIGE, borderRadius:14, border:`1px solid ${darkMode ? '#333333' : BORDER}` }}>
+                  <p style={{ margin:'0 0 14px', fontWeight:700, fontSize:'0.88rem', color: darkMode ? '#f3f4f6' : CARBON }}>Distribución de ingresos</p>
                   {[
                     { label:'Ventas',   pct: pctVenta,   color: GREEN,  amount: balance.ingresos_por_tipo?.venta   || 0 },
                     { label:'Planes',   pct: pctPlan,    color: BLUE,   amount: balance.ingresos_por_tipo?.plan    || 0 },
@@ -603,10 +607,10 @@ export default function BookyPagoFinanzas({ defaultTab = 'balance' }) {
                   ].map(r => (
                     <div key={r.label} style={{ marginBottom:12 }}>
                       <div style={{ display:'flex', justifyContent:'space-between', marginBottom:5 }}>
-                        <span style={{ fontSize:'0.82rem', fontWeight:600, color:CARBON }}>{r.label}</span>
+                        <span style={{ fontSize:'0.82rem', fontWeight:600, color: darkMode ? '#f3f4f6' : CARBON }}>{r.label}</span>
                         <span style={{ fontSize:'0.82rem', fontWeight:700, color:r.color }}>{r.pct}% · {fmt(r.amount)}</span>
                       </div>
-                      <div style={{ background:'#e5e0d9', borderRadius:20, height:8, overflow:'hidden' }}>
+                      <div style={{ background: darkMode ? '#333333' : '#e5e0d9', borderRadius:20, height:8, overflow:'hidden' }}>
                         <div style={{
                           height:'100%', borderRadius:20,
                           background: `linear-gradient(90deg, ${r.color}, ${r.color}99)`,
@@ -627,17 +631,18 @@ export default function BookyPagoFinanzas({ defaultTab = 'balance' }) {
               estadisticas={estadisticas}
               historial={historial}
               balance={balance}
+              darkMode={darkMode}
             />
           )}
 
           {/* ── Historial ─── */}
           {activeTab === 'historial' && (
             <div>
-              <h3 style={{ margin:'0 0 20px', color:CARBON, fontSize:'1.05rem', fontWeight:800 }}>
+              <h3 style={{ margin:'0 0 20px', color: darkMode ? '#f3f4f6' : CARBON, fontSize:'1.05rem', fontWeight:800 }}>
                 Historial Financiero · Últimos 30 días
               </h3>
 
-              <p style={{ margin:'0 0 16px', fontWeight:700, fontSize:'0.9rem', color:CARBON }}>Ingresos registrados</p>
+              <p style={{ margin:'0 0 16px', fontWeight:700, fontSize:'0.9rem', color: darkMode ? '#f3f4f6' : CARBON }}>Ingresos registrados</p>
               {historial.ingresos && historial.ingresos.length > 0 ? (
                 <div style={{ overflowX:'auto', marginBottom:28 }}>
                   <table style={{ width:'100%', borderCollapse:'separate', borderSpacing:'0 4px' }}>
@@ -646,35 +651,35 @@ export default function BookyPagoFinanzas({ defaultTab = 'balance' }) {
                         {['Fecha','Tipo','Comisión BookyHome','Venta Total','Estado'].map(h => (
                           <th key={h} style={{
                             padding:'10px 14px', textAlign: h === 'Comisión BookyHome' || h === 'Venta Total' ? 'right' : h === 'Estado' ? 'center' : 'left',
-                            fontSize:'0.75rem', fontWeight:700, color:GRAY,
+                            fontSize:'0.75rem', fontWeight:700, color: darkMode ? '#9ca3af' : GRAY,
                             textTransform:'uppercase', letterSpacing:'0.06em',
-                            borderBottom:`2px solid ${BORDER}`, background:WHITE,
+                            borderBottom:`2px solid ${darkMode ? '#333333' : BORDER}`, background: darkMode ? '#1e1e1e' : WHITE,
                           }}>{h}</th>
                         ))}
                       </tr>
                     </thead>
                     <tbody>
                       {historial.ingresos.map((ing, i) => (
-                        <tr key={ing.id ?? i} style={{ background: i % 2 === 0 ? WHITE : '#faf8f5' }}>
-                          <td style={{ padding:'12px 14px', fontSize:'0.82rem', color:GRAY, whiteSpace:'nowrap' }}>
+                        <tr key={ing.id ?? i} style={{ background: i % 2 === 0 ? (darkMode ? '#1e1e1e' : WHITE) : (darkMode ? '#252525' : '#faf8f5') }}>
+                          <td style={{ padding:'12px 14px', fontSize:'0.82rem', color: darkMode ? '#9ca3af' : GRAY, whiteSpace:'nowrap' }}>
                             {new Date(ing.fecha).toLocaleDateString('es-CO', { day:'2-digit', month:'short', year:'numeric' })}
                           </td>
                           <td style={{ padding:'12px 14px' }}>
-                            <Badge tipo={ing.tipo} />
+                            <Badge tipo={ing.tipo} darkMode={darkMode} />
                           </td>
                           <td style={{ padding:'12px 14px', textAlign:'right', fontWeight:800, color:GREEN, fontSize:'0.9rem' }}>
                             {fmt(ing.comision ?? ing.monto)}
                           </td>
-                          <td style={{ padding:'12px 14px', textAlign:'right', fontSize:'0.82rem', color:GRAY }}>
+                          <td style={{ padding:'12px 14px', textAlign:'right', fontSize:'0.82rem', color: darkMode ? '#9ca3af' : GRAY }}>
                             {ing.monto_venta != null ? fmt(ing.monto_venta) : '—'}
                           </td>
                           <td style={{ padding:'12px 14px', textAlign:'center' }}>
                             <span style={{
                               display:'inline-flex', alignItems:'center', gap:5,
-                              background:GREEN_BG, color:GREEN, border:`1px solid ${GREEN_BORDER}`,
+                              background: darkMode ? '#16a34a22' : GREEN_BG, color: darkMode ? '#4ade80' : GREEN, border:`1px solid ${darkMode ? '#16a34a44' : GREEN_BORDER}`,
                               borderRadius:20, padding:'3px 10px', fontSize:'0.73rem', fontWeight:700,
                             }}>
-                              <span style={{ width:6, height:6, borderRadius:'50%', background:GREEN, display:'inline-block' }} />
+                              <span style={{ width:6, height:6, borderRadius:'50%', background: darkMode ? '#4ade80' : GREEN, display:'inline-block' }} />
                               {(ing.estado || 'procesado').charAt(0).toUpperCase() + (ing.estado || 'procesado').slice(1)}
                             </span>
                           </td>
@@ -684,13 +689,13 @@ export default function BookyPagoFinanzas({ defaultTab = 'balance' }) {
                   </table>
                 </div>
               ) : (
-                <div style={{ textAlign:'center', padding:'40px 20px', color:GRAY, background:BEIGE, borderRadius:12, marginBottom:24 }}>
+                <div style={{ textAlign:'center', padding:'40px 20px', color: darkMode ? '#9ca3af' : GRAY, background: darkMode ? '#252525' : BEIGE, borderRadius:12, marginBottom:24 }}>
                   <div style={{ fontSize:'2rem', marginBottom:8 }}>📋</div>
                   <p style={{ margin:0, fontWeight:600 }}>No hay ingresos en los últimos 30 días</p>
                 </div>
               )}
 
-              <p style={{ margin:'0 0 16px', fontWeight:700, fontSize:'0.9rem', color:CARBON }}>Pagos operativos</p>
+              <p style={{ margin:'0 0 16px', fontWeight:700, fontSize:'0.9rem', color: darkMode ? '#f3f4f6' : CARBON }}>Pagos operativos</p>
               {historial.pagos && historial.pagos.length > 0 ? (
                 <div style={{ overflowX:'auto' }}>
                   <table style={{ width:'100%', borderCollapse:'separate', borderSpacing:'0 4px' }}>
@@ -699,20 +704,20 @@ export default function BookyPagoFinanzas({ defaultTab = 'balance' }) {
                         {['Fecha','Tipo','Monto','Estado'].map(h => (
                           <th key={h} style={{
                             padding:'10px 14px', textAlign: h === 'Monto' ? 'right' : h === 'Estado' ? 'center' : 'left',
-                            fontSize:'0.75rem', fontWeight:700, color:GRAY,
+                            fontSize:'0.75rem', fontWeight:700, color: darkMode ? '#9ca3af' : GRAY,
                             textTransform:'uppercase', letterSpacing:'0.06em',
-                            borderBottom:`2px solid ${BORDER}`,
+                            borderBottom:`2px solid ${darkMode ? '#333333' : BORDER}`,
                           }}>{h}</th>
                         ))}
                       </tr>
                     </thead>
                     <tbody>
                       {historial.pagos.map((pag, i) => (
-                        <tr key={pag.id ?? i} style={{ background: i % 2 === 0 ? WHITE : '#faf8f5' }}>
-                          <td style={{ padding:'12px 14px', fontSize:'0.82rem', color:GRAY, whiteSpace:'nowrap' }}>
+                        <tr key={pag.id ?? i} style={{ background: i % 2 === 0 ? (darkMode ? '#1e1e1e' : WHITE) : (darkMode ? '#252525' : '#faf8f5') }}>
+                          <td style={{ padding:'12px 14px', fontSize:'0.82rem', color: darkMode ? '#9ca3af' : GRAY, whiteSpace:'nowrap' }}>
                             {new Date(pag.fecha).toLocaleDateString('es-CO', { day:'2-digit', month:'short', year:'numeric' })}
                           </td>
-                          <td style={{ padding:'12px 14px', fontSize:'0.86rem', color:CARBON, fontWeight:600 }}>
+                          <td style={{ padding:'12px 14px', fontSize:'0.86rem', color: darkMode ? '#f3f4f6' : CARBON, fontWeight:600 }}>
                             {pag.tipo.charAt(0).toUpperCase() + pag.tipo.slice(1)}
                           </td>
                           <td style={{ padding:'12px 14px', textAlign:'right', fontWeight:800, color:ORANGE, fontSize:'0.9rem' }}>
@@ -720,7 +725,8 @@ export default function BookyPagoFinanzas({ defaultTab = 'balance' }) {
                           </td>
                           <td style={{ padding:'12px 14px', textAlign:'center' }}>
                             <span style={{
-                              background:GREEN_BG, color:GREEN, border:`1px solid ${GREEN_BORDER}`,
+                              display:'inline-flex', alignItems:'center', gap:5,
+                              background: darkMode ? '#16a34a22' : GREEN_BG, color: darkMode ? '#4ade80' : GREEN, border:`1px solid ${darkMode ? '#16a34a44' : GREEN_BORDER}`,
                               borderRadius:20, padding:'3px 10px', fontSize:'0.73rem', fontWeight:700,
                             }}>
                               {(pag.estado || '').charAt(0).toUpperCase() + (pag.estado || '').slice(1)}
@@ -732,7 +738,7 @@ export default function BookyPagoFinanzas({ defaultTab = 'balance' }) {
                   </table>
                 </div>
               ) : (
-                <div style={{ textAlign:'center', padding:'32px 20px', color:GRAY, background:BEIGE, borderRadius:12 }}>
+                <div style={{ textAlign:'center', padding:'32px 20px', color: darkMode ? '#9ca3af' : GRAY, background: darkMode ? '#252525' : BEIGE, borderRadius:12 }}>
                   <div style={{ fontSize:'2rem', marginBottom:8 }}>✅</div>
                   <p style={{ margin:0, fontWeight:600 }}>Sin pagos operativos registrados</p>
                 </div>
@@ -743,8 +749,8 @@ export default function BookyPagoFinanzas({ defaultTab = 'balance' }) {
           {/* ── Comisiones ─── */}
           {activeTab === 'comisiones' && (
             <div>
-              <h3 style={{ margin:'0 0 6px', color:CARBON, fontSize:'1.05rem', fontWeight:800 }}>Comisiones de BookyHome</h3>
-              <p style={{ margin:'0 0 24px', color:GRAY, fontSize:'0.85rem', lineHeight:1.6 }}>
+              <h3 style={{ margin:'0 0 6px', color: darkMode ? '#f3f4f6' : CARBON, fontSize:'1.05rem', fontWeight:800 }}>Comisiones de BookyHome</h3>
+              <p style={{ margin:'0 0 24px', color: darkMode ? '#9ca3af' : GRAY, fontSize:'0.85rem', lineHeight:1.6 }}>
                 El comprador paga directamente al vendedor. BookyHome cobra su comisión sobre cada transacción: <strong>15 %</strong> en ventas con envío, cobro total en planes e impulsos.
               </p>
 
@@ -753,7 +759,7 @@ export default function BookyPagoFinanzas({ defaultTab = 'balance' }) {
                 background:`linear-gradient(135deg, ${VINOTINTO} 0%, ${VINOTINTO_DARK} 100%)`,
                 borderRadius:16, padding:'24px 28px', color:WHITE, marginBottom:20,
                 display:'flex', justifyContent:'space-between', alignItems:'center', flexWrap:'wrap', gap:16,
-                boxShadow:'0 6px 24px rgba(122,30,58,0.25)',
+                boxShadow: darkMode ? '0 6px 24px rgba(0,0,0,0.5)' : '0 6px 24px rgba(122,30,58,0.25)',
               }}>
                 <div>
                   <p style={{ margin:'0 0 4px', fontSize:'0.78rem', opacity:0.75, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.08em' }}>Total comisiones acumuladas</p>
@@ -773,7 +779,7 @@ export default function BookyPagoFinanzas({ defaultTab = 'balance' }) {
                   { label:'Cobros por Impulsos',    amount: balance.ingresos_por_tipo?.impulso || 0, color:PURPLE, colorBg:PURPLE_BG, colorBorder:PURPLE_BORDER, icon:<IconBolt width={22} height={22} strokeWidth={2} />, sub:'100% del impulso contratado' },
                 ].map(c => (
                   <div key={c.label} style={{
-                    background:c.colorBg, border:`1.5px solid ${c.colorBorder}`,
+                    background: darkMode ? `${c.color}18` : c.colorBg, border:`1.5px solid ${darkMode ? `${c.color}33` : c.colorBorder}`,
                     borderRadius:14, padding:'20px 22px',
                     display:'flex', flexDirection:'column', gap:12,
                   }}>
@@ -781,8 +787,8 @@ export default function BookyPagoFinanzas({ defaultTab = 'balance' }) {
                       <span style={{ fontSize:'0.78rem', fontWeight:700, color:c.color, textTransform:'uppercase', letterSpacing:'0.05em' }}>{c.label}</span>
                       <div style={{ color:c.color }}>{c.icon}</div>
                     </div>
-                    <div style={{ fontSize:'1.5rem', fontWeight:900, color:CARBON }}>{fmt(c.amount)}</div>
-                    <div style={{ fontSize:'0.75rem', color:GRAY }}>{c.sub}</div>
+                    <div style={{ fontSize:'1.5rem', fontWeight:900, color: darkMode ? '#f3f4f6' : CARBON }}>{fmt(c.amount)}</div>
+                    <div style={{ fontSize:'0.75rem', color: darkMode ? '#9ca3af' : GRAY }}>{c.sub}</div>
                   </div>
                 ))}
               </div>
@@ -794,26 +800,26 @@ export default function BookyPagoFinanzas({ defaultTab = 'balance' }) {
 
       {/* ── MODAL cuenta bancaria ─────────────────────────────── */}
       {showPaymentModal && selectedVendedor && (
-        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.55)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:1000, backdropFilter:'blur(4px)' }}>
-          <div style={{ background:WHITE, borderRadius:20, padding:'30px', maxWidth:540, width:'95%', maxHeight:'80vh', overflowY:'auto', boxShadow:'0 20px 60px rgba(0,0,0,0.3)' }}>
+        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.65)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:1000, backdropFilter:'blur(4px)' }}>
+          <div style={{ background: darkMode ? '#1e1e1e' : WHITE, borderRadius:20, padding:'30px', maxWidth:540, width:'95%', maxHeight:'80vh', overflowY:'auto', boxShadow: darkMode ? '0 20px 60px rgba(0,0,0,0.6)' : '0 20px 60px rgba(0,0,0,0.3)', border: `1px solid ${darkMode ? '#333' : 'transparent'}` }}>
             <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20 }}>
-              <h3 style={{ margin:0, color:CARBON, fontSize:'1.25rem', fontWeight:800 }}>Procesar Pago #{selectedVendedor}</h3>
+              <h3 style={{ margin:0, color: darkMode ? '#f3f4f6' : CARBON, fontSize:'1.25rem', fontWeight:800 }}>Procesar Pago #{selectedVendedor}</h3>
               <button onClick={() => { setShowPaymentModal(false); setSelectedVendedor(null); setSelectedCuentaId(null); }}
-                style={{ background:'none', border:'none', fontSize:'1.4rem', cursor:'pointer', color:GRAY, width:34, height:34, borderRadius:'50%', display:'grid', placeItems:'center' }}>×</button>
+                style={{ background:'none', border:'none', fontSize:'1.4rem', cursor:'pointer', color: darkMode ? '#9ca3af' : GRAY, width:34, height:34, borderRadius:'50%', display:'grid', placeItems:'center' }}>×</button>
             </div>
-            <p style={{ margin:'0 0 20px', color:GRAY, fontSize:'0.9rem' }}>Cuenta bancaria del vendedor para recibir el pago:</p>
+            <p style={{ margin:'0 0 20px', color: darkMode ? '#9ca3af' : GRAY, fontSize:'0.9rem' }}>Cuenta bancaria del vendedor para recibir el pago:</p>
             {cuentasBancarias[selectedVendedor]?.length > 0 ? (
               <div style={{ display:'flex', flexDirection:'column', gap:10, marginBottom:20 }}>
                 {cuentasBancarias[selectedVendedor].map(cuenta => {
                   const sel = selectedCuentaId === cuenta.id_metodo;
                   return (
                     <button key={cuenta.id_metodo} type="button" aria-pressed={sel} onClick={() => setSelectedCuentaId(cuenta.id_metodo)}
-                      style={{ width:'100%', padding:16, border:`${sel ? 2 : 1.5}px solid ${sel ? VINOTINTO : BORDER}`, borderRadius:12, background: sel ? '#fdf2f4' : WHITE, cursor:'pointer', transition:'all 0.2s', textAlign:'left', color:'inherit', font:'inherit' }}>
+                      style={{ width:'100%', padding:16, border:`${sel ? 2 : 1.5}px solid ${sel ? VINOTINTO : (darkMode ? '#444' : BORDER)}`, borderRadius:12, background: sel ? (darkMode ? '#7a1e3a33' : '#fdf2f4') : (darkMode ? '#252525' : WHITE), cursor:'pointer', transition:'all 0.2s', textAlign:'left', color:'inherit', font:'inherit' }}>
                       <span style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
                         <span>
-                          <span style={{ display:'block', fontWeight:800, color:CARBON, marginBottom:3 }}>{cuenta.banco}</span>
-                          <span style={{ display:'block', fontSize:'0.82rem', color:GRAY }}>{cuenta.tipo_cuenta} · N.º {cuenta.numero_cuenta}</span>
-                          <span style={{ display:'block', fontSize:'0.76rem', color:GRAY, marginTop:2 }}>Titular: {cuenta.nombre_titular}{cuenta.cedula_titular ? ` · CC ${cuenta.cedula_titular}` : ''}</span>
+                          <span style={{ display:'block', fontWeight:800, color: darkMode ? '#f3f4f6' : CARBON, marginBottom:3 }}>{cuenta.banco}</span>
+                          <span style={{ display:'block', fontSize:'0.82rem', color: darkMode ? '#9ca3af' : GRAY }}>{cuenta.tipo_cuenta} · N.º {cuenta.numero_cuenta}</span>
+                          <span style={{ display:'block', fontSize:'0.76rem', color: darkMode ? '#9ca3af' : GRAY, marginTop:2 }}>Titular: {cuenta.nombre_titular}{cuenta.cedula_titular ? ` · CC ${cuenta.cedula_titular}` : ''}</span>
                         </span>
                         {cuenta.es_principal && <span style={{ background:VINOTINTO, color:WHITE, borderRadius:20, padding:'3px 10px', fontSize:'0.73rem', fontWeight:700 }}>Principal</span>}
                       </span>
@@ -822,13 +828,13 @@ export default function BookyPagoFinanzas({ defaultTab = 'balance' }) {
                 })}
               </div>
             ) : (
-              <div style={{ padding:16, borderRadius:10, background:'#fff7ed', border:'1px solid #fed7aa', color:'#9a3412', fontSize:'0.88rem', marginBottom:20 }}>
+              <div style={{ padding:16, borderRadius:10, background: darkMode ? '#78350f33' : '#fff7ed', border:`1px solid ${darkMode ? '#b4530944' : '#fed7aa'}`, color: darkMode ? '#fed7aa' : '#9a3412', fontSize:'0.88rem', marginBottom:20 }}>
                 Este vendedor aún no ha registrado cuentas bancarias.
               </div>
             )}
             <div style={{ display:'flex', gap:12 }}>
               <button onClick={() => { setShowPaymentModal(false); setSelectedVendedor(null); setSelectedCuentaId(null); }}
-                style={{ flex:1, padding:'12px', background:'#f5f5f5', color:CARBON, border:`1px solid ${BORDER}`, borderRadius:10, cursor:'pointer', fontWeight:700 }}>Cancelar</button>
+                style={{ flex:1, padding:'12px', background: darkMode ? '#2a2a2a' : '#f5f5f5', color: darkMode ? '#f3f4f6' : CARBON, border:`1px solid ${darkMode ? '#444' : BORDER}`, borderRadius:10, cursor:'pointer', fontWeight:700 }}>Cancelar</button>
               <button onClick={confirmarProcesarNomina} disabled={!selectedCuentaId}
                 style={{ flex:1, padding:'12px', background:VINOTINTO, color:WHITE, border:'none', borderRadius:10, cursor: !selectedCuentaId ? 'not-allowed' : 'pointer', opacity: !selectedCuentaId ? 0.6 : 1, fontWeight:700 }}>Procesar Pago</button>
             </div>
@@ -838,13 +844,13 @@ export default function BookyPagoFinanzas({ defaultTab = 'balance' }) {
 
       {/* ── MODAL éxito ──────────────────────────────────────── */}
       {mostrarExitoPago && (
-        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.6)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:1000, backdropFilter:'blur(4px)' }}>
-          <div style={{ background:WHITE, borderRadius:20, padding:'36px 30px', maxWidth:380, width:'95%', boxShadow:'0 20px 60px rgba(0,0,0,0.3)', textAlign:'center' }}>
-            <div style={{ width:70, height:70, borderRadius:'50%', background:'#dcfce7', display:'grid', placeItems:'center', margin:'0 auto 20px' }}>
+        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.65)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:1000, backdropFilter:'blur(4px)' }}>
+          <div style={{ background: darkMode ? '#1e1e1e' : WHITE, borderRadius:20, padding:'36px 30px', maxWidth:380, width:'95%', boxShadow: darkMode ? '0 20px 60px rgba(0,0,0,0.6)' : '0 20px 60px rgba(0,0,0,0.3)', textAlign:'center', border: `1px solid ${darkMode ? '#333' : 'transparent'}` }}>
+            <div style={{ width:70, height:70, borderRadius:'50%', background: darkMode ? '#16a34a22' : '#dcfce7', display:'grid', placeItems:'center', margin:'0 auto 20px' }}>
               <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
             </div>
             <h3 style={{ margin:'0 0 10px', fontSize:'1.3rem', fontWeight:800, color:'#16a34a' }}>¡Pago procesado!</h3>
-            <p style={{ margin:'0 0 24px', color:GRAY, fontSize:'0.9rem', lineHeight:1.6 }}>
+            <p style={{ margin:'0 0 24px', color: darkMode ? '#d1d5db' : GRAY, fontSize:'0.9rem', lineHeight:1.6 }}>
               El pago al vendedor ha sido procesado correctamente.
               {cuentaExito && <><br /><br /><strong>Banco:</strong> {cuentaExito.banco}<br /><strong>Cuenta:</strong> {cuentaExito.tipo_cuenta} · {cuentaExito.numero_cuenta}<br /><strong>Titular:</strong> {cuentaExito.titular}</>}
             </p>

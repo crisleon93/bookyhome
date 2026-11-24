@@ -1329,6 +1329,7 @@ export default function MiTienda() {
     }
     localStorage.removeItem("token");
     document.documentElement.classList.remove('dark');
+    localStorage.setItem('darkMode', 'false');
     window.dispatchEvent(new CustomEvent('auth-change', { detail: { authenticated: false } }));
     void navigate("/");
   };
@@ -1402,7 +1403,33 @@ export default function MiTienda() {
   const [alertasStock,  setAlertasStock]  = useState([]);
   const [stockUmbral,   setStockUmbral]   = useState(() => Number(localStorage.getItem('stockUmbral')) || 3);
   const [tiendaInfo,    setTiendaInfo]    = useState(null);
-  const [darkMode,      setDarkMode]      = useState(() => localStorage.getItem('darkMode') === 'true');
+  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('darkMode_vendedor') === 'true');
+  useEffect(() => {
+    const isDark = localStorage.getItem('darkMode_vendedor') === 'true';
+    setDarkMode(isDark);
+    if (isDark) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+
+    const handleDarkModeChange = (e) => {
+      if (e?.detail?.role && e.detail.role !== 'vendedor') return;
+      const mode = localStorage.getItem('darkMode_vendedor') === 'true';
+      setDarkMode(mode);
+      if (mode) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+    };
+    window.addEventListener('darkModeChange', handleDarkModeChange);
+    window.addEventListener('storage', handleDarkModeChange);
+    return () => {
+      window.removeEventListener('darkModeChange', handleDarkModeChange);
+      window.removeEventListener('storage', handleDarkModeChange);
+    };
+  }, []);
   const [configForm,    setConfigForm]    = useState({
     horario_atencion: "",
     politica_devoluciones: "",
@@ -4403,34 +4430,51 @@ export default function MiTienda() {
                     <h4 style={{ margin: '0 0 0.3rem 0', color: darkMode ? '#ececec' : '#2a2a2a', fontSize: '1rem' }}>Modo Oscuro</h4>
                     <p style={{ margin: 0, color: darkMode ? '#c8c8c8' : '#666', fontSize: '0.85rem' }}>Cambia el tema de la aplicación a modo oscuro</p>
                   </div>
-                  <label aria-label="Activar modo oscuro" style={{ position: 'relative', display: 'inline-block', width: '48px', height: '26px', cursor: 'pointer' }}>
+                  <label htmlFor="tienda-dark-mode-toggle" style={{ position: 'relative', display: 'inline-block', width: '48px', height: '26px', cursor: 'pointer', flexShrink: 0 }}>
                     <input
+                      id="tienda-dark-mode-toggle"
                       type="checkbox"
-                      checked={darkMode}
+                      aria-label="Activar modo oscuro"
+                      checked={Boolean(darkMode)}
                       onChange={() => {
                         const newMode = !darkMode;
                         setDarkMode(newMode);
-                        localStorage.setItem('darkMode', newMode);
+                        localStorage.setItem('darkMode_vendedor', String(newMode));
+                        localStorage.setItem('darkMode', String(newMode));
                         if (newMode) {
                           document.documentElement.classList.add('dark');
                         } else {
                           document.documentElement.classList.remove('dark');
                         }
-                        window.dispatchEvent(new CustomEvent('darkModeChange', { detail: { darkMode: newMode } }));
+                        window.dispatchEvent(new CustomEvent('darkModeChange', { detail: { darkMode: newMode, role: 'vendedor' } }));
                       }}
-                      style={{ opacity: 0, width: 0, height: 0 }}
+                      style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        height: '100%',
+                        margin: 0,
+                        opacity: 0,
+                        cursor: 'pointer',
+                        zIndex: 2,
+                      }}
                     />
                     <span style={{
-                      position: 'absolute', cursor: 'pointer',
+                      position: 'absolute',
                       top: 0, left: 0, right: 0, bottom: 0,
                       backgroundColor: darkMode ? '#e05a7a' : '#ccc',
-                      transition: '0.3s', borderRadius: '26px'
+                      transition: '0.3s', borderRadius: '26px',
+                      pointerEvents: 'none',
+                      zIndex: 1,
                     }}></span>
                     <span style={{
                       position: 'absolute', content: '', height: '20px', width: '20px',
                       left: '3px', bottom: '3px', backgroundColor: 'white',
                       transition: '0.3s', borderRadius: '50%',
-                      transform: darkMode ? 'translateX(22px)' : 'translateX(0)'
+                      transform: darkMode ? 'translateX(22px)' : 'translateX(0)',
+                      pointerEvents: 'none',
+                      zIndex: 1,
                     }}></span>
                   </label>
                 </div>
