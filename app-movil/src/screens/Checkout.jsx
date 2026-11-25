@@ -348,6 +348,7 @@ export default function Checkout({ route, navigation }) {
     }
   };
 
+
   const enviarPago = async (metodo) => {
     let freshTotal = orderTotal;
     const shippingResponse = await actualizarCostoEnvio(orderId, deliveryMethod);
@@ -494,6 +495,17 @@ export default function Checkout({ route, navigation }) {
       <View style={styles.center}>
         <ActivityIndicator size="large" color="#7A1E3A" />
         <Text style={styles.loadingText}>Cargando detalles del pago...</Text>
+      </View>
+    );
+  }
+
+  if (!order) {
+    return (
+      <View style={styles.center}>
+        <Text style={styles.loadingText}>No pudimos cargar los detalles de tu compra.</Text>
+        <TouchableOpacity style={styles.backToCart} onPress={() => navigation.goBack()}>
+          <Text style={styles.backToCartText}>Volver</Text>
+        </TouchableOpacity>
       </View>
     );
   }

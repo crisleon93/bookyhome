@@ -4,6 +4,7 @@ from app.auth import verify_token
 from app.models.carrito import (
     obtener_carrito,
     agregar_al_carrito,
+    actualizar_cantidad_carrito,
     eliminar_item_carrito,
     vaciar_carrito,
     checkout_carrito,
@@ -53,6 +54,16 @@ def add_to_cart(data: dict, user=Depends(get_current_user)):
     }
 
     return agregar_al_carrito(id_usuario, item)
+
+
+@router.patch("/{id_libro}")
+def update_cart_quantity(id_libro: int, data: dict, user=Depends(get_current_user)):
+    id_usuario = _get_user_id(user)
+    cantidad = data.get("cantidad")
+    if cantidad is None:
+        raise HTTPException(status_code=400, detail="El campo 'cantidad' es requerido")
+    cantidad = int(cantidad)
+    return actualizar_cantidad_carrito(id_usuario, id_libro, cantidad)
 
 
 @router.delete("/{id_libro}")

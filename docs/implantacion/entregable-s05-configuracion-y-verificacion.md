@@ -67,7 +67,7 @@ Las variables se separan en tres categorías: **obligatorias** (la app no arranc
 
 **¿Qué variables de tu proyecto son secretos? ¿Dónde vive cada una en cada ambiente?**
 
-Los secretos son `DB_PASSWORD`, `SECRET_KEY`, `MAIL_PASSWORD` y `GEMINI_API_KEY`. En desarrollo viven en `backend/.env` (excluido de Git). En el servidor viven en `deploy/.env.prod` con permisos 600, también excluido de Git. En la nube viven como variables de entorno tipo "secret" en el panel del proveedor (Railway/Render), nunca en el repositorio.
+Los secretos son `DB_PASSWORD`, `SECRET_KEY`, `MAIL_PASSWORD` y `GEMINI_API_KEY`. En desarrollo viven en `backend/.env` (excluido de Git). En el servidor viven en `deploy/.env.prod` con permisos 600, también excluido de Git. En la nube viven como variables de entorno tipo "secret" en el panel del proveedor (Aiven / Render), nunca en el repositorio.
 
 **Si falta una variable, ¿tu proyecto lo dice al arrancar o falla después con un usuario?**
 
@@ -181,21 +181,21 @@ Salida contra el servidor local (2026-10-17):
 RESULTADO: OK — todas las pruebas pasaron
 ```
 
-Salida contra la nube (Railway MySQL + Render API):
+Salida contra la nube (Aiven Cloud MySQL + Render API):
 
 ```text
 ========================================
  Prueba de humo — BookyHome
- API:      https://bookyhome-api.onrender.com
+ API:      https://bookyhome.onrender.com
  Frontend: https://bookyhome-web.onrender.com
  Fecha:    2026-10-17 15:05:00
 ========================================
-  → Comprobando API (https://bookyhome-api.onrender.com)...
+  → Comprobando API (https://bookyhome.onrender.com)...
   ✔ PASS API raíz — HTTP 200
   ✔ PASS API /docs (Swagger) — HTTP 200
   ✔ PASS API /catalogo/categorias — HTTP 200
   ✔ PASS API /catalogo/busqueda-avanzada — HTTP 200
-  → Comprobando endpoint de salud (https://bookyhome-api.onrender.com/health)...
+  → Comprobando endpoint de salud (https://bookyhome.onrender.com/health)...
   ✔ PASS API /health — HTTP 200, base de datos sana
   → Verificación propia: catálogo con datos...
   ✔ PASS Catálogo devuelve estructura JSON con resultados

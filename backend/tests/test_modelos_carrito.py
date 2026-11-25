@@ -85,6 +85,39 @@ class TestAgregarAlCarrito:
 
 
 # ---------------------------------------------------------------------------
+# actualizar_cantidad_carrito
+# ---------------------------------------------------------------------------
+
+class TestActualizarCantidadCarrito:
+    def test_actualiza_cantidad_item_existente(self, carrito_con_items):
+        mod, _ = carrito_con_items
+        result = mod.actualizar_cantidad_carrito(id_usuario=1, id_libro=5, nueva_cantidad=4)
+        item = next(i for i in result if i["id_libro"] == 5)
+        assert item["cantidad"] == 4
+
+    def test_cantidad_cero_elimina_item(self, carrito_con_items):
+        mod, _ = carrito_con_items
+        result = mod.actualizar_cantidad_carrito(id_usuario=1, id_libro=5, nueva_cantidad=0)
+        assert all(i["id_libro"] != 5 for i in result)
+
+    def test_cantidad_negativa_elimina_item(self, carrito_con_items):
+        mod, _ = carrito_con_items
+        result = mod.actualizar_cantidad_carrito(id_usuario=1, id_libro=5, nueva_cantidad=-2)
+        assert all(i["id_libro"] != 5 for i in result)
+
+    def test_libro_no_existente_no_modifica_carrito(self, carrito_con_items):
+        mod, _ = carrito_con_items
+        result = mod.actualizar_cantidad_carrito(id_usuario=1, id_libro=999, nueva_cantidad=3)
+        assert len(result) == 1
+        assert result[0]["id_libro"] == 5
+
+    def test_usuario_sin_carrito_retorna_vacio(self, carrito_vacio):
+        mod, _ = carrito_vacio
+        result = mod.actualizar_cantidad_carrito(id_usuario=77, id_libro=5, nueva_cantidad=2)
+        assert result == []
+
+
+# ---------------------------------------------------------------------------
 # eliminar_item_carrito
 # ---------------------------------------------------------------------------
 

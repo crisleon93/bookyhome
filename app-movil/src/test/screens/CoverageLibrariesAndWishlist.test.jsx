@@ -381,4 +381,72 @@ describe('ListaDeseos móvil', () => {
     await waitFor(() => expect(mocks.removeFavorito).toHaveBeenCalledWith(17))
     expect(getByText(/Libro quitado de la lista/)).toBeTruthy()
   })
+
+  it('valida la creación de listas y comunica fallos de guardado y eliminación', async () => {
+    renderWishlist()
+    await screen.findByText('Cuentos móviles')
+    fireEvent.click(screen.getByRole('button', { name: '+ Nueva' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Crear lista' }))
+    expect(mocks.alert).toHaveBeenCalledWith('Nombre requerido', 'Escribe un nombre para tu lista.')
+
+    mocks.createListaDeseos.mockRejectedValueOnce({ response: { data: { detail: 'No se pudo guardar' } } })
+    fireEvent.change(screen.getByPlaceholderText('Nombre de la lista'), { target: { value: ' Lecturas ' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Crear lista' }))
+    await waitFor(() => expect(mocks.alert).toHaveBeenCalledWith('Error', 'No se pudo guardar'))
+
+    fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }))
+    mocks.deleteListaDeseos.mockRejectedValueOnce({ response: { data: { detail: 'Lista protegida' } } })
+    fireEvent.click(screen.getByRole('button', { name: 'Eliminar lista Para leer' }))
+    await waitFor(() => expect(screen.getByText('Lista protegida')).toBeTruthy())
+  })
+
+  it('reporta errores al cargar o modificar una lista y permite cancelar el selector', async () => {
+    mocks.getLibrosListaDeseos.mockRejectedValueOnce({
+      response: { data: { detail: 'Libros no disponibles' } },
+    })
+    renderWishlist()
+    await screen.findByText('Cuentos móviles')
+    fireEvent.click(screen.getAllByRole('button', { name: /Para leer/ })[0])
+    await waitFor(() => expect(mocks.alert).toHaveBeenCalledWith('Error', 'Libros no disponibles'))
+
+    fireEvent.click(screen.getByRole('button', { name: /Mis favoritos/ }))
+    fireEvent.click(screen.getByRole('button', { name: /Agregar a lista/ }))
+    fireEvent.click(screen.getByText('Cancelar'))
+    expect(screen.queryByText('Agregar a:')).toBeNull()
+
+    mocks.addToListaDeseos.mockRejectedValueOnce({ response: { data: { detail: 'No se pudo agregar' } } })
+    fireEvent.click(screen.getByRole('button', { name: /Agregar a lista/ }))
+    fireEvent.click(screen.getByRole('button', { name: 'Para leer' }))
+    await waitFor(() => expect(screen.getByText('No se pudo agregar')).toBeTruthy())
+  })
+
+  it('mantiene el libro en favoritos y en una lista si la API rechaza quitarlo', async () => {
+    mocks.removeFavorito.mockRejectedValueOnce({ response: { data: { detail: 'Favorito bloqueado' } } })
+    renderWishlist()
+    await screen.findByText('Cuentos móviles')
+    fireEvent.click(screen.getByRole('button', { name: 'Quitar de la lista' }))
+    await waitFor(() => expect(screen.getByText('Favorito bloqueado')).toBeTruthy())
+
+    fireEvent.click(screen.getAllByRole('button', { name: /Para leer/ })[0])
+    await screen.findByText('Cuentos móviles')
+    mocks.removeFromListaDeseos.mockRejectedValueOnce({ response: { data: { detail: 'Libro bloqueado' } } })
+    fireEvent.click(screen.getByRole('button', { name: 'Quitar de la lista' }))
+    await waitFor(() => expect(screen.getByText('Libro bloqueado')).toBeTruthy())
+  })
+
+  it('navega desde favoritos vacíos y limpia la selección al borrar una lista', async () => {
+    mocks.getFavoritos.mockResolvedValueOnce({ data: [] })
+    mocks.getListaDeseos
+      .mockResolvedValueOnce({ data: [wishlist] })
+      .mockResolvedValue({ data: [] })
+    renderWishlist()
+    await screen.findByText('Tu lista de deseos está vacía')
+    fireEvent.click(screen.getByRole('button', { name: 'Explorar catálogo' }))
+    expect(mocks.navigation.navigate).toHaveBeenCalledWith('Catalogo')
+
+    fireEvent.click(screen.getAllByRole('button', { name: /Para leer/ })[0])
+    fireEvent.click(screen.getByRole('button', { name: 'Eliminar lista Para leer' }))
+    await waitFor(() => expect(mocks.deleteListaDeseos).toHaveBeenCalledWith(4))
+    expect(screen.getByText('Mis favoritos')).toBeTruthy()
+  })
 })

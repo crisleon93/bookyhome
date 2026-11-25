@@ -3,7 +3,10 @@ import os
 import secrets
 import uuid
 from datetime import datetime, timedelta, timezone
+import logging
 from app.database import get_db
+
+logger = logging.getLogger(__name__)
 
 STORAGE_DIR = os.path.join(os.path.dirname(__file__), '..', 'data')
 CART_FILE = os.path.join(STORAGE_DIR, 'cart_store.json')
@@ -127,6 +130,31 @@ def agregar_al_carrito(id_usuario, item):
     return user_cart
 
 
+def actualizar_cantidad_carrito(id_usuario, id_libro, nueva_cantidad):
+    """
+    Actualiza la cantidad de un libro en el carrito.
+    Si nueva_cantidad <= 0, elimina el item del carrito.
+    """
+    store = _load_store(CART_FILE)
+    user_key = str(id_usuario)
+    user_cart = store.get(user_key, [])
+
+    if nueva_cantidad <= 0:
+        user_cart = [item for item in user_cart if item['id_libro'] != id_libro]
+        store[user_key] = user_cart
+        _save_store(CART_FILE, store)
+        return user_cart
+
+    existing = next((item for item in user_cart if item['id_libro'] == id_libro), None)
+    if not existing:
+        return user_cart
+
+    existing['cantidad'] = nueva_cantidad
+    store[user_key] = user_cart
+    _save_store(CART_FILE, store)
+    return user_cart
+
+
 def eliminar_item_carrito(id_usuario, id_libro):
     store = _load_store(CART_FILE)
     user_key = str(id_usuario)
@@ -157,7 +185,7 @@ def _calcular_costo_envio(items, tipo_entrega):
                 tiendas.add(int(id_tienda))
         return sum(obtener_tarifa_envio(id_tienda) for id_tienda in tiendas)
     except Exception as e:
-        print(f"[checkout] No se pudo calcular tarifa_envio: {e}")
+        logger.error("[checkout] No se pudo calcular tarifa_envio: %s", e)
         return 0.0
 
 
@@ -338,7 +366,7 @@ def crear_orden_directa(id_usuario, item_libro, id_direccion=None, tipo_entrega=
         orders[str(id_usuario)] = user_orders
         _save_store(ORDER_FILE, orders)
     except Exception as e:
-        print(f"Error guardando orden directa en DB: {e}")
+        logger.error("Error guardando orden directa en DB: %s", e)
     finally:
         if 'cursor' in locals():
             cursor.close()

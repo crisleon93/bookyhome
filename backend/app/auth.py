@@ -1,7 +1,10 @@
 import os
+import logging
 from passlib.context import CryptContext
 from datetime import datetime, timedelta, timezone # Agregamos timezone
-import jwt 
+import jwt
+
+logger = logging.getLogger(__name__)
 
 # ========================
 # Seguridad y cifrado
@@ -31,10 +34,10 @@ def create_token(data: dict):
 def verify_token(token: str):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        print(f"✅ Token verificado correctamente: {payload.get('sub')}", flush=True)
+        logger.info("Token verificado correctamente: %s", payload.get('sub'))
         return payload
     except Exception as e:
-        print(f"❌ Error verificando token: {e}", flush=True)
+        logger.error("Error verificando token: %s", e)
         return None
 
 
@@ -77,4 +80,4 @@ def require_role(*roles_permitidos: str):
                 detail="No tienes permiso para realizar esta acción"
             )
         return usuario
-    return dependency
+    return dependency

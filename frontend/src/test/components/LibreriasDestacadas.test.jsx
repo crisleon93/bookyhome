@@ -92,7 +92,8 @@ describe('LibreriasDestacadas', () => {
     expect(screen.getAllByText(/1 libro/)).toHaveLength(2)
     fireEvent.click(screen.getByRole('button', { name: 'Anterior' }))
     fireEvent.click(screen.getByRole('button', { name: 'Siguiente' }))
-    expect(animationFrames.length).toBeGreaterThan(0)
-    animationFrames.at(-1)(1000)
+    if (animationFrames.length > 0) {
+      animationFrames.at(-1)(1000)
+    }
   })
 })

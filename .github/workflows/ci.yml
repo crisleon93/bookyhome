@@ -84,14 +84,16 @@ jobs:
         run: |
           bash scripts/smoke-test.sh http://localhost:8000 http://localhost:5173
 
-      # ── Pruebas del proyecto (si existen) ─────────────────────────────────
-      - name: Pruebas unitarias del backend (pytest)
+      # ── Pruebas del proyecto (Gate Estricto) ─────────────────────────────
+      - name: Pruebas unitarias del backend (pytest - Gate Estricto)
         run: |
           if [ -d backend/tests ] && [ -n "$(ls -A backend/tests 2>/dev/null)" ]; then
+            echo "Sincronizando dependencias de desarrollo y ejecutando pruebas de backend..."
             docker compose -f docker-compose.ci.yml exec -T backend \
-              python -m pytest tests/ -v --tb=short || true
+              sh -c "uv sync --group dev && python -m pytest tests/ -v --tb=short"
           else
             echo "No hay pruebas unitarias en backend/tests/"
+            exit 1
           fi
 
       - name: Limpiar

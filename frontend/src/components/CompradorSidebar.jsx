@@ -154,10 +154,10 @@ export default function CompradorSidebar({ userName, userEmail, profilePhotoUrl,
               onMouseEnter={(e) => !active && (e.currentTarget.style.background = 'rgba(255,255,255,0.08)')}
               onMouseLeave={(e) => !active && (e.currentTarget.style.background = 'transparent')}
             >
-              <span style={{ display: 'flex', flexShrink: 0, alignItems: 'center', width: '24px', height: '24px', justifyContent: 'center' }}>
+              <span style={{ display: 'flex', flexShrink: 0, alignItems: 'center', width: '24px', height: '24px', justifyContent: 'center', color: WHITE }}>
                 {ICONS[item.name]}
               </span>
-              {sidebarOpen && <span>{item.label}</span>}
+              {sidebarOpen && <span style={{ color: WHITE }}>{item.label}</span>}
             </button>
           );
         })}
@@ -188,7 +188,7 @@ export default function CompradorSidebar({ userName, userEmail, profilePhotoUrl,
         <span style={{ display: 'flex', flexShrink: 0, alignItems: 'center', width: '24px', height: '24px', justifyContent: 'center' }}>
           <SidebarIcon Icon={IconLogOut} size={18} />
         </span>
-        {sidebarOpen && <span>Cerrar sesión</span>}
+        {sidebarOpen && <span style={{ color: WHITE }}>Cerrar sesión</span>}
       </button>
     </aside>
   );

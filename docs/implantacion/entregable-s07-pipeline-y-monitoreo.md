@@ -48,7 +48,7 @@ Enlaces a los workflows en el repositorio:
 |---|---|---|---|---|
 | `RENDER_DEPLOY_HOOK_URL` | Secreto | Ambiente `produccion` | Pedir el despliegue a Render (release) | `ana` (admin) — Render Dashboard → Settings → Deploy Hook → regenerar |
 | `RENDER_API_KEY` | Secreto | Ambiente `produccion` | Crear deploys desde un commit específico (rollback) | `ana` — Render Dashboard → API Keys → rotate |
-| `RENDER_SERVICE_ID_API` | Secreto | Ambiente `produccion` | Identificar el servicio `bookyhome-api` en la API de Render | `ana` — no rota (es un ID fijo) |
+| `RENDER_SERVICE_ID_API` | Secreto | Ambiente `produccion` | Identificar el servicio `bookyhome` en la API de Render | `ana` — no rota (es un ID fijo) |
 | `GITHUB_TOKEN` | Automático | Workflow | Publicar imágenes en GHCR (lo provee GitHub, no se configura) | GitHub lo rota automáticamente |
 
 > **Ningún secreto aparece en los workflows ni en el repositorio.** Todos viven en el ambiente `produccion` de GitHub y solo son accesibles por los jobs que declaran `environment: produccion`. El workflow de CI no usa ningún secreto.
@@ -139,7 +139,7 @@ git push origin v1.0.1
 # El workflow verifica la imagen en GHCR, despliega en Render y verifica.
 
 # Opcion B: panel de Render
-# Render Dashboard → bookyhome-api → Deploys → seleccionar deploy anterior → Rollback
+# Render Dashboard → bookyhome → Deploys → seleccionar deploy anterior → Rollback
 ```
 
 ### En el servidor (VM Ubuntu)
@@ -263,10 +263,10 @@ MODIFY`), se aplaza a la versión N+1 para que la N→N-1 siga siendo posible.
 
 | Monitor | Tipo | Objetivo | Intervalo | Reintentos | Qué hace quien recibe la alerta |
 |---|---|---|---|---|---|
-| Salud API | HTTP(s) | `https://bookyhome-api.onrender.com/health` | 60 s | 2 | Revisar logs de Render, si fue el último cambio ejecutar rollback a la versión anterior |
-| API Raíz | HTTP(s) | `https://bookyhome-api.onrender.com/` | 60 s | 3 | Revisar logs del backend |
+| Salud API | HTTP(s) | `https://bookyhome.onrender.com/health` | 60 s | 2 | Revisar logs de Render, si fue el último cambio ejecutar rollback a la versión anterior |
+| API Raíz | HTTP(s) | `https://bookyhome.onrender.com/` | 60 s | 3 | Revisar logs del backend |
 | Frontend | HTTP(s) | `https://bookyhome-web.onrender.com/` | 120 s | 3 | Revisar logs del frontend / verificar CDN |
-| Versión correcta | Keyword (HTTP) | `https://bookyhome-api.onrender.com/health` — keyword: `"version":"1.0.1"` | 300 s | 2 | Verificar que el release de la versión esperada se completó |
+| Versión correcta | Keyword (HTTP) | `https://bookyhome.onrender.com/health` — keyword: `"version":"1.0.1"` | 300 s | 2 | Verificar que el release de la versión esperada se completó |
 | Respaldo diario | Push | Push URL (latido de `respaldo-restic.sh`) | 25 h | 0 | Verificar cron de respaldo, logs de restic, ejecutar respaldo manual |
 
 | Campo | Valor |

@@ -68,6 +68,10 @@ vi.mock('../../services/api', () => ({
   crearCalificacionTienda: vi.fn(),
   getCalificacionesTienda: vi.fn(() => Promise.resolve({ data: { calificaciones: [] } })),
   actualizarCalificacionTienda: vi.fn(),
+  getOfertaActivaLibro: vi.fn(() => Promise.resolve({ data: null })),
+  compararLibrosApi: vi.fn(() => Promise.resolve({ data: { libros: [] } })),
+  getOrdenes: vi.fn(() => Promise.resolve({ data: [] })),
+  updateCartQuantity: vi.fn(() => Promise.resolve({ data: {} })),
 }))
 
 vi.mock('../../services/chat', () => ({
@@ -80,10 +84,15 @@ vi.mock('../../components/ToastProvider', () => ({
 }))
 
 vi.mock('../../components/LibroCard', () => ({
-  default: ({ libro, onVerDetalles }) => (
+  default: ({ libro, onVerDetalles, onToggleComparar, isComparando }) => (
     <div data-testid={`librocard-${libro.id_libro}`}>
       <span>{libro.titulo}</span>
       <button onClick={() => onVerDetalles?.(libro)}>Ver detalles</button>
+      {onToggleComparar && (
+        <button onClick={() => onToggleComparar(libro)}>
+          {isComparando ? `Quitar comparacion ${libro.id_libro}` : `Comparar ${libro.id_libro}`}
+        </button>
+      )}
     </div>
   ),
 }))
@@ -656,6 +665,223 @@ describe('Catalogo — resolveImagenUrl', () => {
     renderCatalogo()
     await waitFor(() => {
       expect(screen.getByTestId('librocard-1')).toBeInTheDocument()
+    })
+  })
+
+  describe('Catalogo — acciones adicionales de detalle (Reportar, Compartir, Comparar)', () => {
+    it('muestra error al reportar si no hay sesion iniciada', async () => {
+      localStorage.removeItem('token')
+      renderCatalogo()
+      await waitFor(() => screen.getByTestId('librocard-1'))
+      fireEvent.click(screen.getAllByRole('button', { name: /ver detalles/i })[0])
+      const reportBtn = await screen.findByRole('button', { name: /reportar/i })
+      fireEvent.click(reportBtn)
+      const toast = await import('../../components/ToastProvider')
+      expect(toast.notify).toHaveBeenCalledWith('Debes iniciar sesion para reportar un problema con tu pedido', 'error')
+    })
+
+    it('impide reportar si el usuario no ha comprado el libro', async () => {
+      localStorage.setItem('token', 'fake.token.jwt')
+      const apiModule = await import('../../services/api')
+      apiModule.getOrdenes.mockResolvedValueOnce({ data: [{ id_orden: 99, items: [{ id_libro: 999 }] }] })
+      renderCatalogo()
+      await waitFor(() => screen.getByTestId('librocard-1'))
+      fireEvent.click(screen.getAllByRole('button', { name: /ver detalles/i })[0])
+      const reportBtn = await screen.findByRole('button', { name: /reportar/i })
+      fireEvent.click(reportBtn)
+      const toast = await import('../../components/ToastProvider')
+      await waitFor(() => {
+        expect(toast.notify).toHaveBeenCalledWith('Solo puedes radicar una queja o reclamo sobre libros que hayas comprado previamente', 'error')
+      })
+    })
+
+    it('redirige a quejas y reclamos si el usuario ha comprado el libro', async () => {
+      localStorage.setItem('token', 'fake.token.jwt')
+      const apiModule = await import('../../services/api')
+      apiModule.getOrdenes.mockResolvedValueOnce({ data: [{ id_orden: 55, id_orden_db: 55, items: [{ id_libro: 1 }] }] })
+      renderCatalogo()
+      await waitFor(() => screen.getByTestId('librocard-1'))
+      fireEvent.click(screen.getAllByRole('button', { name: /ver detalles/i })[0])
+      const reportBtn = await screen.findByRole('button', { name: /reportar/i })
+      fireEvent.click(reportBtn)
+      await waitFor(() => {
+        expect(mockNavigate).toHaveBeenCalledWith('/?seccion=Quejas y reclamos&ordenId=55')
+      })
+    })
+
+    it('copia enlace al portapapeles al compartir', async () => {
+      renderCatalogo()
+      await waitFor(() => screen.getByTestId('librocard-1'))
+      fireEvent.click(screen.getAllByRole('button', { name: /ver detalles/i })[0])
+      const shareBtn = await screen.findByRole('button', { name: /compartir/i })
+      fireEvent.click(shareBtn)
+      const toast = await import('../../components/ToastProvider')
+      expect(toast.notify).toHaveBeenCalledWith('Enlace del libro copiado al portapapeles!', 'success')
+    })
+
+    it('muestra enlace con notify info si no existe navigator.clipboard', async () => {
+      const originalClipboard = navigator.clipboard
+      Object.defineProperty(navigator, 'clipboard', { value: undefined, configurable: true })
+
+      renderCatalogo()
+      await waitFor(() => screen.getByTestId('librocard-1'))
+      fireEvent.click(screen.getAllByRole('button', { name: /ver detalles/i })[0])
+      const shareBtn = await screen.findByRole('button', { name: /compartir/i })
+      fireEvent.click(shareBtn)
+      const toast = await import('../../components/ToastProvider')
+      expect(toast.notify).toHaveBeenCalledWith(expect.stringContaining('/?seccion=Cat%C3%A1logo&libro=1'), 'info')
+
+      Object.defineProperty(navigator, 'clipboard', { value: originalClipboard, configurable: true })
+    })
+
+    it('muestra error si falla la llamada a getOrdenes al reportar', async () => {
+      localStorage.setItem('token', 'fake.token.jwt')
+      const apiModule = await import('../../services/api')
+      apiModule.getOrdenes.mockRejectedValueOnce(new Error('Network error'))
+
+      renderCatalogo()
+      await waitFor(() => screen.getByTestId('librocard-1'))
+      fireEvent.click(screen.getAllByRole('button', { name: /ver detalles/i })[0])
+      const reportBtn = await screen.findByRole('button', { name: /reportar/i })
+      fireEvent.click(reportBtn)
+      const toast = await import('../../components/ToastProvider')
+      await waitFor(() => {
+        expect(toast.notify).toHaveBeenCalledWith('No se pudo verificar el historial de compras. Intenta de nuevo mas tarde.', 'error')
+      })
+    })
+
+    it('permite comprar ahora desde el detalle y redirige al carrito con buyNow', async () => {
+      renderCatalogo()
+      await waitFor(() => screen.getByTestId('librocard-1'))
+      fireEvent.click(screen.getAllByRole('button', { name: /ver detalles/i })[0])
+
+      const comprarBtn = await screen.findByRole('button', { name: /comprar ahora/i })
+      fireEvent.click(comprarBtn)
+
+      expect(mockNavigate).toHaveBeenCalledWith('/?seccion=Carrito', expect.objectContaining({
+        state: expect.objectContaining({
+          buyNow: expect.objectContaining({ id_libro: 1 }),
+        }),
+      }))
+    })
+  })
+
+  describe('Catalogo — barra flotante y comparador de libros (RF-033)', () => {
+    beforeEach(async () => {
+      localStorage.removeItem('bkh_libros_comparar')
+      const apiModule = await import('../../services/api')
+      apiModule.default.get.mockImplementation((url) => {
+        if (url.includes('busqueda-avanzada')) {
+          return Promise.resolve({
+            data: { libros: librosEjemplo, total_paginas: 1, total: 2, pagina: 1 },
+          })
+        }
+        return Promise.resolve({ data: {} })
+      })
+    })
+
+    it('agrega libros a comparación, muestra barra flotante, abre modal y permite limpiar', async () => {
+      const apiModule = await import('../../services/api')
+      apiModule.compararLibrosApi.mockResolvedValue({
+        data: {
+          libros: [
+            { id_libro: 1, titulo: 'El Quijote', precio_libro: 30000, stock: 5 },
+            { id_libro: 2, titulo: 'Cien años de soledad', precio_libro: 45000, stock: 2 },
+          ],
+        },
+      })
+      renderCatalogo()
+      await waitFor(() => screen.getByTestId('librocard-1'))
+      expect(screen.getByTestId('librocard-2')).toBeInTheDocument()
+
+      // 1. Agregar Libro 1
+      fireEvent.click(screen.getByRole('button', { name: /comparar 1/i }))
+      expect(await screen.findByText(/1 libro para comparar/i)).toBeInTheDocument()
+
+      // 2. Agregar Libro 2
+      fireEvent.click(screen.getByRole('button', { name: /comparar 2/i }))
+      expect(await screen.findByText(/2 libros para comparar/i)).toBeInTheDocument()
+
+      // 3. Abrir modal comparador
+      const btnCompararAhora = screen.getByRole('button', { name: /ver comparación/i })
+      fireEvent.click(btnCompararAhora)
+      expect(await screen.findByText('Comparativa de Libros Lado a Lado')).toBeInTheDocument()
+
+      // 4. Cerrar modal con botón X
+      const btnCerrar = screen.getByTitle('Cerrar ventana')
+      fireEvent.click(btnCerrar)
+      await waitFor(() => {
+        expect(screen.queryByText('Comparativa de Libros Lado a Lado')).not.toBeInTheDocument()
+      })
+
+      // 5. Limpiar comparación
+      const btnLimpiar = screen.getByRole('button', { name: /limpiar/i })
+      fireEvent.click(btnLimpiar)
+      await waitFor(() => {
+        expect(screen.queryByText(/para comparar/i)).not.toBeInTheDocument()
+      })
+    })
+
+    it('agrega al carrito desde el modal de comparación', async () => {
+      localStorage.setItem('token', 'token-valido')
+      const apiModule = await import('../../services/api')
+      apiModule.addToCart.mockResolvedValueOnce({ data: {} })
+      apiModule.compararLibrosApi.mockResolvedValue({
+        data: {
+          libros: [
+            { id_libro: 1, titulo: 'El Quijote', precio_libro: 30000, stock: 5 },
+            { id_libro: 2, titulo: 'Cien años de soledad', precio_libro: 45000, stock: 2 },
+          ],
+        },
+      })
+
+      renderCatalogo()
+      await waitFor(() => screen.getByTestId('librocard-1'))
+      fireEvent.click(screen.getByRole('button', { name: /comparar 1/i }))
+      fireEvent.click(screen.getByRole('button', { name: /comparar 2/i }))
+
+      const btnComparar = screen.getByRole('button', { name: /ver comparación/i })
+      fireEvent.click(btnComparar)
+
+      const addBtn = (await screen.findAllByRole('button', { name: /añadir al carrito/i }))[0]
+      fireEvent.click(addBtn)
+
+      await waitFor(() => {
+        expect(apiModule.addToCart).toHaveBeenCalledWith(expect.objectContaining({ id_libro: 1 }))
+      })
+    })
+
+    it('impide agregar más de 4 libros a la comparación', async () => {
+      // Simular que ya hay 4 libros en localStorage antes de renderizar
+      const cuatroLibros = [
+        { id_libro: 10, titulo: 'L10' },
+        { id_libro: 11, titulo: 'L11' },
+        { id_libro: 12, titulo: 'L12' },
+        { id_libro: 13, titulo: 'L13' },
+      ]
+      localStorage.setItem('bkh_libros_comparar', JSON.stringify(cuatroLibros))
+
+      renderCatalogo()
+      await waitFor(() => screen.getByTestId('librocard-1'))
+
+      // Intentar agregar un 5to libro
+      fireEvent.click(screen.getByRole('button', { name: /comparar 1/i }))
+      const toast = await import('../../components/ToastProvider')
+      expect(toast.notify).toHaveBeenCalledWith('Puedes comparar hasta 4 libros a la vez', 'info')
+    })
+
+    it('remueve un libro si ya estaba seleccionado en comparación', async () => {
+      renderCatalogo()
+      await waitFor(() => screen.getByTestId('librocard-1'))
+
+      // Agregar Libro 1
+      fireEvent.click(screen.getByRole('button', { name: /comparar 1/i }))
+      expect(await screen.findByText(/1 libro para comparar/i)).toBeInTheDocument()
+
+      // Volver a hacer clic para quitar
+      fireEvent.click(screen.getByRole('button', { name: /quitar comparacion 1/i }))
+      const toast = await import('../../components/ToastProvider')
+      expect(toast.notify).toHaveBeenCalledWith('"El Quijote" removido de la comparación', 'info')
     })
   })
 })

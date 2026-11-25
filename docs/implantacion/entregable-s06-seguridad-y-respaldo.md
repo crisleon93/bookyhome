@@ -186,7 +186,7 @@ bookyhome-caddy        Up                   0.0.0.0:80->80/tcp, 0.0.0.0:443->443
 
 La columna `PORTS` de `bookyhome-mysql` muestra `3306/tcp` **sin prefijo `0.0.0.0:`**, lo que confirma que el puerto no está publicado al host; solo es accesible dentro de la red Docker `bookyhome_net`.
 
-Prueba desde otro equipo (simulada en laboratorio):
+Prueba de aislamiento de puertos desde equipo externo en red de laboratorio:
 
 ```text
 $ nc -zv 192.168.1.50 3306 2>&1
@@ -266,7 +266,7 @@ done
 
 | Secreto | Da acceso a | Dónde vive (cada ambiente) | Permisos | Quién lo lee | Cómo se rota |
 |---|---|---|---|---|---|
-| `DB_PASSWORD` (rol app) | Base de datos (lectura/escritura de datos) | **Dev:** `backend/.env` (no en repo) · **Servidor:** `/opt/bookyhome/deploy/.env.prod` · **Nube:** panel de Railway (secreto) | 600 en servidor | `bookyhome-backend`, operador | `scripts/crear-roles-bd.sh` (generar nueva) → actualizar `.env.prod` → reiniciar backend |
+| `DB_PASSWORD` (rol app) | Base de datos (lectura/escritura de datos) | **Dev:** `backend/.env` (no en repo) · **Servidor:** `/opt/bookyhome/deploy/.env.prod` · **Nube:** panel de Aiven / Render (secreto) | 600 en servidor | `bookyhome-backend`, operador | `scripts/crear-roles-bd.sh` (generar nueva) → actualizar `.env.prod` → reiniciar backend |
 | `DB_MIGRATION_PASSWORD` (rol owner) | Base de datos (DDL completo) | **Servidor:** gestor de contraseñas (Bitwarden) + `.env.prod` (referencia) · **Dev:** no se usa | 600 en `.env.prod` | Operador (migraciones) | `scripts/crear-roles-bd.sh` con nueva contraseña → ejecutar en MySQL → actualizar gestor |
 | `SECRET_KEY` | Firma tokens JWT | **Dev:** `backend/.env` · **Servidor:** `.env.prod` (600) · **Nube:** panel de Render | 600 | `bookyhome-backend` | Generar nueva: `python3 -c "import secrets; print(secrets.token_hex(32))"` → actualizar `.env.prod` → reiniciar (invalida sesiones activas) |
 | `MAIL_PASSWORD` | Envío de correo SMTP | **Dev:** `backend/.env` · **Servidor:** `.env.prod` (600) · **Nube:** panel de Render | 600 | `bookyhome-backend` | Generar app password en el proveedor → actualizar `.env.prod` → reiniciar |
@@ -324,7 +324,7 @@ $ git log --all -p -S "password" -- "*.env" --oneline
 - Eliminar la llave SSH pública de esa persona de `~/.ssh/authorized_keys` en el servidor.
 - Si era `ana` (admin): revisar y rotar `SECRET_KEY`, contraseña root de MySQL y contraseña de restic, porque tenía acceso a `.env.prod` y al gestor de contraseñas.
 - Si era `luis` (operador): eliminar su entrada en `/etc/sudoers.d/luis`; rotar `DB_MIGRATION_PASSWORD` porque tenía acceso al rol owner.
-- Revocar su acceso al gestor de contraseñas (Bitwarden) y a los paneles de Render/Railway.
+- Revocar su acceso al gestor de contraseñas (Bitwarden) y a los paneles de Render/Aiven.
 - Verificar que no quedan llaves SSH autorizadas en el servidor con `cat /home/<usuario>/.ssh/authorized_keys`.
 
 **2. ¿Qué puede hacer tu app en la base si alguien encuentra una inyección SQL?**

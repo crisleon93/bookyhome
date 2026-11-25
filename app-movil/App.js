@@ -8,6 +8,7 @@ import { NotificationProvider } from './src/context/NotificationContext';
 import { ThemeProvider, useAppTheme } from './src/context/ThemeContext';
 import { Image, Platform, StatusBar } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import BookyChat from './src/components/BookyChat';
 
 // Referencia global de navegación
 export const navigationRef = React.createRef();
@@ -35,6 +36,7 @@ function RootNavigation() {
       />
       <NavigationContainer ref={navigationRef} theme={navigationTheme}>
         <AppNavigator />
+        <BookyChat />
       </NavigationContainer>
     </>
   );

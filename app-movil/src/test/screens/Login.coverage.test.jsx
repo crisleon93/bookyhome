@@ -52,8 +52,10 @@ vi.mock('react-native', async () => {
     ActivityIndicator: nativeElement('span'),
     Alert: { alert: mocks.alert },
     KeyboardAvoidingView: nativeElement('div'),
-    Modal: ({ visible, children }) => visible
-      ? ReactModule.createElement('div', { 'data-testid': 'modal' }, children)
+    Modal: ({ visible, children, onRequestClose }) => visible
+      ? ReactModule.createElement(ReactModule.Fragment, null,
+        ReactModule.createElement('div', { 'data-testid': 'modal' }, children),
+        ReactModule.createElement('button', { type: 'button', onClick: onRequestClose }, 'Cerrar biometría'))
       : null,
     Platform: { OS: 'web' },
     ScrollView: nativeElement('div'),
@@ -183,6 +185,18 @@ describe('Login móvil', () => {
     expect(await screen.findByText('Elige un método')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Face ID' }))
     await waitFor(() => expect(mocks.unlockWithBiometrics).toHaveBeenCalledWith('face'))
+  })
+
+  it('cierra el selector biométrico por la acción del sistema', async () => {
+    renderLogin({
+      ...normalAuth,
+      biometricEnabled: true,
+      pendingToken: 'saved-token',
+    })
+    fireEvent.click(await screen.findByRole('button', { name: 'Ingresar con Huella o Face ID' }))
+    expect(await screen.findByText('Elige un método')).toBeTruthy()
+    fireEvent.click(screen.getByText('Cerrar biometría'))
+    expect(screen.queryByTestId('modal')).toBeNull()
   })
 
   it('guarda el token pendiente al activar biometría en el inicio de sesión', async () => {
@@ -489,4 +503,71 @@ describe('Login móvil', () => {
     expect(screen.queryByRole('alert')).toBeNull()
     expect(mocks.alert).not.toHaveBeenCalled()
   })
+
+  it('traduce errores de campos obligatorios, longitud, servidor y conexión', async () => {
+    const cases = [
+      [{
+        response: { data: { detail: [{ loc: ['body', 'password'], type: 'missing', msg: 'field required' }] } },
+      }, 'Completa todos los campos obligatorios.'],
+      [{
+        response: { data: { detail: [{ loc: ['body', 'password'], type: 'string_too_short', msg: 'too short' }] } },
+      }, 'Uno de los campos es demasiado corto.'],
+      [{
+        response: { data: { detail: [{ loc: ['body', 'password'], type: 'string_too_long', msg: 'too long' }] } },
+      }, 'Uno de los campos excede la longitud permitida.'],
+      [{
+        response: { data: { detail: [{ loc: ['body', 'name'], type: 'value_error', msg: 'invalid' }] } },
+      }, 'Revisa los datos ingresados e intenta de nuevo.'],
+      [{
+        response: { status: 422, data: { detail: 'datos inválidos' } },
+      }, 'Revisa que el correo tenga un formato válido y que ambos campos estén completos.'],
+      [{
+        response: { data: { detail: 'Cuenta temporalmente bloqueada' } },
+      }, 'Cuenta temporalmente bloqueada'],
+      [{
+        response: { status: 500, data: {} },
+      }, 'No se pudo iniciar sesión. Intenta de nuevo.'],
+    ];
+
+    for (const [error, message] of cases) {
+      mocks.apiPost.mockRejectedValueOnce(error);
+      renderLogin();
+      fillCredentials();
+      fireEvent.click(screen.getByRole('button', { name: 'Ingresar' }));
+      expect(await screen.findByText(message)).toBeTruthy();
+      cleanup();
+    }
+  });
+
+  it('ejecuta el desbloqueo biométrico automático y permite usar huella tras un error facial', async () => {
+    mocks.unlockWithBiometrics
+      .mockResolvedValueOnce({ success: false, reason: 'failed', error: 'sensor' })
+      .mockResolvedValueOnce({ success: false, reason: 'failed', error: 'sensor' })
+      .mockResolvedValueOnce({ success: false, reason: 'no_hardware' });
+    renderLogin({
+      ...normalAuth,
+      biometricEnabled: true,
+      biometricLocked: true,
+      pendingToken: 'saved-token',
+    });
+
+    await waitFor(() => expect(mocks.unlockWithBiometrics).toHaveBeenCalledWith());
+    await waitFor(() => expect(mocks.alert).toHaveBeenCalledWith(
+      'No se pudo verificar', expect.any(String),
+    ));
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Ingresar con Huella o Face ID' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Face ID' }));
+    await waitFor(() => expect(mocks.alert).toHaveBeenCalledWith(
+      'Face ID no disponible',
+      expect.stringContaining('sensor'),
+      expect.any(Array),
+      expect.any(Object),
+    ));
+    const fallback = mocks.alert.mock.calls.at(-1)[2]
+      .find((button) => button.text === 'Usar huella');
+    await fallback.onPress();
+    expect(mocks.unlockWithBiometrics).toHaveBeenLastCalledWith('fingerprint');
+    expect(mocks.alert).toHaveBeenLastCalledWith('Biometría no disponible', expect.any(String));
+  });
 })

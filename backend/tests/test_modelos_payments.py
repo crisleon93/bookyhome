@@ -92,6 +92,36 @@ class TestRegistrarPago:
         assert result["transaction"]["estado"] == "aprobado"
         assert result["order"]["estado"] == "pagado"
 
+    def test_notificacion_errors_do_not_fail_a_successful_payment(self, tmp_path, monkeypatch):
+        order_file = tmp_path / "orders.json"
+        payment_file = tmp_path / "payments.json"
+        order = self._orden_pendiente(id_orden=4)
+        order["items"] = [{"id_libro": 12}]
+        order_file.write_text(json.dumps({"42": [order]}))
+
+        import app.models.payments as mod
+        monkeypatch.setattr(mod, "ORDER_FILE", str(order_file))
+        monkeypatch.setattr(mod, "PAYMENT_FILE", str(payment_file))
+
+        db_mock, cursor_mock = MagicMock(), MagicMock()
+        db_mock.cursor.return_value = cursor_mock
+
+        def execute(query, *_args):
+            if "INSERT INTO notificaciones" in query or "SELECT DISTINCT t.id_usuario" in query:
+                raise RuntimeError("notification service unavailable")
+
+        cursor_mock.execute.side_effect = execute
+        with patch("app.database.get_db", return_value=db_mock):
+            result = mod.registrar_pago(
+                id_usuario=42,
+                id_orden=4,
+                amount=50000.0,
+                payment_method="tarjeta",
+            )
+
+        assert result["ok"] is True
+        assert result["order"]["estado"] == "pagado"
+
     def test_orden_ya_pagada_retorna_already_paid(self, tmp_path, monkeypatch):
         order_file = tmp_path / "orders.json"
         payment_file = tmp_path / "payments.json"

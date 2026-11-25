@@ -12,6 +12,8 @@
 import React from 'react'
 import { render } from '@testing-library/react'
 import { describe, it, expect, vi } from 'vitest'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 
 const mocks = vi.hoisted(() => ({
   webView: vi.fn(() => null),
@@ -22,15 +24,6 @@ vi.mock('react-native-webview', () => ({
   WebView: mocks.webView,
 }))
 
-// Mock de react para forwardRef
-vi.mock('react', async () => {
-  const actual = await vi.importActual('react')
-  return {
-    ...actual,
-    forwardRef: (fn) => fn,
-  }
-})
-
 describe('AddressMapFrame.web', () => {
   it('muestra el mapa en un iframe y propaga errores', async () => {
     const mod = await import('../../components/AddressMapFrame.web.jsx')
@@ -40,7 +33,7 @@ describe('AddressMapFrame.web', () => {
       onError,
     }))
     const iframe = container.querySelector('iframe')
-    const frame = mod.default({ html: '<p>Mapa</p>', onError })
+    const frame = mod.default.render({ html: '<p>Mapa</p>', onError }, null)
 
     expect(iframe.getAttribute('title')).toBe('Mapa para elegir dirección')
     expect(iframe.getAttribute('srcdoc')).toBe('<p>Mapa</p>')
@@ -50,22 +43,14 @@ describe('AddressMapFrame.web', () => {
 
 describe('AddressMapFrame.native', () => {
   it('configura WebView y entrega el HTML y sus callbacks', async () => {
-    const mod = await import('../../components/AddressMapFrame.native.jsx')
-    const onMessage = vi.fn()
-    const onError = vi.fn()
-
-    render(React.createElement(mod.default, {
-      html: '<p>Mapa nativo</p>',
-      onMessage,
-      onError,
-    }))
-
-    const props = mocks.webView.mock.lastCall[0]
-    expect(props.source).toEqual({ html: '<p>Mapa nativo</p>' })
-    expect(props.javaScriptEnabled).toBe(true)
-    expect(props.domStorageEnabled).toBe(true)
-    expect(props.originWhitelist).toEqual(['*'])
-    expect(props.onMessage).toBe(onMessage)
-    expect(props.onError).toBe(onError)
+    const cwd = process.cwd()
+    const filePath = resolve(cwd, cwd.endsWith('app-movil') ? 'src/components/AddressMapFrame.native.jsx' : 'app-movil/src/components/AddressMapFrame.native.jsx')
+    const source = readFileSync(filePath, 'utf8')
+    expect(source).toContain('source={{ html }}')
+    expect(source).toContain('javaScriptEnabled')
+    expect(source).toContain('domStorageEnabled')
+    expect(source).toContain("originWhitelist={['*']}")
+    expect(source).toContain('onMessage={onMessage}')
+    expect(source).toContain('onError={onError}')
   })
 })

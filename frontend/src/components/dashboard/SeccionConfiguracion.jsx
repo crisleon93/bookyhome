@@ -2,19 +2,97 @@ import { IconSettings, IconEyeOpen, IconEyeClosed } from "../Icons";
 import { notify } from "../ToastProvider";
 import { useState, useEffect } from "react";
 import { isStrongPassword } from "../../utils/passwordValidation";
+import { getApiBaseUrl } from "../../services/api";
 
 const PASSWORD_REQUIREMENTS = "Mínimo 8 caracteres, una mayúscula, un número y un carácter especial";
 
+const DEFAULT_PREFERENCIAS = {
+  notificaciones_mensajes: { email: true, web: true },
+  notificaciones_resenas: { email: true, web: true },
+  notificaciones_ofertas: { email: true, web: false },
+  notificaciones_pedidos: { email: true, web: true },
+  notificaciones_entregas: { email: true, web: true },
+  notificaciones_pagos: { email: true, web: true },
+  notificaciones_sistema: { email: true, web: true }
+};
+
+function SwitchControl({
+  checked,
+  onChange,
+  disabled = false,
+  activeColor = "#7A1E3A",
+  ariaLabel = "Activar o desactivar",
+  width = 48,
+  travel = 22,
+  id
+}) {
+  return (
+    <label
+      style={{
+        position: "relative",
+        display: "inline-block",
+        width: `${width}px`,
+        height: "26px",
+        flexShrink: 0,
+        cursor: disabled ? "not-allowed" : "pointer"
+      }}
+    >
+      <input
+        id={id}
+        type="checkbox"
+        aria-label={ariaLabel}
+        checked={Boolean(checked)}
+        onChange={onChange}
+        disabled={disabled}
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          width: "100%",
+          height: "100%",
+          margin: 0,
+          opacity: 0,
+          cursor: disabled ? "not-allowed" : "pointer",
+          zIndex: 2
+        }}
+      />
+      <span
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: checked ? activeColor : (activeColor === "var(--vinotinto)" ? "#ccc" : "#d1d5db"),
+          transition: "0.3s",
+          borderRadius: "26px",
+          pointerEvents: "none",
+          zIndex: 1
+        }}
+      />
+      <span
+        style={{
+          position: "absolute",
+          content: "",
+          height: "20px",
+          width: "20px",
+          left: "3px",
+          bottom: "3px",
+          backgroundColor: "white",
+          transition: "0.3s",
+          borderRadius: "50%",
+          transform: checked ? `translateX(${travel}px)` : "translateX(0)",
+          boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+          pointerEvents: "none",
+          zIndex: 1
+        }}
+      />
+    </label>
+  );
+}
+
 export default function SeccionConfiguracion({ userId }) {
-  const [preferencias, setPreferencias] = useState({
-    notificaciones_mensajes: { email: true, web: true },
-    notificaciones_resenas: { email: true, web: true },
-    notificaciones_ofertas: { email: true, web: false },
-    notificaciones_pedidos: { email: true, web: true },
-    notificaciones_entregas: { email: true, web: true },
-    notificaciones_pagos: { email: true, web: true },
-    notificaciones_sistema: { email: true, web: true }
-  });
+  const [preferencias, setPreferencias] = useState(DEFAULT_PREFERENCIAS);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   
@@ -35,79 +113,154 @@ export default function SeccionConfiguracion({ userId }) {
 
   // Cargar preferencias del usuario
   useEffect(() => {
+    let isMounted = true;
+    try {
+      const cached = localStorage.getItem('preferencias_notificaciones');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed && typeof parsed === 'object') {
+          setPreferencias(prev => {
+            const initial = { ...prev };
+            for (const key of Object.keys(DEFAULT_PREFERENCIAS)) {
+              if (parsed[key]) {
+                initial[key] = { ...DEFAULT_PREFERENCIAS[key], ...parsed[key] };
+              }
+            }
+            return initial;
+          });
+        }
+      }
+    } catch {}
+
     const cargarPreferencias = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch('http://localhost:8000/perfil/mi-perfil', {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
+        const baseUrl = getApiBaseUrl();
+        const headers = {};
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+        const response = await fetch(`${baseUrl}/perfil/mi-perfil`, {
+          headers
         });
-        if (response.ok) {
+        if (response?.ok) {
           const data = await response.json();
-          if (data.preferencias) {
-            setPreferencias(data.preferencias);
+          if (data?.preferencias && isMounted) {
+            setPreferencias(prev => {
+              const updated = { ...prev };
+              for (const key of Object.keys(DEFAULT_PREFERENCIAS)) {
+                updated[key] = {
+                  ...DEFAULT_PREFERENCIAS[key],
+                  ...(data.preferencias[key] || {})
+                };
+              }
+              try {
+                localStorage.setItem('preferencias_notificaciones', JSON.stringify(updated));
+              } catch {}
+              return updated;
+            });
           }
         }
       } catch (error) {
         console.error('Error al cargar preferencias:', error);
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
     void cargarPreferencias();
     
     // Cargar estado de modo oscuro
-    const savedDarkMode = localStorage.getItem('darkMode') === 'true';
+    const savedDarkMode = (localStorage.getItem('darkMode_comprador') ?? localStorage.getItem('darkMode')) === 'true';
     setDarkMode(savedDarkMode);
     
     // Aplicar clase dark al documento si está activo
     if (savedDarkMode) {
       document.documentElement.classList.add('dark');
     }
+
+    const handleDarkModeChange = (e) => {
+      if (e?.detail?.role && e.detail.role !== 'comprador') return;
+      const mode = typeof e?.detail?.darkMode === 'boolean'
+        ? e.detail.darkMode
+        : (localStorage.getItem('darkMode_comprador') ?? localStorage.getItem('darkMode')) === 'true';
+      setDarkMode(mode);
+    };
+    window.addEventListener('darkModeChange', handleDarkModeChange);
+    window.addEventListener('storage', handleDarkModeChange);
+
+    return () => {
+      isMounted = false;
+      window.removeEventListener('darkModeChange', handleDarkModeChange);
+      window.removeEventListener('storage', handleDarkModeChange);
+    };
   }, []);
 
   // Guardar preferencias
-  const guardarPreferencias = async () => {
+  const guardarPreferencias = async (customPreferencias = null, mostrarNotificacion = true) => {
+    const isEvent = customPreferencias && typeof customPreferencias === 'object' && ('nativeEvent' in customPreferencias || 'preventDefault' in customPreferencias);
+    const prefsParaGuardar = (!isEvent && customPreferencias) ? customPreferencias : preferencias;
+    try {
+      localStorage.setItem('preferencias_notificaciones', JSON.stringify(prefsParaGuardar));
+    } catch {}
+
     setSaving(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8000/perfil/preferencias', {
+      const baseUrl = getApiBaseUrl();
+      const headers = {
+        'Content-Type': 'application/json'
+      };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      const response = await fetch(`${baseUrl}/perfil/preferencias`, {
         method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(preferencias)
+        headers,
+        body: JSON.stringify(prefsParaGuardar)
       });
-      if (response.ok) {
-        notify("Preferencias guardadas", "success");
-      } else {
-        notify("Error al guardar preferencias", "error");
+      if (response?.ok) {
+        if (mostrarNotificacion) {
+          notify("Preferencias guardadas", "success");
+        }
+        return true;
+      } else if (response) {
+        if (mostrarNotificacion) {
+          notify("Error al guardar preferencias", "error");
+        }
+        return false;
       }
     } catch (error) {
       console.error('Error al guardar preferencias:', error);
-      notify("Error al guardar preferencias", "error");
+      if (mostrarNotificacion) {
+        notify("Error al guardar preferencias", "error");
+      }
+      return false;
     } finally {
       setSaving(false);
     }
   };
 
   const toggleCanal = (tipoNotificacion, canal) => {
-    setPreferencias(prev => ({
-      ...prev,
+    const cat = preferencias[tipoNotificacion] || DEFAULT_PREFERENCIAS[tipoNotificacion] || { email: true, web: true };
+    const updated = {
+      ...preferencias,
       [tipoNotificacion]: {
-        ...prev[tipoNotificacion],
-        [canal]: !prev[tipoNotificacion][canal]
+        ...cat,
+        [canal]: !cat[canal]
       }
-    }));
+    };
+    setPreferencias(updated);
+    void guardarPreferencias(updated, true);
   };
 
   // Función para cambiar modo oscuro
   const toggleDarkMode = () => {
     const newMode = !darkMode;
     setDarkMode(newMode);
-    localStorage.setItem('darkMode', newMode);
+    localStorage.setItem('darkMode_comprador', String(newMode));
+    localStorage.setItem('darkMode', String(newMode));
     
     // Aplicar clase al documento
     if (newMode) {
@@ -117,7 +270,7 @@ export default function SeccionConfiguracion({ userId }) {
     }
     
     // Disparar evento para que otros componentes sepan del cambio
-    window.dispatchEvent(new CustomEvent('darkModeChange', { detail: { darkMode: newMode } }));
+    window.dispatchEvent(new CustomEvent('darkModeChange', { detail: { darkMode: newMode, role: 'comprador' } }));
     
     notify(newMode ? "Modo oscuro activado" : "Modo claro activado", "success");
   };
@@ -138,8 +291,9 @@ export default function SeccionConfiguracion({ userId }) {
     
     setChangingPassword(true);
     try {
+      const baseUrl = getApiBaseUrl();
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8000/perfil/cambiar-password', {
+      const response = await fetch(`${baseUrl}/perfil/cambiar-password`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -151,7 +305,7 @@ export default function SeccionConfiguracion({ userId }) {
         })
       });
       
-      if (response.ok) {
+      if (response?.ok) {
         notify("Contraseña actualizada correctamente", "success");
         setPasswordForm({
           password_actual: '',
@@ -159,7 +313,7 @@ export default function SeccionConfiguracion({ userId }) {
           password_confirmar: ''
         });
         setShowPasswordForm(false);
-      } else {
+      } else if (response) {
         const error = await response.json();
         notify(error.detail || "Error al cambiar contraseña", "error");
       }
@@ -272,58 +426,22 @@ export default function SeccionConfiguracion({ userId }) {
               </div>
             </div>
             <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-              <label aria-label="Activar o desactivar" style={{ 
-                position: "relative", display: "inline-block", width: "48px", height: "26px",
-                cursor: loading ? "not-allowed" : "pointer"
-              }}>
-                <input 
-                  type="checkbox" 
-                  checked={preferencias.notificaciones_mensajes.email}
-                  onChange={() => toggleCanal('notificaciones_mensajes', 'email')}
-                  disabled={loading}
-                  style={{ opacity: 0, width: 0, height: 0 }} 
-                />
-                <span style={{ 
-                  position: "absolute", cursor: loading ? "not-allowed" : "pointer", 
-                  top: 0, left: 0, right: 0, bottom: 0, 
-                  backgroundColor: preferencias.notificaciones_mensajes.email ? "#7A1E3A" : "#d1d5db", 
-                  transition: "0.3s", borderRadius: "26px" 
-                }}></span>
-                <span style={{ 
-                  position: "absolute", content: "", height: "20px", width: "20px", 
-                  left: "3px", bottom: "3px", backgroundColor: "white", 
-                  transition: "0.3s", borderRadius: "50%", 
-                  transform: preferencias.notificaciones_mensajes.email ? "translateX(22px)" : "translateX(0)",
-                  boxShadow: "0 2px 4px rgba(0,0,0,0.2)"
-                }}></span>
-              </label>
+              <SwitchControl
+                checked={preferencias?.notificaciones_mensajes?.email}
+                onChange={() => toggleCanal('notificaciones_mensajes', 'email')}
+                disabled={loading}
+                activeColor="#7A1E3A"
+                ariaLabel="Notificación por email de mensajes"
+              />
             </div>
             <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-              <label aria-label="Activar o desactivar" style={{ 
-                position: "relative", display: "inline-block", width: "48px", height: "26px",
-                cursor: loading ? "not-allowed" : "pointer"
-              }}>
-                <input 
-                  type="checkbox" 
-                  checked={preferencias.notificaciones_mensajes.web}
-                  onChange={() => toggleCanal('notificaciones_mensajes', 'web')}
-                  disabled={loading}
-                  style={{ opacity: 0, width: 0, height: 0 }} 
-                />
-                <span style={{ 
-                  position: "absolute", cursor: loading ? "not-allowed" : "pointer", 
-                  top: 0, left: 0, right: 0, bottom: 0, 
-                  backgroundColor: preferencias.notificaciones_mensajes.web ? "#e91e63" : "#d1d5db", 
-                  transition: "0.3s", borderRadius: "26px" 
-                }}></span>
-                <span style={{ 
-                  position: "absolute", content: "", height: "20px", width: "20px", 
-                  left: "3px", bottom: "3px", backgroundColor: "white", 
-                  transition: "0.3s", borderRadius: "50%", 
-                  transform: preferencias.notificaciones_mensajes.web ? "translateX(22px)" : "translateX(0)",
-                  boxShadow: "0 2px 4px rgba(0,0,0,0.2)"
-                }}></span>
-              </label>
+              <SwitchControl
+                checked={preferencias?.notificaciones_mensajes?.web}
+                onChange={() => toggleCanal('notificaciones_mensajes', 'web')}
+                disabled={loading}
+                activeColor="#e91e63"
+                ariaLabel="Notificación web de mensajes"
+              />
             </div>
           </div>
 
@@ -352,58 +470,22 @@ export default function SeccionConfiguracion({ userId }) {
               </div>
             </div>
             <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-              <label aria-label="Activar o desactivar" style={{ 
-                position: "relative", display: "inline-block", width: "48px", height: "26px",
-                cursor: loading ? "not-allowed" : "pointer"
-              }}>
-                <input 
-                  type="checkbox" 
-                  checked={preferencias.notificaciones_resenas.email}
-                  onChange={() => toggleCanal('notificaciones_resenas', 'email')}
-                  disabled={loading}
-                  style={{ opacity: 0, width: 0, height: 0 }} 
-                />
-                <span style={{ 
-                  position: "absolute", cursor: loading ? "not-allowed" : "pointer", 
-                  top: 0, left: 0, right: 0, bottom: 0, 
-                  backgroundColor: preferencias.notificaciones_resenas.email ? "#7A1E3A" : "#d1d5db", 
-                  transition: "0.3s", borderRadius: "26px" 
-                }}></span>
-                <span style={{ 
-                  position: "absolute", content: "", height: "20px", width: "20px", 
-                  left: "3px", bottom: "3px", backgroundColor: "white", 
-                  transition: "0.3s", borderRadius: "50%", 
-                  transform: preferencias.notificaciones_resenas.email ? "translateX(22px)" : "translateX(0)",
-                  boxShadow: "0 2px 4px rgba(0,0,0,0.2)"
-                }}></span>
-              </label>
+              <SwitchControl
+                checked={preferencias?.notificaciones_resenas?.email}
+                onChange={() => toggleCanal('notificaciones_resenas', 'email')}
+                disabled={loading}
+                activeColor="#7A1E3A"
+                ariaLabel="Notificación por email de reseñas"
+              />
             </div>
             <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-              <label aria-label="Activar o desactivar" style={{ 
-                position: "relative", display: "inline-block", width: "48px", height: "26px",
-                cursor: loading ? "not-allowed" : "pointer"
-              }}>
-                <input 
-                  type="checkbox" 
-                  checked={preferencias.notificaciones_resenas.web}
-                  onChange={() => toggleCanal('notificaciones_resenas', 'web')}
-                  disabled={loading}
-                  style={{ opacity: 0, width: 0, height: 0 }} 
-                />
-                <span style={{ 
-                  position: "absolute", cursor: loading ? "not-allowed" : "pointer", 
-                  top: 0, left: 0, right: 0, bottom: 0, 
-                  backgroundColor: preferencias.notificaciones_resenas.web ? "#e91e63" : "#d1d5db", 
-                  transition: "0.3s", borderRadius: "26px" 
-                }}></span>
-                <span style={{ 
-                  position: "absolute", content: "", height: "20px", width: "20px", 
-                  left: "3px", bottom: "3px", backgroundColor: "white", 
-                  transition: "0.3s", borderRadius: "50%", 
-                  transform: preferencias.notificaciones_resenas.web ? "translateX(22px)" : "translateX(0)",
-                  boxShadow: "0 2px 4px rgba(0,0,0,0.2)"
-                }}></span>
-              </label>
+              <SwitchControl
+                checked={preferencias?.notificaciones_resenas?.web}
+                onChange={() => toggleCanal('notificaciones_resenas', 'web')}
+                disabled={loading}
+                activeColor="#e91e63"
+                ariaLabel="Notificación web de reseñas"
+              />
             </div>
           </div>
 
@@ -433,58 +515,22 @@ export default function SeccionConfiguracion({ userId }) {
               </div>
             </div>
             <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-              <label aria-label="Activar o desactivar" style={{ 
-                position: "relative", display: "inline-block", width: "48px", height: "26px",
-                cursor: loading ? "not-allowed" : "pointer"
-              }}>
-                <input 
-                  type="checkbox" 
-                  checked={preferencias.notificaciones_ofertas.email}
-                  onChange={() => toggleCanal('notificaciones_ofertas', 'email')}
-                  disabled={loading}
-                  style={{ opacity: 0, width: 0, height: 0 }} 
-                />
-                <span style={{ 
-                  position: "absolute", cursor: loading ? "not-allowed" : "pointer", 
-                  top: 0, left: 0, right: 0, bottom: 0, 
-                  backgroundColor: preferencias.notificaciones_ofertas.email ? "#7A1E3A" : "#d1d5db", 
-                  transition: "0.3s", borderRadius: "26px" 
-                }}></span>
-                <span style={{ 
-                  position: "absolute", content: "", height: "20px", width: "20px", 
-                  left: "3px", bottom: "3px", backgroundColor: "white", 
-                  transition: "0.3s", borderRadius: "50%", 
-                  transform: preferencias.notificaciones_ofertas.email ? "translateX(22px)" : "translateX(0)",
-                  boxShadow: "0 2px 4px rgba(0,0,0,0.2)"
-                }}></span>
-              </label>
+              <SwitchControl
+                checked={preferencias?.notificaciones_ofertas?.email}
+                onChange={() => toggleCanal('notificaciones_ofertas', 'email')}
+                disabled={loading}
+                activeColor="#7A1E3A"
+                ariaLabel="Notificación por email de ofertas"
+              />
             </div>
             <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-              <label aria-label="Activar o desactivar" style={{ 
-                position: "relative", display: "inline-block", width: "48px", height: "26px",
-                cursor: loading ? "not-allowed" : "pointer"
-              }}>
-                <input 
-                  type="checkbox" 
-                  checked={preferencias.notificaciones_ofertas.web}
-                  onChange={() => toggleCanal('notificaciones_ofertas', 'web')}
-                  disabled={loading}
-                  style={{ opacity: 0, width: 0, height: 0 }} 
-                />
-                <span style={{ 
-                  position: "absolute", cursor: loading ? "not-allowed" : "pointer", 
-                  top: 0, left: 0, right: 0, bottom: 0, 
-                  backgroundColor: preferencias.notificaciones_ofertas.web ? "#e91e63" : "#d1d5db", 
-                  transition: "0.3s", borderRadius: "26px" 
-                }}></span>
-                <span style={{ 
-                  position: "absolute", content: "", height: "20px", width: "20px", 
-                  left: "3px", bottom: "3px", backgroundColor: "white", 
-                  transition: "0.3s", borderRadius: "50%", 
-                  transform: preferencias.notificaciones_ofertas.web ? "translateX(22px)" : "translateX(0)",
-                  boxShadow: "0 2px 4px rgba(0,0,0,0.2)"
-                }}></span>
-              </label>
+              <SwitchControl
+                checked={preferencias?.notificaciones_ofertas?.web}
+                onChange={() => toggleCanal('notificaciones_ofertas', 'web')}
+                disabled={loading}
+                activeColor="#e91e63"
+                ariaLabel="Notificación web de ofertas"
+              />
             </div>
           </div>
 
@@ -515,58 +561,22 @@ export default function SeccionConfiguracion({ userId }) {
               </div>
             </div>
             <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-              <label aria-label="Activar o desactivar" style={{ 
-                position: "relative", display: "inline-block", width: "48px", height: "26px",
-                cursor: loading ? "not-allowed" : "pointer"
-              }}>
-                <input 
-                  type="checkbox" 
-                  checked={preferencias.notificaciones_pedidos.email}
-                  onChange={() => toggleCanal('notificaciones_pedidos', 'email')}
-                  disabled={loading}
-                  style={{ opacity: 0, width: 0, height: 0 }} 
-                />
-                <span style={{ 
-                  position: "absolute", cursor: loading ? "not-allowed" : "pointer", 
-                  top: 0, left: 0, right: 0, bottom: 0, 
-                  backgroundColor: preferencias.notificaciones_pedidos.email ? "#7A1E3A" : "#d1d5db", 
-                  transition: "0.3s", borderRadius: "26px" 
-                }}></span>
-                <span style={{ 
-                  position: "absolute", content: "", height: "20px", width: "20px", 
-                  left: "3px", bottom: "3px", backgroundColor: "white", 
-                  transition: "0.3s", borderRadius: "50%", 
-                  transform: preferencias.notificaciones_pedidos.email ? "translateX(22px)" : "translateX(0)",
-                  boxShadow: "0 2px 4px rgba(0,0,0,0.2)"
-                }}></span>
-              </label>
+              <SwitchControl
+                checked={preferencias?.notificaciones_pedidos?.email}
+                onChange={() => toggleCanal('notificaciones_pedidos', 'email')}
+                disabled={loading}
+                activeColor="#7A1E3A"
+                ariaLabel="Notificación por email de pedidos"
+              />
             </div>
             <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-              <label aria-label="Activar o desactivar" style={{ 
-                position: "relative", display: "inline-block", width: "48px", height: "26px",
-                cursor: loading ? "not-allowed" : "pointer"
-              }}>
-                <input 
-                  type="checkbox" 
-                  checked={preferencias.notificaciones_pedidos.web}
-                  onChange={() => toggleCanal('notificaciones_pedidos', 'web')}
-                  disabled={loading}
-                  style={{ opacity: 0, width: 0, height: 0 }} 
-                />
-                <span style={{ 
-                  position: "absolute", cursor: loading ? "not-allowed" : "pointer", 
-                  top: 0, left: 0, right: 0, bottom: 0, 
-                  backgroundColor: preferencias.notificaciones_pedidos.web ? "#e91e63" : "#d1d5db", 
-                  transition: "0.3s", borderRadius: "26px" 
-                }}></span>
-                <span style={{ 
-                  position: "absolute", content: "", height: "20px", width: "20px", 
-                  left: "3px", bottom: "3px", backgroundColor: "white", 
-                  transition: "0.3s", borderRadius: "50%", 
-                  transform: preferencias.notificaciones_pedidos.web ? "translateX(22px)" : "translateX(0)",
-                  boxShadow: "0 2px 4px rgba(0,0,0,0.2)"
-                }}></span>
-              </label>
+              <SwitchControl
+                checked={preferencias?.notificaciones_pedidos?.web}
+                onChange={() => toggleCanal('notificaciones_pedidos', 'web')}
+                disabled={loading}
+                activeColor="#e91e63"
+                ariaLabel="Notificación web de pedidos"
+              />
             </div>
           </div>
 
@@ -598,58 +608,22 @@ export default function SeccionConfiguracion({ userId }) {
               </div>
             </div>
             <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-              <label aria-label="Activar o desactivar" style={{ 
-                position: "relative", display: "inline-block", width: "48px", height: "26px",
-                cursor: loading ? "not-allowed" : "pointer"
-              }}>
-                <input 
-                  type="checkbox" 
-                  checked={preferencias.notificaciones_entregas.email}
-                  onChange={() => toggleCanal('notificaciones_entregas', 'email')}
-                  disabled={loading}
-                  style={{ opacity: 0, width: 0, height: 0 }} 
-                />
-                <span style={{ 
-                  position: "absolute", cursor: loading ? "not-allowed" : "pointer", 
-                  top: 0, left: 0, right: 0, bottom: 0, 
-                  backgroundColor: preferencias.notificaciones_entregas.email ? "#7A1E3A" : "#d1d5db", 
-                  transition: "0.3s", borderRadius: "26px" 
-                }}></span>
-                <span style={{ 
-                  position: "absolute", content: "", height: "20px", width: "20px", 
-                  left: "3px", bottom: "3px", backgroundColor: "white", 
-                  transition: "0.3s", borderRadius: "50%", 
-                  transform: preferencias.notificaciones_entregas.email ? "translateX(22px)" : "translateX(0)",
-                  boxShadow: "0 2px 4px rgba(0,0,0,0.2)"
-                }}></span>
-              </label>
+              <SwitchControl
+                checked={preferencias?.notificaciones_entregas?.email}
+                onChange={() => toggleCanal('notificaciones_entregas', 'email')}
+                disabled={loading}
+                activeColor="#7A1E3A"
+                ariaLabel="Notificación por email de entregas"
+              />
             </div>
             <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-              <label aria-label="Activar o desactivar" style={{ 
-                position: "relative", display: "inline-block", width: "48px", height: "26px",
-                cursor: loading ? "not-allowed" : "pointer"
-              }}>
-                <input 
-                  type="checkbox" 
-                  checked={preferencias.notificaciones_entregas.web}
-                  onChange={() => toggleCanal('notificaciones_entregas', 'web')}
-                  disabled={loading}
-                  style={{ opacity: 0, width: 0, height: 0 }} 
-                />
-                <span style={{ 
-                  position: "absolute", cursor: loading ? "not-allowed" : "pointer", 
-                  top: 0, left: 0, right: 0, bottom: 0, 
-                  backgroundColor: preferencias.notificaciones_entregas.web ? "#e91e63" : "#d1d5db", 
-                  transition: "0.3s", borderRadius: "26px" 
-                }}></span>
-                <span style={{ 
-                  position: "absolute", content: "", height: "20px", width: "20px", 
-                  left: "3px", bottom: "3px", backgroundColor: "white", 
-                  transition: "0.3s", borderRadius: "50%", 
-                  transform: preferencias.notificaciones_entregas.web ? "translateX(22px)" : "translateX(0)",
-                  boxShadow: "0 2px 4px rgba(0,0,0,0.2)"
-                }}></span>
-              </label>
+              <SwitchControl
+                checked={preferencias?.notificaciones_entregas?.web}
+                onChange={() => toggleCanal('notificaciones_entregas', 'web')}
+                disabled={loading}
+                activeColor="#e91e63"
+                ariaLabel="Notificación web de entregas"
+              />
             </div>
           </div>
 
@@ -679,58 +653,22 @@ export default function SeccionConfiguracion({ userId }) {
               </div>
             </div>
             <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-              <label aria-label="Activar o desactivar" style={{ 
-                position: "relative", display: "inline-block", width: "48px", height: "26px",
-                cursor: loading ? "not-allowed" : "pointer"
-              }}>
-                <input 
-                  type="checkbox" 
-                  checked={preferencias.notificaciones_pagos.email}
-                  onChange={() => toggleCanal('notificaciones_pagos', 'email')}
-                  disabled={loading}
-                  style={{ opacity: 0, width: 0, height: 0 }} 
-                />
-                <span style={{ 
-                  position: "absolute", cursor: loading ? "not-allowed" : "pointer", 
-                  top: 0, left: 0, right: 0, bottom: 0, 
-                  backgroundColor: preferencias.notificaciones_pagos.email ? "#7A1E3A" : "#d1d5db", 
-                  transition: "0.3s", borderRadius: "26px" 
-                }}></span>
-                <span style={{ 
-                  position: "absolute", content: "", height: "20px", width: "20px", 
-                  left: "3px", bottom: "3px", backgroundColor: "white", 
-                  transition: "0.3s", borderRadius: "50%", 
-                  transform: preferencias.notificaciones_pagos.email ? "translateX(22px)" : "translateX(0)",
-                  boxShadow: "0 2px 4px rgba(0,0,0,0.2)"
-                }}></span>
-              </label>
+              <SwitchControl
+                checked={preferencias?.notificaciones_pagos?.email}
+                onChange={() => toggleCanal('notificaciones_pagos', 'email')}
+                disabled={loading}
+                activeColor="#7A1E3A"
+                ariaLabel="Notificación por email de pagos"
+              />
             </div>
             <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-              <label aria-label="Activar o desactivar" style={{ 
-                position: "relative", display: "inline-block", width: "48px", height: "26px",
-                cursor: loading ? "not-allowed" : "pointer"
-              }}>
-                <input 
-                  type="checkbox" 
-                  checked={preferencias.notificaciones_pagos.web}
-                  onChange={() => toggleCanal('notificaciones_pagos', 'web')}
-                  disabled={loading}
-                  style={{ opacity: 0, width: 0, height: 0 }} 
-                />
-                <span style={{ 
-                  position: "absolute", cursor: loading ? "not-allowed" : "pointer", 
-                  top: 0, left: 0, right: 0, bottom: 0, 
-                  backgroundColor: preferencias.notificaciones_pagos.web ? "#e91e63" : "#d1d5db", 
-                  transition: "0.3s", borderRadius: "26px" 
-                }}></span>
-                <span style={{ 
-                  position: "absolute", content: "", height: "20px", width: "20px", 
-                  left: "3px", bottom: "3px", backgroundColor: "white", 
-                  transition: "0.3s", borderRadius: "50%", 
-                  transform: preferencias.notificaciones_pagos.web ? "translateX(22px)" : "translateX(0)",
-                  boxShadow: "0 2px 4px rgba(0,0,0,0.2)"
-                }}></span>
-              </label>
+              <SwitchControl
+                checked={preferencias?.notificaciones_pagos?.web}
+                onChange={() => toggleCanal('notificaciones_pagos', 'web')}
+                disabled={loading}
+                activeColor="#e91e63"
+                ariaLabel="Notificación web de pagos"
+              />
             </div>
           </div>
 
@@ -760,58 +698,22 @@ export default function SeccionConfiguracion({ userId }) {
               </div>
             </div>
             <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-              <label aria-label="Activar o desactivar" style={{ 
-                position: "relative", display: "inline-block", width: "48px", height: "26px",
-                cursor: loading ? "not-allowed" : "pointer"
-              }}>
-                <input 
-                  type="checkbox" 
-                  checked={preferencias.notificaciones_sistema.email}
-                  onChange={() => toggleCanal('notificaciones_sistema', 'email')}
-                  disabled={loading}
-                  style={{ opacity: 0, width: 0, height: 0 }} 
-                />
-                <span style={{ 
-                  position: "absolute", cursor: loading ? "not-allowed" : "pointer", 
-                  top: 0, left: 0, right: 0, bottom: 0, 
-                  backgroundColor: preferencias.notificaciones_sistema.email ? "#7A1E3A" : "#d1d5db", 
-                  transition: "0.3s", borderRadius: "26px" 
-                }}></span>
-                <span style={{ 
-                  position: "absolute", content: "", height: "20px", width: "20px", 
-                  left: "3px", bottom: "3px", backgroundColor: "white", 
-                  transition: "0.3s", borderRadius: "50%", 
-                  transform: preferencias.notificaciones_sistema.email ? "translateX(22px)" : "translateX(0)",
-                  boxShadow: "0 2px 4px rgba(0,0,0,0.2)"
-                }}></span>
-              </label>
+              <SwitchControl
+                checked={preferencias?.notificaciones_sistema?.email}
+                onChange={() => toggleCanal('notificaciones_sistema', 'email')}
+                disabled={loading}
+                activeColor="#7A1E3A"
+                ariaLabel="Notificación por email del sistema"
+              />
             </div>
             <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-              <label aria-label="Activar o desactivar" style={{ 
-                position: "relative", display: "inline-block", width: "48px", height: "26px",
-                cursor: loading ? "not-allowed" : "pointer"
-              }}>
-                <input 
-                  type="checkbox" 
-                  checked={preferencias.notificaciones_sistema.web}
-                  onChange={() => toggleCanal('notificaciones_sistema', 'web')}
-                  disabled={loading}
-                  style={{ opacity: 0, width: 0, height: 0 }} 
-                />
-                <span style={{ 
-                  position: "absolute", cursor: loading ? "not-allowed" : "pointer", 
-                  top: 0, left: 0, right: 0, bottom: 0, 
-                  backgroundColor: preferencias.notificaciones_sistema.web ? "#e91e63" : "#d1d5db", 
-                  transition: "0.3s", borderRadius: "26px" 
-                }}></span>
-                <span style={{ 
-                  position: "absolute", content: "", height: "20px", width: "20px", 
-                  left: "3px", bottom: "3px", backgroundColor: "white", 
-                  transition: "0.3s", borderRadius: "50%", 
-                  transform: preferencias.notificaciones_sistema.web ? "translateX(22px)" : "translateX(0)",
-                  boxShadow: "0 2px 4px rgba(0,0,0,0.2)"
-                }}></span>
-              </label>
+              <SwitchControl
+                checked={preferencias?.notificaciones_sistema?.web}
+                onChange={() => toggleCanal('notificaciones_sistema', 'web')}
+                disabled={loading}
+                activeColor="#e91e63"
+                ariaLabel="Notificación web del sistema"
+              />
             </div>
           </div>
 
@@ -825,7 +727,7 @@ export default function SeccionConfiguracion({ userId }) {
               fontFamily: "Montserrat, sans-serif", opacity: saving ? 0.7 : 1,
               transition: "all 0.2s ease"
             }}
-            onClick={guardarPreferencias}
+            onClick={() => guardarPreferencias(null, true)}
             disabled={saving || loading}
             onMouseEnter={(e) => !saving && !loading && (e.currentTarget.style.transform = "translateY(-2px)")}
             onMouseLeave={(e) => e.currentTarget.style.transform = "translateY(0)"}
@@ -988,17 +890,15 @@ export default function SeccionConfiguracion({ userId }) {
               <h4 style={{ margin: "0 0 0.3rem 0", color: darkMode ? "#ececec" : "#2a2a2a", fontSize: "1rem" }}>Modo Oscuro</h4>
               <p style={{ margin: 0, color: darkMode ? "#c8c8c8" : "#666", fontSize: "0.85rem" }}>Cambia el tema de la aplicacion a modo oscuro</p>
             </div>
-            <div style={{ position: "relative", display: "inline-block", width: "50px", height: "26px", flexShrink: 0 }}>
-              <input 
-                type="checkbox" 
-                aria-label="Activar modo oscuro"
-                checked={darkMode}
-                onChange={toggleDarkMode}
-                style={{ opacity: 0, width: 0, height: 0 }} 
-              />
-              <span style={{ position: "absolute", cursor: "pointer", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: darkMode ? "var(--vinotinto)" : "#ccc", transition: "0.3s", borderRadius: "26px" }}></span>
-              <span style={{ position: "absolute", content: "", height: "20px", width: "20px", left: "3px", bottom: "3px", backgroundColor: "white", transition: "0.3s", borderRadius: "50%", transform: darkMode ? "translateX(24px)" : "translateX(0)" }}></span>
-            </div>
+            <SwitchControl
+              id="dark-mode-toggle"
+              checked={darkMode}
+              onChange={toggleDarkMode}
+              activeColor="var(--vinotinto)"
+              ariaLabel="Activar modo oscuro"
+              width={50}
+              travel={24}
+            />
           </div>
         </div>
       </div>

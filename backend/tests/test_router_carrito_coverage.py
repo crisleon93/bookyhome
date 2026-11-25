@@ -68,6 +68,26 @@ def test_cart_rejects_missing_book_and_converts_checkout_failures(monkeypatch):
     assert checkout_error.value.detail == "Sin existencias"
 
 
+def test_update_cart_quantity_endpoint(monkeypatch):
+    calls = []
+    monkeypatch.setattr(
+        carrito,
+        "actualizar_cantidad_carrito",
+        lambda user_id, book_id, cantidad: calls.append((user_id, book_id, cantidad)) or [{"id_libro": book_id, "cantidad": cantidad}],
+    )
+
+    user = {"sub": "15"}
+    # Falla si falta 'cantidad'
+    with pytest.raises(HTTPException) as missing_field:
+        carrito.update_cart_quantity(5, {}, user)
+    assert missing_field.value.status_code == 400
+
+    # Actualiza correctamente con cantidad válida
+    result = carrito.update_cart_quantity(5, {"cantidad": 3}, user)
+    assert result == [{"id_libro": 5, "cantidad": 3}]
+    assert calls == [(15, 5, 3)]
+
+
 def test_direct_checkout_passes_payload_and_surfaces_model_errors(monkeypatch):
     received = []
     user = {"sub": "9"}

@@ -1,6 +1,6 @@
 import anyio
 import os
-
+import logging
 import uuid
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
@@ -8,6 +8,8 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 from pydantic import BaseModel, Field
+
+logger = logging.getLogger(__name__)
 
 
 
@@ -62,12 +64,21 @@ def _order_store(cursor, id_orden, id_usuario):
             cursor.execute("SELECT id_orden, estado_orden FROM ordenes_compra WHERE id_orden=%s AND id_usuario=%s", (id_orden, id_usuario))
             db_ord = cursor.fetchone()
             if db_ord:
-                orden = {"id_orden": db_ord["id_orden"], "estado": db_ord["estado_orden"]}
+                orden = {"id_orden": db_ord["id_orden"], "id_orden_db": db_ord["id_orden"], "estado": db_ord["estado_orden"]}
         except Exception:
             pass
 
     if not orden:
         return None
+
+    # Resolver el id real de MySQL: id_orden_db tiene prioridad sobre el id local del JSON
+    id_orden_real = orden.get("id_orden_db") or orden.get("id_orden")
+    try:
+        cursor.execute("SELECT id_orden FROM ordenes_compra WHERE id_orden = %s", (int(id_orden_real),))
+        if not cursor.fetchone():
+            id_orden_real = id_orden  # fallback al id original si no existe en BD
+    except Exception:
+        id_orden_real = id_orden
 
     id_tienda = None
     libros = [item.get("id_libro") for item in (orden.get("items", []) if orden else []) if item.get("id_libro")]
@@ -112,7 +123,7 @@ def _order_store(cursor, id_orden, id_usuario):
         except Exception:
             id_tienda = None
 
-    return {"id_tienda": id_tienda}
+    return {"id_tienda": id_tienda, "id_orden_real": id_orden_real}
 
 
 @router.get("")
@@ -172,10 +183,10 @@ async def crear_queja(
 
         cursor.execute("""
             SELECT id_solicitud FROM solicitudes_soporte
-            WHERE id_usuario=%s AND id_orden=%s AND tipo_solicitud='reclamo'
+            WHERE id_usuario=%s AND id_orden IN (%s, %s) AND tipo_solicitud='reclamo'
               AND estado IN ('Abierto', 'En revisión')
             LIMIT 1
-        """, (int(user["sub"]), id_orden))
+        """, (int(user["sub"]), id_orden, orden.get("id_orden_real") or id_orden))
 
         if cursor.fetchone():
             raise HTTPException(status_code=409, detail="Ya tienes un reclamo activo para esta compra")
@@ -200,11 +211,14 @@ async def crear_queja(
             except Exception:
                 id_tienda_final = None
 
+        # Usar el id_orden real de MySQL (no el id local del orders.json)
+        id_orden_insertar = orden.get("id_orden_real") or id_orden
+
         cursor.execute("""
             INSERT INTO solicitudes_soporte
               (id_tienda, id_usuario, id_orden, asunto, descripcion, categoria, prioridad, estado, evidencia_url, tipo_solicitud, fecha_creacion)
             VALUES (%s, %s, %s, %s, %s, 'reclamo', 'Normal', 'Abierto', %s, 'reclamo', NOW())
-        """, (id_tienda_final, int(user["sub"]), id_orden, motivo.strip()[:150], descripcion.strip()[:2000], evidencia_url))
+        """, (id_tienda_final, int(user["sub"]), id_orden_insertar, motivo.strip()[:150], descripcion.strip()[:2000], evidencia_url))
 
         id_solicitud = cursor.lastrowid
 
@@ -236,7 +250,7 @@ async def crear_queja(
                 except Exception:
                     pass
         except Exception as err:
-            print(f"Error generando notificaciones de queja: {err}")
+            logger.error("Error generando notificaciones de queja: %s", err)
 
         db.commit()
         return {"ok": True, "id_solicitud": id_solicitud}
@@ -245,7 +259,7 @@ async def crear_queja(
         raise
     except Exception as e:
         db.rollback()
-        print(f"Error creando queja: {e}")
+        logger.error("Error creando queja: %s", e)
         raise HTTPException(status_code=500, detail=f"Error al registrar reclamo: {str(e)}")
     finally:
         cursor.close(); db.close()

@@ -1,7 +1,10 @@
 import json
 import os
 import secrets
+import logging
 from datetime import datetime, timezone
+
+logger = logging.getLogger(__name__)
 
 STORAGE_DIR = os.path.join(os.path.dirname(__file__), '..', 'data')
 ORDER_FILE = os.path.join(STORAGE_DIR, 'orders.json')
@@ -166,7 +169,7 @@ def obtener_orden(id_usuario, id_orden):
         cursor.close()
         db.close()
     except Exception as e:
-        print("Error sincronizando orden individual desde BD:", e)
+        logger.error("Error sincronizando orden individual desde BD: %s", e)
 
     return _agregar_desglose_financiero(target) if target else target
 
@@ -378,7 +381,7 @@ def obtener_ordenes_usuario(id_usuario):
                 "envio": envio,
             })
     except Exception as e:
-        print("Error obteniendo nombres de tiendas en ordenes:", e)
+        logger.error("Error obteniendo nombres de tiendas en ordenes: %s", e)
     finally:
         if 'cursor' in locals(): cursor.close()
         if 'db' in locals(): db.close()
@@ -433,7 +436,7 @@ def registrar_pago(id_usuario, id_orden, amount, payment_method, coupon_code=Non
             cur_lookup.close()
             db_conn.close()
         except Exception as err:
-            print("Error buscando orden directa en MySQL:", err)
+            logger.error("Error buscando orden directa en MySQL: %s", err)
 
     if not target_order:
         return {'ok': False, 'error': 'Orden no encontrada'}
@@ -505,34 +508,56 @@ def registrar_pago(id_usuario, id_orden, amount, payment_method, coupon_code=Non
                 id_libros = [r['id_libro'] for r in cursor.fetchall() if r.get('id_libro')]
 
             # Notificar al comprador de su compra exitosa
-            cursor.execute("""
-                INSERT INTO notificaciones (id_usuario, tipo, titulo, cuerpo, id_referencia, leida, fecha_creacion)
-                VALUES (%s, 'pedido', '¡Compra realizada con éxito!', %s, %s, FALSE, NOW())
-            """, (id_usuario, f"Tu pedido #{id_orden} por ${int(amount_paid):,} ha sido confirmado exitosamente.", id_orden))
+            try:
+                cursor.execute("""
+                    INSERT INTO notificaciones (id_usuario, tipo, titulo, cuerpo, id_referencia, leida, fecha_creacion)
+                    VALUES (%s, 'pedido', '¡Compra realizada con éxito!', '¡Tu compra ha sido confirmada exitosamente! Revisa tu historial de pedidos.', %s, FALSE, NOW())
+                """, (id_usuario, id_orden))
+            except Exception as notif_err:
+                logger.error("Error al notificar al comprador (orden %s): %s", id_orden, type(notif_err).__name__)
 
             # Notificar a los vendedores de los libros comprados
             if id_libros:
-                fmt3 = ','.join(['%s'] * len(id_libros))
-                cursor.execute(f"""
-                    SELECT DISTINCT t.id_usuario AS id_vendedor, t.nombre_tienda
-                    FROM libros l
-                    JOIN tiendas t ON t.id_tienda = l.id_tienda
-                    WHERE l.id_libro IN ({fmt3})
-                """, tuple(id_libros))
-                vendedores = cursor.fetchall()
-                for v in vendedores:
-                    if v.get("id_vendedor") and v["id_vendedor"] != id_usuario:
-                        cursor.execute("""
-                            INSERT INTO notificaciones (id_usuario, tipo, titulo, cuerpo, id_referencia, leida, fecha_creacion)
-                            VALUES (%s, 'pedido', '¡Nueva venta pagada!', %s, %s, FALSE, NOW())
-                        """, (v["id_vendedor"], f"Has recibido el pago para la orden #{id_orden} por ${int(amount_paid):,} vía {payment_method}.", id_orden))
+                try:
+                    # Validar que todos los id_libros sean enteros para cortar el taint
+                    libros_validados = [int(x) for x in id_libros if str(x).isdigit() or (isinstance(x, int) and x > 0)]
+                    if libros_validados:
+                        placeholders = ('%s,' * len(libros_validados)).rstrip(',')
+                        cursor.execute(
+                            "SELECT DISTINCT t.id_usuario AS id_vendedor, t.nombre_tienda"
+                            " FROM libros l JOIN tiendas t ON t.id_tienda = l.id_tienda"
+                            " WHERE l.id_libro IN (" + placeholders + ")",
+                            tuple(libros_validados),
+                        )
+                        vendedores = cursor.fetchall()
+                        logger.info(
+                            "Notificando venta a %d vendedor(es) para orden %s",
+                            len(vendedores), id_orden,
+                        )
+                        for v in vendedores:
+                            if v.get("id_vendedor") and v["id_vendedor"] != id_usuario:
+                                cursor.execute("""
+                                    INSERT INTO notificaciones (id_usuario, tipo, titulo, cuerpo, id_referencia, leida, fecha_creacion)
+                                    VALUES (%s, 'venta', '¡Nueva venta pagada!', '¡Tienes un nuevo pago aprobado! Revisa tu panel de ventas.', %s, FALSE, NOW())
+                                """, (v["id_vendedor"], id_orden))
+                                logger.info(
+                                    "Notificacion de venta insertada para vendedor id=%s (orden %s)",
+                                    v["id_vendedor"], id_orden,
+                                )
+                except Exception as notif_err:
+                    logger.error(
+                        "Error al notificar a vendedor(es) (orden %s): %s",
+                        id_orden, type(notif_err).__name__,
+                    )
+            else:
+                logger.warning("No se encontraron id_libros para la orden %s; la notificación al vendedor no se pudo enviar.", id_orden)
 
             db.commit()
         finally:
             cursor.close()
             db.close()
     except Exception as e:
-        print(f"⚠️ No se pudo sincronizar estado de pago en MySQL: {e}")
+        logger.warning("No se pudo sincronizar estado de pago en MySQL: %s", e)
 
     # Registrar el pago
     payments = _load_store(PAYMENT_FILE)
@@ -591,7 +616,7 @@ def cancelar_orden(id_usuario, id_orden, motivo="Cancelación solicitada por el 
             cursor.close()
             db.close()
     except Exception as e:
-        print(f"Error al actualizar orden en BD: {e}")
+        logger.error("Error al actualizar orden en BD: %s", e)
 
     # Si la encontramos en el JSON, actualizar su estado
     if target_order:
@@ -683,7 +708,7 @@ def reservar_retiro(id_usuario, id_orden, metodo_pago="Efectivo en Tienda"):
         cursor.close()
         db.close()
     except Exception as e:
-        print("Error actualizando reserva en BD:", e)
+        logger.error("Error actualizando reserva en BD: %s", e)
 
     return {
         "ok": True,
@@ -746,7 +771,7 @@ def notificar_llegada_tienda(id_usuario, id_orden):
         cursor.close()
         db.close()
     except Exception as e:
-        print("Error al registrar llegada del cliente:", e)
+        logger.error("Error al registrar llegada del cliente: %s", e)
 
     return {"ok": True, "estado_retiro": "en_tienda", "message": "Llegada notificada al vendedor"}
 
@@ -797,7 +822,7 @@ def habilitar_pago_retiro(id_usuario_vendedor, id_orden):
         cursor.close()
         db.close()
     except Exception as e:
-        print("Error al habilitar pago de retiro:", e)
+        logger.error("Error al habilitar pago de retiro: %s", e)
 
     return {"ok": True, "estado_retiro": "habilitado_pago", "message": "Pago habilitado para el comprador"}
 
@@ -858,6 +883,6 @@ def confirmar_entrega_retiro(id_usuario_vendedor, id_orden, es_efectivo=False):
         cursor.close()
         db.close()
     except Exception as e:
-        print("Error al confirmar entrega de retiro:", e)
+        logger.error("Error al confirmar entrega de retiro: %s", e)
 
     return {"ok": True, "estado_orden": "entregado", "estado_retiro": "entregado", "message": "Libro entregado exitosamente"}

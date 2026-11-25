@@ -4,6 +4,14 @@ import react from '@vitejs/plugin-react'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
+  build: {
+    rollupOptions: {
+      output: {
+        entryFileNames: `assets/[name]-[hash]-${Date.now()}.js`,
+        chunkFileNames: `assets/[name]-[hash]-${Date.now()}.js`,
+      },
+    },
+  },
   server: {
     port: 5173,
     host: true,
@@ -23,8 +31,7 @@ export default defineConfig({
       exclude: ['src/assets/**', 'src/styles/**'],
       reporter: ['text', 'html', 'lcov'],
       thresholds: {
-        // Se activa en semana 7 cuando se alcance el 80%
-        // lines: 80,
+        lines: 80,
       },
     },
   },

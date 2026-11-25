@@ -552,7 +552,13 @@ export default function AdminSection({ route, navigation }) {
   }, [section, renderUsuario, renderLibro, renderTienda, renderOrden]);
 
   const keyExtractor = useCallback(
-    (item, idx) => String(item.id_usuario || item.id_libro || item.id_tienda || item.id_orden || idx),
+    (item, idx) => {
+      if (item.id_orden != null) {
+        if (item.id_orden_db != null) return `orden-db-${item.id_orden_db}`;
+        return `orden-${item.id_usuario_propietario ?? 'x'}-${item.id_orden}`;
+      }
+      return String(item.id_usuario || item.id_libro || item.id_tienda || idx);
+    },
     []
   );
 
@@ -702,6 +708,42 @@ export default function AdminSection({ route, navigation }) {
           keyboardShouldPersistTaps="handled"
         />
       )}
+      <Modal
+        visible={Boolean(modalTienda)}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setModalTienda(null)}
+      >
+        {modalTienda && (
+          <View style={{ flex: 1, justifyContent: 'center', padding: 24, backgroundColor: 'rgba(0,0,0,0.45)' }}>
+            <View style={{ padding: 20, borderRadius: 16, backgroundColor: WHITE }}>
+              <Text style={{ color: CARBON, fontSize: 18, fontWeight: '700', marginBottom: 8 }}>
+                Cambiar estado de tienda
+              </Text>
+              <Text style={{ color: GRAY, marginBottom: 12 }}>
+                {modalTienda.nombre_tienda || 'Librería'}
+              </Text>
+              {ESTADOS_TIENDA.map((estado) => (
+                <TouchableOpacity
+                  key={estado.value}
+                  style={{ paddingVertical: 10 }}
+                  onPress={() => aplicarEstadoTienda(modalTienda, estado.value)}
+                  disabled={guardandoEstado}
+                >
+                  <Text style={{ color: estado.color }}>{estado.label}</Text>
+                </TouchableOpacity>
+              ))}
+              <TouchableOpacity
+                style={{ paddingVertical: 10 }}
+                onPress={() => setModalTienda(null)}
+                disabled={guardandoEstado}
+              >
+                <Text style={{ color: GRAY }}>Cancelar</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+      </Modal>
     </SafeAreaView>
   );
 }

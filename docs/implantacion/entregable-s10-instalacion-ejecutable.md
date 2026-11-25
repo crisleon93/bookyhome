@@ -110,7 +110,7 @@ ansible-playbook -i infra/ansible/inventario.ini \
 
 #### Entorno de prueba
 
-Servidor simulado: contenedor Docker `bkh-servidor` (Ubuntu 24.04 LTS sin Docker preinstalado)
+Servidor de pruebas / laboratorio: contenedor Docker `bkh-servidor` (Ubuntu 24.04 LTS sin Docker preinstalado)
 sobre el host Windows con Docker Engine 29.7.2. El socket del host se monta en el contenedor
 para que el playbook pueda arrancar los contenedores de la aplicación.
 Nodo de control: contenedor `bkh-control` (imagen `willhallonline/ansible:2.17-ubuntu-24.04`).
@@ -379,7 +379,7 @@ bkh-servidor : ok=30  changed=0   unreachable=0  failed=0  skipped=0  rescued=0 
 | Paso | Por qué no está automatizado | Sección del plan |
 |---|---|---|
 | Restaurar datos de un respaldo | Decisión humana: elegir qué instantánea usar, comparar huellas antes de confirmar; un error aquí sobrescribiría datos de producción. | §3.3 |
-| Crear cuentas en la nube (Railway, Render, Neon, etc.) | Requieren registro humano con correo, verificación de identidad y método de pago; no hay API unificada. | §5.3 |
+| Crear cuentas en la nube (Render, Aiven, etc.) | Requieren registro humano con correo, verificación de identidad y método de pago; no hay API unificada. | §5.3 |
 | Actualizar registros DNS | El TTL puede tardar horas en propagarse; se prefiere hacerlo con supervisión humana para detectar errores de corte rápidamente. | §4.3 |
 | Generar y copiar la llave SSH del servidor | La llave privada nunca debe circular por canales automatizados; el administrador la genera localmente y la añade al inventario manualmente. | §7.2 |
 | Entregar la contraseña del vault al instalador | Canal fuera de banda por diseño (Telegram privado, Bitwarden); automatizarlo crearía un punto de compromiso único. | §7.5 |

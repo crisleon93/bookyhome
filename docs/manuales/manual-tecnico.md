@@ -4,19 +4,19 @@
 
 BookyHome esta compuesto por:
 
-- Frontend web en React 19, Vite y React Router.
-- Backend API en FastAPI y Uvicorn.
-- MySQL 8 como base de datos.
+- Frontend web en React 19, Vite y React Router (desplegado en Render Static Site: `https://bookyhome-web.onrender.com`).
+- Backend API en FastAPI y Uvicorn (desplegado en Render Web Service: `https://bookyhome.onrender.com`).
+- MySQL 8.4 LTS como base de datos cloud (desplegado en Aiven Cloud MySQL: `bookyhome-mysql-bookyhome.l.aivencloud.com:22566` con SSL forzoso).
 - App movil en Expo/React Native, ejecutada por separado.
-- Docker Compose para coordinar MySQL, backend y frontend.
+- Docker Compose para coordinar el entorno de desarrollo local (MySQL 8, backend y frontend).
 
 ## 2. Servicios y puertos
 
-| Servicio | Contenedor | Puerto | Funcion |
-|---|---|---:|---|
-| MySQL | `bookyhome-mysql` | 3306 | Persistencia de datos |
-| Backend | `contenedor-back` | 8000 | API FastAPI |
-| Frontend | `contenedor-front` | 5173 | Aplicacion web Vite |
+| Servicio | Contenedor Local | Despliegue en Nube | Puerto Local / Nube | Funcion |
+|---|---|---|---:|---|
+| MySQL | `bookyhome-mysql` | Aiven Cloud MySQL 8.4 LTS | 3306 / 22566 (SSL) | Persistencia de datos relacional (380k+ filas sincronizadas) |
+| Backend | `contenedor-back` | Render Web Service | 8000 / 443 (HTTPS) | API FastAPI y WebSockets |
+| Frontend | `contenedor-front` | Render Static Site | 5173 / 443 (HTTPS) | Aplicacion web SPA Vite/React |
 
 ## 3. Backend
 

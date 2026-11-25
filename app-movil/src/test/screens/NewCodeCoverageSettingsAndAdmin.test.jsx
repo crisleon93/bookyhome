@@ -267,6 +267,8 @@ describe('settings and admin coverage behaviors', () => {
   it('validates store settings, saves normalized data, and reports load/theme/save failures', async () => {
     renderStoreSettings();
     await screen.findByPlaceholderText('Ej: Librería El Quijote');
+    fireEvent.click(screen.getByText('☰'));
+    fireEvent.click(screen.getByText('Cerrar menú vendedor'));
 
     fireEvent.change(screen.getByPlaceholderText('Ej: Librería El Quijote'), { target: { value: '  ' } });
     fireEvent.click(screen.getByText('Guardar cambios'));
@@ -279,6 +281,22 @@ describe('settings and admin coverage behaviors', () => {
     expect(mocks.updateMiTienda).not.toHaveBeenCalled();
 
     fireEvent.change(screen.getByPlaceholderText('Ej: Librería El Quijote'), { target: { value: '  Librería Norte  ' } });
+    fireEvent.change(screen.getByDisplayValue('3001234567'), { target: { value: '3105550101' } });
+    fireEvent.change(screen.getByDisplayValue('Calle 10'), { target: { value: 'Carrera 8' } });
+    fireEvent.change(screen.getByDisplayValue('Bogotá'), { target: { value: 'Cali' } });
+    fireEvent.change(screen.getByDisplayValue('tienda@example.test'), { target: { value: 'norte@example.test' } });
+    fireEvent.change(screen.getByDisplayValue('Lun-Vie'), { target: { value: 'Todos los días' } });
+    fireEvent.change(screen.getByDisplayValue('Envíos nacionales'), { target: { value: 'Envíos locales' } });
+    fireEvent.change(screen.getByDisplayValue('Cambios en 30 días'), { target: { value: 'Cambios en 15 días' } });
+    expect(screen.getByPlaceholderText('Ej: Librería El Quijote').value).toBe('  Librería Norte  ');
+    fireEvent.change(screen.getByPlaceholderText('0'), { target: { value: 'no numérico' } });
+    expect(screen.getByPlaceholderText('0').value).toBe('');
+    fireEvent.click(screen.getByText('Guardar cambios'));
+    expect(mocks.alert).toHaveBeenLastCalledWith(
+      'Tarifa inválida', 'La tarifa de envío debe ser cero o un valor positivo.',
+    );
+    expect(mocks.updateMiTienda).not.toHaveBeenCalled();
+
     fireEvent.change(screen.getByPlaceholderText('0'), { target: { value: '0' } });
     fireEvent.change(screen.getByPlaceholderText('2'), { target: { value: 'días' } });
     fireEvent.click(screen.getByText('Guardar cambios'));

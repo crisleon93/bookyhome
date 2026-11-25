@@ -138,7 +138,7 @@ Base restaurada  : bookyhome_s02_prueba
 
 | Tabla | Filas en producción |
 |---|---|
-| usuarios | 285 |
+| usuarios | 286 |
 | tiendas | 151 |
 | libros | 5 258 |
 | ordenes_compra | 23 439 |

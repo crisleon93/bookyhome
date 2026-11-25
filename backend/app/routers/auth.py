@@ -4,8 +4,10 @@ from pydantic import BaseModel, EmailStr, Field
 from app.auth import create_token, verify_token
 from app.email import enviar_email_recuperacion, enviar_email_agradecimiento_confirmacion, get_frontend_url
 from app.models.usuarios import obtener_usuario_por_email, actualizar_password, verificar_email_usuario, obtener_usuario_por_token, obtener_usuario_por_id
+import logging
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 
 class ForgotPasswordRequest(BaseModel):
@@ -122,9 +124,9 @@ async def forgot_password(data: ForgotPasswordRequest):
     token = create_token({"sub": str(user["id_usuario"]), "tipo": "reset"})
     try:
         await enviar_email_recuperacion(email, token)
-        print(f"✅ Correo de recuperación enviado a {email}", flush=True)
+        logger.info("Correo de recuperación enviado a %s", email)
     except Exception as exc:
-        print(f"❌ Error enviando correo de recuperación a {email}: {exc}", flush=True)
+        logger.error("Error enviando correo de recuperación a %s: %s", email, exc)
         raise HTTPException(status_code=500, detail="No se pudo enviar el correo de recuperación")
 
     return {"mensaje": "Correo de recuperación enviado", "correo_enviado": True}
@@ -181,9 +183,9 @@ async def verify_email(token: str, request: Request):
 
     try:
         await enviar_email_agradecimiento_confirmacion(usuario["correo_usuario"])
-        print(f"✅ Correo de agradecimiento enviado a {usuario['correo_usuario']}", flush=True)
+        logger.info("Correo de agradecimiento enviado a %s", usuario['correo_usuario'])
     except Exception as exc:
-        print(f"❌ Error enviando correo de agradecimiento a {usuario['correo_usuario']}: {exc}", flush=True)
+        logger.error("Error enviando correo de agradecimiento a %s: %s", usuario['correo_usuario'], exc)
 
     mensaje = "Correo electrónico verificado exitosamente. Ya puedes iniciar sesión."
     if wants_json:
