@@ -59,6 +59,7 @@ export default function AppNavigator() {
   const userRole = String(user?.rol || '').trim().toLowerCase();
   const isAdmin = userRole === 'admin' || userRole === 'administrador';
   const isVendor = userRole === 'vendedor';
+  const navigatorKey = !isAuthenticated ? 'public' : isAdmin ? 'admin' : isVendor ? 'vendor' : 'buyer';
 
   if (loading) {
     return (
@@ -70,6 +71,7 @@ export default function AppNavigator() {
 
   return (
     <Stack.Navigator
+      key={navigatorKey}
       initialRouteName={!isAuthenticated ? 'Home' : undefined}
       screenOptions={{ contentStyle: { backgroundColor: colors.page } }}
     >

@@ -437,6 +437,12 @@ describe('BookDetailPublico', () => {
     expect(mocks.goBack).toHaveBeenCalledOnce();
   });
 
+  it('no renderiza el valor cero como texto cuando el libro no es destacado', () => {
+    renderPublicBookDetail(null, { ...book, es_impulsado: 0 });
+
+    expect(screen.queryByText('0')).toBeNull();
+  });
+
   it('redirige al inicio de sesión si un visitante intenta comprar o contactar', () => {
     renderPublicBookDetail();
 

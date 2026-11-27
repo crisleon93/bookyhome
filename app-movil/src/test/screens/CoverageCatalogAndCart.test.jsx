@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import React from 'react';
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import Cart from '../../screens/Cart';
 import Catalogo from '../../screens/Catalogo';
@@ -160,8 +160,10 @@ vi.mock('../../context/ThemeContext', () => ({
 }));
 
 vi.mock('../../components/Header', () => ({
-  default: ({ onSearch, onFilterApply, onBarcodeScanned }) => (
+  default: ({ onSearch, onFilterApply, onBarcodeScanned, filtrosIniciales }) => (
     <div>
+      <output data-testid="header-initial-filters">{JSON.stringify(filtrosIniciales || {})}</output>
+      <button aria-label="Abrir filtros">Filtros</button>
       <button onClick={() => onSearch?.('búsqueda de prueba')}>Buscar desde encabezado</button>
       <button onClick={() => onFilterApply?.({
         busqueda: 'filtrado',
@@ -364,49 +366,24 @@ describe('Catalogo screen', () => {
     })));
   });
 
-  it('abre y aplica los filtros de catálogo desde el botón de filtros', async () => {
+  it('mantiene un solo botón de filtros en el encabezado', async () => {
     renderCatalogo();
     await screen.findByText('Libro móvil');
 
-    fireEvent.click(screen.getByRole('button', { name: 'Abrir filtros' }));
-    fireEvent.change(screen.getByPlaceholderText('Título, autor...'), {
-      target: { value: 'Ciencia' },
-    });
-    fireEvent.change(screen.getByPlaceholderText('Ej: Librería XYZ'), {
-      target: { value: 'Librería Centro' },
-    });
-    fireEvent.change(screen.getByPlaceholderText('Mín'), { target: { value: '12000' } });
-    fireEvent.change(screen.getByPlaceholderText('Máx'), { target: { value: '45000' } });
-    fireEvent.click(screen.getByText('Todas las categorías'));
-    fireEvent.click(within(screen.getByTestId('modal')).getByText(/Ficción/));
-    fireEvent.click(screen.getByText('Relevancia'));
-    fireEvent.click(within(screen.getByTestId('modal')).getByText('Precio: menor a mayor'));
-    fireEvent.click(screen.getByText('4 ★'));
-    fireEvent.click(screen.getByText('SOLO LIBROS EN STOCK'));
-    fireEvent.click(screen.getByText('✓ Aplicar filtros'));
+    expect(screen.getAllByRole('button', { name: 'Abrir filtros' })).toHaveLength(1);
+    expect(screen.queryByPlaceholderText('Título, autor...')).toBeNull();
+  });
 
-    await waitFor(() => expect(mocks.getBusquedaAvanzada).toHaveBeenLastCalledWith(
-      expect.objectContaining({
-        q: 'Ciencia',
-        nombre_tienda: 'Librería Centro',
+  it('sincroniza los filtros activos del catálogo con el encabezado', async () => {
+    renderCatalogo({ params: { q: 'Ciencia', categoryId: 4 } });
+    await screen.findByText('Libro móvil');
+
+    await waitFor(() => {
+      expect(JSON.parse(screen.getByTestId('header-initial-filters').textContent)).toMatchObject({
+        busqueda: 'Ciencia',
         categoria_id: 4,
-        precio_min: 12000,
-        precio_max: 45000,
-        ordenar_por: 'precio_asc',
-        calificacion_min: 4,
-      }),
-    ));
-    fireEvent.click(screen.getByRole('button', { name: /Filtros/ }))
-    fireEvent.click(screen.getByText('Limpiar filtros'))
-    await waitFor(() => expect(mocks.getBusquedaAvanzada).toHaveBeenLastCalledWith(
-      expect.objectContaining({ ordenar_por: 'relevancia', pagina: 1 }),
-    ))
-
-    fireEvent.click(screen.getByRole('button', { name: 'Abrir filtros' }))
-    fireEvent.click(screen.getByText('Todas las categorías'))
-    fireEvent.click(within(screen.getByTestId('modal')).getByText('Todas las categorías'))
-    fireEvent.click(screen.getByText('Relevancia'))
-    fireEvent.click(within(screen.getByTestId('modal')).getByText('Cancelar'))
+      });
+    });
   });
 
   it('muestra la paginación al medir la lista y carga la página siguiente', async () => {

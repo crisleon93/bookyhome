@@ -79,18 +79,26 @@ vi.mock('react-native', async () => {
     Platform: { OS: 'web', select: (values) => values.web || values.default },
     Pressable: NativeElement('button'),
     ScrollView: NativeElement('div'),
-    StyleSheet: { absoluteFill: {}, create: (styles) => styles, flatten: (style) => style },
+    StatusBar: () => null,
+    StyleSheet: { absoluteFill: {}, absoluteFillObject: {}, create: (styles) => styles, flatten: (style) => style },
     Text: NativeElement('span'),
     TouchableOpacity: NativeElement('button'),
     View: NativeElement('div'),
   }
 })
 
+vi.mock('react-native-safe-area-context', () => ({
+  useSafeAreaInsets: () => ({ top: 24, right: 0, bottom: 0, left: 0 }),
+}))
+
 vi.mock('@react-native-async-storage/async-storage', () => ({
   default: { getItem: mocks.getItem, setItem: mocks.setItem },
 }))
 vi.mock('expo-linear-gradient', () => ({
   LinearGradient: ({ children }) => <div>{children}</div>,
+}))
+vi.mock('expo-navigation-bar', () => ({
+  NavigationBar: () => null,
 }))
 vi.mock('../../context/NotificationContext', () => ({
   useNotifications: () => ({
@@ -224,6 +232,9 @@ describe('barras laterales y tema', () => {
     expect(screen.getByText('Ana Compradora')).toBeTruthy()
     expect(screen.getByText('4')).toBeTruthy()
     expect(screen.getByText('3')).toBeTruthy()
+    const menuScroll = screen.getByTestId('sidebar-menu-scroll')
+    expect(menuScroll.contains(screen.getByText('MI CUENTA'))).toBe(true)
+    expect(menuScroll.contains(screen.getByText('Cerrar Sesión'))).toBe(false)
     const buyerRoutes = [
       ['Inicio', 'PostLogin'],
       ['Catálogo', 'Catalogo'],

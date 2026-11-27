@@ -358,7 +358,7 @@ export default function BookDetailPublico({ navigation, route }) {
           {outOfStock && (
             <View style={d.sinStockBadge}><Text style={d.sinStockTxt}>Sin stock</Text></View>
           )}
-          {libro.es_impulsado && (
+          {Boolean(libro.es_impulsado) && (
             <View style={d.impulsoBadge}><Text style={d.impulsoTxt}>⭐ Destacado</Text></View>
           )}
         </View>

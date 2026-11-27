@@ -1,5 +1,8 @@
+// @vitest-environment jsdom
+
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
+import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import AppNavigator from '../../navigation/AppNavigator';
 import { AuthContext } from '../../context/AuthContext';
@@ -27,17 +30,26 @@ vi.mock('react-native', () => ({
 
 vi.mock('@react-navigation/native-stack', () => {
   const ReactModule = React;
-  const Container = ({ children, initialRouteName }) => ReactModule.createElement(
-    'div',
-    { 'data-initial-route': initialRouteName },
+  let nextNavigatorInstance = 0;
+  const Navigator = ({ children, initialRouteName }) => {
+    const [instance] = ReactModule.useState(() => ++nextNavigatorInstance);
+    return ReactModule.createElement(
+      'div',
+      {
+        'data-testid': 'stack-navigator',
+        'data-instance': instance,
+        'data-initial-route': initialRouteName,
+      },
     children,
-  );
+    );
+  };
+  const Group = ({ children }) => ReactModule.createElement('div', null, children);
   const Screen = ({ name }) => ReactModule.createElement('span', null, name);
   return {
     createNativeStackNavigator: () => ({
-      Navigator: Container,
+      Navigator,
       Screen,
-      Group: Container,
+      Group,
     }),
   };
 });
@@ -118,6 +130,25 @@ describe('AppNavigator', () => {
     expect(markup).toContain('CatalogoPublico');
     expect(markup).toContain('PerfilTienda');
     expect(markup).not.toContain('AdminHome');
+  });
+
+  it('reinicia la navegación a Home cuando se cierra sesión desde el catálogo', () => {
+    const { rerender } = render(
+      <AuthContext.Provider value={{ loading: false, user: { rol: 'comprador' }, token: 'token' }}>
+        <AppNavigator />
+      </AuthContext.Provider>,
+    );
+    const authenticatedInstance = screen.getByTestId('stack-navigator').dataset.instance;
+
+    rerender(
+      <AuthContext.Provider value={{ loading: false, user: null, token: null }}>
+        <AppNavigator />
+      </AuthContext.Provider>,
+    );
+
+    const publicNavigator = screen.getByTestId('stack-navigator');
+    expect(publicNavigator.dataset.instance).not.toBe(authenticatedInstance);
+    expect(publicNavigator.dataset.initialRoute).toBe('Home');
   });
 
   it('muestra exclusivamente las rutas del vendedor para el rol vendedor', () => {
