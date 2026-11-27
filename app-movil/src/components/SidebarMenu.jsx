@@ -133,7 +133,7 @@ export default function SidebarMenu({ visible, onClose, user, navigation, onSign
             ) : bannerGradient?.length >= 2 ? (
               <LinearGradient colors={bannerGradient} style={StyleSheet.absoluteFillObject} />
             ) : null}
-            {(bannerUrl || bannerGradient?.length >= 2) && (
+            {Boolean(bannerUrl || bannerGradient?.length >= 2) && (
               <View style={[StyleSheet.absoluteFillObject, styles.headerOverlay]} />
             )}
             <View style={styles.avatar}>
