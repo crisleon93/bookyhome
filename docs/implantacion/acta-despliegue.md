@@ -30,7 +30,7 @@ Usuario / Evaluador SENA
 Frontend React (Render Static): https://bookyhome-web.onrender.com
           | (HTTPS / REST)
           v
-Backend FastAPI (Render Web Service): https://bookyhome.onrender.com
+Backend FastAPI (Render Web Service): https://bookyhome-api.onrender.com
           | (Conexión segura SSL/TLS - Puerto 22566)
           v
 Base de Datos (Aiven MySQL 8.4): bookyhome-mysql-bookyhome.l.aivencloud.com:22566
@@ -42,7 +42,7 @@ Base de Datos (Aiven MySQL 8.4): bookyhome-mysql-bookyhome.l.aivencloud.com:2256
 
 | Servicio | Proveedor | URL / Endpoint Público | Puerto | Tipo de Acceso | Estado |
 |---|---|---|---|---|---|
-| **Backend API** | Render | `https://bookyhome.onrender.com` | 443 (HTTPS) | Público (`/docs`, `/health`) | Configurado / Desplegado |
+| **Backend API** | Render | `https://bookyhome-api.onrender.com` | 443 (HTTPS) | Público (`/docs`, `/health`) | Configurado / Desplegado |
 | **Frontend Web** | Render | `https://bookyhome-web.onrender.com` | 443 (HTTPS) | Público | Configurado / Desplegado |
 | **Base de Datos** | Aiven Cloud | `bookyhome-mysql-bookyhome.l.aivencloud.com` | 22566 | Conexión SSL (`bookyhome`) | Activo (75 tablas y vistas, 20 triggers, 45 rutinas, 380k+ filas) |
 
@@ -99,7 +99,7 @@ Verificacion realizada sobre contenedores locales:
 Se ejecuto el script de prueba de humo automatizado `scripts/smoke-test.sh` contra los endpoints publicos desplegados en Render y Aiven Cloud:
 
 ```powershell
-bash scripts/smoke-test.sh https://bookyhome.onrender.com https://bookyhome-web.onrender.com
+bash scripts/smoke-test.sh https://bookyhome-api.onrender.com https://bookyhome-web.onrender.com
 ```
 
 **Salida real obtenida de la ejecucion:**
@@ -107,16 +107,16 @@ bash scripts/smoke-test.sh https://bookyhome.onrender.com https://bookyhome-web.
 ```text
 ========================================
  Prueba de humo — BookyHome
- API:      https://bookyhome.onrender.com
+ API:      https://bookyhome-api.onrender.com
  Frontend: https://bookyhome-web.onrender.com
  Fecha:    2026-11-21 12:40:26
 ========================================
-  → Comprobando API (https://bookyhome.onrender.com)...
+  → Comprobando API (https://bookyhome-api.onrender.com)...
   ✔ PASS API raíz — HTTP 200
   ✔ PASS API /docs (Swagger) — HTTP 200
   ✔ PASS API /catalogo/categorias — HTTP 200
   ✔ PASS API /catalogo/busqueda-avanzada — HTTP 200
-  → Comprobando endpoint de salud (https://bookyhome.onrender.com/health)...
+  → Comprobando endpoint de salud (https://bookyhome-api.onrender.com/health)...
   ✔ PASS API /health — HTTP 200, base de datos sana
   → Verificación propia: catálogo con datos...
   ✔ PASS Catálogo devuelve estructura JSON con resultados
@@ -128,7 +128,7 @@ bash scripts/smoke-test.sh https://bookyhome.onrender.com https://bookyhome-web.
 RESULTADO: OK — todas las pruebas pasaron
 ```
 
-**Respuesta JSON del endpoint de salud (`https://bookyhome.onrender.com/health`):**
+**Respuesta JSON del endpoint de salud (`https://bookyhome-api.onrender.com/health`):**
 
 ```json
 {
@@ -165,7 +165,7 @@ Las observaciones técnicas para producción fueron atendidas e implementadas en
 
 1. **Credenciales seguras**: Se eliminó el uso de credenciales por defecto. La base de datos en la nube (Aiven) utiliza usuario administrativo dedicado con SSL forzoso y contraseña criptográfica fuerte.
 2. **Gestión de secretos**: Las variables críticas (`DB_PASSWORD`, `SECRET_KEY`, `MAIL_PASSWORD`, `GEMINI_API_KEY`) se administran como variables de entorno seguras en Render, nunca en el repositorio.
-3. **CORS y HTTPS/TLS**: Se configuró HTTPS obligatorio provisto por Render en `https://bookyhome.onrender.com`. El CORS en FastAPI autoriza explícitamente los orígenes de Render (`https://.*\.onrender\.com`).
+3. **CORS y HTTPS/TLS**: Se configuró HTTPS obligatorio provisto por Render en `https://bookyhome-api.onrender.com`. El CORS en FastAPI autoriza explícitamente los orígenes de Render (`https://.*\.onrender\.com`).
 4. **Optimización de contenedor**: Se eliminó la bandera `--reload` en la ejecución productiva del `Dockerfile` y se implementó enlace dinámico al puerto `${PORT:-8000}`.
 5. **Manejo de Base de Datos Cloud**: Se migraron las 43 tablas base y 32 vistas (75 objetos en total) al clúster MySQL 8.4 en Aiven, con soporte SSL nativo en el backend.
 

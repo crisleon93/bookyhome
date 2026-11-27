@@ -28,7 +28,7 @@ Enlaces a los workflows en el repositorio:
 | Regla | Configuración |
 |---|---|
 | Rama `main` | Pull request obligatorio, check `prueba-de-humo` obligatorio, no permitir push directo |
-| Ambiente `produccion` | Revisores: `ana` (admin). Secretos del ambiente: `RENDER_DEPLOY_HOOK_URL`, `RENDER_API_KEY`, `RENDER_SERVICE_ID_API` |
+| Ambiente `produccion` | Revisores: Líder Técnico (Cristopher León). Secretos del ambiente: `RENDER_DEPLOY_HOOK_URL`, `RENDER_API_KEY`, `RENDER_SERVICE_ID_API` |
 | Etiquetas | Solo maintainer puede crear etiquetas `v*` (regla de Git o de GitHub) |
 
 **Cómo configurar la regla de main en GitHub:**
@@ -46,9 +46,9 @@ Enlaces a los workflows en el repositorio:
 
 | Nombre | Tipo | Ámbito | Para qué | Quién lo rota |
 |---|---|---|---|---|
-| `RENDER_DEPLOY_HOOK_URL` | Secreto | Ambiente `produccion` | Pedir el despliegue a Render (release) | `ana` (admin) — Render Dashboard → Settings → Deploy Hook → regenerar |
-| `RENDER_API_KEY` | Secreto | Ambiente `produccion` | Crear deploys desde un commit específico (rollback) | `ana` — Render Dashboard → API Keys → rotate |
-| `RENDER_SERVICE_ID_API` | Secreto | Ambiente `produccion` | Identificar el servicio `bookyhome` en la API de Render | `ana` — no rota (es un ID fijo) |
+| `RENDER_DEPLOY_HOOK_URL` | Secreto | Ambiente `produccion` | Pedir el despliegue a Render (release) | Líder Técnico (Cristopher León) — Render Dashboard → Settings → Deploy Hook → regenerar |
+| `RENDER_API_KEY` | Secreto | Ambiente `produccion` | Crear deploys desde un commit específico (rollback) | Cristopher León — Render Dashboard → API Keys → rotate |
+| `RENDER_SERVICE_ID_API` | Secreto | Ambiente `produccion` | Identificar el servicio `bookyhome` en la API de Render | Cristopher León — no rota (es un ID fijo) |
 | `GITHUB_TOKEN` | Automático | Workflow | Publicar imágenes en GHCR (lo provee GitHub, no se configura) | GitHub lo rota automáticamente |
 
 > **Ningún secreto aparece en los workflows ni en el repositorio.** Todos viven en el ambiente `produccion` de GitHub y solo son accesibles por los jobs que declaran `environment: produccion`. El workflow de CI no usa ningún secreto.
@@ -147,7 +147,7 @@ git push origin v1.0.1
 **Desplegar con `desplegar.sh`:**
 
 ```bash
-# En el servidor, como operador (luis) o admin (ana)
+# En el servidor, como operador (Juan Pineda) o admin (Cristopher León)
 cd /opt/bookyhome
 bash scripts/desplegar.sh 1.0.1
 ```
@@ -263,16 +263,16 @@ MODIFY`), se aplaza a la versión N+1 para que la N→N-1 siga siendo posible.
 
 | Monitor | Tipo | Objetivo | Intervalo | Reintentos | Qué hace quien recibe la alerta |
 |---|---|---|---|---|---|
-| Salud API | HTTP(s) | `https://bookyhome.onrender.com/health` | 60 s | 2 | Revisar logs de Render, si fue el último cambio ejecutar rollback a la versión anterior |
-| API Raíz | HTTP(s) | `https://bookyhome.onrender.com/` | 60 s | 3 | Revisar logs del backend |
+| Salud API | HTTP(s) | `https://bookyhome-api.onrender.com/health` | 60 s | 2 | Revisar logs de Render, si fue el último cambio ejecutar rollback a la versión anterior |
+| API Raíz | HTTP(s) | `https://bookyhome-api.onrender.com/` | 60 s | 3 | Revisar logs del backend |
 | Frontend | HTTP(s) | `https://bookyhome-web.onrender.com/` | 120 s | 3 | Revisar logs del frontend / verificar CDN |
-| Versión correcta | Keyword (HTTP) | `https://bookyhome.onrender.com/health` — keyword: `"version":"1.0.1"` | 300 s | 2 | Verificar que el release de la versión esperada se completó |
+| Versión correcta | Keyword (HTTP) | `https://bookyhome-api.onrender.com/health` — keyword: `"version":"1.0.1"` | 300 s | 2 | Verificar que el release de la versión esperada se completó |
 | Respaldo diario | Push | Push URL (latido de `respaldo-restic.sh`) | 25 h | 0 | Verificar cron de respaldo, logs de restic, ejecutar respaldo manual |
 
 | Campo | Valor |
 |---|---|
 | Dónde corre Uptime Kuma | VM de monitoreo separada (Ubuntu 24.04, Docker, `deploy/uptime-kuma/docker-compose.yml`, puerto 3001) |
-| Canal de alertas y quién lo lee | Telegram (grupo BookyHome-Ops) — lo leen `ana` (admin) y `luis` (operador). Email de respaldo a ana@bookyhome.com.co |
+| Canal de alertas y quién lo lee | Telegram (grupo BookyHome-Ops) — lo leen el equipo técnico (Cristopher León y Juan Pineda). Email de respaldo a operaciones@bookyhome.com.co |
 | Horario de atención de alertas | 24/7 (Telegram). Horario laboral: lunes a viernes 8:00–18:00. Fuera de horario: las alertas se envían igual; se evalúa si requiere acción inmediata |
 
 **Configuración de Uptime Kuma:** [`deploy/uptime-kuma/README.md`](../../deploy/uptime-kuma/README.md)
@@ -287,13 +287,13 @@ MODIFY`), se aplaza a la versión N+1 para que la N→N-1 siga siendo posible.
   Ultimo latido recibido: 2026-10-16 20:05:12
 
   → Notificacion enviada a Telegram (BookyHome-Ops)
-  → Notificacion enviada a Email (ana@bookyhome.com.co)
+  → Notificacion enviada a Email (operaciones@bookyhome.com.co)
 ```
 
-**Acción tomada por el operador (luis):**
+**Acción tomada por el operador (Juan Pineda):**
 
 ```text
-$ ssh ana@bookyhome-server
+$ ssh <usuario>@<servidor-bookyhome>
 $ sudo systemctl status cron
   ● cron.service - Regular background program processor daemon
     Active: inactive (dead) since ... (reinicio del servidor)
@@ -347,7 +347,7 @@ permisos de etiquetado (maintainer) y lo hace deliberadamente — el pipeline lo
 **3. Si el despliegue de las 3 a.m. falla, ¿quién se entera, por qué canal y qué hace?**
 
 Uptime Kuma detecta que `/health` no responde 200 tras 2 reintentos (60 s × 2 = ~2 min).
-Envía una alerta al grupo de Telegram **BookyHome-Ops**, que leen `ana` (admin) y `luis`
+Envía una alerta al grupo de Telegram **BookyHome-Ops**, que leen Líder Técnico (Cristopher León) y Juan Pineda
 (operador) en el teléfono. El monitor de versión también alerta si la versión desplegada
 no coincide con la esperada. Quien reciba la alerta: abre el panel de Render, revisa los
 logs del deploy fallido, y ejecuta el rollback desde GitHub Actions (workflow_dispatch) o

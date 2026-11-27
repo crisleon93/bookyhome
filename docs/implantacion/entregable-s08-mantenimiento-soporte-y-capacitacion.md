@@ -16,15 +16,15 @@
 | Tarea | Tipo | Frecuencia | Automática / manual | Responsable (rol) | ¿Requiere ventana? |
 |---|---|---|---|---|---|
 | Parches de seguridad del SO (Ubuntu) | Preventivo | Diaria | **Automática** (`unattended-upgrades`) | Administrador del servidor | No |
-| Reinicio para parches del kernel (`needrestart`) | Preventivo | Mensual | Manual — se programa en ventana | Administradora (`ana`) | Sí |
-| Actualización de imágenes Docker de producción | Preventivo | Al llegar PR de Dependabot aprobado | Automática (CI) + manual (fusionar PR) | Operador (`luis`) / Administradora (`ana`) | No (azul/verde) |
-| Restauración de prueba del respaldo | Preventivo | Mensual | Manual | Operador (`luis`) | No |
-| Revisión de logs de acceso y errores | Preventivo | Semanal | Manual | Operador (`luis`) | No |
-| Revisión de tabla EOL de componentes | Preventivo | Trimestral | Manual | Administradora (`ana`) | No |
-| Rotación de secretos (JWT, BD, correo, Gemini) | Preventivo | Semestral o ante indicios de compromiso | Manual | Administradora (`ana`) | Sí (breve) |
+| Reinicio para parches del kernel (`needrestart`) | Preventivo | Mensual | Manual — se programa en ventana | Líder Técnico (Cristopher León) | Sí |
+| Actualización de imágenes Docker de producción | Preventivo | Al llegar PR de Dependabot aprobado | Automática (CI) + manual (fusionar PR) | Operador (Juan Pineda) / Líder Técnico (Cristopher León) | No (azul/verde) |
+| Restauración de prueba del respaldo | Preventivo | Mensual | Manual | Operador (Juan Pineda) | No |
+| Revisión de logs de acceso y errores | Preventivo | Semanal | Manual | Operador (Juan Pineda) | No |
+| Revisión de tabla EOL de componentes | Preventivo | Trimestral | Manual | Líder Técnico (Cristopher León) | No |
+| Rotación de secretos (JWT, BD, correo, Gemini) | Preventivo | Semestral o ante indicios de compromiso | Manual | Líder Técnico (Cristopher León) | Sí (breve) |
 | Prueba de humo post-actualización | Correctivo/Preventivo | Cada despliegue | Automática (`scripts/smoke-test.sh` en CI y en servidor) | Pipeline CI / Operador | No |
-| Auditoría de vulnerabilidades (pip-audit / npm audit) | Preventivo | Semanal (Dependabot) + mensual manual | Automática (Dependabot) + manual | Operador (`luis`) | No |
-| Revisión de capacidad de disco y memoria | Preventivo | Mensual | Manual | Operador (`luis`) | No |
+| Auditoría de vulnerabilidades (pip-audit / npm audit) | Preventivo | Semanal (Dependabot) + mensual manual | Automática (Dependabot) + manual | Operador (Juan Pineda) | No |
+| Revisión de capacidad de disco y memoria | Preventivo | Mensual | Manual | Operador (Juan Pineda) | No |
 
 **Ventana de mantenimiento propuesta:** domingos de 02:00 a 04:00 hora de Bogotá (UTC−5). Coincide con el tráfico más bajo observado en los logs.
 
@@ -62,7 +62,7 @@ Fuentes consultadas el 2026-10-17.
 | **Parche de seguridad moderado (CVE Medium)** | 7 días | Igual que crítico, pero puede esperar al ciclo semanal de revisión |
 | **Actualización de parche (corrección de bugs)** | 14 días | CI en verde → fusionar → versión de parche |
 | **Actualización menor (nueva funcionalidad compatible)** | 30 días | Revisar changelog → CI en verde → fusionar → versión menor |
-| **Actualización mayor (cambio de versión principal, breaking changes)** | Planificada en sprint | Crear rama de actualización → probar en dev → PR con revisión de `ana` → versión mayor |
+| **Actualización mayor (cambio de versión principal, breaking changes)** | Planificada en sprint | Crear rama de actualización → probar en dev → PR con revisión de Cristopher León → versión mayor |
 | **Actualización de imagen Docker base** | 7 días para seguridad, 30 para menor | PR de Dependabot → CI pasa → fusionar → nueva imagen en GHCR |
 | **Migración de componente EOL** | Antes de la fecha de EOL (con 3 meses de margen) | Crear tarea en el backlog → sprint dedicado → pruebas en staging → despliegue en ventana de mantenimiento |
 
@@ -134,15 +134,15 @@ trivy image mysql:8.0
 |---|---|---|---|
 | **N0** | Ayudas en línea (guía rápida, FAQ) | Dudas de uso general, primeros pasos | Siempre (autoservicio) |
 | **N1** | Soporte básico (miembro del equipo de turno) | Preguntas de uso que no cubre el N0, errores visuales, problemas de cuenta | Lunes–viernes 8:00–18:00 hora Bogotá |
-| **N2** | Operador (`luis`) | Caídas de servicio, errores del servidor, problemas de respaldo, configuración de Uptime Kuma | Lunes–viernes 8:00–18:00 + alertas fuera de horario si son P1 |
-| **N3** | Administradora (`ana`) | Problemas de seguridad, migraciones, rollback, cambios en infraestructura, incidentes sin resolver por N2 | 24/7 para P1 |
+| **N2** | Operador (Juan Pineda) | Caídas de servicio, errores del servidor, problemas de respaldo, configuración de Uptime Kuma | Lunes–viernes 8:00–18:00 + alertas fuera de horario si son P1 |
+| **N3** | Líder Técnico (Cristopher León) | Problemas de seguridad, migraciones, rollback, cambios en infraestructura, incidentes sin resolver por N2 | 24/7 para P1 |
 
 **Cobertura cuando la persona no está disponible:**
 
 | Rol ausente | Cobertura |
 |---|---|
-| `luis` (N2) | `ana` asume N2 directamente; si `ana` también está fuera, documentar incidente y resolver en la siguiente jornada (solo si no es P1) |
-| `ana` (N3) | `luis` gestiona hasta donde puede y documenta; si es P1, `ana` debe estar disponible (acordar con el equipo) |
+| Juan Pineda (N2) | Cristopher León asume N2 directamente; si Cristopher León también está fuera, documentar incidente y resolver en la siguiente jornada (solo si no es P1) |
+| Cristopher León (N3) | Juan Pineda gestiona hasta donde puede y documenta; si es P1, Cristopher León debe estar disponible (acordar con el equipo) |
 
 ---
 
@@ -161,7 +161,7 @@ Para reportes externos (usuarios): [formulario de falla](https://github.com/book
 | **P3 — Medio** | Función secundaria con error, bug no bloqueante | **1 día hábil** | 5 días hábiles |
 | **P4 — Bajo** | Error cosmético, texto incorrecto, mejora menor | **3 días hábiles** | Próximo sprint |
 
-> **¿Podemos cumplir estos tiempos?** Con el equipo actual de 2 personas (ana + luis), P1 y P2 son alcanzables si los dos miembros están disponibles. P1 requiere que `ana` esté siempre reachable por Telegram. Los tiempos de P3 y P4 son conservadores y realistas.
+> **¿Podemos cumplir estos tiempos?** Con el equipo actual de 2 personas (Cristopher León + Juan Pineda), P1 y P2 son alcanzables si los dos miembros están disponibles. P1 requiere que Cristopher León esté siempre reachable por Telegram. Los tiempos de P3 y P4 son conservadores y realistas.
 
 ---
 
@@ -191,9 +191,9 @@ Para reportes externos (usuarios): [formulario de falla](https://github.com/book
 
 | Fecha | Público | Responsable (rol) | Participantes esperados |
 |---|---|---|---|
-| 2026-10-24 | Soporte N1 | Administradora (`ana`) | 2 (miembros del equipo) |
-| 2026-10-25 | Operación N2 | Administradora (`ana`) + Operador (`luis`) | 1 (operador nuevo o de reemplazo) |
-| 2026-10-28 | Usuarios finales — vendedores (piloto) | Operador (`luis`) | 3 vendedores piloto |
+| 2026-10-24 | Soporte N1 | Líder Técnico (Cristopher León) | 2 (miembros del equipo) |
+| 2026-10-25 | Operación N2 | Líder Técnico (Cristopher León) + Operador (Juan Pineda) | 1 (operador nuevo o de reemplazo) |
+| 2026-10-28 | Usuarios finales — vendedores (piloto) | Operador (Juan Pineda) | 3 vendedores piloto |
 | 2026-11-01 | Usuarios finales — compradores | Cualquier miembro del equipo | Según apertura al público |
 
 ---
@@ -237,7 +237,7 @@ MySQL 8.0 y Node.js 20 ya superaron su EOL (abril 2026). Python 3.10 vence en oc
 
 **¿Quién cubre cada nivel de soporte? ¿Y cuando esa persona no esté?**
 
-N0: las guías en línea. N1: cualquier miembro del equipo. N2: `luis` (operador); si no está disponible, `ana` asume. N3: `ana` (administradora); para P1 es irremplazable hasta que se sume otro miembro con acceso. El equipo es pequeño: la redundancia real es entre ana y luis, y la documentación (runbooks, guías) reduce la dependencia de personas específicas.
+N0: las guías en línea. N1: cualquier miembro del equipo. N2: Operador (Juan Pineda); si no está disponible, Cristopher León asume. N3: Cristopher León (Líder Técnico); para P1 es irremplazable hasta que se sume otro miembro con acceso. El equipo es pequeño: la redundancia real es entre Cristopher León y Juan Pineda, y la documentación (runbooks, guías) reduce la dependencia de personas específicas.
 
 **¿Qué tiempos de respuesta puedes cumplir de verdad?**
 

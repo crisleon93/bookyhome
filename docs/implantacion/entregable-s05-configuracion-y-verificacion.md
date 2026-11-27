@@ -29,9 +29,9 @@ Las variables se separan en tres categorías: **obligatorias** (la app no arranc
 
 | Variable | ¿Secreto? | Desarrollo | Servidor | Nube | Si falta… |
 |---|---|---|---|---|---|
-| `PUBLIC_API_URL` | No | `http://192.168.1.10:8000` | `https://api.bookyhome.com.co` | `https://bookyhome.onrender.com` | Advertencia; enlaces de correo usan default |
+| `PUBLIC_API_URL` | No | `http://192.168.1.10:8000` | `https://api.bookyhome.com.co` | `https://bookyhome-api.onrender.com` | Advertencia; enlaces de correo usan default |
 | `FRONTEND_URL` | No | `http://localhost:5173` | `https://bookyhome.com.co` | `https://bookyhome-web.onrender.com` | Advertencia; redirección de correo usa default |
-| `VITE_API_BASE_URL` | No | `http://localhost:8000` | `https://api.bookyhome.com.co` | `https://bookyhome.onrender.com` | Frontend no puede llamar a la API |
+| `VITE_API_BASE_URL` | No | `http://localhost:8000` | `https://api.bookyhome.com.co` | `https://bookyhome-api.onrender.com` | Frontend no puede llamar a la API |
 | `APP_VERSION` | No | `1.0.0` | `1.0.0` | `1.0.0` | `/health` reporta `unknown` |
 | `MAIL_STARTTLS` | No | `true` | `true` | `true` | Default `true` |
 | `MAIL_SSL_TLS` | No | `false` | `false` | `false` | Default `false` |
@@ -186,16 +186,16 @@ Salida contra la nube (Aiven Cloud MySQL + Render API):
 ```text
 ========================================
  Prueba de humo — BookyHome
- API:      https://bookyhome.onrender.com
+ API:      https://bookyhome-api.onrender.com
  Frontend: https://bookyhome-web.onrender.com
  Fecha:    2026-10-17 15:05:00
 ========================================
-  → Comprobando API (https://bookyhome.onrender.com)...
+  → Comprobando API (https://bookyhome-api.onrender.com)...
   ✔ PASS API raíz — HTTP 200
   ✔ PASS API /docs (Swagger) — HTTP 200
   ✔ PASS API /catalogo/categorias — HTTP 200
   ✔ PASS API /catalogo/busqueda-avanzada — HTTP 200
-  → Comprobando endpoint de salud (https://bookyhome.onrender.com/health)...
+  → Comprobando endpoint de salud (https://bookyhome-api.onrender.com/health)...
   ✔ PASS API /health — HTTP 200, base de datos sana
   → Verificación propia: catálogo con datos...
   ✔ PASS Catálogo devuelve estructura JSON con resultados

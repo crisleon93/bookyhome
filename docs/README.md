@@ -11,6 +11,7 @@ Los documentos de `docs/requisitos` deben servir como guia para construir y vali
 ```text
 docs/
   README.md
+  ayuda/  Guia rapida, preguntas frecuentes e instrucciones de soporte para usuarios
   casos-de-uso/  Diagramas de casos de uso web y móvil, organizados por plataforma
   diagramas-de-clases/
     diagrama-clases-bookyhome.md  Modelo de clases, persistencia y arquitectura verificados contra código/SQL
@@ -22,6 +23,8 @@ docs/
   aceptacion/  Casos de prueba y evidencias de aceptacion
   calidad/  Marco ISO/IEC 25000, CMMI, PSP, RNF y lecciones aprendidas
   manuales/   Manual de instalacion, tecnico, usuario e informe de calidad
+  modulos/    Documentacion funcional de autenticacion, registro y reportes
+  runbooks/   Procedimientos operativos y de recuperacion
   requisitos/
     HIS/   Historias de usuario
     RF/    Requisitos funcionales

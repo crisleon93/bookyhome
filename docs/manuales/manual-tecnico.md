@@ -5,7 +5,7 @@
 BookyHome esta compuesto por:
 
 - Frontend web en React 19, Vite y React Router (desplegado en Render Static Site: `https://bookyhome-web.onrender.com`).
-- Backend API en FastAPI y Uvicorn (desplegado en Render Web Service: `https://bookyhome.onrender.com`).
+- Backend API en FastAPI y Uvicorn (desplegado en Render Web Service: `https://bookyhome-api.onrender.com`).
 - MySQL 8.4 LTS como base de datos cloud (desplegado en Aiven Cloud MySQL: `bookyhome-mysql-bookyhome.l.aivencloud.com:22566` con SSL forzoso).
 - App movil en Expo/React Native, ejecutada por separado.
 - Docker Compose para coordinar el entorno de desarrollo local (MySQL 8, backend y frontend).

@@ -123,6 +123,6 @@ Tras las jornadas de aseguramiento de calidad (Semanas 5 a 7) y la implementaci�
   - Métricas de confiabilidad: 0 Bugs, 0 Vulnerabilidades de seguridad, duplicación < 2%.
 - **Prueba de Humo en Producción (`scripts/smoke-test.sh`):**
   - Ejecutada exitosamente el **21 de noviembre de 2026** contra los dominios en la nube:
-    - Backend: `https://bookyhome.onrender.com` (HTTP 200)
+    - Backend: `https://bookyhome-api.onrender.com` (HTTP 200)
     - Frontend: `https://bookyhome-web.onrender.com` (HTTP 200)
     - Resultado: **7 pasaron / 0 fallaron (100% OK)**.

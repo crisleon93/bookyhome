@@ -44,7 +44,7 @@
 | Componente | Tipo | Valor / Endpoint Real | Estado | Propósito |
 |---|---|---|---|---|
 | **Frontend Web** | CDN / Static | `https://bookyhome-web.onrender.com` | ✅ Live (HTTP 200) | Aplicación SPA pública de compradores y vendedores |
-| **Backend API** | PaaS Web Service | `https://bookyhome.onrender.com` | ✅ Live (HTTP 200) | API REST FastAPI con documentación Swagger y `/health` |
+| **Backend API** | PaaS Web Service | `https://bookyhome-api.onrender.com` | ✅ Live (HTTP 200) | API REST FastAPI con documentación Swagger y `/health` |
 | **Base de Datos** | DBaaS Managed | `bookyhome-mysql-bookyhome.l.aivencloud.com:22566` | ✅ Running | Clúster MySQL 8.4 LTS con cifrado forzoso TLS 1.3 |
 | `api` (Subdominio) | CNAME | `bookyhome.onrender.com.` | Configurado | Alias directo a la API en Render |
 | `www` (Subdominio) | CNAME | `bookyhome-web.onrender.com.` | Configurado | Alias para el frontend web en Render |

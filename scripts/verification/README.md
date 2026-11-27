@@ -19,5 +19,7 @@ docs\implantacion\verificacion-plataforma.md
 Para generar un reporte individual:
 
 ```powershell
-.\scripts\verification\verify-platform.ps1 -ReportPath docs\implantacion\verificacion-NOMBRE.md
+.\scripts\verification\verify-platform.ps1 -ReportPath docs\implantacion\verificacion-IDENTIFICADOR.md
 ```
+
+Usa un identificador no personal. El reporte puede incluir detalles del equipo local; revisalo y anonimiza la informacion que no quieras compartir antes de subirlo a Git.

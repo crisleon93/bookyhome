@@ -20,51 +20,48 @@ frontend/
   src/
     assets/               Imagenes y recursos visuales
     components/           Componentes reutilizables
-    context/              Contextos de React
+    components/dashboard/ Secciones del dashboard del comprador
     hooks/                Utilidades como lectura de token/rol
     pages/                Paginas principales de la aplicacion
     services/             Cliente de API centralizado
     styles/               Estilos globales y modulares
+    test/                 Pruebas automatizadas
+    utils/                Funciones auxiliares
     App.jsx               Definicion de rutas y layout principal
     main.jsx              Entrada de React
     index.css             Estilos globales
     App.css               Estilos dependientes del layout
   eslint.config.js        Configuracion de ESLint
-  vite.config.js          Configuracion de Vite y Puerto 5173
+  vite.config.js          Configuracion de Vite
   package.json            Scripts y dependencias
 ```
 
 ## Paginas principales
 
-- `Home.jsx`: pagina inicial y bienvenida.
+- `Home.jsx`: pagina publica, acceso y dashboard del comprador.
 - `Catalogo.jsx`: listado de libros, busqueda y filtros.
-- `DetalleLibro.jsx`: vista individual de un libro.
-- `Carrito.jsx`: carrito del comprador autenticado.
-- `Checkout.jsx`: fila de pago y confirmacion.
-- `Login.jsx`: inicio de sesion.
-- `Register.jsx`: registro de usuario.
-- `ForgotPassword.jsx`: solicitud de recuperacion.
-- `Resetpassword.jsx`: cambio de nueva contrasena.
-- `Libreria.jsx`: registro de libreria/vendedor.
-- `PostLogin.jsx`: dashboard principal del comprador.
-- `PerfilUsuario.jsx`: gestion de perfil y secciones internas del comprador.
+- `Librerias.jsx` y `PerfilTienda.jsx`: listado de librerias y perfil de tienda.
+- `ResetPassword.jsx`: cambio de contrasena desde el enlace de recuperacion.
 - `MiTienda.jsx`: panel del vendedor.
 - `PublicarLibro.jsx`: publicacion de libros para vendedores.
-- `Favoritos.jsx`: libros guardados por el comprador.
-- `StoredProcedurePage.jsx`: vista de soporte para libros y stored procedures.
-- `AdminDashboard.jsx`: panel administrativo (ruta protegida).
+- `Historial.jsx`, `ListaDeseos.jsx` y `Devoluciones.jsx`: compras, listas y devoluciones.
+- `BookyPagoFinanzas.jsx`: finanzas administrativas y balance de ventas.
+- `AdminDashboard.jsx`: panel administrativo integral (moderacion de catalogo, suspension y activacion de tiendas con filtros simetricos, supervision de ordenes con avatares y modal de seguimiento logistico/numero de guia, tickets de soporte y metricas).
+
+El carrito y el checkout se muestran dentro de secciones del dashboard en `Home.jsx`; no son paginas independientes.
 
 ## Componentes relevantes
 
 - `Header.jsx`: barra de navegacion superior.
 - `Footer.jsx`: pie de pagina.
 - `PrivateRoute.jsx`: proteccion de rutas que requieren sesion.
-- `DashboardSidebar.jsx`: sidebar interno actual para comprador.
-- `SellerSidebarFlowbite.jsx`: sidebar para vistas de vendedor.
+- `CompradorSidebar.jsx`: navegacion del comprador.
+- `VendedorSidebar.jsx`: navegacion del vendedor.
 - `Icons.jsx`: componentes de iconos reutilizables.
 - `ToastProvider.jsx`: notificaciones de usuario.
 - `LibroCard.jsx`: tarjeta de libro reutilizable.
 - `DashboardHeader.jsx`: encabezado en el dashboard.
+- `components/dashboard/`: secciones del dashboard, incluido el carrito y el checkout.
 
 ## Servicio de API
 
@@ -85,7 +82,7 @@ VITE_API_BASE_URL=http://127.0.0.1:8000
 Si no se define, el frontend usa por defecto:
 
 ```text
-http://127.0.0.1:8000
+http://localhost:8000
 ```
 
 ## Scripts
@@ -120,17 +117,28 @@ Previsualizar build:
 pnpm preview
 ```
 
+Ejecutar pruebas:
+
+```bash
+pnpm test
+pnpm test:coverage
+pnpm test:e2e
+```
+
 ## Rutas protegidas
 
 Algunas rutas requieren token de sesion:
 
-- `/post-login`
-- `/carrito` (redirige a `/post-login?seccion=Carrito`)
-- `/checkout/:orderId`
-- `/perfil`
+- `/carrito` (redirige a `/?seccion=Carrito`)
+- `/historial`
+- `/lista-deseos`
+- `/devoluciones`
 - `/mi-tienda`
 - `/vendedor/publicar`
 - `/admin`
+- `/admin/finanzas`
+
+`/favoritos` redirige a `/lista-deseos`. La autenticacion y el registro se manejan desde la pagina principal.
 
 La validacion se hace con `PrivateRoute.jsx` y el token JWT almacenado en `localStorage`.
 
@@ -139,8 +147,8 @@ La validacion se hace con `PrivateRoute.jsx` y el token JWT almacenado en `local
 - El frontend se comunica con el backend FastAPI.
 - Para usar carrito, checkout, publicar libros y gestionar tienda se requiere iniciar sesion.
 - El rol del usuario se obtiene desde el token JWT.
-- El flujo de comprador actual utiliza `DashboardSidebar.jsx`.
-- El flujo de vendedor utiliza `SellerSidebarFlowbite.jsx`.
+- El flujo del comprador utiliza `CompradorSidebar.jsx` y secciones en `components/dashboard/`.
+- El flujo del vendedor utiliza `VendedorSidebar.jsx`.
 - El puerto de desarrollo predeterminado es `5173`.
 
 ## Conexion de API

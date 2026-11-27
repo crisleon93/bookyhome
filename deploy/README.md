@@ -12,7 +12,7 @@ Esta carpeta contiene todo lo necesario para desplegar BookyHome en producción.
 | `compose.prod.yaml` | Docker Compose de producción. Sin volúmenes de código, sin `--reload`, puertos internos cerrados al exterior. |
 | `Caddyfile.prod` | Configuración del reverse proxy Caddy para producción. Obtiene el certificado TLS de Let's Encrypt automáticamente. |
 | `env.prod.example` | Plantilla con todas las variables de entorno necesarias. **Valores ficticios — no contiene secretos reales.** |
-| `.env.prod` | ⚠️ **No está en el repo** (está en `.gitignore`). Solo existe en el servidor. Ver instrucciones abajo. |
+| `.env.prod` | ⚠️ No se versiona (está en `.gitignore`). Cada servidor debe tener su propia copia. Ver instrucciones abajo. |
 | `render.yaml` | Blueprint para despliegue automático en Render (PaaS). Render lo detecta al conectar el repositorio. |
 
 ---
@@ -32,7 +32,7 @@ cp deploy/env.prod.example deploy/.env.prod
 nano deploy/.env.prod
 
 # 4. Levanta los servicios
-APP_VERSION=1.0.0 docker compose -f deploy/compose.prod.yaml up -d
+docker compose --env-file deploy/.env.prod -f deploy/compose.prod.yaml up -d
 
 # 5. Verifica que todo funciona
 bash scripts/smoke-test.sh https://api.bookyhome.com.co https://bookyhome.com.co

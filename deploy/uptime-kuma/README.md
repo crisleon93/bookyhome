@@ -18,10 +18,10 @@ docker compose up -d
 
 | # | Nombre | Tipo | URL / objetivo | Intervalo | Reintentos | Que hace si falla |
 |---|---|---|---|---|---|---|
-| 1 | API Salud | HTTP(s) | `https://bookyhome.onrender.com/health` | 60 s | 2 | Revisar logs, desplegar.sh a la version anterior si fue el ultimo cambio |
-| 2 | API Raiz | HTTP(s) | `https://bookyhome.onrender.com/` | 60 s | 3 | Revisar logs del backend |
+| 1 | API Salud | HTTP(s) | `https://bookyhome-api.onrender.com/health` | 60 s | 2 | Revisar logs y seguir el procedimiento de recuperacion del despliegue |
+| 2 | API Raiz | HTTP(s) | `https://bookyhome-api.onrender.com/` | 60 s | 3 | Revisar logs del backend |
 | 3 | Frontend | HTTP(s) | `https://bookyhome-web.onrender.com/` | 120 s | 3 | Revisar logs del frontend / CDN |
-| 4 | Version correcta | Keyword (HTTP) | `https://bookyhome.onrender.com/health` — keyword: `"version":"1.0.1"` | 300 s | 2 | Verificar que el despliegue de la version esperada se completo |
+| 4 | Version correcta | Keyword (HTTP) | `https://bookyhome-api.onrender.com/health` — keyword: `"version":"1.0.0"` | 300 s | 2 | Verificar que el despliegue de la version esperada se completo |
 | 5 | Respaldo diario | Push | Push URL (ver latido-respaldo.sh) | 25 h | 0 | Verificar cron de respaldo, logs de restic, ejecutar respaldo manual |
 
 ### Monitor 4 — Version correcta (keyword)
@@ -30,7 +30,7 @@ Configura el monitor tipo **Keyword (HTTP(s))** con la URL del health check
 y como keyword el valor de version esperado:
 
 ```
-"version":"1.0.1"
+"version":"1.0.0"
 ```
 
 Cambia el keyword cada vez que liberes una version nueva.
@@ -58,10 +58,9 @@ Configurar en Uptime Kuma → Settings → Notifications:
 
 | Canal | Tipo | Quien lo lee | Cuando |
 |---|---|---|---|
-| Telegram BookyHome-Ops | Telegram | ana (admin), luis (operador) | Cualquier monitor en DOWN |
-| Email on-call | Email (SMTP) | ana@bookyhome.com.co | Monitor en DOWN por mas de 2 reintentos |
+| Telegram de operaciones | Telegram | Equipo de operaciones | Cualquier monitor en DOWN |
+| Email de guardia | Email (SMTP) | Buzon de guardia configurado | Monitor en DOWN por mas de 2 reintentos |
 
-Horario de atencion: 24/7 (Telegram). Ana y Luis reciben notificaciones en el
-telefono. Fuera de horario laboral (lunes a viernes 8:00–18:00) las alertas se
-envian igual; si hay un monitor DOWN se evalua si requiere accion inmediata o
-puede esperar al inicio del horario.
+Configura las notificaciones para el equipo o la rotacion de guardia vigente.
+Las alertas se envian aunque el incidente ocurra fuera del horario habitual; el
+equipo de guardia evalua la urgencia y sigue el procedimiento de respuesta.

@@ -46,7 +46,7 @@ MySQL debe aparecer como `healthy` y los servicios deben estar activos.
 5. Abrir las aplicaciones:
 
 - Frontend web: `http://localhost:5173` (en desarrollo local) o `https://bookyhome-web.onrender.com` (en la nube Render)
-- API y documentacion: `http://localhost:8000/docs` (en desarrollo local) o `https://bookyhome.onrender.com/docs` / `/health` (en la nube Render)
+- API y documentacion: `http://localhost:8000/docs` (en desarrollo local) o `https://bookyhome-api.onrender.com/docs` / `/health` (en la nube Render)
 
 ## 4. Base de datos
 

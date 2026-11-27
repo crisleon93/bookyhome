@@ -8,13 +8,22 @@ El entorno web completo se puede levantar con Docker mediante un solo comando. L
 
 ```text
 BookyHome/
+  .github/               Plantillas de issues y workflows de CI/CD
   app-movil/              Aplicacion movil Expo/React Native
   backend/                API FastAPI
-  database/               Script SQL de inicializacion
+  backups/                Respaldos locales, excluidos de Git
+  database/               Esquema SQL y migraciones de MySQL
+  deploy/                 Configuracion y guias de despliegue
   docs/                   Documentacion adicional del proyecto
+  e2e/                    Pruebas end-to-end
   frontend/               Aplicacion web React/Vite
+  infra/                  Configuracion de infraestructura
+  patches/                Parches de dependencias
+  scripts/                Herramientas de operacion y verificacion
+  Caddyfile               Configuracion de proxy inverso
+  docker-compose.ci.yml   Servicios para CI
   docker-compose.yml      Orquestacion de MySQL, backend y frontend
-  package.json            Scripts generales para frontend
+  package.json            Scripts generales del proyecto
   pnpm-lock.yaml          Lockfile de dependencias
   README.md               Documentacion principal
 ```
@@ -33,10 +42,16 @@ Estructura principal:
   - `libros.py`: publicacion, edicion, stock, categorias, estadisticas y disponibilidad.
   - `ofertas.py`: gestion de promociones/ofertas.
   - `carrito.py`: carrito autenticado, agregar, eliminar, limpiar y checkout.
-  - `payments.py`: pagos, ordenes y confirmaciones.
-  - `stored.py`: consultas de catalogo y stored procedures.
-  - `perfil.py`: perfil de usuario, actualizacion y historial de compras.
+  - `payments.py`: pagos, ordenes, trazabilidad para admin, confirmaciones e items de compra.
+  - `envios.py`: gestion de envios, calculo de flete y asignacion de guia de mensajeria.
+  - `bookypago_finanzas.py`: gestion de saldo, ingresos y finanzas de tiendas.
+  - `direcciones.py`: gestion de direcciones de despacho del comprador.
+  - `devoluciones.py`: solicitudes y gestion de devoluciones y reembolsos.
+  - `chat.py`: comunicacion directa entre compradores, vendedores y soporte.
+  - `notificaciones.py`: alertas del sistema y avisos de estado de compras.
+  - `perfil.py`: perfil de usuario, persistencia de foto y preferencias, historial de compras.
   - `resenas.py`: creacion, edicion y eliminacion de reseñas.
+  - `stored.py`: consultas de catalogo y stored procedures.
 - `app/models/`: logica de acceso a datos y operaciones de negocio.
   - `usuarios.py`
   - `tiendas.py`
@@ -66,32 +81,28 @@ Estructura principal:
 
 - `src/App.jsx`: configuracion de rutas y layout principal.
 - `src/main.jsx`: entrada de React.
-- `src/pages/`: paginas publicas y privadas.
+- `src/pages/`: paginas y vistas principales.
   - `Home.jsx`
   - `Catalogo.jsx`
-  - `DetalleLibro.jsx`
-  - `Carrito.jsx`
-  - `Checkout.jsx`
-  - `Login.jsx`
-  - `Register.jsx`
-  - `ForgotPassword.jsx`
-  - `Resetpassword.jsx`
-  - `PostLogin.jsx`
-  - `PerfilUsuario.jsx`
+  - `Librerias.jsx`
+  - `PerfilTienda.jsx`
+  - `ResetPassword.jsx`
   - `MiTienda.jsx`
   - `PublicarLibro.jsx`
-  - `Libreria.jsx`
-  - `Favoritos.jsx`
-  - `StoredProcedurePage.jsx`
+  - `Historial.jsx`
+  - `ListaDeseos.jsx`
+  - `Devoluciones.jsx`
+  - `BookyPagoFinanzas.jsx`
   - `AdminDashboard.jsx`
 - `src/components/`: componentes reutilizables.
   - `Header.jsx`
   - `Footer.jsx`
   - `PrivateRoute.jsx`
-  - `DashboardSidebar.jsx`
-  - `SellerSidebarFlowbite.jsx`
+  - `CompradorSidebar.jsx`
+  - `VendedorSidebar.jsx`
   - `Icons.jsx`
   - `ToastProvider.jsx`
+- `src/components/dashboard/`: secciones del comprador, incluido carrito y checkout.
 - `src/services/api.js`: cliente Axios centralizado para consumir el backend.
 - `src/hooks/useAuth.js`: utilidades para leer token y rol.
 - `src/assets/`: imagenes y recursos visuales.
@@ -131,9 +142,10 @@ app-movil/README.md
 
 La carpeta `database/` contiene:
 
-- `bookyhome.sql`: script de inicializacion de la base de datos MySQL.
+- `bookyhome.sql`: esquema inicial de la base de datos MySQL.
+- `migrations/`: migraciones SQL complementarias.
 
-Cuando se usa Docker, este script se ejecuta automaticamente la primera vez que se crea el contenedor de MySQL.
+Cuando se usa Docker, el esquema y las migraciones se ejecutan automaticamente la primera vez que se inicializa el volumen de MySQL.
 
 ## Como ejecutar con Docker
 
@@ -145,7 +157,7 @@ Cuando se usa Docker, este script se ejecuta automaticamente la primera vez que 
 
 1. Clonar el repositorio.
 
-2. Crear un archivo `.env` en `backend/` basándose en el archivo `.env.example` de ejemplo. Ajusta los valores de correo y base de datos según corresponda.
+2. Copiar `backend/.env.example` como `backend/.env` y configurar el correo y los servicios externos que vayas a utilizar. No guardes credenciales reales en Git. La configuracion de Docker Compose define credenciales locales de desarrollo para MySQL; no la uses tal cual en produccion.
 
 3. Desde la raiz del proyecto, ejecutar:
 
@@ -158,9 +170,8 @@ docker compose up -d --build
 - Frontend: `http://localhost:5173`
 - Backend API: `http://localhost:8000`
 - MySQL: `localhost:3306`
-  - usuario: `root`
-  - contrasena: `root`
-  - base de datos: `bookyhome`
+  - Base de datos: `bookyhome`
+  - Las credenciales son valores locales de desarrollo definidos en `docker-compose.yml`.
 
 ### Comandos utiles
 
@@ -196,7 +207,7 @@ docker compose up -d --build backend
 
 ## Notas importantes de Docker
 
-- La base de datos se inicializa automaticamente la primera vez con `database/bookyhome.sql`.
+- El esquema y las migraciones se aplican automaticamente al inicializar por primera vez el volumen de MySQL.
 - Si necesitas reiniciar la base de datos desde cero, usa `docker compose down -v` y vuelve a levantar los contenedores.
 - El backend espera a que MySQL este saludable antes de iniciar, gracias al `healthcheck` y `depends_on`.
 - El frontend web y el backend quedan disponibles en `localhost`.
@@ -229,13 +240,10 @@ cd app-movil
 pnpm install
 ```
 
-3. Configurar la URL del backend en `src/services/api.js`. Cambia `baseURL` por la IP local de tu computadora:
+3. Crear `app-movil/.env.local` a partir de `app-movil/.env.example` y configurar la URL del backend con la IP local de tu computadora:
 
-```javascript
-const api = axios.create({
-  baseURL: 'http://TU_IP_LOCAL:8000',
-  timeout: 10000,
-});
+```env
+EXPO_PUBLIC_API_URL=http://TU_IP_LOCAL:8000
 ```
 
 Para obtener tu IP local en Windows:
@@ -245,6 +253,7 @@ ipconfig
 ```
 
 Busca la direccion IPv4 del adaptador WiFi, por ejemplo `192.168.1.9`.
+Reinicia Expo despues de cambiar `.env.local`. No pongas secretos en `EXPO_PUBLIC_API_URL`: las variables con ese prefijo se incluyen en la aplicacion.
 
 4. Iniciar Expo:
 
@@ -293,10 +302,13 @@ npx expo start -c
 
 ### Administracion y soporte
 
-- Listado y gestion de usuarios.
-- Bloqueo de usuarios, segun endpoints disponibles.
-- Stored procedures para consultas de catalogo/libros.
-- Pagos y ordenes mediante endpoints de payments.
+- Listado, busqueda, paginacion y bloqueo de usuarios.
+- Moderacion y control del catalogo de libros y publicaciones.
+- Gestion y suspension/activacion de tiendas y librerias con registro de motivos.
+- Supervision integral de ordenes de compra con avatares de comprador/tienda y modal de detalles (numero de guia, transportadora, fechas y desglose de libros).
+- Atencion de reclamos y tickets de soporte tecnico en vivo.
+- Reportes consolidados y metricas operativas de la plataforma.
+- Stored procedures para consultas optimizadas de catalogo y libros.
 
 ## Scripts utiles del frontend desde la raiz
 
@@ -316,15 +328,14 @@ Estos comandos entran a `frontend/` y ejecutan el script correspondiente.
 - `frontend/README.md`: detalles del frontend web.
 - `backend/README.md`: detalles de la API.
 - `app-movil/README.md`: detalles de la app movil.
-- `autenticacion.md`: detalles del modulo de autenticacion.
-- `registro.md`: detalles del modulo de registro.
-- `reportes.md`: detalles del modulo de reportes.
+- `docs/README.md`: estructura y alcance de la documentacion.
+- `docs/ayuda/guia-rapida.md` y `docs/ayuda/preguntas-frecuentes.md`: ayuda para usuarios.
 
 ## Ayuda y soporte
 
 - **Guía rápida de uso:** [`docs/ayuda/guia-rapida.md`](docs/ayuda/guia-rapida.md)
 - **Preguntas frecuentes:** [`docs/ayuda/preguntas-frecuentes.md`](docs/ayuda/preguntas-frecuentes.md)
-- **Reportar una falla:** [Abrir un issue](https://github.com/bookyhome/biblioteca/issues/new?template=reporte-de-falla.md)
+- **Reportar una falla:** [Abrir un issue](https://github.com/crisleon93/bookyhome/issues/new?template=reporte-de-falla.md)
 - **Canal de soporte (Telegram):** @bookyhome_ops
 - **Runbooks de operación:** [`docs/runbooks/`](docs/runbooks/)
 
@@ -339,5 +350,3 @@ El proyecto esta organizado por capas:
 - App movil con navegacion, pantallas, contextos y servicios.
 - Base de datos inicializada por SQL.
 - Entorno web dockerizado para levantar frontend, backend y MySQL con un solo comando.
-Integración Módulo Autenticación - Compañero C
-Integración Módulo Registro - Cristopher
