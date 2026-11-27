@@ -10,13 +10,13 @@ El procedimiento completo para aplicar migraciones, crear backups y restaurar da
 
 1. **NO** copies y pegues el código de estos archivos dentro del archivo principal `database/bookyhome.sql`. Ese archivo es solo para la carga inicial de una base de datos virgen.
 2. **NO** intentes buscar las tablas en tu gestor (ej. phpMyAdmin) para agregar las columnas a mano. Deja que el script haga el trabajo por ti para evitar errores humanos.
-3. **NO** crees un archivo `000-schema.sql`. Fue eliminado intencionalmente por estar vacío y no cumplir ninguna función. El schema base está en `database/bookyhome.sql`.
+3. **NO** agregues un archivo local `000-schema.sql` a esta carpeta. Docker Compose monta `database/bookyhome.sql` con ese nombre dentro del contenedor; el esquema base sigue en `database/bookyhome.sql`.
 
 ---
 
 ## ✅ LO QUE **SÍ** DEBES HACER (Cómo implementar una migración)
 
-Cuando un compañero de equipo (o tú mismo) baje cambios nuevos de Git y vea que hay un archivo nuevo en esta carpeta (por ejemplo: `20260713_update_planes_herramientas.sql`), **tienes que ejecutar ese archivo en tu base de datos local**.
+Cuando un compañero de equipo (o tú mismo) baje cambios nuevos de Git y vea que hay un archivo nuevo en esta carpeta, **tienes que ejecutar ese archivo en tu base de datos local**. Docker Compose ejecuta estos archivos automáticamente solo al inicializar un volumen MySQL nuevo; no aplica migraciones nuevas en un volumen ya existente. Por ejemplo, actualmente las migraciones usan nombres como `001_add_usuario_profile_columns.sql`.
 
 Existen varias formas de hacerlo. Elige **SOLO UNA** de las siguientes opciones:
 
@@ -25,7 +25,7 @@ Existen varias formas de hacerlo. Elige **SOLO UNA** de las siguientes opciones:
 Si usas Docker Compose para levantar el proyecto, abre una terminal en la raíz del proyecto y corre:
 
 ```bash
-docker compose exec -T mysql mysql -uroot -proot bookyhome < database/migrations/NOMBRE_DEL_ARCHIVO.sql
+docker compose exec -T mysql sh -c 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" bookyhome' < database/migrations/NOMBRE_DEL_ARCHIVO.sql
 ```
 
 *(Cambia `NOMBRE_DEL_ARCHIVO.sql` por el nombre real del archivo que quieres aplicar).*
@@ -33,10 +33,10 @@ docker compose exec -T mysql mysql -uroot -proot bookyhome < database/migrations
 Si estás en PowerShell, la forma correcta es:
 
 ```powershell
-Get-Content database/migrations/NOMBRE_DEL_ARCHIVO.sql | docker compose exec -T mysql mysql -uroot -proot bookyhome
+Get-Content database/migrations/NOMBRE_DEL_ARCHIVO.sql | docker compose exec -T mysql sh -c 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" bookyhome'
 ```
 
-> En PowerShell no se usa el operador `<` como en Bash; por eso se reemplaza con `Get-Content` y el pipe `|`.
+> En PowerShell no se usa el operador `<` como en Bash; por eso se reemplaza con `Get-Content` y el pipe `|`. La contraseña se toma de la configuración local del contenedor y no se escribe en el comando.
 
 ### Opción 2: Usas un gestor visual (phpMyAdmin, MySQL Workbench, DBeaver)
 
@@ -57,4 +57,4 @@ mysql -u root -p bookyhome < database/migrations/NOMBRE_DEL_ARCHIVO.sql
 ---
 
 ## 💡 Nota de seguridad
-La mayoría de nuestras migraciones incluyen validaciones (ej. procedimintos almacenados que verifican si una columna ya existe). Esto significa que si por error ejecutas la misma migración dos veces, **no pasará nada malo** ni se romperá la base de datos.
+No asumas que una migración se puede ejecutar más de una vez sin efectos: algunas también insertan o modifican datos. Haz un backup antes de aplicarla y revisa el script si no estás seguro de su impacto.

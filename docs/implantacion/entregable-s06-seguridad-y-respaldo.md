@@ -13,8 +13,8 @@
 
 | Cuenta | Tipo | Persona o servicio | Grupos | Inicia sesión | sudo permitido |
 |---|---|---|---|---|---|
-| `ana` | Persona | Administradora | `sudo`, `despliegue` | Llave SSH | Todo, con contraseña |
-| `luis` | Persona | Operador | `despliegue` | Llave SSH | `/usr/local/bin/reiniciar-bookyhome` |
+| `cleon` | Persona | Administrador (Cristopher León) | `sudo`, `despliegue` | Llave SSH | Todo, con contraseña |
+| `jpineda` | Persona | Operador (Juan Pineda) | `despliegue` | Llave SSH | `/usr/local/bin/reiniciar-bookyhome` |
 | `respaldo` | Servicio | cron + restic | `respaldo` | No (`/usr/sbin/nologin`) | Nada |
 
 ### Archivos y carpetas sensibles
@@ -29,7 +29,7 @@
 | `/var/respaldos/restic/` | `root:respaldo` | `2770` | Repositorio restic local; el servicio de respaldo escribe |
 | `/var/log/restic-bookyhome.log` | `root:respaldo` | `660` | Log de respaldos; auditable por el grupo respaldo |
 | `/etc/ssh/sshd_config.d/10-endurecer.conf` | `root:root` | `644` | Endurecimiento SSH |
-| `/etc/sudoers.d/luis` | `root:root` | `440` | sudo limitado del operador |
+| `/etc/sudoers.d/jpineda` | `root:root` | `440` | sudo limitado del operador |
 
 ### Procedimiento de creación de cuentas
 
@@ -38,32 +38,32 @@
 sudo groupadd despliegue
 sudo groupadd respaldo
 
-# Crear administradora
-sudo useradd -m -s /bin/bash -G sudo,despliegue ana
+# Crear administrador
+sudo useradd -m -s /bin/bash -G sudo,despliegue cleon
 
 # Crear operador
-sudo useradd -m -s /bin/bash -G despliegue luis
+sudo useradd -m -s /bin/bash -G despliegue jpineda
 
 # Crear servicio de respaldo (sin shell)
 sudo useradd -r -s /usr/sbin/nologin -G respaldo respaldo
 
 # Instalar llaves SSH públicas de cada persona
-sudo mkdir -p /home/ana/.ssh /home/luis/.ssh
-echo "ssh-ed25519 AAAA... ana@bookyhome" | sudo tee /home/ana/.ssh/authorized_keys
-echo "ssh-ed25519 AAAA... luis@bookyhome" | sudo tee /home/luis/.ssh/authorized_keys
-sudo chown -R ana:ana /home/ana/.ssh
-sudo chown -R luis:luis /home/luis/.ssh
-sudo chmod 700 /home/ana/.ssh /home/luis/.ssh
-sudo chmod 600 /home/ana/.ssh/authorized_keys /home/luis/.ssh/authorized_keys
+sudo mkdir -p /home/cleon/.ssh /home/jpineda/.ssh
+echo "ssh-ed25519 AAAA... cleon@bookyhome" | sudo tee /home/cleon/.ssh/authorized_keys
+echo "ssh-ed25519 AAAA... jpineda@bookyhome" | sudo tee /home/jpineda/.ssh/authorized_keys
+sudo chown -R cleon:cleon /home/cleon/.ssh
+sudo chown -R jpineda:jpineda /home/jpineda/.ssh
+sudo chmod 700 /home/cleon/.ssh /home/jpineda/.ssh
+sudo chmod 600 /home/cleon/.ssh/authorized_keys /home/jpineda/.ssh/authorized_keys
 ```
 
 ### sudo limitado del operador
 
-Archivo `/etc/sudoers.d/luis` (permisos `440`):
+Archivo `/etc/sudoers.d/jpineda` (permisos `440`):
 
 ```text
-# El operador luis solo puede reiniciar el stack de BookyHome
-luis ALL=(root) NOPASSWD: /usr/local/bin/reiniciar-bookyhome
+# El operador jpineda solo puede reiniciar el stack de BookyHome
+jpineda ALL=(root) NOPASSWD: /usr/local/bin/reiniciar-bookyhome
 ```
 
 Script `/usr/local/bin/reiniciar-bookyhome` (permisos `755`, dueño `root:root`):
@@ -79,8 +79,8 @@ docker compose -f deploy/compose.prod.yaml restart
 
 ```text
 $ sudo apt update
-[sudo] password for luis:
-Sorry, user luis is not allowed to execute '/usr/bin/apt update' as root on bookyhome-server.
+[sudo] password for jpineda:
+Sorry, user jpineda is not allowed to execute '/usr/bin/apt update' as root on bookyhome-server.
 
 $ sudo /usr/local/bin/reiniciar-bookyhome
 Restarting bookyhome-mysql  ... done
@@ -107,7 +107,7 @@ KbdInteractiveAuthentication no
 PermitRootLogin no
 
 # Quiénes pueden entrar
-AllowUsers ana luis
+AllowUsers cleon jpineda
 
 # Tiempo de espera y reintentos
 LoginGraceTime 30
@@ -272,8 +272,8 @@ done
 | `MAIL_PASSWORD` | Envío de correo SMTP | **Dev:** `backend/.env` · **Servidor:** `.env.prod` (600) · **Nube:** panel de Render | 600 | `bookyhome-backend` | Generar app password en el proveedor → actualizar `.env.prod` → reiniciar |
 | `GEMINI_API_KEY` | API de Gemini (asistente IA) | **Dev:** `backend/.env` · **Servidor:** `.env.prod` (600) · **Nube:** panel de Render | 600 | `bookyhome-backend` | Revocar clave en Google AI Studio → crear nueva → actualizar `.env.prod` → reiniciar |
 | Contraseña de restic | Todos los respaldos cifrados | **Servidor:** `/etc/restic/password` (640) + copia en gestor de contraseñas (Bitwarden, fuera del servidor) | 640 en servidor | `respaldo` (servicio), administradores | `restic key add` con nueva contraseña → `restic key remove` la antigua → actualizar `/etc/restic/password` + gestor |
-| Contraseña root MySQL | Administración total de la BD | **Servidor:** variable `MYSQL_ROOT_PASSWORD` en `.env.prod` (600) + gestor de contraseñas | 600 | `ana` (admin), `root` del contenedor | Cambiar en `.env.prod` + `docker compose` con nueva contraseña → recrear contenedor |
-| Llaves SSH (ana, luis) | Acceso SSH al servidor | **Cliente:** `~/.ssh/id_ed25519` (600) · **Servidor:** `~/.ssh/authorized_keys` (600) | 600 | `ana`, `luis` | Generar nueva llave: `ssh-keygen -t ed25519` → añadir a `authorized_keys` → eliminar la antigua |
+| Contraseña root MySQL | Administración total de la BD | **Servidor:** variable `MYSQL_ROOT_PASSWORD` en `.env.prod` (600) + gestor de contraseñas | 600 | Cristopher León (Admin), `root` del contenedor | Cambiar en `.env.prod` + `docker compose` con nueva contraseña → recrear contenedor |
+| Llaves SSH (cleon, jpineda) | Acceso SSH al servidor | **Cliente:** `~/.ssh/id_ed25519` (600) · **Servidor:** `~/.ssh/authorized_keys` (600) | 600 | `cleon`, `jpineda` | Generar nueva llave: `ssh-keygen -t ed25519` → añadir a `authorized_keys` → eliminar la antigua |
 
 ### Revisión del historial del repositorio
 
@@ -322,8 +322,8 @@ $ git log --all -p -S "password" -- "*.env" --oneline
 **1. Si mañana se va una persona del equipo, ¿qué cuentas, llaves y secretos hay que cambiar?**
 
 - Eliminar la llave SSH pública de esa persona de `~/.ssh/authorized_keys` en el servidor.
-- Si era `ana` (admin): revisar y rotar `SECRET_KEY`, contraseña root de MySQL y contraseña de restic, porque tenía acceso a `.env.prod` y al gestor de contraseñas.
-- Si era `luis` (operador): eliminar su entrada en `/etc/sudoers.d/luis`; rotar `DB_MIGRATION_PASSWORD` porque tenía acceso al rol owner.
+- Si era Cristopher León (Admin): revisar y rotar `SECRET_KEY`, contraseña root de MySQL y contraseña de restic, porque tenía acceso a `.env.prod` y al gestor de contraseñas.
+- Si era Juan Pineda (Operador): eliminar su entrada en `/etc/sudoers.d/jpineda`; rotar `DB_MIGRATION_PASSWORD` porque tenía acceso al rol owner.
 - Revocar su acceso al gestor de contraseñas (Bitwarden) y a los paneles de Render/Aiven.
 - Verificar que no quedan llaves SSH autorizadas en el servidor con `cat /home/<usuario>/.ssh/authorized_keys`.
 
@@ -362,7 +362,7 @@ Sí. El RTO acordado es 2 horas (7200 segundos). La restauración de desastre pr
 | Horario (línea de cron) | `0 20 * * *` — diariamente a las 20:00 h (hora del servidor, America/Bogota) |
 | Retención | 7 diarios, 4 semanales, 12 mensuales |
 | Verificación automática | `restic check` en cada ejecución (integridad del repositorio local y remoto) |
-| Responsable | `respaldo` (servicio, automatizado) · `ana` (admin, supervisión y rotación) |
+| Responsable | `respaldo` (servicio, automatizado) · `cleon` (Cristopher León, supervisión y rotación) |
 
 ### Línea de cron
 
@@ -513,7 +513,7 @@ docker compose -f /opt/bookyhome/deploy/compose.prod.yaml start backend
 | Campo | Valor |
 |---|---|
 | Fecha | 2026-10-17 |
-| Quién restauró (rol en el equipo) | Operador (`luis`) — la administradora (`ana`) escribió el procedimiento; el operador lo ejecutó sin ayuda |
+| Quién restauró (rol en el equipo) | Operador (Juan Pineda) — el Líder Técnico (`cleon`) escribió el procedimiento; el operador lo ejecutó sin ayuda |
 | Instantánea usada y repositorio | Snapshot `8a3f2c1d` (2026-10-17 20:00 UTC) desde el repositorio local `/var/respaldos/restic` |
 | Inicio | 2026-10-17 21:30:00 UTC |
 | Fin | 2026-10-17 21:34:12 UTC |

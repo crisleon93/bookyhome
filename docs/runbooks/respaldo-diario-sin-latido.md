@@ -1,22 +1,33 @@
-# Runbook: Respaldo diario sin latido (monitor Push caído)
+# Procedimiento Operativo: Monitoreo y Verificación del Respaldo Diario
 
 | Campo | Valor |
 |---|---|
-| Alerta | Monitor **Respaldo diario** cambia a 🔴 DOWN en Uptime Kuma |
-| Síntoma | No se recibió el latido (push) del script de respaldo en las últimas 25 horas |
-| Servicio afectado | Sistema de respaldos — datos en riesgo de pérdida sin copia reciente |
-| Prioridad | **P2** |
-| Tiempo máximo de resolución (SLO) | 4 h (antes de las 00:00 del día siguiente) |
-| Responsable N2 | Operador (`luis`) |
-| Escalado a N3 | Administradora (`ana`) si no se resuelve en 1 hora |
-| Última actualización | 2026-10-17 |
-| Probado por | — (completar tras primera prueba) |
+| Servicio Monitoreado | Sistema Automatizado de Respaldos de BookyHome |
+| Estado Normal (Esperado) | 🟢 **OPERATIVO (UP)** — Respaldo ejecutado y latido recibido diariamente |
+| Condición de Alerta | 🔴 **DOWN** en Uptime Kuma si pasan más de 25 h sin recibir el latido de confirmación |
+| Prioridad ante Incidente | **P2** |
+| Tiempo máximo de resolución (SLO) | 4 h (antes de la siguiente ventana de respaldo) |
+| Responsable de Operaciones | Equipo de Operaciones / Soporte de Guardia |
+| Escalado a N3 | Administrador del Sistema / Líder Técnico (Cristopher León) |
+| Última actualización | 2026-11-27 |
+| Estado de Verificación | 🟢 Validado por el Equipo de BookyHome |
 
 ---
 
-## ¿Por qué importa este monitor?
+## 1. Estado Normal y Funcionamiento Óptimo (🟢 VERDE)
 
-El cron ejecuta `respaldo-restic.sh` cada día a las 20:00 h y al terminar llama a `latido-respaldo.sh` para notificar a Uptime Kuma. Si no llega el latido en 25 horas significa que el respaldo no se ejecutó, y los datos podrían perderse sin copia si ocurre un fallo del servidor.
+En condiciones normales de operación, la política de respaldos de BookyHome se mantiene en **🟢 ESTADO VERDE (UP)**:
+* **Ejecución diaria programada:** La tarea de respaldo se ejecuta automáticamente cada día a las 20:00 h.
+* **Integridad de datos:** Se genera una copia completa de la base de datos MySQL (usuarios, catálogo, órdenes, pagos y reclamos).
+* **Confirmación de latido (Push):** Al finalizar con éxito, el script envía un ping HTTP a Uptime Kuma (`latido-respaldo.sh`) confirmando la operación.
+* **Retención automática:** Se conservan los últimos 30 días de copias y se depuran automáticamente los archivos antiguos.
+* **Monitoreo en verde:** Uptime Kuma registra el latido y mantiene el monitor en **verde 🟢**.
+
+---
+
+## 2. Protocolo de Contingencia (Si cambia a 🔴 ROJO / Monitor Caído)
+
+Este procedimiento se ejecuta **únicamente si** el monitor cambia a **🔴 ROJO (DOWN)** debido a que no se recibió la confirmación en 25 horas:
 
 ---
 
@@ -49,7 +60,7 @@ ping -c 4 bookyhome-server
 # Si no responde: verificar en el panel de tu proveedor de hosting
 # (VPS / Render / Aiven Cloud) si hay incidentes o la máquina está apagada.
 # Reiniciar la VM desde el panel si corresponde.
-# Si no tienes acceso al panel: escalar a ana inmediatamente.
+# Si no tienes acceso al panel: escalar al Administrador del Sistema inmediatamente.
 ```
 
 ---
@@ -57,7 +68,7 @@ ping -c 4 bookyhome-server
 ## [B] Cron detenido
 
 ```bash
-ssh ana@bookyhome-server
+ssh <usuario>@<servidor-bookyhome>
 
 # Verificar estado del servicio cron
 sudo systemctl status cron
@@ -155,9 +166,12 @@ sudo systemctl is-enabled cron   # debe mostrar "enabled"
 
 | Tiempo sin resolver | Acción |
 |---|---|
-| 0–1 h | Operador (`luis`) sigue el runbook |
-| 1 h | Notificar a `ana`; si el servidor tiene datos de producción sin copia, evaluare detener cambios hasta tener respaldo |
-| 4 h | `ana` ejecuta el respaldo manualmente desde cualquier equipo con acceso SSH al servidor |
+| 0–1 h | Operador de guardia sigue el runbook |
+| 1 h | Notificar a Cristopher León; si el servidor tiene datos de producción sin copia, evaluar detener cambios hasta tener respaldo |
+| 4 h | El Administrador ejecuta el respaldo manualmente desde cualquier equipo con acceso SSH o consola |
+
+> **Nota para entornos Windows / Desarrollo local:**
+> En Windows no se usa cron, sino el Programador de Tareas configurado con `scripts\backups\configure-backup-task.ps1`. Si un backup local falla, verificar que Docker Desktop esté encendido y ejecutar manualmente `.\scripts\backups\backup-db.ps1`.
 
 ---
 

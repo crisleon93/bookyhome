@@ -65,9 +65,9 @@
 | `DB_PASSWORD` | Contraseña de MySQL | `ContraseñaAlfanumericaSegura!` |
 | `DB_NAME` | Nombre de la base de datos | `bookyhome` |
 | `SECRET_KEY` | Clave JWT (64 hex aleatorios) | `a1b2c3d4...` |
-| `PUBLIC_API_URL` | URL pública de la API | `https://bookyhome.onrender.com` |
+| `PUBLIC_API_URL` | URL pública de la API | `https://bookyhome-api.onrender.com` |
 | `FRONTEND_URL` | URL del frontend | `https://bookyhome-web.onrender.com` |
-| `VITE_API_BASE_URL` | URL de la API para el frontend | `https://bookyhome.onrender.com` |
+| `VITE_API_BASE_URL` | URL de la API para el frontend | `https://bookyhome-api.onrender.com` |
 | `MAIL_USERNAME` | Correo para envíos transaccionales | `noreply@bookyhome.com` |
 | `GEMINI_API_KEY` | Clave del asistente IA | `AIza...` |
 
@@ -160,7 +160,7 @@ RESULTADO: OK — todas las pruebas pasaron
 
 **URL pública (Render):**
 - Frontend: `https://bookyhome-web.onrender.com`
-- API: `https://bookyhome.onrender.com`
+- API: `https://bookyhome-api.onrender.com`
 
 ### Procedimiento de despliegue en Render + Aiven
 
@@ -179,12 +179,12 @@ RESULTADO: OK — todas las pruebas pasaron
 6. En Render: crear el servicio Static Site para el frontend (`bookyhome-web`):
    - Build Command: `pnpm install --no-frozen-lockfile && pnpm run build`
    - Publish Directory: `dist`
-   - Variables de entorno: `NODE_VERSION=22`, `VITE_API_BASE_URL=https://bookyhome.onrender.com`
+   - Variables de entorno: `NODE_VERSION=22`, `VITE_API_BASE_URL=https://bookyhome-api.onrender.com`
 7. Verificar que ambos servicios muestren estado **Live** en el panel de Render.
 8. Ejecutar la prueba de humo contra las URLs públicas:
    ```bash
    bash scripts/smoke-test.sh \
-     https://bookyhome.onrender.com \
+     https://bookyhome-api.onrender.com \
      https://bookyhome-web.onrender.com
    ```
 
@@ -207,7 +207,7 @@ RESULTADO: OK — todas las pruebas pasaron
 
 | Componente | Estado | Detalle |
 |---|---|---|
-| Render Web Service (API) | ✅ Deploy succeeded \| Live | API FastAPI operativa en `https://bookyhome.onrender.com`. Endpoints `/` y `/health` responden HTTP 200 OK con latency de BD < 1s. |
+| Render Web Service (API) | ✅ Deploy succeeded \| Live | API FastAPI operativa en `https://bookyhome-api.onrender.com`. Endpoints `/` y `/health` responden HTTP 200 OK con latency de BD < 1s. |
 | Aiven Cloud (MySQL 8.4) | ✅ Servicio Activo \| Running | Clúster MySQL 8.4 en `bookyhome-mysql-bookyhome.l.aivencloud.com:22566`. 75 objetos creados (43 tablas base + 32 vistas) con SSL forzoso. |
 | Render Static Site (Frontend) | ✅ Deploy succeeded \| Live | SPA React/Vite servida en `https://bookyhome-web.onrender.com`. Construcción exitosa con Node.js 22 LTS en 21.2s, enlazada a la API de producción. |
 

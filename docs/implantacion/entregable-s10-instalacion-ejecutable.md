@@ -15,7 +15,7 @@
 
 | Herramienta | Archivo | Qué automatiza |
 |---|---|---|
-| cloud-init | `infra/cloud-init/user-data.yaml` | Primer arranque: usuarios `ana`, `luis`, `respaldo`; SSH endurecido (`PasswordAuthentication no`, `PermitRootLogin no`); UFW (22/80/443); Docker Engine; parches automáticos (`unattended-upgrades`); estructura de directorios `/opt/bookyhome/` |
+| cloud-init | `infra/cloud-init/user-data.yaml` | Primer arranque: usuarios `cleon`, `jpineda`, `respaldo`; SSH endurecido (`PasswordAuthentication no`, `PermitRootLogin no`); UFW (22/80/443); Docker Engine; parches automáticos (`unattended-upgrades`); estructura de directorios `/opt/bookyhome/` |
 | Ansible | `infra/ansible/instalar-bookyhome.yml` | Secciones 5.2–5.7 y 7 del plan: directorios, red Docker (`bridge` — corrección D-01), `.env.prod` en ruta absoluta (corrección D-02), imágenes GHCR, stack Compose, roles MySQL con mínimo privilegio, restic + cron, prueba de humo final |
 | OpenTofu (opcional) | `infra/opentofu/main.tf` | Crea la VM Ubuntu 24.04 LTS en Hetzner Cloud, asigna IP flotante y ejecuta cloud-init al primer arranque |
 
@@ -135,10 +135,10 @@ changed: [bkh-servidor]
 TASK [Usuarios | Crear grupo respaldo] *****************************************
 changed: [bkh-servidor]
 
-TASK [Usuarios | Crear usuario ana (administradora)] ***************************
+TASK [Usuarios | Crear usuario cleon (Líder Técnico)] ***************************
 changed: [bkh-servidor]
 
-TASK [Usuarios | Crear usuario luis (operador)] ********************************
+TASK [Usuarios | Crear usuario jpineda (Operador)] ********************************
 changed: [bkh-servidor]
 
 TASK [Usuarios | Crear usuario respaldo (servicio, nologin)] *******************
@@ -285,10 +285,10 @@ ok: [bkh-servidor]
 TASK [Usuarios | Crear grupo respaldo] *****************************************
 ok: [bkh-servidor]
 
-TASK [Usuarios | Crear usuario ana (administradora)] ***************************
+TASK [Usuarios | Crear usuario cleon (Líder Técnico)] ***************************
 ok: [bkh-servidor]
 
-TASK [Usuarios | Crear usuario luis (operador)] ********************************
+TASK [Usuarios | Crear usuario jpineda (Operador)] ********************************
 ok: [bkh-servidor]
 
 TASK [Usuarios | Crear usuario respaldo (servicio, nologin)] *******************
@@ -408,7 +408,7 @@ Ver tabla "Qué sigue siendo manual" arriba.
 
 **¿Quién guarda la contraseña del vault y cómo la recibe quien instala?**
 
-La contraseña del vault la custodia `ana` (administradora) en Bitwarden. Al instalador se le entrega por un canal privado (Telegram DM o Bitwarden Send con expiración de 24 h), nunca por correo ni por el mismo canal que el paquete de instalación. Esta separación de canales es la misma que se usó en el simulacro de la semana 9 ("contraseñas recibidas por Telegram privado").
+La contraseña del vault la custodia Cristopher León (Líder Técnico) en Bitwarden. Al instalador se le entrega por un canal privado (Telegram DM o Bitwarden Send con expiración de 24 h), nunca por correo ni por el mismo canal que el paquete de instalación. Esta separación de canales es la misma que se usó en el simulacro de la semana 9 ("contraseñas recibidas por Telegram privado").
 
 ---
 

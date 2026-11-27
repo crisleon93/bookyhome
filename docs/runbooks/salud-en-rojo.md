@@ -1,22 +1,47 @@
-# Runbook: "Salud API" en rojo en Uptime Kuma
+# Procedimiento Operativo: Salud y Disponibilidad de la API
 
 | Campo | Valor |
 |---|---|
-| Alerta | Monitor **Salud API** cambia a 🔴 DOWN en Uptime Kuma |
-| Síntoma | `GET /health` no responde HTTP 200 (timeout o 5xx) |
-| Servicio afectado | Backend FastAPI — todos los usuarios |
-| Prioridad | **P1** |
+| Servicio Monitoreado | Backend FastAPI — BookyHome API (`/health`) |
+| Estado Normal (Esperado) | 🟢 **OPERATIVO (UP)** — HTTP 200 OK |
+| Condición de Alerta | 🔴 **DOWN** en Uptime Kuma si `/health` no responde HTTP 200 o la BD se desconecta |
+| Prioridad ante Incidente | **P1** |
 | Tiempo máximo de resolución (SLO) | 2 h |
-| Responsable N2 | Operador (`luis`) |
-| Escalado a N3 | Administradora (`ana`) si no se resuelve en 30 min |
-| Última actualización | 2026-10-17 |
-| Probado por | — (completar tras primera prueba) |
+| Responsable de Operaciones | Equipo de Operaciones / Soporte de Guardia |
+| Escalado a N3 | Administrador del Sistema / Líder Técnico (Cristopher León) |
+| Última actualización | 2026-11-27 |
+| Estado de Verificación | 🟢 Validado por el Equipo de BookyHome |
 
 ---
 
-## ¿Por qué importa este endpoint?
+## 1. Estado Normal y Funcionamiento Óptimo (🟢 VERDE)
 
-El endpoint `/health` verifica que el backend está en línea **y** que la conexión a MySQL funciona. Si está en rojo significa que los usuarios no pueden iniciar sesión, ver el catálogo ni realizar compras.
+En condiciones normales de operación, BookyHome se encuentra en **🟢 ESTADO VERDE (UP)**.
+El endpoint de salud `/health` responde con código **HTTP 200 OK** y confirma el estado saludable de sus componentes:
+
+```json
+{
+  "status": "ok",
+  "timestamp": "2026-11-27T06:00:00Z",
+  "version": "1.0.0",
+  "checks": {
+    "database": {"status": "ok", "latency_ms": 14.2},
+    "mail": {"status": "ok"},
+    "ai_assistant": {"status": "ok", "provider": "gemini"}
+  }
+}
+```
+
+* **Base de datos (MySQL):** Conexión activa con latencia baja (`status: "ok"`). Los usuarios pueden navegar, iniciar sesión, comprar y consultar órdenes sin retrasos.
+* **Correo SMTP:** Configuración transaccional lista para envíos de confirmación y recuperación.
+* **Asistente IA:** Proveedor configurado y listo para consultas en catálogo.
+* **Monitoreo continuo:** Uptime Kuma realiza peticiones cada 60 segundos y mantiene el indicador en **verde 🟢 (100% disponible)**.
+
+---
+
+## 2. Protocolo de Contingencia y Recuperación (Si cambia a 🔴 ROJO)
+
+Este procedimiento se ejecuta **únicamente si** el monitor cambia a **🔴 ROJO (DOWN)** debido a una eventualidad externa (caída del hosting, desconexión de base de datos o fallo de red):
 
 ---
 
@@ -42,7 +67,7 @@ El endpoint `/health` verifica que el backend está en línea **y** que la conex
 
 ```bash
 # 1. Verificar que Caddy está corriendo
-ssh ana@bookyhome-server
+ssh <usuario>@<servidor-bookyhome>
 docker ps --filter name=bookyhome-caddy
 
 # 2. Ver logs de Caddy
@@ -55,7 +80,7 @@ docker compose -f /opt/bookyhome/deploy/compose.prod.yaml restart caddy
 curl -s http://localhost:8000/health
 ```
 
-Si Caddy no arranca, revisar `deploy/Caddyfile.prod` (¿dominio correcto?).
+Si Caddy no arranca, revisar `deploy/Caddyfile.prod` (¿dominio o certificado TLS expirado?).
 
 ---
 
@@ -71,20 +96,20 @@ docker logs bookyhome-backend --tail 100
 # 3. Causas comunes:
 #    - OOM (matar por falta de RAM) → ver "OOMKilled" en logs
 #    - Error de inicio (import, variable de entorno faltante)
-#    - Fallo de la migración al arrancar
+#    - Fallo de conexión inicial a MySQL
 
 # 4. Reiniciar el backend
 docker compose -f /opt/bookyhome/deploy/compose.prod.yaml restart backend
 
 # 5. Esperar el health check (máx. 60 s) y verificar
 sleep 65
-curl -s https://bookyhome.onrender.com/health | python3 -m json.tool
+curl -s https://bookyhome-api.onrender.com/health | python3 -m json.tool
 
 # 6. Si no arranca: revisar variables de entorno
-docker compose -f /opt/bookyhome/deploy/compose.prod.yaml exec backend env | grep -E "^(DB_|SECRET_|MAIL_)"
+docker compose -f /opt/bookyhome/deploy/compose.prod.yaml exec backend env | grep -E "^(DB_|SECRET_|MAIL_|GEMINI_)"
 ```
 
-**Si falta una variable crítica** (`DB_HOST`, `SECRET_KEY`): editar `/opt/bookyhome/.env.prod` con la variable correcta, luego:
+**Si falta una variable crítica** (`DB_HOST`, `DB_PASSWORD`, `SECRET_KEY`): editar `/opt/bookyhome/deploy/.env.prod` con la variable correcta, luego:
 
 ```bash
 docker compose -f /opt/bookyhome/deploy/compose.prod.yaml up -d --force-recreate backend
@@ -94,14 +119,25 @@ docker compose -f /opt/bookyhome/deploy/compose.prod.yaml up -d --force-recreate
 
 ## [C] Base de datos no disponible
 
-El endpoint `/health` devuelve:
+Cuando la base de datos falla, `/health` devuelve HTTP 503 con:
 
 ```json
-{"status":"error","checks":{"database":{"status":"error","latency_ms":null}}}
+{
+  "status": "error",
+  "timestamp": "2026-11-27T06:00:00Z",
+  "version": "1.0.0",
+  "checks": {
+    "database": {"status": "error", "detail": "Can't connect to MySQL server on '...' (111)"},
+    "mail": {"status": "ok"},
+    "ai_assistant": {"status": "ok", "provider": "gemini"}
+  }
+}
 ```
 
+### Caso 1: Si se usa MySQL local en Docker
+
 ```bash
-# 1. Verificar que MySQL está corriendo y sano
+# 1. Verificar estado del contenedor MySQL
 docker compose -f /opt/bookyhome/deploy/compose.prod.yaml ps mysql
 docker logs bookyhome-mysql --tail 50
 
@@ -120,33 +156,38 @@ print('Conexión OK:', c.is_connected())
 c.close()
 "
 
-# 3a. MySQL corriendo pero no acepta conexiones → reiniciar
+# 3. Si el contenedor está corriendo pero no responde:
 docker compose -f /opt/bookyhome/deploy/compose.prod.yaml restart mysql
 sleep 30
-
-# 3b. MySQL en estado "unhealthy" más de 2 reintentos:
-#     Probablemente el volumen está lleno. Verificar espacio:
-df -h /var/lib/docker/volumes/
-
-# 4. Si hay suficiente espacio y MySQL sigue fallando → escalar a ana (N3)
 ```
+
+### Caso 2: Si se usa Aiven Cloud MySQL (Producción Nube)
+
+1. **Ingresar a la consola web de Aiven:** `https://console.aiven.io`
+2. **Verificar el estado del servicio:** El cluster `bookyhome-mysql` debe estar en estado **Running** (verde).
+3. **Revisar causas de caída en Aiven:**
+   - ¿Plan trial expirado o pausado por inactividad?
+   - ¿Cuota de disco o memoria superada?
+   - ¿Cambió la contraseña o el puerto asignado?
+4. **Verificar SSL:** La conexión a Aiven requiere conexión segura (`ssl_ca` o certificado si está habilitado).
 
 ---
 
 ## Verificación de resolución
 
 ```bash
-# La alerta debe pasar a verde en Uptime Kuma (máx. 2 minutos tras corrección)
-curl -s https://bookyhome.onrender.com/health
+# Comprobar respuesta de salud en producción:
+curl -s https://bookyhome-api.onrender.com/health | python3 -m json.tool
+
 # Debe devolver HTTP 200 con:
-# {"status":"ok","checks":{"database":{"status":"ok","latency_ms":<número>}}}
+# {"status":"ok","checks":{"database":{"status":"ok","latency_ms":...}}}
 ```
 
-También correr la prueba de humo completa:
+También correr la prueba de humo automatizada:
 
 ```bash
-bash /opt/bookyhome/scripts/smoke-test.sh
-# Esperado: 7/7 PASS
+bash /opt/bookyhome/scripts/smoke-test.sh https://bookyhome-api.onrender.com
+# Esperado: Todas las pruebas PASS (incluido /health y base de datos sana)
 ```
 
 ---
@@ -155,9 +196,9 @@ bash /opt/bookyhome/scripts/smoke-test.sh
 
 | Tiempo sin resolver | Acción |
 |---|---|
-| 0–30 min | Operador (`luis`) sigue el runbook |
-| 30 min | Notificar a `ana` por Telegram y continuar |
-| 1 h | `ana` toma control; evalúa rollback a versión anterior |
+| 0–30 min | Operador de guardia sigue este runbook |
+| 30 min | Notificar al Administrador del Sistema (Cristopher León) por Telegram y continuar diagnóstico |
+| 1 h | Se evalúa rollback a versión anterior o reinicio del servicio de BD en la nube |
 | 2 h | Ejecutar rollback: `bash /opt/bookyhome/scripts/desplegar.sh <version-anterior>` |
 
 ---

@@ -20,7 +20,7 @@ La bitacora de lecciones aprendidas se encuentra en [bitacora-lecciones-aprendid
 - `pnpm build` del frontend finaliza correctamente.
 - `docker compose config` valida la configuracion de servicios locales.
 - Frontend responde en `http://localhost:5173` (local) y en `https://bookyhome-web.onrender.com` (producción nube).
-- Backend responde en `http://localhost:8000/docs` (local) y en `https://bookyhome.onrender.com/docs` / `/health` (producción nube).
+- Backend responde en `http://localhost:8000/docs` (local) y en `https://bookyhome-api.onrender.com/docs` / `/health` (producción nube).
 - Base de datos en la nube activa en Aiven Cloud MySQL 8.4 LTS (`bookyhome-mysql-bookyhome.l.aivencloud.com:22566`) con 75 objetos (43 tablas, 32 vistas), 20 triggers, 45 rutinas y más de 380.000 registros sincronizados.
 - MySQL local aparece saludable cuando Docker Desktop esta iniciado.
 - Cobertura de pruebas automatizadas: 62 suites de pruebas backend (pytest) y 69 suites frontend (vitest), alcanzando 82% en SonarCloud.

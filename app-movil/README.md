@@ -81,6 +81,7 @@ usar su propia IP sin modificar `src/services/api.js` ni generar conflictos.
 - Publicacion de libros del vendedor con hasta cinco fotos, descripcion obligatoria, variantes fisicas y digitales con carga de PDF/EPUB, e inventario por idioma y formato.
 - Configuracion de nivel y fecha/hora de disponibilidad publica para libros con acceso anticipado.
 - Registro de libreria, segun flujo disponible.
+- Panel móvil de administración (AdminHome) con métricas del negocio, supervisión y estados de órdenes (pagada, enviada, entregada).
 
 ## Requisitos
 
@@ -123,10 +124,15 @@ pnpm start
 
 Luego escanear el codigo QR con Expo Go.
 
-Tambien existen scripts:
+Tambien puedes iniciar Android directamente con Expo:
 
 ```bash
-pnpm android
+pnpm exec expo run:android
+```
+
+Los scripts adicionales definidos en `package.json` son:
+
+```bash
 pnpm ios
 pnpm web
 ```

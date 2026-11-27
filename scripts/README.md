@@ -42,10 +42,10 @@ Ese reporte es la evidencia del criterio 1. No se actualiza este README ni el RE
 Si cada integrante debe conservar su propia evidencia sin sobrescribir el reporte comun, puede usar un nombre diferente:
 
 ```powershell
-.\scripts\verification\verify-platform.ps1 -ReportPath docs\implantacion\verificacion-JUAN.md
+.\scripts\verification\verify-platform.ps1 -ReportPath docs\implantacion\verificacion-IDENTIFICADOR.md
 ```
 
-Se debe reemplazar `JUAN` por el nombre o identificador del integrante. Ese archivo puede compartirse por Git como evidencia; los archivos de `backups/` siguen siendo locales y estan excluidos por `.gitignore`.
+Reemplaza `IDENTIFICADOR` por un valor no personal. El reporte puede incluir detalles del equipo local; revisalo y anonimiza los datos que no deban compartirse antes de subirlo a Git. Los archivos de `backups/` siguen siendo locales y estan excluidos por `.gitignore`.
 
 ## Crear un backup manual
 

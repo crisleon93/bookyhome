@@ -110,7 +110,7 @@ El pipeline de GitHub Actions ejecuta automáticamente en cada push y PR a `main
 
 **URL de producción verificada el 21 de noviembre de 2026:**
 - Frontend: `https://bookyhome-web.onrender.com` → HTTP 200
-- Backend: `https://bookyhome.onrender.com/health` → `{"status":"ok","database":{"status":"ok"}}`
+- Backend: `https://bookyhome-api.onrender.com/health` → `{"status":"ok","database":{"status":"ok"}}`
 
 ---
 

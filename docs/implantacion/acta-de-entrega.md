@@ -37,7 +37,7 @@
 
 | Ambiente | Dónde | URL |
 |---|---|---|
-| Producción (nube) | Render Web Service + Render Static Site | `https://bookyhome.onrender.com` / `https://bookyhome-web.onrender.com` |
+| Producción (nube) | Render Web Service + Render Static Site | `https://bookyhome-api.onrender.com` / `https://bookyhome-web.onrender.com` |
 | Base de datos producción | Aiven Cloud MySQL (MySQL 8.4 LTS) | `bookyhome-mysql-bookyhome.l.aivencloud.com:22566` (acceso transferido al cliente) |
 | Pruebas | VM Ubuntu 24.04 LTS del equipo (local) | `https://bookyhome.local` / `https://api.bookyhome.local` (Caddy + TLS interno) |
 | Código fuente | GitHub | `https://github.com/bookyhome/bkh` (repositorio privado → transferir propiedad) |
@@ -94,7 +94,7 @@ Enlace al registro completo: [`registro-del-simulacro.md`](registro-del-simulacr
 | Acceso | Cómo se transfiere | Fecha | ¿Rotado después? |
 |---|---|---|---|
 | Repositorio GitHub y GHCR | Transferencia de propiedad del repo + invitación de organización al cliente | 2026-10-17 | El cliente debe revocar los tokens del equipo entregante |
-| Servidor de producción (cuentas `ana` y `luis`) | El cliente crea sus propias cuentas con llave SSH; el equipo elimina sus `authorized_keys` | 2026-10-24 | Sí — tras confirmar acceso del cliente |
+| Servidor de producción (cuentas del equipo técnico) | El cliente crea sus propias cuentas con llave SSH; el equipo elimina sus `authorized_keys` | 2026-10-24 | Sí — tras confirmar acceso del cliente |
 | Contraseñas (BD app, BD owner, restic, SMTP, Gemini) | Bitwarden: el equipo invita al correo del cliente y transfiere la colección "BookyHome-Prod" | 2026-10-17 | El cliente debe rotar todas las contraseñas en los 15 días posteriores a la recepción |
 | Variables de entorno (`.env.prod`) | El cliente recibe el archivo por SCP desde la VM del equipo entregante hacia la suya | 2026-10-17 | Sí — rotar tras confirmar funcionamiento |
 | Panel de Render y Aiven Cloud | El cliente crea su propia cuenta; el equipo entregante elimina los servicios de su cuenta o transfiere el proyecto | 2026-10-24 | N/A — nueva cuenta del cliente |
@@ -104,7 +104,7 @@ Enlace al registro completo: [`registro-del-simulacro.md`](registro-del-simulacr
 
 ## 7. Niveles de servicio acordados
 
-> Estos niveles aplican durante el periodo de garantía (90 días) con el equipo actual de 2 personas (ana + luis). Superado el periodo, se revisarán con el nuevo operador del cliente.
+> Estos niveles aplican durante el periodo de garantía (90 días) con el equipo de desarrollo de BookyHome. Superado el periodo, se revisarán con el nuevo operador del cliente.
 
 | Nivel de servicio | Compromiso | Cómo se mide |
 |---|---|---|
@@ -145,11 +145,11 @@ Enlace al registro completo: [`registro-del-simulacro.md`](registro-del-simulacr
 | Migrar MySQL 8.0 → 8.4 LTS | Operador + Administradora | ✅ Completado en Nube (Aiven MySQL 8.4) |
 | Migrar Node.js 20 → 22 LTS | Desarrollador frontend | ✅ Completado en Nube (Render Node 22) |
 | Migrar Python 3.10 → 3.12 | Desarrollador backend | 2026-10-31 |
-| Transferir acceso a servidor (crear cuentas del cliente, revocar llaves del equipo) | Administradora (`ana`) | 2026-10-24 |
-| Transferir panel de Render / Aiven al cliente | Operador (`luis`) | 2026-10-24 |
+| Transferir acceso a servidor (crear cuentas del cliente, revocar llaves del equipo) | Líder técnico (Cristopher León) | 2026-10-24 |
+| Transferir panel de Render / Aiven al cliente | Operador (Juan Pineda) | 2026-10-24 |
 | Rotar todas las contraseñas de producción tras confirmar acceso del cliente | Cliente | 2026-11-01 |
-| Capacitación de soporte N1 (2 personas del cliente) | Administradora (`ana`) | 2026-10-24 |
-| Capacitación de operación N2 (operador del cliente) | Administradora + Operador | 2026-10-25 |
+| Capacitación de soporte N1 (2 personas del cliente) | Líder técnico (Cristopher León) | 2026-10-24 |
+| Capacitación de operación N2 (operador del cliente) | Equipo técnico (Cristopher León, Juan Pineda) | 2026-10-25 |
 | Prueba de runbooks por el nuevo operador del cliente | Operador del cliente | 2026-10-26 |
 
 ---

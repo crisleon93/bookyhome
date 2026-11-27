@@ -45,7 +45,7 @@ La existencia de un documento cuyo estado diga `Implementado` no reemplaza la me
 | Frontend `http://localhost:5173` | HTTP 200 |
 | Backend `http://localhost:8000/docs` | HTTP 200 |
 | Frontend en la nube (Render) `https://bookyhome-web.onrender.com` | HTTP 200 (Live) |
-| Backend en la nube (Render) `https://bookyhome.onrender.com/health` | HTTP 200 (Live, BD sana) |
+| Backend en la nube (Render) `https://bookyhome-api.onrender.com/health` | HTTP 200 (Live, BD sana) |
 | Base de datos en la nube (Aiven MySQL 8.4 LTS) | Activo con SSL TLS forzoso, 380k+ registros sincronizados |
 | Tiempo de respuesta del frontend principal | 171.23 ms en medicion local |
 | Tiempo de respuesta de `/docs` | 86.05 ms en medicion local |

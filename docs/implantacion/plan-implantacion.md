@@ -276,16 +276,16 @@ Comparación: 8/8 tablas con huellas idénticas. Las 8 tablas críticas (categor
 ```text
 ========================================
  Prueba de humo — BookyHome
- API:      https://bookyhome.onrender.com
+ API:      https://bookyhome-api.onrender.com
  Frontend: https://bookyhome-web.onrender.com
  Fecha:    2026-10-17 02:13:00
 ========================================
-  → Comprobando API (https://bookyhome.onrender.com)...
+  → Comprobando API (https://bookyhome-api.onrender.com)...
   ✔ PASS API raíz — HTTP 200
   ✔ PASS API /docs (Swagger) — HTTP 200
   ✔ PASS API /catalogo/categorias — HTTP 200
   ✔ PASS API /catalogo/busqueda-avanzada — HTTP 200
-  → Comprobando endpoint de salud (https://bookyhome.onrender.com/health)...
+  → Comprobando endpoint de salud (https://bookyhome-api.onrender.com/health)...
   ✔ PASS API /health — HTTP 200, base de datos sana
   → Verificación propia: catálogo con datos...
   ✔ PASS Catálogo devuelve estructura JSON con resultados
@@ -319,7 +319,7 @@ No. La migración completó sin errores: 0 rechazos, 8/8 huellas coincidentes y 
 | Horario (cron) | `0 20 * * *` — diario a las 20:00 h (America/Bogota) |
 | Retención | 7 diarios, 4 semanales, 12 mensuales |
 | Verificación automática | `restic check` en cada ejecución (local + remoto) |
-| Responsable | `respaldo` (servicio automatizado) · `ana` (supervisión) |
+| Responsable | `respaldo` (servicio automatizado) · Cristopher León (supervisión) |
 
 ### 3.1 Regla 3-2-1
 
@@ -333,7 +333,7 @@ No. La migración completó sin errores: 0 rechazos, 8/8 huellas coincidentes y 
 
 | Campo | Valor |
 |---|---|
-| Quién restauró | Operador (`luis`), siguiendo solo el procedimiento escrito |
+| Quién restauró | Operador (Juan Pineda), siguiendo solo el procedimiento escrito |
 | Instantánea | `8a3f2c1d` (2026-10-17 20:00 UTC), repositorio local |
 | Tiempo total | 4 min 12 s (252 s) |
 | RTO acordado | 2 h (7200 s) — **cumple con 96.5 % de margen** |
@@ -377,7 +377,7 @@ Dominio local de prueba: `bookyhome.local` / `api.bookyhome.local` con `tls inte
 | Componente | Tipo | Valor / Endpoint Real | Estado | Propósito |
 |---|---|---|---|---|
 | **Frontend Web** | CDN / Static | `https://bookyhome-web.onrender.com` | ✅ Live (HTTP 200) | Aplicación SPA pública de compradores y vendedores |
-| **Backend API** | PaaS Web Service | `https://bookyhome.onrender.com` | ✅ Live (HTTP 200) | API REST FastAPI con documentación Swagger y `/health` |
+| **Backend API** | PaaS Web Service | `https://bookyhome-api.onrender.com` | ✅ Live (HTTP 200) | API REST FastAPI con documentación Swagger y `/health` |
 | **Base de Datos** | DBaaS Managed | `bookyhome-mysql-bookyhome.l.aivencloud.com:22566` | ✅ Running | Clúster MySQL 8.4 LTS con cifrado forzoso TLS 1.3 |
 | `api` | CNAME | `bookyhome.onrender.com.` | Configurado | Alias directo a la API en Render |
 | `www` | CNAME | `bookyhome-web.onrender.com.` | Configurado | Alias para el frontend web en Render |
@@ -460,11 +460,11 @@ Todas las 83 migraciones de v1.0.0 son compatibles hacia atrás (columnas nullab
 
 | Componente | Proveedor | Plan |
 |---|---|---|
-| API | Render Web Service | Free / Live (`https://bookyhome.onrender.com`) |
+| API | Render Web Service | Free / Live (`https://bookyhome-api.onrender.com`) |
 | Frontend | Render Static Site | Free / Live (`https://bookyhome-web.onrender.com`) |
 | Base de datos | Aiven Cloud MySQL | MySQL 8.4 LTS (con SSL obligatorio) |
 
-Blueprint: `deploy/render.yaml`. URLs públicas verificadas: `https://bookyhome.onrender.com` (backend) y `https://bookyhome-web.onrender.com` (frontend).
+Blueprint: `deploy/render.yaml`. URLs públicas verificadas: `https://bookyhome-api.onrender.com` (backend) y `https://bookyhome-web.onrender.com` (frontend).
 
 ### 5.4 Estimación de costos
 
@@ -551,15 +551,15 @@ Casos funcionales: 8 casos (F-01 a F-08) cubriendo catálogo, salud, login, deta
 
 | Cuenta | Tipo | Persona o servicio | Grupos | Inicia sesión | sudo permitido |
 |---|---|---|---|---|---|
-| `ana` | Persona | Administradora | `sudo`, `despliegue` | Llave SSH | Todo, con contraseña |
-| `luis` | Persona | Operador | `despliegue` | Llave SSH | `/usr/local/bin/reiniciar-bookyhome` |
+| `cleon` | Persona | Administrador (Cristopher León) | `sudo`, `despliegue` | Llave SSH | Todo, con contraseña |
+| `jpineda` | Persona | Operador (Juan Pineda) | `despliegue` | Llave SSH | `/usr/local/bin/reiniciar-bookyhome` |
 | `respaldo` | Servicio | cron + restic | `respaldo` | No (nologin) | Nada |
 
 Archivos sensibles: `/opt/bookyhome` (`root:despliegue`, 2770), `.env.prod` (`root:despliegue`, 640), `/etc/restic/password` (`root:respaldo`, 640).
 
 ### 7.2 Acceso remoto y firewall
 
-SSH endurecido (`/etc/ssh/sshd_config.d/10-endurecer.conf`): `PasswordAuthentication no`, `PermitRootLogin no`, `AllowUsers ana luis`.
+SSH endurecido (`/etc/ssh/sshd_config.d/10-endurecer.conf`): `PasswordAuthentication no`, `PermitRootLogin no`, `AllowUsers cleon jpineda`.
 
 UFW: `default deny incoming`; puertos abiertos: 22 (SSH), 80/443 (Caddy). MySQL (3306) y API (8000) no expuestos al host (solo red interna Docker). Ver evidencia con `docker compose ps` y `nc -zv` desde otro equipo en el entregable.
 
@@ -613,7 +613,7 @@ Reemplaza la sección 3 (ver arriba). Resumen: `mysqldump` + `restic` con cifrad
 | Campo | Valor |
 |---|---|
 | Fecha | 2026-10-17 |
-| Quién restauró | Operador (`luis`), sin ayuda de la administradora |
+| Quién restauró | Operador (Juan Pineda), sin ayuda del Líder Técnico |
 | Instantánea | `8a3f2c1d` (repo local) |
 | Tiempo total | 4 min 12 s (252 s) |
 | RTO | 2 h — cumple con 96.5 % de margen |
@@ -658,7 +658,7 @@ Migraciones: 83 migraciones aditivas (solo `ADD COLUMN` nullable + `INSERT` idem
 
 ### 8.5 Monitoreo
 
-Uptime Kuma en VM separada. Monitores: salud API (60 s), API raíz (60 s), frontend (120 s), versión correcta (keyword, 300 s), latido de respaldo (push, 25 h). Canal de alertas: Telegram (BookyHome-Ops, lo leen ana y luis). Horario: 24/7.
+Uptime Kuma en VM separada. Monitores: salud API (60 s), API raíz (60 s), frontend (120 s), versión correcta (keyword, 300 s), latido de respaldo (push, 25 h). Canal de alertas: Telegram (BookyHome-Ops, lo leen Cristopher León y Juan Pineda). Horario: 24/7.
 
 Evidencia de alerta: respaldo no ejecutado tras reinicio del servidor → alerta Telegram a las 21:00 → operador reinicia cron, ejecuta respaldo manual, envía latido → recuperación a las 21:05 (1 h 05 m de incidencia).
 
@@ -690,7 +690,7 @@ Auditoría: `passlib 1.7.4` marcado como sin mantenimiento activo (sin CVE activ
 
 ### 9.2 Soporte
 
-Modelo N0–N3. N0: guías en línea (autoservicio). N1: cualquier miembro del equipo (horario laboral). N2: `luis` (operador). N3: `ana` (administradora, 24/7 para P1).
+Modelo N0–N3. N0: guías en línea (autoservicio). N1: cualquier miembro del equipo (horario laboral). N2: Juan Pineda (Operador). N3: Cristopher León (Líder Técnico, 24/7 para P1).
 
 Canal único: Telegram (BookyHome-Ops) + GitHub issues (formulario `reporte-de-falla.md`).
 

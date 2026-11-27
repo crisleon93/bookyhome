@@ -5,7 +5,7 @@
 | Campo | Resultado |
 |---|---|
 | Fecha de verificacion | 2026-08-24 16:25:27 |
-| Equipo | DESKTOP-3N2KGUO |
+| Equipo | Identificador local omitido |
 | Sistema operativo | Microsoft Windows 11 Pro 10.0.26200 |
 | Procesador | AMD Ryzen 5 5600GT with Radeon Graphics         (6 nucleos) |
 | Memoria RAM | 15.87 GB |
