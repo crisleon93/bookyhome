@@ -1,8 +1,10 @@
 import React, { useEffect, useRef } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, Image,
-  Modal, Animated, Dimensions, Platform
+  View, Text, StyleSheet, TouchableOpacity, Image, ScrollView,
+  Modal, Animated, Dimensions, Platform, StatusBar
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { NavigationBar } from 'expo-navigation-bar';
 import { 
   IconClose, IconUser, IconFavorites, IconAlertTriangle, IconStore, IconPackage,
   IconLogout, IconChevronRight, IconBell, IconShoppingBag, IconTruck,
@@ -14,7 +16,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useAppTheme, useThemedStyles } from '../context/ThemeContext';
 
 const { width } = Dimensions.get('window');
-const DRAWER_WIDTH = width * 0.75 > 320 ? 320 : width * 0.75;
+const DRAWER_WIDTH = Math.min(250, width * 0.72);
 const USE_NATIVE_DRIVER = Platform.OS !== 'web';
 
 export default function SidebarMenu({ visible, onClose, user, navigation, onSignOut }) {
@@ -23,6 +25,7 @@ export default function SidebarMenu({ visible, onClose, user, navigation, onSign
   const [profile, setProfile] = React.useState(null);
   const { unreadNotifCount, unreadMsgCount } = useNotifications();
   const { darkMode } = useAppTheme();
+  const insets = useSafeAreaInsets();
   const styles = useThemedStyles(baseStyles);
 
   useEffect(() => {
@@ -85,17 +88,15 @@ export default function SidebarMenu({ visible, onClose, user, navigation, onSign
     ? profile.banner_color.match(/#[0-9a-f]{6}/gi)
     : null;
 
-  const MenuItem = ({ icon, label, onPress, isLogout, badge }) => (
+  const MenuItem = ({ icon, label, onPress, badge }) => (
     <TouchableOpacity
-      style={[styles.menuItem, isLogout && styles.logoutItem]}
+      style={styles.menuItem}
       onPress={onPress}
       activeOpacity={0.7}
     >
       <View style={styles.menuItemLeft}>
         {icon}
-        <Text style={[styles.menuItemText, isLogout && styles.logoutText]}>
-          {label}
-        </Text>
+        <Text style={styles.menuItemText}>{label}</Text>
       </View>
       <View style={styles.menuItemRight}>
         {badge > 0 && (
@@ -103,13 +104,22 @@ export default function SidebarMenu({ visible, onClose, user, navigation, onSign
             <Text style={styles.badgeText}>{badge > 99 ? '99+' : badge}</Text>
           </View>
         )}
-        {!isLogout && <IconChevronRight size={16} color="rgba(255,255,255,0.45)" />}
+        <IconChevronRight size={16} color="rgba(255,255,255,0.45)" />
       </View>
     </TouchableOpacity>
   );
 
   return (
-    <Modal visible={visible} transparent animationType="none" onRequestClose={onClose}>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="none"
+      onRequestClose={onClose}
+      statusBarTranslucent={Platform.OS === 'android'}
+      navigationBarTranslucent={Platform.OS === 'android'}
+    >
+      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+      {Platform.OS === 'android' && <NavigationBar style="dark" />}
       <View style={styles.overlayContainer}>
         <Animated.View style={[styles.overlay, { opacity: fadeAnim }]}>
           <TouchableOpacity style={{ flex: 1 }} onPress={onClose} activeOpacity={1} />
@@ -117,23 +127,23 @@ export default function SidebarMenu({ visible, onClose, user, navigation, onSign
         
         <Animated.View style={[styles.drawer, { transform: [{ translateX: slideAnim }] }]}> 
           {/* Header del drawer */}
-          <View style={[styles.header, { backgroundColor: headerColor }]}>
+          <View style={[styles.header, { backgroundColor: headerColor, paddingTop: insets.top + 8 }]}>
             {bannerUrl ? (
-              <Image source={{ uri: bannerUrl }} style={styles.headerBanner} />
+              <Image source={{ uri: bannerUrl }} style={StyleSheet.absoluteFillObject} resizeMode="cover" />
             ) : bannerGradient?.length >= 2 ? (
-              <LinearGradient colors={bannerGradient} style={styles.headerBanner} />
-            ) : (
-              <View style={[styles.headerBanner, { backgroundColor: headerColor }]} />
+              <LinearGradient colors={bannerGradient} style={StyleSheet.absoluteFillObject} />
+            ) : null}
+            {Boolean(bannerUrl || bannerGradient?.length >= 2) && (
+              <View style={[StyleSheet.absoluteFillObject, styles.headerOverlay]} />
             )}
-            <View style={styles.headerOverlay} />
+            <View style={styles.avatar}>
+              {profilePhotoUrl ? (
+                <Image source={{ uri: profilePhotoUrl }} style={styles.avatarImage} resizeMode="cover" />
+              ) : (
+                <Text style={styles.avatarText}>{user?.nombre?.charAt(0)?.toUpperCase() || 'U'}</Text>
+              )}
+            </View>
             <View style={styles.userInfo}>
-              <View style={styles.avatar}>
-                {profilePhotoUrl ? (
-                  <Image source={{ uri: profilePhotoUrl }} style={styles.avatarImage} />
-                ) : (
-                  <Text style={styles.avatarText}>{user?.nombre?.charAt(0)?.toUpperCase() || 'U'}</Text>
-                )}
-              </View>
               <View>
                 <Text style={styles.userName} numberOfLines={1}>{user?.nombre || 'Usuario'}</Text>
                 <Text style={styles.userRole}>{isVendedor ? 'Vendedor' : 'Comprador'}</Text>
@@ -145,7 +155,12 @@ export default function SidebarMenu({ visible, onClose, user, navigation, onSign
           </View>
 
           {/* Lista de opciones */}
-          <View style={styles.menuContent}>
+          <ScrollView
+            style={styles.menuScroll}
+            contentContainerStyle={styles.menuContent}
+            showsVerticalScrollIndicator={false}
+            testID="sidebar-menu-scroll"
+          >
             <Text style={styles.sectionTitle}>MI CUENTA</Text>
 
             {!isVendedor && (
@@ -219,35 +234,41 @@ export default function SidebarMenu({ visible, onClose, user, navigation, onSign
               label="Configuración"
               onPress={() => navigateTo(isVendedor ? 'ConfiguracionTienda' : 'ConfiguracionComprador')}
             />
-            
+
             {isVendedor && (
               <>
                 <Text style={styles.sectionTitle}>MI LIBRERÍA</Text>
-                <MenuItem 
-                  icon={<IconStore size={22} color="#FFF" />} 
-                  label="Panel de Tienda" 
-                  onPress={() => navigateTo('VendorHome')} 
+                <MenuItem
+                  icon={<IconStore size={22} color="#FFF" />}
+                  label="Panel de Tienda"
+                  onPress={() => navigateTo('VendorHome')}
                 />
-                <MenuItem 
-                  icon={<IconPackage size={22} color="#FFF" />} 
-                  label="Mi Librería" 
-                  onPress={() => navigateTo('Libreria')} 
+                <MenuItem
+                  icon={<IconPackage size={22} color="#FFF" />}
+                  label="Mi Librería"
+                  onPress={() => navigateTo('Libreria')}
                 />
               </>
             )}
-            
-            <View style={styles.spacer} />
-            
-            <View style={styles.divider} />
-            <MenuItem 
-              icon={<IconLogout size={22} color={darkMode ? '#ECECEC' : '#7A1E3A'} />}
-              label="Cerrar Sesión" 
+          </ScrollView>
+
+          <View
+            style={[styles.menuFooter, { paddingBottom: insets.bottom + 12 }]}
+            testID="sidebar-menu-footer"
+          >
+            <TouchableOpacity
+              style={[styles.logoutButton, darkMode && styles.logoutButtonDark]}
               onPress={() => {
                 onClose();
                 onSignOut && onSignOut();
-              }} 
-              isLogout 
-            />
+              }}
+              activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel="Cerrar Sesión"
+            >
+              <IconLogout size={18} color={darkMode ? '#ECECEC' : '#7A1E3A'} />
+              <Text style={[styles.logoutText, darkMode && styles.logoutTextDark]}>Cerrar Sesión</Text>
+            </TouchableOpacity>
           </View>
         </Animated.View>
       </View>
@@ -256,105 +277,124 @@ export default function SidebarMenu({ visible, onClose, user, navigation, onSign
 }
 
 const baseStyles = StyleSheet.create({
-  overlayContainer: {
-    flex: 1,
-    flexDirection: 'row',
-  },
+  overlayContainer: { flex: 1 },
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(0,0,0,0.55)',
   },
   drawer: {
     width: DRAWER_WIDTH,
     height: '100%',
     backgroundColor: '#7A1E3A',
-    boxShadow: '2px 0px 5px rgba(0, 0, 0, 0.25)',
-    elevation: 5,
+    flexDirection: 'column',
   },
   header: {
     position: 'relative',
     backgroundColor: '#7A1E3A',
-    paddingTop: Platform.OS === 'ios' ? 50 : 30,
+    flexShrink: 0,
     paddingBottom: 20,
-    paddingHorizontal: 20,
+    paddingHorizontal: 18,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  headerBanner: {
-    ...StyleSheet.absoluteFillObject,
-    width: '100%',
-    height: '100%',
+    overflow: 'hidden',
   },
   headerOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.2)',
+    backgroundColor: 'rgba(0, 0, 0, 0.35)',
   },
   userInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
     flex: 1,
     zIndex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: 12,
   },
   avatar: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: 'rgba(255,255,255,0.2)',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 15,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.35)',
     zIndex: 1,
   },
   avatarImage: {
     width: '100%',
     height: '100%',
-    borderRadius: 25,
+    borderRadius: 22,
   },
   avatarText: {
-    fontSize: 22,
-    fontWeight: 'bold',
+    fontSize: 18,
+    fontWeight: '800',
     color: '#FFF',
   },
   userName: {
-    fontSize: 16,
-    fontWeight: '700',
+    fontSize: 14,
+    fontWeight: '800',
     color: '#FFF',
-    marginBottom: 4,
   },
   userRole: {
-    fontSize: 13,
-    color: 'rgba(255,255,255,0.8)',
+    fontSize: 11,
+    color: 'rgba(255,255,255,0.65)',
+    marginTop: 2,
   },
   closeBtn: {
-    padding: 5,
+    padding: 6,
     zIndex: 1,
   },
-  menuContent: {
+  menuScroll: {
     flex: 1,
-    paddingTop: 20,
+  },
+  menuContent: {
+    paddingVertical: 16,
+    paddingBottom: 28,
+  },
+  menuFooter: {
+    flexShrink: 0,
+    padding: 16,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.12)',
+  },
+  logoutButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    backgroundColor: '#FFF',
+    borderRadius: 12,
+    paddingVertical: 13,
+  },
+  logoutButtonDark: {
+    backgroundColor: '#303030',
+  },
+  logoutText: {
+    color: '#7A1E3A',
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  logoutTextDark: {
+    color: '#ECECEC',
   },
   sectionTitle: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: 'rgba(255,255,255,0.6)',
-    letterSpacing: 1,
-    marginLeft: 20,
-    marginTop: 15,
+    fontSize: 10,
+    fontWeight: '800',
+    color: 'rgba(255,255,255,0.55)',
+    letterSpacing: 1.2,
+    marginHorizontal: 20,
     marginBottom: 10,
+    textTransform: 'uppercase',
   },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-  },
-  logoutItem: {
-    backgroundColor: '#FFF',
-    marginHorizontal: 12,
-    marginBottom: 12,
-    borderRadius: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 18,
+    marginHorizontal: 8,
+    marginBottom: 3,
+    borderRadius: 12,
   },
   menuItemLeft: {
     flexDirection: 'row',
@@ -366,13 +406,9 @@ const baseStyles = StyleSheet.create({
     gap: 6,
   },
   menuItemText: {
-    fontSize: 15,
+    fontSize: 14,
     color: '#FFF',
-    marginLeft: 15,
-    fontWeight: '500',
-  },
-  logoutText: {
-    color: '#7A1E3A',
+    marginLeft: 13,
     fontWeight: '700',
   },
   badge: {
@@ -389,12 +425,4 @@ const baseStyles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '800',
   },
-  spacer: {
-    flex: 1,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: 'rgba(255,255,255,0.12)',
-    marginVertical: 10,
-  }
 });

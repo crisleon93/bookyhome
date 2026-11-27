@@ -70,6 +70,13 @@
           "backgroundColor": "#ffffff"
         }
       ],
+      [
+        "expo-navigation-bar",
+        {
+          "enforceContrast": false,
+          "style": "dark"
+        }
+      ],
       "@react-native-community/datetimepicker",
       "expo-asset"
     ]
