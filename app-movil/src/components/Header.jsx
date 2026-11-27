@@ -55,6 +55,7 @@ export default function Header({
   onBarcodeScanned,
   onFilterApply,   // (filtros, tab) => void — si se pasa, la pantalla maneja la lógica
   filtrosActivos = 0, // número de filtros activos para mostrar en el badge
+  filtrosIniciales = {},
 }) {
   const [search, setSearch]               = useState('');
   const [cuentaModalVisible, setCuentaModalVisible] = useState(false);
@@ -87,6 +88,7 @@ export default function Header({
 
   const handleFiltrosApply = (filtros, tab) => {
     setFiltrosActuales(filtros);
+    setSearch(filtros.busqueda || '');
     setFiltrosVisible(false);
     if (onFilterApply) {
       // La pantalla maneja la navegación/filtrado
@@ -226,6 +228,8 @@ export default function Header({
           style={[styles.filterBtn, filtrosActivos > 0 && styles.filterBtnActive]}
           onPress={() => setFiltrosVisible(true)}
           activeOpacity={0.85}
+          accessibilityRole="button"
+          accessibilityLabel={filtrosActivos ? `Filtros, ${filtrosActivos} activos` : 'Abrir filtros'}
         >
           <IconFilter size={18} color={filtrosActivos > 0 ? WHITE : VINOTINTO} />
           <FilterBadge count={filtrosActivos} />
@@ -326,7 +330,7 @@ export default function Header({
       <FiltrosBusqueda
         visible={filtrosVisible}
         onClose={() => setFiltrosVisible(false)}
-        filtros={filtrosActuales}
+        filtros={{ ...filtrosActuales, ...filtrosIniciales }}
         onApply={handleFiltrosApply}
       />
     </>

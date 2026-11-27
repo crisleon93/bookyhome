@@ -202,7 +202,6 @@ export default function FiltrosBusqueda({
   const [filtros, setFiltros]     = useState({ ...DEFAULTS, ...filtrosIniciales });
   const [opciones, setOpciones]   = useState({ categorias: [], precio_min: 0, precio_max: 1000000, opciones_ordenamiento: SORT_FALLBACK });
   const [loading, setLoading]     = useState(true);
-  const [initialized, setInitialized] = useState(false);
   const [catOpen, setCatOpen]     = useState(false);
   const [limpiarHover, setLimpiarHover] = useState(false);
 
@@ -211,6 +210,7 @@ export default function FiltrosBusqueda({
     if (!visible) return;
     let mounted = true;
     setLoading(true);
+    setFiltros(prev => ({ ...DEFAULTS, precio_max: prev.precio_max, ...filtrosIniciales }));
     api.get('/catalogo/filtros-disponibles')
       .then(res => {
         if (!mounted) return;
@@ -221,10 +221,14 @@ export default function FiltrosBusqueda({
           precio_max:              data.precio_max             || 1000000,
           opciones_ordenamiento:   data.opciones_ordenamiento  || SORT_FALLBACK,
         });
-        if (!initialized) {
-          setFiltros(prev => ({ ...prev, precio_max: data.precio_max || prev.precio_max, ...filtrosIniciales }));
-          setInitialized(true);
-        }
+        const precioMaxInicial = Number(filtrosIniciales.precio_max);
+        setFiltros(prev => ({
+          ...DEFAULTS,
+          ...filtrosIniciales,
+          precio_max: precioMaxInicial && precioMaxInicial !== 1000000
+            ? precioMaxInicial
+            : data.precio_max || prev.precio_max,
+        }));
       })
       .catch(() => {})
       .finally(() => { if (mounted) setLoading(false); });
@@ -256,7 +260,7 @@ export default function FiltrosBusqueda({
 
   const catNombre = filtros.categoria_id
     ? (opciones.categorias.find(c => c.id_categoria === filtros.categoria_id)?.nombre_categoria ?? 'Categoría')
-    : 'Todas las categorías';
+    : filtros.categoria_nombre || 'Todas las categorías';
 
   return (
     <Modal
@@ -371,9 +375,9 @@ export default function FiltrosBusqueda({
                             <View style={s.catDropdown}>
                               <TouchableOpacity
                                 style={s.catOption}
-                                onPress={() => { set('categoria_id', null); setCatOpen(false); }}
+                                onPress={() => { set('categoria_id', null); set('categoria_nombre', null); setCatOpen(false); }}
                               >
-                                <Text style={[s.catOptionTxt, !filtros.categoria_id && s.catOptionActive]}>
+                                <Text style={[s.catOptionTxt, !filtros.categoria_id && !filtros.categoria_nombre && s.catOptionActive]}>
                                   Todas las categorías
                                 </Text>
                               </TouchableOpacity>
@@ -381,7 +385,7 @@ export default function FiltrosBusqueda({
                                 <TouchableOpacity
                                   key={cat.id_categoria}
                                   style={s.catOption}
-                                  onPress={() => { set('categoria_id', cat.id_categoria); setCatOpen(false); }}
+                                  onPress={() => { set('categoria_id', cat.id_categoria); set('categoria_nombre', null); setCatOpen(false); }}
                                 >
                                   <Text style={[s.catOptionTxt, filtros.categoria_id === cat.id_categoria && s.catOptionActive]}>
                                     {cat.nombre_categoria}
@@ -621,10 +625,10 @@ const baseStyles = StyleSheet.create({
   container: {
     backgroundColor: WHITE,
     borderRadius: 20,
-    width: '100%',
+    width: '92%',
     alignSelf: 'center',
-    marginHorizontal: 20,
     maxWidth: 460,
+    height: '78%',
     maxHeight: '82%',
     overflow: 'hidden',
     shadowColor: '#000',

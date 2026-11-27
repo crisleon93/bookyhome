@@ -94,9 +94,10 @@ vi.mock('../../components/BarcodeScanner', () => ({
     : null,
 }))
 vi.mock('../../components/FiltrosBusqueda', () => ({
-  default: ({ visible, onApply, onClose }) => visible
+  default: ({ visible, filtros = {}, onApply, onClose }) => visible
     ? (
       <div>
+        <output data-testid="filters-initial">{JSON.stringify(filtros)}</output>
         <button onClick={() => onApply({ busqueda: '  fantasía ', categoria_id: 7, ordenar_por: 'precio_asc' }, 'libros')}>Aplicar filtros de libros</button>
         <button onClick={() => onApply({ nombre_tienda: 'Librería Sol', correo_vendedor: 'sol@example.test', ordenar_por: 'relevancia' }, 'librerias')}>Aplicar filtros de librerías</button>
         <button onClick={() => onApply({ busqueda: 'ciencia', categoria_nombre: 'Ciencia' }, 'libros')}>Enviar filtros a la pantalla</button>
@@ -119,6 +120,21 @@ const withAuth = (ui) => (
 )
 
 describe('Header', () => {
+  it('entrega los filtros actuales al abrir el modal desde el encabezado', () => {
+    render(
+      <Header
+        variant="dashboard"
+        filtrosIniciales={{ busqueda: 'novela', categoria_id: 7 }}
+      />,
+    );
+
+    fireEvent.click(screen.getByText('Filtros'));
+    expect(JSON.parse(screen.getByTestId('filters-initial').textContent)).toMatchObject({
+      busqueda: 'novela',
+      categoria_id: 7,
+    });
+  });
+
   it('cubre enlaces públicos, limpieza de búsqueda y filtros de navegación predeterminados', () => {
     const navigation = { navigate: mocks.navigate }
     render(<Header navigation={navigation} filtrosActivos={1} />);
